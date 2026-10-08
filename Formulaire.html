@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #222; }
+    .carte { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    h2 { color: #0b57d0; margin-top: 0; }
+    label { display: block; font-weight: bold; margin: 14px 0 4px; font-size: 14px; }
+    select, input[type=text], input[type=date] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    .ligne-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .ligne-check input { width: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 4px; font-size: 12px; }
+    th { background: #f0f0f0; }
+    td input { border: none; width: 100%; padding: 4px; font-size: 12px; }
+    .btn { background: #0b57d0; color: #fff; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 18px; font-size: 15px; }
+    .btn:disabled { background: #999; cursor: not-allowed; }
+    #resultat { margin-top: 16px; padding: 12px; border-radius: 6px; display: none; }
+    #resultat.ok { background: #e6f4ea; color: #137333; display: block; }
+    #resultat.err { background: #fce8e6; color: #c5221f; display: block; }
+    #resultat a { display: block; color: #0b57d0; margin-top: 6px; }
+    .spinner { display: none; margin: 14px auto; border: 4px solid #eee; border-top: 4px solid #0b57d0; border-radius: 50%; width: 26px; height: 26px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    fieldset { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 16px; }
+    legend { font-weight: bold; color: #0b57d0; padding: 0 6px; }
+  </style>
+</head>
+<body>
+  <div class="carte">
+    <h2>Demande de Prise en Charge</h2>
+
+    <label>Prestataire</label>
+    <select id="prestataire"></select>
+
+    <label>Émputation</label>
+    <select id="emputation"></select>
+
+    <label>Base</label>
+    <select id="base"></select>
+
+    <div class="ligne-check">
+      <input type="checkbox" id="remplacement">
+      <label style="margin:0;">Remplacement</label>
+    </div>
+
+    <label>Numéro de chambre</label>
+    <input type="text" id="numeroChambre">
+
+    <label>Date d'arrivée</label>
+    <input type="date" id="dateArrivee">
+
+    <fieldset>
+      <legend>Documents à générer</legend>
+      <div class="ligne-check">
+        <input type="checkbox" id="genererPEC" checked>
+        <label style="margin:0;">Prise en charge</label>
+      </div>
+      <div class="ligne-check">
+        <input type="checkbox" id="genererAuto">
+        <label style="margin:0;">Autorisation d'accès</label>
+      </div>
+      <div class="ligne-check" id="ligneValable2Mois" style="display:none;">
+        <input type="checkbox" id="valable2Mois">
+        <label style="margin:0;">Valable 2 mois</label>
+      </div>
+    </fieldset>
+
+    <label style="margin-top:18px;">Personnes / Véhicules</label>
+    <table>
+      <thead>
+        <tr><th>Nom</th><th>Prénom</th><th>Type véhicule</th><th>Immatriculation</th></tr>
+      </thead>
+      <tbody id="corpsTableau"></tbody>
+    </table>
+
+    <button class="btn" id="btnEnvoyer" onclick="envoyer()">Générer les documents</button>
+    <div class="spinner" id="spinner"></div>
+    <div id="resultat"></div>
+  </div>
+
+  <script>
+    // Construit les 12 lignes du tableau
+    const corps = document.getElementById('corpsTableau');
+    for (let i = 0; i < 12; i++) {
+      corps.innerHTML += `<tr>
+        <td><input data-champ="nom"></td>
+        <td><input data-champ="prenom"></td>
+        <td><input data-champ="typeVehicule"></td>
+        <td><input data-champ="immatriculation"></td>
+      </tr>`;
+    }
+
+    // Affiche/masque "Valable 2 mois" selon la case Autorisation
+    document.getElementById('genererAuto').addEventListener('change', function() {
+      document.getElementById('ligneValable2Mois').style.display = this.checked ? 'flex' : 'none';
+    });
+
+    // Charge les options des listes déroulantes depuis le Sheet
+    google.script.run.withSuccessHandler(function(opts) {
+      const sPrest = document.getElementById('prestataire');
+      opts.prestataires.forEach(p => sPrest.innerHTML += `<option>${p}</option>`);
+
+      const sEmp = document.getElementById('emputation');
+      opts.emputations.forEach(e => sEmp.innerHTML += `<option>${e}</option>`);
+
+      const sBase = document.getElementById('base');
+      opts.bases.forEach(b => sBase.innerHTML += `<option>${b}</option>`);
+    }).obtenirOptionsFormulaire();
+
+    function envoyer() {
+      const personnes = [];
+      corps.querySelectorAll('tr').forEach(tr => {
+        const p = {};
+        tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
+        if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
+      });
+
+      const data = {
+        prestataire: document.getElementById('prestataire').value,
+        emputation: document.getElementById('emputation').value,
+        base: document.getElementById('base').value,
+        remplacement: document.getElementById('remplacement').checked,
+        numeroChambre: document.getElementById('numeroChambre').value,
+        dateArrivee: document.getElementById('dateArrivee').value,
+        genererPEC: document.getElementById('genererPEC').checked,
+        genererAuto: document.getElementById('genererAuto').checked,
+        valable2Mois: document.getElementById('valable2Mois').checked,
+        personnes: personnes
+      };
+
+      document.getElementById('btnEnvoyer').disabled = true;
+      document.getElementById('spinner').style.display = 'block';
+      document.getElementById('resultat').style.display = 'none';
+
+      google.script.run
+        .withSuccessHandler(afficherResultat)
+        .withFailureHandler(function(err) { afficherResultat({ success: false, message: err.message }); })
+        .soumettreFormulairePEC(data);
+    }
+
+    function afficherResultat(res) {
+      document.getElementById('btnEnvoyer').disabled = false;
+      document.getElementById('spinner').style.display = 'none';
+      const div = document.getElementById('resultat');
+      div.className = res.success ? 'ok' : 'err';
+      div.innerHTML = res.message;
+      if (res.success && res.liens) {
+        res.liens.forEach(l => div.innerHTML += `<a href="${l.url}" target="_blank">📄 ${l.nom}</a>`);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "2026-09-19-01",
+    "date": "2026-09-19",
+    "title": "Icône dédiée et installation sur écran d'accueil",
+    "changes": [
+      "Ajout d'une icône personnalisée pour l'application, basée sur le logo de la Division Infrastructure",
+      "Le tableau de bord peut désormais être installé sur l'écran d'accueil (Android et iPhone) pour un accès direct, en plein écran, sans passer par le navigateur",
+      "Une bande d'invitation à l'installation apparaît automatiquement pour les nouveaux visiteurs"
+    ]
+  },
+  {
+    "id": "2026-09-17-01",
+    "date": "2026-09-17",
+    "title": "Ajout de la dotation et nettoyage de la page d'accueil",
+    "changes": [
+      "Ajout de l'application « Dotation Vivres & Eau Minérale » dans la catégorie Logistique & Stocks",
+      "Retrait de la bande « Organigramme Interactif » pleine largeur au-dessus des filtres (l'accès à l'organigramme reste disponible via son card dans RH & Personnel)",
+      "Ajout de cette bande de suivi des modifications"
+    ]
+  }
+]
