@@ -133,16 +133,16 @@ const CHANTIERS = [
   // (donc ignoré par le chargement et exclu de tous les calculs) tant que
   // le service est en pause. URL d'origine gardée en commentaire.
   { nom: "Les Abris", type: "boq", service: "Construction", actif: false,
-    csvUrl: "" }, // désactivé — URL d'origine : https://docs.google.com/spreadsheets/d/12LYR4984-NDKrKngTXDAkRJne0zpE_OF3836f-aYlfw/export?format=csv&gid=926886126
+    csvUrl: "" },
 
   { nom: "Bassin CPF — Physique (Plate-forme/Talus)", type: "journal", service: "Construction", actif: false,
-    csvUrl: "" }, // désactivé — URL d'origine : https://docs.google.com/spreadsheets/d/e/2PACX-1vTTr_x5K-Xe1cDNL5zIxa3-KaWhqvU9uzUUM4zYtjvQRmNW9VdT9zgvDCzRWOHpsg/pub?gid=1697217269&single=true&output=csv
+    csvUrl: "" },
 
   { nom: "Bassin CPF — Financier (GCB)", type: "boq", service: "Construction", actif: false,
-    csvUrl: "" }, // désactivé — URL d'origine : https://docs.google.com/spreadsheets/d/e/2PACX-1vSz2qFQksPbcK5AT7YI2BX6OSE5r14MID4umAs9i6L2r9NJh_lFbEFwDLspSshYgA/pub?gid=1157217160&single=true&output=csv (onglet Export_Dashboard de 'attch valor' dans VER01)
+    csvUrl: "" },
 
   { nom: "Routes & ATIA (portefeuille)", type: "portfolio", service: "Construction", actif: false,
-    csvUrl: "" }, // désactivé — URL d'origine : https://docs.google.com/spreadsheets/d/e/2PACX-1vSz2qFQksPbcK5AT7YI2BX6OSE5r14MID4umAs9i6L2r9NJh_lFbEFwDLspSshYgA/pub?gid=1018327631&single=true&output=csv (un seul onglet Export_Portfolio_Routes dans VER01)
+    csvUrl: "" },
 
   { nom: "MCM", type: "boq", service: "Construction", actif: false, csvUrl: "" },
   { nom: "Mosquée", type: "boq", service: "Construction", actif: false, csvUrl: "" },
@@ -152,7 +152,7 @@ const CHANTIERS = [
 
   // ── Service Génie Civil (rattaché à Construction) — EN PAUSE ──
   { nom: "Prestation Génie Civil", type: "workforce", service: "Construction", actif: false,
-    csvUrl: "" }, // désactivé — URL d'origine : https://docs.google.com/spreadsheets/d/1x7r94U66Ec7t7jBzyzcuHCS1JCrYlPinYRvpFA5gQ3s/export?format=csv&gid=262596576
+    csvUrl: "" },
 
   // ── SERVICE TRAVAUX ENTRETIEN — ACTIF ──────────────────────
   // Forage RNS et Terrassement RNS sont des exemples-types de fiches suiveuses.
@@ -644,7 +644,7 @@ function renderGaugeH(pct, opts) {
 function renderChantierCardBOQ(data, i) {
   const lines = data.lignes.map(l => `
     <div class="line-item">
-      <div class="li-top"><span class="li-name">${l.designation}</span><span class="li-pct">${l.pct.toFixed(0)}%</span></div>
+      <div class="li-top"><span class="li-name">${escapeHtml(l.designation)}</span><span class="li-pct">${l.pct.toFixed(0)}%</span></div>
       <div class="line-bar-bg"><div class="line-bar-fill" style="width:${l.pct}%"></div></div>
       <div class="li-nums">${l.qteRealisee.toLocaleString('fr-FR')} / ${l.qtePrevue.toLocaleString('fr-FR')} ${l.unite} — ${formatDA(l.montantRealise)} / ${formatDA(l.montantPrevu)}</div>
     </div>`).join('');
@@ -659,7 +659,7 @@ function renderChantierCardBOQ(data, i) {
 function renderChantierCardKPI(data, i) {
   const lines = data.lignes.map(l => `
     <div class="line-item">
-      <div class="li-top"><span class="li-name">${l.designation}</span><span class="li-pct">${l.pct.toFixed(0)}%</span></div>
+      <div class="li-top"><span class="li-name">${escapeHtml(l.designation)}</span><span class="li-pct">${l.pct.toFixed(0)}%</span></div>
       <div class="line-bar-bg"><div class="line-bar-fill" style="width:${l.pct}%"></div></div>
       <div class="li-nums">${formatDA(l.montantRealise)} / ${formatDA(l.montantPrevu)}</div>
     </div>`).join('');
@@ -683,7 +683,7 @@ function renderChantierCardElectrique(data, i) {
         <div class="tg-item">
           <div class="tg-label">⏳ Délai d'exécution</div>
           ${renderGaugeH(data.pctDelai !== null ? data.pctDelai : 0, { big: false, color: 'linear-gradient(90deg,#6366F1,#818CF8)' })}
-          <div class="tg-sub">${data.pctDelai !== null ? data.pctDelai.toFixed(1) + '% du délai contractuel consommé' : (data.delaiMotif || 'Délai non calculable')}</div>
+          <div class="tg-sub">${data.pctDelai !== null ? data.pctDelai.toFixed(1) + '% du délai contractuel consommé' : escapeHtml(data.delaiMotif || 'Délai non calculable')}</div>
         </div>
         <div class="tg-item">
           <div class="tg-label">📦 Consommation du marché</div>
@@ -713,9 +713,9 @@ function renderChantierCardJournal(data, i) {
 
 function renderChantierCardWorkforce(data, i) {
   const rowsPresence = (data.parMois || []).map(m => `
-    <tr><td>${m.mois}</td><td>${m.effectif}</td><td>${m.presence.toLocaleString('fr-FR')}</td><td>${m.repos.toLocaleString('fr-FR')}</td></tr>`).join('');
+    <tr><td>${escapeHtml(m.mois)}</td><td>${m.effectif}</td><td>${m.presence.toLocaleString('fr-FR')}</td><td>${m.repos.toLocaleString('fr-FR')}</td></tr>`).join('');
   const rowsMateriel = (data.materielParMois || []).map(m => `
-    <tr><td>${m.mois}</td><td>${m.jours.toLocaleString('fr-FR')}</td></tr>`).join('');
+    <tr><td>${escapeHtml(m.mois)}</td><td>${m.jours.toLocaleString('fr-FR')}</td></tr>`).join('');
   const tableStyle = 'width:100%;border-collapse:collapse;font-size:12px;';
   const thStyle = 'text-align:left;padding:6px 8px;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border);';
   const tdStyle = 'padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-dark);';
@@ -896,7 +896,7 @@ async function init() {
     content.innerHTML = html;
   } catch (e) {
     content.className = 'error-box';
-    content.innerHTML = "Impossible de charger les données. Vérifie ta connexion internet ou que les liens Google Sheets sont bien publiés.<br><br><small>" + e.message + "</small>";
+    content.innerHTML = "Impossible de charger les données. Vérifie ta connexion internet ou que les liens Google Sheets sont bien publiés.<br><br><small>" + escapeHtml(e.message) + "</small>";
   }
 }
 init();

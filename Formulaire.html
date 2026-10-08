@@ -81,6 +81,10 @@
   </div>
 
   <script>
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     // Construit les 12 lignes du tableau
     const corps = document.getElementById('corpsTableau');
     for (let i = 0; i < 12; i++) {
@@ -100,13 +104,13 @@
     // Charge les options des listes déroulantes depuis le Sheet
     google.script.run.withSuccessHandler(function(opts) {
       const sPrest = document.getElementById('prestataire');
-      opts.prestataires.forEach(p => sPrest.innerHTML += `<option>${p}</option>`);
+      opts.prestataires.forEach(p => sPrest.innerHTML += `<option>${esc(p)}</option>`);
 
       const sEmp = document.getElementById('emputation');
-      opts.emputations.forEach(e => sEmp.innerHTML += `<option>${e}</option>`);
+      opts.emputations.forEach(e => sEmp.innerHTML += `<option>${esc(e)}</option>`);
 
       const sBase = document.getElementById('base');
-      opts.bases.forEach(b => sBase.innerHTML += `<option>${b}</option>`);
+      opts.bases.forEach(b => sBase.innerHTML += `<option>${esc(b)}</option>`);
     }).obtenirOptionsFormulaire();
 
     function envoyer() {
@@ -147,7 +151,7 @@
       div.className = res.success ? 'ok' : 'err';
       div.innerHTML = res.message;
       if (res.success && res.liens) {
-        res.liens.forEach(l => div.innerHTML += `<a href="${l.url}" target="_blank">📄 ${l.nom}</a>`);
+        res.liens.forEach(l => div.innerHTML += `<a href="${esc(l.url)}" target="_blank" rel="noopener">📄 ${esc(l.nom)}</a>`);
       }
     }
   </script>
