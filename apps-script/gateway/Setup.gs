@@ -1,0 +1,50 @@
+/**
+ * Installation (à lancer UNE fois depuis le compte du secrétariat) :
+ *   1. crée le classeur « Gateway_DB » et le classeur « Gateway_Secrets » (empreintes, à ne partager avec personne) ;
+ *   2. enregistre leurs identifiants et un poivre aléatoire dans les propriétés du script ;
+ *   3. remplit Modules, rôles et droits par défaut.
+ * Ensuite : coller dans « Utilisateurs » les lignes nettoyées de BDDORGA (voir docs/ARCHITECTURE-4.0.md),
+ * puis déployer en application Web (Exécuter en tant que : moi ; Accès : tout le monde — protégé par la connexion).
+ */
+function installer() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('DB_ID')) throw new Error('Déjà installé. Supprimer les propriétés pour recommencer.');
+  var db = SpreadsheetApp.create('Gateway_DB');
+  var sec = SpreadsheetApp.create('Gateway_Secrets');
+  props.setProperties({ DB_ID: db.getId(), SECRETS_ID: sec.getId(), PEPPER: Utilities.getUuid() + Utilities.getUuid() });
+
+  var feuilles = {
+    Utilisateurs: ['email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
+    Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
+    DroitsRole: ['role', 'module', 'niveau'],
+    Exceptions: ['email', 'module', 'niveau'],
+    Journal: ['date', 'action', 'email', 'detail']
+  };
+  var premiere = true;
+  Object.keys(feuilles).forEach(function (n) {
+    var sh = premiere ? db.getSheets()[0].setName(n) : db.insertSheet(n); premiere = false;
+    sh.appendRow(feuilles[n]); sh.setFrozenRows(1);
+  });
+  var s = sec.getSheets()[0].setName('Identifiants');
+  s.appendRow(['email', 'sel', 'empreinte', 'sel_code', 'empreinte_code', 'code_expire', 'doit_changer']); s.setFrozenRows(1);
+
+  var modules = [
+    ['pilotage', 'Pilotage & Projets', '📊', 1], ['cpm', 'Cellule Passation Marché', '📑', 2],
+    ['logistique', 'Logistique & Stocks', '🚛', 3], ['rh', 'RH & Personnel', '👥', 4],
+    ['admin', 'Administration', '📁', 5], ['planning', 'Planning & Rotations', '🗓️', 6],
+    ['rapports', 'Rapports journaliers', '📝', 7], ['badges', 'Badges prestataires', '🪪', 8],
+    ['securite', 'Sécurité & Accès', '🔐', 9]
+  ];
+  modules.forEach(function (m) { db.getSheetByName('Modules').appendRow(m.concat([1])); });
+
+  // Rôles et niveaux par défaut (1 lecture, 2 saisie, 3 administration) — à ajuster dans l'onglet DroitsRole.
+  var d = db.getSheetByName('DroitsRole');
+  [['agent', 'planning', 1], ['agent', 'rapports', 1],
+   ['conducteur', 'planning', 1], ['conducteur', 'rapports', 2], ['conducteur', 'pilotage', 1], ['conducteur', 'logistique', 2],
+   ['chef_service', 'planning', 2], ['chef_service', 'rapports', 2], ['chef_service', 'pilotage', 2], ['chef_service', 'cpm', 1], ['chef_service', 'logistique', 2], ['chef_service', 'rh', 1], ['chef_service', 'admin', 1],
+   ['chef_division', 'planning', 2], ['chef_division', 'rapports', 3], ['chef_division', 'pilotage', 3], ['chef_division', 'cpm', 3], ['chef_division', 'logistique', 3], ['chef_division', 'rh', 3], ['chef_division', 'admin', 3], ['chef_division', 'badges', 2],
+   ['secretariat', 'admin', 3], ['secretariat', 'rh', 2], ['secretariat', 'badges', 3], ['secretariat', 'securite', 3], ['secretariat', 'planning', 2],
+   ['cpm', 'cpm', 3], ['cpm', 'pilotage', 1]
+  ].forEach(function (r) { d.appendRow(r); });
+  Logger.log('Installé. DB: ' + db.getUrl() + '  SECRETS: ' + sec.getUrl());
+}
