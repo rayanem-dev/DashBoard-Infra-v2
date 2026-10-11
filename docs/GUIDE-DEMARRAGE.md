@@ -1,0 +1,21 @@
+# Guide de démarrage (à faire de votre côté)
+
+## A. Voir le site tout de suite (mode démo, 2 minutes, rien à installer côté Google)
+1. Sur GitHub, ouvrez le dépôt `DashBoard-Infra-v2`, branche `claude/exciting-ritchie-u1o1dl` → bouton vert **Code → Download ZIP**.
+2. Décompressez, puis double-cliquez sur **`connexion.html`**.
+3. Comme `js/config.js` est vide, le site est en **mode démo** (bandeau orange, données fictives) :
+   - choisissez un nom dans la liste ; mot de passe **`Demo2026!`** ;
+   - ou « Première connexion… » avec le code **`123456`**.
+   - 3 profils : chef de division (tout), conducteur (rapports + pilotage), CPM.
+
+## B. Mettre en place la vraie passerelle (compte `sec.infra.rns@gmail.com`)
+1. **Sécuriser le compte** : validation en deux étapes + adresse de récupération (myaccount.google.com › Sécurité).
+2. **Copier les fichiers** : script.google.com › *Nouveau projet* › nommer « Migration v2 » › coller `apps-script/migration/migrer.gs` › exécuter `migrer` › autoriser. Ouvrir ensuite `DashBoard-Infra v2/98_Systeme_Donnees/Registre_Migration` et me dire les lignes en ERREUR.
+3. **Installer la passerelle** : nouveau projet « Passerelle v2 » › créer un fichier par `.gs` de `apps-script/gateway/` (Auth, Applications, Config, Droits, Mail, Main, Setup, Store) + le manifeste `appsscript.json` (Paramètres › « Afficher appsscript.json ») › exécuter `installer` › autoriser. Deux classeurs sont créés (`Gateway_DB`, `Gateway_Secrets`) : **ne partagez jamais `Gateway_Secrets`**.
+4. **Utilisateurs** : dans `Gateway_DB › Utilisateurs`, collez depuis `BDDORGA` uniquement : `email, matricule, nom, service, fonction, dependance` et ajoutez `role` (`agent`, `conducteur`, `chef_service`, `chef_division`, `secretariat`, `cpm`) et `actif` = 1. **Jamais** les colonnes de mots de passe. Puis exécutez `genererUids`.
+5. **Liens vers les copies** : exécutez `pointerVersCopies` (remplace les liens des originaux par ceux des copies).
+6. **Déployer** : Déployer › Nouveau déploiement › *Application Web* › Exécuter en tant que **moi** › Accès **Tout le monde** › copier l'URL `/exec`.
+7. **Brancher le site** : dans `js/config.js`, mettre `window.GATEWAY_URL = 'URL /exec'` (ou me l'envoyer, je le fais). Le mode démo disparaît.
+
+## C. Ce qui reste volontairement inchangé
+Le site actuel, tous les fichiers d'origine et le fichier Organigramme (traité à la fin, comme décidé).

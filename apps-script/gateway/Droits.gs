@@ -34,12 +34,18 @@ var Droits = (function () {
     return res;
   }
 
-  /** Menu : modules du catalogue accessibles, avec leurs applications, triés par ordre. */
-  function menu(acces, catalogue) {
+  /** Menu : modules accessibles (triés) avec leurs applications dont le niveau minimal est atteint. */
+  function menu(acces, catalogue, applications) {
     return (catalogue || [])
       .filter(function (m) { return acces[norm(m.id)] >= 1 && String(m.actif) !== '0'; })
       .sort(function (a, b) { return (Number(a.ordre) || 0) - (Number(b.ordre) || 0); })
-      .map(function (m) { return { id: m.id, titre: m.titre, icone: m.icone, niveau: acces[norm(m.id)] }; });
+      .map(function (m) {
+        var niv = acces[norm(m.id)];
+        var apps = (applications || [])
+          .filter(function (x) { return norm(x.module) === norm(m.id) && niv >= (Number(x.niveau_min) || 1); })
+          .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url }; });
+        return { id: m.id, titre: m.titre, icone: m.icone, niveau: niv, apps: apps };
+      });
   }
 
   return { resolve: resolve, menu: menu };

@@ -34,7 +34,7 @@ function route_(req) {
     case 'me':      return { user: Auth.publique(Auth.userFromToken(req.token)), acces: acces_(Auth.userFromToken(req.token)) };
     case 'menu': {
       var u = Auth.userFromToken(req.token);
-      return { user: Auth.publique(u), menu: Droits.menu(acces_(u), Store.table('Modules')) };
+      return { user: Auth.publique(u), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications')) };
     }
     case 'emettreCode': {
       var admin = Auth.userFromToken(req.token);

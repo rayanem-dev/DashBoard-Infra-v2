@@ -1,0 +1,58 @@
+/* Charte du tableau de bord Division Infrastructure RNS (identique à l'accueil actuel) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+:root {
+  --orange-main: #E85D04; --orange-light: #F48C06; --orange-pale: #FFE8D6; --orange-dark: #9D0208;
+  --gray-dark: #1A1A2E; --gray-mid: #2D2D44; --gray-light: #F8F9FA; --white: #FFFFFF;
+  --text-dark: #1C1C1C; --text-muted: #6B7280; --border: #E5E7EB;
+  --ok: #16A34A; --err: #B91C1C;
+  --shadow-card: 0 4px 20px rgba(232,93,4,.10), 0 1px 4px rgba(0,0,0,.06);
+  --shadow-hover: 0 8px 32px rgba(232,93,4,.22), 0 2px 8px rgba(0,0,0,.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #F5F5F0; color: var(--text-dark); min-height: 100vh; }
+header.bandeau { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+.bandeau-inner { max-width: 1400px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.logo-area { display: flex; align-items: center; gap: 16px; }
+.logo-circle { width: 52px; height: 52px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -1px; box-shadow: 0 4px 14px rgba(232,93,4,.5); }
+.logo-text h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: .3px; }
+.logo-text p { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; letter-spacing: .5px; text-transform: uppercase; }
+.bandeau-droite { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,.8); font-size: 13px; }
+.btn-ghost { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 9px 14px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btn-ghost:hover { background: rgba(255,255,255,.18); }
+.demo-banner { background: #FFF3E0; color: #9A5B0F; text-align: center; font-size: 13px; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #F4D4A8; }
+
+/* Carte de connexion */
+.centre { display: flex; justify-content: center; padding: 40px 16px; }
+.carte { background: #fff; border-radius: 18px; box-shadow: var(--shadow-card); padding: 32px; width: 100%; max-width: 440px; border-top: 5px solid var(--orange-main); }
+.carte h2 { font-size: 22px; margin-bottom: 6px; }
+.carte .sous { color: var(--text-muted); font-size: 14px; margin-bottom: 22px; }
+label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); margin: 16px 0 6px; }
+input[type=text], input[type=password], select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font: inherit; font-size: 15px; background: #fff; }
+input:focus, select:focus { outline: none; border-color: var(--orange-main); box-shadow: 0 0 0 3px rgba(232,93,4,.15); }
+select[size] { padding: 4px; margin-top: 6px; }
+select[size] option { padding: 9px 10px; border-radius: 6px; }
+.btn { width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(232,93,4,.35); }
+.btn:disabled { opacity: .55; cursor: wait; }
+.lien { background: none; border: 0; color: var(--orange-main); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 14px; padding: 0; text-decoration: underline; }
+.msg { margin-top: 14px; font-size: 14px; border-radius: 10px; padding: 10px 12px; display: none; }
+.msg.err { display: block; background: #FEF2F2; color: var(--err); }
+.msg.ok { display: block; background: #F0FDF4; color: #166534; }
+.aide { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+/* Portail */
+main.portail { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
+.accueil { background: #fff; border-radius: 16px; box-shadow: var(--shadow-card); padding: 22px 26px; margin-bottom: 26px; border-left: 5px solid var(--orange-main); }
+.accueil h2 { font-size: 20px; }
+.accueil p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+.module { margin-bottom: 34px; }
+.module h3 { font-size: 17px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.module h3 .niveau { font-size: 11px; font-weight: 700; color: var(--orange-main); background: var(--orange-pale); border-radius: 999px; padding: 3px 10px; text-transform: uppercase; letter-spacing: .5px; }
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.app { display: flex; flex-direction: column; background: #fff; border-radius: 14px; box-shadow: var(--shadow-card); padding: 18px; text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; border-top: 4px solid var(--orange-main); }
+.app:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+.app .em { font-size: 28px; margin-bottom: 8px; }
+.app h4 { font-size: 15px; margin-bottom: 6px; }
+.app p { font-size: 13px; color: var(--text-muted); line-height: 1.45; flex: 1; }
+.app .ouvrir { margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--orange-main); }
+.vide { color: var(--text-muted); font-size: 14px; padding: 40px 0; text-align: center; }
+@media (max-width: 600px) { .bandeau-inner { padding: 14px 16px; } .carte { padding: 24px 20px; } .logo-text h1 { font-size: 16px; } }

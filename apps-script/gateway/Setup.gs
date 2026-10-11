@@ -16,6 +16,7 @@ function installer() {
   var feuilles = {
     Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
     Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
+    Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min'],
     DroitsRole: ['role', 'module', 'niveau'],
     Exceptions: ['email', 'module', 'niveau'],
     Journal: ['date', 'action', 'email', 'detail']
@@ -46,6 +47,7 @@ function installer() {
    ['secretariat', 'admin', 3], ['secretariat', 'rh', 2], ['secretariat', 'badges', 3], ['secretariat', 'securite', 3], ['secretariat', 'planning', 2],
    ['cpm', 'cpm', 3], ['cpm', 'pilotage', 1]
   ].forEach(function (r) { d.appendRow(r); });
+  amorcerApplications();
   Logger.log('Installé. DB: ' + db.getUrl() + '  SECRETS: ' + sec.getUrl());
 }
 

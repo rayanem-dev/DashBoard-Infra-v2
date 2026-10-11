@@ -45,3 +45,15 @@ test('menu : modules accessibles, actifs, triés', () => {
   const m = Droits.menu({ rapports: 2, pilotage: 1, logistique: 1 }, cat);
   assert.deepStrictEqual(m.map(x => x.id), ['pilotage', 'rapports']);
 });
+
+test('menu : applications filtrées par module et niveau minimal', () => {
+  const cat = [{ id: 'cpm', titre: 'C', icone: 'c', ordre: 1, actif: 1 }, { id: 'rh', titre: 'R', icone: 'r', ordre: 2, actif: 1 }];
+  const apps = [
+    { module: 'cpm', titre: 'Lecture', description: '', emoji: '', url: 'u1', niveau_min: 1 },
+    { module: 'cpm', titre: 'Admin', description: '', emoji: '', url: 'u2', niveau_min: 3 },
+    { module: 'rh', titre: 'RH', description: '', emoji: '', url: 'u3', niveau_min: 1 },
+  ];
+  const m = Droits.menu({ cpm: 2 }, cat, apps);
+  assert.strictEqual(m.length, 1);
+  assert.deepStrictEqual(m[0].apps.map(a => a.titre), ['Lecture']);
+});

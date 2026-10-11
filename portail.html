@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Portail – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Tableau de Bord – Division Infrastructure</h1><p>Sonatrach · RNS · Version 4.0 (en construction)</p></div></div>
+  <div class="bandeau-droite"><span id="qui"></span><button class="btn-ghost" id="quitter" type="button">Se déconnecter</button></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+
+<main class="portail">
+  <section class="accueil" id="accueil">
+    <h2 id="salut">Bonjour</h2>
+    <p id="infos">Chargement de votre espace…</p>
+  </section>
+  <div id="modules"></div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  var ROLES = { agent: 'Agent', conducteur: 'Conducteur des travaux', chef_service: 'Chef de service', chef_division: 'Chef de division', secretariat: 'Secrétariat', cpm: 'Cellule Passation de marché' };
+  var NIVEAUX = { 1: 'Lecture', 2: 'Saisie', 3: 'Administration' };
+
+  function el(tag, cls, texte) { var e = document.createElement(tag); if (cls) e.className = cls; if (texte != null) e.textContent = texte; return e; }
+  // N'autorise que http(s) et les pages relatives du site : jamais javascript: ni data:
+  function lienSur(u) { u = String(u || ''); return /^(https?:\/\/|[A-Za-z0-9_\-\/]+\.html)/.test(u) ? u : '#'; }
+
+  function dessiner(r) {
+    $('qui').textContent = r.user.nom;
+    $('salut').textContent = 'Bonjour ' + r.user.nom;
+    $('infos').textContent = (ROLES[r.user.role] || r.user.role || '') + (r.user.service ? ' · ' + r.user.service : '');
+    var zone = $('modules'); zone.textContent = '';
+    if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
+    r.menu.forEach(function (m) {
+      var sec = el('section', 'module');
+      var h = el('h3', null, (m.icone || '') + ' ' + m.titre); h.appendChild(el('span', 'niveau', NIVEAUX[m.niveau] || '')); sec.appendChild(h);
+      var g = el('div', 'grille');
+      if (!m.apps.length) g.appendChild(el('p', 'vide', 'Bientôt disponible.'));
+      m.apps.forEach(function (a) {
+        var c = el('a', 'app'); c.href = lienSur(a.url); c.target = '_blank'; c.rel = 'noopener';
+        c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));
+        c.appendChild(el('p', null, a.description || '')); c.appendChild(el('div', 'ouvrir', 'Ouvrir →'));
+        g.appendChild(c);
+      });
+      sec.appendChild(g); zone.appendChild(sec);
+    });
+  }
+
+  Api.call('menu').then(dessiner).catch(function (e) {
+    if (e.code === 'SESSION' || !Api.token() && !Api.demo) { Api.setToken(''); location.replace('connexion.html'); return; }
+    $('infos').textContent = 'Erreur : ' + e.message;
+  });
+
+  $('quitter').addEventListener('click', function () {
+    Api.call('logout').catch(function () {}).then(function () { Api.setToken(''); location.replace('connexion.html'); });
+  });
+})();
+</script>
+</body>
+</html>

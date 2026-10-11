@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Connexion – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Tableau de Bord – Division Infrastructure</h1><p>Sonatrach · RNS · Accès sécurisé</p></div></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives. Mot de passe : <b>Demo2026!</b> · Code d'activation : <b>123456</b></div>
+
+<div class="centre">
+  <!-- Étape 1 : choisir son nom et saisir son mot de passe -->
+  <form class="carte" id="f-login" autocomplete="off">
+    <h2>Connexion</h2>
+    <p class="sous">Choisissez votre nom puis saisissez votre mot de passe.</p>
+    <label for="q">Votre nom</label>
+    <input type="text" id="q" placeholder="Rechercher…" autocomplete="off">
+    <select id="liste" size="6" aria-label="Liste du personnel"></select>
+    <label for="mdp">Mot de passe</label>
+    <input type="password" id="mdp" autocomplete="current-password">
+    <button class="btn" id="b-login" type="submit">Se connecter</button>
+    <div class="msg" id="m-login" role="alert"></div>
+    <button class="lien" type="button" id="l-code">Première connexion ou mot de passe oublié ?</button>
+  </form>
+
+  <!-- Étape 2 : code reçu par e-mail + nouveau mot de passe -->
+  <form class="carte" id="f-code" autocomplete="off" hidden>
+    <h2>Définir mon mot de passe</h2>
+    <p class="sous" id="s-code"></p>
+    <label for="code">Code reçu par e-mail</label>
+    <input type="text" id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+    <label for="n1">Nouveau mot de passe</label>
+    <input type="password" id="n1" autocomplete="new-password">
+    <p class="aide">10 caractères minimum, avec au moins une lettre et un chiffre.</p>
+    <label for="n2">Confirmer</label>
+    <input type="password" id="n2" autocomplete="new-password">
+    <button class="btn" id="b-code" type="submit">Valider et me connecter</button>
+    <div class="msg" id="m-code" role="alert"></div>
+    <button class="lien" type="button" id="l-retour">← Retour</button>
+  </form>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var tous = [], choisi = '';
+  if (Api.demo) $('demo').hidden = false;
+
+  function msg(id, texte, ok) { var m = $(id); m.textContent = texte || ''; m.className = 'msg' + (texte ? (ok ? ' ok' : ' err') : ''); }
+  function occupe(btn, on) { btn.disabled = on; }
+
+  function afficher(filtre) {
+    var f = (filtre || '').toLowerCase(); var sel = $('liste'); sel.textContent = '';
+    tous.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '')).toLowerCase().indexOf(f) !== -1; }).forEach(function (u) {
+      var o = document.createElement('option'); o.value = u.uid; o.textContent = u.nom + (u.service ? ' — ' + u.service : '');
+      if (u.uid === choisi) o.selected = true; sel.appendChild(o);
+    });
+  }
+
+  Api.call('liste').then(function (r) { tous = r.utilisateurs; afficher(); })
+    .catch(function (e) { msg('m-login', 'Impossible de charger la liste : ' + e.message); });
+  $('q').addEventListener('input', function () { afficher(this.value); });
+  $('liste').addEventListener('change', function () { choisi = this.value; msg('m-login', ''); });
+
+  function entrer(r) { Api.setToken(r.token); location.href = 'portail.html'; }
+
+  $('f-login').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!choisi) return msg('m-login', 'Choisissez votre nom dans la liste.');
+    if (!$('mdp').value) return msg('m-login', 'Saisissez votre mot de passe.');
+    occupe($('b-login'), true); msg('m-login', '');
+    Api.call('login', { ident: choisi, mdp: $('mdp').value }).then(entrer)
+      .catch(function (e) { msg('m-login', e.message); occupe($('b-login'), false); });
+  });
+
+  $('l-code').addEventListener('click', function () {
+    if (!choisi) return msg('m-login', 'Choisissez d\'abord votre nom dans la liste.');
+    msg('m-login', 'Envoi du code…', true);
+    Api.call('demanderCode', { ident: choisi }).then(function (r) {
+      $('s-code').textContent = 'Un code à 6 chiffres vient d\'être envoyé à ' + r.masque + ' (valable ' + r.minutes + ' minutes).';
+      $('f-login').hidden = true; $('f-code').hidden = false; $('code').focus(); msg('m-login', '');
+    }).catch(function (e) { msg('m-login', e.message); });
+  });
+
+  $('l-retour').addEventListener('click', function () { $('f-code').hidden = true; $('f-login').hidden = false; msg('m-code', ''); });
+
+  $('f-code').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if ($('n1').value !== $('n2').value) return msg('m-code', 'Les deux mots de passe sont différents.');
+    occupe($('b-code'), true); msg('m-code', '');
+    Api.call('activer', { ident: choisi, code: $('code').value.trim(), mdp: $('n1').value }).then(entrer)
+      .catch(function (e) { msg('m-code', e.message); occupe($('b-code'), false); });
+  });
+})();
+</script>
+</body>
+</html>
