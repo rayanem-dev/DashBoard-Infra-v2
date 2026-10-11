@@ -32,21 +32,53 @@ var Auth = (function () {
     return t;
   }
 
-  /** Administrateur : génère un code d'activation (à transmettre de vive voix / message privé). */
-  function emettreCode(email) {
-    email = String(email || '').trim().toLowerCase();
-    if (!Store.utilisateur(email)) throw erreur_('Utilisateur inconnu');
+  function poserCode_(email, dureeMs) {
     var code = String(Math.floor(100000 + Math.random() * 900000));
     var sel = Utilities.getUuid().replace(/-/g, '');
-    var exp = Date.now() + CFG.CODE_ACTIVATION_HEURES * 3600000;
     var l = ligneSecret_(email);
-    var ligne = [email, l ? l.row[1] : '', l ? l.row[2] : '', sel, hash(code, sel), exp, 1];
+    var ligne = [email, l ? l.row[1] : '', l ? l.row[2] : '', sel, hash(code, sel), Date.now() + dureeMs, 1];
     if (l) l.sh.getRange(l.ligne, 1, 1, 7).setValues([ligne]); else secrets_().appendRow(ligne);
     return code;
   }
 
-  function activer(email, code, mdp) {
+  /** Administrateur : code de secours (48 h) à remettre de vive voix, pour qui n'a pas d'adresse e-mail. */
+  function emettreCode(email) {
     email = String(email || '').trim().toLowerCase();
+    if (!Store.utilisateur(email)) throw erreur_('Utilisateur inconnu');
+    return poserCode_(email, CFG.CODE_ACTIVATION_HEURES * 3600000);
+  }
+
+  /** Liste du sélecteur : noms seulement (jamais d'e-mail ni de matricule), identifiant opaque. */
+  function liste() {
+    return Store.table('Utilisateurs')
+      .filter(function (u) { return String(u.actif) !== '0' && u.uid; })
+      .map(function (u) { return { uid: u.uid, nom: u.nom, service: u.service }; })
+      .sort(function (a, b) { return String(a.nom).localeCompare(String(b.nom), 'fr'); });
+  }
+
+  function resoudre_(ident) {
+    var u = Store.parUid(ident) || Store.utilisateur(ident);
+    return u && String(u.actif) !== '0' ? u : null;
+  }
+
+  /** Première connexion ou mot de passe oublié : un code à usage unique (30 min) part par e-mail. */
+  function demanderCode(ident) {
+    var u = resoudre_(ident);
+    if (!u) throw erreur_('Utilisateur inconnu');
+    var email = String(u.email || '').trim().toLowerCase();
+    if (!email) throw erreur_('Aucune adresse e-mail pour ce compte : contactez le secrétariat.', 'SANS_EMAIL');
+    var c = CacheService.getScriptCache(); var k = 'C_' + email; var n = Number(c.get(k) || 0);
+    if (n >= 3) throw erreur_('Trop de demandes. Réessayez dans une heure.', 'LIMITE');
+    c.put(k, String(n + 1), 3600);
+    var code = poserCode_(email, CFG.CODE_EMAIL_MINUTES * 60000);
+    Mail.envoyerCode(email, u.nom, code, CFG.CODE_EMAIL_MINUTES);
+    Store.journal('code_email', email, '');
+    return { masque: Mail.masquer(email), minutes: CFG.CODE_EMAIL_MINUTES };
+  }
+
+  function activer(ident, code, mdp) {
+    var u0 = resoudre_(ident); if (!u0) throw erreur_('Code invalide ou expiré');
+    var email = String(u0.email || '').trim().toLowerCase();
     var echec = limiter_(email);
     var l = ligneSecret_(email);
     if (!l || !l.row[3] || Number(l.row[5]) < Date.now() || hash(String(code || ''), l.row[3]) !== l.row[4]) { echec(); throw erreur_('Code invalide ou expiré'); }
@@ -62,11 +94,12 @@ var Auth = (function () {
     if (!/[A-Za-z]/.test(mdp) || !/[0-9]/.test(mdp)) throw erreur_('Mot de passe : au moins une lettre et un chiffre');
   }
 
-  function login(email, mdp) {
-    email = String(email || '').trim().toLowerCase();
+  function login(ident, mdp) {
+    var u0 = resoudre_(ident); if (!u0) throw erreur_('Identifiant ou mot de passe incorrect');
+    var email = String(u0.email || '').trim().toLowerCase();
     var echec = limiter_(email);
     var l = ligneSecret_(email);
-    if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); throw erreur_('E-mail ou mot de passe incorrect'); }
+    if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); throw erreur_('Identifiant ou mot de passe incorrect'); }
     return connecter_(email);
   }
 
@@ -90,5 +123,5 @@ var Auth = (function () {
 
   function logout(token) { if (token) CacheService.getScriptCache().remove('S_' + token); }
 
-  return { login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
+  return { liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
 })();

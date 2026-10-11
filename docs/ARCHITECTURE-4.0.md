@@ -17,7 +17,9 @@ Règle d'or : **les données ne sortent que par la passerelle, après contrôle 
 
 ## Identité et accès
 - **Source des utilisateurs** : onglet `BDDORGA` de « Organigrame Div Infra » (division, service, fonction, dépendance, nom, matricule, e-mail). On en extrait **seulement** ces colonnes vers `Gateway_DB › Utilisateurs` ; **les colonnes de mots de passe (Windows, Wi-Fi) ne sont jamais copiées**.
-- **Mot de passe applicatif propre** : chacun en choisit un à la première connexion avec un **code d'activation à usage unique** (48 h) remis par le secrétariat. Stockage : sel + poivre + SHA-256 itéré, dans un classeur séparé. 5 tentatives / 15 min par e-mail. Session 6 h.
+- **Connexion par sélecteur** : la page de connexion charge la liste du personnel (**noms et service seulement**, jamais d'e-mail ni de matricule, identifiant opaque `uid`) ; l'utilisateur se choisit et saisit son mot de passe.
+- **Première connexion / mot de passe oublié** : même chemin, comme dans Sijil. Un **code à usage unique de 30 min** part par e-mail (adresse de `BDDORGA`, affichée masquée) ; l'utilisateur définit alors son mot de passe. On n'envoie jamais un mot de passe. Le secrétariat garde un code de secours (48 h) pour les comptes sans e-mail.
+- **Mot de passe applicatif propre** : sel + poivre + SHA-256 itéré, dans un classeur séparé (`Gateway_Secrets`). 10 caractères minimum, lettre + chiffre. 5 tentatives / 15 min, 3 codes / heure. Session 6 h.
 - **Modules et privilèges** : un module = un ensemble de logiciels. Niveaux : 1 lecture, 2 saisie, 3 administration. Droits par rôle (`DroitsRole`) + exceptions individuelles (`Exceptions`, niveau 0 = retrait explicite). Le menu du tableau de bord est construit à partir de ce que l'utilisateur peut ouvrir.
 - Rôles par défaut : `agent`, `conducteur`, `chef_service`, `chef_division`, `secretariat`, `cpm` (modifiables dans la feuille).
 

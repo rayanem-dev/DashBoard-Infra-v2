@@ -16,8 +16,15 @@ var Store = (function () {
     for (var i = 0; i < l.length; i += 1) if (String(l[i].email).toLowerCase() === email) return l[i];
     return null;
   }
+  function parUid(uid) {
+    uid = String(uid || '');
+    if (!uid) return null;
+    var l = table('Utilisateurs');
+    for (var i = 0; i < l.length; i += 1) if (String(l[i].uid) === uid) return l[i];
+    return null;
+  }
   function journal(action, email, detail) {
     try { db_().getSheetByName('Journal').appendRow([new Date(), action, email, detail || '']); } catch (e) { Logger.log('Journal : ' + e.message); }
   }
-  return { table: table, utilisateur: utilisateur, journal: journal };
+  return { table: table, utilisateur: utilisateur, parUid: parUid, journal: journal };
 })();

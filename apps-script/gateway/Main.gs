@@ -3,7 +3,8 @@
  * (Content-Type: text/plain, pour éviter la pré-requête CORS) :  { action, token?, ...paramètres }
  * Réponse : { ok: true, ... } ou { ok: false, erreur, code }.
  *
- * Actions : login, activer, me, menu, logout, emettreCode (admin).
+ * Actions : liste, demanderCode, login, activer, me, menu, logout, emettreCode (admin).
+ * `ident` = identifiant opaque (uid) choisi dans le sélecteur ; l'e-mail est aussi accepté.
  * Les données métier ne sortent QUE par cette passerelle, jamais par un lien public.
  */
 function doPost(e) {
@@ -25,8 +26,10 @@ function doGet() {
 
 function route_(req) {
   switch (req.action) {
-    case 'login':   return Auth.login(req.email, req.mdp);
-    case 'activer': return Auth.activer(req.email, req.code, req.mdp);
+    case 'liste':        return { utilisateurs: Auth.liste() };
+    case 'demanderCode': return Auth.demanderCode(req.ident);
+    case 'login':   return Auth.login(req.ident, req.mdp);
+    case 'activer': return Auth.activer(req.ident, req.code, req.mdp);
     case 'logout':  Auth.logout(req.token); return {};
     case 'me':      return { user: Auth.publique(Auth.userFromToken(req.token)), acces: acces_(Auth.userFromToken(req.token)) };
     case 'menu': {

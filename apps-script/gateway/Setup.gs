@@ -14,7 +14,7 @@ function installer() {
   props.setProperties({ DB_ID: db.getId(), SECRETS_ID: sec.getId(), PEPPER: Utilities.getUuid() + Utilities.getUuid() });
 
   var feuilles = {
-    Utilisateurs: ['email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
+    Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
     Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
     DroitsRole: ['role', 'module', 'niveau'],
     Exceptions: ['email', 'module', 'niveau'],
@@ -47,4 +47,16 @@ function installer() {
    ['cpm', 'cpm', 3], ['cpm', 'pilotage', 1]
   ].forEach(function (r) { d.appendRow(r); });
   Logger.log('Installé. DB: ' + db.getUrl() + '  SECRETS: ' + sec.getUrl());
+}
+
+/** À lancer après avoir collé les utilisateurs dans l'onglet Utilisateurs : attribue un identifiant opaque (uid) à chacun. */
+function genererUids() {
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Utilisateurs');
+  var v = sh.getDataRange().getValues(); var h = v[0]; var iU = h.indexOf('uid'), iE = h.indexOf('email');
+  for (var i = 1; i < v.length; i += 1) {
+    if (v[i][iE] && !v[i][iU]) {
+      var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, prop_('PEPPER') + 'uid' + String(v[i][iE]).toLowerCase());
+      sh.getRange(i + 1, iU + 1).setValue(Utilities.base64EncodeWebSafe(d).slice(0, 12));
+    }
+  }
 }

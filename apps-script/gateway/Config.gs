@@ -5,7 +5,8 @@ var CFG = {
   FENETRE_SECONDES: 15 * 60,
   HASH_ITER: 2000,
   MDP_MIN: 10,
-  CODE_ACTIVATION_HEURES: 48
+  CODE_ACTIVATION_HEURES: 48,     // code de secours remis par le secrétariat
+  CODE_EMAIL_MINUTES: 30          // code envoyé par e-mail (première connexion / oubli)
 };
 
 /** Propriétés du script : DB_ID (classeur Utilisateurs/Modules/Droits), SECRETS_ID (classeur des empreintes), PEPPER. */
