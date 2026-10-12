@@ -1,0 +1,54 @@
+# Déploiement automatique de la passerelle (Apps Script) : tests -> clasp push -> nouvelle version sur la MÊME URL.
+# Prérequis (une fois) : voir docs/DEPLOIEMENT-AUTO.md
+name: Déployer la passerelle
+
+on:
+  push:
+    branches: [claude/exciting-ritchie-u1o1dl, main]
+    paths: ['apps-script/gateway/**', '.github/workflows/deploy-gateway.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-gateway
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Tests
+        run: node --test apps-script/gateway/test/*.test.js
+
+      - name: Vérifier la configuration
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          SCRIPT_ID: ${{ vars.GATEWAY_SCRIPT_ID }}
+          DEPLOYMENT_ID: ${{ vars.GATEWAY_DEPLOYMENT_ID }}
+        run: |
+          missing=0
+          [ -z "$CLASPRC_JSON" ] && echo "::error::Secret CLASPRC_JSON manquant" && missing=1
+          [ -z "$SCRIPT_ID" ] && echo "::error::Variable GATEWAY_SCRIPT_ID manquante" && missing=1
+          [ -z "$DEPLOYMENT_ID" ] && echo "::error::Variable GATEWAY_DEPLOYMENT_ID manquante" && missing=1
+          exit $missing
+
+      - name: Installer clasp
+        run: npm install -g @google/clasp@2
+
+      - name: Envoyer le code et publier une nouvelle version
+        working-directory: apps-script/gateway
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          SCRIPT_ID: ${{ vars.GATEWAY_SCRIPT_ID }}
+          DEPLOYMENT_ID: ${{ vars.GATEWAY_DEPLOYMENT_ID }}
+        run: |
+          umask 077
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
+          clasp push --force
+          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7} — $(git log -1 --pretty=%s | cut -c1-60)"
+          rm -f "$HOME/.clasprc.json" .clasp.json

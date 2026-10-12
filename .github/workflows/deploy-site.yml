@@ -1,0 +1,37 @@
+# Publication automatique du site statique sur GitHub Pages.
+# Prérequis : Settings > Pages > Source = « GitHub Actions » (sur un dépôt privé, selon l'offre GitHub).
+name: Publier le site
+
+on:
+  push:
+    branches: [claude/exciting-ritchie-u1o1dl, main]
+    paths-ignore: ['apps-script/**', 'docs/**', '.github/workflows/deploy-gateway.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ne publier que le site
+        run: |
+          mkdir _site
+          cp -r *.html *.json *.png sw.js css js _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
