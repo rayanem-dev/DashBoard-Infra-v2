@@ -48,7 +48,15 @@ var Droits = (function () {
       });
   }
 
-  return { resolve: resolve, menu: menu };
+  var ROLES = ['agent', 'conducteur', 'chef_service', 'chef_division', 'secretariat', 'cpm'];
+  /** Niveau 0 à 3 (entier) ; rôle connu. Retourne le message d'erreur ou ''. */
+  function verifier(role, niveau) {
+    if (role !== undefined && ROLES.indexOf(norm(role)) === -1) return 'Rôle inconnu';
+    if (niveau !== undefined && !(niveau === 0 || niveau === 1 || niveau === 2 || niveau === 3)) return 'Niveau invalide (0 à 3)';
+    return '';
+  }
+
+  return { resolve: resolve, menu: menu, verifier: verifier, ROLES: ROLES };
 })();
 
 if (typeof module !== 'undefined') module.exports = Droits;

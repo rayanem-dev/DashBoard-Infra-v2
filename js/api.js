@@ -15,7 +15,9 @@
         { titre: 'Suivi Chantier', description: 'Détail du suivi par chantier.', emoji: '🗂️', url: 'Suivi_Chantier.html' } ] },
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] },
-      { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [] }
+      { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [] },
+      { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
+        { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' } ] }
     ],
     conducteur: [
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 2, apps: [] },
@@ -27,6 +29,18 @@
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] }
     ]
   };
+  var DEMO_ROLES = ['agent', 'conducteur', 'chef_service', 'chef_division', 'secretariat', 'cpm'];
+  var DEMO_MODULES = [
+    { id: 'pilotage', titre: 'Pilotage & Projets' }, { id: 'cpm', titre: 'Cellule Passation Marché' },
+    { id: 'logistique', titre: 'Logistique & Stocks' }, { id: 'rh', titre: 'RH & Personnel' },
+    { id: 'admin', titre: 'Administration' }, { id: 'planning', titre: 'Planning & Rotations' },
+    { id: 'rapports', titre: 'Rapports journaliers' }, { id: 'badges', titre: 'Badges prestataires' }, { id: 'securite', titre: 'Sécurité & Accès' }
+  ];
+  var demoDroits = [
+    { role: 'conducteur', module: 'rapports', niveau: 2 }, { role: 'conducteur', module: 'pilotage', niveau: 1 },
+    { role: 'cpm', module: 'cpm', niveau: 3 }, { role: 'chef_division', module: 'securite', niveau: 3 }, { role: 'chef_division', module: 'pilotage', niveau: 3 }
+  ];
+  var demoExceptions = [{ email: 's.meziane@exemple.dz', module: 'cpm', niveau: 1 }];
   function erreur(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
 
   function demo(action, p) {
@@ -39,9 +53,26 @@
       case 'menu': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { user: pub(demoState.user), menu: DEMO_MENU[demoState.user.role] || [] };
       case 'logout': demoState.user = null; return {};
+      case 'admin_etat': exigerAdmin();
+        return { roles: DEMO_ROLES, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
+          utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', role: x.role, actif: x.actif !== false }; }) };
+      case 'admin_role': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas modifier votre propre rôle');
+        cibleDemo(p.email).role = p.role; return {};
+      case 'admin_actif': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas désactiver votre propre compte');
+        cibleDemo(p.email).actif = !!p.actif; return {};
+      case 'admin_droit': exigerAdmin(); demoDroits = demoDroits.filter(function (d) { return !(d.role === p.role && d.module === p.module); });
+        if (Number(p.niveau) > 0) demoDroits.push({ role: p.role, module: p.module, niveau: Number(p.niveau) }); return {};
+      case 'admin_exception': exigerAdmin(); demoExceptions = demoExceptions.filter(function (d) { return !(d.email === p.email && d.module === p.module); });
+        if (p.niveau !== null && p.niveau !== '' && p.niveau !== undefined) demoExceptions.push({ email: p.email, module: p.module, niveau: Number(p.niveau) }); return {};
+      case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };
     }
     throw erreur('Action inconnue');
   }
+  function exigerAdmin() {
+    if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+    if (demoState.user.role !== 'chef_division') throw erreur('Droits insuffisants', 'DROITS');
+  }
+  function cibleDemo(email) { var u = DEMO_USERS.filter(function (x) { return x.email === email; })[0]; if (!u) throw erreur('Utilisateur inconnu'); return u; }
   function pub(u) { return { email: u.email, nom: u.nom, role: u.role, service: u.service }; }
   function connecterDemo(u) { demoState.user = u; return { token: 'demo', user: pub(u) }; }
 

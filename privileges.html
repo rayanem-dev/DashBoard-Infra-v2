@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Privilèges – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Gestion des privilèges</h1><p>Sonatrach · RNS · Sécurité &amp; Accès</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives (les modifications ne sont pas enregistrées)</div>
+
+<main class="portail">
+  <div class="onglets" role="tablist">
+    <button class="onglet actif" data-p="p-users">Utilisateurs</button>
+    <button class="onglet" data-p="p-roles">Droits par rôle</button>
+    <button class="onglet" data-p="p-exc">Exceptions</button>
+  </div>
+  <section class="panneau" id="p-users">
+    <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
+    <table class="t"><thead><tr><th>Nom</th><th>Service</th><th>Rôle</th><th>Compte</th><th>Accès</th></tr></thead><tbody id="b-users"></tbody></table>
+  </section>
+  <section class="panneau" id="p-roles" hidden>
+    <p class="aide" style="margin-bottom:12px">Niveau : <b>0</b> aucun · <b>1</b> lecture · <b>2</b> saisie · <b>3</b> administration</p>
+    <table class="t" id="t-roles"></table>
+  </section>
+  <section class="panneau" id="p-exc" hidden>
+    <p class="aide" style="margin-bottom:12px">Une exception s'ajoute aux droits du rôle ; le niveau <b>0</b> retire explicitement l'accès au module.</p>
+    <table class="t"><thead><tr><th>Utilisateur</th><th>Module</th><th>Niveau</th><th></th></tr></thead><tbody id="b-exc"></tbody></table>
+    <div class="ajout">
+      <select id="x-user" aria-label="Utilisateur"></select><select id="x-mod" aria-label="Module"></select>
+      <select id="x-niv" aria-label="Niveau"><option value="0">0 – retirer</option><option value="1">1 – lecture</option><option value="2">2 – saisie</option><option value="3">3 – administration</option></select>
+      <button class="btn-s" id="x-add" type="button">Ajouter l'exception</button>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  var etat = null, tNiv = 0;
+  var LIB_ROLES = { agent: 'Agent', conducteur: 'Conducteur des travaux', chef_service: 'Chef de service', chef_division: 'Chef de division', secretariat: 'Secrétariat', cpm: 'Cellule Passation de marché' };
+
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(tNiv); tNiv = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  function select(options, valeur, onChange) {
+    var s = document.createElement('select');
+    options.forEach(function (o) { var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; if (String(o[0]) === String(valeur)) op.selected = true; s.appendChild(op); });
+    s.addEventListener('change', function () { onChange(s.value, s); });
+    return s;
+  }
+  function agir(action, params, ok) {
+    return Api.call(action, params).then(function () { toast(ok || 'Enregistré'); return recharger(); })
+      .catch(function (e) { toast(e.message, true); return recharger(); });
+  }
+  function nomDe(email) { var u = etat.utilisateurs.filter(function (x) { return x.email === email; })[0]; return u ? u.nom : email; }
+  function exceptionsDe(email) { return etat.exceptions.filter(function (x) { return String(x.email).toLowerCase() === String(email).toLowerCase(); }); }
+
+  function dessinerUsers() {
+    var f = $('filtre').value.toLowerCase(); var b = $('b-users'); b.textContent = '';
+    etat.utilisateurs.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '') + ' ' + (u.fonction || '')).toLowerCase().indexOf(f) !== -1; }).forEach(function (u) {
+      var tr = el('tr', u.actif ? '' : 'inactif');
+      tr.appendChild(el('td', null, u.nom)); tr.appendChild(el('td', null, u.service || ''));
+      var td = el('td'); td.appendChild(select([['', '— aucun —']].concat(etat.roles.map(function (r) { return [r, LIB_ROLES[r] || r]; })), u.role || '', function (v, s) {
+        if (!v) { s.value = u.role || ''; return; }
+        agir('admin_role', { email: u.email, role: v }, 'Rôle mis à jour');
+      })); tr.appendChild(td);
+      var tc = el('td'); var bc = el('button', 'btn-s', u.actif ? 'Désactiver' : 'Réactiver');
+      bc.addEventListener('click', function () { agir('admin_actif', { email: u.email, actif: !u.actif }, u.actif ? 'Compte désactivé' : 'Compte réactivé'); }); tc.appendChild(bc); tr.appendChild(tc);
+      var ta = el('td'); var bk = el('button', 'btn-s', 'Code de secours');
+      bk.addEventListener('click', function () {
+        Api.call('emettreCode', { email: u.email }).then(function (r) { window.prompt('Code à usage unique (48 h) pour ' + u.nom + ' — à lui transmettre de vive voix :', r.code); })
+          .catch(function (e) { toast(e.message, true); });
+      }); ta.appendChild(bk); tr.appendChild(ta);
+      b.appendChild(tr);
+    });
+  }
+
+  function dessinerRoles() {
+    var t = $('t-roles'); t.textContent = '';
+    var hr = el('tr'); hr.appendChild(el('th', null, 'Rôle')); etat.modules.forEach(function (m) { hr.appendChild(el('th', null, m.titre)); });
+    var th = el('thead'); th.appendChild(hr); t.appendChild(th);
+    var tb = el('tbody');
+    etat.roles.forEach(function (r) {
+      var tr = el('tr'); tr.appendChild(el('td', null, LIB_ROLES[r] || r));
+      etat.modules.forEach(function (m) {
+        var d = etat.droitsRole.filter(function (x) { return x.role === r && x.module === m.id; })[0];
+        var td = el('td'); td.appendChild(select([[0, '0'], [1, '1'], [2, '2'], [3, '3']], d ? d.niveau : 0, function (v) {
+          agir('admin_droit', { role: r, module: m.id, niveau: Number(v) }, 'Droit mis à jour');
+        })); tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+  }
+
+  var LIB_NIV = { 0: 'Retrait', 1: 'Lecture', 2: 'Saisie', 3: 'Administration' };
+  function dessinerExc() {
+    var b = $('b-exc'); b.textContent = '';
+    if (!etat.exceptions.length) { var tr0 = el('tr'); var td0 = el('td', null, 'Aucune exception.'); td0.colSpan = 4; tr0.appendChild(td0); b.appendChild(tr0); }
+    etat.exceptions.forEach(function (x) {
+      var tr = el('tr'); tr.appendChild(el('td', null, nomDe(x.email)));
+      var mod = etat.modules.filter(function (m) { return m.id === x.module; })[0];
+      tr.appendChild(el('td', null, mod ? mod.titre : x.module)); tr.appendChild(el('td', null, LIB_NIV[x.niveau] || x.niveau));
+      var td = el('td'); var bs = el('button', 'btn-s', 'Supprimer');
+      bs.addEventListener('click', function () { agir('admin_exception', { email: x.email, module: x.module, niveau: null }, 'Exception supprimée'); });
+      td.appendChild(bs); tr.appendChild(td); b.appendChild(tr);
+    });
+    var su = $('x-user'), sm = $('x-mod'); su.textContent = ''; sm.textContent = '';
+    etat.utilisateurs.forEach(function (u) { var o = el('option', null, u.nom); o.value = u.email; su.appendChild(o); });
+    etat.modules.forEach(function (m) { var o = el('option', null, m.titre); o.value = m.id; sm.appendChild(o); });
+  }
+
+  function dessiner() { dessinerUsers(); dessinerRoles(); dessinerExc(); }
+  function recharger() { return Api.call('admin_etat').then(function (r) { etat = r; dessiner(); }); }
+
+  document.querySelectorAll('.onglet').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.onglet').forEach(function (x) { x.classList.toggle('actif', x === b); });
+      ['p-users', 'p-roles', 'p-exc'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; });
+    });
+  });
+  $('filtre').addEventListener('input', dessinerUsers);
+  $('x-add').addEventListener('click', function () { agir('admin_exception', { email: $('x-user').value, module: $('x-mod').value, niveau: Number($('x-niv').value) }, 'Exception enregistrée'); });
+
+  recharger().catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé à l\'administration de la sécurité.'; return; }
+    toast(e.message, true);
+  });
+})();
+</script>
+</body>
+</html>

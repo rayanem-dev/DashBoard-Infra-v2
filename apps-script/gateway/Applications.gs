@@ -4,6 +4,7 @@
  * pointerVersCopies() les remplace par les copies de l'organisation v2 (via Registre_Migration).
  */
 var SEED_APPS = [
+ ["securite", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3],
  [
   "logistique",
   "Prises en Charge + Autorisation d'Accès",
@@ -291,4 +292,13 @@ function pointerVersCopies() {
   }
   sh.getRange(1, 1, v.length, v[0].length).setValues(v);
   Logger.log(n + ' lien(s) redirigé(s) vers les copies.');
+}
+
+/** Ajoute au catalogue les applications de SEED_APPS qui n'y figurent pas encore (par titre) : utile après une mise à jour. */
+function ajouterApplicationsManquantes() {
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
+  var existants = sh.getDataRange().getValues().slice(1).map(function (l) { return String(l[1]); });
+  var nouveaux = SEED_APPS.filter(function (r) { return existants.indexOf(String(r[1])) === -1; });
+  if (nouveaux.length) sh.getRange(sh.getLastRow() + 1, 1, nouveaux.length, 6).setValues(nouveaux);
+  Logger.log(nouveaux.length + ' application(s) ajoutée(s).');
 }

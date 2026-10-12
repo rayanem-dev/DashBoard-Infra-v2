@@ -57,3 +57,11 @@ test('menu : applications filtrées par module et niveau minimal', () => {
   assert.strictEqual(m.length, 1);
   assert.deepStrictEqual(m[0].apps.map(a => a.titre), ['Lecture']);
 });
+
+test('verifier : rôle et niveau', () => {
+  assert.strictEqual(Droits.verifier('conducteur', 2), '');
+  assert.strictEqual(Droits.verifier('roi'), 'Rôle inconnu');
+  assert.strictEqual(Droits.verifier(undefined, 4), 'Niveau invalide (0 à 3)');
+  assert.strictEqual(Droits.verifier(undefined, 1.5), 'Niveau invalide (0 à 3)');
+  assert.strictEqual(Droits.verifier(undefined, NaN), 'Niveau invalide (0 à 3)');
+});
