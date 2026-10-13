@@ -28,6 +28,8 @@
   <div class="barre" id="barre-filtres" hidden>
     <input type="text" id="q" placeholder="Rechercher un nom…" aria-label="Rechercher">
     <details class="svc" id="svc"><summary id="svc-resume">Services</summary><div class="liste" id="svc-liste"></div></details>
+    <select id="emp" aria-label="Employeur"><option value="">Tous les employeurs</option></select>
+    <div class="legende" id="leg-emp" style="margin-left:0"></div>
     <select id="etat" aria-label="Situation"><option value="">Toutes les situations</option><option value="T">Au travail</option><option value="R">En repos</option><option value="N">Non configurés</option></select>
   </div>
   <section class="panneau" style="padding:0">
@@ -41,6 +43,7 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/rotation.js"></script>
+<script src="js/employeurs.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -128,10 +131,10 @@
   function servicesVisibles(l) { return !masques[svc(l)]; }
 
   function dessiner() {
-    var f = $('q').value.toLowerCase(), et = $('etat').value;
+    var f = $('q').value.toLowerCase(), et = $('etat').value, em = $('emp').value;
     var base = data.peutVoirTous ? data.lignes.filter(servicesVisibles) : data.lignes;
     stats(base);
-    var lignes = base.filter(function (l) { return (!f || (l.nom || '').toLowerCase().indexOf(f) !== -1) && (!et || etatDe(l) === et); });
+    var lignes = base.filter(function (l) { return (!f || (l.nom || '').toLowerCase().indexOf(f) !== -1) && (!et || etatDe(l) === et) && (!em || String(l.dependance || '').toUpperCase() === em); });
     var b = bornes(), px = PX[vue], aujIdx = ecart(b.debut, data.aujourdhui);
     var t = $('tab'); t.textContent = '';
     var hr = el('tr'); hr.appendChild(el('th', 'nom', data.peutVoirTous ? lignes.length + ' personne' + (lignes.length > 1 ? 's' : '') : 'Mon planning'));
@@ -141,6 +144,8 @@
     var body = el('tbody');
     lignes.forEach(function (l) {
       var tr = el('tr', l.moi ? 'moi' : ''); var n = el('td', 'nom'); n.appendChild(el('b', null, l.nom || ''));
+      var pe = Employeur.pastille(l.dependance); if (pe) n.firstChild.appendChild(pe);
+      Employeur.teinter(n, l.dependance);
       n.appendChild(el('small', null, [l.fonction, l.service].filter(Boolean).join(' · ')));
       if (data.peutModifier && l.email) {
         var bt = el('button', 'btn-s', l.configuree ? 'Modifier' : 'Configurer'); bt.style.marginLeft = '8px'; bt.type = 'button';
@@ -180,6 +185,14 @@
     });
     resume();
   }
+  function employeurs() {
+    var noms = Array.from(new Set(data.lignes.map(function (l) { return String(l.dependance || '').trim().toUpperCase(); }).filter(Boolean))).sort();
+    var s = $('emp'), cur = s.value; s.length = 1;
+    noms.forEach(function (n) { var o = el('option', null, n); o.value = n; s.appendChild(o); }); s.value = cur;
+    s.hidden = noms.length < 2;
+    var leg = $('leg-emp'); leg.textContent = '';
+    noms.forEach(function (n) { var e = Employeur.pastille(n); if (e) leg.appendChild(e); });
+  }
   function resume() { var noms = Array.from(new Set(data.lignes.map(svc))); var vis = noms.filter(function (n) { return !masques[n]; }).length; $('svc-resume').textContent = 'Services : ' + vis + ' / ' + noms.length; }
   function sauver() { try { localStorage.setItem(CLE_SVC, JSON.stringify(masques)); } catch (e) {} }
 
@@ -189,7 +202,7 @@
     return Api.call('planning', { debut: b.debut, jours: b.jours }).then(function (r) {
       data = r;
       var chef = r.peutVoirTous; $('barre-filtres').hidden = !chef; $('titre').textContent = chef ? 'Planning & rotations' : 'Mon planning';
-      if (chef) services(); dessiner();
+      if (chef) { services(); employeurs(); } dessiner();
     });
   }
   function majVues() { document.querySelectorAll('#vues button').forEach(function (b) { b.classList.toggle('actif', Number(b.dataset.v) === vue); }); }
@@ -199,7 +212,7 @@
   $('prec').addEventListener('click', function () { debutMois = moisPlus(debutMois, -vue); charger().catch(erreur); });
   $('suiv').addEventListener('click', function () { debutMois = moisPlus(debutMois, vue); charger().catch(erreur); });
   $('auj').addEventListener('click', function () { debutMois = moisPlus(Rotation.aujourdhui(), 0).slice(0, 8) + '01'; charger().catch(erreur); });
-  ['q', 'etat'].forEach(function (id) { $(id).addEventListener('input', function () { if (data) dessiner(); }); });
+  ['q', 'etat', 'emp'].forEach(function (id) { $(id).addEventListener('input', function () { if (data) dessiner(); }); });
   document.addEventListener('click', function (e) { var d = $('svc'); if (d.open && !d.contains(e.target)) d.open = false; });
 
   function erreur(e) {

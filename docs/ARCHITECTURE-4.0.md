@@ -40,8 +40,11 @@ Sijil est déjà une application Apps Script + Sheets avec : authentification (h
 ## Synchronisation avec BDDORGA
 `Utilisateurs` (dans `Gateway_DB`) est une **copie** de l'onglet BDDORGA : elle ne se met pas à jour toute seule tant que la synchro n'est pas activée. `previsualiserSynchro()` montre les changements sans rien écrire ; `synchroniserDepuisBDDORGA()` les applique ; `activerSynchroQuotidienne()` la programme chaque jour vers 6 h. Seules les colonnes d'identité sont lues (nom, e-mail, matricule, service, poste, employeur, téléphone) — jamais les mots de passe ni identifiants du fichier. Les nouveaux arrivent **sans rôle** (donc sans accès) ; personne n'est supprimé ni désactivé automatiquement ; `role`, `actif`, `uid`, `civilite` ne sont jamais modifiés.
 
+## Employeurs (ACOSCO, GTP…)
+La colonne « dépendance » de BDDORGA donne l'employeur. Dans le planning, les privilèges et le portail, chaque personne porte une pastille et une teinte à la couleur de son employeur (ACOSCO violet clair `#D9D2E9`, GTP vert clair `#D9EAD3`, comme dans le fichier Organigramme). Réglable dans `js/config.js` (`window.EMPLOYEURS`). Le planning a un filtre par employeur.
+
 ## Mot de passe provisoire (saisie des rotations)
-`definirMotDePasseParDefaut(jours)` donne « 0000 » aux comptes qui n'ont pas encore de mot de passe, **pour 7 jours puis refusé**. Les comptes à large visibilité (secrétariat, chef de division, chefs de service et intérims, accès sécurité) sont exclus par défaut. Une bannière invite à le changer ; « 0000 » ne peut pas être gardé. `retirerMotsDePasseParDefaut()` = coupe-circuit immédiat.
+`definirMotDePasseParDefaut()` donne « 0000 » aux comptes qui n'ont pas encore de mot de passe, **sans expiration : il reste valable jusqu'à ce que la personne le change** (option : `definirMotDePasseParDefaut(7)` pour l'arrêter après 7 jours). Les comptes à large visibilité (secrétariat, chef de division, chefs de service et intérims, accès sécurité) sont exclus par défaut. Une bannière invite à le changer ; « 0000 » ne peut pas être gardé. `retirerMotsDePasseParDefaut()` = coupe-circuit immédiat.
 
 ## Rapports journaliers (module `rapports`)
 - Onglets `Chantiers` (liste des chantiers saisissables, modifiable) et `Rapports` (un rapport par **jour + chantier + auteur** ; ressaisir le même jour modifie le rapport). Cellules en texte brut : aucune formule ni date convertie.

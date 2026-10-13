@@ -55,6 +55,17 @@ test('mot de passe par défaut : valable jusqu\'à la date, puis refusé ; signa
   echoue(() => m.Auth.login('a@x.dz', '0000'), /expiré/, 'DEFAUT_EXPIRE');
 });
 
+test('mot de passe par défaut SANS expiration : valable tant que la personne ne le change pas', () => {
+  const m = monde(); ouvrir(m, 'a@x.dz', '0000'); m.feuille.find(l => l[0] === 'a@x.dz')[6] = 2; // 2 = provisoire sans expiration
+  assert.strictEqual(m.Auth.estParDefaut('a@x.dz'), true);
+  assert.ok(m.Auth.login('a@x.dz', '0000').token);
+  const RealNow = Date.now; Date.now = () => RealNow() + 400 * 86400000; // 400 jours plus tard
+  try { assert.strictEqual(m.Auth.estParDefaut('a@x.dz'), true); assert.ok(m.Auth.login('a@x.dz', '0000').token); } finally { Date.now = RealNow; }
+  const { token } = m.Auth.login('a@x.dz', '0000'); m.Auth.changerMdp(token, '0000', 'choisi1');
+  assert.strictEqual(m.Auth.estParDefaut('a@x.dz'), false);
+  echoue(() => m.Auth.login('a@x.dz', '0000'), /incorrect/);
+});
+
 test('changer le mot de passe : ancien exigé, 4 caractères, jamais « 0000 », puis l\'ancien ne marche plus', () => {
   const m = monde(); ouvrir(m, 'a@x.dz', '0000', 86400000);
   const { token } = m.Auth.login('a@x.dz', '0000');

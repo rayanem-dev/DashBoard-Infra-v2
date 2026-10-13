@@ -99,9 +99,9 @@ var Auth = (function () {
     var echec = limiter_(email);
     var l = ligneSecret_(email);
     if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); throw erreur_('Identifiant ou mot de passe incorrect'); }
+    // doit_changer : 0 = mot de passe choisi · 2 = provisoire SANS expiration (jusqu'à ce que la personne le change) · > 2 = provisoire jusqu'à cette date (ms).
     var exp = Number(l.row[6]) || 0;
-    // doit_changer > 1 : mot de passe PAR DÉFAUT, valable jusqu'à cette date (ms).
-    if (exp > 1 && Date.now() > exp) throw erreur_('Le mot de passe par défaut a expiré : utilisez « Première connexion ou mot de passe oublié ? ».', 'DEFAUT_EXPIRE');
+    if (exp > 2 && Date.now() > exp) throw erreur_('Le mot de passe par défaut a expiré : utilisez « Première connexion ou mot de passe oublié ? ».', 'DEFAUT_EXPIRE');
     return connecter_(email, remember);
   }
 
@@ -154,7 +154,8 @@ var Auth = (function () {
   /** true si le compte utilise encore le mot de passe par défaut (non expiré). */
   function estParDefaut(email) {
     var l = ligneSecret_(String(email || '').toLowerCase());
-    return !!l && Number(l.row[6]) > 1 && Number(l.row[6]) > Date.now();
+    var v = l ? Number(l.row[6]) || 0 : 0;
+    return v === 2 || v > Date.now();
   }
 
   /** Changer son mot de passe (connecté) : l'ancien est exigé. Le mot de passe par défaut ne peut pas être réutilisé. */

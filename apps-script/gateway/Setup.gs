@@ -187,16 +187,17 @@ function appliquerDroitsPlanning() {
 // Mot de passe PROVISOIRE (saisie des rotations par le secrétariat)
 // ---------------------------------------------------------------------------------------------
 /**
- * Donne le mot de passe provisoire (CFG.MDP_DEFAUT, « 0000 ») aux comptes actifs qui n'ont PAS encore de mot de passe,
- * valable `jours` jours (7 par défaut) puis refusé automatiquement. Ne remplace jamais un mot de passe déjà choisi.
+ * Donne le mot de passe provisoire (CFG.MDP_DEFAUT, « 0000 ») aux comptes actifs qui n'ont PAS encore de mot de passe.
+ * Il N'EXPIRE JAMAIS : il reste valable jusqu'à ce que la personne en choisisse un (bannière « Changez votre mot de passe » au portail).
+ * Option : definirMotDePasseParDefaut(7) l'arrête automatiquement après 7 jours. Ne remplace jamais un mot de passe déjà choisi.
  *
  * Par prudence, les comptes à large visibilité (secrétariat, chef de division, chefs de service et intérims, et tout compte ayant
  * accès au module « securite ») en sont EXCLUS : le site est joignable par Internet et la liste du personnel s'affiche à la connexion.
  * Ils se connectent avec « Première connexion ou mot de passe oublié ? » (code par e-mail).
- * Pour les inclure quand même : definirMotDePasseParDefaut(7, true).
+ * Pour les inclure quand même : definirMotDePasseParDefaut(0, true).
  */
 function definirMotDePasseParDefaut(jours, inclurePrivilegies) {
-  jours = Number(jours) > 0 ? Number(jours) : 7;
+  jours = Number(jours) > 0 ? Number(jours) : 0; // 0 / absent = sans expiration
   chargerRoles_();
   var db = SpreadsheetApp.openById(prop_('DB_ID'));
   var users = Store.table('Utilisateurs');
@@ -205,7 +206,7 @@ function definirMotDePasseParDefaut(jours, inclurePrivilegies) {
   var sec = SpreadsheetApp.openById(prop_('SECRETS_ID')).getSheetByName('Identifiants');
   var v = sec.getDataRange().getValues();
   var index = {}; for (var i = 1; i < v.length; i += 1) index[String(v[i][0]).toLowerCase()] = i;
-  var expire = Date.now() + jours * 86400000;
+  var expire = jours > 0 ? Date.now() + jours * 86400000 : 2; // 2 = provisoire sans expiration
   var nb = 0, deja = 0, exclus = [];
   users.forEach(function (u) {
     var email = String(u.email || '').trim().toLowerCase();
@@ -214,15 +215,15 @@ function definirMotDePasseParDefaut(jours, inclurePrivilegies) {
     var priv = LARGES.indexOf(role) !== -1 || (Droits.resolve(u, droits, exc).securite || 0) >= 1;
     if (priv && !inclurePrivilegies) { exclus.push(u.nom + ' (' + role + ')'); return; }
     var k = index[email];
-    if (k !== undefined && v[k][1] && v[k][2] && !(Number(v[k][6]) > 1)) { deja += 1; return; } // a déjà choisi son mot de passe
+    if (k !== undefined && v[k][1] && v[k][2] && !(Number(v[k][6]) >= 2)) { deja += 1; return; } // a déjà choisi son mot de passe
     var e = Auth.empreinteDe(CFG.MDP_DEFAUT);
     var ligne = [email, e.sel, e.empreinte, '', '', '', expire];
     if (k !== undefined) v[k] = ligne; else { index[email] = v.length; v.push(ligne); }
     nb += 1;
   });
   sec.getRange(1, 1, v.length, 7).setValues(v);
-  Store.journal('mdp_defaut', 'script', nb + ' comptes, expire ' + new Date(expire).toISOString());
-  Logger.log('Mot de passe provisoire donné à ' + nb + ' compte(s), valable jusqu\'au ' + new Date(expire).toLocaleString('fr-FR') +
+  Store.journal('mdp_defaut', 'script', nb + ' comptes, ' + (jours > 0 ? 'expire dans ' + jours + ' j' : 'sans expiration'));
+  Logger.log('Mot de passe provisoire donné à ' + nb + ' compte(s), ' + (jours > 0 ? 'valable jusqu\'au ' + new Date(expire).toLocaleString('fr-FR') : 'SANS expiration (jusqu\'à ce que chacun le change)') +
     '. Ignorés (ont déjà un mot de passe) : ' + deja + '. Exclus (large visibilité) : ' + exclus.length + (exclus.length ? ' → ' + exclus.join(' ; ') : ''));
 }
 
@@ -255,7 +256,8 @@ function diagnostiquerCompte(email) {
   var sec = SpreadsheetApp.openById(prop_('SECRETS_ID')).getSheetByName('Identifiants').getDataRange().getValues();
   var ligne = null; for (var i = 1; i < sec.length; i += 1) if (String(sec[i][0]).toLowerCase() === email) ligne = sec[i];
   if (!ligne || !ligne[2]) l.push('mot de passe : AUCUN' + (large ? ' — compte à large visibilité : exclu du mot de passe provisoire (utiliser « Première connexion ou mot de passe oublié ? »)' : ' → lancer definirMotDePasseParDefaut'));
-  else if (Number(ligne[6]) > 1) l.push('mot de passe : PROVISOIRE, ' + (Number(ligne[6]) > Date.now() ? 'valable jusqu\'au ' + new Date(Number(ligne[6])).toLocaleString('fr-FR') : 'EXPIRÉ le ' + new Date(Number(ligne[6])).toLocaleString('fr-FR') + ' → relancer definirMotDePasseParDefaut'));
+  else if (Number(ligne[6]) === 2) l.push('mot de passe : PROVISOIRE, sans expiration (la personne doit le changer)');
+  else if (Number(ligne[6]) > 2) l.push('mot de passe : PROVISOIRE, ' + (Number(ligne[6]) > Date.now() ? 'valable jusqu\'au ' + new Date(Number(ligne[6])).toLocaleString('fr-FR') : 'EXPIRÉ le ' + new Date(Number(ligne[6])).toLocaleString('fr-FR') + ' → relancer definirMotDePasseParDefaut'));
   else l.push('mot de passe : choisi par la personne (le provisoire ne s\'applique pas)');
   Logger.log(l.join('\n'));
 }

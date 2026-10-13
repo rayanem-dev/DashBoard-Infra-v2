@@ -64,7 +64,7 @@ function route_(req) {
         roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles) }; }),
-        utilisateurs: us.map(function (u) { return { email: u.email, nom: u.nom, service: u.service, fonction: u.fonction, role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
+        utilisateurs: us.map(function (u) { return { email: u.email, nom: u.nom, service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
       };
     }
     case 'admin_role_enregistrer': return roleEnregistrer_(req);
@@ -163,7 +163,7 @@ function planning_(req) {
   var lignes = Store.table('Utilisateurs').filter(function (x) {
     return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi);
   }).map(function (x) {
-    var l = { nom: x.nom, service: x.service, fonction: x.fonction, configuree: false, moi: String(x.email).toLowerCase() === moi };
+    var l = { nom: x.nom, service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
     if (niv >= 3) l.email = x.email;
     var rot = rotationDe_(x.email);
     if (!rot) return l;

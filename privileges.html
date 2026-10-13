@@ -59,6 +59,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/employeurs.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -86,7 +87,7 @@
     var f = $('filtre').value.toLowerCase(); var b = $('b-users'); b.textContent = '';
     etat.utilisateurs.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '') + ' ' + (u.fonction || '')).toLowerCase().indexOf(f) !== -1; }).forEach(function (u) {
       var tr = el('tr', u.actif ? '' : 'inactif');
-      tr.appendChild(el('td', null, u.nom)); tr.appendChild(el('td', null, u.service || ''));
+      var tdn = el('td', null, u.nom); var pe = Employeur.pastille(u.dependance); if (pe) tdn.appendChild(pe); tr.appendChild(tdn); tr.appendChild(el('td', null, u.service || ''));
       var td = el('td'); td.appendChild(select([['', '— aucun —']].concat(etat.roles.map(function (r) { return [r.id, r.libelle]; })), u.role || '', function (v, s) {
         if (!v) { s.value = u.role || ''; return; }
         agir('admin_role', { email: u.email, role: v }, 'Rôle mis à jour');

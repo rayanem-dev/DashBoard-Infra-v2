@@ -30,6 +30,7 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/rotation.js"></script>
+<script src="js/employeurs.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -49,7 +50,7 @@
     var champs = [['Matricule', u.matricule], ['Fonction', u.fonction], ['Service', u.service], ['Employeur', u.dependance],
                   ['Rôle', u.role_libelle || ROLES[u.role] || u.role], ['E-mail', u.email], ['Téléphone', u.telephone]].filter(function (c) { return c[1]; });
     var fiche = $('fiche'); fiche.textContent = ''; fiche.hidden = !champs.length;
-    champs.forEach(function (c) { var d = document.createElement('div'); var l = document.createElement('span'); l.textContent = c[0]; var v = document.createElement('b'); v.textContent = c[1]; v.title = c[1]; d.appendChild(l); d.appendChild(v); fiche.appendChild(d); });
+    champs.forEach(function (c) { var d = document.createElement('div'); var l = document.createElement('span'); l.textContent = c[0]; var v = document.createElement('b'); v.textContent = c[1]; v.title = c[1]; d.appendChild(l); d.appendChild(v); if (c[0] === 'Employeur') Employeur.teinter(d, c[1]); fiche.appendChild(d); });
     var bm = document.createElement('button'); bm.className = 'btn-s'; bm.type = 'button'; bm.textContent = 'Changer mon mot de passe'; bm.addEventListener('click', ouvrirMdp);
     var dm = document.createElement('div'); dm.className = 'fiche-action'; dm.appendChild(bm); fiche.appendChild(dm); fiche.hidden = false;
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
