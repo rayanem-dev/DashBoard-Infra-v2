@@ -187,6 +187,24 @@
   var CLE_RM = 'infra_v2_remember';
   var SANS_REPRISE = { login: 1, activer: 1, reprendre: 1, liste: 1, demanderCode: 1 };
 
+  // Un nouvel onglet démarre sans session (elle est propre à l'onglet) : il la demande aux autres onglets ouverts du même
+  // navigateur (BroadcastChannel). Rien n'est écrit durablement ; sans onglet ouvert, on retombe sur la connexion.
+  function jeton() { try { return sessionStorage.getItem(CLE) || ''; } catch (e) { return ''; } }
+  var CANAL = 'infra_v2_session';
+  var pret = Promise.resolve();
+  if (!DEMO && typeof BroadcastChannel !== 'undefined') {
+    try {
+      var repondeur = new BroadcastChannel(CANAL);
+      repondeur.onmessage = function (e) { if (e.data && e.data.type === 'demande' && jeton()) repondeur.postMessage({ type: 'jeton', jeton: jeton() }); };
+      if (!jeton()) pret = new Promise(function (ok) {
+        var bc = new BroadcastChannel(CANAL), fini = false;
+        function fin() { if (!fini) { fini = true; try { bc.close(); } catch (e) {} ok(); } }
+        bc.onmessage = function (e) { if (e.data && e.data.type === 'jeton' && e.data.jeton && !fini) { try { sessionStorage.setItem(CLE, e.data.jeton); } catch (x) {} fin(); } };
+        bc.postMessage({ type: 'demande' }); setTimeout(fin, 400);
+      });
+    } catch (e) { pret = Promise.resolve(); }
+  }
+
   window.Api = {
     demo: DEMO,
     remember: function () { try { return localStorage.getItem(CLE_RM) || ''; } catch (e) { return ''; } },
@@ -212,7 +230,8 @@
             var r = demo(action, params); if (demoState.user) { try { sessionStorage.setItem(CLE + '_demo', JSON.stringify(demoState.user)); } catch (e) {} } else { try { sessionStorage.removeItem(CLE + '_demo'); } catch (e) {} } ok(r); } catch (e) { ko(e); }
         }, 250); });
       }
-      var corps = Object.assign({ action: action, token: this.token() }, params);
+      return (SANS_REPRISE[action] ? Promise.resolve() : pret).then(function () {
+      var corps = Object.assign({ action: action, token: self.token() }, params);
       return fetch(window.GATEWAY_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corps) })
         .then(function (r) { return r.json(); })
         .then(function (j) { if (!j.ok) throw erreur(j.erreur || 'Erreur', j.code); return j; })
@@ -223,6 +242,7 @@
           }
           throw e;
         });
+      });
     }
   };
 })();

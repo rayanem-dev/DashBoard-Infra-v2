@@ -92,6 +92,7 @@ function mettreAJourStructure() {
   ajouterRolesParDefaut();
   ajouterDroitsParDefaut();
   ajouterChantiersParDefaut();
+  rangerCartes();
 }
 
 function installer() {

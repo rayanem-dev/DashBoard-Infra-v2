@@ -61,7 +61,9 @@
       var g = el('div', 'grille');
       if (!m.apps.length) g.appendChild(el('p', 'vide', 'Bientôt disponible.'));
       m.apps.forEach(function (a) {
-        var c = el('a', 'app'); c.href = lienSur(a.url); c.target = '_blank'; c.rel = 'noopener';
+        var c = el('a', 'app'); c.href = lienSur(a.url);
+        // Pages du site : même onglet (la session est propre à l'onglet) ; sites externes : nouvel onglet.
+        if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
         c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));
         c.appendChild(el('p', null, a.description || '')); c.appendChild(el('div', 'ouvrir', 'Ouvrir →'));
         g.appendChild(c);

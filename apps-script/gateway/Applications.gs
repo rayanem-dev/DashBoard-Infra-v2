@@ -6,7 +6,7 @@
 var SEED_APPS = [
  ["rapports", "Rapports journaliers", "Saisie du rapport du jour par chantier (effectif, travaux, difficultés, commentaire) et suivi par la hiérarchie.", "📝", "rapports.html", 1],
  ["planning", "Planning & rotations", "Votre planning et, selon vos droits, celui de la division : 1 mois, 3 mois, 6 mois, 1 an.", "🗓️", "planning.html", 1],
- ["securite", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3],
+ ["admin", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3, "secretariat"],
  [
   "logistique",
   "Prises en Charge + Autorisation d'Accès",
@@ -276,7 +276,7 @@ var SEED_APPS = [
 function amorcerApplications() {
   var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
   if (sh.getLastRow() > 1) throw new Error('Onglet Applications déjà rempli.');
-  sh.getRange(2, 1, SEED_APPS.length, 6).setValues(SEED_APPS);
+  sh.getRange(2, 1, SEED_APPS.length, 7).setValues(SEED_APPS.map(function (r) { return r.length >= 7 ? r : r.concat(['']); }));
 }
 
 /** Remplace, dans les URL du catalogue, l'identifiant de chaque fichier original par celui de sa copie. */
@@ -301,6 +301,24 @@ function ajouterApplicationsManquantes() {
   var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
   var existants = sh.getDataRange().getValues().slice(1).map(function (l) { return String(l[1]); });
   var nouveaux = SEED_APPS.filter(function (r) { return existants.indexOf(String(r[1])) === -1; });
-  if (nouveaux.length) sh.getRange(sh.getLastRow() + 1, 1, nouveaux.length, 6).setValues(nouveaux);
+  if (nouveaux.length) sh.getRange(sh.getLastRow() + 1, 1, nouveaux.length, 7).setValues(nouveaux.map(function (r) { return r.length >= 7 ? r : r.concat(['']); }));
   Logger.log(nouveaux.length + ' application(s) ajoutée(s).');
+}
+
+/**
+ * Range la carte « Gestion des privilèges » dans le module Administration, visible du seul rôle « secrétariat »
+ * (la page elle-même exige le niveau 3 sur « Sécurité & Accès », que seul le secrétariat a par défaut).
+ */
+function rangerCartes() {
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
+  var v = sh.getDataRange().getValues(); var h = v[0].map(String);
+  var iM = h.indexOf('module'), iU = h.indexOf('url'), iN = h.indexOf('niveau_min'), iR = h.indexOf('roles');
+  var n = 0;
+  for (var i = 1; i < v.length; i += 1) {
+    if (String(v[i][iU]) === 'privileges.html') {
+      sh.getRange(i + 1, iM + 1).setValue('admin'); sh.getRange(i + 1, iN + 1).setValue(3); if (iR >= 0) sh.getRange(i + 1, iR + 1).setValue('secretariat'); n += 1;
+    }
+  }
+  CacheService.getScriptCache().remove('TBL_Applications');
+  Logger.log(n + ' carte(s) rangée(s) dans Administration.');
 }
