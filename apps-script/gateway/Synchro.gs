@@ -47,6 +47,9 @@ function synchro_(appliquer) {
   l.push('Mis à jour (' + f.maj.length + ') : ' + (f.maj.map(function (m) { return m.nom + ' [' + Object.keys(m.champs).join(', ') + ']'; }).join(' ; ') || 'aucun'));
   l.push('Inchangés : ' + f.inchanges);
   l.push('Dans la passerelle mais absents de BDDORGA (' + f.absents.length + ', non modifiés) : ' + (f.absents.join(' ; ') || 'aucun'));
+  var numeriques = existants.filter(function (u) { return Annuaire.ressembleNumero(u.nom); });
+  l.push('Noms inutilisables dans Utilisateurs (numéros à la place du nom) : ' + numeriques.length + (numeriques.length ? ' → ' + (appliquer ? 'corrigés ci-dessus quand la source donne un nom ou un e-mail' : 'seront corrigés par la synchronisation') : '') + '. Ils ne s\'affichent de toute façon plus jamais (nom déduit de l\'e-mail).');
+  l.push('Avertissements (' + lu.avertissements.length + ') : ' + (lu.avertissements.map(function (x) { return 'ligne ' + x.ligne + ' — ' + x.texte; }).join(' ; ') || 'aucun'));
   l.push('Lignes ignorées (' + lu.ignores.length + ') : ' + (lu.ignores.map(function (x) { return 'ligne ' + x.ligne + ' ' + (x.nom || '(sans nom)') + ' — ' + x.raison; }).join(' ; ') || 'aucune'));
   Logger.log(l.join('\n'));
   return f;

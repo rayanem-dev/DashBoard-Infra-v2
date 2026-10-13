@@ -29,7 +29,7 @@ function monde() {
     Store: { utilisateur: e => ({ email: e, nom: 'Test', actif: 1, role: 'agent' })._ || (e === 'a@x.dz' ? { email: 'a@x.dz', nom: 'Aïcha', actif: 1, role: 'agent', service: 'S1' } : null), journal() {}, parUid: () => null, table: () => [] },
   });
   vm.createContext(ctx);
-  for (const f of ['Config.gs', 'Droits.gs', 'Auth.gs']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8').replace(/if \(typeof module[^\n]*\n/g, ''), ctx, { filename: f });
+  for (const f of ['Config.gs', 'Droits.gs', 'Annuaire.gs', 'Auth.gs']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8').replace(/if \(typeof module[^\n]*\n/g, ''), ctx, { filename: f });
   return { ctx, feuille, cacheMap, props, Auth: vm.runInContext('Auth', ctx) };
 }
 const ouvrir = (m, email, mdp, delaiMs) => {

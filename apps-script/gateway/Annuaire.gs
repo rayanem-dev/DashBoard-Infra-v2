@@ -22,12 +22,31 @@ var Annuaire = (function () {
       var iDep = h.indexOf('dependance');
       var iNom = -1;
       ['nom', 'nom prenom', 'nom et prenom', 'agent'].forEach(function (c) { if (iNom < 0) iNom = h.indexOf(c); });
-      if (iNom < 0 && iDep >= 0 && h[iDep + 1] === '') iNom = iDep + 1; // la colonne de noms n'a pas d'en-tête, juste après « dépendance »
+      var iNom2 = -1;
+      if (iNom < 0 && iDep >= 0 && h[iDep + 1] === '') { iNom = iDep + 1; if (h[iDep + 2] === '') iNom2 = iDep + 2; } // colonne(s) sans en-tête juste après « dépendance » : le nom, et parfois un numéro à côté
       if (iNom < 0) return { erreur: 'Colonne des noms introuvable dans BDDORGA (attendue juste après « dependance », ou intitulée « Nom »)' };
       var iTel = Math.max(h.indexOf('numero telephone'), h.indexOf('telephone'));
-      return { ligne: r, idx: { nom: iNom, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: iDep, telephone: iTel } };
+      return { ligne: r, idx: { nom: iNom, nom2: iNom2, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: iDep, telephone: iTel } };
     }
     return { erreur: 'En-têtes introuvables dans BDDORGA (colonnes « Service » et « E-Mail » attendues)' };
+  }
+
+  /** Vrai si la chaîne est un numéro (identifiant, matricule numérique, téléphone…) et non un nom de personne. */
+  function ressembleNumero(s) {
+    var brut = String(s == null ? '' : s);
+    var d = brut.replace(/[\s.\-_/]/g, '');
+    return /^\d{6,}$/.test(d) || /\d{9,}/.test(brut);
+  }
+  /** « noureddine.lakkaichi@sonatrach.dz » → « NOUREDDINE LAKKAICHI » (repli quand le nom de la source est inutilisable). */
+  function depuisEmail(email) {
+    var l = String(email == null ? '' : email).split('@')[0].replace(/\d+/g, ' ').replace(/[._\-+]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return l ? l.toUpperCase() : '';
+  }
+  /** Nom à AFFICHER : jamais un numéro. À utiliser partout où un nom quitte le serveur (liste de connexion comprise, qui est publique). */
+  function nomAffichable(nom, email) {
+    var x = t(nom);
+    if (x && !ressembleNumero(x)) return x;
+    return depuisEmail(email) || '(nom à compléter)';
   }
 
   function telephone(v) {
@@ -39,19 +58,23 @@ var Annuaire = (function () {
   function lire(valeurs) {
     var c = colonnes(valeurs || []);
     if (c.erreur) return { erreur: c.erreur };
-    var i = c.idx, personnes = [], ignores = [], vus = {};
+    var i = c.idx, personnes = [], ignores = [], avertissements = [], vus = {};
     function cell(row, k) { return k >= 0 ? row[k] : ''; }
     for (var r = c.ligne + 1; r < valeurs.length; r += 1) {
       var row = valeurs[r];
-      var nom = t(cell(row, i.nom)), email = t(cell(row, i.email)).toLowerCase();
-      if (!nom && !email) continue; // ligne vide
+      var email = t(cell(row, i.email)).toLowerCase();
+      var nom = '';
+      [cell(row, i.nom), cell(row, i.nom2)].forEach(function (c) { if (!nom && t(c) && !ressembleNumero(c)) nom = t(c); }); // un numéro n'est JAMAIS pris pour un nom
+      var brut = t(cell(row, i.nom)) || t(cell(row, i.nom2));
+      if (!nom && !brut && !email) continue; // ligne vide
+      if (!nom && EMAIL.test(email)) { nom = depuisEmail(email); avertissements.push({ ligne: r + 1, texte: 'nom absent ou numérique : nom déduit de l\'e-mail (« ' + nom + ' »)' }); }
       if (!EMAIL.test(email)) { ignores.push({ ligne: r + 1, nom: nom, raison: 'e-mail manquant ou invalide' }); continue; }
       if (vus[email]) { ignores.push({ ligne: r + 1, nom: nom, raison: 'e-mail en double (ligne ' + vus[email] + ')' }); continue; }
       vus[email] = r + 1;
       personnes.push({ email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
                        fonction: t(cell(row, i.fonction)), dependance: t(cell(row, i.dependance)), telephone: telephone(cell(row, i.telephone)) });
     }
-    return { personnes: personnes, ignores: ignores };
+    return { personnes: personnes, ignores: ignores, avertissements: avertissements };
   }
 
   /**
@@ -74,7 +97,7 @@ var Annuaire = (function () {
     return { ajouts: ajouts, maj: maj, absents: absents, inchanges: inchanges };
   }
 
-  return { lire: lire, fusionner: fusionner, colonnes: colonnes, CHAMPS: CHAMPS };
+  return { lire: lire, fusionner: fusionner, colonnes: colonnes, nomAffichable: nomAffichable, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Annuaire;

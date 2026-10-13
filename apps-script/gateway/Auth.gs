@@ -52,7 +52,7 @@ var Auth = (function () {
   function liste() {
     return Store.table('Utilisateurs')
       .filter(function (u) { return String(u.actif) !== '0' && u.uid; })
-      .map(function (u) { return { uid: u.uid, nom: u.nom, service: u.service }; })
+      .map(function (u) { return { uid: u.uid, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service }; })
       .sort(function (a, b) { return String(a.nom).localeCompare(String(b.nom), 'fr'); });
   }
 
@@ -136,7 +136,7 @@ var Auth = (function () {
   }
 
   function publique_(u) {
-    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: u.matricule || '', role: u.role, service: u.service, fonction: u.fonction,
+    return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), civilite: u.civilite || '', matricule: u.matricule || '', role: u.role, service: u.service, fonction: u.fonction,
              dependance: u.dependance || '', telephone: u.telephone || '' };
   }
 

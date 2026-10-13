@@ -64,7 +64,7 @@ function route_(req) {
         roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles) }; }),
-        utilisateurs: us.map(function (u) { return { email: u.email, nom: u.nom, service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
+        utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
       };
     }
     case 'admin_role_enregistrer': return roleEnregistrer_(req);
@@ -163,7 +163,7 @@ function planning_(req) {
   var lignes = Store.table('Utilisateurs').filter(function (x) {
     return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi);
   }).map(function (x) {
-    var l = { nom: x.nom, service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
+    var l = { nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
     if (niv >= 3) l.email = x.email;
     var rot = rotationDe_(x.email);
     if (!rot) return l;
@@ -264,7 +264,7 @@ function rapportEnregistrer_(req) {
   var r = v.rapport; var id = Rapports.cle(r.date, r.chantier, u.email);
   var maintenant = new Date().toISOString();
   var existe = Store.table('Rapports').some(function (x) { return String(x.id) === id; });
-  var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: u.nom, service: u.service || '', effectif: r.effectif, travaux: r.travaux,
+  var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service || '', effectif: r.effectif, travaux: r.travaux,
                   difficultes: r.difficultes, commentaire: r.commentaire, avancement: r.avancement, modifie_le: maintenant };
   if (!existe) valeurs.cree_le = maintenant;
   Store.maj('Rapports', { id: id }, valeurs);
@@ -285,7 +285,7 @@ function rapportViser_(req) {
   var r = rapportsLus_().filter(function (x) { return x.id === String(req.id); })[0];
   if (!r) throw new Error('Rapport introuvable');
   if (!Rapports.peutViser(u, niv, r)) throw Object.assign(new Error('Vous ne pouvez pas viser ce rapport'), { code: 'DROITS' });
-  Store.maj('Rapports', { id: r.id }, { visa_par: u.nom || u.email, visa_note: Rapports.nettoyer(req.note, 500), visa_le: new Date().toISOString() });
+  Store.maj('Rapports', { id: r.id }, { visa_par: Annuaire.nomAffichable(u.nom, u.email), visa_note: Rapports.nettoyer(req.note, 500), visa_le: new Date().toISOString() });
   Store.journal('rapport_vise', u.email, r.id);
   return {};
 }
