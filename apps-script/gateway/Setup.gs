@@ -32,6 +32,20 @@ function ajouterDroitsParDefaut() {
   Logger.log(nouveaux.length + ' droit(s) par défaut ajouté(s).');
 }
 
+// Module « simulation » : niveau 2 = pour son service (chef de service, intérim) ; 3 = pour tous (chef de division, secrétariat).
+var DROITS_SIMULATION_ = [['chef_service', 'simulation', 2], ['interim_chef_service', 'simulation', 2], ['chef_division', 'simulation', 3], ['secretariat', 'simulation', 3]];
+/** Crée le module « simulation » et ses droits par défaut s'ils n'existent pas (ne touche jamais aux réglages existants). */
+function ajouterModuleSimulation() {
+  var db = SpreadsheetApp.openById(prop_('DB_ID'));
+  var mo = db.getSheetByName('Modules');
+  if (!mo.getDataRange().getValues().slice(1).some(function (l) { return String(l[0]).toLowerCase() === 'simulation'; })) mo.appendRow(['simulation', 'Simulation de planning', '🧪', 7, 1]);
+  var dr = db.getSheetByName('DroitsRole'), v = dr.getDataRange().getValues().slice(1);
+  var nouveaux = DROITS_SIMULATION_.filter(function (r) { return !v.some(function (l) { return Droits.roleCanon(l[0]) === r[0] && String(l[1]).toLowerCase() === 'simulation'; }); });
+  if (nouveaux.length) dr.getRange(dr.getLastRow() + 1, 1, nouveaux.length, 3).setValues(nouveaux);
+  CacheService.getScriptCache().removeAll(['TBL_Modules', 'TBL_DroitsRole']);
+  Logger.log('Module simulation prêt (' + nouveaux.length + ' droit(s) ajouté(s)).');
+}
+
 /** Remplit l'onglet « Roles » avec les rôles d'origine s'il est vide. */
 function ajouterRolesParDefaut() {
   var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Roles');
@@ -63,6 +77,7 @@ var SCHEMA_ = {
   Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le'],
   Chantiers: ['id', 'nom', 'service', 'actif'],
   Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le'],
+  Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire'],
   Journal: ['date', 'action', 'email', 'detail']
 };
 
@@ -73,7 +88,7 @@ function formaterTextes_(db) {
   if (us && us.getLastColumn() > 0) { var en = us.getRange(1, 1, 1, us.getLastColumn()).getValues()[0].map(String); ['date_integration', 'matricule', 'sap', 'nin', 'sona', 'wifi_user'].forEach(function (nomCol) { var ci = en.indexOf(nomCol); if (ci >= 0) us.getRange(2, ci + 1, Math.max(1, us.getMaxRows() - 1), 1).setNumberFormat('@'); }); }
   var sh = db.getSheetByName('Rotations'); if (sh) { sh.getRange('C:C').setNumberFormat('@'); sh.getRange('G:G').setNumberFormat('@'); }
   // Rapports et chantiers : tout en TEXTE brut (aucune formule possible, aucune date convertie).
-  ['Rapports', 'Chantiers'].forEach(function (n) { var x = db.getSheetByName(n); if (x) x.getRange('A:Z').setNumberFormat('@'); });
+  ['Rapports', 'Chantiers', 'Modifications'].forEach(function (n) { var x = db.getSheetByName(n); if (x) x.getRange('A:Z').setNumberFormat('@'); });
 }
 
 /**
@@ -94,6 +109,7 @@ function mettreAJourStructure() {
   ajouterApplicationsManquantes();
   ajouterRolesParDefaut();
   ajouterDroitsParDefaut();
+  ajouterModuleSimulation();
   ajouterChantiersParDefaut();
   rangerCartes();
 }

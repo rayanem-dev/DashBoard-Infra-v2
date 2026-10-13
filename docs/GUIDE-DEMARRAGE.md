@@ -19,3 +19,17 @@
 
 ## C. Ce qui reste volontairement inchangé
 Le site actuel, tous les fichiers d'origine et le fichier Organigramme (traité à la fin, comme décidé).
+
+## Simulation de planning et demandes de modification (module « simulation »)
+
+1. Après le déploiement, lancer **`mettreAJourStructure`** (crée l'onglet `Modifications`, le module « Simulation de planning », la carte et les droits par défaut :
+   chef de service / intérim = niveau 2 (leur service), chef de division / secrétariat = niveau 3 (tous)). Les droits se règlent ensuite dans Privilèges comme les autres modules.
+2. Page `simulation.html` : choisir l'agent, éventuellement un collègue « en vis-à-vis », saisir les périodes (travail / repos, nombre de jours) ; la rotation habituelle reprend
+   automatiquement ensuite. Le bouton « Proposer une combinaison » cherche une transition qui met les deux agents en relève (tolérances de chevauchement / trou réglables).
+   **Rien n'est enregistré** tant qu'on ne clique pas sur « Valider ».
+3. « Valider » crée une demande numérotée (`MOD-AAAA-NNNN`, statut *en attente*), envoie un e-mail à l'intéressé, à l'émetteur, au chef de division et au secrétariat, et ouvre
+   `demande.html` : le document au format papier (Planning actuel / Planning modifié, cadres Décision et Avis du chef de division PE) à imprimer et signer.
+4. Onglet « Demandes » : les ayants droit (même portée) **approuvent** ou **refusent**. Approuvée → le planning officiel est recalculé avec la modification (planning global, situation du jour, jauge) ;
+   refusée → archivée sans effet.
+5. Le moteur est `js/simulation.js` (source unique) : le workflow de la passerelle le copie en `Simulation.gs` avant le déploiement ; il est testé contre le moteur de Sijil (parité).
+   Le lien envoyé par e-mail utilise la propriété de script `SITE_URL` (par défaut l'adresse GitHub Pages du portail).

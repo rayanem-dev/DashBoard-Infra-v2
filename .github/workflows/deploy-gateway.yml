@@ -5,7 +5,7 @@ name: Déployer la passerelle
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths: ['apps-script/gateway/**', '.github/workflows/deploy-gateway.yml']
+    paths: ['apps-script/gateway/**', 'js/simulation.js', '.github/workflows/deploy-gateway.yml']
   workflow_dispatch:
 
 concurrency:
@@ -20,6 +20,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+
+      - name: Copier le moteur de simulation (partagé avec le site : js/simulation.js)
+        run: cp js/simulation.js apps-script/gateway/Simulation.gs
 
       - name: Tests
         run: node --test apps-script/gateway/test/*.test.js

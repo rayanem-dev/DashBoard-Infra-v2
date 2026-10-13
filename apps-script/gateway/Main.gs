@@ -4,6 +4,7 @@
  * Réponse : { ok: true, ... } ou { ok: false, erreur, code }.
  *
  * Planning (module « planning ») : situation, rotation_enregistrer (soi-même : niveau 1 ; autrui : niveau 3), planning (niveau 2 : tout le monde).
+ * Simulation de planning (module « simulation », voir Modifications.gs) : simu_agents, simu_donnees, simu_valider, simu_liste, simu_demande, simu_decider.
  * Rapports journaliers (module « rapports ») : rapports_chantiers, rapport_enregistrer, rapports_liste, rapport_viser, rapports_synthese (niveau 3).
  * Administration (niveau 3 sur le module « securite ») : admin_etat, admin_role, admin_actif, admin_droit, admin_exception, emettreCode.
  * Actions : liste (recherche : { q } — 3 lettres minimum, 8 résultats au plus), demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, admin_app, emettreCode (admin).
@@ -52,6 +53,12 @@ function route_(req) {
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
     case 'rotation_enregistrer': return rotationEnregistrer_(req);
     case 'planning': return planning_(req);
+    case 'simu_agents': return simuAgents_(req);
+    case 'simu_donnees': return simuDonnees_(req);
+    case 'simu_valider': return simuValider_(req);
+    case 'simu_liste': return simuListe_(req);
+    case 'simu_demande': return simuDemande_(req);
+    case 'simu_decider': return simuDecider_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
@@ -140,7 +147,7 @@ function situationDe_(u) {
   if ((acces_(u).planning || 0) < 1) return { acces: false };
   var rot = rotationDe_(u.email);
   if (!rot) return { acces: true, configuree: false, nom: u.nom };
-  return { acces: true, configuree: true, nom: u.nom, rotation: rot, situation: Planning.situation(rot, [], Dates.today()) };
+  return { acces: true, configuree: true, nom: u.nom, rotation: rot, situation: Planning.situation(rot, correctionsDe_(u.email), Dates.today()) };
 }
 function rotationEnregistrer_(req) {
   var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;
@@ -161,6 +168,7 @@ function planning_(req) {
   var n = Math.max(7, Math.min(370, Number(req.jours) || 35));
   var tous = niv >= 2; // 1 = son propre planning seulement ; 2 = tout le monde ; 3 = tout le monde + modification
   var moi = String(u.email).toLowerCase();
+  var mods = correctionsParEmail_(); // demandes de modification approuvées
   var lignes = Store.table('Utilisateurs').filter(function (x) {
     return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi);
   }).map(function (x) {
@@ -168,9 +176,10 @@ function planning_(req) {
     if (niv >= 3) l.email = x.email;
     var rot = rotationDe_(x.email);
     if (!rot) return l;
-    var s = Planning.situation(rot, [], auj);
+    var corr = mods[String(x.email).toLowerCase()] || [];
+    var s = Planning.situation(rot, corr, auj);
     l.configuree = true; l.rotation = { jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, statut: rot.statut, depuis: rot.depuis };
-    l.situation = s; l.grille = Planning.grille(rot, [], debut, n);
+    l.situation = s; l.grille = Planning.grille(rot, corr, debut, n);
     return l;
   });
   return { aujourdhui: auj, debut: debut, jours: n, peutVoirTous: tous, peutModifier: niv >= 3, lignes: lignes };

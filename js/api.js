@@ -26,6 +26,8 @@
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] },
       { id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 2, apps: [
         { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
+      { id: 'simulation', titre: 'Simulation de planning', icone: '🧪', niveau: 3, apps: [
+        { titre: 'Simulation de planning', description: 'Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande à signer.', emoji: '🧪', url: 'simulation.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
         { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
@@ -92,6 +94,23 @@
     return { statut: x.st, depuis: plus(a, -(x.jour - 1)), jour: x.jour, total: x.total, restants: rest, prochain: { date: plus(a, rest), statut: x.st === 'T' ? 'R' : 'T' }, prevu: true };
   }
   function demoGrille(rot, debut, n) { var o = ''; for (var i = 0; i < n; i += 1) { var x = statutAu(rot, plus(debut, i)); o += x ? x.st : '.'; } return o; }
+
+  // Demandes de modification de planning de démonstration (stockées dans le navigateur ; le calcul réel est celui de Simulation / Modifications.gs).
+  var CLE_MOD = 'infra_v2_demo_modifs';
+  function demoMods() { try { return JSON.parse(localStorage.getItem(CLE_MOD) || '[]'); } catch (e) { return []; } }
+  function saveMods(l) { try { localStorage.setItem(CLE_MOD, JSON.stringify(l)); } catch (e) {} }
+  function demoGrilleDe(email, debut, n) {
+    var rot = demoRots()[email], g = demoGrille(rot, debut, n);
+    demoMods().filter(function (m) { return m.statut === 'approuvee' && m.email === email; }).forEach(function (m) { g = Simulation.appliquer(g, debut, m.modif, rot); });
+    return g;
+  }
+  function demoDoc(m) {
+    var u = DEMO_USERS.filter(function (x) { return x.email === m.email; })[0] || {}, p = String(u.nom || '').split(/\s+/);
+    var emet = DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}, dec = DEMO_USERS.filter(function (x) { return x.email === m.decide_par; })[0];
+    return { numero: m.numero, ville: 'Rhourde Nouss', date: m.cree_le.slice(0, 10), statut: m.statut,
+      agent: { nom: p[0] || '', prenom: p.slice(1).join(' '), matricule: u.matricule || '', fonction: u.fonction || '', service: u.service || '', division: 'INFRA' },
+      motif: m.motif, actuel: m.actuel, modifie: m.modifie, emetteur: emet.nom || '', decide_par: dec ? dec.nom : '', decide_le: m.decide_le || '', commentaire: m.commentaire || '' };
+  }
 
   // Rapports de démonstration (la validation réelle est celle de Rapports.gs, côté passerelle).
   var CLE_RAP = 'infra_v2_demo_rapports';
@@ -185,6 +204,35 @@
           if (!c[1].test(v)) throw erreur(c[2] + ' : format invalide.'); dp[c[0]] = v; fait += 1; });
         if (!fait) throw erreur('Rien à enregistrer : ces champs sont déjà renseignés (pour les corriger, contactez le secrétariat).');
         return { user: pub(demoState.user) }; }
+      case 'simu_agents': exigerAdmin();
+        return { niveau: 3, moi: demoState.user.uid, agents: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', configuree: !!demoRots()[x.email] }; }) };
+      case 'simu_donnees': { exigerAdmin(); var cu = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0], rr0 = cu && demoRots()[cu.email];
+        if (!rr0) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
+        var d0s = p.debut && p.debut >= rr0.depuis ? p.debut : (plus(auj(), -35) < rr0.depuis ? rr0.depuis : plus(auj(), -35)), ns = Math.max(30, Math.min(400, Number(p.jours) || 240));
+        return { uid: cu.uid, nom: cu.nom, service: cu.service, fonction: cu.fonction || '', rotation: rr0, aujourdhui: auj(), debut: d0s, jours: ns, grille: demoGrilleDe(cu.email, d0s, ns) }; }
+      case 'simu_valider': { exigerAdmin(); var cv = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0], rv = cv && demoRots()[cv.email];
+        if (!rv) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
+        var mv = { debut: p.debut, periodes: p.periodes, reprise: p.reprise }, ev = Simulation.valider(mv, rv, auj()); if (ev) throw erreur(ev);
+        var motif = String(p.motif || 'Raison de service').trim(); if (motif.length < 3) throw erreur('Indiquez le motif de la demande');
+        var cy = rv.jours_travail + rv.jours_repos, F = plus(mv.debut, -(cy + 30)); if (F < rv.depuis) F = rv.depuis;
+        var fin = plus(Simulation.dateReprise(mv), 2 * cy - 1), nn = ecart(F, fin) + 1, off = demoGrilleDe(cv.email, F, nn), mod = Simulation.appliquer(off, F, mv, rv);
+        var du = mv.debut; if (du > F) { var ii = ecart(F, du) - 1, cc = off.charAt(ii); while (ii > 0 && off.charAt(ii - 1) === cc) ii -= 1; du = plus(F, ii); }
+        var lm = demoMods(), numero = 'MOD-' + new Date().getFullYear() + '-' + ('000' + (lm.length + 1)).slice(-4);
+        var nm = { numero: numero, cree_le: new Date().toISOString(), email: cv.email, emetteur: demoState.user.email, motif: motif, modif: mv, statut: 'en_attente',
+                   actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14) };
+        lm.push(nm); saveMods(lm); return { numero: numero, emails: 4, demande: demoDoc(nm) }; }
+      case 'simu_liste': { var lq = demoMods().slice().reverse().map(function (m) { var u2 = DEMO_USERS.filter(function (x) { return x.email === m.email; })[0] || {};
+          return { numero: m.numero, cree_le: m.cree_le, agent: u2.nom, service: u2.service, debut: m.modif.debut, reprise_le: Simulation.dateReprise(m.modif), motif: m.motif, statut: m.statut,
+                   emetteur: (DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}).nom, decide_par: m.decide_par || '', decide_le: m.decide_le || '', commentaire: m.commentaire || '',
+                   peut_decider: m.statut === 'en_attente' && demoState.user.role === 'chef_division' }; });
+        return { niveau: demoState.user.role === 'chef_division' ? 3 : 0, demandes: lq }; }
+      case 'simu_demande': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var dm = demoMods().filter(function (m) { return m.numero === p.numero; })[0];
+        if (!dm) throw erreur('Demande introuvable'); return { demande: demoDoc(dm) }; }
+      case 'simu_decider': { exigerAdmin(); var ld = demoMods(), dd = ld.filter(function (m) { return m.numero === p.numero; })[0];
+        if (!dd) throw erreur('Demande introuvable'); if (dd.statut !== 'en_attente') throw erreur('Cette demande a déjà été traitée');
+        if (p.decision !== 'approuvee' && p.decision !== 'refusee') throw erreur('Décision invalide');
+        dd.statut = p.decision; dd.decide_par = demoState.user.email; dd.decide_le = new Date().toISOString(); dd.commentaire = String(p.commentaire || ''); saveMods(ld);
+        return { demande: { numero: dd.numero, statut: dd.statut }, emails: 4 }; }
       case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };
     }
     throw erreur('Action inconnue');

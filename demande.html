@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Demande de modification de planning</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+<style>
+  body { background: #E5E7EB; }
+  .barre-outils { max-width: 794px; margin: 16px auto 0; display: flex; gap: 10px; justify-content: space-between; align-items: center; padding: 0 8px; }
+  .page { background: #fff; width: 794px; max-width: 100%; min-height: 1000px; margin: 12px auto 40px; padding: 48px 56px; box-shadow: 0 4px 24px rgba(0,0,0,.15); font-family: "Times New Roman", Times, serif; color: #111; box-sizing: border-box; }
+  .entete { display: flex; justify-content: space-between; align-items: flex-start; font-size: 13px; }
+  .entete b { display: block; font-size: 14px; }
+  .entete .gauche { line-height: 1.35; } .entete .droite { font-weight: 700; font-size: 13px; padding-top: 6px; }
+  .titre { border: 2px solid #333; outline: 1px solid #333; outline-offset: 3px; text-align: center; font-weight: 700; font-size: 14px; padding: 16px 8px; margin: 38px 6px 34px; }
+  .ident { font-size: 14px; line-height: 1.7; display: grid; grid-template-columns: 1.3fr 1.3fr .8fr; gap: 0 10px; }
+  .ident b { font-weight: 700; } .ident .l { grid-column: 1 / -1; display: grid; grid-template-columns: 1.3fr 1.3fr .8fr; }
+  h3 { font-size: 14px; margin: 18px 0 2px; letter-spacing: .3px; }
+  table.cadre { width: 100%; border: 2px solid #444; border-collapse: collapse; font-size: 13px; }
+  table.cadre td { padding: 2.5px 6px; }
+  table.cadre td.n { text-align: right; font-weight: 700; width: 36px; } table.cadre td.d { font-weight: 700; width: 98px; }
+  table.cadre td.j { width: 82px; } table.cadre td.a { width: 26px; text-align: center; }
+  table.cadre tr.vide td { height: 20px; }
+  .signatures { display: flex; justify-content: space-between; margin-top: 22px; font-size: 13px; font-weight: 700; }
+  .signatures div { width: 48%; } .signatures u { display: block; margin-bottom: 4px; }
+  .zone { height: 130px; }
+  .statut { margin-top: 18px; font: 13px/1.5 Arial, sans-serif; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; }
+  .statut.approuvee { background: #F0FDF4; border-color: #86EFAC; } .statut.refusee { background: #FEF2F2; border-color: #FCA5A5; } .statut.en_attente { background: #FFFBEB; border-color: #FCD34D; }
+  .pied-doc { margin-top: 16px; font: 11px Arial, sans-serif; color: #666; }
+  @media print {
+    body { background: #fff; } .barre-outils, #demo, .bandeau { display: none !important; }
+    .page { box-shadow: none; margin: 0; padding: 18mm 16mm; width: auto; min-height: 0; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<div class="barre-outils"><a class="btn-ghost" style="background:#fff;color:#111;border:1.5px solid #ccc;text-decoration:none;padding:8px 14px;border-radius:9px;font:700 13px Arial,sans-serif" href="simulation.html">← Retour</a>
+  <button class="btn-p" id="imprimer" type="button" style="padding:9px 18px;border:0;border-radius:10px;background:#E85D04;color:#fff;font:700 14px Arial,sans-serif;cursor:pointer">🖨 Imprimer / enregistrer en PDF</button></div>
+<div class="page" id="page"><p id="charg">Chargement…</p></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function fr(d) { return d ? String(d).slice(8, 10) + '/' + String(d).slice(5, 7) + '/' + String(d).slice(0, 4) : ''; }
+  var n = new URLSearchParams(location.search).get('n') || '';
+  $('imprimer').addEventListener('click', function () { window.print(); });
+
+  function tableau(lignes) {
+    var t = el('table', 'cadre'), b = el('tbody');
+    lignes.forEach(function (p) {
+      var tr = el('tr'); tr.appendChild(el('td', null, p.type === 'T' ? 'Travail du' : 'Récupération du')); tr.appendChild(el('td', 'd', fr(p.du))); tr.appendChild(el('td', 'a', 'au'));
+      tr.appendChild(el('td', 'd', fr(p.au))); tr.appendChild(el('td', 'j', 'Nbr.jours')); tr.appendChild(el('td', 'n', String(p.jours))); b.appendChild(tr);
+    });
+    for (var i = lignes.length; i < 10; i += 1) { var v = el('tr', 'vide'); v.appendChild(el('td')); v.colSpan = 6; b.appendChild(v); }
+    t.appendChild(b); return t;
+  }
+  function dessiner(d) {
+    var p = $('page'); p.textContent = '';
+    document.title = 'Demande de modification de planning ' + d.agent.nom + ' ' + d.numero;
+    var e = el('div', 'entete'), g = el('div', 'gauche');
+    ['Activité Amont', 'Division Production', 'Direction Régionale', 'Rhourde Nouss'].forEach(function (x) { g.appendChild(el('b', null, x)); });
+    e.appendChild(g); e.appendChild(el('div', 'droite', d.ville + ' le , ' + fr(d.date))); p.appendChild(e);
+    p.appendChild(el('div', 'titre', 'DEMANDE DE MODIFICATION DE PLANNING'));
+    var id = el('div', 'ident');
+    function champ(l, v, b) { var s = el('div'); s.appendChild(document.createTextNode(l + ' : ')); s.appendChild(el('b', null, v)); if (b) s.style.gridColumn = b; return s; }
+    id.appendChild(champ('Nom', d.agent.nom)); id.appendChild(champ('Prénom', d.agent.prenom)); id.appendChild(champ('Mle.', d.agent.matricule));
+    id.appendChild(champ('Fonction', d.agent.fonction)); id.appendChild(champ('Division', d.agent.division)); id.appendChild(el('div'));
+    id.appendChild(champ('Motif', d.motif, '1 / -1')); p.appendChild(id);
+    p.appendChild(el('h3', null, 'PLANNING ACTUEL :')); p.appendChild(tableau(d.actuel));
+    p.appendChild(el('h3', null, 'PLANNING MODIFIE:')); p.appendChild(tableau(d.modifie));
+    var s = el('div', 'signatures'); var a = el('div'); a.appendChild(el('u', null, 'DECISION DU CHEF DE DIVISION')); a.appendChild(el('div', 'zone')); var b = el('div'); b.appendChild(el('u', null, 'AVIS DU CHEF DE DIVISION PE')); b.appendChild(el('div', 'zone'));
+    s.appendChild(a); s.appendChild(b); p.appendChild(s);
+    var st = el('div', 'statut ' + d.statut);
+    st.textContent = d.statut === 'approuvee' ? 'Demande ' + d.numero + ' APPROUVÉE dans le portail' + (d.decide_par ? ' par ' + d.decide_par : '') + (d.decide_le ? ' le ' + fr(d.decide_le) : '') + (d.commentaire ? ' — ' + d.commentaire : '') + '. Le planning officiel est mis à jour.'
+      : d.statut === 'refusee' ? 'Demande ' + d.numero + ' REFUSÉE dans le portail' + (d.decide_par ? ' par ' + d.decide_par : '') + (d.decide_le ? ' le ' + fr(d.decide_le) : '') + (d.commentaire ? ' — ' + d.commentaire : '') + '. Le planning officiel n\'est pas modifié.'
+      : 'Demande ' + d.numero + ' EN ATTENTE de décision dans le portail. Le planning officiel sera mis à jour à l\'approbation.';
+    p.appendChild(st);
+    p.appendChild(el('div', 'pied-doc', 'Demande n° ' + d.numero + ' — émise par ' + d.emetteur + ' depuis le portail de la Division Infrastructure.'));
+  }
+  if (!n) { $('page').textContent = 'Numéro de demande manquant.'; return; }
+  Api.call('simu_demande', { numero: n }).then(function (r) { dessiner(r.demande); }).catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    $('page').textContent = e.message;
+  });
+})();
+</script>
+</body>
+</html>
