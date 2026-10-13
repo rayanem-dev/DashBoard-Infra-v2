@@ -9,10 +9,10 @@ const NUM = '100000000000000001'; // faux numéro à 18 chiffres (le fichier ré
 
 // ----- Disposition ACTUELLE de BDDORGA : e-mail | matricule | NOM (sans titre) | service | fonction | division | dépendance | NUMÉRO (sans titre) | SONA | FONCTION | wifi | pass | date | téléphone
 const ENT = ['E-Mail', 'Matricule', '', 'Service', 'Fonction', 'Division', 'dependance', '', 'SONA', 'FONCTION', 'Wifi User', 'Pass', 'Date Integration', 'Numero telephone'];
-const ligne = (email, mat, nom, service, dep, num, poste, tel = '') =>
-  [email, mat, nom, service, 'Chef', 'Division Infrastructures', dep, num, 'login1', poste, 'wifi.user', 'MOT-DE-PASSE-SECRET', '', tel];
+const ligne = (email, mat, nom, service, dep, num, poste, tel = '', sona = 'sona10001', integ = '') =>
+  [email, mat, nom, service, 'Chef', 'Division Infrastructures', dep, num, sona, poste, 'wifi.user', 'MOT-DE-PASSE-SECRET', integ, tel];
 const SRC = [ENT,
-  ligne('marie.durand@sonatrach.dz', 'M-100', 'DURAND MARIE', 'CPM', 'SONATRACH', NUM, 'Technicienne', 658578057),
+  ligne('marie.durand@sonatrach.dz', 'M-100', 'DURAND MARIE', 'CPM', 'SONATRACH', NUM, 'Technicienne', 658578057, 'sona10001', '05/10/2025'),
   ligne('benoit.martin463@gmail.com', '', 'MARTIN BENOIT', 'CPM', 'GTP', '', 'Conducteur des travaux'),     // pas de numéro : le cas qui produisait « BENOITMARTIN »
   ligne('alice.bernard@gmail.com', '', 'BERNARD ALICE', 'Service Construction', 'ACOSCO', '', 'ING GENIE CIVIL'),
   ligne('', 'M-101', 'SANS MAIL', 'CPM', 'SONATRACH', NUM, 'X'),
@@ -36,10 +36,22 @@ test('RÉGRESSION : noms, employeurs et postes corrects ; BENOIT MARTIN (sans nu
   assert.strictEqual(r.personnes[0].telephone, '0658578057');
 });
 
+test('fiche : identifiant SONA et date d\'intégration lus ; les colonnes secrètes jamais', () => {
+  const p = Annuaire.lire(SRC).personnes[0];
+  assert.strictEqual(p.sona, 'sona10001'); assert.strictEqual(p.date_integration, '2025-10-05');
+  assert.strictEqual(Annuaire.lire(SRC).personnes[1].date_integration, ''); // vide : reste vide
+});
+
+test('dateIso : formats courants, dates impossibles refusées', () => {
+  const d = Annuaire.dateIso;
+  assert.strictEqual(d('05/10/2025'), '2025-10-05'); assert.strictEqual(d('5.3.2024'), '2024-03-05'); assert.strictEqual(d('2025-10-05'), '2025-10-05');
+  assert.strictEqual(d(new Date(2025, 9, 5)), '2025-10-05'); assert.strictEqual(d('31/02/2025'), ''); assert.strictEqual(d('n\'importe quoi'), ''); assert.strictEqual(d(''), ''); assert.strictEqual(d(null), '');
+});
+
 test('SÉCURITÉ : ni numéro d\'identité, ni mot de passe, ni identifiant n\'est recopié', () => {
   const j = JSON.stringify(Annuaire.lire(SRC));
-  for (const secret of [NUM, 'MOT-DE-PASSE-SECRET', 'wifi.user', 'login1']) assert.ok(!j.includes(secret), secret);
-  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['dependance', 'email', 'fonction', 'matricule', 'nom', 'nomDeduit', 'service', 'telephone']);
+  for (const secret of [NUM, 'MOT-DE-PASSE-SECRET', 'wifi.user']) assert.ok(!j.includes(secret), secret);
+  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['date_integration', 'dependance', 'email', 'fonction', 'matricule', 'nom', 'nomDeduit', 'service', 'sona', 'telephone']);
 });
 
 // ----- Ancienne disposition (nom puis numéro côte à côte après « dépendance ») : doit marcher aussi
@@ -72,8 +84,8 @@ test('nomAffichable : jamais de numéro, quelle que soit la forme', () => {
 
 test('fusion : une valeur vide n\'efface rien ; role/actif/uid jamais touchés ; absents listés', () => {
   const existants = [
-    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: 'DURAND MARIE', service: 'Ancien service', matricule: 'M-100', role: 'chef_service', actif: 1, telephone: '' },
-    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'MARTIN BENOIT', service: 'CPM', matricule: 'M-7', fonction: 'Conducteur des travaux', dependance: 'GTP', role: 'agent', actif: 1 },
+    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: 'DURAND MARIE', service: 'Ancien service', matricule: 'M-100', role: 'chef_service', actif: 1, telephone: '', sona: 'sona10001', date_integration: '2025-10-05' },
+    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'MARTIN BENOIT', service: 'CPM', matricule: 'M-7', fonction: 'Conducteur des travaux', dependance: 'GTP', sona: 'sona10001', role: 'agent', actif: 1 },
     { uid: 'u3', email: 'parti@x.dz', nom: 'PARTI', role: 'agent', actif: 1 },
   ];
   const f = Annuaire.fusionner(existants, Annuaire.lire(SRC).personnes);
@@ -87,8 +99,8 @@ test('fusion : une valeur vide n\'efface rien ; role/actif/uid jamais touchés ;
 
 test('RÉPARATION : la synchro rétablit un vrai nom à la place d\'un numéro ou d\'un nom déduit de l\'e-mail', () => {
   const existants = [
-    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: NUM, service: 'CPM', matricule: 'M-100', dependance: 'SONATRACH', fonction: 'Technicienne', telephone: '0658578057', role: 'agent', actif: 1 },
-    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'BENOITMARTIN', service: 'CPM', matricule: 'M-7', dependance: 'GTP', fonction: 'Conducteur des travaux', role: 'agent', actif: 1 },
+    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: NUM, service: 'CPM', matricule: 'M-100', dependance: 'SONATRACH', fonction: 'Technicienne', telephone: '0658578057', sona: 'sona10001', date_integration: '2025-10-05', role: 'agent', actif: 1 },
+    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'BENOITMARTIN', service: 'CPM', matricule: 'M-7', dependance: 'GTP', fonction: 'Conducteur des travaux', sona: 'sona10001', role: 'agent', actif: 1 },
   ];
   const f = Annuaire.fusionner(existants, Annuaire.lire(SRC).personnes);
   const noms = Object.fromEntries(f.maj.map(m => [m.email, m.champs.nom]));
@@ -99,9 +111,9 @@ test('RÉPARATION : la synchro rétablit un vrai nom à la place d\'un numéro o
 test('un nom DÉDUIT de l\'e-mail n\'écrase jamais un vrai nom déjà enregistré', () => {
   const src = Annuaire.lire([ENT, ligne('b@x.dz', '', 'BERNARD ALICE', 'CPM', 'SONATRACH', '', 'X'), ligne('marie.durand@x.dz', '', '', 'CPM', 'SONATRACH', NUM, 'X')]).personnes.slice(1);
   assert.strictEqual(src[0].nomDeduit, true);
-  const f = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: 'DURAND MARIE', service: 'CPM', fonction: 'X', dependance: 'SONATRACH', matricule: '', role: 'agent', actif: 1 }], src);
+  const f = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: 'DURAND MARIE', service: 'CPM', fonction: 'X', dependance: 'SONATRACH', matricule: '', sona: 'sona10001', role: 'agent', actif: 1 }], src);
   assert.strictEqual(f.maj.length, 0);
-  const g = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: NUM, service: 'CPM', fonction: 'X', dependance: 'SONATRACH', role: 'agent', actif: 1 }], src);
+  const g = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: NUM, service: 'CPM', fonction: 'X', dependance: 'SONATRACH', sona: 'sona10001', role: 'agent', actif: 1 }], src);
   assert.strictEqual(g.maj[0].champs.nom, 'MARIE DURAND'); // mieux qu'un numéro
 });
 
@@ -111,11 +123,41 @@ test('erreurs claires : en-têtes absents, colonne des noms introuvable ; en-tê
   assert.strictEqual(Annuaire.lire([['Service', 'Nom', 'E-Mail'], ['S', 'DURAND MARIE', 'x@y.dz']]).personnes[0].nom, 'DURAND MARIE');
 });
 
-test('la liste de connexion (publique) ne contient jamais de numéro, même si Utilisateurs en contient', () => {
-  const ctx = { Store: { table: () => [{ uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: NUM, service: 'S', actif: 1 }, { uid: 'u2', email: 'b@x.dz', nom: 'MARTIN BENOIT', service: 'S', actif: 1 }] }, CFG: {} };
+function ctxListe(utilisateurs) {
+  const ctx = { Store: { table: () => utilisateurs }, CFG: {} };
   vm.createContext(ctx);
   for (const f of ['Annuaire.gs', 'Auth.gs']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8').replace(/if \(typeof module[^\n]*\n/g, ''), ctx);
-  const liste = vm.runInContext('Auth.liste()', ctx);
-  assert.deepStrictEqual(liste.map(u => u.nom), ['MARIE DURAND', 'MARTIN BENOIT']);
-  assert.ok(!JSON.stringify(liste).includes(NUM));
+  return q => { ctx.q = q; return JSON.parse(JSON.stringify(vm.runInContext('Auth.liste(q)', ctx))); };
+}
+const U = (i, nom, extra = {}) => Object.assign({ uid: 'u' + i, email: `p${i}@x.dz`, nom, service: 'S', actif: 1 }, extra);
+
+test('LA LISTE N\'EST JAMAIS RENVOYÉE EN ENTIER : rien sans recherche, rien en dessous de 3 lettres', () => {
+  const liste = ctxListe([U(1, 'DURAND MARIE'), U(2, 'MARTIN BENOIT')]);
+  for (const q of [undefined, '', '  ', 'a', 'du', 'd u']) assert.deepStrictEqual(liste(q).utilisateurs, [], JSON.stringify(q));
+  assert.strictEqual(liste('du').court, true);
+});
+
+test('recherche : accents et majuscules ignorés, tous les mots doivent correspondre, prénom ou nom', () => {
+  const liste = ctxListe([U(1, 'DURAND MARIE'), U(2, 'MARTIN BENOIT'), U(3, 'DJELLOUL BOUCHIKHI'), U(4, 'BOUAZIZ HOCINE'), U(5, 'GARCÍA ÉLODIE')]);
+  assert.deepStrictEqual(liste('bou').utilisateurs.map(u => u.nom), ['BOUAZIZ HOCINE', 'DJELLOUL BOUCHIKHI']);
+  assert.deepStrictEqual(liste('hocine bouaziz').utilisateurs.map(u => u.nom), ['BOUAZIZ HOCINE']);
+  assert.deepStrictEqual(liste('garcia elodie').utilisateurs.map(u => u.nom), ['GARCÍA ÉLODIE']);
+  assert.deepStrictEqual(liste('zzz').utilisateurs, []);
+});
+
+test('au plus 8 résultats, avec l\'indication qu\'il y en a davantage ; comptes désactivés et sans uid exclus', () => {
+  const beaucoup = Array.from({ length: 12 }, (_, i) => U(i, 'MARTIN ' + String.fromCharCode(65 + i) + 'ALICE'));
+  beaucoup.push(U(99, 'MARTIN ZOMBIE', { actif: 0 }), U(98, 'MARTIN SANSUID', { uid: '' }));
+  const r = ctxListe(beaucoup)('martin');
+  assert.strictEqual(r.utilisateurs.length, 8); assert.strictEqual(r.plus, true);
+  assert.ok(!JSON.stringify(r).includes('ZOMBIE') && !JSON.stringify(r).includes('SANSUID'));
+});
+
+test('la recherche ne renvoie jamais d\'e-mail, de matricule ni de numéro, même si Utilisateurs en contient', () => {
+  const liste = ctxListe([U(1, NUM, { email: 'marie.durand@sonatrach.dz', matricule: 'M-100' }), U(2, 'MARTIN BENOIT', { matricule: 'M-7' })]);
+  const r = liste('marie');
+  assert.deepStrictEqual(r.utilisateurs.map(u => u.nom), ['MARIE DURAND']);
+  const j = JSON.stringify(liste('mar'));
+  for (const interdit of [NUM, 'M-100', 'M-7', '@', 'sonatrach']) assert.ok(!j.includes(interdit), interdit);
+  assert.deepStrictEqual(Object.keys(r.utilisateurs[0]).sort(), ['nom', 'service', 'uid']);
 });

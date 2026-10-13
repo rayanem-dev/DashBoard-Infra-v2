@@ -7,7 +7,7 @@
  */
 var Annuaire = (function () {
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  var CHAMPS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone'];
+  var CHAMPS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone', 'sona', 'date_integration'];
 
   function n(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
   function t(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
@@ -44,7 +44,7 @@ var Annuaire = (function () {
       }
       if (!noms.length) return { erreur: 'Colonne des noms introuvable dans BDDORGA (une colonne sans titre contenant les noms, ou une colonne intitulée « Nom »)' };
       var iTel = Math.max(h.indexOf('numero telephone'), h.indexOf('telephone'));
-      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel } };
+      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration') } };
     }
     return { erreur: 'En-têtes introuvables dans BDDORGA (colonnes « Service » et « E-Mail » attendues)' };
   }
@@ -65,6 +65,20 @@ var Annuaire = (function () {
     var x = t(nom);
     if (x && !ressembleNumero(x)) return x;
     return depuisEmail(email) || '(nom à compléter)';
+  }
+
+  /** Date → « AAAA-MM-JJ » (objet Date, « JJ/MM/AAAA » ou « AAAA-MM-JJ ») ; chaîne vide si illisible ou impossible. */
+  function dateIso(v) {
+    if (v == null || v === '') return '';
+    var y, m, d;
+    if (Object.prototype.toString.call(v) === '[object Date]') { if (isNaN(v.getTime())) return ''; y = v.getFullYear(); m = v.getMonth() + 1; d = v.getDate(); }
+    else {
+      var s = t(v), a = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/.exec(s), b = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+      if (a) { d = +a[1]; m = +a[2]; y = +a[3]; } else if (b) { y = +b[1]; m = +b[2]; d = +b[3]; } else return '';
+    }
+    var t2 = new Date(Date.UTC(y, m - 1, d));
+    if (t2.getUTCFullYear() !== y || t2.getUTCMonth() !== m - 1 || t2.getUTCDate() !== d || y < 1950 || y > 2100) return '';
+    return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
   }
 
   function telephone(v) {
@@ -89,7 +103,8 @@ var Annuaire = (function () {
       if (vus[email]) { ignores.push({ ligne: r + 1, nom: nom, raison: 'e-mail en double (ligne ' + vus[email] + ')' }); continue; }
       vus[email] = r + 1;
       personnes.push({ nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
-                       fonction: t(cell(row, i.fonction)), dependance: t(cell(row, i.dependance)), telephone: telephone(cell(row, i.telephone)) });
+                       fonction: t(cell(row, i.fonction)), dependance: t(cell(row, i.dependance)), telephone: telephone(cell(row, i.telephone)),
+                       sona: t(cell(row, i.sona)).replace(/[\u200B-\u200D\uFEFF]/g, ''), date_integration: dateIso(cell(row, i.date_integration)) });
     }
     return { personnes: personnes, ignores: ignores, avertissements: avertissements };
   }
@@ -108,7 +123,8 @@ var Annuaire = (function () {
       if (!u) { ajouts.push(p); return; }
       var champs = {};
       CHAMPS.forEach(function (k) {
-        if (!p[k] || t(u[k]) === p[k]) return;
+        var actuel = k === 'date_integration' ? dateIso(u[k]) : t(u[k]);
+        if (!p[k] || actuel === p[k]) return;
         if (k === 'nom' && p.nomDeduit && t(u.nom) && !ressembleNumero(u.nom)) return; // nom déduit de l'e-mail : jamais au détriment d'un vrai nom
         champs[k] = p[k];
       });
@@ -118,7 +134,7 @@ var Annuaire = (function () {
     return { ajouts: ajouts, maj: maj, absents: absents, inchanges: inchanges };
   }
 
-  return { lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
+  return { lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Annuaire;

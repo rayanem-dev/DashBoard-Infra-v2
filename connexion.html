@@ -19,10 +19,14 @@
   <!-- Étape 1 : choisir son nom et saisir son mot de passe -->
   <form class="carte" id="f-login" autocomplete="off">
     <h2>Connexion</h2>
-    <p class="sous">Choisissez votre nom puis saisissez votre mot de passe.</p>
+    <p class="sous">Tapez votre nom ou votre prénom, choisissez-vous, puis saisissez votre mot de passe.</p>
     <label for="q">Votre nom</label>
-    <input type="text" id="q" placeholder="Rechercher…" autocomplete="off">
-    <select id="liste" size="6" aria-label="Liste du personnel"></select>
+    <input type="text" id="q" placeholder="Nom ou prénom (3 lettres minimum)…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="choix" id="choix" hidden>
+      <select id="liste" size="5" aria-label="Personnes trouvées"></select>
+      <p class="aide" id="aide-q" aria-live="polite"></p>
+    </div>
+    <div class="selection" id="selection" hidden><span id="sel-nom"></span><button type="button" class="lien" id="sel-changer">Changer</button></div>
     <label for="mdp">Mot de passe</label>
     <input type="password" id="mdp" autocomplete="current-password">
     <label class="case"><input type="checkbox" id="r1"> Rester connecté</label>
@@ -54,24 +58,39 @@
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var tous = [], choisi = '';
+  var choisi = '', minuteur = null, derniere = '';
   if (Api.demo) $('demo').hidden = false;
 
   function msg(id, texte, ok) { var m = $(id); m.textContent = texte || ''; m.className = 'msg' + (texte ? (ok ? ' ok' : ' err') : ''); }
   function occupe(btn, on) { btn.disabled = on; }
 
-  function afficher(filtre) {
-    var f = (filtre || '').toLowerCase(); var sel = $('liste'); sel.textContent = '';
-    tous.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '')).toLowerCase().indexOf(f) !== -1; }).forEach(function (u) {
-      var o = document.createElement('option'); o.value = u.uid; o.textContent = u.nom + (u.service ? ' — ' + u.service : '');
-      if (u.uid === choisi) o.selected = true; sel.appendChild(o);
-    });
+  // La liste du personnel n'est JAMAIS chargée : on interroge le serveur à mesure qu'on tape (3 lettres minimum, 8 résultats au plus).
+  function rechercher() {
+    var q = $('q').value.trim(); derniere = q;
+    var box = $('choix'), sel = $('liste');
+    if (q.replace(/\s+/g, '').length < 3) { box.hidden = true; sel.textContent = ''; return; }
+    Api.call('liste', { q: q }).then(function (r) {
+      if (q !== derniere) return; // une frappe plus récente est déjà en cours
+      sel.textContent = ''; box.hidden = false;
+      r.utilisateurs.forEach(function (u) {
+        var o = document.createElement('option'); o.value = u.uid; o.textContent = u.nom + (u.service ? ' — ' + u.service : ''); o.title = o.textContent; sel.appendChild(o);
+      });
+      $('aide-q').textContent = !r.utilisateurs.length ? 'Aucun résultat : vérifiez l\'orthographe, ou essayez votre prénom.' : r.plus ? 'Plus de résultats : précisez en ajoutant votre prénom ou votre nom.' : (r.utilisateurs.length > 1 ? 'Cliquez sur votre nom.' : 'Cliquez sur votre nom pour le sélectionner.');
+      sel.hidden = !r.utilisateurs.length; sel.size = Math.max(2, Math.min(5, r.utilisateurs.length));
+    }).catch(function (e) { msg('m-login', 'Recherche impossible : ' + e.message); });
   }
+  $('q').addEventListener('input', function () { choisi = ''; $('selection').hidden = true; msg('m-login', ''); clearTimeout(minuteur); minuteur = setTimeout(rechercher, 250); });
 
-  Api.call('liste').then(function (r) { tous = r.utilisateurs; afficher(); })
-    .catch(function (e) { msg('m-login', 'Impossible de charger la liste : ' + e.message); });
-  $('q').addEventListener('input', function () { afficher(this.value); });
-  $('liste').addEventListener('change', function () { choisi = this.value; msg('m-login', ''); });
+  function selectionner(uid, libelle) {
+    choisi = uid; $('sel-nom').textContent = libelle; $('selection').hidden = false;
+    $('choix').hidden = true; $('q').hidden = true; document.querySelector('label[for="q"]').hidden = true; msg('m-login', '');
+    $('mdp').focus();
+  }
+  $('liste').addEventListener('change', function () { var o = this.options[this.selectedIndex]; if (o) selectionner(this.value, o.textContent); });
+  $('liste').addEventListener('click', function () { var o = this.options[this.selectedIndex]; if (o && choisi !== this.value) selectionner(this.value, o.textContent); });
+  $('sel-changer').addEventListener('click', function () {
+    choisi = ''; $('selection').hidden = true; $('q').hidden = false; document.querySelector('label[for="q"]').hidden = false; $('q').value = ''; $('q').focus(); $('mdp').value = '';
+  });
 
   function entrer(r) { Api.setToken(r.token); Api.setRemember(r.remember || ''); location.href = 'portail.html'; }
 
@@ -80,7 +99,7 @@
 
   $('f-login').addEventListener('submit', function (e) {
     e.preventDefault();
-    if (!choisi) return msg('m-login', 'Choisissez votre nom dans la liste.');
+    if (!choisi) return msg('m-login', 'Tapez votre nom, puis cliquez sur votre nom dans les résultats.');
     if (!$('mdp').value) return msg('m-login', 'Saisissez votre mot de passe.');
     occupe($('b-login'), true); msg('m-login', '');
     Api.call('login', { ident: choisi, mdp: $('mdp').value, remember: $('r1').checked }).then(entrer)
@@ -88,7 +107,7 @@
   });
 
   $('l-code').addEventListener('click', function () {
-    if (!choisi) return msg('m-login', 'Choisissez d\'abord votre nom dans la liste.');
+    if (!choisi) return msg('m-login', 'Tapez d\'abord votre nom, puis cliquez sur votre nom dans les résultats.');
     msg('m-login', 'Envoi du code…', true);
     Api.call('demanderCode', { ident: choisi }).then(function (r) {
       $('s-code').textContent = 'Un code à 6 chiffres vient d\'être envoyé à ' + r.masque + ' (valable ' + r.minutes + ' minutes).';

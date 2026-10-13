@@ -17,12 +17,31 @@
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 
 <main class="portail">
-  <section class="accueil" id="accueil">
-    <h2 id="salut">Bonjour</h2>
-    <p id="infos">Chargement de votre espace…</p>
-    <div class="fiche-user" id="fiche" hidden></div>
+  <section class="agent" id="accueil" aria-label="Ma fiche">
+    <div class="agent-entete">
+      <div class="avatar" id="avatar" aria-hidden="true"></div>
+      <div class="agent-id">
+        <p class="agent-salut" id="salut">Bonjour</p>
+        <h2 id="nom-agent">Chargement…</h2>
+        <p class="agent-poste" id="agent-poste"></p>
+        <div class="agent-badges" id="agent-badges"></div>
+      </div>
+    </div>
+    <div class="agent-corps">
+      <div class="agent-infos" id="fiche"></div>
+      <div class="jauge-bloc" id="statut" hidden>
+        <div class="jauge" id="jauge" role="img" aria-label="Rotation"><div class="centre"><b id="j-reste">–</b><small id="j-lib">jours</small></div></div>
+        <div class="jauge-texte">
+          <span class="etat-pill" id="j-etat"></span>
+          <p id="phrase"></p>
+          <div class="jauge-barre" id="j-barre" aria-hidden="true"><i id="j-barre-i"></i></div>
+          <p class="jauge-dates" id="j-dates"></p>
+          <button class="btn-s" id="b-rot" type="button"></button>
+        </div>
+      </div>
+    </div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
-    <div class="statut" id="statut" hidden><p id="phrase"></p><button class="btn-s" id="b-rot" type="button"></button></div>
+    <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
   </section>
   <div id="modules"></div>
 </main>
@@ -42,17 +61,35 @@
   // N'autorise que http(s) et les pages relatives du site : jamais javascript: ni data:
   function lienSur(u) { u = String(u || ''); return /^(https?:\/\/|[A-Za-z0-9_\-\/]+\.html)/.test(u) ? u : '#'; }
 
-  function dessiner(r) {
-    var u = r.user;
+  // ---------- Fiche de l'agent ----------
+  function initiales(nom) { var m = String(nom || '').trim().split(/\s+/).filter(function (x) { return /[A-Za-zÀ-ÿ]/.test(x); }); return ((m[0] || '?').charAt(0) + (m[1] ? m[1].charAt(0) : '')).toUpperCase(); }
+  function anciennete(iso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return '';
+    var d = new Date(iso + 'T00:00:00'), n = new Date(); if (isNaN(d) || d > n) return '';
+    var mois = (n.getFullYear() - d.getFullYear()) * 12 + n.getMonth() - d.getMonth() - (n.getDate() < d.getDate() ? 1 : 0);
+    if (mois >= 12) { var an = Math.floor(mois / 12), r = mois % 12; return an + ' an' + (an > 1 ? 's' : '') + (r ? ' ' + r + ' mois' : ''); }
+    if (mois >= 1) return mois + ' mois';
+    var j = Math.floor((n - d) / 86400000); return j <= 0 ? 'aujourd\'hui' : j + ' jour' + (j > 1 ? 's' : '');
+  }
+  function dessinerFiche(u) {
     $('qui').textContent = u.nom;
-    $('salut').textContent = 'Bonjour ' + [u.civilite, u.nom].filter(Boolean).join(' ');
-    $('infos').hidden = true;
-    var champs = [['Matricule', u.matricule], ['Fonction', u.fonction], ['Service', u.service], ['Employeur', u.dependance],
-                  ['Rôle', u.role_libelle || ROLES[u.role] || u.role], ['E-mail', u.email], ['Téléphone', u.telephone]].filter(function (c) { return c[1]; });
-    var fiche = $('fiche'); fiche.textContent = ''; fiche.hidden = !champs.length;
-    champs.forEach(function (c) { var d = document.createElement('div'); var l = document.createElement('span'); l.textContent = c[0]; var v = document.createElement('b'); v.textContent = c[1]; v.title = c[1]; d.appendChild(l); d.appendChild(v); if (c[0] === 'Employeur') Employeur.teinter(d, c[1]); fiche.appendChild(d); });
-    var bm = document.createElement('button'); bm.className = 'btn-s'; bm.type = 'button'; bm.textContent = 'Changer mon mot de passe'; bm.addEventListener('click', ouvrirMdp);
-    var dm = document.createElement('div'); dm.className = 'fiche-action'; dm.appendChild(bm); fiche.appendChild(dm); fiche.hidden = false;
+    $('salut').textContent = ['Bonjour', u.civilite].filter(Boolean).join(' ');
+    $('nom-agent').textContent = u.nom;
+    $('agent-poste').textContent = [u.fonction, u.service].filter(Boolean).join(' · ');
+    var av = $('avatar'); av.textContent = initiales(u.nom); var st = Employeur.style(u.dependance);
+    av.style.background = st ? st.fond : ''; av.style.color = st ? st.texte : ''; if (st) av.style.boxShadow = '0 0 0 3px ' + st.texte + '33';
+    var bd = $('agent-badges'); bd.textContent = '';
+    var pe = Employeur.pastille(u.dependance); if (pe) { pe.style.marginLeft = '0'; bd.appendChild(pe); }
+    bd.appendChild(el('span', 'role-pill', u.role_libelle || ROLES[u.role] || u.role || ''));
+    var integ = u.date_integration ? Rotation.frDate(u.date_integration) + (anciennete(u.date_integration) ? ' · ' + anciennete(u.date_integration) : '') : '';
+    var champs = [['Matricule', u.matricule], ['Identifiant SONA', u.sona], ['Fonction', u.fonction], ['Service', u.service], ['E-mail', u.email], ['Téléphone', u.telephone], ['Intégration', integ]].filter(function (c) { return c[1]; });
+    var fiche = $('fiche'); fiche.textContent = '';
+    champs.forEach(function (c) { var d = el('div'); d.appendChild(el('span', null, c[0])); var v = el('b', null, c[1]); v.title = c[1]; d.appendChild(v); fiche.appendChild(d); });
+    if (st) $('accueil').style.setProperty('--agent-bord', st.texte);
+  }
+
+  function dessiner(r) {
+    dessinerFiche(r.user);
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
     var zone = $('modules'); zone.textContent = '';
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
@@ -96,17 +133,37 @@
     dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
   }
   $('b-mdp-alerte').addEventListener('click', ouvrirMdp);
+  $('b-mdp').addEventListener('click', ouvrirMdp);
 
+  var COUL = { T: '#4EA72E', R: '#E97132' };
   function dessinerStatut(nomAffiche) {
     return Api.call('situation').then(function (r) {
       var box = $('statut'); if (!r.acces) { box.hidden = true; return; }
-      box.hidden = false; box.className = 'statut' + (r.configuree ? '' : ' invite');
-      var nom = nomAffiche || r.nom;
+      box.hidden = false;
+      var j = $('jauge'), s = r.configuree ? r.situation : null;
+      var pill = $('j-etat'), dates = $('j-dates'), barre = $('j-barre'), bi = $('j-barre-i');
+      barre.hidden = true; dates.textContent = '';
       if (!r.configuree) {
-        $('phrase').textContent = 'Pour afficher votre planning (travail / repos, jours restants), indiquez où vous en êtes dans votre rotation.';
+        j.className = 'jauge vide'; j.style.setProperty('--p', 0); $('j-reste').textContent = '?'; $('j-lib').textContent = '';
+        pill.className = 'etat-pill neutre'; pill.textContent = 'Rotation non renseignée';
+        $('phrase').textContent = 'Indiquez où vous en êtes dans votre rotation pour afficher votre planning, vos jours restants et votre prochain changement.';
         $('b-rot').textContent = 'Configurer ma rotation';
+      } else if (!s) {
+        j.className = 'jauge vide'; j.style.setProperty('--p', 0); $('j-reste').textContent = '–'; $('j-lib').textContent = '';
+        pill.className = 'etat-pill neutre'; pill.textContent = 'Rotation à vérifier'; $('phrase').textContent = 'Votre rotation est enregistrée mais ne peut pas être calculée : vérifiez-la.'; $('b-rot').textContent = 'Modifier';
+      } else if (s.avant) {
+        j.className = 'jauge vide'; j.style.setProperty('--p', 0); $('j-reste').textContent = '…'; $('j-lib').textContent = 'à venir';
+        pill.className = 'etat-pill neutre'; pill.textContent = 'Pas encore commencée'; $('phrase').textContent = Rotation.phrase(s); $('b-rot').textContent = 'Modifier';
       } else {
-        $('phrase').textContent = Rotation.phrase(r.situation); $('b-rot').textContent = 'Modifier';
+        var pct = Math.max(2, Math.min(100, Math.round(s.jour / s.total * 100)));
+        j.className = 'jauge'; j.style.setProperty('--c', COUL[s.statut]); j.style.setProperty('--p', pct);
+        $('j-reste').textContent = s.restants; $('j-lib').textContent = s.restants > 1 ? 'jours restants' : 'jour restant';
+        pill.className = 'etat-pill ' + s.statut; pill.textContent = (s.statut === 'T' ? 'Au travail' : 'En repos') + ' · jour ' + s.jour + '/' + s.total;
+        $('phrase').textContent = Rotation.phrase(s);
+        bi.style.width = pct + '%'; bi.style.background = COUL[s.statut]; barre.hidden = false;
+        dates.textContent = 'Du ' + Rotation.frDate(s.depuis) + (s.prochain ? ' → prochain changement le ' + Rotation.frDate(s.prochain.date) : '');
+        j.setAttribute('aria-label', 'Rotation : jour ' + s.jour + ' sur ' + s.total + ', ' + s.restants + ' jours restants');
+        $('b-rot').textContent = 'Modifier ma rotation';
       }
       $('b-rot').onclick = function () { Rotation.ouvrir({ valeurs: r.rotation, onOk: function () { dessinerStatut(nomAffiche); } }); };
     }).catch(function () { $('statut').hidden = true; });
@@ -114,7 +171,7 @@
 
   Api.call('menu').then(function (r) { dessiner(r); return dessinerStatut(r.user.nom); }).catch(function (e) {
     if (e.code === 'SESSION' || !Api.token() && !Api.demo) { Api.setToken(''); location.replace('connexion.html'); return; }
-    $('infos').textContent = 'Erreur : ' + e.message;
+    $('nom-agent').textContent = 'Erreur : ' + e.message;
   });
 
   $('quitter').addEventListener('click', function () {

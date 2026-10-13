@@ -48,12 +48,20 @@ var Auth = (function () {
     return poserCode_(email, CFG.CODE_ACTIVATION_HEURES * 3600000);
   }
 
-  /** Liste du sélecteur : noms seulement (jamais d'e-mail ni de matricule), identifiant opaque. */
-  function liste() {
-    return Store.table('Utilisateurs')
+  /**
+   * Recherche pour la page de connexion (publique) : AUCUNE liste complète n'est jamais renvoyée.
+   * Il faut au moins 3 lettres ; on renvoie au plus 8 personnes dont le nom contient tous les mots tapés
+   * (sans tenir compte des accents ni des majuscules). Jamais d'e-mail, de matricule ni de numéro.
+   */
+  function liste(q) {
+    var mots = Annuaire.norm(q).split(' ').filter(Boolean);
+    if (Annuaire.norm(q).replace(/ /g, '').length < 3) return { utilisateurs: [], plus: false, court: true };
+    var trouves = Store.table('Utilisateurs')
       .filter(function (u) { return String(u.actif) !== '0' && u.uid; })
       .map(function (u) { return { uid: u.uid, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service }; })
+      .filter(function (u) { var h = Annuaire.norm(u.nom); return mots.every(function (m) { return h.indexOf(m) !== -1; }); })
       .sort(function (a, b) { return String(a.nom).localeCompare(String(b.nom), 'fr'); });
+    return { utilisateurs: trouves.slice(0, 8), plus: trouves.length > 8, court: false };
   }
 
   function resoudre_(ident) {
@@ -137,7 +145,8 @@ var Auth = (function () {
 
   function publique_(u) {
     return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), civilite: u.civilite || '', matricule: u.matricule || '', role: u.role, service: u.service, fonction: u.fonction,
-             dependance: u.dependance || '', telephone: u.telephone || '' };
+             dependance: u.dependance || '', telephone: u.telephone || '',
+             sona: u.sona || '', date_integration: Annuaire.dateIso(u.date_integration) };
   }
 
   function userFromToken(token) {

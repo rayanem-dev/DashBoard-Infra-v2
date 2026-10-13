@@ -6,7 +6,7 @@
  * Planning (module « planning ») : situation, rotation_enregistrer (soi-même : niveau 1 ; autrui : niveau 3), planning (niveau 2 : tout le monde).
  * Rapports journaliers (module « rapports ») : rapports_chantiers, rapport_enregistrer, rapports_liste, rapport_viser, rapports_synthese (niveau 3).
  * Administration (niveau 3 sur le module « securite ») : admin_etat, admin_role, admin_actif, admin_droit, admin_exception, emettreCode.
- * Actions : liste, demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, admin_app, emettreCode (admin).
+ * Actions : liste (recherche : { q } — 3 lettres minimum, 8 résultats au plus), demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, admin_app, emettreCode (admin).
  * `ident` = identifiant opaque (uid) choisi dans le sélecteur ; l'e-mail est aussi accepté.
  * Les données métier ne sortent QUE par cette passerelle, jamais par un lien public.
  */
@@ -30,7 +30,7 @@ function doGet() {
 function route_(req) {
   chargerRoles_();
   switch (req.action) {
-    case 'liste':        return { utilisateurs: Auth.liste() };
+    case 'liste':        return Auth.liste(req.q);
     case 'demanderCode': return Auth.demanderCode(req.ident);
     case 'login':   return Auth.login(req.ident, req.mdp, req.remember);
     case 'activer': return Auth.activer(req.ident, req.code, req.mdp, req.remember);

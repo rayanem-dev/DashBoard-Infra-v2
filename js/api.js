@@ -110,7 +110,10 @@
   function demo(action, p) {
     var u = DEMO_USERS.filter(function (x) { return x.uid === p.ident; })[0];
     switch (action) {
-      case 'liste': return { utilisateurs: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service }; }) };
+      case 'liste': { var qn = String(p.q || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(), mots = qn.split(/\s+/).filter(Boolean);
+        if (qn.replace(/\s+/g, '').length < 3) return { utilisateurs: [], plus: false, court: true };
+        var tr = DEMO_USERS.filter(function (x) { var h = x.nom.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); return mots.every(function (m) { return h.indexOf(m) !== -1; }); });
+        return { utilisateurs: tr.slice(0, 8).map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service }; }), plus: tr.length > 8, court: false }; }
       case 'demanderCode': if (!u) throw erreur('Utilisateur inconnu'); return { masque: u.email.slice(0, 2) + '***@exemple.dz', minutes: 30 };
       case 'activer': if (!u || p.code !== '123456') throw erreur('Code invalide ou expiré');
         if (String(p.mdp || '').length < 4) throw erreur('Mot de passe : 4 caractères minimum'); return connecterDemo(u, p.remember);
@@ -180,7 +183,8 @@
   function cibleDemo(email) { var u = DEMO_USERS.filter(function (x) { return x.email === email; })[0]; if (!u) throw erreur('Utilisateur inconnu'); return u; }
   function pub(u) {
     return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: u.matricule || ('9' + u.uid.slice(1) + '4' + u.uid.slice(1) + 'B'), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
-             service: u.service, fonction: u.fonction || '', dependance: u.dependance || 'SONATRACH', telephone: u.telephone || '' };
+             service: u.service, fonction: u.fonction || '', dependance: u.dependance || 'SONATRACH', telephone: u.telephone || '',
+             sona: u.sona || ('sona' + (10000 + Number(String(u.uid).slice(1)))), date_integration: u.date_integration || '2025-03-17' };
   }
   function connecterDemo(u, remember) { demoState.user = u; var r = { token: 'demo', user: pub(u) }; if (remember) r.remember = 'demo-rm-' + u.uid; return r; }
 
