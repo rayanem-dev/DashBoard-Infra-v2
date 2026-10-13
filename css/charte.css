@@ -237,3 +237,9 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent-infos .a-completer { display: block; margin-top: 1px; padding: 0; border: 0; background: none; font: inherit; font-size: 12px; font-weight: 700; color: var(--orange-main); cursor: pointer; text-decoration: underline dotted; }
 
 .note-mdp { background: #FFF7ED; border: 1px solid #FED7AA; color: #7C2D12; border-radius: 10px; padding: 9px 12px; font-size: 13px; line-height: 1.45; margin: 0 0 12px; }
+
+.raccourcis { margin-left: auto; display: flex; gap: 8px; align-self: flex-start; }
+.raccourci { position: relative; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; text-decoration: none; background: #fff; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.08); transition: transform .15s, box-shadow .15s; }
+.raccourci:hover, .raccourci:focus-visible { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.14); border-color: var(--orange-main); }
+.raccourci span { position: absolute; top: 44px; right: 0; white-space: nowrap; font-size: 11px; font-weight: 600; color: #fff; background: #1F2937; padding: 3px 8px; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 5; }
+.raccourci:hover span, .raccourci:focus-visible span { opacity: 1; }

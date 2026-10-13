@@ -11,6 +11,12 @@
     { uid: 'u5', nom: 'OUALI Nadia', service: 'Travaux Entretien', role: 'agent', email: 'n.ouali@exemple.dz', fonction: 'Technicienne', dependance: 'ACOSCO' },
     { uid: 'u6', nom: 'BRAHIMI Samir', service: 'Travaux Entretien', role: 'agent', email: 's.brahimi@exemple.dz', fonction: 'Technicien' }
   ];
+  // En démonstration, tout le monde a au moins le niveau 1 du module « planning » (comme les droits par défaut de la vraie passerelle).
+  function menuDemo(role) {
+    var m = (DEMO_MENU[role] || []).slice();
+    if (!m.some(function (x) { return x.id === 'planning'; })) m.push({ id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 1, apps: [{ titre: 'Planning & rotations', description: 'Votre planning : 1 mois, 3 mois, 6 mois, 1 an.', emoji: '🗓️', url: 'planning.html' }] });
+    return m;
+  }
   var DEMO_MENU = {
     chef_division: [
       { id: 'pilotage', titre: 'Pilotage & Projets', icone: '📊', niveau: 3, apps: [
@@ -121,7 +127,7 @@
       case 'reprendre': { var m = /^demo-rm-(.+)$/.exec(p.rt || ''); var ur = m && DEMO_USERS.filter(function (x) { return x.uid === m[1]; })[0];
         if (!ur) throw erreur('Session expirée', 'SESSION'); return connecterDemo(ur, true); }
       case 'menu': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        return { user: pub(demoState.user), mdp_par_defaut: demoState.user.uid === 'u6', menu: DEMO_MENU[demoState.user.role] || [] };
+        return { user: pub(demoState.user), mdp_par_defaut: demoState.user.uid === 'u6', menu: menuDemo(demoState.user.role) };
       case 'logout': demoState.user = null; return {};
       case 'changer_mdp': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.ancien !== 'Demo2026!' && p.ancien !== '0000') throw erreur('Ancien mot de passe incorrect');

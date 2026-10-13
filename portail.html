@@ -26,6 +26,7 @@
         <p class="agent-poste" id="agent-poste"></p>
         <div class="agent-badges" id="agent-badges"></div>
       </div>
+      <nav class="raccourcis" id="raccourcis" aria-label="Raccourcis planning" hidden></nav>
     </div>
     <div class="agent-corps">
       <div class="agent-infos" id="fiche"></div>
@@ -41,7 +42,7 @@
       </div>
     </div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
-    <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button><a class="lien" id="b-oubli" href="#" hidden>✉️ Mot de passe oublié ? Demander au secrétariat</a></div>
+    <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
   </section>
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
   <div id="modules"></div>
@@ -94,13 +95,22 @@
       else { var v = el('b', null, c[1]); v.title = c[1]; d.appendChild(v); }
       fiche.appendChild(d);
     });
-    var mail = window.SECRETARIAT_EMAIL, oubli = $('b-oubli');
-    if (mail) { oubli.hidden = false; oubli.href = 'mailto:' + mail + '?subject=' + encodeURIComponent('Réinitialisation de mon mot de passe') + '&body=' + encodeURIComponent('Bonjour,\n\nJ\'ai oublié mon mot de passe du portail de la division Infrastructure.\nMerci de m\'envoyer un code de réinitialisation.\n\nNom : ' + u.nom + (u.matricule ? '\nMatricule : ' + u.matricule : '') + '\n\nCordialement.'); }
     if (st) $('accueil').style.setProperty('--agent-bord', st.texte);
   }
 
+  // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
+  function raccourcis(menu) {
+    var m = (menu || []).filter(function (x) { return x.id === 'planning'; })[0], nav = $('raccourcis'); nav.textContent = '';
+    if (!m) { nav.hidden = true; return; }
+    [['📅', 'Mon planning', 'planning.html?moi=1', 1], ['👥', 'Planning des équipes', 'planning.html', 2]].forEach(function (x) {
+      if (m.niveau < x[3]) return;
+      var a = el('a', 'raccourci', x[0]); a.href = x[2]; a.title = x[1]; a.setAttribute('aria-label', x[1]); a.appendChild(el('span', null, x[1])); nav.appendChild(a);
+    });
+    nav.hidden = !nav.children.length;
+  }
+
   function dessiner(r) {
-    dessinerFiche(r.user);
+    dessinerFiche(r.user); raccourcis(r.menu);
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
     var zone = $('modules'); zone.textContent = '';
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }

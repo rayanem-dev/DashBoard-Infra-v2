@@ -198,9 +198,11 @@
   function sauver() { try { localStorage.setItem(CLE_SVC, JSON.stringify(masques)); } catch (e) {} }
 
   // ---------- Chargement ----------
+  var MOI = /[?&]moi=1(&|$)/.test(location.search); // « Mon planning » depuis la fiche du portail : seule ma ligne, même si j'ai le droit de voir les équipes
   function charger() {
     var b = bornes();
     return Api.call('planning', { debut: b.debut, jours: b.jours }).then(function (r) {
+      if (MOI) { r.lignes = r.lignes.filter(function (l) { return l.moi; }); r.peutVoirTous = false; }
       data = r;
       var chef = r.peutVoirTous; $('barre-filtres').hidden = !chef; $('titre').textContent = chef ? 'Planning & rotations' : 'Mon planning';
       if (chef) { services(); employeurs(); } dessiner();
