@@ -59,7 +59,7 @@
     var boutons = el('div', 'boutons');
     var ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
     var ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit';
-    boutons.appendChild(ann); boutons.appendChild(ok); f.appendChild(boutons);
+    if (!options.obligatoire) boutons.appendChild(ann); boutons.appendChild(ok); f.appendChild(boutons);
 
     f.addEventListener('submit', function (e) {
       e.preventDefault(); ok.disabled = true; msg.className = 'msg';
@@ -69,9 +69,14 @@
         .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
     });
     dlg.addEventListener('close', function () { dlg.remove(); });
+    if (options.obligatoire) dlg.addEventListener('cancel', function (e) { e.preventDefault(); }); // Échap ne ferme pas
     dlg.appendChild(f); document.body.appendChild(dlg);
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   }
 
-  window.Rotation = { phrase: phrase, ouvrir: ouvrir, frDate: frDate, aujourdhui: aujourdhui };
+  /** Les autres pages exigent une rotation renseignée : sinon retour au portail, où elle est demandée avant tout accès. */
+  function exiger() {
+    Api.call('situation').then(function (r) { if (r.acces && !r.configuree) location.replace('portail.html'); }).catch(function () {});
+  }
+  window.Rotation = { exiger: exiger, phrase: phrase, ouvrir: ouvrir, frDate: frDate, aujourdhui: aujourdhui };
 })();

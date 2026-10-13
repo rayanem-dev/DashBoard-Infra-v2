@@ -20,6 +20,7 @@
   <form class="carte" id="f-login" autocomplete="off">
     <h2>Connexion</h2>
     <p class="sous">Tapez votre nom ou votre prénom, choisissez-vous, puis saisissez votre mot de passe.</p>
+    <p class="note-mdp">🔑 <b>Première connexion ?</b> Le mot de passe par défaut est <b>0000</b> : vous pourrez le changer ensuite. Si 0000 est refusé, utilisez « Première connexion ou mot de passe oublié ? » ci-dessous.</p>
     <label for="q">Votre nom</label>
     <input type="text" id="q" placeholder="Nom ou prénom (3 lettres minimum)…" autocomplete="off" autocapitalize="off" spellcheck="false">
     <div class="choix" id="choix" hidden>
@@ -95,7 +96,8 @@
   function entrer(r) { Api.setToken(r.token); Api.setRemember(r.remember || ''); location.href = 'portail.html'; }
 
   // Déjà « connecté » sur cet appareil : on rouvre la session sans rien demander.
-  if (Api.remember()) Api.reprendre().then(function (ok) { if (ok) location.replace('portail.html'); });
+  if (Api.token()) location.replace('portail.html');
+  else if (Api.remember()) Api.reprendre().then(function (ok) { if (ok) location.replace('portail.html'); });
 
   $('f-login').addEventListener('submit', function (e) {
     e.preventDefault();

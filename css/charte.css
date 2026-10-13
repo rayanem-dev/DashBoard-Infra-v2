@@ -84,7 +84,7 @@ table.t tr.inactif td { opacity: .5; }
 .case input { width: 18px; height: 18px; accent-color: var(--orange-main); }
 
 /* Rotation / planning */
-.dlg { border: 0; border-radius: 16px; padding: 26px; width: min(460px, 94vw); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.dlg { margin: auto; max-height: 92vh; overflow: auto; border: 0; border-radius: 16px; padding: 26px; width: min(460px, 94vw); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .dlg::backdrop { background: rgba(26,26,46,.55); }
 .dlg h2 { font-size: 20px; margin-bottom: 4px; }
 .dlg .sous { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
@@ -235,3 +235,5 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent-actions a.lien { font-size: 12px; color: var(--text-muted); text-decoration: none; margin-top: 0; }
 .agent-actions a.lien:hover { color: var(--orange-main); text-decoration: underline; }
 .agent-infos .a-completer { display: block; margin-top: 1px; padding: 0; border: 0; background: none; font: inherit; font-size: 12px; font-weight: 700; color: var(--orange-main); cursor: pointer; text-decoration: underline dotted; }
+
+.note-mdp { background: #FFF7ED; border: 1px solid #FED7AA; color: #7C2D12; border-radius: 10px; padding: 9px 12px; font-size: 13px; line-height: 1.45; margin: 0 0 12px; }

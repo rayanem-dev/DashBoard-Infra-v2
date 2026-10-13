@@ -43,6 +43,7 @@
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
     <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button><a class="lien" id="b-oubli" href="#" hidden>✉️ Mot de passe oublié ? Demander au secrétariat</a></div>
   </section>
+  <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
   <div id="modules"></div>
 </main>
 
@@ -169,10 +170,21 @@
   $('b-mdp-alerte').addEventListener('click', ouvrirMdp);
   $('b-mdp').addEventListener('click', ouvrirMdp);
 
+  // Tant que le planning est vierge : modules masqués et fenêtre OBLIGATOIRE (ni Annuler, ni Échap) ; l'accès s'ouvre dès l'enregistrement.
+  var verrou = false;
+  function verrouiller(on, nomAffiche) {
+    $('modules').hidden = on;
+    var bandeau = $('verrou'); if (bandeau) bandeau.hidden = !on;
+    if (on && !verrou) {
+      verrou = true;
+      Rotation.ouvrir({ obligatoire: true, titre: 'Bienvenue — renseignez votre planning', onOk: function () { verrou = false; dessinerStatut(nomAffiche); } });
+    } else if (!on) verrou = false;
+  }
   var COUL = { T: '#4EA72E', R: '#E97132' };
   function dessinerStatut(nomAffiche) {
     return Api.call('situation').then(function (r) {
       var box = $('statut'); if (!r.acces) { box.hidden = true; return; }
+      verrouiller(r.acces && !r.configuree, nomAffiche);
       box.hidden = false;
       var j = $('jauge'), s = r.configuree ? r.situation : null;
       var pill = $('j-etat'), dates = $('j-dates'), barre = $('j-barre'), bi = $('j-barre-i');
