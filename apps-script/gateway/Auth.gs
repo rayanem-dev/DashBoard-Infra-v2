@@ -99,6 +99,9 @@ var Auth = (function () {
     var echec = limiter_(email);
     var l = ligneSecret_(email);
     if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); throw erreur_('Identifiant ou mot de passe incorrect'); }
+    var exp = Number(l.row[6]) || 0;
+    // doit_changer > 1 : mot de passe PAR DÉFAUT, valable jusqu'à cette date (ms).
+    if (exp > 1 && Date.now() > exp) throw erreur_('Le mot de passe par défaut a expiré : utilisez « Première connexion ou mot de passe oublié ? ».', 'DEFAUT_EXPIRE');
     return connecter_(email, remember);
   }
 
@@ -132,7 +135,10 @@ var Auth = (function () {
     return { token: ouvrirSession_(u), user: publique_(u), remember: emettreRemember_(u.email) };
   }
 
-  function publique_(u) { return { email: u.email, nom: u.nom, role: u.role, service: u.service, fonction: u.fonction }; }
+  function publique_(u) {
+    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: u.matricule || '', role: u.role, service: u.service, fonction: u.fonction,
+             dependance: u.dependance || '', telephone: u.telephone || '' };
+  }
 
   function userFromToken(token) {
     var email = token ? CacheService.getScriptCache().get('S_' + token) : null;
@@ -142,12 +148,35 @@ var Auth = (function () {
     return u;
   }
 
+  /** Empreinte d'un mot de passe avec un sel neuf : { sel, empreinte } (pour l'installation du mot de passe par défaut). */
+  function empreinteDe(mdp) { var sel = Utilities.getUuid().replace(/-/g, ''); return { sel: sel, empreinte: hash(String(mdp), sel) }; }
+
+  /** true si le compte utilise encore le mot de passe par défaut (non expiré). */
+  function estParDefaut(email) {
+    var l = ligneSecret_(String(email || '').toLowerCase());
+    return !!l && Number(l.row[6]) > 1 && Number(l.row[6]) > Date.now();
+  }
+
+  /** Changer son mot de passe (connecté) : l'ancien est exigé. Le mot de passe par défaut ne peut pas être réutilisé. */
+  function changerMdp(token, ancien, nouveau) {
+    var u = userFromToken(token); var email = String(u.email).toLowerCase();
+    var echec = limiter_(email);
+    var l = ligneSecret_(email);
+    if (!l || !l.row[1] || hash(String(ancien || ''), l.row[1]) !== l.row[2]) { echec(); throw erreur_('Ancien mot de passe incorrect'); }
+    controleMdp_(nouveau);
+    if (String(nouveau) === String(CFG.MDP_DEFAUT)) throw erreur_('Choisissez un autre mot de passe que celui par défaut');
+    var sel = Utilities.getUuid().replace(/-/g, '');
+    l.sh.getRange(l.ligne, 1, 1, 7).setValues([[email, sel, hash(String(nouveau), sel), '', '', '', 0]]);
+    Store.journal('mdp_change', email, '');
+    return {};
+  }
+
   function logout(token, rt) {
     if (token) CacheService.getScriptCache().remove('S_' + token);
     if (rt) PropertiesService.getScriptProperties().deleteProperty(rmKey_(rt));
   }
 
-  return { reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
+  return { empreinteDe: empreinteDe, estParDefaut: estParDefaut, changerMdp: changerMdp, reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
 })();
 
 if (typeof module !== 'undefined') module.exports = Auth;

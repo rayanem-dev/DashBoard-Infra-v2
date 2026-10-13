@@ -31,6 +31,15 @@ Sijil est déjà une application Apps Script + Sheets avec : authentification (h
 - **Message d'accueil** « Bonjour M. X, vous êtes au travail depuis … il vous reste … jours » : la passerelle interroge Sijil (`dayInfo`) avec l'e-mail de l'utilisateur. À la première connexion, 3-4 questions (où êtes-vous, quelle rotation, dernier jour de relève) créent le premier pointage → le moteur calcule la suite tout seul.
 - **À faire côté Sijil** (dépôt `pointage-app`, accès en lecture seule pour l'instant) : un petit point d'entrée serveur-à-serveur protégé par un secret partagé, renvoyant `dayInfo` / planning par e-mail. Aucune modification tant que vous ne l'avez pas validée.
 
+## Planning & rotations (module `planning`)
+- Vues **Mois / 3 mois / 6 mois / 1 an** (navigation ‹ ›, « Aujourd'hui »), une frise par personne : travail / repos / absence, trait noir = aujourd'hui, survol = dates et durée. Calcul par le moteur de Sijil (copié à l'identique : `Cycle.gs`, `Dates.gs`).
+- Niveaux : **1** voit **son** planning · **2** voit tout le monde, avec **sélecteur de services** (cases à cocher, mémorisé) · **3** modifie aussi la rotation de chacun. Par défaut : chef de service et intérim = 2 ; chef de division et secrétariat = 3 ; tous les autres = 1 (`appliquerDroitsPlanning`).
+- Portail : la fiche de l'utilisateur (matricule, fonction, service, employeur, rôle, e-mail, téléphone) et sa situation du jour. Colonnes optionnelles `telephone` et `civilite` (« Monsieur », « Madame ») de l'onglet `Utilisateurs`.
+- Pied de page « Propulsé par Sijil » (lien réglable : `SIJIL_URL` dans `js/config.js`).
+
+## Mot de passe provisoire (saisie des rotations)
+`definirMotDePasseParDefaut(jours)` donne « 0000 » aux comptes qui n'ont pas encore de mot de passe, **pour 7 jours puis refusé**. Les comptes à large visibilité (secrétariat, chef de division, chefs de service et intérims, accès sécurité) sont exclus par défaut. Une bannière invite à le changer ; « 0000 » ne peut pas être gardé. `retirerMotsDePasseParDefaut()` = coupe-circuit immédiat.
+
 ## Rapports journaliers (module `rapports`)
 - Onglets `Chantiers` (liste des chantiers saisissables, modifiable) et `Rapports` (un rapport par **jour + chantier + auteur** ; ressaisir le même jour modifie le rapport). Cellules en texte brut : aucune formule ni date convertie.
 - Niveaux : **1** voit ses rapports · **2** saisit, voit et vise ceux de son service (pas les siens) · **3** voit et vise tout, **synthèse du jour** par chantier (avec les chantiers sans rapport), saisie jusqu'à 60 jours en arrière.

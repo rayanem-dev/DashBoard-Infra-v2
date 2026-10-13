@@ -5,7 +5,7 @@
  */
 var SEED_APPS = [
  ["rapports", "Rapports journaliers", "Saisie du rapport du jour par chantier (effectif, travaux, difficultés, commentaire) et suivi par la hiérarchie.", "📝", "rapports.html", 1],
- ["planning", "Planning global", "Qui est au travail, qui est en repos : vue d'ensemble des rotations de la division, prochains changements.", "🗓️", "planning.html", 2],
+ ["planning", "Planning & rotations", "Votre planning et, selon vos droits, celui de la division : 1 mois, 3 mois, 6 mois, 1 an.", "🗓️", "planning.html", 1],
  ["securite", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3],
  [
   "logistique",

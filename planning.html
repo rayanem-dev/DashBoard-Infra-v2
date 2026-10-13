@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Planning global – Division Infrastructure RNS</title>
+<title>Planning &amp; rotations – Division Infrastructure RNS</title>
 <meta name="theme-color" content="#E85D04">
 <link rel="icon" href="icon-192.png">
 <link rel="stylesheet" href="css/charte.css">
@@ -11,24 +11,31 @@
 <body>
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">SH</div>
-    <div class="logo-text"><h1>Planning global</h1><p>Sonatrach · RNS · Rotations de la division</p></div></div>
+    <div class="logo-text"><h1 id="titre">Planning &amp; rotations</h1><p>Sonatrach · RNS · Travail / repos</p></div></div>
   <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Portail</a></div>
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 
 <main class="portail">
   <div class="stats" id="stats"></div>
-  <div class="barre">
+  <div class="barre" id="barre-vue">
+    <div class="vues" role="group" aria-label="Vue" id="vues">
+      <button data-v="1">Mois</button><button data-v="3">3 mois</button><button data-v="6">6 mois</button><button data-v="12">1 an</button>
+    </div>
+    <div class="nav-periode"><button class="btn-s" id="prec" type="button" aria-label="Période précédente">‹</button><b id="periode"></b><button class="btn-s" id="suiv" type="button" aria-label="Période suivante">›</button><button class="btn-s" id="auj" type="button">Aujourd'hui</button></div>
+    <div class="legende"><span><i style="background:var(--orange-main)"></i>Travail</span><span><i style="background:#9ED3B0"></i>Repos</span><span><i style="background:#FDE68A"></i>Absence</span></div>
+  </div>
+  <div class="barre" id="barre-filtres" hidden>
     <input type="text" id="q" placeholder="Rechercher un nom…" aria-label="Rechercher">
-    <select id="svc" aria-label="Service"><option value="">Tous les services</option></select>
+    <details class="svc" id="svc"><summary id="svc-resume">Services</summary><div class="liste" id="svc-liste"></div></details>
     <select id="etat" aria-label="Situation"><option value="">Toutes les situations</option><option value="T">Au travail</option><option value="R">En repos</option><option value="N">Non configurés</option></select>
-    <div class="legende"><span><i style="background:var(--orange-main)"></i>Travail</span><span><i style="background:#CDE8D6"></i>Repos</span><span><i style="background:#FDE68A"></i>Absence</span><span><i style="background:#F3F4F6"></i>Hors rotation</span></div>
   </div>
   <section class="panneau" style="padding:0">
-    <div style="overflow:auto;max-height:72vh"><table class="plan" id="tab"></table></div>
+    <div style="overflow:auto;max-height:70vh"><table class="plan2" id="tab"></table></div>
   </section>
-  <p class="aide" style="margin-top:12px">Le planning est calculé automatiquement par le moteur de rotation de Sijil à partir de la situation déclarée par chacun. La colonne entourée est aujourd'hui.</p>
+  <p class="aide" id="aide" style="margin-top:12px"></p>
 </main>
+<footer class="pied"><a id="sijil" href="https://rayanem-dev.github.io/pointage-app/" target="_blank" rel="noopener" title="Sijil — gestion des pointages et des rotations"><img src="img/sijil-symbole.png" alt="" width="16" height="16"><span>Propulsé par <b>Sijil</b></span></a></footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="js/config.js"></script>
@@ -38,43 +45,100 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (Api.demo) $('demo').hidden = false;
-  var data = null;
-  var JOURS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
-  function plus(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
-  function etatDe(l) { return !l.configuree || !l.situation || l.situation.avant ? 'N' : l.situation.statut; }
+  if (window.SIJIL_URL) $('sijil').href = window.SIJIL_URL;
+  var MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  var MCOURT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  var PX = { 1: 24, 3: 11, 6: 5.5, 12: 2.8 };   // largeur d'un jour
+  var CLE_VUE = 'infra_v2_plan_vue', CLE_SVC = 'infra_v2_plan_svc_masques';
+  var vue = 3, debutMois = null, data = null, masques = {};
+  try { vue = Number(localStorage.getItem(CLE_VUE)) || 3; masques = JSON.parse(localStorage.getItem(CLE_SVC) || '{}'); } catch (e) {}
+  if (!PX[vue]) vue = 3;
 
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function svgEl(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); return e; }
+  function d2s(d) { return d.toISOString().slice(0, 10); }
+  function s2d(s) { return new Date(s + 'T00:00:00Z'); }
+  function plus(s, n) { var d = s2d(s); d.setUTCDate(d.getUTCDate() + n); return d2s(d); }
+  function ecart(a, b) { return Math.round((s2d(b) - s2d(a)) / 86400000); }
+  function moisPlus(s, n) { var d = s2d(s); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + n); return d2s(d); }
+  function etatDe(l) { return !l.configuree || !l.situation || l.situation.avant ? 'N' : l.situation.statut; }
+  function svc(l) { return l.service || '(sans service)'; }
+  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  function court(s) { return s.slice(8) + '/' + s.slice(5, 7); }
+
+  // ---------- Période ----------
+  function bornes() { var fin = plus(moisPlus(debutMois, vue), -1); return { debut: debutMois, fin: fin, jours: ecart(debutMois, fin) + 1 }; }
+  function libellePeriode() {
+    var b = bornes(), d = s2d(b.debut), f = s2d(b.fin);
+    if (vue === 1) return MOIS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+    return MCOURT[d.getUTCMonth()] + ' ' + d.getUTCFullYear() + ' → ' + MCOURT[f.getUTCMonth()] + ' ' + f.getUTCFullYear();
+  }
+
+  // ---------- Frise SVG : un segment par suite de jours identiques ----------
+  function segments(g) { var out = [], i = 0; while (i < g.length) { var c = g.charAt(i), j = i; while (j < g.length && g.charAt(j) === c) j += 1; out.push({ c: c, a: i, n: j - i }); i = j; } return out; }
+  var COUL = { T: '#E85D04', R: '#9ED3B0', A: '#FDE68A' }, LIB = { T: 'Travail', R: 'Repos', A: 'Absence' };
+  function frise(grille, debut, n, px, aujIdx) {
+    var h = 22, s = svgEl('svg', { width: n * px, height: h, viewBox: '0 0 ' + (n * px) + ' ' + h, role: 'img' });
+    s.appendChild(svgEl('rect', { x: 0, y: 4, width: n * px, height: h - 8, rx: 3, fill: '#F3F4F6' }));
+    segments(grille).forEach(function (g) {
+      if (!COUL[g.c]) return;
+      var r = svgEl('rect', { x: g.a * px, y: 4, width: g.n * px - (px > 6 ? 1 : 0), height: h - 8, rx: px > 6 ? 3 : 1, fill: COUL[g.c] });
+      var t = svgEl('title'); t.textContent = LIB[g.c] + ' : du ' + court(plus(debut, g.a)) + ' au ' + court(plus(debut, g.a + g.n - 1)) + ' (' + g.n + ' jour' + (g.n > 1 ? 's' : '') + ')';
+      r.appendChild(t); s.appendChild(r);
+      if (px >= 20) {
+        for (var k = 0; k < g.n; k += 1) {
+          var tx = svgEl('text', { x: (g.a + k) * px + px / 2, y: 15, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: g.c === 'T' ? '#fff' : '#1B5E36' });
+          tx.textContent = g.c; s.appendChild(tx);
+        }
+      }
+    });
+    if (aujIdx >= 0 && aujIdx < n) s.appendChild(svgEl('rect', { x: aujIdx * px - 1, y: 0, width: Math.max(2, px > 6 ? 2 : 1.5), height: h, fill: '#1A1A2E' }));
+    return s;
+  }
+  function entete(debut, n, px, aujIdx) {
+    var h = 34, s = svgEl('svg', { width: n * px, height: h, viewBox: '0 0 ' + (n * px) + ' ' + h });
+    for (var i = 0; i < n; i += 1) {
+      var d = plus(debut, i), jour = s2d(d).getUTCDate();
+      if (jour === 1 || i === 0) {
+        s.appendChild(svgEl('line', { x1: i * px, y1: 0, x2: i * px, y2: h, stroke: '#D1D5DB' }));
+        var m = svgEl('text', { x: i * px + 4, y: 12, 'font-size': 11, 'font-weight': 700, fill: '#374151' }); m.textContent = (vue === 1 ? MOIS[s2d(d).getUTCMonth()] : MCOURT[s2d(d).getUTCMonth()]) + (vue >= 6 && s2d(d).getUTCMonth() === 0 ? ' ' + s2d(d).getUTCFullYear() : ''); s.appendChild(m);
+      }
+      if (px >= 20 || (px >= 10 && (jour % 5 === 0 || jour === 1)) ) {
+        var t = svgEl('text', { x: i * px + px / 2, y: 28, 'text-anchor': 'middle', 'font-size': px >= 20 ? 10 : 9, fill: i === aujIdx ? '#E85D04' : '#6B7280', 'font-weight': i === aujIdx ? 700 : 400 }); t.textContent = jour; s.appendChild(t);
+      }
+      if (i === aujIdx) s.appendChild(svgEl('rect', { x: i * px, y: 30, width: px, height: 3, fill: '#E85D04' }));
+    }
+    return s;
+  }
+
+  // ---------- Dessin ----------
   function stats(lignes) {
     var c = { T: 0, R: 0, N: 0 }; lignes.forEach(function (l) { c[etatDe(l)] += 1; });
     var z = $('stats'); z.textContent = '';
-    [['T', 'Au travail'], ['R', 'En repos'], ['N', 'Non configurés']].forEach(function (x) {
-      var d = el('div', 'stat'); d.appendChild(el('b', null, String(c[x[0]]))); d.appendChild(el('span', null, x[1])); z.appendChild(d);
-    });
+    if (!data.peutVoirTous) return;
+    [['T', 'Au travail'], ['R', 'En repos'], ['N', 'Non configurés']].forEach(function (x) { var d = el('div', 'stat'); d.appendChild(el('b', null, String(c[x[0]]))); d.appendChild(el('span', null, x[1])); z.appendChild(d); });
   }
+  function servicesVisibles(l) { return !masques[svc(l)]; }
 
   function dessiner() {
-    var f = $('q').value.toLowerCase(), sv = $('svc').value, et = $('etat').value;
-    var lignes = data.lignes.filter(function (l) {
-      return (!f || (l.nom || '').toLowerCase().indexOf(f) !== -1) && (!sv || l.service === sv) && (!et || etatDe(l) === et);
-    });
-    stats(data.lignes);
+    var f = $('q').value.toLowerCase(), et = $('etat').value;
+    var base = data.peutVoirTous ? data.lignes.filter(servicesVisibles) : data.lignes;
+    stats(base);
+    var lignes = base.filter(function (l) { return (!f || (l.nom || '').toLowerCase().indexOf(f) !== -1) && (!et || etatDe(l) === et); });
+    var b = bornes(), px = PX[vue], aujIdx = ecart(b.debut, data.aujourdhui);
     var t = $('tab'); t.textContent = '';
-    var hr = el('tr'); hr.appendChild(el('th', 'nom', lignes.length + ' personne' + (lignes.length > 1 ? 's' : '')));
+    var hr = el('tr'); hr.appendChild(el('th', 'nom', data.peutVoirTous ? lignes.length + ' personne' + (lignes.length > 1 ? 's' : '') : 'Mon planning'));
     hr.appendChild(el('th', null, 'Situation'));
-    for (var i = 0; i < data.jours; i += 1) {
-      var d = plus(data.debut, i), th = el('th', 'j' + (d === data.aujourdhui ? ' auj' : ''));
-      th.appendChild(document.createTextNode(d.slice(8))); th.appendChild(document.createElement('br')); th.appendChild(document.createTextNode(JOURS[new Date(d + 'T00:00:00Z').getUTCDay()]));
-      th.title = Rotation.frDate(d); hr.appendChild(th);
-    }
+    var th = el('th', 'frise'); th.appendChild(entete(b.debut, b.jours, px, aujIdx)); hr.appendChild(th);
     var head = el('thead'); head.appendChild(hr); t.appendChild(head);
     var body = el('tbody');
     lignes.forEach(function (l) {
-      var tr = el('tr'); var n = el('td', 'nom'); n.appendChild(el('b', null, l.nom || ''));
+      var tr = el('tr', l.moi ? 'moi' : ''); var n = el('td', 'nom'); n.appendChild(el('b', null, l.nom || ''));
       n.appendChild(el('small', null, [l.fonction, l.service].filter(Boolean).join(' · ')));
       if (data.peutModifier && l.email) {
-        var b = el('button', 'btn-s', l.configuree ? 'Modifier' : 'Configurer'); b.style.marginLeft = '8px'; b.type = 'button';
-        b.addEventListener('click', function () { Rotation.ouvrir({ titre: 'Rotation de ' + l.nom, email: l.email, valeurs: l.rotation, onOk: recharger }); });
-        n.appendChild(b);
+        var bt = el('button', 'btn-s', l.configuree ? 'Modifier' : 'Configurer'); bt.style.marginLeft = '8px'; bt.type = 'button';
+        bt.addEventListener('click', function () { Rotation.ouvrir({ titre: 'Rotation de ' + l.nom, email: l.email, valeurs: l.rotation, onOk: charger }); });
+        n.appendChild(bt);
       }
       tr.appendChild(n);
       var e = el('td', 'etat'); var s = l.situation;
@@ -82,35 +146,62 @@
       else if (s.avant) e.appendChild(el('span', 'pastille N', 'Débute le ' + Rotation.frDate(s.debut)));
       else {
         e.appendChild(el('span', 'pastille ' + s.statut, s.statut === 'T' ? 'Travail' : 'Repos'));
-        e.appendChild(document.createTextNode(' j' + s.jour + '/' + s.total + ' · ' + s.restants + ' restant' + (s.restants > 1 ? 's' : '') +
-          (s.prochain ? ' · → ' + Rotation.frDate(s.prochain.date).slice(0, 5) : '')));
+        e.appendChild(document.createTextNode(' j' + s.jour + '/' + s.total + ' · ' + s.restants + ' restant' + (s.restants > 1 ? 's' : '') + (s.prochain ? ' · → ' + court(s.prochain.date) : '')));
       }
       tr.appendChild(e);
-      for (var k = 0; k < data.jours; k += 1) {
-        var ch = l.grille ? l.grille.charAt(k) : '.', cl = ch === 'T' ? 'T' : ch === 'R' ? 'R' : ch === 'A' ? 'A' : 'x';
-        var td = el('td', 'c ' + cl + (plus(data.debut, k) === data.aujourdhui ? ' auj' : ''), ch === '.' ? '' : ch);
-        tr.appendChild(td);
-      }
+      var fr = el('td', 'frise'); fr.appendChild(frise(l.grille || '', b.debut, b.jours, px, aujIdx)); tr.appendChild(fr);
       body.appendChild(tr);
     });
     t.appendChild(body);
+    $('periode').textContent = libellePeriode();
+    $('aide').textContent = 'Calculé automatiquement par le moteur de rotation de Sijil à partir de la situation déclarée de chacun. Trait noir = aujourd\'hui. Survolez une barre pour le détail.';
   }
 
-  function recharger() {
-    return Api.call('planning').then(function (r) {
+  function services() {
+    var liste = $('svc-liste'); liste.textContent = '';
+    var noms = Array.from(new Set(data.lignes.map(svc))).sort();
+    var outils = el('div', 'outils');
+    [['Tout afficher', false], ['Tout masquer', true]].forEach(function (x) {
+      var b = el('button', 'lien', x[0]); b.type = 'button'; b.style.marginTop = '0'; b.addEventListener('click', function () { noms.forEach(function (n) { masques[n] = x[1]; }); sauver(); services(); dessiner(); }); outils.appendChild(b);
+    });
+    liste.appendChild(outils);
+    noms.forEach(function (n) {
+      var nb = data.lignes.filter(function (l) { return svc(l) === n; }).length;
+      var lab = el('label', 'case'); var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !masques[n];
+      cb.addEventListener('change', function () { masques[n] = !cb.checked; sauver(); resume(); dessiner(); });
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + n + ' (' + nb + ')')); liste.appendChild(lab);
+    });
+    resume();
+  }
+  function resume() { var noms = Array.from(new Set(data.lignes.map(svc))); var vis = noms.filter(function (n) { return !masques[n]; }).length; $('svc-resume').textContent = 'Services : ' + vis + ' / ' + noms.length; }
+  function sauver() { try { localStorage.setItem(CLE_SVC, JSON.stringify(masques)); } catch (e) {} }
+
+  // ---------- Chargement ----------
+  function charger() {
+    var b = bornes();
+    return Api.call('planning', { debut: b.debut, jours: b.jours }).then(function (r) {
       data = r;
-      var sv = $('svc'), cur = sv.value; sv.length = 1;
-      Array.from(new Set(r.lignes.map(function (l) { return l.service; }).filter(Boolean))).sort().forEach(function (s) { var o = el('option', null, s); o.value = s; sv.appendChild(o); });
-      sv.value = cur; dessiner();
+      var chef = r.peutVoirTous; $('barre-filtres').hidden = !chef; $('titre').textContent = chef ? 'Planning & rotations' : 'Mon planning';
+      if (chef) services(); dessiner();
     });
   }
-  ['q', 'svc', 'etat'].forEach(function (id) { $(id).addEventListener('input', function () { if (data) dessiner(); }); });
-
-  recharger().catch(function (e) {
-    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
-    if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé aux responsables (niveau 2 sur le module Planning).'; return; }
-    var t = $('toast'); t.textContent = e.message; t.className = 'toast on err';
+  function majVues() { document.querySelectorAll('#vues button').forEach(function (b) { b.classList.toggle('actif', Number(b.dataset.v) === vue); }); }
+  document.querySelectorAll('#vues button').forEach(function (b) {
+    b.addEventListener('click', function () { vue = Number(b.dataset.v); try { localStorage.setItem(CLE_VUE, String(vue)); } catch (e) {} majVues(); charger().catch(erreur); });
   });
+  $('prec').addEventListener('click', function () { debutMois = moisPlus(debutMois, -vue); charger().catch(erreur); });
+  $('suiv').addEventListener('click', function () { debutMois = moisPlus(debutMois, vue); charger().catch(erreur); });
+  $('auj').addEventListener('click', function () { debutMois = moisPlus(Rotation.aujourdhui(), 0).slice(0, 8) + '01'; charger().catch(erreur); });
+  ['q', 'etat'].forEach(function (id) { $(id).addEventListener('input', function () { if (data) dessiner(); }); });
+  document.addEventListener('click', function (e) { var d = $('svc'); if (d.open && !d.contains(e.target)) d.open = false; });
+
+  function erreur(e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Le module « Planning & rotations » n\'est pas activé pour votre compte.'; return; }
+    toast(e.message, true);
+  }
+  debutMois = Rotation.aujourdhui().slice(0, 8) + '01'; majVues();
+  charger().catch(erreur);
 })();
 </script>
 </body>

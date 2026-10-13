@@ -24,6 +24,7 @@
    */
   function ouvrir(options) {
     var v = options.valeurs || {};
+    if (!v.jours_travail) { try { var m = JSON.parse(localStorage.getItem('infra_v2_derniere_rotation') || 'null'); if (m) v = Object.assign({}, m, v); } catch (e) {} }
     var dlg = el('dialog', 'dlg');
     var f = el('form'); f.method = 'dialog';
     f.appendChild(el('h2', null, options.titre || 'Où en êtes-vous ?'));
@@ -64,7 +65,7 @@
       e.preventDefault(); ok.disabled = true; msg.className = 'msg';
       var p = { statut: sStat.value, depuis: iDate.value, jours_travail: Number(jt.value), jours_repos: Number(jr.value) };
       if (options.email) p.email = options.email;
-      Api.call('rotation_enregistrer', p).then(function () { dlg.close(); if (options.onOk) options.onOk(); })
+      Api.call('rotation_enregistrer', p).then(function () { try { localStorage.setItem('infra_v2_derniere_rotation', JSON.stringify({ statut: p.statut, jours_travail: p.jours_travail, jours_repos: p.jours_repos })); } catch (e) {} dlg.close(); if (options.onOk) options.onOk(); })
         .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
     });
     dlg.addEventListener('close', function () { dlg.remove(); });

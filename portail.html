@@ -20,6 +20,8 @@
   <section class="accueil" id="accueil">
     <h2 id="salut">Bonjour</h2>
     <p id="infos">Chargement de votre espace…</p>
+    <div class="fiche-user" id="fiche" hidden></div>
+    <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
     <div class="statut" id="statut" hidden><p id="phrase"></p><button class="btn-s" id="b-rot" type="button"></button></div>
   </section>
   <div id="modules"></div>
@@ -40,9 +42,17 @@
   function lienSur(u) { u = String(u || ''); return /^(https?:\/\/|[A-Za-z0-9_\-\/]+\.html)/.test(u) ? u : '#'; }
 
   function dessiner(r) {
-    $('qui').textContent = r.user.nom;
-    $('salut').textContent = 'Bonjour ' + r.user.nom;
-    $('infos').textContent = (r.user.role_libelle || ROLES[r.user.role] || r.user.role || '') + (r.user.service ? ' · ' + r.user.service : '');
+    var u = r.user;
+    $('qui').textContent = u.nom;
+    $('salut').textContent = 'Bonjour ' + [u.civilite, u.nom].filter(Boolean).join(' ');
+    $('infos').hidden = true;
+    var champs = [['Matricule', u.matricule], ['Fonction', u.fonction], ['Service', u.service], ['Employeur', u.dependance],
+                  ['Rôle', u.role_libelle || ROLES[u.role] || u.role], ['E-mail', u.email], ['Téléphone', u.telephone]].filter(function (c) { return c[1]; });
+    var fiche = $('fiche'); fiche.textContent = ''; fiche.hidden = !champs.length;
+    champs.forEach(function (c) { var d = document.createElement('div'); var l = document.createElement('span'); l.textContent = c[0]; var v = document.createElement('b'); v.textContent = c[1]; v.title = c[1]; d.appendChild(l); d.appendChild(v); fiche.appendChild(d); });
+    var bm = document.createElement('button'); bm.className = 'btn-s'; bm.type = 'button'; bm.textContent = 'Changer mon mot de passe'; bm.addEventListener('click', ouvrirMdp);
+    var dm = document.createElement('div'); dm.className = 'fiche-action'; dm.appendChild(bm); fiche.appendChild(dm); fiche.hidden = false;
+    $('alerte-mdp').hidden = !r.mdp_par_defaut;
     var zone = $('modules'); zone.textContent = '';
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
     r.menu.forEach(function (m) {
@@ -59,6 +69,30 @@
       sec.appendChild(g); zone.appendChild(sec);
     });
   }
+
+  function ouvrirMdp() {
+    var dlg = document.createElement('dialog'); dlg.className = 'dlg';
+    var f = document.createElement('form'); f.method = 'dialog';
+    var h = document.createElement('h2'); h.textContent = 'Changer mon mot de passe'; f.appendChild(h);
+    var champs = {}; [['ancien', 'Mot de passe actuel', 'current-password'], ['nouveau', 'Nouveau mot de passe (4 caractères minimum)', 'new-password'], ['confirmer', 'Confirmer le nouveau', 'new-password']].forEach(function (c) {
+      var w = document.createElement('div'); w.className = 'champ'; var l = document.createElement('label'); l.textContent = c[1];
+      var i = document.createElement('input'); i.type = 'password'; i.autocomplete = c[2]; i.style.cssText = 'width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit;font-size:15px';
+      champs[c[0]] = i; w.appendChild(l); w.appendChild(i); f.appendChild(w);
+    });
+    var msg = document.createElement('div'); msg.className = 'msg'; f.appendChild(msg);
+    var bt = document.createElement('div'); bt.className = 'boutons';
+    var ann = document.createElement('button'); ann.type = 'button'; ann.className = 'btn-s'; ann.textContent = 'Annuler'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = document.createElement('button'); ok.type = 'submit'; ok.className = 'btn'; ok.textContent = 'Enregistrer'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); msg.className = 'msg';
+      if (champs.nouveau.value !== champs.confirmer.value) { msg.textContent = 'Les deux nouveaux mots de passe sont différents.'; msg.className = 'msg err'; return; }
+      ok.disabled = true;
+      Api.call('changer_mdp', { ancien: champs.ancien.value, nouveau: champs.nouveau.value }).then(function () { dlg.close(); $('alerte-mdp').hidden = true; })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
+  $('b-mdp-alerte').addEventListener('click', ouvrirMdp);
 
   function dessinerStatut(nomAffiche) {
     return Api.call('situation').then(function (r) {

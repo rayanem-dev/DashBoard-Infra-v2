@@ -6,7 +6,10 @@
   var DEMO_USERS = [
     { uid: 'u1', nom: 'BENALI Karim', service: 'Division Infrastructures', role: 'chef_division', email: 'k.benali@exemple.dz' },
     { uid: 'u2', nom: 'MEZIANE Sofia', service: 'Service Construction', role: 'conducteur', email: 's.meziane@exemple.dz' },
-    { uid: 'u3', nom: 'TAHRI Yacine', service: 'Cellule Passation de marché', role: 'cpm', email: 'y.tahri@exemple.dz' }
+    { uid: 'u3', nom: 'TAHRI Yacine', service: 'Cellule Passation de marché', role: 'cpm', email: 'y.tahri@exemple.dz' },
+    { uid: 'u4', nom: 'KHELIFI Amine', service: 'Service Construction', role: 'conducteur', email: 'a.khelifi@exemple.dz', fonction: 'Conducteur des travaux' },
+    { uid: 'u5', nom: 'OUALI Nadia', service: 'Travaux Entretien', role: 'agent', email: 'n.ouali@exemple.dz', fonction: 'Technicienne' },
+    { uid: 'u6', nom: 'BRAHIMI Samir', service: 'Travaux Entretien', role: 'agent', email: 's.brahimi@exemple.dz', fonction: 'Technicien' }
   ];
   var DEMO_MENU = {
     chef_division: [
@@ -64,7 +67,9 @@
   function demoRots() {
     var d; try { d = JSON.parse(sessionStorage.getItem(CLE_ROT) || 'null'); } catch (e) { d = null; }
     if (!d) { d = { 'k.benali@exemple.dz': { statut: 'T', depuis: plus(auj(), -9), jours_travail: 28, jours_repos: 28 },
-                    's.meziane@exemple.dz': { statut: 'R', depuis: plus(auj(), -3), jours_travail: 14, jours_repos: 14 } }; }
+                    's.meziane@exemple.dz': { statut: 'R', depuis: plus(auj(), -3), jours_travail: 14, jours_repos: 14 },
+                    'a.khelifi@exemple.dz': { statut: 'T', depuis: plus(auj(), -20), jours_travail: 28, jours_repos: 28 },
+                    'n.ouali@exemple.dz': { statut: 'R', depuis: plus(auj(), -5), jours_travail: 4, jours_repos: 4 } }; }
     return d;
   }
   function saveRots(d) { try { sessionStorage.setItem(CLE_ROT, JSON.stringify(d)); } catch (e) {} }
@@ -113,8 +118,12 @@
       case 'reprendre': { var m = /^demo-rm-(.+)$/.exec(p.rt || ''); var ur = m && DEMO_USERS.filter(function (x) { return x.uid === m[1]; })[0];
         if (!ur) throw erreur('Session expirée', 'SESSION'); return connecterDemo(ur, true); }
       case 'menu': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        return { user: pub(demoState.user), menu: DEMO_MENU[demoState.user.role] || [] };
+        return { user: pub(demoState.user), mdp_par_defaut: demoState.user.uid === 'u6', menu: DEMO_MENU[demoState.user.role] || [] };
       case 'logout': demoState.user = null; return {};
+      case 'changer_mdp': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        if (p.ancien !== 'Demo2026!' && p.ancien !== '0000') throw erreur('Ancien mot de passe incorrect');
+        if (String(p.nouveau || '').length < 4) throw erreur('Mot de passe : 4 caractères minimum');
+        if (p.nouveau === '0000') throw erreur('Choisissez un autre mot de passe que celui par défaut'); return {}; }
       case 'admin_etat': exigerAdmin();
         return { roles: demoRoles.map(function (r) { var n = DEMO_USERS.filter(function (u) { return u.role === r.id; }).length; return Object.assign({ nb_utilisateurs: n }, r); }),
           applications: demoApps, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
@@ -154,38 +163,12 @@
         var tous = demoRots(); tous[cible] = { statut: p.statut, depuis: p.depuis, jours_travail: p.jours_travail, jours_repos: p.jours_repos }; saveRots(tous);
         return { acces: true, configuree: true }; }
       case 'planning': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        if (demoState.user.role !== 'chef_division') throw erreur('Droits insuffisants', 'DROITS');
-        var d0 = plus(auj(), -7), n = 35, all = demoRots();
-        return { aujourdhui: auj(), debut: d0, jours: n, peutModifier: true, lignes: DEMO_USERS.map(function (x) {
-          var r = all[x.email], l = { nom: x.nom, service: x.service, fonction: '', email: x.email, configuree: !!r };
-          if (r) { l.rotation = r; l.situation = demoSituation(r); l.grille = demoGrille(r, d0, n); }
-          return l; }) }; }
-      case 'rapports_chantiers': { if (niveauRap() < 1) throw erreur('Droits insuffisants', 'DROITS'); return { chantiers: DEMO_CHANTIERS }; }
-      case 'rapports_liste': { var nv = niveauRap(); if (nv < 1) throw erreur('Droits insuffisants', 'DROITS'); var u = demoState.user;
-        var l = demoRapports().filter(function (r) { return vuRap(r, nv) && (!p.du || r.date >= p.du) && (!p.au || r.date <= p.au) && (!p.chantier || r.chantier === p.chantier); })
-          .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
-          .map(function (r) { return Object.assign({}, r, { le_mien: r.auteur_email === u.email, peut_viser: nv >= 2 && r.auteur_email !== u.email }); });
-        return { du: p.du, au: p.au, niveau: nv, rapports: l, tronque: false }; }
-      case 'rapport_enregistrer': { var n2 = niveauRap(); if (n2 < 2) throw erreur('Droits insuffisants', 'DROITS'); var uu = demoState.user;
-        if (!DEMO_CHANTIERS.some(function (c) { return c.id === p.chantier; })) throw erreur('Chantier inconnu');
-        if (!p.date || p.date > auj()) throw erreur('La date ne peut pas être dans le futur');
-        if (ecart(p.date, auj()) > (n2 >= 3 ? 60 : 7)) throw erreur('Rapport trop ancien (' + (n2 >= 3 ? 60 : 7) + ' jours maximum)');
-        if (p.effectif === '' || !(Number(p.effectif) >= 0) || Math.floor(Number(p.effectif)) !== Number(p.effectif)) throw erreur('Effectif : nombre entier de 0 à 1000');
-        if (String(p.travaux || '').trim().length < 3) throw erreur('Décrivez les travaux réalisés');
-        var rr = demoRapports(), id = [p.date, p.chantier, uu.email].join('|'), ex2 = rr.filter(function (r) { return r.id === id; })[0];
-        var nouv = { id: id, date: p.date, chantier: p.chantier, auteur_email: uu.email, auteur_nom: uu.nom, service: uu.service, effectif: Number(p.effectif),
-          travaux: p.travaux.trim(), difficultes: (p.difficultes || '').trim(), commentaire: (p.commentaire || '').trim(), avancement: p.avancement === '' ? '' : Number(p.avancement), visa_par: '', visa_note: '', visa_le: '' };
-        if (ex2) Object.assign(ex2, nouv, { visa_par: ex2.visa_par, visa_note: ex2.visa_note }); else rr.push(nouv);
-        saveRap(rr); return { id: id, modifie: !!ex2 }; }
-      case 'rapport_viser': { var n3 = niveauRap(); var rv = demoRapports(); var cible2 = rv.filter(function (r) { return r.id === p.id; })[0];
-        if (!cible2) throw erreur('Rapport introuvable');
-        if (n3 < 2 || cible2.auteur_email === demoState.user.email || !vuRap(cible2, n3)) throw erreur('Vous ne pouvez pas viser ce rapport', 'DROITS');
-        cible2.visa_par = demoState.user.nom; cible2.visa_note = p.note || ''; saveRap(rv); return {}; }
-      case 'rapports_synthese': { if (niveauRap() < 3) throw erreur('Droits insuffisants', 'DROITS'); var jour = p.date || auj(); var rs = demoRapports();
-        var cs = DEMO_CHANTIERS.map(function (c) { var x = rs.filter(function (r) { return r.date === jour && r.chantier === c.id; });
-          var avs = x.map(function (r) { return r.avancement; }).filter(function (a) { return a !== ''; });
-          return { id: c.id, nom: c.nom, service: c.service, rapports: x, effectif: x.reduce(function (s2, r) { return s2 + r.effectif; }, 0), avancement: avs.length ? Math.max.apply(null, avs) : null }; });
-        return { date: jour, chantiers: cs, manquants: cs.filter(function (c) { return !c.rapports.length; }).length }; }
+        var tousP = demoState.user.role === 'chef_division', d0 = p.debut || plus(auj(), -7), n = Math.min(370, Math.max(7, Number(p.jours) || 35)), all = demoRots();
+        return { aujourdhui: auj(), debut: d0, jours: n, peutVoirTous: tousP, peutModifier: tousP,
+          lignes: DEMO_USERS.filter(function (x) { return tousP || x.email === demoState.user.email; }).map(function (x) {
+            var r = all[x.email], l = { nom: x.nom, service: x.service, fonction: x.fonction || '', email: x.email, configuree: !!r, moi: x.email === demoState.user.email };
+            if (r) { l.rotation = r; l.situation = demoSituation(r); l.grille = demoGrille(r, d0, n); }
+            return l; }) }; }
       case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };
     }
     throw erreur('Action inconnue');
@@ -195,7 +178,10 @@
     if (demoState.user.role !== 'chef_division') throw erreur('Droits insuffisants', 'DROITS');
   }
   function cibleDemo(email) { var u = DEMO_USERS.filter(function (x) { return x.email === email; })[0]; if (!u) throw erreur('Utilisateur inconnu'); return u; }
-  function pub(u) { return { email: u.email, nom: u.nom, role: u.role, service: u.service }; }
+  function pub(u) {
+    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: u.matricule || ('9' + u.uid.slice(1) + '4' + u.uid.slice(1) + 'B'), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
+             service: u.service, fonction: u.fonction || '', dependance: u.dependance || 'SONATRACH', telephone: u.telephone || '' };
+  }
   function connecterDemo(u, remember) { demoState.user = u; var r = { token: 'demo', user: pub(u) }; if (remember) r.remember = 'demo-rm-' + u.uid; return r; }
 
   var CLE_RM = 'infra_v2_remember';

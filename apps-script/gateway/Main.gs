@@ -36,10 +36,11 @@ function route_(req) {
     case 'activer': return Auth.activer(req.ident, req.code, req.mdp, req.remember);
     case 'reprendre': return Auth.reprendre(req.rt);
     case 'logout':  Auth.logout(req.token, req.rt); return {};
+    case 'changer_mdp': return Auth.changerMdp(req.token, req.ancien, req.nouveau);
     case 'me':      { var um = Auth.userFromToken(req.token); return { user: pubUser_(um), acces: acces_(um) }; }
     case 'menu': {
       var u = Auth.userFromToken(req.token);
-      return { user: pubUser_(u), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
+      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
     }
     case 'emettreCode': {
       var admin = Auth.userFromToken(req.token);
@@ -153,12 +154,16 @@ function rotationEnregistrer_(req) {
 }
 function planning_(req) {
   var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;
-  if (niv < 2) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  if (niv < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
   var auj = Dates.today();
   var debut = Dates.isDate(req.debut) ? req.debut : Dates.addDays(auj, -7);
-  var n = Math.max(7, Math.min(62, Number(req.jours) || 35));
-  var lignes = Store.table('Utilisateurs').filter(function (x) { return String(x.actif) !== '0' && x.email; }).map(function (x) {
-    var l = { nom: x.nom, service: x.service, fonction: x.fonction, configuree: false };
+  var n = Math.max(7, Math.min(370, Number(req.jours) || 35));
+  var tous = niv >= 2; // 1 = son propre planning seulement ; 2 = tout le monde ; 3 = tout le monde + modification
+  var moi = String(u.email).toLowerCase();
+  var lignes = Store.table('Utilisateurs').filter(function (x) {
+    return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi);
+  }).map(function (x) {
+    var l = { nom: x.nom, service: x.service, fonction: x.fonction, configuree: false, moi: String(x.email).toLowerCase() === moi };
     if (niv >= 3) l.email = x.email;
     var rot = rotationDe_(x.email);
     if (!rot) return l;
@@ -167,7 +172,7 @@ function planning_(req) {
     l.situation = s; l.grille = Planning.grille(rot, [], debut, n);
     return l;
   });
-  return { aujourdhui: auj, debut: debut, jours: n, peutModifier: niv >= 3, lignes: lignes };
+  return { aujourdhui: auj, debut: debut, jours: n, peutVoirTous: tous, peutModifier: niv >= 3, lignes: lignes };
 }
 
 // ---------- Rôles modifiables (onglet « Roles ») ----------
