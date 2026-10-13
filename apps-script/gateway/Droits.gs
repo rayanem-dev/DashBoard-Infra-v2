@@ -13,11 +13,24 @@
 var Droits = (function () {
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
 
+  // Variantes de saisie courantes → rôle canonique (accents, majuscules, « _ » ou espace, singulier/pluriel écrits à la main).
+  var ALIAS = {
+    'secretaire': 'secretariat', 'secretariat': 'secretariat', 'secretariat division': 'secretariat',
+    'chef division': 'chef_division', 'chef de division': 'chef_division', 'chef division infrastructure': 'chef_division',
+    'chef service': 'chef_service', 'chef de service': 'chef_service',
+    'conducteur': 'conducteur', 'conducteur des travaux': 'conducteur', 'conducteur de travaux': 'conducteur',
+    'agent': 'agent', 'cpm': 'cpm'
+  };
+  function roleCanon(r) {
+    var s = norm(r).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return ALIAS[s] || norm(r);
+  }
+
   function resolve(user, droitsRole, exceptions) {
     var res = {};
-    var role = norm(user.role);
+    var role = roleCanon(user.role);
     (droitsRole || []).forEach(function (d) {
-      if (norm(d.role) !== role) return;
+      if (roleCanon(d.role) !== role) return;
       var n = Number(d.niveau) || 0;
       if (n > (res[norm(d.module)] || 0)) res[norm(d.module)] = n;
     });
@@ -56,7 +69,7 @@ var Droits = (function () {
     return '';
   }
 
-  return { resolve: resolve, menu: menu, verifier: verifier, ROLES: ROLES };
+  return { resolve: resolve, menu: menu, verifier: verifier, roleCanon: roleCanon, ROLES: ROLES };
 })();
 
 if (typeof module !== 'undefined') module.exports = Droits;

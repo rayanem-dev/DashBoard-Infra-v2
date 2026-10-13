@@ -65,3 +65,13 @@ test('verifier : rôle et niveau', () => {
   assert.strictEqual(Droits.verifier(undefined, 1.5), 'Niveau invalide (0 à 3)');
   assert.strictEqual(Droits.verifier(undefined, NaN), 'Niveau invalide (0 à 3)');
 });
+
+test('rôle écrit autrement : « secretaire », « Secrétariat », « Chef de division » sont reconnus', () => {
+  assert.strictEqual(Droits.roleCanon('secretaire'), 'secretariat');
+  assert.strictEqual(Droits.roleCanon(' Secrétariat '), 'secretariat');
+  assert.strictEqual(Droits.roleCanon('Chef de Division'), 'chef_division');
+  assert.strictEqual(Droits.roleCanon('chef_service'), 'chef_service');
+  assert.strictEqual(Droits.roleCanon('inconnu'), 'inconnu');
+  const dr = [{ role: 'secretariat', module: 'securite', niveau: 3 }];
+  assert.deepStrictEqual(Droits.resolve({ email: 'a@x.dz', role: 'secretaire' }, dr, []), { securite: 3 });
+});
