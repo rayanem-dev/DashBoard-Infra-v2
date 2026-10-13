@@ -7,7 +7,7 @@
  */
 var Annuaire = (function () {
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  var CHAMPS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone', 'sona', 'date_integration', 'wifi_user'];
+  var CHAMPS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone', 'sona', 'date_integration', 'wifi_user', 'sap', 'nin'];
 
   function n(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
   function t(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
@@ -23,6 +23,9 @@ var Annuaire = (function () {
    * Repère la ligne d'en-têtes et les colonnes utiles. La colonne des NOMS est trouvée par son contenu : parmi les colonnes
    * sans titre, celles qui contiennent le plus de vrais noms (jamais une colonne de numéros). Ainsi le fichier peut être réorganisé.
    */
+  /** NIN valide : 18 chiffres saisis en TEXTE (un nombre de cette taille perd ses derniers chiffres dans un tableur : on le refuse). */
+  function nin(v) { return typeof v === 'string' && /^\d{18}$/.test(v.replace(/\s+/g, '')) ? v.replace(/\s+/g, '') : ''; }
+
   function colonnes(valeurs) {
     for (var r = 0; r < Math.min(10, valeurs.length); r += 1) {
       var h = valeurs[r].map(n);
@@ -43,8 +46,18 @@ var Annuaire = (function () {
         noms = scores.map(function (x) { return x.c; });
       }
       if (!noms.length) return { erreur: 'Colonne des noms introuvable dans BDDORGA (une colonne sans titre contenant les noms, ou une colonne intitulée « Nom »)' };
+      var iNin = h.indexOf('nin');
+      if (iNin < 0) { // colonne sans titre dont les cellules sont, pour la plupart, des numéros de 18 chiffres (texte) : le NIN
+        var meilleur = 0;
+        for (var cn = 0; cn < h.length; cn += 1) {
+          if (h[cn] !== '' || noms.indexOf(cn) !== -1) continue;
+          var k18 = 0;
+          for (var rn = r + 1; rn < Math.min(valeurs.length, r + 400); rn += 1) if (nin(valeurs[rn][cn])) k18 += 1;
+          if (k18 > meilleur) { meilleur = k18; iNin = cn; }
+        }
+      }
       var iTel = Math.max(h.indexOf('numero telephone'), h.indexOf('telephone'));
-      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration'), wifi_user: h.indexOf('wifi user') } };
+      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration'), wifi_user: h.indexOf('wifi user'), sap: h.indexOf('matricule sap'), nin: iNin } };
     }
     return { erreur: 'En-têtes introuvables dans BDDORGA (colonnes « Service » et « E-Mail » attendues)' };
   }
@@ -104,7 +117,7 @@ var Annuaire = (function () {
       vus[email] = r + 1;
       personnes.push({ nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
                        fonction: t(cell(row, i.fonction)), dependance: t(cell(row, i.dependance)), telephone: telephone(cell(row, i.telephone)),
-                       sona: t(cell(row, i.sona)).replace(/[\u200B-\u200D\uFEFF]/g, ''), date_integration: dateIso(cell(row, i.date_integration)), wifi_user: t(cell(row, i.wifi_user)) });
+                       sona: t(cell(row, i.sona)).replace(/[\u200B-\u200D\uFEFF]/g, ''), date_integration: dateIso(cell(row, i.date_integration)), wifi_user: t(cell(row, i.wifi_user)), sap: t(cell(row, i.sap)), nin: nin(cell(row, i.nin)) });
     }
     return { personnes: personnes, ignores: ignores, avertissements: avertissements };
   }
@@ -134,7 +147,31 @@ var Annuaire = (function () {
     return { ajouts: ajouts, maj: maj, absents: absents, inchanges: inchanges };
   }
 
-  return { lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
+  /**
+   * Plan d'écriture dans BDDORGA des champs saisis par l'agent (matricule, matricule SAP, NIN) : jamais d'écrasement d'une cellule déjà remplie,
+   * colonnes « Matricule SAP » / « NIN » créées à droite si elles n'existent pas. Le NIN n'est écrit que si options.nin est vrai
+   * (propriété ORGA_ECRIRE_NIN, à activer APRÈS avoir restreint le partage du fichier). Retourne { ligne, ecritures: [{ col, valeur, entete?, ligneEntete? }] } (1-based) ou { erreur }.
+   */
+  function planEcriture(valeurs, email, champs, options) {
+    var c = colonnes(valeurs || []);
+    if (c.erreur) return { erreur: c.erreur };
+    var mail = t(email).toLowerCase(), ligne = -1;
+    for (var r = c.ligne + 1; r < valeurs.length; r += 1) if (t(valeurs[r][c.idx.email]).toLowerCase() === mail) { ligne = r; break; }
+    if (ligne < 0) return { erreur: 'Adresse absente de BDDORGA : ' + mail };
+    var largeur = valeurs.reduce(function (m, row) { return Math.max(m, row.length); }, 0), ecritures = [];
+    var autorises = ['matricule', 'sap']; if (options && options.nin) autorises.push('nin');
+    autorises.forEach(function (k) {
+      var v = t(champs && champs[k]); if (!v) return;
+      var col = c.idx[k], neuf = false;
+      if (col < 0) { if (k === 'matricule') return; col = largeur; neuf = true; largeur += 1; }
+      if (!neuf && t(valeurs[ligne][col])) return; // déjà renseigné dans le fichier : on n'y touche pas
+      var e = { col: col + 1, valeur: v }; if (neuf) { e.entete = k === 'nin' ? 'NIN' : 'Matricule SAP'; e.ligneEntete = c.ligne + 1; }
+      ecritures.push(e);
+    });
+    return { ligne: ligne + 1, ecritures: ecritures };
+  }
+
+  return { nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Annuaire;

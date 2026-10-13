@@ -315,5 +315,8 @@ function profilEnregistrer_(req) {
   if (!faits.length) throw new Error('Rien à enregistrer : ces champs sont déjà renseignés (pour les corriger, contactez le secrétariat).');
   Store.maj('Utilisateurs', { email: u.email }, champs);
   Store.journal('profil', u.email, 'champs renseignés : ' + faits.join(', '));
+  var versOrga = {}; faits.forEach(function (k) { versOrga[k] = champs[k]; });
+  try { var n = ecrireDansBddorga_(u.email, versOrga); Store.journal('profil_bddorga', u.email, n + ' cellule(s) écrite(s) dans BDDORGA'); }
+  catch (err) { Store.journal('profil_bddorga_echec', u.email, String(err.message || err)); } // l'agent n'est pas bloqué : la valeur est déjà dans la passerelle
   return { user: pubUser_(Store.utilisateur(u.email)) };
 }

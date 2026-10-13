@@ -66,3 +66,29 @@ function activerSynchroQuotidienne() {
 function desactiverSynchroQuotidienne() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'synchroniserDepuisBDDORGA') ScriptApp.deleteTrigger(t); });
 }
+
+/** À lancer UNIQUEMENT après avoir restreint le partage du fichier Organigramme (plus de « tous les utilisateurs disposant du lien »). */
+function autoriserEcritureNIN() { PropertiesService.getScriptProperties().setProperty('ORGA_ECRIRE_NIN', '1'); Logger.log('Écriture du NIN dans BDDORGA : ACTIVÉE'); }
+function interdireEcritureNIN() { PropertiesService.getScriptProperties().deleteProperty('ORGA_ECRIRE_NIN'); Logger.log('Écriture du NIN dans BDDORGA : désactivée'); }
+
+/**
+ * Recopie dans BDDORGA ce que l'agent a saisi lui-même (matricule, matricule SAP, NIN) : le fichier reste la fiche de référence.
+ * Ne bloque jamais l'agent : en cas d'échec, la valeur reste dans la passerelle et on le signale dans le journal.
+ * Le NIN n'est recopié que si ORGA_ECRIRE_NIN = 1 (voir autoriserEcritureNIN) : à n'activer qu'une fois le partage du fichier restreint.
+ */
+function ecrireDansBddorga_(email, champs) {
+  var props = PropertiesService.getScriptProperties(); var id = props.getProperty('ORGA_ID') || ORGA_ID_DEFAUT;
+  var sh = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
+  if (!sh) throw new Error('Onglet BDDORGA introuvable');
+  var plan = Annuaire.planEcriture(sh.getDataRange().getValues(), email, champs, { nin: props.getProperty('ORGA_ECRIRE_NIN') === '1' });
+  if (plan.erreur) throw new Error(plan.erreur);
+  plan.ecritures.forEach(function (e) {
+    if (e.entete) sh.getRange(e.ligneEntete, e.col).setValue(e.entete);
+    var cell = sh.getRange(plan.ligne, e.col); cell.setNumberFormat('@'); cell.setValue(e.valeur); // texte : un NIN de 18 chiffres perdrait ses derniers chiffres en nombre
+  });
+  return plan.ecritures.length;
+}
+
+/** À lancer UNIQUEMENT après avoir restreint le partage du fichier Organigramme (plus de « tous les utilisateurs disposant du lien »). */
+function autoriserEcritureNIN() { PropertiesService.getScriptProperties().setProperty('ORGA_ECRIRE_NIN', '1'); Logger.log('Écriture du NIN dans BDDORGA : ACTIVÉE'); }
+function interdireEcritureNIN() { PropertiesService.getScriptProperties().deleteProperty('ORGA_ECRIRE_NIN'); Logger.log('Écriture du NIN dans BDDORGA : désactivée'); }
