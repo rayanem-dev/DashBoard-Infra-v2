@@ -299,8 +299,10 @@ function pointerVersCopies() {
 /** Ajoute au catalogue les applications de SEED_APPS qui n'y figurent pas encore (par titre) : utile après une mise à jour. */
 function ajouterApplicationsManquantes() {
   var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
-  var existants = sh.getDataRange().getValues().slice(1).map(function (l) { return String(l[1]); });
-  var nouveaux = SEED_APPS.filter(function (r) { return existants.indexOf(String(r[1])) === -1; });
+  var lignes = sh.getDataRange().getValues().slice(1);
+  var existants = lignes.map(function (l) { return String(l[1]); });
+  var pages = lignes.map(function (l) { return String(l[4]); }); // une page du site (ex. planning.html) ne doit figurer qu'une fois, même renommée
+  var nouveaux = SEED_APPS.filter(function (r) { return existants.indexOf(String(r[1])) === -1 && !(/^[\w\-]+\.html$/.test(String(r[4])) && pages.indexOf(String(r[4])) !== -1); });
   if (nouveaux.length) sh.getRange(sh.getLastRow() + 1, 1, nouveaux.length, 7).setValues(nouveaux.map(function (r) { return r.length >= 7 ? r : r.concat(['']); }));
   Logger.log(nouveaux.length + ' application(s) ajoutée(s).');
 }
@@ -314,6 +316,15 @@ function rangerCartes() {
   var v = sh.getDataRange().getValues(); var h = v[0].map(String);
   var iM = h.indexOf('module'), iU = h.indexOf('url'), iN = h.indexOf('niveau_min'), iR = h.indexOf('roles');
   var n = 0;
+  // Doublons : une même page du site (ex. planning.html) ne garde qu'une carte (la première) ; les autres lignes sont supprimées.
+  var vues = {}, doublons = [];
+  for (var d = 1; d < v.length; d += 1) {
+    var page = String(v[d][iU]);
+    if (!/^[\w\-]+\.html$/.test(page)) continue;
+    if (vues[page]) doublons.push(d + 1); else vues[page] = true;
+  }
+  doublons.reverse().forEach(function (ligne) { sh.deleteRow(ligne); });
+  if (doublons.length) { Logger.log(doublons.length + ' carte(s) en double supprimée(s).'); v = sh.getDataRange().getValues(); }
   for (var i = 1; i < v.length; i += 1) {
     if (String(v[i][iU]) === 'privileges.html') {
       sh.getRange(i + 1, iM + 1).setValue('admin'); sh.getRange(i + 1, iN + 1).setValue(3); if (iR >= 0) sh.getRange(i + 1, iR + 1).setValue('secretariat'); n += 1;

@@ -172,6 +172,13 @@
             var r = all[x.email], l = { nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', email: x.email, configuree: !!r, moi: x.email === demoState.user.email };
             if (r) { l.rotation = r; l.situation = demoSituation(r); l.grille = demoGrille(r, d0, n); }
             return l; }) }; }
+      case 'profil_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var dp = demoProfil[demoState.user.email] = demoProfil[demoState.user.email] || {}, vu = pub(demoState.user), fait = 0;
+        [['matricule', /^[A-Za-z0-9\-]{3,15}$/, 'Matricule'], ['sap', /^[A-Za-z0-9\-]{3,15}$/, 'Matricule SAP'], ['nin', /^\d{18}$/, 'NIN (18 chiffres)']].forEach(function (c) {
+          var v = String(p[c[0]] || '').replace(/\s+/g, ''); if (!v || (c[0] === 'nin' ? vu.nin_renseigne : vu[c[0]])) return;
+          if (!c[1].test(v)) throw erreur(c[2] + ' : format invalide.'); dp[c[0]] = v; fait += 1; });
+        if (!fait) throw erreur('Rien à enregistrer : ces champs sont déjà renseignés (pour les corriger, contactez le secrétariat).');
+        return { user: pub(demoState.user) }; }
       case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };
     }
     throw erreur('Action inconnue');
@@ -182,10 +189,13 @@
   }
   function cibleDemo(email) { var u = DEMO_USERS.filter(function (x) { return x.email === email; })[0]; if (!u) throw erreur('Utilisateur inconnu'); return u; }
   function pub(u) {
-    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: u.matricule || ('9' + u.uid.slice(1) + '4' + u.uid.slice(1) + 'B'), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
+    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: (demoProfil[u.email] || {}).matricule || u.matricule || (u.role === 'chef_division' ? '90514B' : ''), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
              service: u.service, fonction: u.fonction || '', dependance: u.dependance || 'SONATRACH', telephone: u.telephone || '',
-             sona: u.sona || ('sona' + (10000 + Number(String(u.uid).slice(1)))), date_integration: u.date_integration || '2025-03-17' };
+             sona: u.sona || ('sona' + (10000 + Number(String(u.uid).slice(1)))), date_integration: u.date_integration || '2025-03-17',
+             wifi_user: 'wf.' + String(u.email).split('@')[0], sap: (demoProfil[u.email] || {}).sap || '', nin_masque: masquerNin((demoProfil[u.email] || {}).nin), nin_renseigne: !!(demoProfil[u.email] || {}).nin };
   }
+  var demoProfil = {};
+  function masquerNin(v) { return v ? v.slice(0, 4) + '••••••' + v.slice(-4) : ''; }
   function connecterDemo(u, remember) { demoState.user = u; var r = { token: 'demo', user: pub(u) }; if (remember) r.remember = 'demo-rm-' + u.uid; return r; }
 
   var CLE_RM = 'infra_v2_remember';

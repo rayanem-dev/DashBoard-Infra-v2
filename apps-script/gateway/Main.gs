@@ -48,6 +48,7 @@ function route_(req) {
       Store.journal('code_active', admin.email, req.email);
       return { code: Auth.emettreCode(req.email) };
     }
+    case 'profil_enregistrer': return profilEnregistrer_(req);
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
     case 'rotation_enregistrer': return rotationEnregistrer_(req);
     case 'planning': return planning_(req);
@@ -293,4 +294,26 @@ function rapportsSynthese_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
   var auj = Dates.today(); var date = Dates.isDate(req.date) ? req.date : auj;
   return Rapports.synthese(chantiersActifs_(), rapportsLus_(), date);
+}
+
+/**
+ * L'agent complète lui-même sa fiche (matricule, matricule SAP, NIN). Une valeur DÉJÀ renseignée n'est jamais écrasée :
+ * pour la corriger, il passe par le secrétariat. Le NIN n'est jamais renvoyé en entier ni écrit dans le journal.
+ */
+function profilEnregistrer_(req) {
+  var u = Auth.userFromToken(req.token);
+  var regles = { matricule: /^[A-Za-z0-9\-]{3,15}$/, sap: /^[A-Za-z0-9\-]{3,15}$/, nin: /^\d{18}$/ };
+  var noms = { matricule: 'Matricule', sap: 'Matricule SAP', nin: 'NIN (18 chiffres)' };
+  var champs = {}, faits = [];
+  Object.keys(regles).forEach(function (k) {
+    var v = String(req[k] == null ? '' : req[k]).replace(/\s+/g, '');
+    if (!v) return;
+    if (String(u[k] || '').trim()) return; // déjà renseigné : on ne touche pas
+    if (!regles[k].test(v)) throw new Error(noms[k] + ' : format invalide.');
+    champs[k] = v; faits.push(k);
+  });
+  if (!faits.length) throw new Error('Rien à enregistrer : ces champs sont déjà renseignés (pour les corriger, contactez le secrétariat).');
+  Store.maj('Utilisateurs', { email: u.email }, champs);
+  Store.journal('profil', u.email, 'champs renseignés : ' + faits.join(', '));
+  return { user: pubUser_(Store.utilisateur(u.email)) };
 }

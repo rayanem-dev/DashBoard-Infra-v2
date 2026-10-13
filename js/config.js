@@ -11,3 +11,6 @@ window.EMPLOYEURS = {
   'ACOSCO': { fond: '#D9D2E9', texte: '#4A3B6B' },
   'GTP': { fond: '#D9EAD3', texte: '#2F5D2A' }
 };
+
+// Adresse du secrétariat : lien « Mot de passe oublié ? Demander au secrétariat » de la fiche de l'agent.
+window.SECRETARIAT_EMAIL = 'sec.infra.rns@gmail.com,Sec-INFRA.RNS@Sonatrach.dz'; // plusieurs adresses possibles, séparées par une virgule

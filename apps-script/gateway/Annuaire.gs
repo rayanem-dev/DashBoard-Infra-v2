@@ -2,12 +2,12 @@
  * Synchronisation de l'onglet « Utilisateurs » avec l'onglet BDDORGA du fichier « Organigrame Div Infra » (fonctions PURES, testées).
  *
  * On ne lit QUE les colonnes d'identité utiles : nom, e-mail, matricule, service, intitulé du poste, employeur (dépendance), téléphone.
- * Les colonnes sensibles de ce fichier (mots de passe Windows / Wi-Fi, identifiants, numéros nationaux…) ne sont JAMAIS lues.
+ * L'identifiant Wi-Fi (« Wifi User ») est repris pour la fiche de l'agent ; les colonnes sensibles (mots de passe Windows / Wi-Fi, numéros nationaux…) ne sont JAMAIS lues.
  * Les colonnes gérées à la main dans la passerelle (uid, role, actif, civilite) ne sont jamais modifiées.
  */
 var Annuaire = (function () {
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  var CHAMPS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone', 'sona', 'date_integration'];
+  var CHAMPS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone', 'sona', 'date_integration', 'wifi_user'];
 
   function n(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
   function t(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
@@ -44,7 +44,7 @@ var Annuaire = (function () {
       }
       if (!noms.length) return { erreur: 'Colonne des noms introuvable dans BDDORGA (une colonne sans titre contenant les noms, ou une colonne intitulée « Nom »)' };
       var iTel = Math.max(h.indexOf('numero telephone'), h.indexOf('telephone'));
-      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration') } };
+      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration'), wifi_user: h.indexOf('wifi user') } };
     }
     return { erreur: 'En-têtes introuvables dans BDDORGA (colonnes « Service » et « E-Mail » attendues)' };
   }
@@ -104,7 +104,7 @@ var Annuaire = (function () {
       vus[email] = r + 1;
       personnes.push({ nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
                        fonction: t(cell(row, i.fonction)), dependance: t(cell(row, i.dependance)), telephone: telephone(cell(row, i.telephone)),
-                       sona: t(cell(row, i.sona)).replace(/[\u200B-\u200D\uFEFF]/g, ''), date_integration: dateIso(cell(row, i.date_integration)) });
+                       sona: t(cell(row, i.sona)).replace(/[\u200B-\u200D\uFEFF]/g, ''), date_integration: dateIso(cell(row, i.date_integration)), wifi_user: t(cell(row, i.wifi_user)) });
     }
     return { personnes: personnes, ignores: ignores, avertissements: avertissements };
   }

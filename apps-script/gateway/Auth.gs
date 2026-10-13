@@ -143,10 +143,14 @@ var Auth = (function () {
     return { token: ouvrirSession_(u), user: publique_(u), remember: emettreRemember_(u.email) };
   }
 
+  /** « 123456789012345678 » → « 1234••••••5678 » : la fiche n'affiche jamais le NIN en entier. */
+  function masquer_(v) { var x = String(v == null ? '' : v).replace(/\s+/g, ''); return x.length < 8 ? (x ? '••••' : '') : x.slice(0, 4) + '••••••' + x.slice(-4); }
+
   function publique_(u) {
     return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), civilite: u.civilite || '', matricule: u.matricule || '', role: u.role, service: u.service, fonction: u.fonction,
              dependance: u.dependance || '', telephone: u.telephone || '',
-             sona: u.sona || '', date_integration: Annuaire.dateIso(u.date_integration) };
+             sona: u.sona || '', date_integration: Annuaire.dateIso(u.date_integration),
+             wifi_user: u.wifi_user || '', sap: u.sap || '', nin_masque: masquer_(u.nin), nin_renseigne: !!String(u.nin || '').trim() };
   }
 
   function userFromToken(token) {

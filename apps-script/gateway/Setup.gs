@@ -54,7 +54,7 @@ function ajouterChantiersParDefaut() {
 }
 
 var SCHEMA_ = {
-  Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif', 'telephone', 'civilite', 'sona', 'date_integration'],
+  Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif', 'telephone', 'civilite', 'sona', 'date_integration', 'wifi_user', 'nin', 'sap'],
   Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
   Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min', 'roles'],
   Roles: ['id', 'libelle', 'niveau_max', 'interdits'],
@@ -70,7 +70,7 @@ var SCHEMA_ = {
 function formaterTextes_(db) {
   // Utilisateurs : la date d'intégration en TEXTE (sinon Sheets la convertit en date et décale le fuseau)
   var us = db.getSheetByName('Utilisateurs');
-  if (us && us.getLastColumn() > 0) { var en = us.getRange(1, 1, 1, us.getLastColumn()).getValues()[0].map(String); var ci = en.indexOf('date_integration'); if (ci >= 0) us.getRange(1, ci + 1, us.getMaxRows(), 1).setNumberFormat('@'); }
+  if (us && us.getLastColumn() > 0) { var en = us.getRange(1, 1, 1, us.getLastColumn()).getValues()[0].map(String); ['date_integration', 'matricule', 'sap', 'nin', 'sona', 'wifi_user'].forEach(function (nomCol) { var ci = en.indexOf(nomCol); if (ci >= 0) us.getRange(2, ci + 1, Math.max(1, us.getMaxRows() - 1), 1).setNumberFormat('@'); }); }
   var sh = db.getSheetByName('Rotations'); if (sh) { sh.getRange('C:C').setNumberFormat('@'); sh.getRange('G:G').setNumberFormat('@'); }
   // Rapports et chantiers : tout en TEXTE brut (aucune formule possible, aucune date convertie).
   ['Rapports', 'Chantiers'].forEach(function (n) { var x = db.getSheetByName(n); if (x) x.getRange('A:Z').setNumberFormat('@'); });

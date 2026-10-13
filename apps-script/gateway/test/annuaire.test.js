@@ -50,8 +50,8 @@ test('dateIso : formats courants, dates impossibles refusées', () => {
 
 test('SÉCURITÉ : ni numéro d\'identité, ni mot de passe, ni identifiant n\'est recopié', () => {
   const j = JSON.stringify(Annuaire.lire(SRC));
-  for (const secret of [NUM, 'MOT-DE-PASSE-SECRET', 'wifi.user']) assert.ok(!j.includes(secret), secret);
-  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['date_integration', 'dependance', 'email', 'fonction', 'matricule', 'nom', 'nomDeduit', 'service', 'sona', 'telephone']);
+  for (const secret of [NUM, 'MOT-DE-PASSE-SECRET']) assert.ok(!j.includes(secret), secret);
+  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['date_integration', 'dependance', 'email', 'fonction', 'matricule', 'nom', 'nomDeduit', 'service', 'sona', 'telephone', 'wifi_user']);
 });
 
 // ----- Ancienne disposition (nom puis numéro côte à côte après « dépendance ») : doit marcher aussi
@@ -84,8 +84,8 @@ test('nomAffichable : jamais de numéro, quelle que soit la forme', () => {
 
 test('fusion : une valeur vide n\'efface rien ; role/actif/uid jamais touchés ; absents listés', () => {
   const existants = [
-    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: 'DURAND MARIE', service: 'Ancien service', matricule: 'M-100', role: 'chef_service', actif: 1, telephone: '', sona: 'sona10001', date_integration: '2025-10-05' },
-    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'MARTIN BENOIT', service: 'CPM', matricule: 'M-7', fonction: 'Conducteur des travaux', dependance: 'GTP', sona: 'sona10001', role: 'agent', actif: 1 },
+    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: 'DURAND MARIE', service: 'Ancien service', matricule: 'M-100', role: 'chef_service', actif: 1, telephone: '', sona: 'sona10001', wifi_user: 'wifi.user', date_integration: '2025-10-05' },
+    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'MARTIN BENOIT', service: 'CPM', matricule: 'M-7', fonction: 'Conducteur des travaux', dependance: 'GTP', sona: 'sona10001', wifi_user: 'wifi.user', role: 'agent', actif: 1 },
     { uid: 'u3', email: 'parti@x.dz', nom: 'PARTI', role: 'agent', actif: 1 },
   ];
   const f = Annuaire.fusionner(existants, Annuaire.lire(SRC).personnes);
@@ -99,8 +99,8 @@ test('fusion : une valeur vide n\'efface rien ; role/actif/uid jamais touchés ;
 
 test('RÉPARATION : la synchro rétablit un vrai nom à la place d\'un numéro ou d\'un nom déduit de l\'e-mail', () => {
   const existants = [
-    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: NUM, service: 'CPM', matricule: 'M-100', dependance: 'SONATRACH', fonction: 'Technicienne', telephone: '0658578057', sona: 'sona10001', date_integration: '2025-10-05', role: 'agent', actif: 1 },
-    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'BENOITMARTIN', service: 'CPM', matricule: 'M-7', dependance: 'GTP', fonction: 'Conducteur des travaux', sona: 'sona10001', role: 'agent', actif: 1 },
+    { uid: 'u1', email: 'marie.durand@sonatrach.dz', nom: NUM, service: 'CPM', matricule: 'M-100', dependance: 'SONATRACH', fonction: 'Technicienne', telephone: '0658578057', sona: 'sona10001', wifi_user: 'wifi.user', date_integration: '2025-10-05', role: 'agent', actif: 1 },
+    { uid: 'u2', email: 'benoit.martin463@gmail.com', nom: 'BENOITMARTIN', service: 'CPM', matricule: 'M-7', dependance: 'GTP', fonction: 'Conducteur des travaux', sona: 'sona10001', wifi_user: 'wifi.user', role: 'agent', actif: 1 },
   ];
   const f = Annuaire.fusionner(existants, Annuaire.lire(SRC).personnes);
   const noms = Object.fromEntries(f.maj.map(m => [m.email, m.champs.nom]));
@@ -111,9 +111,9 @@ test('RÉPARATION : la synchro rétablit un vrai nom à la place d\'un numéro o
 test('un nom DÉDUIT de l\'e-mail n\'écrase jamais un vrai nom déjà enregistré', () => {
   const src = Annuaire.lire([ENT, ligne('b@x.dz', '', 'BERNARD ALICE', 'CPM', 'SONATRACH', '', 'X'), ligne('marie.durand@x.dz', '', '', 'CPM', 'SONATRACH', NUM, 'X')]).personnes.slice(1);
   assert.strictEqual(src[0].nomDeduit, true);
-  const f = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: 'DURAND MARIE', service: 'CPM', fonction: 'X', dependance: 'SONATRACH', matricule: '', sona: 'sona10001', role: 'agent', actif: 1 }], src);
+  const f = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: 'DURAND MARIE', service: 'CPM', fonction: 'X', dependance: 'SONATRACH', matricule: '', sona: 'sona10001', wifi_user: 'wifi.user', role: 'agent', actif: 1 }], src);
   assert.strictEqual(f.maj.length, 0);
-  const g = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: NUM, service: 'CPM', fonction: 'X', dependance: 'SONATRACH', sona: 'sona10001', role: 'agent', actif: 1 }], src);
+  const g = Annuaire.fusionner([{ uid: 'u1', email: 'marie.durand@x.dz', nom: NUM, service: 'CPM', fonction: 'X', dependance: 'SONATRACH', sona: 'sona10001', wifi_user: 'wifi.user', role: 'agent', actif: 1 }], src);
   assert.strictEqual(g.maj[0].champs.nom, 'MARIE DURAND'); // mieux qu'un numéro
 });
 

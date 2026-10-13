@@ -41,7 +41,7 @@
       </div>
     </div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
-    <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
+    <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button><a class="lien" id="b-oubli" href="#" hidden>✉️ Mot de passe oublié ? Demander au secrétariat</a></div>
   </section>
   <div id="modules"></div>
 </main>
@@ -82,9 +82,19 @@
     var pe = Employeur.pastille(u.dependance); if (pe) { pe.style.marginLeft = '0'; bd.appendChild(pe); }
     bd.appendChild(el('span', 'role-pill', u.role_libelle || ROLES[u.role] || u.role || ''));
     var integ = u.date_integration ? Rotation.frDate(u.date_integration) + (anciennete(u.date_integration) ? ' · ' + anciennete(u.date_integration) : '') : '';
-    var champs = [['Matricule', u.matricule], ['Identifiant SONA', u.sona], ['Fonction', u.fonction], ['Service', u.service], ['E-mail', u.email], ['Téléphone', u.telephone], ['Intégration', integ]].filter(function (c) { return c[1]; });
+    var manque = [];
+    function ajouter(k, lib, v, vide) { if (v) return [lib, v]; if (vide) { manque.push(k); return [lib, null]; } return null; }
+    var champs = [ajouter('matricule', 'Matricule', u.matricule, true), ajouter('sap', 'Matricule SAP', u.sap, true), ajouter('nin', 'NIN', u.nin_masque, true),
+      ['Identifiant SONA', u.sona], ['Wi-Fi', u.wifi_user], ['E-mail', u.email], ['Téléphone', u.telephone], ['Intégration', integ]].filter(function (c) { return c && (c[1] || c[1] === null); });
     var fiche = $('fiche'); fiche.textContent = '';
-    champs.forEach(function (c) { var d = el('div'); d.appendChild(el('span', null, c[0])); var v = el('b', null, c[1]); v.title = c[1]; d.appendChild(v); fiche.appendChild(d); });
+    champs.forEach(function (c) {
+      var d = el('div'); d.appendChild(el('span', null, c[0]));
+      if (c[1] === null) { var b = el('button', 'a-completer', 'à compléter'); b.type = 'button'; b.addEventListener('click', function () { ouvrirProfil(u, manque); }); d.appendChild(b); }
+      else { var v = el('b', null, c[1]); v.title = c[1]; d.appendChild(v); }
+      fiche.appendChild(d);
+    });
+    var mail = window.SECRETARIAT_EMAIL, oubli = $('b-oubli');
+    if (mail) { oubli.hidden = false; oubli.href = 'mailto:' + mail + '?subject=' + encodeURIComponent('Réinitialisation de mon mot de passe') + '&body=' + encodeURIComponent('Bonjour,\n\nJ\'ai oublié mon mot de passe du portail de la division Infrastructure.\nMerci de m\'envoyer un code de réinitialisation.\n\nNom : ' + u.nom + (u.matricule ? '\nMatricule : ' + u.matricule : '') + '\n\nCordialement.'); }
     if (st) $('accueil').style.setProperty('--agent-bord', st.texte);
   }
 
@@ -108,6 +118,30 @@
       });
       sec.appendChild(g); zone.appendChild(sec);
     });
+  }
+
+  // L'agent complète lui-même les champs vides de sa fiche ; une valeur déjà enregistrée ne se modifie plus (secrétariat).
+  function ouvrirProfil(u, manque) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
+    f.appendChild(el('h2', null, 'Compléter ma fiche'));
+    f.appendChild(el('p', 'aide', 'Ces informations ne sont visibles que par vous et le secrétariat. Une fois enregistrées, elles ne se modifient plus ici : en cas d\'erreur, contactez le secrétariat.'));
+    var defs = { matricule: ['Matricule', 'ex. 90514B', 15], sap: ['Matricule SAP', 'ex. 00123456', 15], nin: ['NIN (numéro d\'identification nationale, 18 chiffres)', '18 chiffres', 18] }, champs = {};
+    manque.forEach(function (k) {
+      var w = el('div', 'champ'), l = el('label', null, defs[k][0]), i = el('input'); i.type = 'text'; i.placeholder = defs[k][1]; i.maxLength = defs[k][2]; i.autocomplete = 'off';
+      if (k === 'nin') i.inputMode = 'numeric';
+      i.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit;font-size:15px'; champs[k] = i; w.appendChild(l); w.appendChild(i); f.appendChild(w);
+    });
+    var msg = el('div', 'msg'); f.appendChild(msg);
+    var bt = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); msg.className = 'msg'; var p = {}; Object.keys(champs).forEach(function (k) { p[k] = champs[k].value.trim(); });
+      if (!Object.keys(p).some(function (k) { return p[k]; })) { msg.textContent = 'Renseignez au moins un champ.'; msg.className = 'msg err'; return; }
+      ok.disabled = true;
+      Api.call('profil_enregistrer', p).then(function (r) { dlg.close(); dessinerFiche(r.user); dessinerStatut(); })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
   }
 
   function ouvrirMdp() {
