@@ -23,7 +23,7 @@
       <button data-v="1">Mois</button><button data-v="3">3 mois</button><button data-v="6">6 mois</button><button data-v="12">1 an</button>
     </div>
     <div class="nav-periode"><button class="btn-s" id="prec" type="button" aria-label="Période précédente">‹</button><b id="periode"></b><button class="btn-s" id="suiv" type="button" aria-label="Période suivante">›</button><button class="btn-s" id="auj" type="button">Aujourd'hui</button></div>
-    <div class="legende"><span><i style="background:var(--orange-main)"></i>Travail</span><span><i style="background:#9ED3B0"></i>Repos</span><span><i style="background:#FDE68A"></i>Absence</span></div>
+    <div class="legende"><span><i style="background:var(--c-T)"></i>Travail</span><span><i style="background:var(--c-R)"></i>Repos</span><span><i style="background:var(--c-ABS)"></i>Absence</span><span><i style="background:var(--c-T-prevu);border:1px solid #BFE3B1"></i><i style="background:var(--c-R-prevu);border:1px solid #F4C3A5"></i>Prévu (à venir)</span></div>
   </div>
   <div class="barre" id="barre-filtres" hidden>
     <input type="text" id="q" placeholder="Rechercher un nom…" aria-label="Rechercher">
@@ -76,18 +76,25 @@
 
   // ---------- Frise SVG : un segment par suite de jours identiques ----------
   function segments(g) { var out = [], i = 0; while (i < g.length) { var c = g.charAt(i), j = i; while (j < g.length && g.charAt(j) === c) j += 1; out.push({ c: c, a: i, n: j - i }); i = j; } return out; }
-  var COUL = { T: '#E85D04', R: '#9ED3B0', A: '#FDE68A' }, LIB = { T: 'Travail', R: 'Repos', A: 'Absence' };
+  // Palette de Sijil : jusqu'à aujourd'hui = couleur vive ; après aujourd'hui = teinte claire « prévu » (sauf absence).
+  var COUL = { T: '#4EA72E', R: '#E97132', A: '#E53935' }, PREVU = { T: '#D6F0CC', R: '#FBDCC8', A: '#E53935' }, LIB = { T: 'Travail', R: 'Repos', A: 'Absence' };
   function frise(grille, debut, n, px, aujIdx) {
     var h = 22, s = svgEl('svg', { width: n * px, height: h, viewBox: '0 0 ' + (n * px) + ' ' + h, role: 'img' });
     s.appendChild(svgEl('rect', { x: 0, y: 4, width: n * px, height: h - 8, rx: 3, fill: '#F3F4F6' }));
     segments(grille).forEach(function (g) {
       if (!COUL[g.c]) return;
-      var r = svgEl('rect', { x: g.a * px, y: 4, width: g.n * px - (px > 6 ? 1 : 0), height: h - 8, rx: px > 6 ? 3 : 1, fill: COUL[g.c] });
-      var t = svgEl('title'); t.textContent = LIB[g.c] + ' : du ' + court(plus(debut, g.a)) + ' au ' + court(plus(debut, g.a + g.n - 1)) + ' (' + g.n + ' jour' + (g.n > 1 ? 's' : '') + ')';
-      r.appendChild(t); s.appendChild(r);
+      // le segment est coupé au lendemain d'aujourd'hui : partie vive, puis partie « prévue »
+      var coupe = Math.min(Math.max(aujIdx + 1, g.a), g.a + g.n);
+      [[g.a, coupe, COUL], [coupe, g.a + g.n, PREVU]].forEach(function (part) {
+        var de = part[0], a2 = part[1], n2 = a2 - de; if (n2 <= 0) return;
+        var r = svgEl('rect', { x: de * px, y: 4, width: n2 * px - (px > 6 ? 1 : 0), height: h - 8, rx: px > 6 ? 3 : 1, fill: part[2][g.c] });
+        var t = svgEl('title'); t.textContent = LIB[g.c] + (part[2] === PREVU && g.c !== 'A' ? ' (prévu)' : '') + ' : du ' + court(plus(debut, de)) + ' au ' + court(plus(debut, a2 - 1)) + ' (' + n2 + ' jour' + (n2 > 1 ? 's' : '') + ')';
+        r.appendChild(t); s.appendChild(r);
+      });
       if (px >= 20) {
         for (var k = 0; k < g.n; k += 1) {
-          var tx = svgEl('text', { x: (g.a + k) * px + px / 2, y: 15, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: g.c === 'T' ? '#fff' : '#1B5E36' });
+          var futur = g.a + k > aujIdx && g.c !== 'A';
+          var tx = svgEl('text', { x: (g.a + k) * px + px / 2, y: 15, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: futur ? '#4B5563' : '#fff' });
           tx.textContent = g.c; s.appendChild(tx);
         }
       }
@@ -104,9 +111,9 @@
         var m = svgEl('text', { x: i * px + 4, y: 12, 'font-size': 11, 'font-weight': 700, fill: '#374151' }); m.textContent = (vue === 1 ? MOIS[s2d(d).getUTCMonth()] : MCOURT[s2d(d).getUTCMonth()]) + (vue >= 6 && s2d(d).getUTCMonth() === 0 ? ' ' + s2d(d).getUTCFullYear() : ''); s.appendChild(m);
       }
       if (px >= 20 || (px >= 10 && (jour % 5 === 0 || jour === 1)) ) {
-        var t = svgEl('text', { x: i * px + px / 2, y: 28, 'text-anchor': 'middle', 'font-size': px >= 20 ? 10 : 9, fill: i === aujIdx ? '#E85D04' : '#6B7280', 'font-weight': i === aujIdx ? 700 : 400 }); t.textContent = jour; s.appendChild(t);
+        var t = svgEl('text', { x: i * px + px / 2, y: 28, 'text-anchor': 'middle', 'font-size': px >= 20 ? 10 : 9, fill: i === aujIdx ? '#16598D' : '#6B7280', 'font-weight': i === aujIdx ? 700 : 400 }); t.textContent = jour; s.appendChild(t);
       }
-      if (i === aujIdx) s.appendChild(svgEl('rect', { x: i * px, y: 30, width: px, height: 3, fill: '#E85D04' }));
+      if (i === aujIdx) s.appendChild(svgEl('rect', { x: i * px, y: 30, width: px, height: 3, fill: '#16598D' }));
     }
     return s;
   }

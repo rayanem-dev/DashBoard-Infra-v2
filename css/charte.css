@@ -5,6 +5,8 @@
   --gray-dark: #1A1A2E; --gray-mid: #2D2D44; --gray-light: #F8F9FA; --white: #FFFFFF;
   --text-dark: #1C1C1C; --text-muted: #6B7280; --border: #E5E7EB;
   --ok: #16A34A; --err: #B91C1C;
+  /* Code couleur de Sijil : travail = vert, repos = orange, absence = rouge ; teintes claires = prévu */
+  --c-T: #4EA72E; --c-R: #E97132; --c-ABS: #E53935; --c-T-prevu: #D6F0CC; --c-R-prevu: #FBDCC8;
   --shadow-card: 0 4px 20px rgba(232,93,4,.10), 0 1px 4px rgba(0,0,0,.06);
   --shadow-hover: 0 8px 32px rgba(232,93,4,.22), 0 2px 8px rgba(0,0,0,.10);
 }
@@ -118,7 +120,7 @@ table.plan td.c.R { background: #CDE8D6; color: #1B5E36; }
 table.plan td.c.A { background: #FDE68A; color: #92400E; }
 table.plan td.c.x { background: #F3F4F6; }
 table.plan td.c.auj { box-shadow: inset 2px 0 0 var(--gray-dark), inset -2px 0 0 var(--gray-dark); }
-.pastille.T { background: var(--orange-main); color: #fff; } .pastille.R { background: #CDE8D6; color: #1B5E36; } .pastille.N { background: #F3F4F6; color: var(--text-muted); }
+.pastille.T { background: var(--c-T); color: #fff; } .pastille.R { background: var(--c-R); color: #fff; } .pastille.A { background: var(--c-ABS); color: #fff; } .pastille.N { background: #F3F4F6; color: var(--text-muted); }
 
 /* Rapports journaliers */
 .form { max-width: 760px; }
