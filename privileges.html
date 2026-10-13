@@ -19,12 +19,27 @@
 <main class="portail">
   <div class="onglets" role="tablist">
     <button class="onglet actif" data-p="p-users">Utilisateurs</button>
+    <button class="onglet" data-p="p-def">Rôles</button>
     <button class="onglet" data-p="p-roles">Droits par rôle</button>
+    <button class="onglet" data-p="p-apps">Applications</button>
     <button class="onglet" data-p="p-exc">Exceptions</button>
   </div>
   <section class="panneau" id="p-users">
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
     <table class="t"><thead><tr><th>Nom</th><th>Service</th><th>Rôle</th><th>Compte</th><th>Accès</th></tr></thead><tbody id="b-users"></tbody></table>
+  </section>
+  <section class="panneau" id="p-def" hidden>
+    <p class="aide" style="margin-bottom:12px">Créez, renommez ou supprimez les rôles. <b>Niveau maximum</b> : plafond absolu du rôle, quoi qu'on configure (ex. « Invité » = lecture seule). <b>Modules interdits</b> : jamais accessibles à ce rôle. Un rôle ne peut être supprimé que si plus personne ne l'utilise.</p>
+    <table class="t"><thead><tr><th>Nom</th><th>Identifiant</th><th>Niveau maximum</th><th>Modules interdits</th><th>Personnes</th><th></th></tr></thead><tbody id="b-def"></tbody></table>
+    <div class="ajout" id="nouveau-role">
+      <input type="text" id="n-nom" placeholder="Nom du nouveau rôle (ex. Stagiaire)" style="max-width:280px">
+      <select id="n-max"><option value="0">Sans plafond</option><option value="1">Lecture seule</option><option value="2">Saisie maximum</option></select>
+      <button class="btn-s" id="n-add" type="button">Créer le rôle</button>
+    </div>
+  </section>
+  <section class="panneau" id="p-apps" hidden>
+    <p class="aide" style="margin-bottom:12px">Pour chaque application : le <b>niveau minimal</b> requis dans son module, et éventuellement les <b>rôles autorisés</b>. Sans rôle indiqué, toute personne qui a accès au module la voit.</p>
+    <table class="t"><thead><tr><th>Module</th><th>Application</th><th>Niveau minimal</th><th>Rôles autorisés</th></tr></thead><tbody id="b-apps"></tbody></table>
   </section>
   <section class="panneau" id="p-roles" hidden>
     <p class="aide" style="margin-bottom:12px">Niveau : <b>0</b> aucun · <b>1</b> lecture · <b>2</b> saisie · <b>3</b> administration</p>
@@ -49,7 +64,8 @@
   var $ = function (id) { return document.getElementById(id); };
   if (Api.demo) $('demo').hidden = false;
   var etat = null, tNiv = 0;
-  var LIB_ROLES = { agent: 'Agent', conducteur: 'Conducteur des travaux', chef_service: 'Chef de service', chef_division: 'Chef de division', secretariat: 'Secrétariat', cpm: 'Cellule Passation de marché' };
+  function lib(id) { var r = etat && etat.roles.filter(function (x) { return x.id === id; })[0]; return r ? r.libelle : id; }
+  var NIV_LIB = { 1: 'Lecture', 2: 'Saisie', 3: 'Administration' };
 
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(tNiv); tNiv = setTimeout(function () { t.className = 'toast'; }, 3200); }
@@ -71,7 +87,7 @@
     etat.utilisateurs.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '') + ' ' + (u.fonction || '')).toLowerCase().indexOf(f) !== -1; }).forEach(function (u) {
       var tr = el('tr', u.actif ? '' : 'inactif');
       tr.appendChild(el('td', null, u.nom)); tr.appendChild(el('td', null, u.service || ''));
-      var td = el('td'); td.appendChild(select([['', '— aucun —']].concat(etat.roles.map(function (r) { return [r, LIB_ROLES[r] || r]; })), u.role || '', function (v, s) {
+      var td = el('td'); td.appendChild(select([['', '— aucun —']].concat(etat.roles.map(function (r) { return [r.id, r.libelle]; })), u.role || '', function (v, s) {
         if (!v) { s.value = u.role || ''; return; }
         agir('admin_role', { email: u.email, role: v }, 'Rôle mis à jour');
       })); tr.appendChild(td);
@@ -92,16 +108,65 @@
     var th = el('thead'); th.appendChild(hr); t.appendChild(th);
     var tb = el('tbody');
     etat.roles.forEach(function (r) {
-      var tr = el('tr'); tr.appendChild(el('td', null, LIB_ROLES[r] || r));
+      var tr = el('tr'); tr.appendChild(el('td', null, r.libelle));
       etat.modules.forEach(function (m) {
-        var d = etat.droitsRole.filter(function (x) { return x.role === r && x.module === m.id; })[0];
-        var td = el('td'); td.appendChild(select([[0, '0'], [1, '1'], [2, '2'], [3, '3']], d ? d.niveau : 0, function (v) {
-          agir('admin_droit', { role: r, module: m.id, niveau: Number(v) }, 'Droit mis à jour');
-        })); tr.appendChild(td);
+        var d = etat.droitsRole.filter(function (x) { return String(x.role).toLowerCase() === r.id && x.module === m.id; })[0];
+        var td = el('td'); var interdit = r.interdits.indexOf(String(m.id).toLowerCase()) !== -1; var max = r.niveau_max || 3;
+        var opts = [[0, '0']]; for (var n = 1; n <= max; n += 1) opts.push([n, String(n)]);
+        var s = select(opts, interdit ? 0 : Math.min(d ? Number(d.niveau) : 0, max), function (v) { agir('admin_droit', { role: r.id, module: m.id, niveau: Number(v) }, 'Droit mis à jour'); });
+        if (interdit) { s.disabled = true; s.title = 'Module interdit pour ce rôle'; }
+        td.appendChild(s); tr.appendChild(td);
       });
       tb.appendChild(tr);
     });
     t.appendChild(tb);
+  }
+
+  function dessinerDef() {
+    var b = $('b-def'); b.textContent = '';
+    etat.roles.forEach(function (r) {
+      var tr = el('tr'); var protege = r.id === 'secretariat';
+      var nom = document.createElement('input'); nom.type = 'text'; nom.value = r.libelle; nom.style.minWidth = '180px';
+      var td1 = el('td'); td1.appendChild(nom); tr.appendChild(td1);
+      tr.appendChild(el('td', null, r.id));
+      var tdm = el('td'); var sm = select([[0, 'Sans plafond'], [1, 'Lecture seule'], [2, 'Saisie maximum']], r.niveau_max || 0, function () {}); sm.disabled = protege; tdm.appendChild(sm); tr.appendChild(tdm);
+      var tdi = el('td'); var det = document.createElement('details'); var sum = el('summary', null, r.interdits.length ? r.interdits.length + ' module(s)' : 'aucun');
+      det.appendChild(sum); var checks = [];
+      etat.modules.forEach(function (m) {
+        var lab = el('label', 'case'); var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = String(m.id).toLowerCase();
+        cb.checked = r.interdits.indexOf(cb.value) !== -1; cb.disabled = protege; checks.push(cb); lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + m.titre)); det.appendChild(lab);
+      });
+      tdi.appendChild(det); tr.appendChild(tdi);
+      tr.appendChild(el('td', null, String(r.nb_utilisateurs)));
+      var ta = el('td'); ta.style.whiteSpace = 'nowrap';
+      var save = el('button', 'btn-s', 'Enregistrer'); save.type = 'button'; save.disabled = protege && false;
+      save.addEventListener('click', function () {
+        agir('admin_role_enregistrer', { id: r.id, libelle: nom.value, niveau_max: Number(sm.value), interdits: checks.filter(function (c) { return c.checked; }).map(function (c) { return c.value; }) }, 'Rôle enregistré');
+      });
+      var del = el('button', 'btn-s', 'Supprimer'); del.type = 'button'; del.style.marginLeft = '6px'; del.disabled = protege; if (protege) del.title = 'Le secrétariat ne peut pas être supprimé';
+      del.addEventListener('click', function () { if (window.confirm('Supprimer le rôle « ' + r.libelle + ' » ? Ses droits seront retirés.')) agir('admin_role_supprimer', { id: r.id }, 'Rôle supprimé'); });
+      ta.appendChild(save); ta.appendChild(del); tr.appendChild(ta); b.appendChild(tr);
+    });
+  }
+
+  function dessinerApps() {
+    var b = $('b-apps'); b.textContent = '';
+    etat.applications.forEach(function (a) {
+      var tr = el('tr'); var mod = etat.modules.filter(function (m) { return m.id === a.module; })[0];
+      tr.appendChild(el('td', null, mod ? mod.titre : a.module)); tr.appendChild(el('td', null, a.titre));
+      var enr = function (niv, roles) { agir('admin_app', { titre: a.titre, niveau_min: niv, roles: roles }, 'Application mise à jour'); };
+      var tn = el('td'); tn.appendChild(select([[1, 'Lecture'], [2, 'Saisie'], [3, 'Administration']], a.niveau_min, function (v) { enr(Number(v), a.roles); })); tr.appendChild(tn);
+      var tr2 = el('td');
+      if (!a.roles.length) tr2.appendChild(el('span', 'aide', 'Tous les rôles du module '));
+      a.roles.forEach(function (rid) {
+        var chip = el('span', 'pastille', lib(rid) + ' '); var x = el('button', 'btn-s', '×'); x.type = 'button'; x.style.padding = '0 6px'; x.title = 'Retirer';
+        x.addEventListener('click', function () { enr(a.niveau_min, a.roles.filter(function (r) { return r !== rid; })); });
+        chip.appendChild(x); tr2.appendChild(chip);
+      });
+      var libres = etat.roles.filter(function (r) { return a.roles.indexOf(r.id) === -1; });
+      if (libres.length) tr2.appendChild(select([['', '+ rôle']].concat(libres.map(function (r) { return [r.id, r.libelle]; })), '', function (v, s) { if (v) enr(a.niveau_min, a.roles.concat([v])); }));
+      tr.appendChild(tr2); b.appendChild(tr);
+    });
   }
 
   var LIB_NIV = { 0: 'Retrait', 1: 'Lecture', 2: 'Saisie', 3: 'Administration' };
@@ -121,16 +186,19 @@
     etat.modules.forEach(function (m) { var o = el('option', null, m.titre); o.value = m.id; sm.appendChild(o); });
   }
 
-  function dessiner() { dessinerUsers(); dessinerRoles(); dessinerExc(); }
+  function dessiner() { dessinerUsers(); dessinerDef(); dessinerRoles(); dessinerApps(); dessinerExc(); }
   function recharger() { return Api.call('admin_etat').then(function (r) { etat = r; dessiner(); }); }
 
   document.querySelectorAll('.onglet').forEach(function (b) {
     b.addEventListener('click', function () {
       document.querySelectorAll('.onglet').forEach(function (x) { x.classList.toggle('actif', x === b); });
-      ['p-users', 'p-roles', 'p-exc'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; });
+      ['p-users', 'p-def', 'p-roles', 'p-apps', 'p-exc'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; });
     });
   });
   $('filtre').addEventListener('input', dessinerUsers);
+  $('n-add').addEventListener('click', function () {
+    agir('admin_role_enregistrer', { creation: true, libelle: $('n-nom').value, niveau_max: Number($('n-max').value), interdits: [] }, 'Rôle créé').then(function () { $('n-nom').value = ''; });
+  });
   $('x-add').addEventListener('click', function () { agir('admin_exception', { email: $('x-user').value, module: $('x-mod').value, niveau: Number($('x-niv').value) }, 'Exception enregistrée'); });
 
   recharger().catch(function (e) {

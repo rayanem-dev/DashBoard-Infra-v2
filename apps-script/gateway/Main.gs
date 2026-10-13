@@ -5,7 +5,7 @@
  *
  * Planning (module « planning ») : situation, rotation_enregistrer (soi-même : niveau 1 ; autrui : niveau 3), planning (niveau 2 : tout le monde).
  * Administration (niveau 3 sur le module « securite ») : admin_etat, admin_role, admin_actif, admin_droit, admin_exception, emettreCode.
- * Actions : liste, demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, emettreCode (admin).
+ * Actions : liste, demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, admin_app, emettreCode (admin).
  * `ident` = identifiant opaque (uid) choisi dans le sélecteur ; l'e-mail est aussi accepté.
  * Les données métier ne sortent QUE par cette passerelle, jamais par un lien public.
  */
@@ -27,6 +27,7 @@ function doGet() {
 }
 
 function route_(req) {
+  chargerRoles_();
   switch (req.action) {
     case 'liste':        return { utilisateurs: Auth.liste() };
     case 'demanderCode': return Auth.demanderCode(req.ident);
@@ -34,10 +35,10 @@ function route_(req) {
     case 'activer': return Auth.activer(req.ident, req.code, req.mdp, req.remember);
     case 'reprendre': return Auth.reprendre(req.rt);
     case 'logout':  Auth.logout(req.token, req.rt); return {};
-    case 'me':      return { user: Auth.publique(Auth.userFromToken(req.token)), acces: acces_(Auth.userFromToken(req.token)) };
+    case 'me':      { var um = Auth.userFromToken(req.token); return { user: pubUser_(um), acces: acces_(um) }; }
     case 'menu': {
       var u = Auth.userFromToken(req.token);
-      return { user: Auth.publique(u), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications')) };
+      return { user: pubUser_(u), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
     }
     case 'emettreCode': {
       var admin = Auth.userFromToken(req.token);
@@ -50,16 +51,22 @@ function route_(req) {
     case 'planning': return planning_(req);
     case 'admin_etat': {
       admin_(req);
+      var us = Store.table('Utilisateurs'); var nb = {};
+      us.forEach(function (u) { var c = Droits.roleCanon(u.role); nb[c] = (nb[c] || 0) + 1; });
       return {
-        roles: Droits.ROLES, modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
-        utilisateurs: Store.table('Utilisateurs').map(function (u) { return { email: u.email, nom: u.nom, service: u.service, fonction: u.fonction, role: u.role, actif: String(u.actif) !== '0' }; })
+        roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
+        modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
+        applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles) }; }),
+        utilisateurs: us.map(function (u) { return { email: u.email, nom: u.nom, service: u.service, fonction: u.fonction, role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
       };
     }
+    case 'admin_role_enregistrer': return roleEnregistrer_(req);
+    case 'admin_role_supprimer': return roleSupprimer_(req);
     case 'admin_role': {
       var a1 = admin_(req); var e1 = Droits.verifier(req.role); if (e1) throw new Error(e1);
       cible_(req.email);
       if (String(req.email).toLowerCase() === String(a1.email).toLowerCase()) throw new Error('Vous ne pouvez pas modifier votre propre rôle');
-      Store.maj('Utilisateurs', { email: req.email }, { role: req.role });
+      Store.maj('Utilisateurs', { email: req.email }, { role: Droits.roleCanon(req.role) });
       Store.journal('role', a1.email, req.email + ' -> ' + req.role); return {};
     }
     case 'admin_actif': {
@@ -69,18 +76,28 @@ function route_(req) {
       Store.journal(req.actif ? 'activation' : 'desactivation', a2.email, req.email); return {};
     }
     case 'admin_droit': {
-      var a3 = admin_(req); var e3 = Droits.verifier(req.role, Number(req.niveau)); if (e3) throw new Error(e3);
-      module_(req.module);
+      var a3 = admin_(req); module_(req.module); var e3 = Droits.verifier(req.role, Number(req.niveau), req.module); if (e3) throw new Error(e3);
       if (String(req.role) === 'secretariat' && String(req.module) === 'securite' && Number(req.niveau) < 3) throw new Error('Le secrétariat doit garder l\'administration de la sécurité');
-      if (Number(req.niveau) === 0) Store.supprimer('DroitsRole', { role: req.role, module: req.module });
-      else Store.maj('DroitsRole', { role: req.role, module: req.module }, { niveau: Number(req.niveau) });
+      var rc3 = Droits.roleCanon(req.role);
+      if (Number(req.niveau) === 0) Store.supprimer('DroitsRole', { role: rc3, module: req.module });
+      else Store.maj('DroitsRole', { role: rc3, module: req.module }, { niveau: Number(req.niveau) });
       Store.journal('droit_role', a3.email, req.role + '/' + req.module + '=' + req.niveau); return {};
     }
     case 'admin_exception': {
       var a4 = admin_(req); cible_(req.email); module_(req.module);
       if (req.niveau === null || req.niveau === undefined || req.niveau === '') Store.supprimer('Exceptions', { email: req.email, module: req.module });
-      else { var e4 = Droits.verifier(undefined, Number(req.niveau)); if (e4) throw new Error(e4); Store.maj('Exceptions', { email: req.email, module: req.module }, { niveau: Number(req.niveau) }); }
+      else { var rc4 = Droits.roleCanon(Store.utilisateur(req.email).role); var e4 = Droits.verifier(Droits.ROLES.indexOf(rc4) === -1 ? undefined : rc4, Number(req.niveau), req.module); if (e4) throw new Error(e4); Store.maj('Exceptions', { email: req.email, module: req.module }, { niveau: Number(req.niveau) }); }
       Store.journal('exception', a4.email, req.email + '/' + req.module + '=' + req.niveau); return {};
+    }
+    case 'admin_app': {
+      var a5 = admin_(req);
+      var ap = Store.table('Applications').filter(function (x) { return String(x.titre) === String(req.titre); })[0];
+      if (!ap) throw new Error('Application inconnue');
+      var nm = Number(req.niveau_min); if (!(nm === 1 || nm === 2 || nm === 3)) throw new Error('Niveau minimal invalide (1 à 3)');
+      var liste = (req.roles || []).map(Droits.roleCanon);
+      liste.forEach(function (r) { if (Droits.ROLES.indexOf(r) === -1) throw new Error('Rôle inconnu : ' + r); });
+      Store.maj('Applications', { titre: req.titre }, { niveau_min: nm, roles: liste.join(',') });
+      Store.journal('application', a5.email, req.titre + ' niveau>=' + nm + ' roles=' + (liste.join(',') || 'tous')); return {};
     }
     default: throw new Error('Action inconnue');
   }
@@ -145,4 +162,64 @@ function planning_(req) {
     return l;
   });
   return { aujourdhui: auj, debut: debut, jours: n, peutModifier: niv >= 3, lignes: lignes };
+}
+
+// ---------- Rôles modifiables (onglet « Roles ») ----------
+var ROLES_INFO_ = [];
+
+/** Charge les rôles de l'onglet « Roles » ; à défaut (onglet absent ou vide), les rôles d'origine. Le secrétariat est toujours présent (anti-verrouillage). */
+function chargerRoles_() {
+  var l = [];
+  try { l = Store.table('Roles'); } catch (e) { l = []; }
+  var defs = l.map(function (r) {
+    return { id: Droits.roleCanon(r.id), libelle: String(r.libelle || r.id), niveau_max: Number(r.niveau_max) || 0,
+             interdits: String(r.interdits || '').split(/[,;]/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean) };
+  }).filter(function (r) { return r.id; });
+  if (defs.length && !defs.some(function (r) { return r.id === 'secretariat'; })) defs.push({ id: 'secretariat', libelle: 'Secrétariat', niveau_max: 0, interdits: [] });
+  Droits.configurer(defs);
+  ROLES_INFO_ = defs.length ? defs : Droits.rolesParDefaut();
+}
+function libelleRole_(role) {
+  var c = Droits.roleCanon(role);
+  for (var i = 0; i < ROLES_INFO_.length; i += 1) if (ROLES_INFO_[i].id === c) return ROLES_INFO_[i].libelle;
+  return role || '';
+}
+function pubUser_(u) { var p = Auth.publique(u); p.role_libelle = libelleRole_(u.role); return p; }
+
+/** Si l'onglet « Roles » est vide, y recopie d'abord les rôles d'origine (sinon le premier rôle créé ferait disparaître les autres). */
+function semerRoles_() {
+  var l = []; try { l = Store.table('Roles'); } catch (e) { throw new Error('Onglet « Roles » absent : exécutez mettreAJourStructure dans l\'éditeur Apps Script'); }
+  if (l.length) return;
+  Droits.rolesParDefaut().forEach(function (r) { Store.maj('Roles', { id: r.id }, { libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits.join(',') }); });
+}
+function roleEnregistrer_(req) {
+  var a = admin_(req); semerRoles_(); chargerRoles_();
+  var def = { id: req.id, libelle: req.libelle, niveau_max: Number(req.niveau_max) || 0, interdits: req.interdits || [] };
+  var mods = Store.table('Modules').map(function (x) { return String(x.id).toLowerCase(); });
+  var err = Droits.validerRole(def, Droits.ROLES, mods, !!req.creation); if (err) throw new Error(err);
+  var id = Droits.roleCanon(def.id || def.libelle);
+  if (!req.creation && Droits.ROLES.indexOf(id) === -1) throw new Error('Rôle inconnu');
+  if (id === 'secretariat' && (def.niveau_max || def.interdits.length)) throw new Error('Le rôle secrétariat ne peut pas être restreint');
+  Store.maj('Roles', { id: id }, { libelle: String(def.libelle).trim(), niveau_max: def.niveau_max, interdits: def.interdits.map(function (x) { return String(x).toLowerCase(); }).join(',') });
+  Store.journal(req.creation ? 'role_cree' : 'role_modifie', a.email, id);
+  return { id: id };
+}
+function roleSupprimer_(req) {
+  var a = admin_(req); semerRoles_(); chargerRoles_();
+  var id = Droits.roleCanon(req.id);
+  if (id === 'secretariat') throw new Error('Le rôle secrétariat ne peut pas être supprimé');
+  if (Droits.ROLES.indexOf(id) === -1) throw new Error('Rôle inconnu');
+  var nb = Store.table('Utilisateurs').filter(function (u) { return Droits.roleCanon(u.role) === id; }).length;
+  if (nb) throw new Error('Impossible : ' + nb + ' utilisateur' + (nb > 1 ? 's ont' : ' a') + ' ce rôle. Changez d\'abord leur rôle.');
+  // Droits et limitations d'applications qui le mentionnent
+  var vus = {};
+  Store.table('DroitsRole').forEach(function (d) { if (Droits.roleCanon(d.role) === id) vus[String(d.role)] = true; });
+  Object.keys(vus).forEach(function (r) { Store.supprimerTout('DroitsRole', { role: r }); });
+  Store.table('Applications').forEach(function (x) {
+    var l = Droits.rolesDe(x.roles);
+    if (l.indexOf(id) !== -1) Store.maj('Applications', { titre: x.titre }, { roles: l.filter(function (r) { return r !== id; }).join(',') });
+  });
+  Store.supprimer('Roles', { id: id });
+  Store.journal('role_supprime', a.email, id);
+  return {};
 }

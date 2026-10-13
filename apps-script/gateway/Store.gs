@@ -40,6 +40,11 @@ var Store = (function () {
     if (t.ligne) sh.deleteRow(t.ligne);
     invalider_(nom);
   }
+  function supprimerTout(nom, cles) {
+    var sh = feuille_(nom);
+    for (var i = 0; i < 500; i += 1) { var t = trouver_(sh, cles); if (!t.ligne) break; sh.deleteRow(t.ligne); }
+    invalider_(nom);
+  }
   function parUid(uid) {
     uid = String(uid || '');
     if (!uid) return null;
@@ -50,5 +55,5 @@ var Store = (function () {
   function journal(action, email, detail) {
     try { db_().getSheetByName('Journal').appendRow([new Date(), action, email, detail || '']); } catch (e) { Logger.log('Journal : ' + e.message); }
   }
-  return { table: table, utilisateur: utilisateur, parUid: parUid, maj: maj, supprimer: supprimer, journal: journal };
+  return { table: table, utilisateur: utilisateur, parUid: parUid, maj: maj, supprimer: supprimer, supprimerTout: supprimerTout, journal: journal };
 })();

@@ -6,10 +6,45 @@
  * Ensuite : coller dans « Utilisateurs » les lignes nettoyées de BDDORGA (voir docs/ARCHITECTURE-4.0.md),
  * puis déployer en application Web (Exécuter en tant que : moi ; Accès : tout le monde — protégé par la connexion).
  */
+// Droits par défaut (1 lecture, 2 saisie, 3 administration) — à ajuster dans la page « Privilèges » ou l'onglet DroitsRole.
+// « prestataire » et « guest » n'ont volontairement aucun droit par défaut : on les ouvre module par module.
+var DROITS_DEFAUT_ = [
+  ['agent', 'planning', 1], ['agent', 'rapports', 1],
+  ['conducteur', 'planning', 1], ['conducteur', 'rapports', 2], ['conducteur', 'pilotage', 1], ['conducteur', 'logistique', 2],
+  ['dessinateur', 'planning', 1], ['dessinateur', 'rapports', 1], ['dessinateur', 'pilotage', 1],
+  ['chef_atelier', 'planning', 1], ['chef_atelier', 'rapports', 2], ['chef_atelier', 'pilotage', 1], ['chef_atelier', 'logistique', 2],
+  ['chef_service', 'planning', 2], ['chef_service', 'rapports', 2], ['chef_service', 'pilotage', 2], ['chef_service', 'cpm', 1], ['chef_service', 'logistique', 2], ['chef_service', 'rh', 1], ['chef_service', 'admin', 1],
+  ['interim_chef_service', 'planning', 2], ['interim_chef_service', 'rapports', 2], ['interim_chef_service', 'pilotage', 2], ['interim_chef_service', 'cpm', 1], ['interim_chef_service', 'logistique', 2], ['interim_chef_service', 'rh', 1], ['interim_chef_service', 'admin', 1],
+  ['cadre_sup', 'planning', 2], ['cadre_sup', 'rapports', 2], ['cadre_sup', 'pilotage', 2], ['cadre_sup', 'cpm', 1], ['cadre_sup', 'logistique', 2], ['cadre_sup', 'rh', 1], ['cadre_sup', 'admin', 1],
+  ['chef_division', 'planning', 2], ['chef_division', 'rapports', 3], ['chef_division', 'pilotage', 3], ['chef_division', 'cpm', 3], ['chef_division', 'logistique', 3], ['chef_division', 'rh', 3], ['chef_division', 'admin', 3], ['chef_division', 'badges', 2],
+  ['ordonnateur', 'planning', 1], ['ordonnateur', 'rapports', 1], ['ordonnateur', 'pilotage', 2], ['ordonnateur', 'cpm', 1], ['ordonnateur', 'logistique', 1], ['ordonnateur', 'admin', 1],
+  ['secretariat', 'admin', 3], ['secretariat', 'rh', 2], ['secretariat', 'badges', 3], ['secretariat', 'securite', 3], ['secretariat', 'planning', 2],
+  ['cpm', 'cpm', 3], ['cpm', 'pilotage', 1]
+];
+
+/** Ajoute les droits par défaut des rôles qui n'ont encore AUCUNE ligne dans DroitsRole (ne touche jamais aux réglages existants). */
+function ajouterDroitsParDefaut() {
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('DroitsRole');
+  var presents = {};
+  sh.getDataRange().getValues().slice(1).forEach(function (l) { if (l[0]) presents[Droits.roleCanon(l[0])] = true; });
+  var nouveaux = DROITS_DEFAUT_.filter(function (r) { return !presents[r[0]]; });
+  if (nouveaux.length) sh.getRange(sh.getLastRow() + 1, 1, nouveaux.length, 3).setValues(nouveaux);
+  Logger.log(nouveaux.length + ' droit(s) par défaut ajouté(s).');
+}
+
+/** Remplit l'onglet « Roles » avec les rôles d'origine s'il est vide. */
+function ajouterRolesParDefaut() {
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Roles');
+  if (sh.getLastRow() > 1) return;
+  var l = Droits.rolesParDefaut().map(function (r) { return [r.id, r.libelle, r.niveau_max, r.interdits.join(',')]; });
+  sh.getRange(2, 1, l.length, 4).setValues(l);
+}
+
 var SCHEMA_ = {
   Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
   Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
-  Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min'],
+  Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min', 'roles'],
+  Roles: ['id', 'libelle', 'niveau_max', 'interdits'],
   DroitsRole: ['role', 'module', 'niveau'],
   Exceptions: ['email', 'module', 'niveau'],
   Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le'],
@@ -37,6 +72,8 @@ function mettreAJourStructure() {
   });
   formaterTextes_(db);
   ajouterApplicationsManquantes();
+  ajouterRolesParDefaut();
+  ajouterDroitsParDefaut();
 }
 
 function installer() {
@@ -64,15 +101,8 @@ function installer() {
   ];
   modules.forEach(function (m) { db.getSheetByName('Modules').appendRow(m.concat([1])); });
 
-  // Rôles et niveaux par défaut (1 lecture, 2 saisie, 3 administration) — à ajuster dans l'onglet DroitsRole.
-  var d = db.getSheetByName('DroitsRole');
-  [['agent', 'planning', 1], ['agent', 'rapports', 1],
-   ['conducteur', 'planning', 1], ['conducteur', 'rapports', 2], ['conducteur', 'pilotage', 1], ['conducteur', 'logistique', 2],
-   ['chef_service', 'planning', 2], ['chef_service', 'rapports', 2], ['chef_service', 'pilotage', 2], ['chef_service', 'cpm', 1], ['chef_service', 'logistique', 2], ['chef_service', 'rh', 1], ['chef_service', 'admin', 1],
-   ['chef_division', 'planning', 2], ['chef_division', 'rapports', 3], ['chef_division', 'pilotage', 3], ['chef_division', 'cpm', 3], ['chef_division', 'logistique', 3], ['chef_division', 'rh', 3], ['chef_division', 'admin', 3], ['chef_division', 'badges', 2],
-   ['secretariat', 'admin', 3], ['secretariat', 'rh', 2], ['secretariat', 'badges', 3], ['secretariat', 'securite', 3], ['secretariat', 'planning', 2],
-   ['cpm', 'cpm', 3], ['cpm', 'pilotage', 1]
-  ].forEach(function (r) { d.appendRow(r); });
+  DROITS_DEFAUT_.forEach(function (r) { db.getSheetByName('DroitsRole').appendRow(r); });
+  Droits.rolesParDefaut().forEach(function (r) { db.getSheetByName('Roles').appendRow([r.id, r.libelle, r.niveau_max, r.interdits.join(',')]); });
   amorcerApplications();
   Logger.log('Installé. DB: ' + db.getUrl() + '  SECRETS: ' + sec.getUrl());
 }

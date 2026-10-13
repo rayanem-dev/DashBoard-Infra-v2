@@ -75,3 +75,81 @@ test('rôle écrit autrement : « secretaire », « Secrétariat », « Chef de 
   const dr = [{ role: 'secretariat', module: 'securite', niveau: 3 }];
   assert.deepStrictEqual(Droits.resolve({ email: 'a@x.dz', role: 'secretaire' }, dr, []), { securite: 3 });
 });
+
+test('rôles issus de la base : variantes reconnues', () => {
+  ['Cadre_Sup', 'Interim_chef_service', 'chef_atelier', 'dessinateur', 'ordonateur', 'Chef de Division'].forEach(r =>
+    assert.ok(Droits.ROLES.includes(Droits.roleCanon(r)), r));
+  assert.strictEqual(Droits.roleCanon('Cadre_Sup'), 'cadre_sup');
+  assert.strictEqual(Droits.roleCanon('Interim_chef_service'), 'interim_chef_service');
+  assert.strictEqual(Droits.roleCanon('ordonateur'), 'ordonnateur');
+});
+
+test('guest : lecture seule, jamais plus, même avec un droit ou une exception de niveau 3', () => {
+  const dr = [{ role: 'guest', module: 'pilotage', niveau: 3 }, { role: 'guest', module: 'cpm', niveau: 2 }];
+  const a = Droits.resolve({ email: 'g@x.dz', role: 'Guest' }, dr, [{ email: 'g@x.dz', module: 'logistique', niveau: 3 }]);
+  assert.deepStrictEqual(a, { pilotage: 1, cpm: 1, logistique: 1 });
+});
+
+test('guest et prestataire : modules sensibles toujours fermés', () => {
+  const dr = ['securite', 'rh', 'admin', 'planning', 'badges', 'cpm'].map(m => ({ role: 'guest', module: m, niveau: 1 }));
+  assert.deepStrictEqual(Droits.resolve({ email: 'g@x.dz', role: 'guest' }, dr, [{ email: 'g@x.dz', module: 'securite', niveau: 3 }]), { cpm: 1 });
+  const p = Droits.resolve({ email: 'p@x.dz', role: 'prestataire' }, [
+    { role: 'prestataire', module: 'securite', niveau: 3 }, { role: 'prestataire', module: 'badges', niveau: 3 }, { role: 'prestataire', module: 'rapports', niveau: 2 }], []);
+  assert.deepStrictEqual(p, { badges: 2, rapports: 2 });
+});
+
+test('verifier : rôle, niveau, plafond et module interdit', () => {
+  assert.strictEqual(Droits.verifier('prestataire', 2, 'rapports'), '');
+  assert.match(Droits.verifier('prestataire', 3, 'rapports'), /Niveau maximum/);
+  assert.match(Droits.verifier('guest', 1, 'securite'), /ne peut pas accéder/);
+  assert.strictEqual(Droits.verifier('guest', 0, 'securite'), '');
+  assert.strictEqual(Droits.verifier('Interim_chef_service', 2, 'cpm'), '');
+});
+
+test('menu : application limitée à certains rôles', () => {
+  const cat = [{ id: 'logistique', titre: 'L', icone: 'l', ordre: 1, actif: 1 }];
+  const apps = [
+    { module: 'logistique', titre: 'Pour tous', url: 'a', niveau_min: 1, roles: '' },
+    { module: 'logistique', titre: 'Prestataires', url: 'b', niveau_min: 1, roles: 'prestataire, secretaire' },
+    { module: 'logistique', titre: 'Chefs', url: 'c', niveau_min: 1, roles: 'chef_service;chef_division' },
+  ];
+  const titres = r => Droits.menu({ logistique: 1 }, cat, apps, r)[0].apps.map(x => x.titre);
+  assert.deepStrictEqual(titres('prestataire'), ['Pour tous', 'Prestataires']);
+  assert.deepStrictEqual(titres('secretariat'), ['Pour tous', 'Prestataires']);
+  assert.deepStrictEqual(titres('Chef_Service'), ['Pour tous', 'Chefs']);
+  assert.deepStrictEqual(titres('guest'), ['Pour tous']);
+});
+
+test('rôles modifiables : un rôle créé par l\'administrateur fonctionne, avec plafond et modules interdits', () => {
+  Droits.configurer([
+    { id: 'secretariat', niveau_max: 0, interdits: [] },
+    { id: 'Stagiaire', niveau_max: 1, interdits: ['securite', 'RH'] },
+  ]);
+  try {
+    assert.deepStrictEqual(Droits.ROLES, ['secretariat', 'stagiaire']);
+    assert.strictEqual(Droits.roleCanon('Chef Projet'), 'chef_projet');
+    const dr = [{ role: 'stagiaire', module: 'pilotage', niveau: 3 }, { role: 'stagiaire', module: 'rh', niveau: 1 }, { role: 'secretariat', module: 'securite', niveau: 3 }];
+    assert.deepStrictEqual(Droits.resolve({ email: 's@x.dz', role: 'stagiaire' }, dr, []), { pilotage: 1 });
+    assert.deepStrictEqual(Droits.resolve({ email: 'a@x.dz', role: 'secretariat' }, dr, []), { securite: 3 });
+    assert.strictEqual(Droits.verifier('stagiaire', 2, 'pilotage'), 'Niveau maximum pour ce rôle : 1');
+    assert.strictEqual(Droits.verifier('guest', 1, 'cpm'), 'Rôle inconnu'); // supprimé de la liste
+  } finally { Droits.configurer([]); }
+  assert.strictEqual(Droits.ROLES.length, 13); // retour aux rôles d'origine
+});
+
+test('validerRole : création, doublon, niveau, module inconnu', () => {
+  const ex = ['agent', 'cpm'], mods = ['cpm', 'rh', 'securite'];
+  assert.strictEqual(Droits.validerRole({ libelle: 'Stagiaire', niveau_max: 1, interdits: ['rh'] }, ex, mods, true), '');
+  assert.match(Droits.validerRole({ libelle: 'Agent' }, ex, mods, true), /existe déjà/);
+  assert.strictEqual(Droits.validerRole({ id: 'agent', libelle: 'Agent', niveau_max: 0 }, ex, mods, false), '');
+  assert.match(Droits.validerRole({ libelle: '' , id: 'xx' }, ex, mods, true), /nom au rôle/);
+  assert.match(Droits.validerRole({ libelle: 'Z', id: 'a' }, ex, mods, true), /Identifiant invalide/);
+  assert.match(Droits.validerRole({ libelle: 'Test', niveau_max: 5 }, ex, mods, true), /Niveau maximum/);
+  assert.match(Droits.validerRole({ libelle: 'Test', interdits: ['nimporte'] }, ex, mods, true), /Module inconnu/);
+});
+
+test('rolesParDefaut reste celui d\'origine même après une configuration personnalisée', () => {
+  Droits.configurer([{ id: 'secretariat' }, { id: 'stagiaire', niveau_max: 1 }]);
+  try { assert.strictEqual(Droits.rolesParDefaut().length, 13); assert.strictEqual(Droits.rolesParDefaut().find(r => r.id === 'guest').niveau_max, 1); }
+  finally { Droits.configurer([]); }
+});

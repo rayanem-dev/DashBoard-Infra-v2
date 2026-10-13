@@ -31,7 +31,17 @@
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] }
     ]
   };
-  var DEMO_ROLES = ['agent', 'conducteur', 'chef_service', 'chef_division', 'secretariat', 'cpm'];
+  var demoRoles = [
+    { id: 'agent', libelle: 'Agent', niveau_max: 0, interdits: [] }, { id: 'conducteur', libelle: 'Conducteur des travaux', niveau_max: 0, interdits: [] },
+    { id: 'chef_service', libelle: 'Chef de service', niveau_max: 0, interdits: [] }, { id: 'chef_division', libelle: 'Chef de division', niveau_max: 0, interdits: [] },
+    { id: 'secretariat', libelle: 'Secrétariat', niveau_max: 0, interdits: [] }, { id: 'cpm', libelle: 'Cellule Passation de marché', niveau_max: 0, interdits: [] },
+    { id: 'prestataire', libelle: 'Prestataire', niveau_max: 2, interdits: ['securite', 'rh', 'admin'] },
+    { id: 'guest', libelle: 'Invité (lecture seule)', niveau_max: 1, interdits: ['securite', 'rh', 'admin', 'planning', 'badges'] }
+  ];
+  var demoApps = [
+    { module: 'pilotage', titre: 'Avancement Chantiers', niveau_min: 1, roles: [] }, { module: 'pilotage', titre: 'Suivi Chantier', niveau_min: 1, roles: [] },
+    { module: 'cpm', titre: 'Dossiers CPM — Détail', niveau_min: 1, roles: [] }, { module: 'planning', titre: 'Planning global', niveau_min: 2, roles: [] }
+  ];
   var DEMO_MODULES = [
     { id: 'pilotage', titre: 'Pilotage & Projets' }, { id: 'cpm', titre: 'Cellule Passation Marché' },
     { id: 'logistique', titre: 'Logistique & Stocks' }, { id: 'rh', titre: 'RH & Personnel' },
@@ -86,12 +96,28 @@
         return { user: pub(demoState.user), menu: DEMO_MENU[demoState.user.role] || [] };
       case 'logout': demoState.user = null; return {};
       case 'admin_etat': exigerAdmin();
-        return { roles: DEMO_ROLES, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
+        return { roles: demoRoles.map(function (r) { var n = DEMO_USERS.filter(function (u) { return u.role === r.id; }).length; return Object.assign({ nb_utilisateurs: n }, r); }),
+          applications: demoApps, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
           utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', role: x.role, actif: x.actif !== false }; }) };
       case 'admin_role': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas modifier votre propre rôle');
         cibleDemo(p.email).role = p.role; return {};
       case 'admin_actif': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas désactiver votre propre compte');
         cibleDemo(p.email).actif = !!p.actif; return {};
+      case 'admin_role_enregistrer': { exigerAdmin();
+        var lib = String(p.libelle || '').trim(); if (!lib) throw erreur('Donnez un nom au rôle');
+        var rid = p.creation ? lib.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') : p.id;
+        var ex = demoRoles.filter(function (r) { return r.id === rid; })[0];
+        if (p.creation && ex) throw erreur('Ce rôle existe déjà'); if (!p.creation && !ex) throw erreur('Rôle inconnu');
+        if (rid === 'secretariat' && (p.niveau_max || (p.interdits || []).length)) throw erreur('Le rôle secrétariat ne peut pas être restreint');
+        if (ex) { ex.libelle = lib; ex.niveau_max = p.niveau_max || 0; ex.interdits = p.interdits || []; } else demoRoles.push({ id: rid, libelle: lib, niveau_max: p.niveau_max || 0, interdits: p.interdits || [] });
+        return { id: rid }; }
+      case 'admin_role_supprimer': { exigerAdmin();
+        if (p.id === 'secretariat') throw erreur('Le rôle secrétariat ne peut pas être supprimé');
+        var nbu = DEMO_USERS.filter(function (u) { return u.role === p.id; }).length;
+        if (nbu) throw erreur('Impossible : ' + nbu + ' utilisateur' + (nbu > 1 ? 's ont' : ' a') + ' ce rôle. Changez d\'abord leur rôle.');
+        demoRoles = demoRoles.filter(function (r) { return r.id !== p.id; }); demoDroits = demoDroits.filter(function (d) { return d.role !== p.id; }); return {}; }
+      case 'admin_app': { exigerAdmin(); var ap = demoApps.filter(function (x) { return x.titre === p.titre; })[0]; if (!ap) throw erreur('Application inconnue');
+        ap.niveau_min = p.niveau_min; ap.roles = p.roles || []; return {}; }
       case 'admin_droit': exigerAdmin(); demoDroits = demoDroits.filter(function (d) { return !(d.role === p.role && d.module === p.module); });
         if (Number(p.niveau) > 0) demoDroits.push({ role: p.role, module: p.module, niveau: Number(p.niveau) }); return {};
       case 'admin_exception': exigerAdmin(); demoExceptions = demoExceptions.filter(function (d) { return !(d.email === p.email && d.module === p.module); });

@@ -42,7 +42,7 @@
   function dessiner(r) {
     $('qui').textContent = r.user.nom;
     $('salut').textContent = 'Bonjour ' + r.user.nom;
-    $('infos').textContent = (ROLES[r.user.role] || r.user.role || '') + (r.user.service ? ' · ' + r.user.service : '');
+    $('infos').textContent = (r.user.role_libelle || ROLES[r.user.role] || r.user.role || '') + (r.user.service ? ' · ' + r.user.service : '');
     var zone = $('modules'); zone.textContent = '';
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
     r.menu.forEach(function (m) {
