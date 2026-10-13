@@ -4,7 +4,7 @@
  * Réponse : { ok: true, ... } ou { ok: false, erreur, code }.
  *
  * Administration (niveau 3 sur le module « securite ») : admin_etat, admin_role, admin_actif, admin_droit, admin_exception, emettreCode.
- * Actions : liste, demanderCode, login, activer, me, menu, logout, emettreCode (admin).
+ * Actions : liste, demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, emettreCode (admin).
  * `ident` = identifiant opaque (uid) choisi dans le sélecteur ; l'e-mail est aussi accepté.
  * Les données métier ne sortent QUE par cette passerelle, jamais par un lien public.
  */
@@ -29,9 +29,10 @@ function route_(req) {
   switch (req.action) {
     case 'liste':        return { utilisateurs: Auth.liste() };
     case 'demanderCode': return Auth.demanderCode(req.ident);
-    case 'login':   return Auth.login(req.ident, req.mdp);
-    case 'activer': return Auth.activer(req.ident, req.code, req.mdp);
-    case 'logout':  Auth.logout(req.token); return {};
+    case 'login':   return Auth.login(req.ident, req.mdp, req.remember);
+    case 'activer': return Auth.activer(req.ident, req.code, req.mdp, req.remember);
+    case 'reprendre': return Auth.reprendre(req.rt);
+    case 'logout':  Auth.logout(req.token, req.rt); return {};
     case 'me':      return { user: Auth.publique(Auth.userFromToken(req.token)), acces: acces_(Auth.userFromToken(req.token)) };
     case 'menu': {
       var u = Auth.userFromToken(req.token);

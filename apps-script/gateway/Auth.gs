@@ -76,7 +76,7 @@ var Auth = (function () {
     return { masque: Mail.masquer(email), minutes: CFG.CODE_EMAIL_MINUTES };
   }
 
-  function activer(ident, code, mdp) {
+  function activer(ident, code, mdp, remember) {
     var u0 = resoudre_(ident); if (!u0) throw erreur_('Code invalide ou expiré');
     var email = String(u0.email || '').trim().toLowerCase();
     var echec = limiter_(email);
@@ -85,30 +85,51 @@ var Auth = (function () {
     controleMdp_(mdp);
     var sel = Utilities.getUuid().replace(/-/g, '');
     l.sh.getRange(l.ligne, 1, 1, 7).setValues([[email, sel, hash(String(mdp), sel), '', '', '', 0]]);
-    return connecter_(email);
+    return connecter_(email, remember);
   }
 
   function controleMdp_(mdp) {
-    mdp = String(mdp || '');
+    mdp = String(mdp == null ? '' : mdp);
     if (mdp.length < CFG.MDP_MIN) throw erreur_('Mot de passe : ' + CFG.MDP_MIN + ' caractères minimum');
-    if (!/[A-Za-z]/.test(mdp) || !/[0-9]/.test(mdp)) throw erreur_('Mot de passe : au moins une lettre et un chiffre');
   }
 
-  function login(ident, mdp) {
+  function login(ident, mdp, remember) {
     var u0 = resoudre_(ident); if (!u0) throw erreur_('Identifiant ou mot de passe incorrect');
     var email = String(u0.email || '').trim().toLowerCase();
     var echec = limiter_(email);
     var l = ligneSecret_(email);
     if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); throw erreur_('Identifiant ou mot de passe incorrect'); }
-    return connecter_(email);
+    return connecter_(email, remember);
   }
 
-  function connecter_(email) {
+  function connecter_(email, remember) {
     var u = Store.utilisateur(email);
     if (!u || String(u.actif) === '0') throw erreur_('Compte désactivé');
     var token = ouvrirSession_(u);
-    Store.journal('connexion', email, '');
-    return { token: token, user: publique_(u) };
+    Store.journal('connexion', email, remember ? 'rester connecté' : '');
+    var out = { token: token, user: publique_(u) };
+    if (remember) out.remember = emettreRemember_(email);
+    return out;
+  }
+
+  // « Rester connecté » : jeton aléatoire long, seule son empreinte est gardée (propriétés du script), 30 jours, à usage unique (renouvelé à chaque reprise).
+  function rmKey_(t) { return 'RM_' + Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t))).replace(/[^A-Za-z0-9]/g, '').slice(0, 40); }
+  function emettreRemember_(email) {
+    var props = PropertiesService.getScriptProperties(); var now = Date.now();
+    var all = props.getProperties();
+    Object.keys(all).forEach(function (k) { if (k.indexOf('RM_') === 0) { try { if (JSON.parse(all[k]).x < now) props.deleteProperty(k); } catch (e) { props.deleteProperty(k); } } });
+    var t = tok_() + tok_();
+    props.setProperty(rmKey_(t), JSON.stringify({ e: email, x: now + CFG.REMEMBER_DAYS * 86400000 }));
+    return t;
+  }
+  function reprendre(rt) {
+    var props = PropertiesService.getScriptProperties(); var k = rmKey_(rt || '');
+    var v = null; try { v = JSON.parse(props.getProperty(k) || 'null'); } catch (e) { v = null; }
+    if (!rt || !v || v.x < Date.now()) { if (v) props.deleteProperty(k); throw erreur_('Session expirée', 'SESSION'); }
+    props.deleteProperty(k);
+    var u = Store.utilisateur(v.e);
+    if (!u || String(u.actif) === '0') throw erreur_('Compte désactivé', 'SESSION');
+    return { token: ouvrirSession_(u), user: publique_(u), remember: emettreRemember_(u.email) };
   }
 
   function publique_(u) { return { email: u.email, nom: u.nom, role: u.role, service: u.service, fonction: u.fonction }; }
@@ -121,7 +142,12 @@ var Auth = (function () {
     return u;
   }
 
-  function logout(token) { if (token) CacheService.getScriptCache().remove('S_' + token); }
+  function logout(token, rt) {
+    if (token) CacheService.getScriptCache().remove('S_' + token);
+    if (rt) PropertiesService.getScriptProperties().deleteProperty(rmKey_(rt));
+  }
 
-  return { liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
+  return { reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
 })();
+
+if (typeof module !== 'undefined') module.exports = Auth;

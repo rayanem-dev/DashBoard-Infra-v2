@@ -48,8 +48,11 @@
     switch (action) {
       case 'liste': return { utilisateurs: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service }; }) };
       case 'demanderCode': if (!u) throw erreur('Utilisateur inconnu'); return { masque: u.email.slice(0, 2) + '***@exemple.dz', minutes: 30 };
-      case 'activer': if (!u || p.code !== '123456') throw erreur('Code invalide ou expiré'); return connecterDemo(u);
-      case 'login': if (!u || p.mdp !== 'Demo2026!') throw erreur('Identifiant ou mot de passe incorrect'); return connecterDemo(u);
+      case 'activer': if (!u || p.code !== '123456') throw erreur('Code invalide ou expiré');
+        if (String(p.mdp || '').length < 4) throw erreur('Mot de passe : 4 caractères minimum'); return connecterDemo(u, p.remember);
+      case 'login': if (!u || p.mdp !== 'Demo2026!') throw erreur('Identifiant ou mot de passe incorrect'); return connecterDemo(u, p.remember);
+      case 'reprendre': { var m = /^demo-rm-(.+)$/.exec(p.rt || ''); var ur = m && DEMO_USERS.filter(function (x) { return x.uid === m[1]; })[0];
+        if (!ur) throw erreur('Session expirée', 'SESSION'); return connecterDemo(ur, true); }
       case 'menu': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { user: pub(demoState.user), menu: DEMO_MENU[demoState.user.role] || [] };
       case 'logout': demoState.user = null; return {};
@@ -74,25 +77,47 @@
   }
   function cibleDemo(email) { var u = DEMO_USERS.filter(function (x) { return x.email === email; })[0]; if (!u) throw erreur('Utilisateur inconnu'); return u; }
   function pub(u) { return { email: u.email, nom: u.nom, role: u.role, service: u.service }; }
-  function connecterDemo(u) { demoState.user = u; return { token: 'demo', user: pub(u) }; }
+  function connecterDemo(u, remember) { demoState.user = u; var r = { token: 'demo', user: pub(u) }; if (remember) r.remember = 'demo-rm-' + u.uid; return r; }
+
+  var CLE_RM = 'infra_v2_remember';
+  var SANS_REPRISE = { login: 1, activer: 1, reprendre: 1, liste: 1, demanderCode: 1 };
 
   window.Api = {
     demo: DEMO,
+    remember: function () { try { return localStorage.getItem(CLE_RM) || ''; } catch (e) { return ''; } },
+    setRemember: function (t) { try { t ? localStorage.setItem(CLE_RM, t) : localStorage.removeItem(CLE_RM); } catch (e) { /* stockage indisponible */ } },
+    // Rouvre une session à partir du jeton « rester connecté » ; résout true/false.
+    reprendre: function () {
+      var self = this; var rt = this.remember();
+      if (!rt) return Promise.resolve(false);
+      return this.call('reprendre', { rt: rt }).then(function (r) {
+        self.setToken(r.token); if (r.remember) self.setRemember(r.remember); return true;
+      }).catch(function (e) { if (e.code === 'SESSION') self.setRemember(''); return false; });
+    },
     token: function () { try { return sessionStorage.getItem(CLE) || ''; } catch (e) { return ''; } },
     setToken: function (t) { try { t ? sessionStorage.setItem(CLE, t) : sessionStorage.removeItem(CLE); } catch (e) { /* stockage indisponible */ } },
-    call: function (action, params) {
+    call: function (action, params, dejaRepris) {
       params = params || {};
+      var self = this;
       if (DEMO) {
         // Le mode démo ne garde pas d'état entre deux pages : on rejoue la connexion mémorisée.
         try { var m = sessionStorage.getItem(CLE + '_demo'); if (m && !demoState.user) demoState.user = JSON.parse(m); } catch (e) {}
         return new Promise(function (ok, ko) { setTimeout(function () {
-          try { var r = demo(action, params); if (demoState.user) { try { sessionStorage.setItem(CLE + '_demo', JSON.stringify(demoState.user)); } catch (e) {} } else { try { sessionStorage.removeItem(CLE + '_demo'); } catch (e) {} } ok(r); } catch (e) { ko(e); }
+          try { if (!demoState.user && !SANS_REPRISE[action] && self.remember()) { var rr = demo('reprendre', { rt: self.remember() }); self.setToken(rr.token); }
+            var r = demo(action, params); if (demoState.user) { try { sessionStorage.setItem(CLE + '_demo', JSON.stringify(demoState.user)); } catch (e) {} } else { try { sessionStorage.removeItem(CLE + '_demo'); } catch (e) {} } ok(r); } catch (e) { ko(e); }
         }, 250); });
       }
       var corps = Object.assign({ action: action, token: this.token() }, params);
       return fetch(window.GATEWAY_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corps) })
         .then(function (r) { return r.json(); })
-        .then(function (j) { if (!j.ok) throw erreur(j.erreur || 'Erreur', j.code); return j; });
+        .then(function (j) { if (!j.ok) throw erreur(j.erreur || 'Erreur', j.code); return j; })
+        .catch(function (e) {
+          // Session expirée : on tente une fois de la rouvrir avec « rester connecté », puis on rejoue l'appel.
+          if (e.code === 'SESSION' && !dejaRepris && !SANS_REPRISE[action] && self.remember()) {
+            return self.reprendre().then(function (ok) { if (!ok) throw e; return self.call(action, params, true); });
+          }
+          throw e;
+        });
     }
   };
 })();

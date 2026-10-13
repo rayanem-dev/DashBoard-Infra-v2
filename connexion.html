@@ -25,6 +25,7 @@
     <select id="liste" size="6" aria-label="Liste du personnel"></select>
     <label for="mdp">Mot de passe</label>
     <input type="password" id="mdp" autocomplete="current-password">
+    <label class="case"><input type="checkbox" id="r1"> Rester connecté</label>
     <button class="btn" id="b-login" type="submit">Se connecter</button>
     <div class="msg" id="m-login" role="alert"></div>
     <button class="lien" type="button" id="l-code">Première connexion ou mot de passe oublié ?</button>
@@ -38,9 +39,10 @@
     <input type="text" id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
     <label for="n1">Nouveau mot de passe</label>
     <input type="password" id="n1" autocomplete="new-password">
-    <p class="aide">10 caractères minimum, avec au moins une lettre et un chiffre.</p>
+    <p class="aide">4 caractères minimum.</p>
     <label for="n2">Confirmer</label>
     <input type="password" id="n2" autocomplete="new-password">
+    <label class="case"><input type="checkbox" id="r2"> Rester connecté</label>
     <button class="btn" id="b-code" type="submit">Valider et me connecter</button>
     <div class="msg" id="m-code" role="alert"></div>
     <button class="lien" type="button" id="l-retour">← Retour</button>
@@ -71,14 +73,17 @@
   $('q').addEventListener('input', function () { afficher(this.value); });
   $('liste').addEventListener('change', function () { choisi = this.value; msg('m-login', ''); });
 
-  function entrer(r) { Api.setToken(r.token); location.href = 'portail.html'; }
+  function entrer(r) { Api.setToken(r.token); Api.setRemember(r.remember || ''); location.href = 'portail.html'; }
+
+  // Déjà « connecté » sur cet appareil : on rouvre la session sans rien demander.
+  if (Api.remember()) Api.reprendre().then(function (ok) { if (ok) location.replace('portail.html'); });
 
   $('f-login').addEventListener('submit', function (e) {
     e.preventDefault();
     if (!choisi) return msg('m-login', 'Choisissez votre nom dans la liste.');
     if (!$('mdp').value) return msg('m-login', 'Saisissez votre mot de passe.');
     occupe($('b-login'), true); msg('m-login', '');
-    Api.call('login', { ident: choisi, mdp: $('mdp').value }).then(entrer)
+    Api.call('login', { ident: choisi, mdp: $('mdp').value, remember: $('r1').checked }).then(entrer)
       .catch(function (e) { msg('m-login', e.message); occupe($('b-login'), false); });
   });
 
@@ -95,9 +100,10 @@
 
   $('f-code').addEventListener('submit', function (e) {
     e.preventDefault();
+    if ($('n1').value.length < 4) return msg('m-code', 'Mot de passe : 4 caractères minimum.');
     if ($('n1').value !== $('n2').value) return msg('m-code', 'Les deux mots de passe sont différents.');
     occupe($('b-code'), true); msg('m-code', '');
-    Api.call('activer', { ident: choisi, code: $('code').value.trim(), mdp: $('n1').value }).then(entrer)
+    Api.call('activer', { ident: choisi, code: $('code').value.trim(), mdp: $('n1').value, remember: $('r2').checked }).then(entrer)
       .catch(function (e) { msg('m-code', e.message); occupe($('b-code'), false); });
   });
 })();

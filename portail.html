@@ -64,7 +64,7 @@
   });
 
   $('quitter').addEventListener('click', function () {
-    Api.call('logout').catch(function () {}).then(function () { Api.setToken(''); location.replace('connexion.html'); });
+    Api.call('logout', { rt: Api.remember() }).catch(function () {}).then(function () { Api.setToken(''); Api.setRemember(''); location.replace('connexion.html'); });
   });
 })();
 </script>
