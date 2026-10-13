@@ -31,6 +31,12 @@ Sijil est déjà une application Apps Script + Sheets avec : authentification (h
 - **Message d'accueil** « Bonjour M. X, vous êtes au travail depuis … il vous reste … jours » : la passerelle interroge Sijil (`dayInfo`) avec l'e-mail de l'utilisateur. À la première connexion, 3-4 questions (où êtes-vous, quelle rotation, dernier jour de relève) créent le premier pointage → le moteur calcule la suite tout seul.
 - **À faire côté Sijil** (dépôt `pointage-app`, accès en lecture seule pour l'instant) : un petit point d'entrée serveur-à-serveur protégé par un secret partagé, renvoyant `dayInfo` / planning par e-mail. Aucune modification tant que vous ne l'avez pas validée.
 
+## Rapports journaliers (module `rapports`)
+- Onglets `Chantiers` (liste des chantiers saisissables, modifiable) et `Rapports` (un rapport par **jour + chantier + auteur** ; ressaisir le même jour modifie le rapport). Cellules en texte brut : aucune formule ni date convertie.
+- Niveaux : **1** voit ses rapports · **2** saisit, voit et vise ceux de son service (pas les siens) · **3** voit et vise tout, **synthèse du jour** par chantier (avec les chantiers sans rapport), saisie jusqu'à 60 jours en arrière.
+- Saisie : chantier, date (7 jours en arrière au plus), effectif, travaux réalisés, difficultés, commentaire, avancement estimé (facultatif).
+- **Pas encore fait** : écriture directe dans les fiches suiveuses Google Sheets et affichage des commentaires sur la page d'avancement (leurs structures diffèrent : puits, items BPU, électrique) — à cadrer ensemble ; la page d'avancement lit encore des exports publics, elle passera par la passerelle à la bascule.
+
 ## Phases
 1. Dossier v2 + copie des fichiers (`apps-script/migration/migrer.gs`) — **prêt**
 2. Passerelle : connexion, activation, droits, menu (`apps-script/gateway/`) — **base écrite, 6 tests**

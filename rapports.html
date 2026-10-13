@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rapports journaliers – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Rapports journaliers</h1><p>Sonatrach · RNS · Suivi des chantiers</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives (les rapports ne sont pas enregistrés au-delà de cette session)</div>
+
+<main class="portail">
+  <div class="onglets" role="tablist">
+    <button class="onglet actif" data-p="p-saisie" id="o-saisie">Saisir mon rapport</button>
+    <button class="onglet" data-p="p-journal">Journal</button>
+    <button class="onglet" data-p="p-synth" id="o-synth" hidden>Synthèse du jour</button>
+  </div>
+
+  <section class="panneau" id="p-saisie">
+    <form class="form" id="f" autocomplete="off">
+      <div class="deux">
+        <div class="champ"><label for="chantier">Chantier</label><select id="chantier"></select></div>
+        <div class="champ"><label for="date">Date</label><input type="date" id="date"></div>
+      </div>
+      <div class="deux">
+        <div class="champ"><label for="effectif">Effectif présent</label><input type="number" id="effectif" min="0" max="1000" step="1" inputmode="numeric"></div>
+        <div class="champ"><label for="avancement">Avancement estimé (%) — facultatif</label><input type="number" id="avancement" min="0" max="100" step="0.1" inputmode="decimal"></div>
+      </div>
+      <div class="champ"><label for="travaux">Travaux réalisés</label><textarea id="travaux" maxlength="1000"></textarea></div>
+      <div class="champ"><label for="difficultes">Difficultés / incidents — facultatif</label><textarea id="difficultes" maxlength="1000"></textarea></div>
+      <div class="champ"><label for="commentaire">Commentaire du jour — facultatif</label><textarea id="commentaire" maxlength="1000"></textarea></div>
+      <button class="btn" id="b-save" type="submit" style="max-width:320px">Enregistrer le rapport</button>
+      <p class="aide" id="deja" style="margin-top:10px"></p>
+      <div class="msg" id="m" role="alert"></div>
+    </form>
+  </section>
+
+  <section class="panneau" id="p-journal" hidden>
+    <div class="barre">
+      <label class="aide" for="du" style="margin:0">Du</label><input type="date" id="du" style="min-width:150px">
+      <label class="aide" for="au" style="margin:0">au</label><input type="date" id="au" style="min-width:150px">
+      <select id="f-chantier" aria-label="Chantier"><option value="">Tous les chantiers</option></select>
+      <button class="btn-s" id="b-filtre" type="button">Afficher</button>
+    </div>
+    <div id="liste"></div>
+  </section>
+
+  <section class="panneau" id="p-synth" hidden>
+    <div class="barre"><label class="aide" for="s-date" style="margin:0">Jour</label><input type="date" id="s-date" style="min-width:160px"><span id="s-resume" class="aide"></span></div>
+    <div class="grille-synthese" id="synth"></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/rotation.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  var niveau = 0, chantiers = [], mails = {}, mesRapports = [];
+  var auj = Rotation.aujourdhui();
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function plus(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  function nomChantier(id) { var c = chantiers.filter(function (x) { return x.id === id; })[0]; return c ? c.nom : id; }
+  function msg(texte, ok) { var m = $('m'); m.textContent = texte || ''; m.className = 'msg' + (texte ? (ok ? ' ok' : ' err') : ''); }
+
+  // ----- Saisie : préremplit si un rapport existe déjà pour (date, chantier)
+  function prerempli() {
+    var d = $('date').value, c = $('chantier').value;
+    var r = mesRapports.filter(function (x) { return x.date === d && x.chantier === c && x.le_mien; })[0];
+    ['effectif', 'avancement', 'travaux', 'difficultes', 'commentaire'].forEach(function (k) { $(k).value = r ? (r[k] === '' ? '' : r[k]) : ''; });
+    $('deja').textContent = r ? 'Un rapport existe déjà pour ce chantier et ce jour : vous le modifiez.' : '';
+  }
+  // Après un enregistrement, on met à jour la liste SANS toucher aux champs (l'utilisateur a pu déjà commencer autre chose).
+  function chargerMesRapports() {
+    return Api.call('rapports_liste', { du: plus(auj, -60), au: auj }).then(function (r) {
+      mesRapports = r.rapports;
+      var d = $('date').value, c = $('chantier').value;
+      $('deja').textContent = mesRapports.some(function (x) { return x.date === d && x.chantier === c && x.le_mien; }) ? 'Un rapport existe déjà pour ce chantier et ce jour : vous le modifiez.' : '';
+    });
+  }
+  $('date').max = auj; $('date').value = auj;
+  $('chantier').addEventListener('change', prerempli); $('date').addEventListener('change', prerempli);
+
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault(); msg('');
+    var p = { chantier: $('chantier').value, date: $('date').value, effectif: $('effectif').value, avancement: $('avancement').value,
+              travaux: $('travaux').value, difficultes: $('difficultes').value, commentaire: $('commentaire').value };
+    if (!p.travaux.trim()) return msg('Décrivez les travaux réalisés.');
+    if (p.effectif === '') return msg('Indiquez l\'effectif présent.');
+    $('b-save').disabled = true;
+    Api.call('rapport_enregistrer', p).then(function (r) { toast(r.modifie ? 'Rapport modifié' : 'Rapport enregistré'); return chargerMesRapports(); })
+      .catch(function (err) { msg(err.message); }).then(function () { $('b-save').disabled = false; });
+  });
+
+  // ----- Journal
+  function ligne(titre, texte) { var b = el('div', 'bloc'); b.appendChild(el('b', null, titre)); b.appendChild(document.createTextNode(texte)); return b; }
+  function fiche(r) {
+    var f = el('div', 'fiche'); var h = el('header'); h.appendChild(el('h4', null, nomChantier(r.chantier)));
+    h.appendChild(el('span', 'meta', Rotation.frDate(r.date) + ' · ' + (r.auteur_nom || r.auteur_email) + ' · effectif ' + r.effectif));
+    if (r.avancement !== '' && r.avancement != null) h.appendChild(el('span', 'pastille', 'Avancement ' + r.avancement + ' %'));
+    f.appendChild(h); f.appendChild(ligne('Travaux réalisés', r.travaux));
+    if (r.difficultes) f.appendChild(ligne('Difficultés', r.difficultes));
+    if (r.commentaire) f.appendChild(ligne('Commentaire', r.commentaire));
+    if (r.visa_par) f.appendChild(el('div', 'visa', 'Vu par ' + r.visa_par + (r.visa_note ? ' — ' + r.visa_note : '')));
+    if (r.peut_viser) {
+      var b = el('button', 'btn-s', r.visa_par ? 'Modifier le visa' : 'Viser'); b.type = 'button'; b.style.marginTop = '10px';
+      b.addEventListener('click', function () {
+        var note = window.prompt('Observation (facultatif) :', r.visa_note || ''); if (note === null) return;
+        Api.call('rapport_viser', { id: r.id, note: note }).then(function () { toast('Visa enregistré'); return journal(); }).catch(function (e) { toast(e.message, true); });
+      });
+      f.appendChild(b);
+    }
+    return f;
+  }
+  function journal() {
+    return Api.call('rapports_liste', { du: $('du').value, au: $('au').value, chantier: $('f-chantier').value }).then(function (r) {
+      var z = $('liste'); z.textContent = '';
+      if (!r.rapports.length) z.appendChild(el('p', 'vide', 'Aucun rapport sur cette période.'));
+      r.rapports.forEach(function (x) { z.appendChild(fiche(x)); });
+      if (r.tronque) z.appendChild(el('p', 'aide', 'Résultats limités aux 300 plus récents : affinez la période.'));
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  $('b-filtre').addEventListener('click', journal);
+
+  // ----- Synthèse (niveau 3)
+  function synthese() {
+    return Api.call('rapports_synthese', { date: $('s-date').value }).then(function (s) {
+      var z = $('synth'); z.textContent = '';
+      $('s-resume').textContent = s.manquants ? s.manquants + ' chantier(s) sans rapport ce jour' : 'Tous les chantiers ont un rapport';
+      s.chantiers.forEach(function (c) {
+        var f = el('div', 'fiche' + (c.rapports.length ? '' : ' manquant')); var h = el('header'); h.appendChild(el('h4', null, c.nom));
+        h.appendChild(el('span', 'pastille ' + (c.rapports.length ? 'vert' : 'rouge'), c.rapports.length ? c.rapports.length + ' rapport(s)' : 'Aucun rapport'));
+        f.appendChild(h);
+        if (c.rapports.length) {
+          f.appendChild(el('div', 'meta', 'Effectif cumulé : ' + c.effectif + (c.avancement != null ? ' · Avancement : ' + c.avancement + ' %' : '')));
+          c.rapports.forEach(function (r) { f.appendChild(ligne(r.auteur_nom || r.auteur_email, r.travaux + (r.difficultes ? '\n⚠ ' + r.difficultes : '') + (r.commentaire ? '\n💬 ' + r.commentaire : ''))); });
+        }
+        z.appendChild(f);
+      });
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  $('s-date').addEventListener('change', synthese);
+
+  // ----- Onglets
+  document.querySelectorAll('.onglet').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.onglet').forEach(function (x) { x.classList.toggle('actif', x === b); });
+      ['p-saisie', 'p-journal', 'p-synth'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; });
+      if (b.dataset.p === 'p-journal') journal(); if (b.dataset.p === 'p-synth') synthese();
+    });
+  });
+
+  // ----- Démarrage
+  $('du').value = plus(auj, -6); $('au').value = auj; $('s-date').value = auj; $('s-date').max = auj;
+  Api.call('rapports_chantiers').then(function (r) {
+    chantiers = r.chantiers;
+    [$('chantier'), $('f-chantier')].forEach(function (s, i) { chantiers.forEach(function (c) { var o = el('option', null, c.nom); o.value = c.id; s.appendChild(o); }); });
+    return Api.call('rapports_liste', { du: plus(auj, -60), au: auj });
+  }).then(function (r) {
+    niveau = r.niveau; mesRapports = r.rapports; prerempli();
+    if (niveau < 2) { $('o-saisie').hidden = true; $('p-saisie').hidden = true; document.querySelector('[data-p=p-journal]').click(); }
+    if (niveau >= 3) $('o-synth').hidden = false;
+  }).catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : le module « Rapports journaliers » n\'est pas activé pour votre compte.'; return; }
+    toast(e.message, true);
+  });
+})();
+</script>
+</body>
+</html>

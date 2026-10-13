@@ -40,6 +40,19 @@ function ajouterRolesParDefaut() {
   sh.getRange(2, 1, l.length, 4).setValues(l);
 }
 
+// Chantiers proposés à la saisie des rapports (reprend les chantiers ACTIFS de Avancement_des_Chantiers.html) — modifiables dans l'onglet « Chantiers ».
+var CHANTIERS_DEFAUT_ = [
+  ['forage_rns', 'Forage RNS — 3 puits d\'eau', 'Travaux Entretien', 1],
+  ['terrassement_rns', 'Terrassement RNS (36 mois)', 'Travaux Entretien', 1],
+  ['maintenance_electrique', 'Maintenance des installations électriques', 'Électromécanique', 1],
+  ['froid_climatisation', 'Maintenance des installations de froid et climatisation', 'Électromécanique', 1]
+];
+function ajouterChantiersParDefaut() {
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Chantiers');
+  if (sh.getLastRow() > 1) return;
+  sh.getRange(2, 1, CHANTIERS_DEFAUT_.length, 4).setValues(CHANTIERS_DEFAUT_);
+}
+
 var SCHEMA_ = {
   Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
   Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
@@ -48,12 +61,16 @@ var SCHEMA_ = {
   DroitsRole: ['role', 'module', 'niveau'],
   Exceptions: ['email', 'module', 'niveau'],
   Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le'],
+  Chantiers: ['id', 'nom', 'service', 'actif'],
+  Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le'],
   Journal: ['date', 'action', 'email', 'detail']
 };
 
 /** Colonnes de dates en TEXTE brut : Sheets ne doit pas les convertir en dates (décalage de fuseau). */
 function formaterTextes_(db) {
   var sh = db.getSheetByName('Rotations'); if (sh) { sh.getRange('C:C').setNumberFormat('@'); sh.getRange('G:G').setNumberFormat('@'); }
+  // Rapports et chantiers : tout en TEXTE brut (aucune formule possible, aucune date convertie).
+  ['Rapports', 'Chantiers'].forEach(function (n) { var x = db.getSheetByName(n); if (x) x.getRange('A:Z').setNumberFormat('@'); });
 }
 
 /**
@@ -74,6 +91,7 @@ function mettreAJourStructure() {
   ajouterApplicationsManquantes();
   ajouterRolesParDefaut();
   ajouterDroitsParDefaut();
+  ajouterChantiersParDefaut();
 }
 
 function installer() {
@@ -101,6 +119,7 @@ function installer() {
   ];
   modules.forEach(function (m) { db.getSheetByName('Modules').appendRow(m.concat([1])); });
 
+  ajouterChantiersParDefaut_installation_(db);
   DROITS_DEFAUT_.forEach(function (r) { db.getSheetByName('DroitsRole').appendRow(r); });
   Droits.rolesParDefaut().forEach(function (r) { db.getSheetByName('Roles').appendRow([r.id, r.libelle, r.niveau_max, r.interdits.join(',')]); });
   amorcerApplications();
@@ -117,4 +136,9 @@ function genererUids() {
       sh.getRange(i + 1, iU + 1).setValue(Utilities.base64EncodeWebSafe(d).slice(0, 12));
     }
   }
+}
+
+function ajouterChantiersParDefaut_installation_(db) {
+  var sh = db.getSheetByName('Chantiers');
+  sh.getRange(2, 1, CHANTIERS_DEFAUT_.length, 4).setValues(CHANTIERS_DEFAUT_);
 }

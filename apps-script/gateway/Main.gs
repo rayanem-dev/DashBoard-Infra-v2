@@ -4,6 +4,7 @@
  * Réponse : { ok: true, ... } ou { ok: false, erreur, code }.
  *
  * Planning (module « planning ») : situation, rotation_enregistrer (soi-même : niveau 1 ; autrui : niveau 3), planning (niveau 2 : tout le monde).
+ * Rapports journaliers (module « rapports ») : rapports_chantiers, rapport_enregistrer, rapports_liste, rapport_viser, rapports_synthese (niveau 3).
  * Administration (niveau 3 sur le module « securite ») : admin_etat, admin_role, admin_actif, admin_droit, admin_exception, emettreCode.
  * Actions : liste, demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, admin_app, emettreCode (admin).
  * `ident` = identifiant opaque (uid) choisi dans le sélecteur ; l'e-mail est aussi accepté.
@@ -49,6 +50,11 @@ function route_(req) {
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
     case 'rotation_enregistrer': return rotationEnregistrer_(req);
     case 'planning': return planning_(req);
+    case 'rapports_chantiers': return rapportsChantiers_(req);
+    case 'rapport_enregistrer': return rapportEnregistrer_(req);
+    case 'rapports_liste': return rapportsListe_(req);
+    case 'rapport_viser': return rapportViser_(req);
+    case 'rapports_synthese': return rapportsSynthese_(req);
     case 'admin_etat': {
       admin_(req);
       var us = Store.table('Utilisateurs'); var nb = {};
@@ -222,4 +228,64 @@ function roleSupprimer_(req) {
   Store.supprimer('Roles', { id: id });
   Store.journal('role_supprime', a.email, id);
   return {};
+}
+
+// ---------- Rapports journaliers ----------
+function niveauRapports_(u, min) {
+  var n = acces_(u).rapports || 0;
+  if (n < (min || 1)) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  return n;
+}
+function chantiersActifs_() {
+  return Store.table('Chantiers').filter(function (c) { return String(c.actif) !== '0' && c.id; })
+    .map(function (c) { return { id: String(c.id).toLowerCase(), nom: c.nom, service: c.service, actif: 1 }; });
+}
+function rapportsLus_() {
+  return Store.table('Rapports').map(function (r) {
+    return { id: String(r.id), date: jour_(r.date), chantier: String(r.chantier).toLowerCase(), auteur_email: String(r.auteur_email), auteur_nom: r.auteur_nom, service: r.service,
+      effectif: Number(r.effectif) || 0, travaux: String(r.travaux || ''), difficultes: String(r.difficultes || ''), commentaire: String(r.commentaire || ''),
+      avancement: r.avancement === '' || r.avancement == null ? '' : Number(r.avancement),
+      visa_par: String(r.visa_par || ''), visa_note: String(r.visa_note || ''), visa_le: String(r.visa_le || '') };
+  });
+}
+function rapportsChantiers_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 1);
+  return { chantiers: chantiersActifs_() };
+}
+function rapportEnregistrer_(req) {
+  var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 2);
+  var ids = chantiersActifs_().map(function (c) { return c.id; });
+  var v = Rapports.valider(req, Dates.today(), niv, ids); if (v.erreur) throw new Error(v.erreur);
+  var r = v.rapport; var id = Rapports.cle(r.date, r.chantier, u.email);
+  var maintenant = new Date().toISOString();
+  var existe = Store.table('Rapports').some(function (x) { return String(x.id) === id; });
+  var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: u.nom, service: u.service || '', effectif: r.effectif, travaux: r.travaux,
+                  difficultes: r.difficultes, commentaire: r.commentaire, avancement: r.avancement, modifie_le: maintenant };
+  if (!existe) valeurs.cree_le = maintenant;
+  Store.maj('Rapports', { id: id }, valeurs);
+  Store.journal(existe ? 'rapport_modifie' : 'rapport_cree', u.email, id);
+  return { id: id, modifie: existe };
+}
+function rapportsListe_(req) {
+  var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 1);
+  var auj = Dates.today();
+  var du = Dates.isDate(req.du) ? req.du : Dates.addDays(auj, -6);
+  var au = Dates.isDate(req.au) ? req.au : auj;
+  var liste = Rapports.filtrer(rapportsLus_(), u, niv, { du: du, au: au, chantier: req.chantier || '', auteur: niv >= 2 ? (req.auteur || '') : '' });
+  var out = liste.slice(0, 300).map(function (r) { r.peut_viser = Rapports.peutViser(u, niv, r); r.le_mien = String(r.auteur_email).toLowerCase() === String(u.email).toLowerCase(); return r; });
+  return { du: du, au: au, niveau: niv, rapports: out, tronque: liste.length > 300 };
+}
+function rapportViser_(req) {
+  var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 2);
+  var r = rapportsLus_().filter(function (x) { return x.id === String(req.id); })[0];
+  if (!r) throw new Error('Rapport introuvable');
+  if (!Rapports.peutViser(u, niv, r)) throw Object.assign(new Error('Vous ne pouvez pas viser ce rapport'), { code: 'DROITS' });
+  Store.maj('Rapports', { id: r.id }, { visa_par: u.nom || u.email, visa_note: Rapports.nettoyer(req.note, 500), visa_le: new Date().toISOString() });
+  Store.journal('rapport_vise', u.email, r.id);
+  return {};
+}
+function rapportsSynthese_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var auj = Dates.today(); var date = Dates.isDate(req.date) ? req.date : auj;
+  return Rapports.synthese(chantiersActifs_(), rapportsLus_(), date);
 }

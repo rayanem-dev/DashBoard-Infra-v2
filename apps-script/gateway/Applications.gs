@@ -4,6 +4,7 @@
  * pointerVersCopies() les remplace par les copies de l'organisation v2 (via Registre_Migration).
  */
 var SEED_APPS = [
+ ["rapports", "Rapports journaliers", "Saisie du rapport du jour par chantier (effectif, travaux, difficultés, commentaire) et suivi par la hiérarchie.", "📝", "rapports.html", 1],
  ["planning", "Planning global", "Qui est au travail, qui est en repos : vue d'ensemble des rotations de la division, prochains changements.", "🗓️", "planning.html", 2],
  ["securite", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3],
  [

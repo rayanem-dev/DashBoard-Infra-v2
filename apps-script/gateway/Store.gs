@@ -7,7 +7,7 @@ var Store = (function () {
     var v = db_().getSheetByName(nom).getDataRange().getValues();
     var h = v[0].map(String);
     var rows = v.slice(1).filter(function (r) { return r.join('') !== ''; }).map(function (r) { var o = {}; h.forEach(function (c, i) { o[c] = r[i]; }); return o; });
-    cache.put(k, JSON.stringify(rows), 120); // 2 min : une modification manuelle du classeur est vue rapidement
+    try { cache.put(k, JSON.stringify(rows), 120); } catch (e) { /* table > 100 Ko : lue directement à chaque appel */ } // 2 min : une modification manuelle du classeur est vue rapidement
     return rows;
   }
   function utilisateur(email) {

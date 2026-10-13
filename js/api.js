@@ -17,12 +17,14 @@
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] },
       { id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 2, apps: [
         { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
-      { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [] },
+      { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
+        { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' } ] }
     ],
     conducteur: [
-      { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 2, apps: [] },
+      { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 2, apps: [
+        { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
       { id: 'pilotage', titre: 'Pilotage & Projets', icone: '📊', niveau: 1, apps: [
         { titre: 'Avancement Chantiers', description: 'Vue d\'ensemble de l\'avancement des chantiers.', emoji: '📊', url: 'Avancement_des_Chantiers.html' } ] }
     ],
@@ -79,6 +81,24 @@
     return { statut: x.st, depuis: plus(a, -(x.jour - 1)), jour: x.jour, total: x.total, restants: rest, prochain: { date: plus(a, rest), statut: x.st === 'T' ? 'R' : 'T' }, prevu: true };
   }
   function demoGrille(rot, debut, n) { var o = ''; for (var i = 0; i < n; i += 1) { var x = statutAu(rot, plus(debut, i)); o += x ? x.st : '.'; } return o; }
+
+  // Rapports de démonstration (la validation réelle est celle de Rapports.gs, côté passerelle).
+  var CLE_RAP = 'infra_v2_demo_rapports';
+  var DEMO_CHANTIERS = [
+    { id: 'forage_rns', nom: 'Forage RNS — 3 puits d\'eau', service: 'Travaux Entretien', actif: 1 },
+    { id: 'terrassement_rns', nom: 'Terrassement RNS (36 mois)', service: 'Travaux Entretien', actif: 1 },
+    { id: 'maintenance_electrique', nom: 'Maintenance des installations électriques', service: 'Électromécanique', actif: 1 }
+  ];
+  var NIV_RAP = { chef_division: 3, conducteur: 2, cpm: 1 };
+  function demoRapports() {
+    var d; try { d = JSON.parse(sessionStorage.getItem(CLE_RAP) || 'null'); } catch (e) { d = null; }
+    if (!d) d = [{ id: 'seed1', date: auj(), chantier: 'forage_rns', auteur_email: 'a.khelifi@exemple.dz', auteur_nom: 'KHELIFI Amine', service: 'Service Construction',
+      effectif: 14, travaux: 'Forage du puits P2 : passage à 85 m, remontée des déblais.', difficultes: 'Venue d\'eau à 80 m, pompage nécessaire.', commentaire: 'Prévoir pièces de rechange pour la pompe.', avancement: 42, visa_par: '', visa_note: '', visa_le: '' }];
+    return d;
+  }
+  function saveRap(d) { try { sessionStorage.setItem(CLE_RAP, JSON.stringify(d)); } catch (e) {} }
+  function niveauRap() { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return NIV_RAP[demoState.user.role] || 0; }
+  function vuRap(r, niv) { var u = demoState.user; return niv >= 3 || r.auteur_email === u.email || (niv === 2 && r.service === u.service); }
 
   function erreur(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
 
@@ -140,6 +160,32 @@
           var r = all[x.email], l = { nom: x.nom, service: x.service, fonction: '', email: x.email, configuree: !!r };
           if (r) { l.rotation = r; l.situation = demoSituation(r); l.grille = demoGrille(r, d0, n); }
           return l; }) }; }
+      case 'rapports_chantiers': { if (niveauRap() < 1) throw erreur('Droits insuffisants', 'DROITS'); return { chantiers: DEMO_CHANTIERS }; }
+      case 'rapports_liste': { var nv = niveauRap(); if (nv < 1) throw erreur('Droits insuffisants', 'DROITS'); var u = demoState.user;
+        var l = demoRapports().filter(function (r) { return vuRap(r, nv) && (!p.du || r.date >= p.du) && (!p.au || r.date <= p.au) && (!p.chantier || r.chantier === p.chantier); })
+          .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
+          .map(function (r) { return Object.assign({}, r, { le_mien: r.auteur_email === u.email, peut_viser: nv >= 2 && r.auteur_email !== u.email }); });
+        return { du: p.du, au: p.au, niveau: nv, rapports: l, tronque: false }; }
+      case 'rapport_enregistrer': { var n2 = niveauRap(); if (n2 < 2) throw erreur('Droits insuffisants', 'DROITS'); var uu = demoState.user;
+        if (!DEMO_CHANTIERS.some(function (c) { return c.id === p.chantier; })) throw erreur('Chantier inconnu');
+        if (!p.date || p.date > auj()) throw erreur('La date ne peut pas être dans le futur');
+        if (ecart(p.date, auj()) > (n2 >= 3 ? 60 : 7)) throw erreur('Rapport trop ancien (' + (n2 >= 3 ? 60 : 7) + ' jours maximum)');
+        if (p.effectif === '' || !(Number(p.effectif) >= 0) || Math.floor(Number(p.effectif)) !== Number(p.effectif)) throw erreur('Effectif : nombre entier de 0 à 1000');
+        if (String(p.travaux || '').trim().length < 3) throw erreur('Décrivez les travaux réalisés');
+        var rr = demoRapports(), id = [p.date, p.chantier, uu.email].join('|'), ex2 = rr.filter(function (r) { return r.id === id; })[0];
+        var nouv = { id: id, date: p.date, chantier: p.chantier, auteur_email: uu.email, auteur_nom: uu.nom, service: uu.service, effectif: Number(p.effectif),
+          travaux: p.travaux.trim(), difficultes: (p.difficultes || '').trim(), commentaire: (p.commentaire || '').trim(), avancement: p.avancement === '' ? '' : Number(p.avancement), visa_par: '', visa_note: '', visa_le: '' };
+        if (ex2) Object.assign(ex2, nouv, { visa_par: ex2.visa_par, visa_note: ex2.visa_note }); else rr.push(nouv);
+        saveRap(rr); return { id: id, modifie: !!ex2 }; }
+      case 'rapport_viser': { var n3 = niveauRap(); var rv = demoRapports(); var cible2 = rv.filter(function (r) { return r.id === p.id; })[0];
+        if (!cible2) throw erreur('Rapport introuvable');
+        if (n3 < 2 || cible2.auteur_email === demoState.user.email || !vuRap(cible2, n3)) throw erreur('Vous ne pouvez pas viser ce rapport', 'DROITS');
+        cible2.visa_par = demoState.user.nom; cible2.visa_note = p.note || ''; saveRap(rv); return {}; }
+      case 'rapports_synthese': { if (niveauRap() < 3) throw erreur('Droits insuffisants', 'DROITS'); var jour = p.date || auj(); var rs = demoRapports();
+        var cs = DEMO_CHANTIERS.map(function (c) { var x = rs.filter(function (r) { return r.date === jour && r.chantier === c.id; });
+          var avs = x.map(function (r) { return r.avancement; }).filter(function (a) { return a !== ''; });
+          return { id: c.id, nom: c.nom, service: c.service, rapports: x, effectif: x.reduce(function (s2, r) { return s2 + r.effectif; }, 0), avancement: avs.length ? Math.max.apply(null, avs) : null }; });
+        return { date: jour, chantiers: cs, manquants: cs.filter(function (c) { return !c.rapports.length; }).length }; }
       case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };
     }
     throw erreur('Action inconnue');
