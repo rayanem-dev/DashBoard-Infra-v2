@@ -131,12 +131,7 @@ function installer() {
 function genererUids() {
   var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Utilisateurs');
   var v = sh.getDataRange().getValues(); var h = v[0]; var iU = h.indexOf('uid'), iE = h.indexOf('email');
-  for (var i = 1; i < v.length; i += 1) {
-    if (v[i][iE] && !v[i][iU]) {
-      var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, prop_('PEPPER') + 'uid' + String(v[i][iE]).toLowerCase());
-      sh.getRange(i + 1, iU + 1).setValue(Utilities.base64EncodeWebSafe(d).slice(0, 12));
-    }
-  }
+  for (var i = 1; i < v.length; i += 1) if (v[i][iE] && !v[i][iU]) sh.getRange(i + 1, iU + 1).setValue(uidPour_(v[i][iE]));
 }
 
 function ajouterChantiersParDefaut_installation_(db) {
@@ -238,4 +233,29 @@ function retirerMotsDePasseParDefaut() {
   for (var i = 1; i < v.length; i += 1) if (Number(v[i][6]) > 1) { v[i] = [v[i][0], '', '', '', '', '', 0]; n += 1; }
   sec.getRange(1, 1, v.length, 7).setValues(v);
   Logger.log(n + ' mot(s) de passe provisoire(s) retiré(s).');
+}
+
+/**
+ * Diagnostic d'un compte : pourquoi (ou non) peut-il se connecter avec le mot de passe provisoire ? Exemple : diagnostiquerCompte('prenom.nom@sonatrach.dz').
+ * N'affiche aucun secret : uniquement des constats.
+ */
+function diagnostiquerCompte(email) {
+  email = String(email || '').trim().toLowerCase();
+  chargerRoles_();
+  var u = Store.utilisateur(email);
+  var l = [];
+  if (!u) { Logger.log('Absent de l\'onglet Utilisateurs de Gateway_DB : lancer previsualiserSynchro puis synchroniserDepuisBDDORGA.'); return; }
+  l.push('Utilisateurs : trouvé (' + u.nom + ')');
+  l.push('uid : ' + (u.uid ? 'présent' : 'MANQUANT → lancer genererUids (sinon la personne n\'apparaît pas dans la liste de connexion)'));
+  l.push('actif : ' + (String(u.actif) === '0' ? 'NON (compte désactivé)' : 'oui'));
+  var role = Droits.roleCanon(u.role);
+  l.push('rôle : ' + (u.role ? role + (Droits.ROLES.indexOf(role) === -1 ? ' (INCONNU : aucun accès)' : '') : 'AUCUN (connexion possible mais aucun module)'));
+  var acces = Droits.resolve(u, Store.table('DroitsRole'), Store.table('Exceptions'));
+  var large = ['secretariat', 'chef_division', 'chef_service', 'interim_chef_service'].indexOf(role) !== -1 || (acces.securite || 0) >= 1;
+  var sec = SpreadsheetApp.openById(prop_('SECRETS_ID')).getSheetByName('Identifiants').getDataRange().getValues();
+  var ligne = null; for (var i = 1; i < sec.length; i += 1) if (String(sec[i][0]).toLowerCase() === email) ligne = sec[i];
+  if (!ligne || !ligne[2]) l.push('mot de passe : AUCUN' + (large ? ' — compte à large visibilité : exclu du mot de passe provisoire (utiliser « Première connexion ou mot de passe oublié ? »)' : ' → lancer definirMotDePasseParDefaut'));
+  else if (Number(ligne[6]) > 1) l.push('mot de passe : PROVISOIRE, ' + (Number(ligne[6]) > Date.now() ? 'valable jusqu\'au ' + new Date(Number(ligne[6])).toLocaleString('fr-FR') : 'EXPIRÉ le ' + new Date(Number(ligne[6])).toLocaleString('fr-FR') + ' → relancer definirMotDePasseParDefaut'));
+  else l.push('mot de passe : choisi par la personne (le provisoire ne s\'applique pas)');
+  Logger.log(l.join('\n'));
 }

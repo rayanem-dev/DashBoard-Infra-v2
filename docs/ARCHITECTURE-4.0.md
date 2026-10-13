@@ -37,6 +37,9 @@ Sijil est déjà une application Apps Script + Sheets avec : authentification (h
 - Portail : la fiche de l'utilisateur (matricule, fonction, service, employeur, rôle, e-mail, téléphone) et sa situation du jour. Colonnes optionnelles `telephone` et `civilite` (« Monsieur », « Madame ») de l'onglet `Utilisateurs`.
 - Pied de page « Propulsé par Sijil » (lien réglable : `SIJIL_URL` dans `js/config.js`).
 
+## Synchronisation avec BDDORGA
+`Utilisateurs` (dans `Gateway_DB`) est une **copie** de l'onglet BDDORGA : elle ne se met pas à jour toute seule tant que la synchro n'est pas activée. `previsualiserSynchro()` montre les changements sans rien écrire ; `synchroniserDepuisBDDORGA()` les applique ; `activerSynchroQuotidienne()` la programme chaque jour vers 6 h. Seules les colonnes d'identité sont lues (nom, e-mail, matricule, service, poste, employeur, téléphone) — jamais les mots de passe ni identifiants du fichier. Les nouveaux arrivent **sans rôle** (donc sans accès) ; personne n'est supprimé ni désactivé automatiquement ; `role`, `actif`, `uid`, `civilite` ne sont jamais modifiés.
+
 ## Mot de passe provisoire (saisie des rotations)
 `definirMotDePasseParDefaut(jours)` donne « 0000 » aux comptes qui n'ont pas encore de mot de passe, **pour 7 jours puis refusé**. Les comptes à large visibilité (secrétariat, chef de division, chefs de service et intérims, accès sécurité) sont exclus par défaut. Une bannière invite à le changer ; « 0000 » ne peut pas être gardé. `retirerMotsDePasseParDefaut()` = coupe-circuit immédiat.
 
