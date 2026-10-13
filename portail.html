@@ -20,12 +20,14 @@
   <section class="accueil" id="accueil">
     <h2 id="salut">Bonjour</h2>
     <p id="infos">Chargement de votre espace…</p>
+    <div class="statut" id="statut" hidden><p id="phrase"></p><button class="btn-s" id="b-rot" type="button"></button></div>
   </section>
   <div id="modules"></div>
 </main>
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/rotation.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -58,7 +60,22 @@
     });
   }
 
-  Api.call('menu').then(dessiner).catch(function (e) {
+  function dessinerStatut(nomAffiche) {
+    return Api.call('situation').then(function (r) {
+      var box = $('statut'); if (!r.acces) { box.hidden = true; return; }
+      box.hidden = false; box.className = 'statut' + (r.configuree ? '' : ' invite');
+      var nom = nomAffiche || r.nom;
+      if (!r.configuree) {
+        $('phrase').textContent = 'Pour afficher votre planning (travail / repos, jours restants), indiquez où vous en êtes dans votre rotation.';
+        $('b-rot').textContent = 'Configurer ma rotation';
+      } else {
+        $('phrase').textContent = Rotation.phrase(r.situation); $('b-rot').textContent = 'Modifier';
+      }
+      $('b-rot').onclick = function () { Rotation.ouvrir({ valeurs: r.rotation, onOk: function () { dessinerStatut(nomAffiche); } }); };
+    }).catch(function () { $('statut').hidden = true; });
+  }
+
+  Api.call('menu').then(function (r) { dessiner(r); return dessinerStatut(r.user.nom); }).catch(function (e) {
     if (e.code === 'SESSION' || !Api.token() && !Api.demo) { Api.setToken(''); location.replace('connexion.html'); return; }
     $('infos').textContent = 'Erreur : ' + e.message;
   });

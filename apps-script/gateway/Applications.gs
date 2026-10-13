@@ -4,6 +4,7 @@
  * pointerVersCopies() les remplace par les copies de l'organisation v2 (via Registre_Migration).
  */
 var SEED_APPS = [
+ ["planning", "Planning global", "Qui est au travail, qui est en repos : vue d'ensemble des rotations de la division, prochains changements.", "🗓️", "planning.html", 2],
  ["securite", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3],
  [
   "logistique",

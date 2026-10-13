@@ -3,6 +3,7 @@
  * (Content-Type: text/plain, pour éviter la pré-requête CORS) :  { action, token?, ...paramètres }
  * Réponse : { ok: true, ... } ou { ok: false, erreur, code }.
  *
+ * Planning (module « planning ») : situation, rotation_enregistrer (soi-même : niveau 1 ; autrui : niveau 3), planning (niveau 2 : tout le monde).
  * Administration (niveau 3 sur le module « securite ») : admin_etat, admin_role, admin_actif, admin_droit, admin_exception, emettreCode.
  * Actions : liste, demanderCode, login, activer, reprendre (rester connecté), me, menu, logout, emettreCode (admin).
  * `ident` = identifiant opaque (uid) choisi dans le sélecteur ; l'e-mail est aussi accepté.
@@ -44,6 +45,9 @@ function route_(req) {
       Store.journal('code_active', admin.email, req.email);
       return { code: Auth.emettreCode(req.email) };
     }
+    case 'situation': return situationDe_(Auth.userFromToken(req.token));
+    case 'rotation_enregistrer': return rotationEnregistrer_(req);
+    case 'planning': return planning_(req);
     case 'admin_etat': {
       admin_(req);
       return {
@@ -92,4 +96,53 @@ function admin_(req) {
 function cible_(email) { if (!Store.utilisateur(email)) throw new Error('Utilisateur inconnu'); }
 function module_(id) {
   if (!Store.table('Modules').some(function (m) { return String(m.id).toLowerCase() === String(id).toLowerCase(); })) throw new Error('Module inconnu');
+}
+
+// ---------- Planning (rotations) ----------
+function jour_(v) {
+  var s = String(v == null ? '' : v);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var d = new Date(v); return isNaN(d.getTime()) ? '' : Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+function rotationDe_(email) {
+  var l = Store.table('Rotations'); email = String(email).toLowerCase();
+  for (var i = 0; i < l.length; i += 1) if (String(l[i].email).toLowerCase() === email) {
+    return { statut: String(l[i].statut), depuis: jour_(l[i].depuis), jours_travail: Number(l[i].jours_travail), jours_repos: Number(l[i].jours_repos) };
+  }
+  return null;
+}
+function situationDe_(u) {
+  if ((acces_(u).planning || 0) < 1) return { acces: false };
+  var rot = rotationDe_(u.email);
+  if (!rot) return { acces: true, configuree: false, nom: u.nom };
+  return { acces: true, configuree: true, nom: u.nom, rotation: rot, situation: Planning.situation(rot, [], Dates.today()) };
+}
+function rotationEnregistrer_(req) {
+  var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;
+  var email = String(req.email || u.email).toLowerCase();
+  if (email !== String(u.email).toLowerCase()) { if (niv < 3) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' }); cible_(email); }
+  else if (niv < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  var rot = { statut: String(req.statut), depuis: String(req.depuis), jours_travail: Number(req.jours_travail), jours_repos: Number(req.jours_repos) };
+  var err = Planning.valider(rot, Dates.today()); if (err) throw new Error(err);
+  Store.maj('Rotations', { email: email }, { statut: rot.statut, depuis: rot.depuis, jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, maj_par: u.email, maj_le: new Date().toISOString() });
+  Store.journal('rotation', u.email, email + ' ' + rot.statut + ' depuis ' + rot.depuis + ' (' + rot.jours_travail + '/' + rot.jours_repos + ')');
+  return situationDe_(Store.utilisateur(email));
+}
+function planning_(req) {
+  var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;
+  if (niv < 2) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  var auj = Dates.today();
+  var debut = Dates.isDate(req.debut) ? req.debut : Dates.addDays(auj, -7);
+  var n = Math.max(7, Math.min(62, Number(req.jours) || 35));
+  var lignes = Store.table('Utilisateurs').filter(function (x) { return String(x.actif) !== '0' && x.email; }).map(function (x) {
+    var l = { nom: x.nom, service: x.service, fonction: x.fonction, configuree: false };
+    if (niv >= 3) l.email = x.email;
+    var rot = rotationDe_(x.email);
+    if (!rot) return l;
+    var s = Planning.situation(rot, [], auj);
+    l.configuree = true; l.rotation = { jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, statut: rot.statut, depuis: rot.depuis };
+    l.situation = s; l.grille = Planning.grille(rot, [], debut, n);
+    return l;
+  });
+  return { aujourdhui: auj, debut: debut, jours: n, peutModifier: niv >= 3, lignes: lignes };
 }

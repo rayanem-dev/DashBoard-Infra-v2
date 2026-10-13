@@ -15,6 +15,8 @@
         { titre: 'Suivi Chantier', description: 'Détail du suivi par chantier.', emoji: '🗂️', url: 'Suivi_Chantier.html' } ] },
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] },
+      { id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 2, apps: [
+        { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' } ] }
@@ -41,6 +43,33 @@
     { role: 'cpm', module: 'cpm', niveau: 3 }, { role: 'chef_division', module: 'securite', niveau: 3 }, { role: 'chef_division', module: 'pilotage', niveau: 3 }
   ];
   var demoExceptions = [{ email: 's.meziane@exemple.dz', module: 'cpm', niveau: 1 }];
+  // Rotations de démonstration (le vrai calcul est celui du moteur Sijil, côté passerelle).
+  var CLE_ROT = 'infra_v2_demo_rot';
+  function jourStr(d) { return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2); }
+  function auj() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function plus(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return jourStr(d); }
+  function ecart(a, b) { return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000); }
+  function demoRots() {
+    var d; try { d = JSON.parse(sessionStorage.getItem(CLE_ROT) || 'null'); } catch (e) { d = null; }
+    if (!d) { d = { 'k.benali@exemple.dz': { statut: 'T', depuis: plus(auj(), -9), jours_travail: 28, jours_repos: 28 },
+                    's.meziane@exemple.dz': { statut: 'R', depuis: plus(auj(), -3), jours_travail: 14, jours_repos: 14 } }; }
+    return d;
+  }
+  function saveRots(d) { try { sessionStorage.setItem(CLE_ROT, JSON.stringify(d)); } catch (e) {} }
+  function statutAu(rot, jour) {
+    var jt = rot.jours_travail, jr = rot.jours_repos, off = ecart(rot.depuis, jour);
+    if (off < 0) return null;
+    var premier = rot.statut === 'T' ? jt : jr, second = rot.statut === 'T' ? jr : jt, pos = off % (jt + jr);
+    return pos < premier ? { st: rot.statut, jour: pos + 1, total: premier } : { st: rot.statut === 'T' ? 'R' : 'T', jour: pos - premier + 1, total: second };
+  }
+  function demoSituation(rot) {
+    var a = auj(), x = statutAu(rot, a);
+    if (!x) return { avant: true, debut: rot.depuis };
+    var rest = x.total - x.jour + 1;
+    return { statut: x.st, depuis: plus(a, -(x.jour - 1)), jour: x.jour, total: x.total, restants: rest, prochain: { date: plus(a, rest), statut: x.st === 'T' ? 'R' : 'T' }, prevu: true };
+  }
+  function demoGrille(rot, debut, n) { var o = ''; for (var i = 0; i < n; i += 1) { var x = statutAu(rot, plus(debut, i)); o += x ? x.st : '.'; } return o; }
+
   function erreur(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
 
   function demo(action, p) {
@@ -67,6 +96,24 @@
         if (Number(p.niveau) > 0) demoDroits.push({ role: p.role, module: p.module, niveau: Number(p.niveau) }); return {};
       case 'admin_exception': exigerAdmin(); demoExceptions = demoExceptions.filter(function (d) { return !(d.email === p.email && d.module === p.module); });
         if (p.niveau !== null && p.niveau !== '' && p.niveau !== undefined) demoExceptions.push({ email: p.email, module: p.module, niveau: Number(p.niveau) }); return {};
+      case 'situation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var rr = demoRots()[demoState.user.email];
+        return rr ? { acces: true, configuree: true, nom: demoState.user.nom, rotation: rr, situation: demoSituation(rr) } : { acces: true, configuree: false, nom: demoState.user.nom }; }
+      case 'rotation_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var cible = p.email || demoState.user.email;
+        if (cible !== demoState.user.email && demoState.user.role !== 'chef_division') throw erreur('Droits insuffisants', 'DROITS');
+        if (p.statut !== 'T' && p.statut !== 'R') throw erreur('Indiquez si vous êtes en travail ou en repos');
+        if (!p.depuis || p.depuis > auj()) throw erreur('La date ne peut pas être dans le futur');
+        if (!(p.jours_travail >= 1 && p.jours_travail <= 90 && p.jours_repos >= 1 && p.jours_repos <= 90)) throw erreur('Rotation invalide (1 à 90 jours)');
+        var tous = demoRots(); tous[cible] = { statut: p.statut, depuis: p.depuis, jours_travail: p.jours_travail, jours_repos: p.jours_repos }; saveRots(tous);
+        return { acces: true, configuree: true }; }
+      case 'planning': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        if (demoState.user.role !== 'chef_division') throw erreur('Droits insuffisants', 'DROITS');
+        var d0 = plus(auj(), -7), n = 35, all = demoRots();
+        return { aujourdhui: auj(), debut: d0, jours: n, peutModifier: true, lignes: DEMO_USERS.map(function (x) {
+          var r = all[x.email], l = { nom: x.nom, service: x.service, fonction: '', email: x.email, configuree: !!r };
+          if (r) { l.rotation = r; l.situation = demoSituation(r); l.grille = demoGrille(r, d0, n); }
+          return l; }) }; }
       case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };
     }
     throw erreur('Action inconnue');

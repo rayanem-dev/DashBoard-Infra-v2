@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Planning global – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Planning global</h1><p>Sonatrach · RNS · Rotations de la division</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+
+<main class="portail">
+  <div class="stats" id="stats"></div>
+  <div class="barre">
+    <input type="text" id="q" placeholder="Rechercher un nom…" aria-label="Rechercher">
+    <select id="svc" aria-label="Service"><option value="">Tous les services</option></select>
+    <select id="etat" aria-label="Situation"><option value="">Toutes les situations</option><option value="T">Au travail</option><option value="R">En repos</option><option value="N">Non configurés</option></select>
+    <div class="legende"><span><i style="background:var(--orange-main)"></i>Travail</span><span><i style="background:#CDE8D6"></i>Repos</span><span><i style="background:#FDE68A"></i>Absence</span><span><i style="background:#F3F4F6"></i>Hors rotation</span></div>
+  </div>
+  <section class="panneau" style="padding:0">
+    <div style="overflow:auto;max-height:72vh"><table class="plan" id="tab"></table></div>
+  </section>
+  <p class="aide" style="margin-top:12px">Le planning est calculé automatiquement par le moteur de rotation de Sijil à partir de la situation déclarée par chacun. La colonne entourée est aujourd'hui.</p>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/rotation.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  var data = null;
+  var JOURS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function plus(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function etatDe(l) { return !l.configuree || !l.situation || l.situation.avant ? 'N' : l.situation.statut; }
+
+  function stats(lignes) {
+    var c = { T: 0, R: 0, N: 0 }; lignes.forEach(function (l) { c[etatDe(l)] += 1; });
+    var z = $('stats'); z.textContent = '';
+    [['T', 'Au travail'], ['R', 'En repos'], ['N', 'Non configurés']].forEach(function (x) {
+      var d = el('div', 'stat'); d.appendChild(el('b', null, String(c[x[0]]))); d.appendChild(el('span', null, x[1])); z.appendChild(d);
+    });
+  }
+
+  function dessiner() {
+    var f = $('q').value.toLowerCase(), sv = $('svc').value, et = $('etat').value;
+    var lignes = data.lignes.filter(function (l) {
+      return (!f || (l.nom || '').toLowerCase().indexOf(f) !== -1) && (!sv || l.service === sv) && (!et || etatDe(l) === et);
+    });
+    stats(data.lignes);
+    var t = $('tab'); t.textContent = '';
+    var hr = el('tr'); hr.appendChild(el('th', 'nom', lignes.length + ' personne' + (lignes.length > 1 ? 's' : '')));
+    hr.appendChild(el('th', null, 'Situation'));
+    for (var i = 0; i < data.jours; i += 1) {
+      var d = plus(data.debut, i), th = el('th', 'j' + (d === data.aujourdhui ? ' auj' : ''));
+      th.appendChild(document.createTextNode(d.slice(8))); th.appendChild(document.createElement('br')); th.appendChild(document.createTextNode(JOURS[new Date(d + 'T00:00:00Z').getUTCDay()]));
+      th.title = Rotation.frDate(d); hr.appendChild(th);
+    }
+    var head = el('thead'); head.appendChild(hr); t.appendChild(head);
+    var body = el('tbody');
+    lignes.forEach(function (l) {
+      var tr = el('tr'); var n = el('td', 'nom'); n.appendChild(el('b', null, l.nom || ''));
+      n.appendChild(el('small', null, [l.fonction, l.service].filter(Boolean).join(' · ')));
+      if (data.peutModifier && l.email) {
+        var b = el('button', 'btn-s', l.configuree ? 'Modifier' : 'Configurer'); b.style.marginLeft = '8px'; b.type = 'button';
+        b.addEventListener('click', function () { Rotation.ouvrir({ titre: 'Rotation de ' + l.nom, email: l.email, valeurs: l.rotation, onOk: recharger }); });
+        n.appendChild(b);
+      }
+      tr.appendChild(n);
+      var e = el('td', 'etat'); var s = l.situation;
+      if (!l.configuree || !s) e.appendChild(el('span', 'pastille N', 'Non configuré'));
+      else if (s.avant) e.appendChild(el('span', 'pastille N', 'Débute le ' + Rotation.frDate(s.debut)));
+      else {
+        e.appendChild(el('span', 'pastille ' + s.statut, s.statut === 'T' ? 'Travail' : 'Repos'));
+        e.appendChild(document.createTextNode(' j' + s.jour + '/' + s.total + ' · ' + s.restants + ' restant' + (s.restants > 1 ? 's' : '') +
+          (s.prochain ? ' · → ' + Rotation.frDate(s.prochain.date).slice(0, 5) : '')));
+      }
+      tr.appendChild(e);
+      for (var k = 0; k < data.jours; k += 1) {
+        var ch = l.grille ? l.grille.charAt(k) : '.', cl = ch === 'T' ? 'T' : ch === 'R' ? 'R' : ch === 'A' ? 'A' : 'x';
+        var td = el('td', 'c ' + cl + (plus(data.debut, k) === data.aujourdhui ? ' auj' : ''), ch === '.' ? '' : ch);
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    });
+    t.appendChild(body);
+  }
+
+  function recharger() {
+    return Api.call('planning').then(function (r) {
+      data = r;
+      var sv = $('svc'), cur = sv.value; sv.length = 1;
+      Array.from(new Set(r.lignes.map(function (l) { return l.service; }).filter(Boolean))).sort().forEach(function (s) { var o = el('option', null, s); o.value = s; sv.appendChild(o); });
+      sv.value = cur; dessiner();
+    });
+  }
+  ['q', 'svc', 'etat'].forEach(function (id) { $(id).addEventListener('input', function () { if (data) dessiner(); }); });
+
+  recharger().catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé aux responsables (niveau 2 sur le module Planning).'; return; }
+    var t = $('toast'); t.textContent = e.message; t.className = 'toast on err';
+  });
+})();
+</script>
+</body>
+</html>

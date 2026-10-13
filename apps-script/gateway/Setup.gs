@@ -6,6 +6,39 @@
  * Ensuite : coller dans « Utilisateurs » les lignes nettoyées de BDDORGA (voir docs/ARCHITECTURE-4.0.md),
  * puis déployer en application Web (Exécuter en tant que : moi ; Accès : tout le monde — protégé par la connexion).
  */
+var SCHEMA_ = {
+  Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
+  Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
+  Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min'],
+  DroitsRole: ['role', 'module', 'niveau'],
+  Exceptions: ['email', 'module', 'niveau'],
+  Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le'],
+  Journal: ['date', 'action', 'email', 'detail']
+};
+
+/** Colonnes de dates en TEXTE brut : Sheets ne doit pas les convertir en dates (décalage de fuseau). */
+function formaterTextes_(db) {
+  var sh = db.getSheetByName('Rotations'); if (sh) { sh.getRange('C:C').setNumberFormat('@'); sh.getRange('G:G').setNumberFormat('@'); }
+}
+
+/**
+ * Mise à jour de structure après une nouvelle version du code : crée les onglets et colonnes manquants, sans toucher aux données.
+ * À lancer une fois après un déploiement qui ajoute des onglets (ex. « Rotations »).
+ */
+function mettreAJourStructure() {
+  var db = SpreadsheetApp.openById(prop_('DB_ID'));
+  Object.keys(SCHEMA_).forEach(function (n) {
+    var sh = db.getSheetByName(n);
+    if (!sh) { sh = db.insertSheet(n); sh.appendRow(SCHEMA_[n]); sh.setFrozenRows(1); Logger.log('Onglet créé : ' + n); return; }
+    var entetes = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0].map(String);
+    SCHEMA_[n].forEach(function (c) {
+      if (entetes.indexOf(c) === -1) { sh.getRange(1, entetes.length + 1).setValue(c); entetes.push(c); Logger.log('Colonne ajoutée : ' + n + '.' + c); }
+    });
+  });
+  formaterTextes_(db);
+  ajouterApplicationsManquantes();
+}
+
 function installer() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('DB_ID')) throw new Error('Déjà installé. Supprimer les propriétés pour recommencer.');
@@ -13,19 +46,12 @@ function installer() {
   var sec = SpreadsheetApp.create('Gateway_Secrets');
   props.setProperties({ DB_ID: db.getId(), SECRETS_ID: sec.getId(), PEPPER: Utilities.getUuid() + Utilities.getUuid() });
 
-  var feuilles = {
-    Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif'],
-    Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
-    Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min'],
-    DroitsRole: ['role', 'module', 'niveau'],
-    Exceptions: ['email', 'module', 'niveau'],
-    Journal: ['date', 'action', 'email', 'detail']
-  };
   var premiere = true;
-  Object.keys(feuilles).forEach(function (n) {
+  Object.keys(SCHEMA_).forEach(function (n) {
     var sh = premiere ? db.getSheets()[0].setName(n) : db.insertSheet(n); premiere = false;
-    sh.appendRow(feuilles[n]); sh.setFrozenRows(1);
+    sh.appendRow(SCHEMA_[n]); sh.setFrozenRows(1);
   });
+  formaterTextes_(db);
   var s = sec.getSheets()[0].setName('Identifiants');
   s.appendRow(['email', 'sel', 'empreinte', 'sel_code', 'empreinte_code', 'code_expire', 'doit_changer']); s.setFrozenRows(1);
 
