@@ -19,5 +19,5 @@
     if (window.I18n) I18n.appliquer(BasDePage.langue()); // langue mémorisée (basdepage règle lang/dir, la traduction du texte est faite ici)
   }
   // version → nouveautés → traduction (moteur + dictionnaire) → pied de page (qui applique la langue mémorisée)
-  charger('js/version.js', function () { charger('js/nouveautes.js', function () { charger('js/i18n.js', function () { charger('js/i18n-dico.js', function () { charger('js/basdepage.js', monter); }); }); }); });
+  charger('js/version.js', function () { charger('js/nouveautes.js', function () { charger('js/i18n.js', function () { charger('js/i18n-dico.js', function () { charger('js/i18n-apps.js', function () { charger('js/basdepage.js', monter); }); }); }); }); });
 })();
