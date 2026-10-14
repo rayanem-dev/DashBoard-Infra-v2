@@ -157,6 +157,21 @@ var Simulation = (function () {
     return tot;
   }
 
+  /**
+   * Reliquat concédé par une modification : écart cumulé (jours de travail du planning modifié − jours de travail du planning actuel), à partir du début
+   * de la modification ; on retient son PIC : + = l'agent travaille jusqu'à N jours de plus que prévu (reliquat à récupérer), − = jusqu'à N jours de repos
+   * de plus. Une rotation raccourcie (ou rallongée) se rattrape plus tard : le pic mesure donc le décalage réellement concédé. 0 si pas de modification.
+   */
+  function reliquat(off, mod, debutF, m) {
+    if (!m) return 0;
+    var n = Math.min(off.length, mod.length), d = 0, pic = 0;
+    for (var i = Math.max(0, diff(debutF, m.debut)); i < n; i += 1) {
+      var a = mod.charAt(i), b = off.charAt(i);
+      if (a !== b) { d += (a === 'T' ? 1 : 0) - (b === 'T' ? 1 : 0); if (Math.abs(d) > Math.abs(pic)) pic = d; }
+    }
+    return pic;
+  }
+
   /** Une passe : { conflits (jours), maxChev (plus long chevauchement), maxTrou (plus long trou) } à partir de depuisIdx. */
   function analyser(gA, gB, depuisIdx, tolC, tolV) {
     var n = Math.min(gA.length, gB.length), conflits = 0, maxChev = 0, maxTrou = 0, i = 0;
@@ -213,7 +228,8 @@ var Simulation = (function () {
       var gA = a.grille, gB = b.grille;
       var c = analyser(gA, gB, depuisIdx, tolC, tolV), tr = (a.modif ? totalJours(a.modif) : 0) + (b.modif ? totalJours(b.modif) : 0);
       // maxChev / maxTrou : tolérances qui suffiraient à supprimer tout conflit
-      res.push({ a: a, b: b, conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
+      var rA = reliquat(opts.offA, gA, opts.debutF, a.modif), rB = reliquat(opts.offB, gB, opts.debutF, b.modif);
+      res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
     }
     var i, j, B0 = cB.un[0], A0 = cA.un[0];
     for (i = 0; i < AU.length; i += 1) essayer(AU[i], B0);
@@ -223,16 +239,17 @@ var Simulation = (function () {
     for (i = 1; i < LA.length; i += 1) for (j = 1; j < LB.length; j += 1) essayer(LA[i], LB[j]);
     // Sans conflit d'abord ; sinon, les plus proches d'un vis-à-vis (plus longue série de jours à tolérer la plus courte), puis le moins de jours en conflit, puis la transition la plus courte.
     function cle(r) { return r.conflits === 0 ? 0 : 1 + Math.max(r.maxChev, r.maxTrou); }
-    res.sort(function (p, q) { return cle(p) - cle(q) || p.conflits - q.conflits || p.transition - q.transition || p.agents - q.agents; });
+    // Puis : le moins de reliquat concédé (jours de travail ou de repos en plus pour les deux agents), la transition la plus courte, le moins d'agents modifiés.
+    res.sort(function (p, q) { return cle(p) - cle(q) || p.conflits - q.conflits || p.concession - q.concession || p.transition - q.transition || p.agents - q.agents; });
     var vus = {}, out = [];
     for (i = 0; i < res.length && out.length < (opts.max || 5); i += 1) {
       var r = res[i], k = r.a.grille + '|' + r.b.grille; if (vus[k]) continue; vus[k] = true;
-      out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, tolChevMin: r.maxChev, tolTrouMin: r.maxTrou, depuis: depuisDate });
+      out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, reliquatA: r.reliquatA, reliquatB: r.reliquatB, concession: r.concession, tolChevMin: r.maxChev, tolTrouMin: r.maxTrou, depuis: depuisDate });
     }
     return out;
   }
 
-  return { proposerPaire: proposerPaire, prochaineReleve: prochaineReleve, addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
+  return { reliquat: reliquat, proposerPaire: proposerPaire, prochaineReleve: prochaineReleve, addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
            corrections: corrections, tableau: tableau, conflits: conflits, proposer: proposer };
 })();
 
