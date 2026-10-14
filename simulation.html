@@ -297,9 +297,9 @@
     }
     function sg(n) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n) + ' j'; }
     var parts = [];
-    if (eA.m && !eA.err) parts.push(A.nom + ' ' + sg(Simulation.reliquat(A.grille, eA.mod, A.debut, eA.m)));
-    if (P && eB && eB.m && !eB.err) parts.push(P.nom + ' ' + sg(Simulation.reliquat(P.grille, eB.mod, P.debut, eB.m)));
-    if (parts.length) { var rq = el('div', null, 'Reliquat concédé pendant la transition : ' + parts.join(' · ') + '  (+ : jours de travail en plus, − : jours de repos en plus)'); rq.style.cssText = 'margin-top:6px;font-weight:700'; bilan.appendChild(rq); }
+    if (eA.m && !eA.err) parts.push(A.nom + ' ' + sg(Simulation.reliquat(A.grille, eA.mod, A.debut, eA.m, A.rotation)));
+    if (P && eB && eB.m && !eB.err) parts.push(P.nom + ' ' + sg(Simulation.reliquat(P.grille, eB.mod, P.debut, eB.m, P.rotation)));
+    if (parts.length) { var rq = el('div', null, 'Reliquat concédé pendant la transition : ' + parts.join(' · ') + '  (+ : rotation reculée, N jours de retard sur le planning initial ; − : rotation avancée, N jours de repos cédés)'); rq.style.cssText = 'margin-top:6px;font-weight:700'; bilan.appendChild(rq); }
     var lg = $('legende'); lg.textContent = ''; leg.forEach(function (x) { var s = el('span'); var i2 = document.createElement('i'); i2.style.background = x[0]; s.appendChild(i2); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
   }
 
@@ -322,7 +322,7 @@
         var info = 'Vis-à-vis évalué à partir du ' + fr(r.depuis) + ' : ' + (r.conflits === 0 ? '✔ aucun conflit' : r.conflits + ' j en conflit (aucun en tolérant ' + r.tolChevMin + ' j de chevauchement et ' + r.tolTrouMin + ' j de trou)') ;
         function sg(n) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n) + ' j'; }
         var rq = el('div', 'l'); rq.style.fontWeight = '700';
-        rq.textContent = 'Reliquat concédé : ' + A.nom + ' ' + sg(r.reliquatA) + ' · ' + B.nom + ' ' + sg(r.reliquatB) + ' (total ' + r.concession + ' j)'; rq.title = '+ : l\'agent travaille des jours en plus que prévu pendant la transition ; − : il a des jours de repos en plus.';
+        rq.textContent = 'Reliquat concédé : ' + A.nom + ' ' + sg(r.reliquatA) + ' · ' + B.nom + ' ' + sg(r.reliquatB) + ' (total ' + r.concession + ' j)'; rq.title = '+ : rotation reculée (travail prolongé ou repos rallongé) ; − : rotation avancée (repos écourté), donc des jours de repos cédés.';
         t.appendChild(rq);
         t.appendChild(el('small', null, info + ' · ' + r.transition + ' jour(s) de transition · ' + r.agents + ' agent(s) modifié(s)'));
         d.appendChild(t);
