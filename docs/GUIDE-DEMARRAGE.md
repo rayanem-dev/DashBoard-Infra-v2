@@ -63,8 +63,10 @@ Le CPM et les chantiers sont lus par la passerelle (`apps-script/gateway/Donnees
 3. Seulement alors, pour chaque feuille : Partager ▸ Accès général ▸ **Restreint**. Une feuille à la fois, en vérifiant le portail après chacune.
 
 ## Journal des changements du CPM (version 4.5)
-- **Installation (une seule fois)** : dans le projet Apps Script de la passerelle (compte du secrétariat), exécuter **`installerJournalCpm`**. Elle crée deux déclencheurs (instantané chaque nuit vers 2 h, rapport chaque lundi vers 7 h, heure d'Alger) et mémorise l'état de départ : le premier jour, il n'y a donc aucun changement à signaler.
+- **Installation (une seule fois)** : dans le projet Apps Script de la passerelle (compte du secrétariat), exécuter **`installerJournalCpm`**. Elle crée deux déclencheurs (instantané chaque nuit vers 2 h, rapport chaque samedi vers 7 h, heure d'Alger) et mémorise l'état de départ : le premier jour, il n'y a donc aucun changement à signaler.
 - **Essai** : exécuter **`cpmRapportEssai`** envoie le rapport de la semaine à vous seul (pas à la direction).
 - **Destinataires du rapport** : chefs de division et secrétariat actifs (onglet Utilisateurs). Pour ajouter d'autres adresses : propriétés du script (Paramètres du projet), clé `CPM_RAPPORT_DESTINATAIRES`, adresses séparées par des virgules.
 - **Données** : onglets `CpmEtat` (dernier état connu, un dossier par ligne) et `CpmJournal` (un changement par ligne) dans `Gateway_DB`. Clé d'un dossier : son N° de dossier, sinon son intitulé.
 - **Page Dossiers CPM** : le journal des 90 derniers jours est en bas de la page.
+
+- **Semaines** : le journal est présenté par semaine du **samedi au vendredi** (accueil du portail : troisième panneau « Le journal des changements du CPM » ; page Dossiers CPM : liste complète). Le rapport du samedi matin couvre la semaine qui vient de finir. Les changements détectés la nuit sont datés de la veille, pour qu'une semaine se termine bien le vendredi soir.

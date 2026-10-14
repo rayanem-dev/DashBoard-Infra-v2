@@ -1,11 +1,21 @@
 [
   {
+    "id": "2026-10-15-04",
+    "date": "2026-10-15",
+    "title": "Version 4.6 — Le journal des changements sur l'accueil",
+    "changes": [
+      "L'accueil montre maintenant, côte à côte : l'avancement des chantiers, le suivi CPM et le journal des changements du CPM.",
+      "Le journal regroupe les changements par semaine, du samedi au vendredi.",
+      "Le résumé par e-mail part le samedi matin et couvre la semaine qui vient de se terminer."
+    ]
+  },
+  {
     "id": "2026-10-15-03",
     "date": "2026-10-15",
     "title": "Version 4.5 — Journal des changements du suivi CPM",
     "changes": [
       "Chaque nuit, le portail compare le suivi CPM à la veille et note ce qui a changé : nouveau dossier, changement de statut, dates, montants.",
-      "Chaque lundi matin, la direction reçoit par e-mail un résumé de la semaine : « ce qui a bougé ».",
+      "Chaque samedi matin, la direction reçoit par e-mail un résumé de la semaine : « ce qui a bougé ».",
       "Le journal est aussi consultable en bas de la page « Dossiers CPM »."
     ]
   },

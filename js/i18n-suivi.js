@@ -42,6 +42,8 @@
     ['Commentaire', 'Comment', 'تعليق'], ['Attribution finale', 'Final award', 'المنح النهائي'], ['Attribué à', 'Awarded to', 'ممنوح لـ'], ['N° de contrat', 'Contract no.', 'رقم العقد'],
     ['Date de signature', 'Signature date', 'تاريخ التوقيع'], ['Date ODS', 'Start order date', 'تاريخ أمر الخدمة'], ['Durée du contrat (mois)', 'Contract duration (months)', 'مدة العقد (أشهر)'], ['Échéance du contrat', 'Contract deadline', 'أجل العقد'],
     ['Intitulé', 'Title', 'العنوان'],
+    ['🕘 Le journal des changements du CPM (90 derniers jours)', '🕘 The CPM change log (last 90 days)', '🕘 سجل تغييرات CPM (آخر 90 يومًا)'],
+    ['Le journal des changements du CPM', 'The CPM change log', 'سجل تغييرات CPM'], ['Semaines du samedi au vendredi', 'Weeks from Saturday to Friday', 'أسابيع من السبت إلى الجمعة'], ['Tout voir', 'See all', 'عرض الكل'],
     ['Suivi Chantier', 'Site Tracking', 'متابعة الورشة'], ['Avancement Chantiers', 'Site Progress', 'تقدّم الأشغال'], ['📊 Avancement Chantiers', '📊 Site Progress', '📊 تقدّم الأشغال'], ['📋 Suivi CPM', '📋 CPM Tracking', '📋 متابعة CPM'],
     ['FICHE SUIVEUSE GLOBALE', 'GLOBAL TRACKING SHEET', 'بطاقة المتابعة العامة']
   ];
@@ -54,6 +56,11 @@
       return String(txt).replace(/(\d+) mois/g, function (_, n) { return E ? n + ' month' + (n > 1 ? 's' : '') : n + ' شهر'; }).replace(/(\d+) jours?/g, function (_, n) { return E ? n + ' day' + (n > 1 ? 's' : '') : n + ' يومًا'; }).replace(/ et /g, E ? ' and ' : ' و');
     }
     return [
+      [/^Semaine du (.+) au (.+)$/, function (a, b) { return E ? 'Week from ' + a + ' to ' + b : 'الأسبوع من ' + a + ' إلى ' + b; }],
+      [/^Nouveau dossier : (.+?)(?: \((.+)\))?$/, function (n, st) { return (E ? 'New file: ' : 'ملف جديد: ') + n + (st ? ' (' + I18n.t(st) + ')' : ''); }],
+      [/^Dossier retiré du suivi : (.+)$/, function (n) { return (E ? 'File removed from tracking: ' : 'ملف محذوف من المتابعة: ') + n; }],
+      [/^(.+) : passe de « (.*) » à « (.*) »$/, function (n, a, b) { return E ? n + ': changes from “' + I18n.t(a) + '” to “' + I18n.t(b) + '”' : n + ': ينتقل من «' + I18n.t(a) + '» إلى «' + I18n.t(b) + '»'; }],
+      [/^(.+) — ([^:—]+) : (.*) → (.*)$/, function (n, l, a, b) { return n + ' — ' + I18n.t(l.trim()) + ' : ' + I18n.t(a) + ' → ' + I18n.t(b); }],
       [/^Dernière lecture de la feuille : (.+)$/, function (d) { return (E ? 'Last reading of the sheet: ' : 'آخر قراءة للجدول: ') + d; }],
       [/^ — (.+)$/, function (v) { return ' — ' + I18n.t(v); }],
       [/^ : (.*) → (.*)$/, function (a, b) { return ' : ' + I18n.t(a) + ' → ' + I18n.t(b); }],

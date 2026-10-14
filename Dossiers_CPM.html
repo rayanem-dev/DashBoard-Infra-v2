@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Dossiers CPM — Détail — Division Infrastructure RNS</title>
-<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/garde.js"></script>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/synthese.js"></script><script src="js/garde.js"></script>
 <link rel="stylesheet" href="css/sombre-ancien.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -104,6 +104,9 @@
   .journal[hidden] { display: none; }
   .journal summary { cursor: pointer; font-weight: 800; font-size: 14.5px; padding: 14px 0; }
   .journal-info { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .syn-semaine { font-size: 13px; font-weight: 800; margin: 14px 0 4px; }
+  .syn-puces { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
+  .syn-puces li { margin-bottom: 2px; }
   .journal-jour { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 14px 0 6px; }
   .journal-ligne { font-size: 13.5px; line-height: 1.5; padding: 5px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
   .journal-ligne b { font-weight: 700; }
@@ -132,7 +135,7 @@
 <main>
   <div id="content" class="loading"><div class="spinner"></div>Chargement des dossiers…</div>
   <details class="journal" id="journal" hidden>
-    <summary>🕘 Journal des changements (90 derniers jours)</summary>
+    <summary>🕘 Le journal des changements du CPM (90 derniers jours)</summary>
     <p class="journal-info" id="journal-info"></p>
     <div id="journal-liste"></div>
   </details>
@@ -444,25 +447,14 @@ init();
 
 <script src="js/pied.js"></script>
 <script>
-// Journal des changements (chaque nuit, la passerelle compare la feuille CPM à la veille)
+// Journal des changements (chaque nuit, la passerelle compare la feuille CPM à la veille) — semaines du samedi au vendredi
 (function () {
-  function fr(iso) { var p = String(iso).slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : iso; }
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
-  function vide(v) { return v === '' || v == null ? '(vide)' : v; }
   Api.call('cpm_journal').then(function (r) {
     var box = document.getElementById('journal'), liste = document.getElementById('journal-liste'); box.hidden = false;
-    var info = document.getElementById('journal-info');
-    info.textContent = r.dernier_instantane ? 'Dernière lecture de la feuille : ' + new Date(r.dernier_instantane).toLocaleString('fr-FR') : 'Le journal démarre à la première lecture de la feuille (chaque nuit).';
-    if (!r.evenements.length) { liste.appendChild(el('p', 'journal-info', 'Aucun changement enregistré pour le moment.')); return; }
-    var jour = '';
-    r.evenements.forEach(function (e) {
-      if (e.date !== jour) { jour = e.date; liste.appendChild(el('div', 'journal-jour', fr(jour))); }
-      var l = el('div', 'journal-ligne');
-      if (e.type === 'nouveau') { l.appendChild(el('span', 'journal-etiq nouveau', 'Nouveau')); l.appendChild(el('b', null, e.dossier)); l.appendChild(document.createTextNode(e.apres ? ' — ' + e.apres : '')); }
-      else if (e.type === 'retire') { l.appendChild(el('span', 'journal-etiq retire', 'Retiré')); l.appendChild(el('b', null, e.dossier)); }
-      else { l.appendChild(el('span', 'journal-etiq' + (e.champ === 'statut' ? ' statut' : ''), e.libelle)); l.appendChild(el('b', null, e.dossier)); l.appendChild(document.createTextNode(' : ' + vide(e.avant) + ' → ' + vide(e.apres))); }
-      liste.appendChild(l);
-    });
+    document.getElementById('journal-info').textContent = r.dernier_instantane ? 'Dernière lecture de la feuille : ' + new Date(r.dernier_instantane).toLocaleString('fr-FR') : 'Le journal démarre à la première lecture de la feuille (chaque nuit).';
+    if (!r.evenements.length) liste.appendChild(el('p', 'journal-info', 'Aucun changement enregistré pour le moment.')); else Synthese.listeSemaines(liste, r.evenements);
+    if (location.hash === '#journal') { box.open = true; box.scrollIntoView(); }
   }).catch(function () { /* pas de droit ou journal indisponible : on n'affiche rien */ });
 })();
 </script>

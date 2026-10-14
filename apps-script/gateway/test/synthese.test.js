@@ -27,3 +27,18 @@ test('synthèse chantiers : ≥ 70 % bien avancé, 20–70 % en cours, < 20 % d�
   assert.deepStrictEqual(Synthese.chantiers([{ pct: 100 }, { pct: 70 }, { pct: 69.9 }, { pct: 20 }, { pct: 19 }, { pct: 0 }]), { total: 6, bien: 2, encours: 2, demarrage: 2 });
   assert.deepStrictEqual(Synthese.chantiers([]), { total: 0, bien: 0, encours: 0, demarrage: 0 });
 });
+
+test('journal : semaines du samedi au vendredi, phrases simples', () => {
+  assert.strictEqual(Synthese.debutSemaine('2026-10-10'), '2026-10-10'); // samedi
+  assert.strictEqual(Synthese.debutSemaine('2026-10-16'), '2026-10-10'); // vendredi
+  assert.strictEqual(Synthese.debutSemaine('2026-10-17'), '2026-10-17'); // samedi suivant
+  assert.strictEqual(Synthese.debutSemaine('2026-10-14'), '2026-10-10'); // mercredi
+  const ev = [{ date: '2026-10-17', type: 'nouveau', dossier: 'N', apres: 'Non démarré' }, { date: '2026-10-16', type: 'modifie', champ: 'statut', dossier: 'A', avant: 'En cours', apres: 'Attribué' },
+    { date: '2026-10-11', type: 'modifie', champ: 'montant', libelle: 'Montant', dossier: 'B', avant: '', apres: '10' }, { date: '2026-10-09', type: 'retire', dossier: 'R' }];
+  const w = Synthese.semaines(ev);
+  assert.deepStrictEqual(w.map(x => [x.debut, x.fin, x.evenements.length]), [['2026-10-17', '2026-10-23', 1], ['2026-10-10', '2026-10-16', 2], ['2026-10-03', '2026-10-09', 1]]);
+  assert.strictEqual(Synthese.phrase(ev[0]), 'Nouveau dossier : N (Non démarré)');
+  assert.strictEqual(Synthese.phrase(ev[1]), 'A : passe de « En cours » à « Attribué »');
+  assert.strictEqual(Synthese.phrase(ev[2]), 'B — Montant : (vide) → 10');
+  assert.strictEqual(Synthese.phrase(ev[3]), 'Dossier retiré du suivi : R');
+});

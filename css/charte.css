@@ -406,3 +406,20 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 @media (max-width: 900px) { .agent-corps { grid-template-columns: 1fr; } .agent-gauche .agent-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 420px) { .agent .jauge-bloc { flex-direction: column; text-align: center; } .agent .jauge-texte { align-items: center; } }
 @media (max-width: 420px) { .agent .jauge-bloc { padding-bottom: 34px; } }
+
+/* ===== Accueil : trois panneaux (Avancement chantiers | Suivi CPM | Journal des changements), marges réduites ===== */
+.syntheses { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.syn { padding: 10px 12px; border-radius: 12px; }
+.syn-entete { margin-bottom: 6px; }
+.syn-titre { font-size: 14px; } .syn-titre .em { font-size: 16px; }
+.syn-grille { gap: 6px; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
+.syn-quatre { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.syn-tuile { padding: 6px 8px; border-radius: 9px; } .syn-num { font-size: 18px; } .syn-lib { font-size: 10.5px; }
+.syn-barre { margin-top: 8px; height: 6px; }
+.syn-journal { max-height: 190px; overflow-y: auto; padding-right: 4px; }
+.syn-journal .syn-semaine { font-size: 12.5px; margin: 8px 0 3px; } .syn-journal .syn-semaine:first-child { margin-top: 0; }
+.syn-journal .syn-puces { font-size: 12px; padding-left: 16px; line-height: 1.45; }
+.syn-semaine { font-size: 13px; font-weight: 800; }
+.syn-puces { margin: 0; padding-left: 20px; color: var(--text-muted); }
+@media (max-width: 1100px) { .syntheses { grid-template-columns: repeat(2, minmax(0, 1fr)); } .syn-journal-boite { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .syntheses { grid-template-columns: 1fr; } }

@@ -2,7 +2,7 @@
  * Journal des changements du Suivi CPM.
  *  - chaque nuit : lecture de la feuille Suivi CPM, comparaison avec l'état de la veille (onglet « CpmEtat »), les différences sont notées
  *    dans l'onglet « CpmJournal » (nouveau dossier, dossier retiré, champ modifié) ;
- *  - chaque lundi matin : rapport « ce qui a bougé cette semaine » envoyé par e-mail à la direction (chefs de division et secrétariat,
+ *  - chaque samedi matin : rapport « ce qui a bougé cette semaine » (semaine du samedi au vendredi) envoyé par e-mail à la direction (chefs de division et secrétariat,
  *    plus les adresses de la propriété de script CPM_RAPPORT_DESTINATAIRES) ;
  *  - dans le portail (page Dossiers CPM) : liste des derniers changements (action cpm_journal).
  * La première exécution ne fait que mémoriser l'état de départ (aucun changement n'est inventé).
@@ -130,7 +130,7 @@ function cpmFeuille_(nom, entetes) {
 function cpmAujourdhui_() { return Utilities.formatDate(new Date(), 'Africa/Algiers', 'yyyy-MM-dd'); }
 
 /** Lit la feuille CPM, la compare à l'état mémorisé, enregistre les changements et le nouvel état. Retourne { base, evenements }. */
-function cpmInstantane_() {
+function cpmInstantane_(dateIso) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var apres = cpmEnregistrements_(lignesSource_('cpm'));
@@ -139,7 +139,7 @@ function cpmInstantane_() {
     var v = etat.getDataRange().getValues().slice(1).filter(function (r) { return r[0] !== ''; });
     var avant = { dossiers: {} }; v.forEach(function (r) { try { avant.dossiers[String(r[0])] = JSON.parse(String(r[1])); } catch (e) { /* ligne illisible : traitée comme absente */ } });
     var base = v.length === 0;
-    var ev = base ? [] : cpmDiff_(avant, apres, cpmAujourdhui_());
+    var ev = base ? [] : cpmDiff_(avant, apres, dateIso || cpmAujourdhui_());
     if (ev.length) journal.getRange(journal.getLastRow() + 1, 1, ev.length, CPM_ENTETES_JOURNAL_.length).setValues(ev.map(function (e) { return CPM_ENTETES_JOURNAL_.map(function (c) { return e[c]; }); }));
     etat.clearContents(); etat.getRange(1, 1, 1, 2).setValues([CPM_ENTETES_ETAT_]);
     var lignes = apres.ordre.map(function (cle) { return [cle, JSON.stringify(apres.dossiers[cle])]; });
@@ -148,7 +148,8 @@ function cpmInstantane_() {
     return { base: base, evenements: ev.length, dossiers: apres.ordre.length };
   } finally { lock.releaseLock(); }
 }
-function cpmInstantaneNuit() { var r = cpmInstantane_(); Logger.log('Instantané CPM : ' + r.dossiers + ' dossiers, ' + r.evenements + ' changement(s)' + (r.base ? ' (état de départ)' : '')); }
+/** Lancé vers 2 h : l'état lu est celui de la fin de la veille ; les changements sont donc datés de la veille (une semaine finit bien le vendredi soir). */
+function cpmInstantaneNuit() { var r = cpmInstantane_(cpmJoursAvant_(1)); Logger.log('Instantané CPM : ' + r.dossiers + ' dossiers, ' + r.evenements + ' changement(s)' + (r.base ? ' (état de départ)' : '')); }
 
 function cpmEvenementsDepuis_(depuisIso) {
   var sh = cpmFeuille_('CpmJournal', CPM_ENTETES_JOURNAL_);
@@ -163,11 +164,15 @@ function cpmDestinataires_() {
 }
 function cpmJoursAvant_(n) { var d = new Date(); d.setDate(d.getDate() - n); return Utilities.formatDate(d, 'Africa/Algiers', 'yyyy-MM-dd'); }
 
-/** Prend un instantané, puis envoie le rapport des 7 derniers jours. `essai` = true : envoi au seul compte qui lance la fonction. */
+/**
+ * Envoie le rapport de la semaine écoulée (du samedi au vendredi précédents) ; déclenché le samedi matin.
+ * `essai` = true : prend un instantané, couvre les 7 derniers jours et n'écrit qu'au compte qui lance la fonction.
+ */
 function cpmRapportSemaine(essai) {
-  cpmInstantane_();
-  var du = cpmJoursAvant_(7), au = cpmAujourdhui_();
-  var ev = cpmEvenementsDepuis_(du);
+  var du, au;
+  if (essai === true) { cpmInstantane_(); du = cpmJoursAvant_(7); au = cpmAujourdhui_(); }
+  else { du = cpmJoursAvant_(7); au = cpmJoursAvant_(1); } // exécuté un samedi : du samedi dernier au vendredi d'hier
+  var ev = cpmEvenementsDepuis_(du).filter(function (e) { return e.date <= au; });
   var etat = { dossiers: {} };
   cpmFeuille_('CpmEtat', CPM_ENTETES_ETAT_).getDataRange().getValues().slice(1).forEach(function (r) { try { etat.dossiers[String(r[0])] = JSON.parse(String(r[1])); } catch (e) {} });
   var rap = cpmRapport_(ev, cpmEcheances_(etat, new Date()), du, au);
@@ -180,11 +185,11 @@ function cpmRapportSemaine(essai) {
 /** Pour essayer sans déranger la direction : envoie le rapport à vous seul. */
 function cpmRapportEssai() { return cpmRapportSemaine(true); }
 
-/** À lancer UNE fois depuis l'éditeur : instantané chaque nuit vers 2 h, rapport chaque lundi vers 7 h (heure d'Alger). */
+/** À lancer UNE fois depuis l'éditeur : instantané chaque nuit vers 2 h, rapport chaque samedi vers 7 h (heure d'Alger). */
 function installerJournalCpm() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (['cpmInstantaneNuit', 'cpmRapportSemaine'].indexOf(t.getHandlerFunction()) !== -1) ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('cpmInstantaneNuit').timeBased().everyDays(1).atHour(2).create();
-  ScriptApp.newTrigger('cpmRapportSemaine').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(7).create();
+  ScriptApp.newTrigger('cpmRapportSemaine').timeBased().onWeekDay(ScriptApp.WeekDay.SATURDAY).atHour(7).create();
   var r = cpmInstantane_();
   Logger.log('Déclencheurs installés. État de départ : ' + r.dossiers + ' dossiers' + (r.base ? ' (premier instantané, aucun changement à signaler)' : ''));
 }

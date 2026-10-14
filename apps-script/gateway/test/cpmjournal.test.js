@@ -97,7 +97,7 @@ test('échéances : seuls les contrats en exécution à ≥ 60 % du délai', () 
 });
 test('rapport hebdomadaire : envoyé à la direction active (sans doublon), essai = soi-même ; journal sans droit refusé', () => {
   const m = monde({ depart: [A, B] }); m.props.CPM_RAPPORT_DESTINATAIRES = 'sec@x.dz, direction@x.dz';
-  m.run('cpmRapportSemaine()');
+  m.run('cpmInstantane_()'); m.run('cpmRapportSemaine()');
   assert.strictEqual(m.mails.length, 1); assert.deepStrictEqual(m.mails[0].to.split(',').sort(), ['chef@x.dz', 'direction@x.dz', 'sec@x.dz']);
   m.run('cpmRapportEssai()'); assert.strictEqual(m.mails[1].to, 'moi@x.dz');
   assert.throws(() => m.run("cpmJournalListe_({ token: 'c' })"), /Droits insuffisants/);

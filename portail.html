@@ -50,7 +50,7 @@
     <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
   </section>
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
-  <section class="syntheses" id="syntheses"><div class="syn" id="syn-cpm" hidden></div><div class="syn" id="syn-chantiers" hidden></div></section>
+  <section class="syntheses" id="syntheses"><div class="syn" id="syn-chantiers" hidden></div><div class="syn" id="syn-cpm" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
   <div class="outils" id="outils" hidden>
     <input type="search" id="recherche" placeholder="Rechercher une application ou un contact…" aria-label="Rechercher une application ou un contact" autocomplete="off">
     <span class="date-badge" id="date-badge"></span>
@@ -162,8 +162,8 @@
     // Synthèses : seulement pour qui a accès aux applications correspondantes
     var urls = []; menu.forEach(function (m) { m.apps.forEach(function (a) { urls.push(String(a.url)); }); });
     function a(f) { return urls.some(function (u) { return u.indexOf(f) !== -1; }); }
-    if (a('Dossiers_CPM.html')) Synthese.monterCpm($('syn-cpm'));
     if (a('Avancement_des_Chantiers.html')) Synthese.monterChantiers($('syn-chantiers'));
+    if (a('Dossiers_CPM.html')) { Synthese.monterCpm($('syn-cpm')); Synthese.monterJournal($('syn-journal')); }
   }
   $('recherche').addEventListener('input', filtrer);
 

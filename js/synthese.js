@@ -62,6 +62,29 @@ var Synthese = (function () {
     return { total: t, bien: globalResults.filter(function (r) { return r.pct >= 70; }).length, encours: globalResults.filter(function (r) { return r.pct >= 20 && r.pct < 70; }).length, demarrage: globalResults.filter(function (r) { return r.pct < 20; }).length };
   }
 
+  // ---------- journal des changements : semaines du samedi au vendredi ----------
+  /** Samedi qui ouvre la semaine contenant la date ISO (yyyy-mm-dd). */
+  function debutSemaine(iso) {
+    var p = String(iso).slice(0, 10).split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7)); return d.toISOString().slice(0, 10);
+  }
+  function plusJours(iso, n) { var p = iso.split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function frIso(iso) { var p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  /** evenements (du plus récent au plus ancien) → [{ debut, fin, evenements }], semaine la plus récente d'abord. */
+  function semaines(evenements) {
+    var par = {}, ordre = [];
+    evenements.forEach(function (e) { var d = debutSemaine(e.date); if (!par[d]) { par[d] = { debut: d, fin: plusJours(d, 6), evenements: [] }; ordre.push(d); } par[d].evenements.push(e); });
+    return ordre.sort().reverse().map(function (d) { return par[d]; });
+  }
+  /** Une phrase simple par changement. */
+  function phrase(e) {
+    var v = function (x) { return x === '' || x == null ? '(vide)' : x; };
+    if (e.type === 'nouveau') return 'Nouveau dossier : ' + e.dossier + (e.apres ? ' (' + e.apres + ')' : '');
+    if (e.type === 'retire') return 'Dossier retiré du suivi : ' + e.dossier;
+    if (e.champ === 'statut') return e.dossier + ' : passe de « ' + v(e.avant) + ' » à « ' + v(e.apres) + ' »';
+    return e.dossier + ' — ' + e.libelle + ' : ' + v(e.avant) + ' → ' + v(e.apres);
+  }
+
   // ---------- affichage (navigateur) ----------
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function pct(n, t) { return t > 0 ? Math.round((n / t) * 100) + '% du total' : '—'; }
@@ -103,6 +126,23 @@ var Synthese = (function () {
     }).catch(function () { sub.textContent = 'Données indisponibles pour l\'instant'; });
   }
 
-  return { parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
+  /** Remplit `zone` (ul par semaine) ; limite = nombre de semaines affichées. */
+  function listeSemaines(zone, evenements, limite) {
+    semaines(evenements).slice(0, limite || 99).forEach(function (w) {
+      zone.appendChild(el('h4', 'syn-semaine', 'Semaine du ' + frIso(w.debut) + ' au ' + frIso(w.fin)));
+      var ul = el('ul', 'syn-puces'); w.evenements.forEach(function (e) { ul.appendChild(el('li', null, phrase(e))); }); zone.appendChild(ul);
+    });
+  }
+  function monterJournal(zone) {
+    var sub = panneau(zone, '🕘', 'Le journal des changements du CPM', null, [['Tout voir', 'Dossiers_CPM.html#journal']]);
+    return Api.call('cpm_journal').then(function (r) {
+      sub.textContent = 'Semaines du samedi au vendredi';
+      var corps = el('div', 'syn-journal');
+      if (!r.evenements.length) corps.appendChild(el('p', 'syn-sous', 'Aucun changement enregistré pour le moment.')); else listeSemaines(corps, r.evenements, 4);
+      zone.appendChild(corps);
+    }).catch(function () { sub.textContent = 'Données indisponibles pour l\'instant'; });
+  }
+
+  return { debutSemaine: debutSemaine, semaines: semaines, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
 })();
 if (typeof module !== 'undefined') module.exports = Synthese;

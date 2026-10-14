@@ -254,8 +254,12 @@
     ['Les pages de suivi ont le même pied de page, le choix de la langue et le mode sombre que le reste du portail.', 'The tracking pages have the same footer, language choice and dark mode as the rest of the portal.', 'لصفحات المتابعة نفس التذييل واختيار اللغة والوضع الداكن كبقية البوابة.'],
     ['Version 4.5 — Journal des changements du suivi CPM', 'Version 4.5 — CPM tracking change log', 'الإصدار 4.5 — سجل تغييرات متابعة CPM'],
     ['Chaque nuit, le portail compare le suivi CPM à la veille et note ce qui a changé : nouveau dossier, changement de statut, dates, montants.', 'Every night, the portal compares the CPM tracking with the previous day and records what changed: new file, status change, dates, amounts.', 'كل ليلة تقارن البوابة متابعة CPM مع اليوم السابق وتسجّل ما تغيّر: ملف جديد، تغيّر الحالة، التواريخ، المبالغ.'],
-    ['Chaque lundi matin, la direction reçoit par e-mail un résumé de la semaine : « ce qui a bougé ».', 'Every Monday morning, management receives an e-mail summary of the week: “what has moved”.', 'كل صباح اثنين تتلقى الإدارة بالبريد الإلكتروني ملخص الأسبوع: «ما الذي تحرّك».'],
+    ['Chaque samedi matin, la direction reçoit par e-mail un résumé de la semaine : « ce qui a bougé ».', 'Every Saturday morning, management receives an e-mail summary of the week: “what has moved”.', 'كل صباح سبت تتلقى الإدارة بالبريد الإلكتروني ملخص الأسبوع: «ما الذي تحرّك».'],
     ['Le journal est aussi consultable en bas de la page « Dossiers CPM ».', 'The log can also be viewed at the bottom of the “CPM Files” page.', 'يمكن الاطلاع على السجل أيضًا في أسفل صفحة «ملفات CPM».'],
+    ['Version 4.6 — Le journal des changements sur l\'accueil', 'Version 4.6 — The change log on the home page', 'الإصدار 4.6 — سجل التغييرات في الصفحة الرئيسية'],
+    ['L\'accueil montre maintenant, côte à côte : l\'avancement des chantiers, le suivi CPM et le journal des changements du CPM.', 'The home page now shows, side by side: site progress, CPM tracking and the CPM change log.', 'تعرض الصفحة الرئيسية الآن جنبًا إلى جنب: تقدّم الأشغال ومتابعة CPM وسجل تغييرات CPM.'],
+    ['Le journal regroupe les changements par semaine, du samedi au vendredi.', 'The log groups changes by week, from Saturday to Friday.', 'يجمع السجل التغييرات حسب الأسبوع، من السبت إلى الجمعة.'],
+    ['Le résumé par e-mail part le samedi matin et couvre la semaine qui vient de se terminer.', 'The e-mail summary goes out on Saturday morning and covers the week that has just ended.', 'يُرسل الملخص بالبريد الإلكتروني صباح السبت ويغطي الأسبوع الذي انتهى للتو.'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];
