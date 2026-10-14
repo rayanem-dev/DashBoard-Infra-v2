@@ -317,7 +317,10 @@
   function proposer() {
     var A = S.A.data, B = S.B.data; if (!A || !B) return;
     var debut = $('debut').value; if (!Simulation.estDate(debut)) return;
-    var o = opts(), pas = Number($('pas').value) || 7, pref = $('pref').value; $('prop-aide').textContent = 'Calcul…'; $('props').textContent = '';
+    var o = opts(), pas = Number($('pas').value) || 7, pref = $('pref').value; $('props').textContent = '';
+    var base = Simulation.conflits(A.grille, B.grille, A.debut, o, Math.max(0, Simulation.diff(A.debut, debut)));
+    if (!base.jours) { $('prop-aide').textContent = '✔ ' + A.nom + ' et ' + B.nom + ' sont déjà en vis-à-vis à partir du ' + fr(debut) + ' (avec ces tolérances) : aucune modification n\'est nécessaire.'; return; }
+    $('prop-aide').textContent = 'Calcul…';
     setTimeout(function () {
       var res = Simulation.proposerPaire({ offA: A.grille, offB: B.grille, debutF: A.debut, rotA: A.rotation, rotB: B.rotation, debut: debut, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: pas, alignerReleve: pas > 1, maxTransition: 60, preference: pref, maxTotal: Number($('maxt').value) || 28 });
       var z = $('props'); z.textContent = '';
