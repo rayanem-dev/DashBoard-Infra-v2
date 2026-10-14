@@ -21,6 +21,8 @@
   table.div th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); background: var(--surface-2); }
   .gen { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 1px 8px; border-radius: 999px; }
   .gen.different { background: #FDE2E2; color: #991B1B; } .gen.manque_fiche, .gen.manque_bddorga { background: #FEF3C7; color: #92400E; }
+  .cand { display: inline-flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 1px; margin: 3px 6px 3px 0; padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .cand:hover { border-color: var(--orange-main); } .cand small { color: var(--text-muted); font-size: 11px; } .cand .amb { color: #B45309; font-weight: 800; }
   .div-liste { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; }
 </style>
 </head>
@@ -36,7 +38,11 @@
   <div id="etat" class="vide">Comparaison en cours…</div>
   <div id="rapport" hidden>
     <div class="div-resume" id="resume"></div>
-    <h2 class="div-titre">Valeurs différentes ou manquantes</h2><div id="t-div"></div>
+    <h2 class="div-titre">Noms à rapprocher (correspondances probables)</h2>
+    <p class="div-note">Ces fiches n'ont pas de personne au nom identique dans BDDORGA, mais des noms très proches existent. Cliquez sur la bonne personne pour confirmer : la fiche sera comparée avec elle (ses différences apparaîtront plus bas). Rien n'est modifié dans BDDORGA. Si le nom est suivi de « plusieurs possibilités », vérifiez avec le téléphone ou le service.</p>
+    <div id="t-probables"></div>
+    <h2 class="div-titre">Valeurs différentes ou manquantes</h2><p class="div-note"><button class="btn-s" id="copier" type="button">Copier ce tableau</button> pour l'envoyer ou le coller dans un tableur.</p><div id="t-div"></div>
+    <h2 class="div-titre">Rapprochements confirmés</h2><div id="t-rapproches"></div>
     <h2 class="div-titre">Fiches sans personne correspondante dans BDDORGA</h2><div id="t-sans-bdd"></div>
     <h2 class="div-titre">Personnes de BDDORGA sans fiche contact</h2><div id="t-sans-fiche"></div>
   </div>
@@ -54,17 +60,46 @@
     lignes.forEach(function (l) { var r = el('tr'); l.forEach(function (c) { var td = el('td'); if (c && c.genre) td.appendChild(el('span', 'gen ' + c.genre, GENRE[c.genre])); else td.textContent = c == null || c === '' ? '—' : c; r.appendChild(td); }); t.appendChild(r); });
     zone.appendChild(t);
   }
-  Api.call('contacts_divergences').then(function (r) {
+  var derniere = null;
+  function charger() {
+    Api.call('contacts_divergences').then(function (r) { derniere = r; dessiner(r); }).catch(function (e) { if (e && e.code === 'SESSION') { location.replace('connexion.html'); return; } $('etat').hidden = false; $('etat').textContent = 'Impossible de comparer : ' + (e && e.message ? e.message : 'erreur'); });
+  }
+  function confirmer(nom, email) { Api.call('contacts_confirmer', { nom: nom, email: email }).then(charger).catch(function (e) { alert(e.message || 'Échec'); }); }
+  function dessiner(r) {
+    ['resume', 't-probables', 't-div', 't-rapproches', 't-sans-bdd', 't-sans-fiche'].forEach(function (i) { $(i).textContent = ''; });
     $('etat').hidden = true; $('rapport').hidden = false;
     var diff = r.divergences.filter(function (d) { return d.genre === 'different'; }).length;
     var noms = {}; r.divergences.forEach(function (d) { noms[d.nom] = 1; });
     var rs = $('resume');
-    [[r.appariees + ' / ' + r.fiches_personnes, 'fiches retrouvées dans BDDORGA'], [diff, 'valeurs différentes'], [r.divergences.length - diff, 'valeurs absentes d\'un côté'], [Object.keys(noms).length, 'personnes concernées'],
+    [[r.appariees + ' / ' + r.fiches_personnes, 'fiches retrouvées dans BDDORGA'], [r.correspondances_probables.length, 'noms à rapprocher'], [diff, 'valeurs différentes'], [r.divergences.length - diff, 'valeurs absentes d\'un côté'], [Object.keys(noms).length, 'personnes concernées'],
       [r.fiches_sans_bddorga.length, 'fiches sans BDDORGA'], [r.bddorga_sans_fiche.length, 'BDDORGA sans fiche'], [r.prestataires_non_compares, 'prestataires (non comparés)']].forEach(function (x) { rs.appendChild(tuile(x[0], x[1])); });
+    var zp = $('t-probables');
+    if (!r.correspondances_probables.length) zp.appendChild(el('p', 'div-note', 'Aucun nom à rapprocher.'));
+    r.correspondances_probables.forEach(function (x) {
+      var bloc = el('div', 'div-note'); bloc.style.cssText = 'margin: 0 0 10px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px';
+      var t = el('div'); t.style.fontSize = '13.5px'; t.appendChild(el('b', null, x.nom)); t.appendChild(document.createTextNode(' — ' + x.employeur + ' · ' + x.section + (x.tels && x.tels.length ? ' · tél. ' + x.tels.join(' / ') : '')));
+      bloc.appendChild(t);
+      x.candidats.forEach(function (c) {
+        var b = el('button', 'cand'); b.type = 'button';
+        b.appendChild(el('span', null, c.nom + ' — ' + Math.round(c.score * 100) + ' %')); if (c.ambigu) b.appendChild(el('span', 'amb', 'plusieurs possibilités'));
+        b.appendChild(el('small', null, [c.service, c.employeur, c.indices.join(', ')].filter(Boolean).join(' · '))); b.addEventListener('click', function () { confirmer(x.nom, c.email); }); bloc.appendChild(b);
+      });
+      zp.appendChild(bloc);
+    });
     tableau($('t-div'), ['Personne', 'Champ', 'Fiche contact', 'BDDORGA', 'Nature'], r.divergences.map(function (d) { return [d.nom, d.champ, d.fiche, d.bddorga, { genre: d.genre }]; }), 'Aucune divergence : les fiches et BDDORGA concordent.');
+    var zr = $('t-rapproches');
+    if (!r.rapproches.length) zr.appendChild(el('p', 'div-note', 'Aucun rapprochement confirmé à la main.'));
+    r.rapproches.forEach(function (x) { var l = el('div', 'div-note'); l.appendChild(document.createTextNode(x.nom + '  →  ' + x.bddorga + '  ')); var b = el('button', 'btn-s', 'Annuler'); b.type = 'button'; b.addEventListener('click', function () { confirmer(x.nom, ''); }); l.appendChild(b); zr.appendChild(l); });
     tableau($('t-sans-bdd'), ['Fiche', 'Employeur', 'Section'], r.fiches_sans_bddorga.map(function (x) { return [x.nom, x.employeur, x.section]; }), 'Toutes les fiches ont une personne correspondante dans BDDORGA.');
     tableau($('t-sans-fiche'), ['BDDORGA', 'Service', 'Employeur'], r.bddorga_sans_fiche.map(function (x) { return [x.nom, x.service, x.employeur]; }), 'Toutes les personnes de BDDORGA ont une fiche.');
-  }).catch(function (e) { if (e && e.code === 'SESSION') { location.replace('connexion.html'); return; } $('etat').textContent = 'Impossible de comparer : ' + (e && e.message ? e.message : 'erreur'); });
+  }
+  $('copier').addEventListener('click', function () {
+    if (!derniere) return;
+    var lignes = [['Personne', 'Champ', 'Fiche contact', 'BDDORGA', 'Nature']].concat(derniere.divergences.map(function (d) { return [d.nom, d.champ, d.fiche, d.bddorga, GENRE[d.genre]]; }));
+    var txt = lignes.map(function (l) { return l.join('\t'); }).join('\n'), b = $('copier');
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { b.textContent = 'Copié ✓'; setTimeout(function () { b.textContent = 'Copier ce tableau'; }, 1800); }, function () { prompt('Copiez ce texte :', txt); });
+  });
+  charger();
 })();
 </script>
 <script src="js/pied.js"></script>

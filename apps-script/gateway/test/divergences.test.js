@@ -48,3 +48,41 @@ test('sur les vraies fiches du site : analyse sans erreur, 107 personnes dont de
   const c = D.cartesPersonnes(w.ANNUAIRE_DATA); assert.strictEqual(c.length, 107);
   const r = D.comparer([], w.ANNUAIRE_DATA); assert.strictEqual(r.fiches_sans_bddorga.length, 107 - 58); assert.strictEqual(r.prestataires_non_compares, 58);
 });
+
+test('ressemblance de noms : fautes, accents, ordre, initiales, prénoms composés ; noms différents refusés', () => {
+  const s = (a, b) => D.simNom(a, b);
+  assert.ok(s('KHATIRI Mohammed Sadek Elslam', 'KHATIRI MOHAMED SADEK ELISLAM') > 0.8);
+  assert.ok(s('Loucif AZEGGAGH', 'AZEGGAGH Loucif') > 0.99);
+  assert.ok(s('BOUAZIZ Hocine', 'BOUAZIZ Houcine') > 0.85);
+  assert.ok(s('Benali Mohamed Amine', 'BENALI Mohamed') > 0.8);
+  assert.ok(s('BENALI M.', 'BENALI Mohamed') > 0.6);
+  assert.ok(s('BENALI Karim', 'BENALI Samir') < 0.62);
+  assert.ok(s('HADJ Ali', 'MEZIANE Sofia') < 0.3);
+});
+test('correspondances probables : proposées (jamais appliquées seules), ambiguïté signalée, indices (téléphone)', () => {
+  const bdd = [
+    { nom: 'KHATIRI MOHAMED SADEK ELISLAM', email: 'k@x.dz', telephone: '0562303481', dependance: 'SONATRACH', service: 'S1' },
+    { nom: 'BENALI KARIMA', email: 'bk@x.dz', telephone: '', dependance: 'ACOSCO', service: 'S2' },
+    { nom: 'BENALI KARIMA', email: 'bk2@x.dz', telephone: '', dependance: 'ACOSCO', service: 'S5' },
+    { nom: 'ZZ AUTRE', email: 'z@x.dz', telephone: '', dependance: 'GTP', service: 'S3' }];
+  const cartes = data([
+    ['KHATIRI Mohammed Sadek Elslam', '📞 0562303481', 'FROID', 'SONATRACH'],
+    ['BENALI Karimaa', '📞 0600000001', 'FROID', 'ACOSCO'],
+    ['TOTALEMENT DIFFERENT', '📞 0600000002', 'FROID', 'GTP']]);
+  const r = D.comparer(bdd, cartes);
+  assert.strictEqual(r.appariees, 0);
+  const k = r.correspondances_probables.find(x => x.nom.startsWith('KHATIRI'));
+  assert.strictEqual(k.candidats[0].email, 'k@x.dz'); assert.ok(k.candidats[0].indices.includes('même téléphone'));
+  const b = r.correspondances_probables.find(x => x.nom === 'BENALI Karimaa');
+  assert.ok(b.candidats.length >= 2); assert.strictEqual(b.candidats[0].ambigu, true);
+  assert.deepStrictEqual([...r.fiches_sans_bddorga.map(x => x.nom)], ['TOTALEMENT DIFFERENT']);
+  assert.deepStrictEqual([...r.bddorga_sans_fiche.map(x => x.nom)], ['ZZ AUTRE']);
+});
+test('rapprochement confirmé à la main : la fiche est comparée à la personne choisie (champs différents signalés)', () => {
+  const bdd = [{ nom: 'KHATIRI MOHAMED SADEK ELISLAM', email: 'k@x.dz', telephone: '0562000000', dependance: 'SONATRACH', matricule: '', sona: '' }];
+  const cartes = data([['KHATIRI Mohammed Sadek Elslam', '📞 0562303481', 'FROID', 'SONATRACH']]);
+  const r = D.comparer(bdd, cartes, { [D.jetons('KHATIRI Mohammed Sadek Elslam')]: 'k@x.dz' });
+  assert.strictEqual(r.appariees, 1); assert.strictEqual(r.correspondances_probables.length, 0);
+  assert.deepStrictEqual([...r.rapproches.map(x => x.email)], ['k@x.dz']);
+  assert.strictEqual(r.divergences.find(x => x.champ === 'Téléphone').genre, 'different');
+});

@@ -181,14 +181,21 @@
       case 'donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.source === 'cpm') return { csv: demoCpmCsv(), maj: new Date().toISOString() };
         throw erreur('Données de démonstration non disponibles pour cette source');
+      case 'contacts_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoState.rapproches = demoState.rapproches || {};
+        if (p.email) demoState.rapproches[p.nom] = p.email; else delete demoState.rapproches[p.nom]; return { enregistre: true };
       case 'contacts_divergences': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        return { appariees: 41, fiches_personnes: 49, bddorga: 52, prestataires_non_compares: 58,
+        var rap = demoState.rapproches || {}, khat = !!rap['KHATIRI Mohammed Sadek Elslam'];
+        return { appariees: khat ? 42 : 41, fiches_personnes: 49, bddorga: 52, prestataires_non_compares: 58,
+          rapproches: khat ? [{ nom: 'KHATIRI Mohammed Sadek Elslam', bddorga: 'KHATIRI MOHAMED SADEK ELISLAM', email: 'k@exemple.dz' }] : [],
+          correspondances_probables: khat ? [] : [
+            { nom: 'KHATIRI Mohammed Sadek Elslam', employeur: 'SONATRACH', section: 'SECTION ÉLECTRICITÉ', tels: ['562303481'], email: '', candidats: [{ nom: 'KHATIRI MOHAMED SADEK ELISLAM', email: 'k@exemple.dz', service: 'Travaux Entretien', employeur: 'SONATRACH', score: 0.97, indices: ['même téléphone', 'même employeur'] }] },
+            { nom: 'BENALI Karimaa', employeur: 'ACOSCO', section: 'SECTION FROID', tels: ['600000001'], email: '', candidats: [{ nom: 'BENALI KARIMA', email: 'bk@exemple.dz', service: 'Service Construction', employeur: 'ACOSCO', score: 0.9, ambigu: true, indices: ['même employeur'] }, { nom: 'BENALI KARIMA', email: 'bk2@exemple.dz', service: 'Travaux Entretien', employeur: 'ACOSCO', score: 0.9, indices: ['même employeur'] }] }],
           divergences: [
             { nom: 'AZEGGAGH Loucif', champ: 'Téléphone', fiche: '661383013', bddorga: '0661383099', genre: 'different' },
             { nom: 'BOUAZIZ Hocine', champ: 'Employeur', fiche: 'GTP', bddorga: 'ACOSCO', genre: 'different' },
             { nom: 'BOUAZIZ Hocine', champ: 'Identifiant SONA', fiche: '', bddorga: 'sona20001', genre: 'manque_fiche' },
             { nom: 'HADJADJ Lamine', champ: 'E-mail', fiche: 'lamine.hadjadj@sonatrach.dz', bddorga: 'l.hadjadj@sonatrach.dz', genre: 'different' },
-            { nom: 'MEKKI Sofiane', champ: 'Matricule', fiche: '90210X', bddorga: '', genre: 'manque_bddorga' } ],
+            { nom: 'MEKKI Sofiane', champ: 'Matricule', fiche: '90210X', bddorga: '', genre: 'manque_bddorga' } ].concat(khat ? [{ nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Téléphone', fiche: '562303481', bddorga: '0562000000', genre: 'different' }] : []),
           fiches_sans_bddorga: [{ nom: 'INCONNU Paul', employeur: 'SONATRACH', section: 'SECTION FROID' }],
           bddorga_sans_fiche: [{ nom: 'NOUVEAU Karim', service: 'Travaux Entretien', employeur: 'ACOSCO' }] };
       case 'cpm_journal': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
