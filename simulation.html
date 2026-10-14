@@ -115,7 +115,7 @@
           <div><label for="pref">Reliquat accepté</label><select id="pref"><option value="indifferent" selected>Indifférent (+ ou −)</option><option value="negatif">Congés prolongés seulement (reliquat − : personne ne travaille plus)</option><option value="positif">Congés écourtés / travail en plus seulement (reliquat +)</option></select></div>
         </div>
         <div class="actions"><button class="btn-s" id="proposer" type="button">💡 Proposer une combinaison en vis-à-vis (pour les deux)</button><span class="aide" id="prop-aide" style="margin:0"></span></div>
-        <p class="aide" style="margin:8px 0 0">Classement des propositions : <b>1)</b> le vis-à-vis s'établit le plus tôt possible, <b>2)</b> le moins de reliquat concédé (+ congé écourté / travail en plus, − congé prolongé), <b>3)</b> la transition la plus courte.</p>
+        <p class="aide" style="margin:8px 0 0">Classement des propositions : <b>1)</b> le vis-à-vis s'établit le plus tôt possible, <b>2)</b> le plus fort reliquat atteint par un agent classé en dernier (+ congé écourté / travail en plus, − congé prolongé), <b>3)</b> le moins de reliquat au total, <b>4)</b> la transition la plus courte.</p>
         <div class="props" id="props"></div>
       </div>
     </div>
@@ -333,7 +333,7 @@
           : '✖ ' + r.conflits + ' j en conflit (aucun en tolérant ' + r.tolChevMin + ' j de chevauchement et ' + r.tolTrouMin + ' j de trou)';
         function sg(n) { return n > 0 ? '+' + n + ' j (' + n + ' j de travail en plus)' : n < 0 ? '−' + (-n) + ' j (' + (-n) + ' j de repos en plus)' : '0 j'; }
         var rq = el('div', 'l'); rq.style.fontWeight = '700';
-        rq.textContent = 'Reliquat concédé : ' + A.nom + ' ' + sg(r.reliquatA) + ' · ' + B.nom + ' ' + sg(r.reliquatB) + ' (total ' + r.concession + ' j)'; rq.title = '+ : congé écourté ou jours travaillés en plus (reliquat à récupérer) ; − : congé prolongé (jours de repos en plus).';
+        rq.textContent = 'Reliquat concédé : ' + A.nom + ' ' + sg(r.reliquatA) + ' · ' + B.nom + ' ' + sg(r.reliquatB) + ' (total ' + r.concession + ' j, le plus fort : ' + r.pire + ' j)'; rq.title = '+ : congé écourté ou jours travaillés en plus (reliquat à récupérer) ; − : congé prolongé (jours de repos en plus).';
         t.appendChild(rq);
         t.appendChild(el('small', null, info + ' · ' + r.transition + ' jour(s) de transition · ' + r.agents + ' agent(s) modifié(s)'));
         d.appendChild(t);

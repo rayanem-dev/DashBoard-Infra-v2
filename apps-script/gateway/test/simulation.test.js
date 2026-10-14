@@ -112,6 +112,7 @@ test('reliquat concédé = jours de travail en plus (+) ou de repos en plus (−
   assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'R', jours: 7 }], reprise: 'T' }), 21, 'congé écourté : 7 j pris sur 28, donc 21 j de congé cédés');
   assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'R', jours: 35 }], reprise: 'T' }), -7, 'congé rallongé de 7 j');
   assert.strictEqual(Simulation.reliquat(off, off, '2026-09-14', null), 0);
+  assert.strictEqual(r({ debut: '2026-11-26', periodes: [{ type: 'R', jours: 7 }], reprise: 'T' }), 3, 'départ en milieu de congé : il en restait 10 j, écourté à 7 j : +3');
   assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'T', jours: 7 }, { type: 'R', jours: 7 }], reprise: 'T' }), 21, 'deux périodes : 7 j de travail puis congé écourté à 7 j');
   // 4×4 : congé terminé, le suivant est du travail ; on prolonge le congé de 7 j à la maison : −7
   assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'T', jours: 28 }, { type: 'R', jours: 28 }], reprise: 'T' }), 28, 'travail en plus puis repos en plus : le pic (+28) reste concédé, pas 0');
@@ -134,7 +135,7 @@ test('priorités des propositions : 1) vis-à-vis établi au plus tôt, 2) moins
   const res = Simulation.proposerPaire(base);
   assert.ok(res.length > 0 && res.every(p => p.A || p.B), 'jamais « aucune modification »');
   assert.ok(res.every(p => p.stable && p.etabliLe === '2026-11-08'), 'vis-à-vis établi dès la date choisie');
-  for (let i = 1; i < res.length; i++) assert.ok(res[i - 1].etabliLe < res[i].etabliLe || res[i - 1].concession <= res[i].concession, 'puis le moins de reliquat');
+  for (let i = 1; i < res.length; i++) assert.ok(res[i - 1].etabliLe < res[i].etabliLe || res[i - 1].pire <= res[i].pire, 'le plus fort reliquat atteint est classé en dernier');
   assert.deepStrictEqual([...new Set(res.map(p => p.concession))], [28], 'phases identiques : décaler d\'un demi-cycle coûte 28 j au total');
   // deux semaines de transition au maximum : on ne propose rien de plus long
   assert.ok(Simulation.proposerPaire(Object.assign({}, base, { maxTotal: 14 })).every(p => (p.A ? Simulation.totalJours(p.A) : 0) <= 14 && (p.B ? Simulation.totalJours(p.B) : 0) <= 14));
@@ -146,4 +147,11 @@ test('priorités des propositions : 1) vis-à-vis établi au plus tôt, 2) moins
   assert.ok(neg.length > 0 && neg.every(p => p.reliquatA <= 0 && p.reliquatB <= 0), 'aucun reliquat positif');
   const pos = Simulation.proposerPaire(Object.assign({}, base, { preference: 'positif' }));
   assert.ok(pos.length > 0 && pos.every(p => p.reliquatA >= 0 && p.reliquatB >= 0));
+});
+
+test('à vis-à-vis égal, le plus fort reliquat atteint est classé en dernier (14/14 avant 28/0)', () => {
+  const r = { statut: 'T', depuis: '2026-10-11', jours_travail: 28, jours_repos: 28 }, dF = '2026-09-14', off = Planning.grille(r, [], dF, 400);
+  const res = Simulation.proposerPaire({ offA: off, offB: off, debutF: dF, rotA: r, rotB: r, debut: '2026-11-08', tolChev: 2, tolTrou: 0, pas: 7, alignerReleve: true, maxTotal: 28, max: 50 });
+  const i1414 = res.findIndex(p => p.pire === 14 && p.concession === 28), i280 = res.findIndex(p => p.pire === 28 && p.concession === 28);
+  assert.ok(i1414 >= 0 && i280 >= 0 && i1414 < i280, '14/14 avant 28/0');
 });
