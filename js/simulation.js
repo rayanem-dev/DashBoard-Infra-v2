@@ -163,20 +163,22 @@ var Simulation = (function () {
    *    (congé de 28 j écourté à 7 j : +21 ; congé de 28 j rallongé à 35 j : −7 ; travail prolongé : +) ;
    *  - période d'un AUTRE statut (insérée avant le bloc suivant) : elle compte en entier
    *    (7 j de travail avant un congé : +7 ; congé prolongé de 7 j alors qu'on devrait travailler : −7).
+   *  - plusieurs périodes : on cumule, et on retient le PLUS FORT reliquat atteint (28 j de travail en plus suivis de 28 j de repos en plus : +28, pas 0).
    * + = jours travaillés en plus, reliquat à récupérer ; − = jours de repos en plus. 0 si pas de modification.
    */
   function reliquat(off, mod, debutF, m) {
     if (!m) return 0;
-    var total = 0, d = m.debut;
+    var total = 0, pic = 0, d = m.debut;
     m.periodes.forEach(function (p) {
       var i = diff(debutF, d), st = i >= 0 && i < off.length ? off.charAt(i) : '', sg = p.type === 'T' ? 1 : -1;
       if (st === 'T' || st === 'R') {
         if (p.type === st) { var r = 0; while (i + r < off.length && off.charAt(i + r) === st) r += 1; total += sg * (p.jours - r); }
         else total += sg * p.jours;
       }
+      if (Math.abs(total) > Math.abs(pic)) pic = total; // on retient le plus fort reliquat atteint (un travail en plus compensé ensuite par du repos reste concédé le temps de la transition)
       d = addDays(d, p.jours);
     });
-    return total;
+    return pic;
   }
 
   /** Une passe : { conflits (jours), maxChev, maxTrou (plus longues séries), dernier (index du dernier jour en conflit, −1 si aucun) } à partir de depuisIdx. */

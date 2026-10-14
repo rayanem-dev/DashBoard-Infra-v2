@@ -114,6 +114,8 @@ test('reliquat concédé = jours de travail en plus (+) ou de repos en plus (−
   assert.strictEqual(Simulation.reliquat(off, off, '2026-09-14', null), 0);
   assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'T', jours: 7 }, { type: 'R', jours: 7 }], reprise: 'T' }), 21, 'deux périodes : 7 j de travail puis congé écourté à 7 j');
   // 4×4 : congé terminé, le suivant est du travail ; on prolonge le congé de 7 j à la maison : −7
+  assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'T', jours: 28 }, { type: 'R', jours: 28 }], reprise: 'T' }), 28, 'travail en plus puis repos en plus : le pic (+28) reste concédé, pas 0');
+  assert.strictEqual(r({ debut: '2026-12-06', periodes: [{ type: 'R', jours: 28 }, { type: 'T', jours: 28 }], reprise: 'R' }), -28, 'repos en plus puis travail en plus : −28');
   const r4 = { statut: 'T', depuis: '2026-10-01', jours_travail: 4, jours_repos: 4 }, off4 = Planning.grille(r4, [], '2026-09-14', 200);
   const m4 = { debut: '2026-10-09', periodes: [{ type: 'R', jours: 7 }], reprise: 'T' };
   assert.strictEqual(Simulation.reliquat(off4, Simulation.appliquer(off4, '2026-09-14', m4, r4), '2026-09-14', m4), -7, 'congé prolongé de 7 j : −7');
