@@ -75,6 +75,12 @@ function preparerPages_() {
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }
+/** Ajoute au catalogue la carte « Contrôle de l'annuaire » (administration, secrétariat) une seule fois. Idempotent. */
+function preparerAnnuaire_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('ANN_PRET') === '1') return;
+  try { ajouterApplicationsManquantes(); props.setProperty('ANN_PRET', '1'); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera */ }
+}
 /** Prépare le module « affectation » tout seul au premier passage (onglet Affectations, module, droits, carte). Idempotent. */
 function preparerAffectation_() {
   var props = PropertiesService.getScriptProperties();

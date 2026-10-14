@@ -435,3 +435,14 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 @media (max-width: 720px) { #modules { grid-template-columns: 1fr; } #modules > .module, #modules > .module[data-n="2"], #modules > .module[data-n="3"] { grid-column: auto; } }
 #modules .module h3 { flex-wrap: wrap; row-gap: 4px; }
 #modules .module h3 .niveau { white-space: nowrap; }
+
+/* ===== Code couleur par employeur (fiches contact et fiche de l'agent) : ACOSCO mauve · GTP vert · Sonatrach (SH) orange clair ===== */
+[data-emp="acosco"] { --c: #8E6BBF; } [data-emp="gtp"] { --c: #4F9D3F; } [data-emp="sh"] { --c: #F2A154; } [data-emp="autre"] { --c: #9CA3AF; }
+.contact[data-emp], .annuaire-groupe .contact[data-emp] { border-left-color: var(--c); background: color-mix(in srgb, var(--c) 9%, var(--surface)); }
+.contact[data-emp] .contact-badge { background: color-mix(in srgb, var(--c) 32%, var(--surface)); color: var(--text-dark); }
+.contact[data-emp] .contact-nom { color: var(--text-dark); }
+/* Fiche de l'agent : même esprit que les fiches contact (liseré coloré à gauche, fond teinté, pas de bandeau orange en haut) */
+.agent[data-emp] { border-top: 0; border-left: 4px solid var(--c); background: color-mix(in srgb, var(--c) 8%, var(--surface)); border-radius: 12px; }
+.agent[data-emp] .agent-gauche .agent-infos { border-top-color: color-mix(in srgb, var(--c) 35%, var(--border)); }
+.agent[data-emp] .jauge-bloc { background: color-mix(in srgb, var(--c) 6%, var(--surface)); border-color: color-mix(in srgb, var(--c) 30%, var(--border)); }
+.agent[data-emp] .agent-id h2 { font-size: 18px; }

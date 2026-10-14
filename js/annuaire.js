@@ -6,6 +6,8 @@ var Annuaire = (function () {
   var D = window.ANNUAIRE_DATA || { groupes: [], rows: [] };
   function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   var index = D.rows.map(function (r) { return norme(r[1] + ' ' + r[2] + ' ' + r[3] + ' ' + r[4] + ' ' + D.groupes[r[0]]); });
+  /** Code couleur des fiches : ACOSCO mauve, GTP vert, Sonatrach (SH) orange clair, autres gris. */
+  function cleEmployeur(e) { var n = String(e || '').trim().toUpperCase(); if (n === 'ACOSCO') return 'acosco'; if (n === 'GTP') return 'gtp'; if (n === 'SONATRACH' || n === 'SH') return 'sh'; return n ? 'autre' : ''; }
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function lien(texte, href) { var a = el('a', null, texte); a.href = href; return a; }
   /** Texte avec numéros (0XXXXXXXXX) et e-mails cliquables. */
@@ -19,7 +21,7 @@ var Annuaire = (function () {
     if (i < txt.length) parent.appendChild(document.createTextNode(txt.slice(i)));
   }
   function fiche(r) {
-    var c = el('div', 'contact');
+    var c = el('div', 'contact'); var ce = cleEmployeur(r[4]); if (ce) c.setAttribute('data-emp', ce);
     var t = el('div', 'contact-nom', r[1]); if (r[4]) t.appendChild(el('span', 'contact-badge', r[4])); c.appendChild(t);
     if (r[3]) c.appendChild(el('div', 'contact-poste', r[3]));
     String(r[2] || '').split(' | ').forEach(function (seg) { if (seg && !/^Réf\. —$/.test(seg)) { var l = el('div', 'contact-ligne'); enrichi(l, seg); c.appendChild(l); } });
@@ -46,5 +48,5 @@ var Annuaire = (function () {
     });
     return total;
   }
-  return { rechercher: rechercher, lister: lister, total: D.rows.length };
+  return { rechercher: rechercher, lister: lister, cleEmployeur: cleEmployeur, total: D.rows.length };
 })();

@@ -8,6 +8,7 @@ var SEED_APPS = [
  ["planning", "Planning & rotations", "Votre planning et, selon vos droits, celui de la division : 1 mois, 3 mois, 6 mois, 1 an.", "🗓️", "planning.html", 1],
  ["affectation", "Affectation du personnel", "Changez le service d'une personne directement dans l'Organigramme (BDDORGA) et dans le portail, avec historique et e-mail à l'intéressé, au chef de division et au secrétariat.", "🔀", "affectation.html", 2],
  ["simulation", "Simulation de planning", "Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande de modification à signer.", "🧪", "simulation.html", 2],
+ ["admin", "Contrôle de l'annuaire", "Compare les fiches contact avec BDDORGA et liste les divergences (téléphone, e-mail, matricule, identifiant SONA, employeur) pour les corriger.", "🔎", "divergences.html", 3, "secretariat"],
  ["admin", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3, "secretariat"],
  [
   "logistique",

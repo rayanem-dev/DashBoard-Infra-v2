@@ -47,6 +47,7 @@ function route_(req) {
       if (typeof preparerSimulation_ === 'function') preparerSimulation_();
       if (typeof preparerAffectation_ === 'function') preparerAffectation_();
       if (typeof preparerPages_ === 'function') preparerPages_();
+      if (typeof preparerAnnuaire_ === 'function') preparerAnnuaire_();
       return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
     }
     case 'emettreCode': {
@@ -71,6 +72,7 @@ function route_(req) {
     case 'simu_demande': return simuDemande_(req);
     case 'simu_decider': return simuDecider_(req);
     case 'donnees': return donneesCsv_(req);
+    case 'contacts_divergences': return contactsDivergences_(req);
     case 'cpm_journal': return cpmJournalListe_(req);
     case 'cpm_instantane': return cpmInstantaneMaintenant_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);

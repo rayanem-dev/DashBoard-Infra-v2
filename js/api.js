@@ -54,6 +54,7 @@
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
         { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
+        { titre: 'Contrôle de l\'annuaire', description: 'Compare les fiches contact avec BDDORGA.', emoji: '🔎', url: 'divergences.html' },
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' } ] }
     ],
     conducteur: [
@@ -180,6 +181,16 @@
       case 'donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.source === 'cpm') return { csv: demoCpmCsv(), maj: new Date().toISOString() };
         throw erreur('Données de démonstration non disponibles pour cette source');
+      case 'contacts_divergences': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        return { appariees: 41, fiches_personnes: 49, bddorga: 52, prestataires_non_compares: 58,
+          divergences: [
+            { nom: 'AZEGGAGH Loucif', champ: 'Téléphone', fiche: '661383013', bddorga: '0661383099', genre: 'different' },
+            { nom: 'BOUAZIZ Hocine', champ: 'Employeur', fiche: 'GTP', bddorga: 'ACOSCO', genre: 'different' },
+            { nom: 'BOUAZIZ Hocine', champ: 'Identifiant SONA', fiche: '', bddorga: 'sona20001', genre: 'manque_fiche' },
+            { nom: 'HADJADJ Lamine', champ: 'E-mail', fiche: 'lamine.hadjadj@sonatrach.dz', bddorga: 'l.hadjadj@sonatrach.dz', genre: 'different' },
+            { nom: 'MEKKI Sofiane', champ: 'Matricule', fiche: '90210X', bddorga: '', genre: 'manque_bddorga' } ],
+          fiches_sans_bddorga: [{ nom: 'INCONNU Paul', employeur: 'SONATRACH', section: 'SECTION FROID' }],
+          bddorga_sans_fiche: [{ nom: 'NOUVEAU Karim', service: 'Travaux Entretien', employeur: 'ACOSCO' }] };
       case 'cpm_journal': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { dernier_instantane: new Date().toISOString(), evenements: [
           { date: '2026-10-13', cle: 'a', n_dossier: 'N°39/SH-PROD/RNS/INFRA/2025', categorie: 'Dossier Appel Offre DAO', dossier: 'Travaux et prestations en génie civil', type: 'modifie', champ: 'commentaire', libelle: 'Commentaire', avant: '', apres: 'Réserves non suspensives levées le 16/09/2026' },

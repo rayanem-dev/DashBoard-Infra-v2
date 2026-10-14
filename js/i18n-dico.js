@@ -267,6 +267,11 @@
     ['Version 4.7.1 — Accueil plus compact', 'Version 4.7.1 — More compact home page', 'الإصدار 4.7.1 — صفحة رئيسية أكثر إحكامًا'],
     ['Les rubriques de l\'accueil se rangent maintenant côte à côte au lieu d\'être empilées.', 'The home page sections are now placed side by side instead of stacked.', 'أصبحت أقسام الصفحة الرئيسية متجاورة بدل أن تكون متراصّة فوق بعضها.'],
     ['L\'étiquette orange indique désormais votre droit sur la rubrique (« Droit : administration »), pour ne plus la confondre avec un nom de rubrique.', 'The orange label now shows your right on the section (“Right: administration”), so it is no longer mistaken for a section name.', 'تُظهر العلامة البرتقالية الآن حقك في القسم («الحق: إدارة») حتى لا تُخلط باسم قسم.'],
+    ['Version 4.8 — Fiches contact en couleurs et contrôle de l\'annuaire', 'Version 4.8 — Colour-coded contact cards and directory check', 'الإصدار 4.8 — بطاقات اتصال ملوّنة ومراقبة الدليل'],
+    ['Les fiches contact ont un code couleur selon l\'employeur : orange clair pour Sonatrach, mauve pour ACOSCO, vert pour GTP.', 'Contact cards are colour-coded by employer: light orange for Sonatrach, purple for ACOSCO, green for GTP.', 'لبطاقات الاتصال رمز لوني حسب المستخدِم: برتقالي فاتح لسوناطراك، بنفسجي لـ ACOSCO، أخضر لـ GTP.'],
+    ['Votre fiche personnelle reprend le même style que les fiches contact.', 'Your personal profile now has the same style as the contact cards.', 'تتبنّى بطاقتك الشخصية نفس نمط بطاقات الاتصال.'],
+    ['Le secrétariat dispose d\'une page pour comparer l\'annuaire avec BDDORGA et repérer les différences.', 'The secretariat has a page to compare the directory with BDDORGA and spot differences.', 'تتوفر للأمانة صفحة لمقارنة الدليل مع BDDORGA ورصد الفروقات.'],
+    ['Contrôle de l\'annuaire', 'Directory check', 'مراقبة الدليل'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];

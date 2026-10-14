@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-16-03",
+    "date": "2026-10-16",
+    "title": "Version 4.8 — Fiches contact en couleurs et contrôle de l'annuaire",
+    "changes": [
+      "Les fiches contact ont un code couleur selon l'employeur : orange clair pour Sonatrach, mauve pour ACOSCO, vert pour GTP.",
+      "Votre fiche personnelle reprend le même style que les fiches contact.",
+      "Le secrétariat dispose d'une page pour comparer l'annuaire avec BDDORGA et repérer les différences."
+    ]
+  },
+  {
     "id": "2026-10-16-02",
     "date": "2026-10-16",
     "title": "Version 4.7.1 — Accueil plus compact",

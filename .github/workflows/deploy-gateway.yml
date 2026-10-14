@@ -5,7 +5,7 @@ name: Déployer la passerelle
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths: ['apps-script/gateway/**', 'js/simulation.js', '.github/workflows/deploy-gateway.yml']
+    paths: ['apps-script/gateway/**', 'js/simulation.js', 'js/annuaire-data.js', '.github/workflows/deploy-gateway.yml']
   workflow_dispatch:
 
 concurrency:
@@ -23,6 +23,9 @@ jobs:
 
       - name: "Copier le moteur de simulation (partagé avec le site, js/simulation.js)"
         run: cp js/simulation.js apps-script/gateway/Simulation.gs
+
+      - name: "Copier les fiches contact (partagées avec le site, js/annuaire-data.js)"
+        run: sed 's/^window\.ANNUAIRE_DATA = /var ANNUAIRE_DATA = /' js/annuaire-data.js > apps-script/gateway/AnnuaireContacts.gs
 
       - name: Tests
         run: node --test apps-script/gateway/test/*.test.js

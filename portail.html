@@ -103,7 +103,10 @@
     var av = $('avatar'); av.textContent = initiales(u.nom); var st = Employeur.style(u.dependance);
     av.style.background = st ? st.fond : ''; av.style.color = st ? st.texte : ''; if (st) av.style.boxShadow = '0 0 0 3px ' + st.texte + '33';
     var bd = $('agent-badges'); bd.textContent = '';
-    var pe = Employeur.pastille(u.dependance); if (pe) { pe.style.marginLeft = '0'; bd.appendChild(pe); }
+    var pe = Employeur.pastille(u.dependance);
+    if (!pe) { pe = el('span', 'emp', String(u.dependance || 'SONATRACH').toUpperCase()); pe.style.background = '#FCE9D6'; pe.style.color = '#B94E00'; pe.style.border = '1px solid #B94E0066'; }
+    pe.style.marginLeft = '0'; bd.appendChild(pe);
+    $('accueil').setAttribute('data-emp', Annuaire.cleEmployeur(u.dependance) || 'sh');
     bd.appendChild(el('span', 'role-pill', u.role_libelle || ROLES[u.role] || u.role || ''));
     var integ = u.date_integration ? Rotation.frDate(u.date_integration) + (anciennete(u.date_integration) ? ' · ' + anciennete(u.date_integration) : '') : '';
     var manque = [];

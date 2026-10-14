@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Contrôle de l'annuaire – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .div-resume { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .div-tuile { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 14px; }
+  .div-tuile b { display: block; font-size: 24px; line-height: 1.1; } .div-tuile span { font-size: 12px; color: var(--text-muted); }
+  .div-titre { font-size: 15px; font-weight: 800; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--orange-main); }
+  .div-note { font-size: 12.5px; color: var(--text-muted); margin: 0 0 8px; }
+  table.div { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); border-radius: 10px; overflow: hidden; }
+  table.div th, table.div td { border-bottom: 1px solid var(--border); padding: 6px 10px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+  table.div th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); background: var(--surface-2); }
+  .gen { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 1px 8px; border-radius: 999px; }
+  .gen.different { background: #FDE2E2; color: #991B1B; } .gen.manque_fiche, .gen.manque_bddorga { background: #FEF3C7; color: #92400E; }
+  .div-liste { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Contrôle de l'annuaire</h1><p>Sonatrach · RNS · Fiches contact ↔ BDDORGA</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="portail">
+  <p class="div-note">Compare chaque fiche contact de l'annuaire (personnel Sonatrach, ACOSCO et GTP) avec la ligne correspondante de BDDORGA. Rien n'est modifié ici : c'est une liste à relire pour décider, cas par cas, quelle valeur est la bonne. Les prestataires ne sont pas dans BDDORGA : ils ne sont pas comparés.</p>
+  <div id="etat" class="vide">Comparaison en cours…</div>
+  <div id="rapport" hidden>
+    <div class="div-resume" id="resume"></div>
+    <h2 class="div-titre">Valeurs différentes ou manquantes</h2><div id="t-div"></div>
+    <h2 class="div-titre">Fiches sans personne correspondante dans BDDORGA</h2><div id="t-sans-bdd"></div>
+    <h2 class="div-titre">Personnes de BDDORGA sans fiche contact</h2><div id="t-sans-fiche"></div>
+  </div>
+</main>
+<script>
+(function () {
+  function $(i) { return document.getElementById(i); }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  if (Api.demo) $('demo').hidden = false;
+  var GENRE = { different: 'Différent', manque_fiche: 'Absent de la fiche', manque_bddorga: 'Absent de BDDORGA' };
+  function tuile(n, l) { var d = el('div', 'div-tuile'); d.appendChild(el('b', null, String(n))); d.appendChild(el('span', null, l)); return d; }
+  function tableau(zone, entetes, lignes, vide) {
+    if (!lignes.length) { zone.appendChild(el('p', 'div-note', vide)); return; }
+    var t = el('table', 'div'), h = el('tr'); entetes.forEach(function (x) { h.appendChild(el('th', null, x)); }); t.appendChild(h);
+    lignes.forEach(function (l) { var r = el('tr'); l.forEach(function (c) { var td = el('td'); if (c && c.genre) td.appendChild(el('span', 'gen ' + c.genre, GENRE[c.genre])); else td.textContent = c == null || c === '' ? '—' : c; r.appendChild(td); }); t.appendChild(r); });
+    zone.appendChild(t);
+  }
+  Api.call('contacts_divergences').then(function (r) {
+    $('etat').hidden = true; $('rapport').hidden = false;
+    var diff = r.divergences.filter(function (d) { return d.genre === 'different'; }).length;
+    var noms = {}; r.divergences.forEach(function (d) { noms[d.nom] = 1; });
+    var rs = $('resume');
+    [[r.appariees + ' / ' + r.fiches_personnes, 'fiches retrouvées dans BDDORGA'], [diff, 'valeurs différentes'], [r.divergences.length - diff, 'valeurs absentes d\'un côté'], [Object.keys(noms).length, 'personnes concernées'],
+      [r.fiches_sans_bddorga.length, 'fiches sans BDDORGA'], [r.bddorga_sans_fiche.length, 'BDDORGA sans fiche'], [r.prestataires_non_compares, 'prestataires (non comparés)']].forEach(function (x) { rs.appendChild(tuile(x[0], x[1])); });
+    tableau($('t-div'), ['Personne', 'Champ', 'Fiche contact', 'BDDORGA', 'Nature'], r.divergences.map(function (d) { return [d.nom, d.champ, d.fiche, d.bddorga, { genre: d.genre }]; }), 'Aucune divergence : les fiches et BDDORGA concordent.');
+    tableau($('t-sans-bdd'), ['Fiche', 'Employeur', 'Section'], r.fiches_sans_bddorga.map(function (x) { return [x.nom, x.employeur, x.section]; }), 'Toutes les fiches ont une personne correspondante dans BDDORGA.');
+    tableau($('t-sans-fiche'), ['BDDORGA', 'Service', 'Employeur'], r.bddorga_sans_fiche.map(function (x) { return [x.nom, x.service, x.employeur]; }), 'Toutes les personnes de BDDORGA ont une fiche.');
+  }).catch(function (e) { if (e && e.code === 'SESSION') { location.replace('connexion.html'); return; } $('etat').textContent = 'Impossible de comparer : ' + (e && e.message ? e.message : 'erreur'); });
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
