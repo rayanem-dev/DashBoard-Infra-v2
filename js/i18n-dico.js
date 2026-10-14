@@ -272,6 +272,9 @@
     ['Votre fiche personnelle reprend le même style que les fiches contact.', 'Your personal profile now has the same style as the contact cards.', 'تتبنّى بطاقتك الشخصية نفس نمط بطاقات الاتصال.'],
     ['Le secrétariat dispose d\'une page pour comparer l\'annuaire avec BDDORGA et repérer les différences.', 'The secretariat has a page to compare the directory with BDDORGA and spot differences.', 'تتوفر للأمانة صفحة لمقارنة الدليل مع BDDORGA ورصد الفروقات.'],
     ['Contrôle de l\'annuaire', 'Directory check', 'مراقبة الدليل'],
+    ['Version 4.9 — Annuaire toujours à jour', 'Version 4.9 — Always up-to-date directory', 'الإصدار 4.9 — دليل محدَّث دائمًا'],
+    ['Les fiches du personnel se mettent à jour toutes seules depuis BDDORGA : numéro de téléphone, e-mail, matricule et identifiant SONA.', 'Staff cards now update themselves from BDDORGA: phone number, e-mail, registration number and SONA ID.', 'تتحدّث بطاقات المستخدمين تلقائيًا من BDDORGA: رقم الهاتف والبريد الإلكتروني ورقم التسجيل ومعرّف SONA.'],
+    ['Les informations qui manquaient d\'un côté sont complétées par l\'autre, et les numéros s\'affichent avec le 0 au début.', 'Information missing on one side is completed by the other, and numbers are displayed with the leading 0.', 'تُستكمل المعلومات الناقصة من جهة بمعلومات الجهة الأخرى، وتظهر الأرقام مع الصفر في البداية.'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];

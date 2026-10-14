@@ -5,7 +5,35 @@
 var Annuaire = (function () {
   var D = window.ANNUAIRE_DATA || { groupes: [], rows: [] };
   function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
-  var index = D.rows.map(function (r) { return norme(r[1] + ' ' + r[2] + ' ' + r[3] + ' ' + r[4] + ' ' + D.groupes[r[0]]); });
+  var index = [];
+  function reindexer() { index = D.rows.map(function (r) { return norme(r[1] + ' ' + r[2] + ' ' + r[3] + ' ' + r[4] + ' ' + D.groupes[r[0]]); }); }
+  reindexer();
+  var DONNEES_STATIQUES = D.rows.slice(), GROUPES_STATIQUES = D.groupes.slice(), charge = null;
+  function groupeIndex(libelle) { var i = D.groupes.indexOf(libelle); if (i === -1) { D.groupes.push(libelle); i = D.groupes.length - 1; } return i; }
+  /**
+   * Remplace les fiches du personnel (Sonatrach, ACOSCO, GTP) par celles construites depuis BDDORGA (action « annuaire_personnes »), complétées par les fiches du site ;
+   * les prestataires, les postes et les fiches sans personne dans BDDORGA restent tels quels. En cas d'échec (hors connexion, démo) : fiches du site seules.
+   */
+  function charger() {
+    if (charge) return charge;
+    charge = (window.Api ? Api.call('annuaire_personnes') : Promise.reject()).then(function (r) {
+      var remplace = {}; (r.remplace || []).forEach(function (n) { remplace[n] = 1; });
+      var gardees = DONNEES_STATIQUES.filter(function (x) { return !(x[4] && x[4] !== 'PRESTATAIRE' && remplace[x[1]]); });
+      D.groupes = GROUPES_STATIQUES.slice(); var rows = gardees.slice();
+      r.personnes.forEach(function (p) {
+        var det = [];
+        var tels = [p.tel].concat(p.tels_alt || []).filter(Boolean); if (tels.length) det.push('📞 ' + tels.join(' / '));
+        var mails = [p.email, p.email2].filter(Boolean); if (mails.length) det.push('✉️ ' + mails.join(' / '));
+        if (p.sona) det.push('ID Sonatrach : ' + p.sona); if (p.matricule) det.push('Matricule : ' + p.matricule);
+        var grp = p.section ? 'Équipe Division Infrastructure — Collaborateurs & Bureaux › ' + p.section : 'Équipe Division Infrastructure — Collaborateurs & Bureaux › ' + (p.service || 'Autres');
+        var g = D.groupes.filter(function (x) { return x.indexOf('Équipe Division Infrastructure — Collaborateurs & Bureaux › ') === 0 && norme(x).indexOf(norme(p.section || p.service)) !== -1; })[0];
+        rows.push([groupeIndex(g || grp), p.nom, det.join(' | '), p.fonction || p.section || p.service || '', p.employeur]);
+      });
+      rows.sort(function (a, b) { return a[0] - b[0]; });
+      D.rows = rows; reindexer(); return true;
+    }).catch(function () { return false; });
+    return charge;
+  }
   /** Code couleur des fiches : ACOSCO mauve, GTP vert, Sonatrach (SH) orange clair, autres gris. */
   function cleEmployeur(e) { var n = String(e || '').trim().toUpperCase(); if (n === 'ACOSCO') return 'acosco'; if (n === 'GTP') return 'gtp'; if (n === 'SONATRACH' || n === 'SH') return 'sh'; return n ? 'autre' : ''; }
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
@@ -48,5 +76,5 @@ var Annuaire = (function () {
     });
     return total;
   }
-  return { rechercher: rechercher, lister: lister, cleEmployeur: cleEmployeur, total: D.rows.length };
+  return { rechercher: rechercher, lister: lister, cleEmployeur: cleEmployeur, charger: charger, total: function () { return D.rows.length; } };
 })();

@@ -86,3 +86,25 @@ test('rapprochement confirmé à la main : la fiche est comparée à la personne
   assert.deepStrictEqual([...r.rapproches.map(x => x.email)], ['k@x.dz']);
   assert.strictEqual(r.divergences.find(x => x.champ === 'Téléphone').genre, 'different');
 });
+
+test('annuaire fusionné : BDDORGA complète la fiche et la fiche complète BDDORGA ; 0 initial ; e-mail de la fiche gardé en « e-mail 2 »', () => {
+  const bdd = [
+    { nom: 'HADJADJ LAMINE', email: 'h@x.dz', matricule: '', sona: '', telephone: '', dependance: 'SONATRACH', service: 'Division', fonction: 'Chef' },
+    { nom: 'BOUAZIZ HOCINE', email: 'hocin@gmail.com', matricule: '', sona: 'soni0299', telephone: '0659191322', dependance: 'ACOSCO', service: 'CPM', fonction: '' },
+    { nom: 'LAKKAICHI NOUREDDINE', email: 'lak@gmail.com', matricule: '', sona: '', telephone: '661775887', dependance: 'SONATRACH', service: 'S', fonction: '' },
+    { nom: 'NOUVEAU PERSONNE', email: 'n@x.dz', matricule: '9', sona: '', telephone: '', dependance: 'GTP', service: 'S2', fonction: '' }];
+  const cartes = data([
+    ['HADJADJ Lamine', '📞 660514275 | ID Sonatrach : sona12551 | Matricule : 90856S', 'CHEF DIVISION', 'SONATRACH'],
+    ['BOUAZIZ Hocine', '📞 0659191322', 'CPM', 'ACOSCO'],
+    ['LAKKAICHI Noureddine', '📞 0661775887 | ✉️ noureddine.lakkaichi@sonatrach.dz', 'FROID', 'SONATRACH'],
+    ['AUCUNE Fiche', '📞 0600000000', 'FROID', 'SONATRACH'], ['PRESTA Un', '📞 0555000000', 'FROID', 'PRESTATAIRE']]);
+  const r = D.fusionner(bdd, cartes, {});
+  const par = n => r.personnes.find(p => p.nom === n);
+  assert.strictEqual(par('HADJADJ Lamine').tel, '0660514275');   // téléphone pris sur la fiche, avec le 0 initial
+  assert.strictEqual(par('HADJADJ Lamine').sona, 'sona12551'); assert.strictEqual(par('HADJADJ Lamine').matricule, '90856S');
+  assert.strictEqual(par('HADJADJ Lamine').section, 'CHEF DIVISION');
+  assert.strictEqual(par('BOUAZIZ Hocine').email, 'hocin@gmail.com'); assert.strictEqual(par('BOUAZIZ Hocine').sona, 'soni0299'); // pris sur BDDORGA (la fiche n'avait rien)
+  assert.strictEqual(par('LAKKAICHI Noureddine').tel, '0661775887'); assert.strictEqual(par('LAKKAICHI Noureddine').email2, 'noureddine.lakkaichi@sonatrach.dz');
+  assert.strictEqual(par('NOUVEAU PERSONNE').employeur, 'GTP');
+  assert.deepStrictEqual([...r.remplace].sort(), ['BOUAZIZ Hocine', 'HADJADJ Lamine', 'LAKKAICHI Noureddine']);
+});

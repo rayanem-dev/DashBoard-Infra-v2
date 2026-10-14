@@ -75,6 +75,7 @@ function route_(req) {
     case 'contacts_divergences': return contactsDivergences_(req);
     case 'contacts_confirmer': return contactsConfirmer_(req);
     case 'contacts_completer': return contactsCompleter_(req);
+    case 'annuaire_personnes': return annuairePersonnes_(req);
     case 'cpm_journal': return cpmJournalListe_(req);
     case 'cpm_instantane': return cpmInstantaneMaintenant_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);

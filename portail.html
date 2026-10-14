@@ -169,6 +169,8 @@
     if (a('Dossiers_CPM.html')) { Synthese.monterCpm($('syn-cpm')); Synthese.monterJournal($('syn-journal')); }
   }
   $('recherche').addEventListener('input', filtrer);
+  // Fiches du personnel : lues depuis BDDORGA (complétées par les fiches du site) ; on rafraîchit la recherche une fois chargées
+  Annuaire.charger().then(function () { filtrer(); });
 
   function dessiner(r) {
     dessinerFiche(r.user); raccourcis(r.menu);

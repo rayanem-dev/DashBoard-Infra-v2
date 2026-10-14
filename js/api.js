@@ -183,6 +183,11 @@
         throw erreur('Données de démonstration non disponibles pour cette source');
       case 'contacts_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoState.rapproches = demoState.rapproches || {};
         if (p.email) demoState.rapproches[p.nom] = p.email; else delete demoState.rapproches[p.nom]; return { enregistre: true };
+      case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        return { remplace: ['HADJADJ Lamine', 'BOUAZIZ Hocine', 'LAKKAICHI Noureddine'], personnes: [
+          { nom: 'HADJADJ Lamine', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0660514275', tels_alt: [], email: 'lamine.hadjadj@sonatrach.dz', email2: '', sona: 'sona12551', matricule: '90856S' },
+          { nom: 'BOUAZIZ Hocine', employeur: 'GTP', section: '📑 CPM — CELLULE PASSATION MARCHÉ', service: 'CPM', fonction: 'CPM — CELLULE PASSATION MARCHÉ', tel: '0659191322', tels_alt: [], email: 'hocinbouaziz463@gmail.com', email2: '', sona: 'soni0299', matricule: '' },
+          { nom: 'LAKKAICHI Noureddine', employeur: 'SONATRACH', section: '', service: 'Travaux Entretien', fonction: '', tel: '0661775887', tels_alt: [], email: 'lakkaichi@gmail.com', email2: 'noureddine.lakkaichi@sonatrach.dz', sona: '', matricule: '' } ] };
       case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'HADJADJ Lamine', champ: 'Téléphone', valeur: '0660514275' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Identifiant SONA', valeur: 'sona29432' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Matricule', valeur: '77589N' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };

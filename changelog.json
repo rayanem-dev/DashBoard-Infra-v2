@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-17-01",
+    "date": "2026-10-17",
+    "title": "Version 4.9 — Annuaire toujours à jour",
+    "changes": [
+      "Les fiches du personnel se mettent à jour toutes seules depuis BDDORGA : numéro de téléphone, e-mail, matricule et identifiant SONA.",
+      "Les informations qui manquaient d'un côté sont complétées par l'autre, et les numéros s'affichent avec le 0 au début."
+    ]
+  },
+  {
     "id": "2026-10-16-03",
     "date": "2026-10-16",
     "title": "Version 4.8 — Fiches contact en couleurs et contrôle de l'annuaire",

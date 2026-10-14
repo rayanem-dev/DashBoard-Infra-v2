@@ -71,17 +71,47 @@ var Divergences = (function () {
   }
   function empNorm(v) { var n = norme(v); if (!n || n === 'sh' || n === 'sonatrach') return 'SONATRACH'; return n.toUpperCase(); }
 
+  function indexer(personnes) {
+    var i = { mat: {}, sona: {}, mail: {}, nom: {} };
+    personnes.forEach(function (p) { var k;
+      if ((k = String(p.matricule || '').toUpperCase())) i.mat[k] = p; if ((k = String(p.sona || '').toLowerCase())) i.sona[k] = p; if ((k = String(p.email || '').toLowerCase())) i.mail[k] = p; if ((k = jetons(p.nom))) i.nom[k] = p; });
+    return i;
+  }
+  /** Personne BDDORGA correspondant à une fiche : rapprochement confirmé, puis matricule, SONA, e-mail, nom identique. */
+  function trouver(i, c, confirmees) {
+    var conf = confirmees && confirmees[jetons(c.nom)];
+    return (conf && i.mail[String(conf).toLowerCase()]) || (c.matricule && i.mat[c.matricule]) || (c.sona && i.sona[c.sona]) || (c.email && i.mail[c.email]) || i.nom[jetons(c.nom)] || null;
+  }
+  function tel10(v) { var d = chiffres(v); return d.length === 9 ? '0' + d : String(v || '').trim(); }
+
+  /**
+   * Annuaire du personnel construit depuis BDDORGA, complété par les fiches (et inversement) :
+   * pour chaque personne de BDDORGA, valeur de BDDORGA sinon valeur de la fiche ; une adresse e-mail de la fiche différente de celle de BDDORGA est gardée en « e-mail 2 ».
+   * Retourne { personnes: [...], remplace: [noms des fiches reprises] } ; les fiches sans personne dans BDDORGA et les prestataires ne sont pas touchés.
+   */
+  function fusionner(personnes, data, confirmees) {
+    var staff = cartesPersonnes(data).filter(function (c) { return c.employeur !== 'PRESTATAIRE'; }), idx = indexer(personnes), parMail = {}, remplace = [];
+    var cartesDe = {};
+    staff.forEach(function (c) { var p = trouver(idx, c, confirmees); if (p) { cartesDe[String(p.email).toLowerCase()] = c; remplace.push(c.nom); } });
+    var sortie = personnes.map(function (p) {
+      var c = cartesDe[String(p.email).toLowerCase()] || null, emp = String(p.dependance || (c && c.employeur) || 'SONATRACH').toUpperCase();
+      var tel = tel10(p.telephone) || (c && c.tels.length ? '0' + c.tels[0] : ''), alt = c ? c.tels.filter(function (x) { return x !== neuf(tel); }).map(function (x) { return '0' + x; }) : [];
+      var mail = String(p.email || '').toLowerCase(), mail2 = c && c.email && c.email !== mail ? c.email : '';
+      return { nom: c ? c.nom : p.nom, employeur: emp === 'SH' ? 'SONATRACH' : emp, section: c ? c.section : '', service: p.service || '', fonction: p.fonction || '',
+        tel: tel, tels_alt: alt, email: mail, email2: mail2, sona: p.sona || (c && c.sona) || '', matricule: p.matricule || (c && c.matricule) || '' };
+    });
+    return { personnes: sortie, remplace: remplace };
+  }
+
   /** personnes : résultat d'Annuaire.lire(...).personnes ; data : ANNUAIRE_DATA. */
   function comparer(personnes, data, confirmees) {
     confirmees = confirmees || {};
     var cartes = cartesPersonnes(data), prest = cartes.filter(function (c) { return c.employeur === 'PRESTATAIRE'; }).length;
     var staff = cartes.filter(function (c) { return c.employeur !== 'PRESTATAIRE'; });
-    var parMat = {}, parSona = {}, parMail = {}, parNom = {};
-    personnes.forEach(function (p) { var k;
-      if ((k = String(p.matricule || '').toUpperCase())) parMat[k] = p; if ((k = String(p.sona || '').toLowerCase())) parSona[k] = p; if ((k = String(p.email || '').toLowerCase())) parMail[k] = p; if ((k = jetons(p.nom))) parNom[k] = p; });
+    var idx = indexer(personnes);
     var div = [], sansBdd = [], utilises = {}, appariees = 0, rapproches = [];
     staff.forEach(function (c) {
-      var p = (confirmees[jetons(c.nom)] && parMail[String(confirmees[jetons(c.nom)]).toLowerCase()]) || (c.matricule && parMat[c.matricule]) || (c.sona && parSona[c.sona]) || (c.email && parMail[c.email]) || parNom[jetons(c.nom)] || null;
+      var p = trouver(idx, c, confirmees);
       if (!p) { sansBdd.push({ nom: c.nom, employeur: c.employeur, section: c.section, tels: c.tels, email: c.email, carte: c }); return; }
       appariees += 1; utilises[String(p.email).toLowerCase()] = true;
       if (confirmees[jetons(c.nom)] && String(confirmees[jetons(c.nom)]).toLowerCase() === String(p.email).toLowerCase()) rapproches.push({ nom: c.nom, bddorga: p.nom, email: p.email });
@@ -107,7 +137,7 @@ var Divergences = (function () {
     var sansFiche = libres.filter(function (p) { return !reserves[String(p.email).toLowerCase()]; }).map(function (p) { return { nom: p.nom, service: p.service, employeur: p.dependance || '' }; });
     return { rapproches: rapproches, correspondances_probables: probables, divergences: div, fiches_sans_bddorga: vraimentSans, bddorga_sans_fiche: sansFiche, prestataires_non_compares: prest, appariees: appariees, fiches_personnes: staff.length, bddorga: personnes.length };
   }
-  return { simNom: simNom, candidats: candidats, jetons: jetons, comparer: comparer, analyserCarte: analyserCarte, cartesPersonnes: cartesPersonnes, neuf: neuf };
+  return { fusionner: fusionner, simNom: simNom, candidats: candidats, jetons: jetons, comparer: comparer, analyserCarte: analyserCarte, cartesPersonnes: cartesPersonnes, neuf: neuf };
 })();
 
 /** Action « contacts_divergences » (administration de la sécurité). */
@@ -167,4 +197,20 @@ function contactsCompleter_(req) {
   });
   Store.journal('bddorga_complete', u.email, ecrites + ' case(s) vide(s) remplie(s) depuis les fiches contact' + (echecs.length ? ' ; échecs : ' + echecs.join(' | ') : ''));
   return { appliquer: true, ecrites: ecrites, echecs: echecs };
+}
+
+/** Action « annuaire_personnes » (toute personne connectée) : le personnel tel que BDDORGA le décrit, complété par les fiches. Mis en cache 5 minutes. */
+function annuairePersonnes_(req) {
+  Auth.userFromToken(req.token);
+  var cache = CacheService.getScriptCache(), vu = cache.get('ANN_PERSONNES');
+  if (vu) return JSON.parse(vu);
+  if (typeof ANNUAIRE_DATA === 'undefined') throw new Error('Fiches contact absentes de la passerelle');
+  var id = PropertiesService.getScriptProperties().getProperty('ORGA_ID') || ORGA_ID_DEFAUT;
+  var src = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
+  if (!src) throw new Error('Onglet BDDORGA introuvable dans le fichier Organigramme');
+  var lu = Annuaire.lire(src.getDataRange().getValues());
+  if (lu.erreur) throw new Error(lu.erreur);
+  var res = Divergences.fusionner(lu.personnes, ANNUAIRE_DATA, correspondancesConfirmees_());
+  try { cache.put('ANN_PERSONNES', JSON.stringify(res), 300); } catch (e) {}
+  return res;
 }
