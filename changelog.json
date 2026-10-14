@@ -1,16 +1,24 @@
 [
   {
+    "id": "2026-10-14-02",
+    "date": "2026-10-14",
+    "title": "Version 4.2 — Annuaire, langues et mode sombre",
+    "changes": [
+      "L'annuaire téléphonique est de retour : tapez un nom ou un service dans la recherche, ou ouvrez l'onglet « Annuaire ».",
+      "Le site existe maintenant en français, en anglais et en arabe : le choix se fait en bas à droite.",
+      "Un mode sombre est disponible : bouton soleil / lune en bas à droite."
+    ]
+  },
+  {
     "id": "2026-10-14-01",
     "date": "2026-10-14",
-    "title": "Portail 4.0 : connexion, planning, simulation, affectation, organigramme dynamique",
+    "title": "Version 4.0 — Le nouveau portail",
     "changes": [
-      "Connexion par mot de passe (mot de passe par défaut 0000) avec recherche du nom : plus aucune liste du personnel n'est affichée",
-      "Fiche individuelle : matricule, matricule SAP, NIN, identifiant SONA, jauge de rotation et reliquat",
-      "Planning & rotations : vues 1 mois, 3 mois, 6 mois, 1 an ; planning personnel et planning des équipes selon les droits ; impression PDF",
-      "Simulation de modification de planning : vis-à-vis de deux agents, propositions classées, reliquat concédé, demande à signer et approbation",
-      "Affectation du personnel : changement de service directement dans l'Organigramme (BDDORGA), avec historique et e-mails",
-      "Organigramme dynamique, calculé depuis BDDORGA",
-      "Recherche dans les applications, filtres par module, synthèses CPM et chantiers, bouton « Installer » et pied de page avec les nouveautés"
+      "Connexion simple : vous tapez votre nom, puis votre mot de passe.",
+      "Votre fiche personnelle et votre planning de travail et de repos, avec impression en PDF.",
+      "Simulation d'un changement de planning entre deux agents, avec la demande à signer.",
+      "Changement de service du personnel depuis l'organigramme, qui se met à jour tout seul.",
+      "Recherche des applications, synthèses des dossiers CPM et des chantiers, et installation sur le téléphone."
     ]
   },
   {

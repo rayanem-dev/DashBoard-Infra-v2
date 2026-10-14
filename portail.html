@@ -50,16 +50,22 @@
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
   <section class="syntheses" id="syntheses"><div class="syn" id="syn-cpm" hidden></div><div class="syn" id="syn-chantiers" hidden></div></section>
   <div class="outils" id="outils" hidden>
-    <input type="search" id="recherche" placeholder="Rechercher une application…" aria-label="Rechercher une application" autocomplete="off">
+    <input type="search" id="recherche" placeholder="Rechercher une application ou un contact…" aria-label="Rechercher une application ou un contact" autocomplete="off">
     <span class="date-badge" id="date-badge"></span>
     <div class="onglets-modules" id="onglets-modules"></div>
   </div>
   <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
   <div id="modules"></div>
+  <section id="annuaire-zone" class="annuaire-zone" hidden>
+    <h3 id="annuaire-titre">📞 Annuaire</h3>
+    <div id="annuaire-liste"></div>
+  </section>
 </main>
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/annuaire-data.js"></script>
+<script src="js/annuaire.js"></script>
 <script src="js/rotation.js"></script>
 <script src="js/employeurs.js"></script>
 <script src="js/synthese.js"></script>
@@ -126,22 +132,30 @@
   // ---------- Recherche, filtres par module, date, synthèses (comme l'ancien accueil) ----------
   var modulesFiltre = '', verrouContenu = false, aDesApps = false;
   function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
-  function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache; $('syntheses').hidden = cache; $('outils').hidden = cache || !aDesApps; }
+  function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache || modulesFiltre === '__annuaire'; $('syntheses').hidden = cache; if (cache) $('annuaire-zone').hidden = true; $('outils').hidden = cache || !aDesApps; }
   function filtrer() {
-    var q = norme($('recherche').value).trim(), vus = 0;
+    var brut = $('recherche').value, q = norme(brut).trim(), vus = 0, zoneA = $('annuaire-zone'), liste = $('annuaire-liste');
+    var modeAnnuaire = modulesFiltre === '__annuaire';
+    $('modules').hidden = verrouContenu || modeAnnuaire;
     document.querySelectorAll('#modules .module').forEach(function (sec) {
       var dansModule = !modulesFiltre || sec.dataset.m === modulesFiltre, n = 0;
       sec.querySelectorAll('.app').forEach(function (c) { var ok = dansModule && (!q || c.dataset.t.indexOf(q) !== -1); c.classList.toggle('cache', !ok); if (ok) n += 1; });
       sec.classList.toggle('cache', n === 0 && (q || modulesFiltre)); vus += n;
     });
-    $('aucun-resultat').hidden = !(q || modulesFiltre) || vus > 0;
+    // Annuaire téléphonique : liste complète (onglet) ou résultats de la recherche (2 lettres minimum)
+    var nb = 0;
+    if (verrouContenu) { zoneA.hidden = true; }
+    else if (modeAnnuaire) { nb = Annuaire.lister(liste, brut); zoneA.hidden = false; $('annuaire-titre').textContent = '📞 Annuaire — ' + nb + ' contact(s)'; }
+    else if (q.length >= 2 && !modulesFiltre) { liste.textContent = ''; var g = document.createElement('div'); g.className = 'contacts'; nb = Annuaire.rechercher(g, brut, 24); liste.appendChild(g); zoneA.hidden = !nb; $('annuaire-titre').textContent = '📞 Annuaire — ' + nb + ' contact(s)' + (nb > 24 ? ' (24 affichés : précisez la recherche)' : ''); }
+    else zoneA.hidden = true;
+    $('aucun-resultat').hidden = !(q || modulesFiltre) || vus > 0 || nb > 0 || modeAnnuaire;
   }
   function outilsAccueil(menu) {
     aDesApps = menu.some(function (m) { return m.apps.length; }); afficherContenu();
     $('date-badge').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     var on = $('onglets-modules'); on.textContent = '';
     function bouton(id, lib) { var b = el('button', modulesFiltre === id ? 'actif' : '', lib); b.type = 'button'; b.addEventListener('click', function () { modulesFiltre = id; on.querySelectorAll('button').forEach(function (x) { x.classList.remove('actif'); }); b.classList.add('actif'); filtrer(); }); on.appendChild(b); }
-    bouton('', 'Tout'); menu.forEach(function (m) { if (m.apps.length) bouton(m.id, (m.icone || '') + ' ' + m.titre); });
+    bouton('', 'Tout'); menu.forEach(function (m) { if (m.apps.length) bouton(m.id, (m.icone || '') + ' ' + m.titre); }); bouton('__annuaire', '📞 Annuaire');
     // Synthèses : seulement pour qui a accès aux applications correspondantes
     var urls = []; menu.forEach(function (m) { m.apps.forEach(function (a) { urls.push(String(a.url)); }); });
     function a(f) { return urls.some(function (u) { return u.indexOf(f) !== -1; }); }
