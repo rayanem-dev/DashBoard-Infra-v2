@@ -179,18 +179,18 @@ var Simulation = (function () {
     return total;
   }
 
-  /** Une passe : { conflits (jours), maxChev (plus long chevauchement), maxTrou (plus long trou) } à partir de depuisIdx. */
+  /** Une passe : { conflits (jours), maxChev, maxTrou (plus longues séries), dernier (index du dernier jour en conflit, −1 si aucun) } à partir de depuisIdx. */
   function analyser(gA, gB, depuisIdx, tolC, tolV) {
-    var n = Math.min(gA.length, gB.length), conflits = 0, maxChev = 0, maxTrou = 0, i = 0;
+    var n = Math.min(gA.length, gB.length), conflits = 0, maxChev = 0, maxTrou = 0, dernier = -1, i = 0;
     while (i < n) {
       var a = gA.charCodeAt(i), b = gB.charCodeAt(i);
       if (!((a === 84 && b === 84) || (a === 82 && b === 82))) { i += 1; continue; }
       var j = i + 1; while (j < n && gA.charCodeAt(j) === a && gB.charCodeAt(j) === b) j += 1;
       var len = j - i, chev = a === 84;
-      if (j > depuisIdx) { var eff = j - Math.max(i, depuisIdx); if (chev) { if (eff > maxChev) maxChev = eff; } else if (eff > maxTrou) maxTrou = eff; if (len > (chev ? tolC : tolV)) conflits += eff; }
+      if (j > depuisIdx) { var eff = j - Math.max(i, depuisIdx); if (chev) { if (eff > maxChev) maxChev = eff; } else if (eff > maxTrou) maxTrou = eff; if (len > (chev ? tolC : tolV)) { conflits += eff; dernier = j - 1; } }
       i = j;
     }
-    return { conflits: conflits, maxChev: maxChev, maxTrou: maxTrou };
+    return { conflits: conflits, maxChev: maxChev, maxTrou: maxTrou, dernier: dernier, n: n };
   }
 
   /** Premier jour (index) à partir de `idx` où la grille change de statut : la « relève » de l'agent (ou idx si c'est déjà un jour de relève). */
@@ -206,10 +206,12 @@ var Simulation = (function () {
     var pas = o.pas || 1, maxT = o.maxTransition || 60, X = ['T', 'R'];
     var idx = Math.max(0, diff(debutF, debut)), dep = o.alignerReleve ? prochaineReleve(off, idx) : idx;
     var d0 = addDays(debutF, dep), un = [{ modif: null, grille: off }], deux = [];
+    var maxTotal = o.maxTotal || 1e9; // durée totale maximale de la transition d'un agent
     function ajouter(liste, periodes, reprise) {
       var m = { debut: d0, periodes: periodes, reprise: reprise };
-      if (valider(m, rot, null)) return;
-      liste.push({ modif: m, grille: appliquer(off, debutF, m, rot) });
+      if (totalJours(m) > maxTotal || valider(m, rot, null)) return;
+      var g = appliquer(off, debutF, m, rot); if (g === off) return; // sans effet sur le planning : pas une vraie modification
+      liste.push({ modif: m, grille: g });
     }
     var x, l1, l2;
     for (x = 0; x < 2; x += 1) for (l1 = pas; l1 <= maxT; l1 += pas) ajouter(un, [{ type: X[x], jours: l1 }], autre(X[x]));
@@ -225,33 +227,40 @@ var Simulation = (function () {
    * Retourne [{ A: modif|null, B: modif|null, grilleA, grilleB, conflits, transition, agents }].
    */
   function proposerPaire(opts) {
-    var tolC = opts.tolChev != null ? opts.tolChev : 2, tolV = opts.tolTrou != null ? opts.tolTrou : 0;
+    var tolC = opts.tolChev != null ? opts.tolChev : 2, tolV = opts.tolTrou != null ? opts.tolTrou : 0, pref = opts.preference || 'indifferent';
     var cA = candidats(opts.offA, opts.debutF, opts.rotA, opts.debut, opts), cB = candidats(opts.offB, opts.debutF, opts.rotB, opts.debut, opts);
-    // Le vis-à-vis est évalué à partir du moment où les deux agents peuvent être modifiés (leur relève, ou la date choisie) : avant, rien ne peut être corrigé.
-    var depuisIdx = Math.max(cA.dep, cB.dep), depuisDate = addDays(opts.debutF, depuisIdx);
-    var AU = cA.un.concat(cA.deux), BU = cB.un.concat(cB.deux), none = { modif: null, grille: null };
-    var res = [];
+    // Le vis-à-vis est exigé à partir de la date choisie : un candidat qui attend la prochaine relève laisse des conflits d'ici là, ce que la priorité « établi au plus tôt » compte.
+    var depuisIdx = Math.max(0, diff(opts.debutF, opts.debut)), depuisDate = addDays(opts.debutF, depuisIdx);
+    var cyMax = Math.max(Number(opts.rotA.jours_travail) + Number(opts.rotA.jours_repos), Number(opts.rotB.jours_travail) + Number(opts.rotB.jours_repos));
+    var AU = cA.un.concat(cA.deux), BU = cB.un.concat(cB.deux), res = [];
     function essayer(a, b) {
+      if (!a.modif && !b.modif) return; // aucune modification : ce n'est pas une proposition
       var gA = a.grille, gB = b.grille;
-      var c = analyser(gA, gB, depuisIdx, tolC, tolV), tr = (a.modif ? totalJours(a.modif) : 0) + (b.modif ? totalJours(b.modif) : 0);
-      // maxChev / maxTrou : tolérances qui suffiraient à supprimer tout conflit
       var rA = reliquat(opts.offA, gA, opts.debutF, a.modif), rB = reliquat(opts.offB, gB, opts.debutF, b.modif);
-      res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
+      if (pref === 'negatif' && (rA > 0 || rB > 0)) return;   // personne ne travaille plus que prévu : congés prolongés seulement
+      if (pref === 'positif' && (rA < 0 || rB < 0)) return;   // personne ne rallonge son congé : congés écourtés / travail en plus seulement
+      var c = analyser(gA, gB, depuisIdx, tolC, tolV), tr = (a.modif ? totalJours(a.modif) : 0) + (b.modif ? totalJours(b.modif) : 0);
+      var stable = c.dernier < c.n - cyMax; // les conflits cessent bien avant la fin de l'horizon : le vis-à-vis finit par s'établir
+      res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, stable: stable, etabli: c.dernier + 1 < depuisIdx ? depuisIdx : c.dernier + 1, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
     }
     var i, j, B0 = cB.un[0], A0 = cA.un[0];
-    for (i = 0; i < AU.length; i += 1) essayer(AU[i], B0);
+    for (i = 1; i < AU.length; i += 1) essayer(AU[i], B0);
     for (j = 1; j < BU.length; j += 1) essayer(A0, BU[j]);
     var plein = AU.length * BU.length <= 60000;
     var LA = plein ? AU : cA.un, LB = plein ? BU : cB.un;
     for (i = 1; i < LA.length; i += 1) for (j = 1; j < LB.length; j += 1) essayer(LA[i], LB[j]);
-    // Sans conflit d'abord ; sinon, les plus proches d'un vis-à-vis (plus longue série de jours à tolérer la plus courte), puis le moins de jours en conflit, puis la transition la plus courte.
-    function cle(r) { return r.conflits === 0 ? 0 : 1 + Math.max(r.maxChev, r.maxTrou); }
-    // Puis : le moins de reliquat concédé (jours de travail ou de repos en plus pour les deux agents), la transition la plus courte, le moins d'agents modifiés.
-    res.sort(function (p, q) { return cle(p) - cle(q) || p.conflits - q.conflits || p.concession - q.concession || p.transition - q.transition || p.agents - q.agents; });
+    // Priorités : 1) le vis-à-vis s'établit le plus TÔT possible ; 2) le moins de reliquat concédé (jours en plus ou en moins pour les deux agents) ;
+    // 3) la transition la plus courte ; 4) le moins d'agents modifiés. Sans vis-à-vis stable : les plus proches (plus longue série à tolérer), puis le moins de jours en conflit.
+    res.sort(function (p, q) {
+      if (p.stable !== q.stable) return p.stable ? -1 : 1;
+      if (p.stable) return p.etabli - q.etabli || p.concession - q.concession || p.transition - q.transition || p.agents - q.agents;
+      return Math.max(p.maxChev, p.maxTrou) - Math.max(q.maxChev, q.maxTrou) || p.conflits - q.conflits || p.concession - q.concession || p.transition - q.transition;
+    });
     var vus = {}, out = [];
-    for (i = 0; i < res.length && out.length < (opts.max || 5); i += 1) {
+    for (i = 0; i < res.length && out.length < (opts.max || 6); i += 1) {
       var r = res[i], k = r.a.grille + '|' + r.b.grille; if (vus[k]) continue; vus[k] = true;
-      out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, reliquatA: r.reliquatA, reliquatB: r.reliquatB, concession: r.concession, tolChevMin: r.maxChev, tolTrouMin: r.maxTrou, depuis: depuisDate });
+      out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, reliquatA: r.reliquatA, reliquatB: r.reliquatB, concession: r.concession,
+                 tolChevMin: r.maxChev, tolTrouMin: r.maxTrou, stable: r.stable, etabliLe: addDays(opts.debutF, r.etabli), jusquEtabli: r.etabli - depuisIdx, depuis: depuisDate });
     }
     return out;
   }

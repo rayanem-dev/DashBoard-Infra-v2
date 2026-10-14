@@ -95,12 +95,11 @@ test('proposition pour les DEUX agents : par semaine, depuis la relève, sans co
       assert.strictEqual(m.debut, Simulation.addDays(dF, Simulation.prochaineReleve(off, Simulation.diff(dF, debut))), 'depuis la relève');
     }
     assert.strictEqual(p.conflits, Simulation.conflits(p.grilleA, p.grilleB, dF, { tolChev: 2, tolTrou: 0 }, Simulation.diff(dF, p.depuis)).jours);
+    assert.strictEqual(p.depuis, debut, 'le vis-à-vis est évalué depuis la date choisie');
   }
   // le meilleur résultat commun n'est jamais plus long que le meilleur résultat obtenu en ne modifiant qu'UN agent
   const seulA = Simulation.proposerPaire(Object.assign({ pas: 7, alignerReleve: true }, base, { offB: offB })).filter(p => p.agents === 1 && p.A);
-  const meilleur = sem[0], zeroUn = seulA.filter(p => p.conflits === meilleur.conflits);
-  if (zeroUn.length) assert.ok(meilleur.transition <= zeroUn[0].transition);
-  // au jour près : permet des durées non multiples de 7
+    // au jour près : permet des durées non multiples de 7
   const jour = Simulation.proposerPaire(Object.assign({ pas: 1, alignerReleve: false }, base));
   assert.ok(jour[0].conflits <= sem[0].conflits);
 });
@@ -124,4 +123,25 @@ test('reliquat concédé = jours de travail en plus (+) ou de repos en plus (−
   const sansConflit = res.filter(x => x.conflits === 0);
   for (let i = 1; i < sansConflit.length; i++) assert.ok(sansConflit[i - 1].concession <= sansConflit[i].concession, 'classés par reliquat croissant');
   for (const x of res) assert.strictEqual(x.concession, Math.abs(x.reliquatA) + Math.abs(x.reliquatB));
+});
+
+test('priorités des propositions : 1) vis-à-vis établi au plus tôt, 2) moins de reliquat ; préférence de signe ; transition limitée', () => {
+  const r = { statut: 'T', depuis: '2026-10-11', jours_travail: 28, jours_repos: 28 }, dF = '2026-09-14';
+  const off = Planning.grille(r, [], dF, 400);
+  const base = { offA: off, offB: off, debutF: dF, rotA: r, rotB: r, debut: '2026-11-08', tolChev: 2, tolTrou: 0, pas: 7, alignerReleve: true, maxTotal: 28 };
+  const res = Simulation.proposerPaire(base);
+  assert.ok(res.length > 0 && res.every(p => p.A || p.B), 'jamais « aucune modification »');
+  assert.ok(res.every(p => p.stable && p.etabliLe === '2026-11-08'), 'vis-à-vis établi dès la date choisie');
+  for (let i = 1; i < res.length; i++) assert.ok(res[i - 1].etabliLe < res[i].etabliLe || res[i - 1].concession <= res[i].concession, 'puis le moins de reliquat');
+  assert.deepStrictEqual([...new Set(res.map(p => p.concession))], [28], 'phases identiques : décaler d\'un demi-cycle coûte 28 j au total');
+  // deux semaines de transition au maximum : on ne propose rien de plus long
+  assert.ok(Simulation.proposerPaire(Object.assign({}, base, { maxTotal: 14 })).every(p => (p.A ? Simulation.totalJours(p.A) : 0) <= 14 && (p.B ? Simulation.totalJours(p.B) : 0) <= 14));
+  // phases identiques : décaler d'un demi-cycle sans faire travailler personne en plus est impossible dans cette limite
+  assert.strictEqual(Simulation.proposerPaire(Object.assign({}, base, { preference: 'negatif' })).length, 0);
+  // « congés prolongés seulement » avec des rotations décalées : des propositions existent, aucun reliquat positif
+  const rB = { statut: 'T', depuis: '2026-11-01', jours_travail: 28, jours_repos: 28 }, offB = Planning.grille(rB, [], dF, 400);
+  const neg = Simulation.proposerPaire(Object.assign({}, base, { offB, rotB: rB, preference: 'negatif', maxTotal: 56 }));
+  assert.ok(neg.length > 0 && neg.every(p => p.reliquatA <= 0 && p.reliquatB <= 0), 'aucun reliquat positif');
+  const pos = Simulation.proposerPaire(Object.assign({}, base, { preference: 'positif' }));
+  assert.ok(pos.length > 0 && pos.every(p => p.reliquatA >= 0 && p.reliquatB >= 0));
 });

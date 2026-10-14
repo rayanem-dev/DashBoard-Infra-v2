@@ -110,9 +110,12 @@
       </div>
       <div id="z-prop" hidden style="margin-top:14px">
         <div class="grille-form">
-          <div><label for="pas">Ajustement des propositions (classées : sans conflit, puis le moins de reliquat concédé)</label><select id="pas"><option value="7" selected>Par semaine, à partir de la relève (recommandé)</option><option value="1">Au jour près, à la date choisie</option></select></div>
+          <div><label for="pas">Ajustement des propositions</label><select id="pas"><option value="7" selected>Par semaine, à partir de la relève (recommandé)</option><option value="1">Au jour près, à la date choisie</option></select></div>
+          <div><label for="maxt">Transition maximale par agent</label><select id="maxt"><option value="14">2 semaines</option><option value="28" selected>4 semaines</option><option value="42">6 semaines</option><option value="56">8 semaines</option></select></div>
+          <div><label for="pref">Reliquat accepté</label><select id="pref"><option value="indifferent" selected>Indifférent (+ ou −)</option><option value="negatif">Congés prolongés seulement (reliquat − : personne ne travaille plus)</option><option value="positif">Congés écourtés / travail en plus seulement (reliquat +)</option></select></div>
         </div>
         <div class="actions"><button class="btn-s" id="proposer" type="button">💡 Proposer une combinaison en vis-à-vis (pour les deux)</button><span class="aide" id="prop-aide" style="margin:0"></span></div>
+        <p class="aide" style="margin:8px 0 0">Classement des propositions : <b>1)</b> le vis-à-vis s'établit le plus tôt possible, <b>2)</b> le moins de reliquat concédé (+ congé écourté / travail en plus, − congé prolongé), <b>3)</b> la transition la plus courte.</p>
         <div class="props" id="props"></div>
       </div>
     </div>
@@ -314,16 +317,17 @@
   function proposer() {
     var A = S.A.data, B = S.B.data; if (!A || !B) return;
     var debut = $('debut').value; if (!Simulation.estDate(debut)) return;
-    var o = opts(), pas = Number($('pas').value) || 7; $('prop-aide').textContent = 'Calcul…'; $('props').textContent = '';
+    var o = opts(), pas = Number($('pas').value) || 7, pref = $('pref').value; $('prop-aide').textContent = 'Calcul…'; $('props').textContent = '';
     setTimeout(function () {
-      var res = Simulation.proposerPaire({ offA: A.grille, offB: B.grille, debutF: A.debut, rotA: A.rotation, rotB: B.rotation, debut: debut, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: pas, alignerReleve: pas > 1, maxTransition: 60 });
+      var res = Simulation.proposerPaire({ offA: A.grille, offB: B.grille, debutF: A.debut, rotA: A.rotation, rotB: B.rotation, debut: debut, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: pas, alignerReleve: pas > 1, maxTransition: 60, preference: pref, maxTotal: Number($('maxt').value) || 28 });
       var z = $('props'); z.textContent = '';
-      $('prop-aide').textContent = !res.length ? 'Aucune combinaison simple trouvée.' : (res[0].conflits > 0 && pas > 1 ? 'Pas de vis-à-vis parfait en ajustant par semaine (les relèves ne sont pas décalées d\'un nombre entier de semaines) : voici les plus proches. Essayez « Au jour près » ou augmentez les tolérances.' : '');
+      $('prop-aide').textContent = !res.length ? 'Aucune combinaison avec ces limites : essayez une transition maximale plus longue, « Reliquat accepté : indifférent » ou « Au jour près ».' : (!res[0].stable && pas > 1 ? 'Pas de vis-à-vis parfait en ajustant par semaine (les relèves ne sont pas décalées d\'un nombre entier de semaines) : voici les plus proches. Essayez « Au jour près » ou augmentez les tolérances.' : '');
       res.forEach(function (r) {
-        var d = el('div', 'prop' + (r.conflits === 0 ? ' parfait' : ''));
+        var d = el('div', 'prop' + (r.stable ? ' parfait' : ''));
         var t = el('div');
         t.appendChild(el('div', 'l', libModif(A.nom, r.A))); t.appendChild(el('div', 'l', libModif(B.nom, r.B)));
-        var info = 'Vis-à-vis évalué à partir du ' + fr(r.depuis) + ' : ' + (r.conflits === 0 ? '✔ aucun conflit' : r.conflits + ' j en conflit (aucun en tolérant ' + r.tolChevMin + ' j de chevauchement et ' + r.tolTrouMin + ' j de trou)') ;
+        var info = r.stable ? '✔ Vis-à-vis établi ' + (r.jusquEtabli <= 0 ? 'dès le ' + fr(r.etabliLe) + ' (immédiat)' : 'dès le ' + fr(r.etabliLe) + ' (dans ' + r.jusquEtabli + ' j)')
+          : '✖ ' + r.conflits + ' j en conflit (aucun en tolérant ' + r.tolChevMin + ' j de chevauchement et ' + r.tolTrouMin + ' j de trou)';
         function sg(n) { return n > 0 ? '+' + n + ' j (' + n + ' j de travail en plus)' : n < 0 ? '−' + (-n) + ' j (' + (-n) + ' j de repos en plus)' : '0 j'; }
         var rq = el('div', 'l'); rq.style.fontWeight = '700';
         rq.textContent = 'Reliquat concédé : ' + A.nom + ' ' + sg(r.reliquatA) + ' · ' + B.nom + ' ' + sg(r.reliquatB) + ' (total ' + r.concession + ' j)'; rq.title = '+ : congé écourté ou jours travaillés en plus (reliquat à récupérer) ; − : congé prolongé (jours de repos en plus).';
@@ -336,7 +340,7 @@
   }
   function utiliser(r) {
     function appliquerA(cle, m) { S[cle].periodes = m ? m.periodes.map(function (p) { return { type: p.type, jours: p.jours }; }) : []; if (m) S[cle].debut.value = m.debut; }
-    evalDepuis = r.depuis; $('modb').checked = !!r.B; appliquerA('A', r.A); if (r.B) appliquerA('B', r.B);
+    evalDepuis = ''; $('modb').checked = !!r.B; appliquerA('A', r.A); if (r.B) appliquerA('B', r.B);
     majTout(); setTimeout(function () { window.scrollTo({ top: $('b-frise').offsetTop - 70, behavior: 'smooth' }); }, 50);
   }
 
