@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tableau de Bord – Avancement des Chantiers – Division Infrastructure RNS</title>
-<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/garde.js"></script>
 <link rel="stylesheet" href="css/sombre-ancien.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -163,18 +163,18 @@ const CHANTIERS = [
   // type "multiwell" = lit directement l'onglet "Tableau de Bord Global" source
   // et en extrait le tableau SYNTHÈSE MULTI-PUITS (un poste par puits, avec son propre %)
   { nom: "Forage RNS — 3 puits d'eau", type: "multiwell", service: "Travaux Entretien", actif: true,
-    csvUrl: "https://docs.google.com/spreadsheets/d/1gD_aQEw7YUU2DBGMrJchqUGvuFuEeyn8EG9XHf7gxkw/export?format=csv&gid=1809509458" },
+    csvUrl: "forage" },
 
   // type "itemized" = lit directement l'onglet "Tableau de Bord" source et en extrait
   // le tableau de cumul par item contractuel (un poste par ligne BPU, avec son propre %)
   { nom: "Terrassement RNS (36 mois)", type: "itemized", service: "Travaux Entretien", actif: true,
-    csvUrl: "https://docs.google.com/spreadsheets/d/1_bL3vv2dtYJWmvs0ZqZqq2agACVEZdAr14UP2unoUhM/export?format=csv&gid=2117456852" },
+    csvUrl: "terrassement" },
 
   // ── SERVICE ÉLECTROMÉCANIQUE — ACTIF (liens à venir) ────────
   // Ajouter ici les fiches suiveuses au fur et à mesure qu'elles arrivent.
   { nom: "Maintenance des Installations Électriques", type: "electrique", service: "Électromécanique", actif: true,
     nContrat: "30.INFRA.24",
-    csvUrl: "https://docs.google.com/spreadsheets/d/1Pk0n5UNT8yf5A7yZNe8rwHyevn7XHsB4/export?format=csv&gid=627222972" },
+    csvUrl: "electricite" },
   { nom: "Travaux de maintenance des installations de froid et climatisation", type: "boq", service: "Électromécanique", actif: true, csvUrl: "" },
 ];
 
@@ -225,19 +225,13 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-async function fetchCSV(url) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
+// Les feuilles ne sont plus lues directement : la passerelle les lit pour nous (source = « forage », « cpm »…), après vérification des droits.
+async function fetchCSV(source) {
   try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error('fetch failed (' + res.status + '): ' + url);
-    const text = await res.text();
-    return parseCSV(text);
+    return parseCSV(await Donnees.csv(source));
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('délai dépassé (12s) — le lien ne répond pas : ' + url);
+    if (e && e.code === 'SESSION') { location.replace('connexion.html'); }
     throw e;
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -249,7 +243,7 @@ async function fetchCSV(url) {
 //   AG (index 32) = Service            (ex: "Service Construction")
 //   AH (index 33) = Nature du contrat  (ex: "Travaux", "Prestation")
 // ─────────────────────────────────────────────
-const CPM_CSV_URL = "https://docs.google.com/spreadsheets/d/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY/export?format=csv&gid=1963142469";
+const CPM_CSV_URL = "cpm"; // source lue par la passerelle (js/donnees.js)
 const COL_CPM = { INTITULE: 3, STATUT: 8, N_CONTRAT: 13, DATE_ODS: 16, DUREE_CONTRAT: 17, ECHEANCE: 18, SERVICE: 32, NATURE: 33 };
 const SERVICES_ORDRE = ["Construction", "Travaux Entretien", "Électromécanique", "Autre"];
 

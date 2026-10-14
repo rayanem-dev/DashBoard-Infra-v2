@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-15-02",
+    "date": "2026-10-15",
+    "title": "Version 4.4 — Données protégées et pages de suivi complètes",
+    "changes": [
+      "Les chiffres du suivi CPM et de l'avancement des chantiers sont maintenant lus par le portail : les fichiers n'ont plus besoin d'être ouverts à tout le monde.",
+      "Les pages de suivi ont le même pied de page, le choix de la langue et le mode sombre que le reste du portail."
+    ]
+  },
+  {
     "id": "2026-10-15-01",
     "date": "2026-10-15",
     "title": "Version 4.3 — Suivi des chantiers et dossiers CPM dans le portail",

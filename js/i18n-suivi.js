@@ -1,0 +1,62 @@
+/** Traductions des pages de suivi (Dossiers CPM, Avancement des chantiers, Suivi chantier) — voir js/i18n.js. [français, English, العربية] */
+(function () {
+  var T = [
+    ['Dossiers CPM', 'CPM Files', 'ملفات CPM'], ['Division Infrastructure — RNS', 'Infrastructure Division — RNS', 'قسم البنى التحتية — RNS'], ['← Portail', '← Portal', 'البوابة →'],
+    ['📂 Ouvrir le fichier', '📂 Open the file', '📂 فتح الملف'], ['Total dossiers', 'Total files', 'مجموع الملفات'],
+    ['Attribué', 'Awarded', 'ممنوح'], ['Dossier en cours', 'File in progress', 'ملف قيد المعالجة'], ['Contrat en exécution', 'Contract in execution', 'عقد قيد التنفيذ'], ['Contrat échu', 'Expired contract', 'عقد منتهٍ'],
+    ['Bloqué', 'Blocked', 'متوقف'], ['Infructueux', 'Unsuccessful', 'غير مثمر'], ['Non démarré', 'Not started', 'لم يبدأ'], ['Autre / non renseigné', 'Other / not filled in', 'أخرى / غير مُدخل'],
+    ['Arrivée à échéance (contrats en exécution, ≥60% du délai consommé)', 'Nearing deadline (contracts in execution, ≥60% of the time used)', 'اقتراب الأجل (عقود قيد التنفيذ، استُهلك ≥60% من الأجل)'],
+    ['Rechercher un intitulé, une entreprise, une adresse…', 'Search for a title, a company, an address…', 'ابحث عن عنوان أو مؤسسة أو عنوان بريدي…'],
+    ['Attribution', 'Award', 'المنح'], ['⏳ Arrive à échéance', '⏳ Nearing deadline', '⏳ يقترب أجله'], ['consommé', 'used', 'مستهلك'], ['Jours restants', 'Days remaining', 'الأيام المتبقية'],
+    ['Avancement des Chantiers', 'Site Progress', 'تقدّم الأشغال'], ['Vue globale', 'Global view', 'نظرة شاملة'], ['Projets & Prestations — Division Infra', 'Projects & Services — Infra Division', 'المشاريع والخدمات — قسم البنى التحتية'],
+    ['Avancement global par service', 'Overall progress by department', 'التقدّم العام حسب المصلحة'], ['En pause', 'On hold', 'متوقف مؤقتًا'],
+    ['Chantiers gelés temporairement — données conservées dans le fichier, exclues du calcul global. Reprise ultérieure.', 'Sites temporarily frozen — data kept in the file, excluded from the overall calculation. To resume later.', 'أشغال مجمّدة مؤقتًا — البيانات محفوظة في الملف ومستبعدة من الحساب العام. تُستأنف لاحقًا.'],
+    ['🚧 Service Travaux Entretien', '🚧 Maintenance Works Department', '🚧 مصلحة أشغال الصيانة'], ['🔧 Service Électromécanique', '🔧 Electromechanical Department', '🔧 مصلحة الكهروميكانيك'],
+    ['Actif', 'Active', 'نشط'], ['À venir', 'Coming soon', 'قريبًا'],
+    ['Aucune fiche suiveuse renseignée pour l\'instant — ajoutée dès réception.', 'No tracking sheet filled in yet — added as soon as received.', 'لا توجد بطاقة متابعة مُدخلة حاليًا — تُضاف فور استلامها.'],
+    ['📋 Contrats en exécution à activer', '📋 Contracts in execution to activate', '📋 عقود قيد التنفيذ للتفعيل'], ['recensement automatique CPM', 'automatic CPM census', 'إحصاء CPM التلقائي'],
+    ['Fiche suiveuse non branchée', 'Tracking sheet not connected', 'بطاقة المتابعة غير موصولة'], ['⚠️ Chantiers non chargés', '⚠️ Sites not loaded', '⚠️ أشغال لم تُحمَّل'],
+    ['Forage RNS — 3 puits d\'eau', 'RNS Drilling — 3 water wells', 'حفر RNS — 3 آبار مياه'], ['Terrassement RNS (36 mois)', 'RNS Earthworks (36 months)', 'أشغال التسوية RNS (36 شهرًا)'], ['Maintenance des Installations Électriques', 'Electrical Installations Maintenance', 'صيانة المنشآت الكهربائية'],
+    ['Données de démonstration non disponibles pour cette source', 'Demo data not available for this source', 'بيانات العرض التجريبي غير متاحة لهذا المصدر'],
+    ['Fiche suiveuse globale', 'Global tracking sheet', 'بطاقة المتابعة العامة'], ['FICHE SUIVEUSE GLOBALE', 'GLOBAL TRACKING SHEET', 'بطاقة المتابعة العامة'], ['Fichier maître — tous les chantiers', 'Master file — all sites', 'الملف الرئيسي — كل الأشغال'],
+    ['Les fiches restent listées ci-dessous (grisées) pour mémoire, mais ne sont pas accessibles pour l\'instant.', 'The sheets remain listed below (greyed out) for reference, but are not accessible for now.', 'تبقى البطاقات مدرجة أدناه (باهتة) للتذكير لكنها غير متاحة حاليًا.'],
+    ['Service Travaux Entretien', 'Maintenance Works Department', 'مصلحة أشغال الصيانة'], ['Lien conservé, en attente — dis-le-moi quand tu veux l\'activer', 'Link kept, on hold — tell me when you want to activate it', 'الرابط محفوظ في الانتظار — أخبرني متى تريد تفعيله'],
+    ['Prestation de Maintenance des Installations Hydrauliques', 'Maintenance of Hydraulic Installations', 'خدمة صيانة المنشآت الهيدروليكية'], ['Lien à venir', 'Link coming soon', 'الرابط قريبًا'],
+    ['Travaux de Dessablage Mécanique', 'Mechanical Desanding Works', 'أشغال إزالة الرمال آليًا'], ['Travaux de Dessablage Manuel', 'Manual Desanding Works', 'أشغال إزالة الرمال يدويًا'],
+    ['Forage RNS (3 puits)', 'RNS Drilling (3 wells)', 'حفر RNS (3 آبار)'], ['Tableau de bord exécutif', 'Executive dashboard', 'لوحة القيادة التنفيذية'], ['Suivi global du contrat', 'Overall contract tracking', 'المتابعة العامة للعقد'],
+    ['Service Électromécanique', 'Electromechanical Department', 'مصلحة الكهروميكانيك'], ['Prestation de Travaux de maintenance des installations électriques', 'Electrical Installations Maintenance Works', 'خدمة أشغال صيانة المنشآت الكهربائية'], ['Tableau de bord', 'Dashboard', 'لوحة القيادة'],
+    ['Travaux de maintenance des installations de froid et climatisation', 'Refrigeration and Air-conditioning Maintenance Works', 'أشغال صيانة منشآت التبريد والتكييف'],
+    ['Service Construction — en pause ⏸️', 'Construction Department — on hold ⏸️', 'مصلحة البناء — متوقفة مؤقتًا ⏸️'], ['Pause', 'On hold', 'متوقف'], ['Génie Civil (ETBE ZATOUT)', 'Civil Engineering (ETBE ZATOUT)', 'الهندسة المدنية (ETBE ZATOUT)'],
+    ['Pointage MO/Matériel — synthèse annuelle', 'Labour/Equipment attendance — annual summary', 'تسجيل اليد العاملة/العتاد — الملخص السنوي'], ['Bassin CPF (tab de suivi)', 'CPF Basin (tracking tab)', 'حوض CPF (جدول المتابعة)'],
+    ['Suivi journalier — Plate-forme/Talus', 'Daily tracking — Platform/Embankment', 'متابعة يومية — المنصة/المنحدر'], ['Les Abris', 'The Shelters', 'المآوي'], ['Fiche suiveuse indépendante', 'Independent tracking sheet', 'بطاقة متابعة مستقلة'],
+    ['Stades', 'Stadiums', 'الملاعب'], ['Mosquée', 'Mosque', 'المسجد'], ['Piscine', 'Swimming pool', 'المسبح'], ['Studio (cadre)', 'Studio (frame)', 'الاستوديو (الإطار)'],
+    ['Plans de situation — par projet (Service Construction, en pause)', 'Site plans — by project (Construction Department, on hold)', 'مخططات الوضعية — حسب المشروع (مصلحة البناء، متوقفة)'], ['Plan de situation', 'Site plan', 'مخطط الوضعية'], ['Lien manquant', 'Missing link', 'رابط مفقود'],
+    ['Dossier projet complet (Drive)', 'Complete project folder (Drive)', 'ملف المشروع الكامل (Drive)'], ['Dossier "Dashboard"', '“Dashboard” folder', 'مجلد «Dashboard»'], ['Tous les fichiers projet réunis', 'All project files together', 'كل ملفات المشروع مجتمعة'],
+    ['⚠️ Cette page ne contient que les liens pour l\'instant (accès rapide à un seul endroit). Le résumé d\'avancement global et détaillé par chantier, avec les pourcentages, est sur la page', '⚠️ This page only contains the links for now (quick access in one place). The overall and detailed progress summary by site, with percentages, is on the page', '⚠️ تحتوي هذه الصفحة على الروابط فقط حاليًا (وصول سريع من مكان واحد). ملخص التقدّم العام والمفصّل حسب الورشة مع النسب موجود في صفحة'],
+    ['"📊 Avancement Chantiers"', '“📊 Site Progress”', '«📊 تقدّم الأشغال»'], ['(en haut à droite) — on continue à l\'enrichir ensemble.', '(top right) — we keep enriching it together.', '(أعلى اليمين) — نواصل إثراءها معًا.'],
+    ['Suivi Chantier', 'Site Tracking', 'متابعة الورشة'], ['Avancement Chantiers', 'Site Progress', 'تقدّم الأشغال'], ['📊 Avancement Chantiers', '📊 Site Progress', '📊 تقدّم الأشغال'], ['📋 Suivi CPM', '📋 CPM Tracking', '📋 متابعة CPM'],
+    ['FICHE SUIVEUSE GLOBALE', 'GLOBAL TRACKING SHEET', 'بطاقة المتابعة العامة']
+  ];
+  var en = {}, ar = {};
+  T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
+  function motifs(l) {
+    var E = l === 'en';
+    function jours(n) { return E ? n + ' d.' : n + ' ي'; }
+    function duree(txt) { // « 1 mois et 10 jours », « 1 mois », « 12 jours »
+      return String(txt).replace(/(\d+) mois/g, function (_, n) { return E ? n + ' month' + (n > 1 ? 's' : '') : n + ' شهر'; }).replace(/(\d+) jours?/g, function (_, n) { return E ? n + ' day' + (n > 1 ? 's' : '') : n + ' يومًا'; }).replace(/ et /g, E ? ' and ' : ' و');
+    }
+    return [
+      [/^(\d+) j\.$/, function (n) { return jours(n); }],
+      [/^il reste (.+)$/, function (d) { return (E ? 'remaining: ' : 'المتبقي: ') + duree(d); }],
+      [/^⏳ (\d+)$/, function (n) { return '⏳ ' + n; }],
+      [/^📁 Service (.+) — (\d+) en attente de branchement$/, function (s, n) { return E ? '📁 ' + s + ' Department — ' + n + ' awaiting connection' : '📁 مصلحة ' + s + ' — ' + n + ' في انتظار الربط'; }],
+      [/^Tableau de bord exécutif — ([\d,]+)% réalisé$/, function (p) { return E ? 'Executive dashboard — ' + p + '% completed' : 'لوحة القيادة التنفيذية — ' + p + '% منجز'; }],
+      [/^Tableau de bord — ([\d,]+)% consommé$/, function (p) { return E ? 'Dashboard — ' + p + '% used' : 'لوحة القيادة — ' + p + '% مستهلك'; }],
+      [/^Suivi global du contrat — ([\d,]+)% réalisé$/, function (p) { return E ? 'Overall contract tracking — ' + p + '% completed' : 'المتابعة العامة للعقد — ' + p + '% منجز'; }],
+      [/^Fiche suiveuse indépendante \(Suivi_MCM000 — (\d+) lots\)$/, function (n) { return E ? 'Independent tracking sheet (Suivi_MCM000 — ' + n + ' lots)' : 'بطاقة متابعة مستقلة (Suivi_MCM000 — ' + n + ' حصص)'; }],
+      [/^⏸️ Le$/, function () { return E ? '⏸️ The' : '⏸️'; }],
+      [/^est actuellement mis en pause — on se concentre sur les autres services\. (.+)$/, function (r) { return (E ? 'is currently on hold — we are focusing on the other departments. ' : 'متوقفة حاليًا — نركّز على المصالح الأخرى. ') + I18n.t(r); }]
+    ];
+  }
+  I18n.dico({ en: en, ar: ar }, { en: motifs('en'), ar: motifs('ar') });
+})();

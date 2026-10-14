@@ -249,6 +249,9 @@
     ['Chaque personne ne voit que les pages auxquelles son rôle donne droit.', 'Each person only sees the pages their role gives access to.', 'يرى كل شخص الصفحات التي يتيحها له دوره فقط.'],
     ['Vous n\'avez pas accès à cette page avec votre compte.', 'You do not have access to this page with your account.', 'ليس لديك حق الوصول إلى هذه الصفحة بحسابك.'],
     ['← Retour au portail', '← Back to the portal', 'العودة إلى البوابة →'],
+    ['Version 4.4 — Données protégées et pages de suivi complètes', 'Version 4.4 — Protected data and complete tracking pages', 'الإصدار 4.4 — بيانات محمية وصفحات متابعة مكتملة'],
+    ['Les chiffres du suivi CPM et de l\'avancement des chantiers sont maintenant lus par le portail : les fichiers n\'ont plus besoin d\'être ouverts à tout le monde.', 'The CPM tracking and site progress figures are now read by the portal: the files no longer need to be open to everyone.', 'تُقرأ أرقام متابعة CPM وتقدّم الأشغال الآن بواسطة البوابة: لم تعد الملفات بحاجة إلى أن تكون مفتوحة للجميع.'],
+    ['Les pages de suivi ont le même pied de page, le choix de la langue et le mode sombre que le reste du portail.', 'The tracking pages have the same footer, language choice and dark mode as the rest of the portal.', 'لصفحات المتابعة نفس التذييل واختيار اللغة والوضع الداكن كبقية البوابة.'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];

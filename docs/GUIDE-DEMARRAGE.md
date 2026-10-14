@@ -55,3 +55,9 @@ Le site actuel, tous les fichiers d'origine et le fichier Organigramme (traité 
 
 ## Règle pour les « Nouveautés »
 À chaque changement visible, on monte `PORTAIL_VERSION` (`js/version.js`) et on ajoute une entrée en tête de `changelog.json` : un titre « Version X — … » et 2 à 4 phrases courtes, sans détail technique, écrites pour le chef de division (ce qui change pour lui). Les traductions anglaise et arabe de ces phrases vont dans `js/i18n-dico.js`.
+
+## Rendre les feuilles de suivi privées (lot 3)
+Le CPM et les chantiers sont lus par la passerelle (`apps-script/gateway/Donnees.gs`, liste `SOURCES_`) : plus aucune page n'ouvre la feuille directement.
+1. Après le déploiement de la passerelle, ouvrir son projet Apps Script avec le compte du secrétariat et exécuter **`verifierSourcesDonnees`** : le journal doit afficher « OK » pour `cpm`, `forage`, `terrassement`, `electricite`. Un « ÉCHEC » veut dire : feuille non partagée avec le secrétariat, ou fichier Office `.xlsx` à convertir (Fichier ▸ Enregistrer en tant que feuille Google Sheets, puis remplacer l'identifiant dans `SOURCES_`).
+2. Ouvrir le portail : les synthèses de l'accueil et les pages Dossiers CPM / Avancement doivent afficher leurs chiffres.
+3. Seulement alors, pour chaque feuille : Partager ▸ Accès général ▸ **Restreint**. Une feuille à la fois, en vérifiant le portail après chacune.

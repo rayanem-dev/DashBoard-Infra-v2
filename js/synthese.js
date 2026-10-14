@@ -1,10 +1,8 @@
 /**
  * Synthèses de l'accueil : « Suivi CPM » (dossiers par statut, échéances proches) et « Avancement chantiers » — mêmes calculs que l'ancien accueil.
- * Pour l'instant les données sont lues comme avant (feuille Suivi CPM V5 exportée en CSV, pages d'avancement) ; elles passeront par la passerelle
- * quand les feuilles seront privées. La partie CALCUL est pure (testée en Node : test/synthese.test.js), l'affichage construit le DOM sans innerHTML.
+ * Les données passent par la passerelle (action « donnees », js/donnees.js) : les feuilles peuvent être privées. La partie CALCUL est pure (testée en Node : test/synthese.test.js), l'affichage construit le DOM sans innerHTML.
  */
 var Synthese = (function () {
-  var CPM_CSV_URL = 'https://docs.google.com/spreadsheets/d/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY/export?format=csv&gid=1963142469';
   var STATUTS = {
     attribue: { label: 'Attribué', bg: '#7CD5B0', text: '#0B4A34' }, encours: { label: 'Dossier en cours', bg: '#D4EDBC', text: '#3F6B2E' },
     execution: { label: 'Contrat en exécution', bg: '#BFE1F6', text: '#155479' }, echu: { label: 'Contrat échu', bg: '#8B8D91', text: '#FFFFFF' },
@@ -81,7 +79,7 @@ var Synthese = (function () {
   }
   function monterCpm(zone, url) {
     var sub = panneau(zone, '📋', 'Suivi CPM', null, [['Détail', 'Dossiers_CPM.html']]);
-    return fetch(url || window.SYNTHESE_CPM_CSV || CPM_CSV_URL).then(function (r) { if (!r.ok) throw new Error('lecture impossible'); return r.text(); }).then(function (txt) {
+    return (url ? fetch(url).then(function (r) { if (!r.ok) throw new Error('lecture impossible'); return r.text(); }) : Donnees.csv('cpm')).then(function (txt) {
       var s = cpm(parseCSV(txt), new Date()), grille = el('div', 'syn-grille'), barre = el('div', 'syn-barre');
       grille.appendChild(tuile(s.total, 'Total dossiers', '', 'linear-gradient(135deg,#1A1A2E,#16213E)', '#fff'));
       ORDRE.forEach(function (k) { if (!s.comptes[k]) return; var st = STATUTS[k]; grille.appendChild(tuile(s.comptes[k], st.label, pct(s.comptes[k], s.total), st.bg, st.text));

@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Dossiers CPM — Détail — Division Infrastructure RNS</title>
-<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/garde.js"></script>
 <link rel="stylesheet" href="css/sombre-ancien.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -35,7 +35,7 @@
   /* ── SUMMARY STRIP ── */
   .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
   @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
-  .sum-card { background: white; border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow-card); border: 1px solid var(--border); cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; }
+  .sum-card { background: var(--white); border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow-card); border: 1px solid var(--border); cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; }
   .sum-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   .sum-card .n { font-size: 24px; font-weight: 800; }
   .sum-card .l { font-size: 11.5px; font-weight: 600; color: var(--text-muted); margin-top: 4px; }
@@ -54,7 +54,7 @@
   .search-box input:focus { border-color: var(--orange-main); box-shadow: 0 0 0 4px rgba(232,93,4,0.10); }
   .search-box .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 15px; }
   .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-  .filter-tab { border: 1.5px solid var(--border); background: white; padding: 9px 16px; border-radius: 20px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .filter-tab { border: 1.5px solid var(--border); background: var(--white); padding: 9px 16px; border-radius: 20px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
   .filter-tab:hover { border-color: var(--orange-light); color: var(--orange-main); }
   .filter-tab.active { background: var(--gray-dark); border-color: var(--gray-dark); color: white; }
 
@@ -69,7 +69,7 @@
   .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
 
   /* ── DOSSIER CARD ── */
-  .dcard { background: white; border-radius: 18px; padding: 18px 20px; box-shadow: var(--shadow-card); border: 1px solid var(--border); border-left: 5px solid var(--gray-mid); transition: box-shadow 0.2s, transform 0.15s; position: relative; }
+  .dcard { background: var(--white); border-radius: 18px; padding: 18px 20px; box-shadow: var(--shadow-card); border: 1px solid var(--border); border-left: 5px solid var(--gray-mid); transition: box-shadow 0.2s, transform 0.15s; position: relative; }
   .dcard:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   .dcard-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
   .dcard h3 { font-size: 14.5px; font-weight: 700; color: var(--gray-dark); line-height: 1.35; }
@@ -125,7 +125,7 @@
 </main>
 
 <script>
-const CPM_CSV_URL = "https://docs.google.com/spreadsheets/d/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY/export?format=csv&gid=1963142469";
+const CPM_CSV_URL = "cpm"; // source lue par la passerelle (js/donnees.js)
 
 // Colonnes (0-indexées, A=0) — Suivi CPM V5
 const COL = {
@@ -354,9 +354,7 @@ function attachEvents() {
 async function init() {
   const content = document.getElementById('content');
   try {
-    const res = await fetch(CPM_CSV_URL);
-    if (!res.ok) throw new Error('Impossible de charger le fichier (' + res.status + ')');
-    const text = await res.text();
+    const text = await Donnees.csv(CPM_CSV_URL);
     const rows = parseCSV(text);
 
     let headerIdx = rows.findIndex(r => r.some(cell => normalize(cell) === 'statut'));

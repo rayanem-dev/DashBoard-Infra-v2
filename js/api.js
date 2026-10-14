@@ -12,6 +12,25 @@
     { uid: 'u6', nom: 'BRAHIMI Samir', service: 'Travaux Entretien', role: 'agent', email: 's.brahimi@exemple.dz', fonction: 'Technicien' }
   ];
   // En démonstration, tout le monde a au moins le niveau 1 du module « planning » (comme les droits par défaut de la vraie passerelle).
+  // ---- Démonstration : feuille « Suivi CPM » fictive (mêmes colonnes que la vraie) ----
+  function demoCpmCsv() {
+    var auj = new Date(); function fr(j) { var d = new Date(auj); d.setDate(d.getDate() + j); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+    var cols = 27, vide = function () { var r = []; for (var i = 0; i < cols; i += 1) r.push(''); return r; };
+    function L(titre, statut, extra) { var r = vide(); r[2] = 'CPM-' + (100 + titre.length); r[3] = titre; r[8] = statut; Object.keys(extra || {}).forEach(function (k) { r[k] = extra[k]; }); return r; }
+    var tete = vide(); ['Début CDC', 'Type', 'N° dossier', 'Intitulé', 'Étape', 'Date limite', 'Échéance', '%', 'Statut'].forEach(function (c, i) { tete[i] = c; });
+    var lignes = [vide(), tete,
+      L('Réhabilitation du réseau d\'eau — base de vie', 'Contrat en exécution', { 16: fr(-200), 17: '8', 18: fr(40), 14: '18 500 000' }),
+      L('Maintenance des installations électriques', 'Contrat en exécution', { 16: fr(-60), 17: '12', 18: fr(300), 14: '9 200 000' }),
+      L('Travaux de terrassement — plateforme B', 'Contrat en exécution', { 16: fr(-150), 17: '6', 18: fr(30), 14: '41 000 000' }),
+      L('Fourniture de pièces détachées', 'Attribué', { 12: 'Entreprise Atlas', 14: '3 400 000' }),
+      L('Entretien des espaces verts', 'Dossier en cours', {}),
+      L('Étude de faisabilité — pont d\'accès', 'Dossier en cours', {}),
+      L('Location d\'engins', 'Contrat échu', { 16: fr(-500), 17: '12', 18: fr(-130) }),
+      L('Nettoyage des bacs', 'Bloqué', {}),
+      L('Vérification des extincteurs', 'Infructueux', {}),
+      L('Peinture des bâtiments', 'Non démarré', {})];
+    return lignes.map(function (l) { return l.map(function (c) { var t = String(c); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; }).join(','); }).join('\n');
+  }
   function menuDemo(role) {
     var m = (DEMO_MENU[role] || []).slice();
     if (!m.some(function (x) { return x.id === 'planning'; })) m.push({ id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 1, apps: [{ titre: 'Planning & rotations', description: 'Votre planning : 1 mois, 3 mois, 6 mois, 1 an.', emoji: '🗓️', url: 'planning.html' }] });
@@ -158,6 +177,9 @@
         if (!ur) throw erreur('Session expirée', 'SESSION'); return connecterDemo(ur, true); }
       case 'menu': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { user: pub(demoState.user), mdp_par_defaut: demoState.user.uid === 'u6', menu: menuDemo(demoState.user.role) };
+      case 'donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        if (p.source === 'cpm') return { csv: demoCpmCsv(), maj: new Date().toISOString() };
+        throw erreur('Données de démonstration non disponibles pour cette source');
       case 'logout': demoState.user = null; return {};
       case 'changer_mdp': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.ancien !== 'Demo2026!' && p.ancien !== '0000') throw erreur('Ancien mot de passe incorrect');
