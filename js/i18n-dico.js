@@ -244,6 +244,11 @@
     ['(nouveautés)', '(what\'s new)', '(المستجدات)'],
     ['Version 4.2.1 — Fiche personnelle plus claire', 'Version 4.2.1 — Clearer personal profile', 'الإصدار 4.2.1 — بطاقة شخصية أوضح'],
     ['Votre fiche est maintenant partagée en deux moitiés égales : vos informations à gauche, votre rotation à droite.', 'Your profile is now split into two equal halves: your information on the left, your rotation on the right.', 'بطاقتك مقسّمة الآن إلى نصفين متساويين: معلوماتك على اليسار وتناوبك على اليمين.'],
+    ['Version 4.3 — Suivi des chantiers et dossiers CPM dans le portail', 'Version 4.3 — Site tracking and CPM files in the portal', 'الإصدار 4.3 — متابعة الأشغال وملفات CPM داخل البوابة'],
+    ['Les pages « Avancement des chantiers », « Suivi chantier » et « Dossiers CPM » s\'ouvrent maintenant depuis le portail, après connexion.', 'The “Site progress”, “Site tracking” and “CPM files” pages now open from the portal, after login.', 'صفحات «تقدّم الأشغال» و«متابعة الورشة» و«ملفات CPM» تُفتح الآن من البوابة بعد تسجيل الدخول.'],
+    ['Chaque personne ne voit que les pages auxquelles son rôle donne droit.', 'Each person only sees the pages their role gives access to.', 'يرى كل شخص الصفحات التي يتيحها له دوره فقط.'],
+    ['Vous n\'avez pas accès à cette page avec votre compte.', 'You do not have access to this page with your account.', 'ليس لديك حق الوصول إلى هذه الصفحة بحسابك.'],
+    ['← Retour au portail', '← Back to the portal', 'العودة إلى البوابة →'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];

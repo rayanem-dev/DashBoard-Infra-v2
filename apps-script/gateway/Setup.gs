@@ -57,6 +57,24 @@ function ajouterModuleAffectation() {
   if (nouveaux.length) dr.getRange(dr.getLastRow() + 1, 1, nouveaux.length, 3).setValues(nouveaux);
   CacheService.getScriptCache().removeAll(['TBL_Modules', 'TBL_DroitsRole']);
 }
+/**
+ * Lot 2 : les pages Avancement_des_Chantiers et Suivi_Chantier faisaient encore pointer leur carte vers l'ancien site ;
+ * elles sont maintenant servies par le portail (derrière la connexion). Réécrit une seule fois ces deux liens en pages relatives. Idempotent.
+ */
+function preparerPages_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('PAGES_PRET') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
+    var v = sh.getDataRange().getValues(), iU = v[0].map(String).indexOf('url');
+    for (var i = 1; i < v.length; i += 1) {
+      var m = /^https:\/\/rayanem-dev\.github\.io\/DashBoard-Infra\/(Avancement_des_Chantiers|Suivi_Chantier|Dossiers_CPM)\.html$/.exec(String(v[i][iU]));
+      if (m) sh.getRange(i + 1, iU + 1).setValue(m[1] + '.html');
+    }
+    props.setProperty('PAGES_PRET', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
 /** Prépare le module « affectation » tout seul au premier passage (onglet Affectations, module, droits, carte). Idempotent. */
 function preparerAffectation_() {
   var props = PropertiesService.getScriptProperties();

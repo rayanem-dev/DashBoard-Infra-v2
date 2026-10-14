@@ -94,7 +94,7 @@ var SEED_APPS = [
   "Avancement Chantiers",
   "Tableau de bord global des chantiers d'infrastructure en cours, suivi de l'avancement physique et financier en temps réel.",
   "📊",
-  "https://rayanem-dev.github.io/DashBoard-Infra/Avancement_des_Chantiers.html",
+  "Avancement_des_Chantiers.html",
   1
  ],
  [
@@ -102,7 +102,7 @@ var SEED_APPS = [
   "Suivi Chantier",
   "Suivi détaillé chantier par chantier : jalons, documents et état d'avancement consolidé.",
   "🗂️",
-  "https://rayanem-dev.github.io/DashBoard-Infra/Suivi_Chantier.html",
+  "Suivi_Chantier.html",
   1
  ],
  [

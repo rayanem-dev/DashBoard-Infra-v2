@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-15-01",
+    "date": "2026-10-15",
+    "title": "Version 4.3 — Suivi des chantiers et dossiers CPM dans le portail",
+    "changes": [
+      "Les pages « Avancement des chantiers », « Suivi chantier » et « Dossiers CPM » s'ouvrent maintenant depuis le portail, après connexion.",
+      "Chaque personne ne voit que les pages auxquelles son rôle donne droit."
+    ]
+  },
+  {
     "id": "2026-10-14-03",
     "date": "2026-10-14",
     "title": "Version 4.2.1 — Fiche personnelle plus claire",

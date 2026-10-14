@@ -46,6 +46,7 @@ function route_(req) {
       if (typeof preparerStructure_ === 'function') preparerStructure_();
       if (typeof preparerSimulation_ === 'function') preparerSimulation_();
       if (typeof preparerAffectation_ === 'function') preparerAffectation_();
+      if (typeof preparerPages_ === 'function') preparerPages_();
       return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
     }
     case 'emettreCode': {
