@@ -7,7 +7,6 @@ Portail statique (HTML/CSS/JS, sans build) installable en PWA. Les données vien
 - `Avancement_des_Chantiers.html` — avancement des chantiers (liste `CHANTIERS` en haut du script)
 - `Dossiers_CPM.html` — suivi des dossiers CPM
 - `Suivi_Chantier.html`, `Organigramme.html` — suivi et organigramme
-- `Formulaire.html` — formulaire servi par Google Apps Script (`google.script.run`), `requete.html` y redirige
 
 ## Opérations courantes
 - **Ajouter un chantier** : ajouter une entrée dans `CHANTIERS` (`Avancement_des_Chantiers.html`) avec son `csvUrl`.
