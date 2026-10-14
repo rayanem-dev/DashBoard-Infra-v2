@@ -105,17 +105,17 @@ test('proposition pour les DEUX agents : par semaine, depuis la relève, sans co
   assert.ok(jour[0].conflits <= sem[0].conflits);
 });
 
-test('reliquat concédé = décalage de la rotation : + reculée (retard), − avancée (repos cédé) ; classement du moins au plus concédé', () => {
-  const rA = { statut: 'T', depuis: '2026-09-01', jours_travail: 28, jours_repos: 28 };
-  const off = Planning.grille(rA, [], '2026-09-01', 160);          // T 01/09→28/09, R 29/09→26/10, T 27/10→23/11, R 24/11→21/12…
-  const r = m => Simulation.reliquat(off, Simulation.appliquer(off, '2026-09-01', m, rA), '2026-09-01', m, rA);
-  assert.strictEqual(r({ debut: '2026-09-29', periodes: [{ type: 'T', jours: 14 }], reprise: 'R' }), 14, 'travail prolongé de 14 j : 14 j de retard');
-  assert.strictEqual(r({ debut: '2026-09-29', periodes: [{ type: 'R', jours: 14 }], reprise: 'T' }), -14, 'repos écourté de 14 j : 14 j d\'avance (14 j de repos cédés)');
-  assert.strictEqual(r({ debut: '2026-09-29', periodes: [{ type: 'R', jours: 35 }], reprise: 'T' }), 7, 'repos rallongé de 7 j');
-  assert.strictEqual(Simulation.reliquat(off, off, '2026-09-01', null, rA), 0);
-  const rB = { statut: 'T', depuis: '2026-09-15', jours_travail: 28, jours_repos: 28 };
-  const offB = Planning.grille(rB, [], '2026-09-01', 160);
-  const res = Simulation.proposerPaire({ offA: off, offB, debutF: '2026-09-01', rotA: rA, rotB: rB, debut: '2026-10-05', tolChev: 2, tolTrou: 0, pas: 7, alignerReleve: true });
+test('reliquat concédé = jours de travail en plus (+) ou de repos en plus (−), au pic ; classement du moins au plus concédé', () => {
+  const rA = { statut: 'T', depuis: '2026-10-11', jours_travail: 28, jours_repos: 28 };
+  const off = Planning.grille(rA, [], '2026-09-14', 200);          // T jusqu'au 07/11, R 08/11→05/12, T 06/12→02/01…
+  const r = m => Simulation.reliquat(off, Simulation.appliquer(off, '2026-09-14', m, rA), '2026-09-14', m);
+  assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'T', jours: 7 }], reprise: 'R' }), 7, 'travaille 7 j de plus puis son congé habituel de 28 j');
+  assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'R', jours: 7 }], reprise: 'T' }), 21, 'congé écourté : 7 j pris sur 28, donc 21 j de congé cédés');
+  assert.strictEqual(r({ debut: '2026-11-08', periodes: [{ type: 'R', jours: 35 }], reprise: 'T' }), -7, 'congé rallongé de 7 j');
+  assert.strictEqual(Simulation.reliquat(off, off, '2026-09-14', null), 0);
+  const rB = { statut: 'T', depuis: '2026-10-25', jours_travail: 28, jours_repos: 28 };
+  const offB = Planning.grille(rB, [], '2026-09-14', 200);
+  const res = Simulation.proposerPaire({ offA: off, offB, debutF: '2026-09-14', rotA: rA, rotB: rB, debut: '2026-11-01', tolChev: 2, tolTrou: 0, pas: 7, alignerReleve: true });
   const sansConflit = res.filter(x => x.conflits === 0);
   for (let i = 1; i < sansConflit.length; i++) assert.ok(sansConflit[i - 1].concession <= sansConflit[i].concession, 'classés par reliquat croissant');
   for (const x of res) assert.strictEqual(x.concession, Math.abs(x.reliquatA) + Math.abs(x.reliquatB));

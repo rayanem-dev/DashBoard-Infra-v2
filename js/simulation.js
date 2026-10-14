@@ -158,19 +158,18 @@ var Simulation = (function () {
   }
 
   /**
-   * Reliquat concédé par une modification = DÉCALAGE de la rotation de l'agent par rapport à son planning actuel, en jours :
-   * le jour où la rotation habituelle reprend, on le compare au début du bloc de même statut du planning actuel le plus proche.
-   * + = rotation reculée (travail prolongé ou repos rallongé : l'agent a N jours de retard sur son planning initial) ;
-   * − = rotation avancée (repos écourté ou travail raccourci : N jours d'avance, donc N jours de repos cédés). 0 si pas de modification.
+   * Reliquat concédé par une modification : écart cumulé (jours de travail du planning modifié − jours de travail du planning actuel) à partir du début
+   * de la modification ; on retient son PIC. + = l'agent a travaillé jusqu'à N jours de plus que prévu (travail prolongé, congé écourté : reliquat à
+   * récupérer) ; − = jusqu'à N jours de repos de plus. Le décalage se rattrape plus tard dans le cycle, d'où le pic. 0 si pas de modification.
    */
-  function reliquat(off, mod, debutF, m, rot) {
+  function reliquat(off, mod, debutF, m) {
     if (!m) return 0;
-    var rep = diff(debutF, dateReprise(m)), t = m.reprise, cy = rot ? Number(rot.jours_travail) + Number(rot.jours_repos) : 56, meilleur = null;
-    for (var i = Math.max(0, rep - cy); i < Math.min(off.length, rep + cy + 1); i += 1) {
-      if (off.charAt(i) !== t || (i > 0 && off.charAt(i - 1) === t)) continue; // début d'un bloc de ce statut
-      var d = rep - i; if (meilleur === null || Math.abs(d) < Math.abs(meilleur)) meilleur = d;
+    var n = Math.min(off.length, mod.length), d = 0, pic = 0;
+    for (var i = Math.max(0, diff(debutF, m.debut)); i < n; i += 1) {
+      var a = mod.charAt(i), b = off.charAt(i);
+      if (a !== b) { d += (a === 'T' ? 1 : 0) - (b === 'T' ? 1 : 0); if (Math.abs(d) > Math.abs(pic)) pic = d; }
     }
-    return meilleur === null ? 0 : meilleur;
+    return pic;
   }
 
   /** Une passe : { conflits (jours), maxChev (plus long chevauchement), maxTrou (plus long trou) } à partir de depuisIdx. */
@@ -229,7 +228,7 @@ var Simulation = (function () {
       var gA = a.grille, gB = b.grille;
       var c = analyser(gA, gB, depuisIdx, tolC, tolV), tr = (a.modif ? totalJours(a.modif) : 0) + (b.modif ? totalJours(b.modif) : 0);
       // maxChev / maxTrou : tolérances qui suffiraient à supprimer tout conflit
-      var rA = reliquat(opts.offA, gA, opts.debutF, a.modif, opts.rotA), rB = reliquat(opts.offB, gB, opts.debutF, b.modif, opts.rotB);
+      var rA = reliquat(opts.offA, gA, opts.debutF, a.modif), rB = reliquat(opts.offB, gB, opts.debutF, b.modif);
       res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
     }
     var i, j, B0 = cB.un[0], A0 = cA.un[0];
