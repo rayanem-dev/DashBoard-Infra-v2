@@ -158,18 +158,25 @@ var Simulation = (function () {
   }
 
   /**
-   * Reliquat concédé par une modification : écart cumulé (jours de travail du planning modifié − jours de travail du planning actuel) à partir du début
-   * de la modification ; on retient son PIC. + = l'agent a travaillé jusqu'à N jours de plus que prévu (travail prolongé, congé écourté : reliquat à
-   * récupérer) ; − = jusqu'à N jours de repos de plus. Le décalage se rattrape plus tard dans le cycle, d'où le pic. 0 si pas de modification.
+   * Reliquat concédé par une modification, période par période (travail : +, repos : −) :
+   *  - période du MÊME statut que le planning actuel à cette date : on compare sa durée au reste du bloc actuel
+   *    (congé de 28 j écourté à 7 j : +21 ; congé de 28 j rallongé à 35 j : −7 ; travail prolongé : +) ;
+   *  - période d'un AUTRE statut (insérée avant le bloc suivant) : elle compte en entier
+   *    (7 j de travail avant un congé : +7 ; congé prolongé de 7 j alors qu'on devrait travailler : −7).
+   * + = jours travaillés en plus, reliquat à récupérer ; − = jours de repos en plus. 0 si pas de modification.
    */
   function reliquat(off, mod, debutF, m) {
     if (!m) return 0;
-    var n = Math.min(off.length, mod.length), d = 0, pic = 0;
-    for (var i = Math.max(0, diff(debutF, m.debut)); i < n; i += 1) {
-      var a = mod.charAt(i), b = off.charAt(i);
-      if (a !== b) { d += (a === 'T' ? 1 : 0) - (b === 'T' ? 1 : 0); if (Math.abs(d) > Math.abs(pic)) pic = d; }
-    }
-    return pic;
+    var total = 0, d = m.debut;
+    m.periodes.forEach(function (p) {
+      var i = diff(debutF, d), st = i >= 0 && i < off.length ? off.charAt(i) : '', sg = p.type === 'T' ? 1 : -1;
+      if (st === 'T' || st === 'R') {
+        if (p.type === st) { var r = 0; while (i + r < off.length && off.charAt(i + r) === st) r += 1; total += sg * (p.jours - r); }
+        else total += sg * p.jours;
+      }
+      d = addDays(d, p.jours);
+    });
+    return total;
   }
 
   /** Une passe : { conflits (jours), maxChev (plus long chevauchement), maxTrou (plus long trou) } à partir de depuisIdx. */
