@@ -71,6 +71,8 @@ function route_(req) {
     case 'simu_demande': return simuDemande_(req);
     case 'simu_decider': return simuDecider_(req);
     case 'donnees': return donneesCsv_(req);
+    case 'cpm_journal': return cpmJournalListe_(req);
+    case 'cpm_instantane': return cpmInstantaneMaintenant_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);

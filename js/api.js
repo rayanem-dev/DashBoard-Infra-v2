@@ -180,6 +180,12 @@
       case 'donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.source === 'cpm') return { csv: demoCpmCsv(), maj: new Date().toISOString() };
         throw erreur('Données de démonstration non disponibles pour cette source');
+      case 'cpm_journal': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        return { dernier_instantane: new Date().toISOString(), evenements: [
+          { date: '2026-10-13', cle: 'a', dossier: 'Fourniture de pièces détachées', type: 'modifie', champ: 'statut', libelle: 'Statut', avant: 'Dossier en cours', apres: 'Attribué' },
+          { date: '2026-10-13', cle: 'b', dossier: 'Nettoyage des bacs', type: 'nouveau', champ: '', libelle: '', avant: '', apres: 'Non démarré' },
+          { date: '2026-10-12', cle: 'c', dossier: 'Location d\'engins', type: 'modifie', champ: 'echeance', libelle: 'Échéance du contrat', avant: '', apres: '15/03/2027' },
+          { date: '2026-10-09', cle: 'd', dossier: 'Ancien dossier test', type: 'retire', champ: '', libelle: '', avant: 'Non démarré', apres: '' } ] };
       case 'logout': demoState.user = null; return {};
       case 'changer_mdp': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.ancien !== 'Demo2026!' && p.ancien !== '0000') throw erreur('Ancien mot de passe incorrect');

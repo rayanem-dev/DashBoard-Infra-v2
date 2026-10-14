@@ -20,6 +20,18 @@ function csvDepuisLignes_(lignes) {
   }).join('\n');
 }
 
+/** Lignes (texte affiché) de l'onglet d'une source ; erreurs en clair. Sans contrôle de droits : réservé au code de la passerelle. */
+function lignesSource_(cle) {
+  var src = SOURCES_[String(cle || '')];
+  if (!src) throw new Error('Source de données inconnue');
+  var ss;
+  try { ss = SpreadsheetApp.openById(src.fichier); }
+  catch (e) { throw new Error('La feuille « ' + src.libelle + ' » n\'est pas lisible par la passerelle (fichier Office .xlsx à convertir en Google Sheets, ou accès non partagé avec le secrétariat).'); }
+  var feuille = ss.getSheets().filter(function (s) { return s.getSheetId() === src.gid; })[0];
+  if (!feuille) throw new Error('Onglet introuvable dans « ' + src.libelle + ' »');
+  return feuille.getDataRange().getDisplayValues();
+}
+
 function donneesCsv_(req) {
   var u = Auth.userFromToken(req.token);
   var src = SOURCES_[String(req.source || '')];
@@ -29,12 +41,7 @@ function donneesCsv_(req) {
   var cle = 'CSV_' + req.source, cache = CacheService.getScriptCache();
   var vu = cache.get(cle);
   if (vu) { var o = JSON.parse(vu); return { csv: o.csv, maj: o.maj, cache: true }; }
-  var ss;
-  try { ss = SpreadsheetApp.openById(src.fichier); }
-  catch (e) { throw new Error('La feuille « ' + src.libelle + ' » n\'est pas lisible par la passerelle (fichier Office .xlsx à convertir en Google Sheets, ou accès non partagé avec le secrétariat).'); }
-  var feuille = ss.getSheets().filter(function (s) { return s.getSheetId() === src.gid; })[0];
-  if (!feuille) throw new Error('Onglet introuvable dans « ' + src.libelle + ' »');
-  var csv = csvDepuisLignes_(feuille.getDataRange().getDisplayValues());
+  var csv = csvDepuisLignes_(lignesSource_(req.source));
   var maj = new Date().toISOString();
   if (csv.length < 90000) { try { cache.put(cle, JSON.stringify({ csv: csv, maj: maj }), 120); } catch (e) {} }
   return { csv: csv, maj: maj };

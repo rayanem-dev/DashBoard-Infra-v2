@@ -34,6 +34,14 @@
     ['Dossier projet complet (Drive)', 'Complete project folder (Drive)', 'ملف المشروع الكامل (Drive)'], ['Dossier "Dashboard"', '“Dashboard” folder', 'مجلد «Dashboard»'], ['Tous les fichiers projet réunis', 'All project files together', 'كل ملفات المشروع مجتمعة'],
     ['⚠️ Cette page ne contient que les liens pour l\'instant (accès rapide à un seul endroit). Le résumé d\'avancement global et détaillé par chantier, avec les pourcentages, est sur la page', '⚠️ This page only contains the links for now (quick access in one place). The overall and detailed progress summary by site, with percentages, is on the page', '⚠️ تحتوي هذه الصفحة على الروابط فقط حاليًا (وصول سريع من مكان واحد). ملخص التقدّم العام والمفصّل حسب الورشة مع النسب موجود في صفحة'],
     ['"📊 Avancement Chantiers"', '“📊 Site Progress”', '«📊 تقدّم الأشغال»'], ['(en haut à droite) — on continue à l\'enrichir ensemble.', '(top right) — we keep enriching it together.', '(أعلى اليمين) — نواصل إثراءها معًا.'],
+    ['🕘 Journal des changements (90 derniers jours)', '🕘 Change log (last 90 days)', '🕘 سجل التغييرات (آخر 90 يومًا)'],
+    ['Aucun changement enregistré pour le moment.', 'No change recorded yet.', 'لم يُسجَّل أي تغيير حتى الآن.'],
+    ['Le journal démarre à la première lecture de la feuille (chaque nuit).', 'The log starts at the first reading of the sheet (every night).', 'يبدأ السجل عند أول قراءة للجدول (كل ليلة).'],
+    ['Nouveau', 'New', 'جديد'], ['Retiré', 'Removed', 'محذوف'], ['(vide)', '(empty)', '(فارغ)'],
+    ['Étape', 'Stage', 'المرحلة'], ['Date limite', 'Deadline', 'التاريخ الأقصى'], ['Échéance (passation)', 'Deadline (award)', 'الأجل (الإبرام)'], ['Avancement', 'Progress', 'التقدّم'],
+    ['Commentaire', 'Comment', 'تعليق'], ['Attribution finale', 'Final award', 'المنح النهائي'], ['Attribué à', 'Awarded to', 'ممنوح لـ'], ['N° de contrat', 'Contract no.', 'رقم العقد'],
+    ['Date de signature', 'Signature date', 'تاريخ التوقيع'], ['Date ODS', 'Start order date', 'تاريخ أمر الخدمة'], ['Durée du contrat (mois)', 'Contract duration (months)', 'مدة العقد (أشهر)'], ['Échéance du contrat', 'Contract deadline', 'أجل العقد'],
+    ['Intitulé', 'Title', 'العنوان'],
     ['Suivi Chantier', 'Site Tracking', 'متابعة الورشة'], ['Avancement Chantiers', 'Site Progress', 'تقدّم الأشغال'], ['📊 Avancement Chantiers', '📊 Site Progress', '📊 تقدّم الأشغال'], ['📋 Suivi CPM', '📋 CPM Tracking', '📋 متابعة CPM'],
     ['FICHE SUIVEUSE GLOBALE', 'GLOBAL TRACKING SHEET', 'بطاقة المتابعة العامة']
   ];
@@ -46,6 +54,9 @@
       return String(txt).replace(/(\d+) mois/g, function (_, n) { return E ? n + ' month' + (n > 1 ? 's' : '') : n + ' شهر'; }).replace(/(\d+) jours?/g, function (_, n) { return E ? n + ' day' + (n > 1 ? 's' : '') : n + ' يومًا'; }).replace(/ et /g, E ? ' and ' : ' و');
     }
     return [
+      [/^Dernière lecture de la feuille : (.+)$/, function (d) { return (E ? 'Last reading of the sheet: ' : 'آخر قراءة للجدول: ') + d; }],
+      [/^ — (.+)$/, function (v) { return ' — ' + I18n.t(v); }],
+      [/^ : (.*) → (.*)$/, function (a, b) { return ' : ' + I18n.t(a) + ' → ' + I18n.t(b); }],
       [/^(\d+) j\.$/, function (n) { return jours(n); }],
       [/^il reste (.+)$/, function (d) { return (E ? 'remaining: ' : 'المتبقي: ') + duree(d); }],
       [/^⏳ (\d+)$/, function (n) { return '⏳ ' + n; }],

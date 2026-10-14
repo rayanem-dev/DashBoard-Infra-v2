@@ -61,3 +61,10 @@ Le CPM et les chantiers sont lus par la passerelle (`apps-script/gateway/Donnees
 1. Après le déploiement de la passerelle, ouvrir son projet Apps Script avec le compte du secrétariat et exécuter **`verifierSourcesDonnees`** : le journal doit afficher « OK » pour `cpm`, `forage`, `terrassement`, `electricite`. Un « ÉCHEC » veut dire : feuille non partagée avec le secrétariat, ou fichier Office `.xlsx` à convertir (Fichier ▸ Enregistrer en tant que feuille Google Sheets, puis remplacer l'identifiant dans `SOURCES_`).
 2. Ouvrir le portail : les synthèses de l'accueil et les pages Dossiers CPM / Avancement doivent afficher leurs chiffres.
 3. Seulement alors, pour chaque feuille : Partager ▸ Accès général ▸ **Restreint**. Une feuille à la fois, en vérifiant le portail après chacune.
+
+## Journal des changements du CPM (version 4.5)
+- **Installation (une seule fois)** : dans le projet Apps Script de la passerelle (compte du secrétariat), exécuter **`installerJournalCpm`**. Elle crée deux déclencheurs (instantané chaque nuit vers 2 h, rapport chaque lundi vers 7 h, heure d'Alger) et mémorise l'état de départ : le premier jour, il n'y a donc aucun changement à signaler.
+- **Essai** : exécuter **`cpmRapportEssai`** envoie le rapport de la semaine à vous seul (pas à la direction).
+- **Destinataires du rapport** : chefs de division et secrétariat actifs (onglet Utilisateurs). Pour ajouter d'autres adresses : propriétés du script (Paramètres du projet), clé `CPM_RAPPORT_DESTINATAIRES`, adresses séparées par des virgules.
+- **Données** : onglets `CpmEtat` (dernier état connu, un dossier par ligne) et `CpmJournal` (un changement par ligne) dans `Gateway_DB`. Clé d'un dossier : son N° de dossier, sinon son intitulé.
+- **Page Dossiers CPM** : le journal des 90 derniers jours est en bas de la page.
