@@ -28,6 +28,8 @@
         { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
       { id: 'simulation', titre: 'Simulation de planning', icone: '🧪', niveau: 3, apps: [
         { titre: 'Simulation de planning', description: 'Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande à signer.', emoji: '🧪', url: 'simulation.html' } ] },
+      { id: 'rh', titre: 'RH & Personnel', icone: '👥', niveau: 3, apps: [
+        { titre: 'Organigramme — Division Infrastructure', description: 'Structure de la division, à jour avec BDDORGA : services, responsables, employeurs, téléphones.', emoji: '🏢', url: 'Organigramme.html' } ] },
       { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
@@ -213,6 +215,12 @@
           if (!c[1].test(v)) throw erreur(c[2] + ' : format invalide.'); dp[c[0]] = v; fait += 1; });
         if (!fait) throw erreur('Rien à enregistrer : ces champs sont déjà renseignés (pour les corriger, contactez le secrétariat).');
         return { user: pub(demoState.user) }; }
+      case 'organigramme': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var gr = {}, ordre = [];
+        DEMO_USERS.forEach(function (x) { var sv = demoService(x); if (!gr[sv]) { gr[sv] = { nom: sv, racine: false, membres: [] }; ordre.push(sv); }
+          var chef = x.role === 'chef_division'; if (chef) gr[sv].racine = true;
+          gr[sv].membres.push({ nom: x.nom, fonction: x.fonction || (chef ? 'Chef de division' : ''), dependance: x.dependance || '', role: x.role, chef: chef, telephone: '0555 00 00 0' + x.uid.slice(1) }); });
+        var sv2 = ordre.map(function (k) { return gr[k]; }).sort(function (a, b) { return (b.racine ? 1 : 0) - (a.racine ? 1 : 0) || (a.nom < b.nom ? -1 : 1); });
+        return { services: sv2, total: DEMO_USERS.length }; }
       case 'aff_personnes': exigerAdmin();
         return { niveau: 3, moi: demoState.user.uid, services: demoServices(), personnes: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: demoService(x), fonction: x.fonction || '', dependance: x.dependance || '' }; }) };
       case 'aff_changer': { exigerAdmin(); var ca = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0]; if (!ca) throw erreur('Personne inconnue');

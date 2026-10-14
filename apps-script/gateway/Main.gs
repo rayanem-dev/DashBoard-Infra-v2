@@ -4,6 +4,7 @@
  * Réponse : { ok: true, ... } ou { ok: false, erreur, code }.
  *
  * Planning (module « planning ») : situation, rotation_enregistrer (soi-même : niveau 1 ; autrui : niveau 3), planning (niveau 2 : tout le monde).
+ * Organigramme dynamique (module « rh », voir Organigramme.gs) : organigramme.
  * Affectation du personnel (module « affectation », voir Affectations.gs) : aff_personnes, aff_changer, aff_historique.
  * Simulation de planning (module « simulation », voir Modifications.gs) : simu_agents, simu_donnees, simu_valider, simu_liste, simu_demande, simu_decider.
  * Rapports journaliers (module « rapports ») : rapports_chantiers, rapport_enregistrer, rapports_liste, rapport_viser, rapports_synthese (niveau 3).
@@ -56,6 +57,7 @@ function route_(req) {
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
     case 'rotation_enregistrer': return rotationEnregistrer_(req);
     case 'planning': return planning_(req);
+    case 'organigramme': return organigramme_(req);
     case 'aff_personnes': return affPersonnes_(req);
     case 'aff_changer': return affChanger_(req);
     case 'aff_historique': return affHistorique_(req);

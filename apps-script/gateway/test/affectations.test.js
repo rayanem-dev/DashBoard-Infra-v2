@@ -32,8 +32,8 @@ function monde(options = {}) {
   };
   vm.createContext(ctx);
   const lire = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8').replace(/if \(typeof module[^\n]*\n/g, '');
-  for (const f of ['Config.gs', 'Droits.gs', 'Annuaire.gs', 'Mail.gs', 'Affectations.gs']) vm.runInContext(lire(f), ctx, { filename: f });
-  ctx.acces_ = u => ({ affectation: niveaux[u.email] || 0 });
+  for (const f of ['Config.gs', 'Droits.gs', 'Annuaire.gs', 'Mail.gs', 'Affectations.gs', 'Organigramme.gs']) vm.runInContext(lire(f), ctx, { filename: f });
+  ctx.acces_ = u => ({ affectation: niveaux[u.email] || 0, rh: u.role === 'agent' ? 0 : 1 });
   return { ctx, tables, mails, journal, bddorga, run: c => vm.runInContext(c, ctx) };
 }
 const appel = (m, fn, tok, req) => { m.ctx.__req = Object.assign({ token: tok }, req); return m.run(fn + '(__req)'); };
@@ -83,4 +83,20 @@ test('historique : visible selon la portée', () => {
   assert.strictEqual(appel(m, 'affHistorique_', 'chef.div@x.dz', {}).historique.length, 1);
   assert.strictEqual(appel(m, 'affHistorique_', 'chef.s1@x.dz', {}).historique.length, 1); // S1 est l'ancien service
   assert.throws(() => appel(m, 'affHistorique_', 'agent.b@x.dz', {}), /Droits/);
+});
+
+test('organigramme dynamique : services groupés, responsables d\'abord, racine = division, pas d\'e-mail, droits rh', () => {
+  const m = monde();
+  m.tables.Utilisateurs.find(u => u.uid === 'u3').telephone = '0555123456';
+  assert.throws(() => appel(m, 'organigramme_', 'agent.a@x.dz', {}), /Droits/);
+  const o = appel(m, 'organigramme_', 'chef.s1@x.dz', {});
+  assert.strictEqual(o.total, 5);
+  assert.strictEqual(o.services[0].nom, 'Division'); assert.strictEqual(o.services[0].racine, true);
+  const s1 = o.services.find(s => s.nom === 'S1');
+  assert.deepStrictEqual([...s1.membres.map(x => x.nom)], ['DURAND SERGE', 'MARTIN ALAIN']); assert.strictEqual(s1.membres[0].chef, true); assert.strictEqual(s1.membres[1].telephone, '0555123456');
+  assert.ok(!JSON.stringify(o).includes('@'), 'aucune adresse e-mail dans l\'organigramme');
+  // après une affectation, l'organigramme suit
+  appel(m, 'affChanger_', 'chef.div@x.dz', { uid: 'u3', service: 'S2' });
+  const o2 = appel(m, 'organigramme_', 'chef.s1@x.dz', {});
+  assert.deepStrictEqual([...o2.services.find(s => s.nom === 'S2').membres.map(x => x.nom)], ['BERNARD JEAN', 'MARTIN ALAIN']);
 });

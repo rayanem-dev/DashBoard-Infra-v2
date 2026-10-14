@@ -164,7 +164,7 @@ var SEED_APPS = [
  [
   "rh",
   "Organigramme — Division Infrastructure",
-  "Structure hiérarchique complète de la division, dépliable section par section, avec les numéros déjà vérifiés.",
+  "Structure de la division, à jour avec BDDORGA : services, responsables, employeurs et téléphones (se met à jour à chaque affectation).",
   "🏢",
   "Organigramme.html",
   1
