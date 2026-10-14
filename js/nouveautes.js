@@ -13,7 +13,7 @@ var Nouveautes = (function () {
       (l || []).slice(0, 12).forEach(function (e) {
         var c = el('div'); c.style.cssText = 'padding:10px 0;border-bottom:1px solid #F1F3F5';
         var t = el('div'); t.style.fontWeight = '700'; t.textContent = fr(e.date) + ' — ' + (e.title || ''); c.appendChild(t);
-        var u = el('ul'); u.style.cssText = 'margin:6px 0 0 18px;padding:0;font-size:13px;color:#374151'; (e.changes || []).forEach(function (x) { u.appendChild(el('li', null, x)); }); c.appendChild(u); corps.appendChild(c);
+        var u = el('ul'); u.style.cssText = 'margin:6px 0 0 18px;padding:0;font-size:13px;color: var(--ink-2)'; (e.changes || []).forEach(function (x) { u.appendChild(el('li', null, x)); }); c.appendChild(u); corps.appendChild(c);
       });
       if (!l || !l.length) corps.appendChild(el('p', 'aide', 'Aucune nouveauté enregistrée.'));
     }).catch(function () { corps.textContent = ''; corps.appendChild(el('p', 'aide', 'Historique indisponible pour l\'instant.')); });

@@ -85,10 +85,12 @@
   // ---------- Frise SVG : un segment par suite de jours identiques ----------
   function segments(g) { var out = [], i = 0; while (i < g.length) { var c = g.charAt(i), j = i; while (j < g.length && g.charAt(j) === c) j += 1; out.push({ c: c, a: i, n: j - i }); i = j; } return out; }
   // Palette de Sijil : jusqu'à aujourd'hui = couleur vive ; après aujourd'hui = teinte claire « prévu » (sauf absence).
-  var COUL = { T: '#4EA72E', R: '#E97132', A: '#E53935' }, PREVU = { T: '#D6F0CC', R: '#FBDCC8', A: '#E53935' }, LIB = { T: 'Travail', R: 'Repos', A: 'Absence' };
+  var COUL = { T: '#4EA72E', R: '#E97132', A: '#E53935' }, PREVU = { T: '#D6F0CC', R: '#FBDCC8', A: '#E53935' }, PREVU_CLAIR = { T: '#D6F0CC', R: '#FBDCC8' }, LIB = { T: 'Travail', R: 'Repos', A: 'Absence' };
   function frise(grille, debut, n, px, aujIdx) {
+    // teintes « prévu » et fond selon le thème (clair / sombre)
+    var cs = getComputedStyle(document.documentElement); PREVU.T = cs.getPropertyValue('--c-T-prevu').trim() || PREVU_CLAIR.T; PREVU.R = cs.getPropertyValue('--c-R-prevu').trim() || PREVU_CLAIR.R;
     var h = 22, s = svgEl('svg', { width: n * px, height: h, viewBox: '0 0 ' + (n * px) + ' ' + h, role: 'img' });
-    s.appendChild(svgEl('rect', { x: 0, y: 4, width: n * px, height: h - 8, rx: 3, fill: '#F3F4F6' }));
+    s.appendChild(svgEl('rect', { x: 0, y: 4, width: n * px, height: h - 8, rx: 3, fill: '#F3F4F6', style: 'fill:' + (cs.getPropertyValue('--surface-2').trim() || '#F3F4F6') }));
     segments(grille).forEach(function (g) {
       if (!COUL[g.c]) return;
       // le segment est coupé au lendemain d'aujourd'hui : partie vive, puis partie « prévue »
@@ -203,6 +205,7 @@
 
   // ---------- Chargement ----------
   var MOI = /[?&]moi=1(&|$)/.test(location.search); // « Mon planning » depuis la fiche du portail : seule ma ligne, même si j'ai le droit de voir les équipes
+  document.addEventListener('infra-theme', function () { if (data) dessiner(); });
   $('imprimer').addEventListener('click', function () {
     $('t-imp').textContent = ($('titre').textContent || 'Planning & rotations') + ' — Division Infrastructure RNS';
     $('s-imp').textContent = ($('periode').textContent || '') + ' · imprimé le ' + new Date().toLocaleDateString('fr-FR') + (Api.demo ? ' · données fictives' : '');

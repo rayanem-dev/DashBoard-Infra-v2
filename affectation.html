@@ -10,23 +10,23 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="css/charte.css">
 <style>
-  .onglets { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; margin-bottom: 16px; }
-  .onglets button { border: 0; background: #fff; padding: 9px 18px; font: inherit; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+  .onglets { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); margin-bottom: 16px; }
+  .onglets button { border: 0; background: var(--surface); padding: 9px 18px; font: inherit; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
   .onglets button + button { border-left: 1.5px solid var(--border); }
   .onglets button.actif { background: var(--orange-main); color: #fff; }
-  .bloc { background: #fff; border-radius: 14px; box-shadow: var(--shadow-card); padding: 18px 20px; margin-bottom: 16px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 18px 20px; margin-bottom: 16px; }
   .bloc h2 { font-size: 15px; margin: 0 0 12px; }
   .gf { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 18px; align-items: end; }
   .gf label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 4px; }
-  .gf input, .gf select { width: 100%; padding: 9px 11px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: #fff; }
+  .gf input, .gf select { width: 100%; padding: 9px 11px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); }
   .res { max-height: 260px; overflow: auto; border: 1.5px solid var(--border); border-radius: 10px; margin-top: 8px; }
-  .res button { display: flex; width: 100%; justify-content: space-between; gap: 10px; text-align: left; border: 0; border-bottom: 1px solid #F1F3F5; background: #fff; padding: 8px 12px; font: inherit; font-size: 13px; cursor: pointer; }
-  .res button:hover, .res button.sel { background: #FFF3E8; }
+  .res button { display: flex; width: 100%; justify-content: space-between; gap: 10px; text-align: left; border: 0; border-bottom: 1px solid #F1F3F5; background: var(--surface); padding: 8px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .res button:hover, .res button.sel { background: var(--tint-orange); }
   .res small { color: var(--text-muted); }
   .btn-p { padding: 10px 18px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(232,93,4,.3); }
   .btn-p:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
-  .succes { background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
-  .choisi { background: #F8FAFC; border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-top: 10px; }
+  .succes { background: var(--tint-ok); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+  .choisi { background: var(--surface-2); border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-top: 10px; }
   table.h { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.h th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1.5px solid var(--border); }
   table.h td { padding: 9px 10px; border-bottom: 1px solid #F1F3F5; vertical-align: top; }
