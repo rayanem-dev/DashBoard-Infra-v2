@@ -208,19 +208,26 @@
         return { niveau: 3, moi: demoState.user.uid, agents: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', configuree: !!demoRots()[x.email] }; }) };
       case 'simu_donnees': { exigerAdmin(); var cu = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0], rr0 = cu && demoRots()[cu.email];
         if (!rr0) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
-        var d0s = p.debut && p.debut >= rr0.depuis ? p.debut : (plus(auj(), -35) < rr0.depuis ? rr0.depuis : plus(auj(), -35)), ns = Math.max(30, Math.min(400, Number(p.jours) || 240));
+        var d0s = /^\d{4}-\d{2}-\d{2}$/.test(p.debut || '') ? p.debut : plus(auj(), -35), ns = Math.max(30, Math.min(400, Number(p.jours) || 240));
         return { uid: cu.uid, nom: cu.nom, service: cu.service, fonction: cu.fonction || '', rotation: rr0, aujourdhui: auj(), debut: d0s, jours: ns, grille: demoGrilleDe(cu.email, d0s, ns) }; }
-      case 'simu_valider': { exigerAdmin(); var cv = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0], rv = cv && demoRots()[cv.email];
-        if (!rv) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
-        var mv = { debut: p.debut, periodes: p.periodes, reprise: p.reprise }, ev = Simulation.valider(mv, rv, auj()); if (ev) throw erreur(ev);
-        var motif = String(p.motif || 'Raison de service').trim(); if (motif.length < 3) throw erreur('Indiquez le motif de la demande');
-        var cy = rv.jours_travail + rv.jours_repos, F = plus(mv.debut, -(cy + 30)); if (F < rv.depuis) F = rv.depuis;
-        var fin = plus(Simulation.dateReprise(mv), 2 * cy - 1), nn = ecart(F, fin) + 1, off = demoGrilleDe(cv.email, F, nn), mod = Simulation.appliquer(off, F, mv, rv);
-        var du = mv.debut; if (du > F) { var ii = ecart(F, du) - 1, cc = off.charAt(ii); while (ii > 0 && off.charAt(ii - 1) === cc) ii -= 1; du = plus(F, ii); }
-        var lm = demoMods(), numero = 'MOD-' + new Date().getFullYear() + '-' + ('000' + (lm.length + 1)).slice(-4);
-        var nm = { numero: numero, cree_le: new Date().toISOString(), email: cv.email, emetteur: demoState.user.email, motif: motif, modif: mv, statut: 'en_attente',
-                   actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14) };
-        lm.push(nm); saveMods(lm); return { numero: numero, emails: 4, demande: demoDoc(nm) }; }
+      case 'simu_valider': { exigerAdmin(); var itemsV = Array.isArray(p.lot) && p.lot.length ? p.lot : [p], motifV = String(p.motif || 'Raison de service').trim();
+        if (motifV.length < 3) throw erreur('Indiquez le motif de la demande');
+        var prepV = itemsV.map(function (it) {
+          var cv = DEMO_USERS.filter(function (x) { return x.uid === it.uid; })[0], rv = cv && demoRots()[cv.email];
+          if (!rv) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
+          var mv = { debut: it.debut, periodes: it.periodes, reprise: it.reprise }, ev = Simulation.valider(mv, rv, auj()); if (ev) throw erreur(cv.nom + ' : ' + ev);
+          var cy = rv.jours_travail + rv.jours_repos, F = plus(mv.debut, -(cy + 30)); if (F < rv.depuis) F = rv.depuis;
+          var fin = plus(Simulation.dateReprise(mv), 2 * cy - 1), nn = ecart(F, fin) + 1, off = demoGrilleDe(cv.email, F, nn), mod = Simulation.appliquer(off, F, mv, rv);
+          var du = mv.debut; if (du > F) { var ii = ecart(F, du) - 1, cc = off.charAt(ii); while (ii > 0 && off.charAt(ii - 1) === cc) ii -= 1; du = plus(F, ii); }
+          return { cv: cv, mv: mv, actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14) };
+        });
+        var lm = demoMods(), numerosV = [], docsV = [];
+        prepV.forEach(function (q) {
+          var numero = 'MOD-' + new Date().getFullYear() + '-' + ('000' + (lm.length + 1)).slice(-4);
+          var nm = { numero: numero, cree_le: new Date().toISOString(), email: q.cv.email, emetteur: demoState.user.email, motif: motifV, modif: q.mv, statut: 'en_attente', actuel: q.actuel, modifie: q.modifie };
+          lm.push(nm); numerosV.push(numero); docsV.push(demoDoc(nm));
+        });
+        saveMods(lm); return { numero: numerosV[0], numeros: numerosV, emails: 4, demande: docsV[0], demandes: docsV }; }
       case 'simu_liste': { var lq = demoMods().slice().reverse().map(function (m) { var u2 = DEMO_USERS.filter(function (x) { return x.email === m.email; })[0] || {};
           return { numero: m.numero, cree_le: m.cree_le, agent: u2.nom, service: u2.service, debut: m.modif.debut, reprise_le: Simulation.dateReprise(m.modif), motif: m.motif, statut: m.statut,
                    emetteur: (DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}).nom, decide_par: m.decide_par || '', decide_le: m.decide_le || '', commentaire: m.commentaire || '',

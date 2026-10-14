@@ -142,7 +142,97 @@ var Simulation = (function () {
     return out;
   }
 
-  return { addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
+
+  /** Nombre de jours en conflit (sans allocation : sert à classer des milliers de candidats). */
+  function compter(gA, gB, depuisIdx, tolC, tolV) {
+    var n = Math.min(gA.length, gB.length), tot = 0, i = 0;
+    while (i < n) {
+      var a = gA.charCodeAt(i), b = gB.charCodeAt(i);
+      var T = 84, R = 82;
+      if (!((a === T && b === T) || (a === R && b === R))) { i += 1; continue; }
+      var j = i + 1; while (j < n && gA.charCodeAt(j) === a && gB.charCodeAt(j) === b) j += 1;
+      if (j - i > (a === T ? tolC : tolV)) tot += j - Math.max(i, depuisIdx) > 0 ? j - Math.max(i, depuisIdx) : 0;
+      i = j;
+    }
+    return tot;
+  }
+
+  /** Une passe : { conflits (jours), maxChev (plus long chevauchement), maxTrou (plus long trou) } à partir de depuisIdx. */
+  function analyser(gA, gB, depuisIdx, tolC, tolV) {
+    var n = Math.min(gA.length, gB.length), conflits = 0, maxChev = 0, maxTrou = 0, i = 0;
+    while (i < n) {
+      var a = gA.charCodeAt(i), b = gB.charCodeAt(i);
+      if (!((a === 84 && b === 84) || (a === 82 && b === 82))) { i += 1; continue; }
+      var j = i + 1; while (j < n && gA.charCodeAt(j) === a && gB.charCodeAt(j) === b) j += 1;
+      var len = j - i, chev = a === 84;
+      if (j > depuisIdx) { var eff = j - Math.max(i, depuisIdx); if (chev) { if (eff > maxChev) maxChev = eff; } else if (eff > maxTrou) maxTrou = eff; if (len > (chev ? tolC : tolV)) conflits += eff; }
+      i = j;
+    }
+    return { conflits: conflits, maxChev: maxChev, maxTrou: maxTrou };
+  }
+
+  /** Premier jour (index) à partir de `idx` où la grille change de statut : la « relève » de l'agent (ou idx si c'est déjà un jour de relève). */
+  function prochaineReleve(g, idx) {
+    var i = Math.max(0, idx);
+    if (i === 0 || g.charAt(i) !== g.charAt(i - 1)) return i;
+    while (i < g.length && g.charAt(i) === g.charAt(i - 1)) i += 1;
+    return i;
+  }
+
+  /** Modifications candidates d'UN agent : une ou deux périodes de transition (multiples de `pas`), depuis sa relève (ou la date choisie). */
+  function candidats(off, debutF, rot, debut, o) {
+    var pas = o.pas || 1, maxT = o.maxTransition || 60, X = ['T', 'R'];
+    var idx = Math.max(0, diff(debutF, debut)), dep = o.alignerReleve ? prochaineReleve(off, idx) : idx;
+    var d0 = addDays(debutF, dep), un = [{ modif: null, grille: off }], deux = [];
+    function ajouter(liste, periodes, reprise) {
+      var m = { debut: d0, periodes: periodes, reprise: reprise };
+      if (valider(m, rot, null)) return;
+      liste.push({ modif: m, grille: appliquer(off, debutF, m, rot) });
+    }
+    var x, l1, l2;
+    for (x = 0; x < 2; x += 1) for (l1 = pas; l1 <= maxT; l1 += pas) ajouter(un, [{ type: X[x], jours: l1 }], autre(X[x]));
+    var max2 = Math.min(maxT, 42);
+    for (x = 0; x < 2; x += 1) for (l1 = pas; l1 <= max2; l1 += pas) for (l2 = pas; l2 <= max2; l2 += pas) ajouter(deux, [{ type: X[x], jours: l1 }, { type: autre(X[x]), jours: l2 }], X[x]);
+    return { un: un, deux: deux, dep: dep };
+  }
+
+  /**
+   * Propose des modifications de A et/ou de B (les deux ensemble si cela raccourcit la transition) qui les mettent en vis-à-vis.
+   * opts : { offA, offB, debutF, rotA, rotB, debut, tolChev, tolTrou, pas (1 ou 7 : ajustement au jour ou par semaine), alignerReleve, maxTransition, max }.
+   * Classement : jours en conflit, puis jours de transition au total, puis nombre d'agents modifiés.
+   * Retourne [{ A: modif|null, B: modif|null, grilleA, grilleB, conflits, transition, agents }].
+   */
+  function proposerPaire(opts) {
+    var tolC = opts.tolChev != null ? opts.tolChev : 2, tolV = opts.tolTrou != null ? opts.tolTrou : 0;
+    var cA = candidats(opts.offA, opts.debutF, opts.rotA, opts.debut, opts), cB = candidats(opts.offB, opts.debutF, opts.rotB, opts.debut, opts);
+    // Le vis-à-vis est évalué à partir du moment où les deux agents peuvent être modifiés (leur relève, ou la date choisie) : avant, rien ne peut être corrigé.
+    var depuisIdx = Math.max(cA.dep, cB.dep), depuisDate = addDays(opts.debutF, depuisIdx);
+    var AU = cA.un.concat(cA.deux), BU = cB.un.concat(cB.deux), none = { modif: null, grille: null };
+    var res = [];
+    function essayer(a, b) {
+      var gA = a.grille, gB = b.grille;
+      var c = analyser(gA, gB, depuisIdx, tolC, tolV), tr = (a.modif ? totalJours(a.modif) : 0) + (b.modif ? totalJours(b.modif) : 0);
+      // maxChev / maxTrou : tolérances qui suffiraient à supprimer tout conflit
+      res.push({ a: a, b: b, conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
+    }
+    var i, j, B0 = cB.un[0], A0 = cA.un[0];
+    for (i = 0; i < AU.length; i += 1) essayer(AU[i], B0);
+    for (j = 1; j < BU.length; j += 1) essayer(A0, BU[j]);
+    var plein = AU.length * BU.length <= 60000;
+    var LA = plein ? AU : cA.un, LB = plein ? BU : cB.un;
+    for (i = 1; i < LA.length; i += 1) for (j = 1; j < LB.length; j += 1) essayer(LA[i], LB[j]);
+    // Sans conflit d'abord ; sinon, les plus proches d'un vis-à-vis (plus longue série de jours à tolérer la plus courte), puis le moins de jours en conflit, puis la transition la plus courte.
+    function cle(r) { return r.conflits === 0 ? 0 : 1 + Math.max(r.maxChev, r.maxTrou); }
+    res.sort(function (p, q) { return cle(p) - cle(q) || p.conflits - q.conflits || p.transition - q.transition || p.agents - q.agents; });
+    var vus = {}, out = [];
+    for (i = 0; i < res.length && out.length < (opts.max || 5); i += 1) {
+      var r = res[i], k = r.a.grille + '|' + r.b.grille; if (vus[k]) continue; vus[k] = true;
+      out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, tolChevMin: r.maxChev, tolTrouMin: r.maxTrou, depuis: depuisDate });
+    }
+    return out;
+  }
+
+  return { proposerPaire: proposerPaire, prochaineReleve: prochaineReleve, addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
            corrections: corrections, tableau: tableau, conflits: conflits, proposer: proposer };
 })();
 

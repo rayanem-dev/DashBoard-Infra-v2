@@ -77,3 +77,30 @@ test('proposition : met l\'agent en vis-à-vis d\'un collègue décalé', () => 
   // la proposition appliquée via les corrections donne la même grille que la simulation
   assert.strictEqual(Planning.grille(rA, Simulation.corrections(p[0].modif), dF, n), p[0].grille);
 });
+
+test('proposition pour les DEUX agents : par semaine, depuis la relève, sans conflit, transition minimale', () => {
+  const rA = { statut: 'T', depuis: '2026-09-01', jours_travail: 28, jours_repos: 28 };
+  const rB = { statut: 'T', depuis: '2026-09-11', jours_travail: 28, jours_repos: 28 }; // décalé de 10 jours : relèves à des jours de semaine différents
+  const dF = '2026-09-01', n = 300, debut = '2026-10-05';
+  const offA = Planning.grille(rA, [], dF, n), offB = Planning.grille(rB, [], dF, n);
+  const base = { offA, offB, debutF: dF, rotA: rA, rotB: rB, debut, tolChev: 2, tolTrou: 0 };
+  const sem = Simulation.proposerPaire(Object.assign({ pas: 7, alignerReleve: true }, base));
+  assert.ok(sem.length > 0);
+  for (const p of sem) {
+    for (const [m, g, off, rot] of [[p.A, p.grilleA, offA, rA], [p.B, p.grilleB, offB, rB]]) {
+      if (!m) continue;
+      assert.strictEqual(Simulation.valider(m, rot, null), '');
+      assert.strictEqual(g, Simulation.appliquer(off, dF, m, rot), 'la grille proposée = la modification appliquée');
+      assert.ok(m.periodes.every(x => x.jours % 7 === 0), 'ajustement par semaine');
+      assert.strictEqual(m.debut, Simulation.addDays(dF, Simulation.prochaineReleve(off, Simulation.diff(dF, debut))), 'depuis la relève');
+    }
+    assert.strictEqual(p.conflits, Simulation.conflits(p.grilleA, p.grilleB, dF, { tolChev: 2, tolTrou: 0 }, Simulation.diff(dF, p.depuis)).jours);
+  }
+  // le meilleur résultat commun n'est jamais plus long que le meilleur résultat obtenu en ne modifiant qu'UN agent
+  const seulA = Simulation.proposerPaire(Object.assign({ pas: 7, alignerReleve: true }, base, { offB: offB })).filter(p => p.agents === 1 && p.A);
+  const meilleur = sem[0], zeroUn = seulA.filter(p => p.conflits === meilleur.conflits);
+  if (zeroUn.length) assert.ok(meilleur.transition <= zeroUn[0].transition);
+  // au jour près : permet des durées non multiples de 7
+  const jour = Simulation.proposerPaire(Object.assign({ pas: 1, alignerReleve: false }, base));
+  assert.ok(jour[0].conflits <= sem[0].conflits);
+});

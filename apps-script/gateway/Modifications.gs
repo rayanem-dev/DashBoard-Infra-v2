@@ -62,7 +62,7 @@ function simuDonnees_(req) {
   var rot = rotationDe_(c.email); if (!rot) throw new Error('Cet agent n\'a pas encore renseigné sa rotation');
   var auj = Dates.today();
   var debut = Dates.isDate(req.debut) ? req.debut : Dates.addDays(auj, -35);
-  if (debut < rot.depuis) debut = rot.depuis;
+  // la fenêtre commence à la même date pour tous les agents (avant le début de sa rotation, la grille est faite de « . ») : deux grilles se superposent toujours
   var n = Math.max(30, Math.min(400, Number(req.jours) || 240));
   return { uid: String(c.uid), nom: Annuaire.nomAffichable(c.nom, c.email), service: c.service || '', fonction: c.fonction || '', rotation: rot,
            aujourdhui: auj, debut: debut, jours: n, grille: Planning.grille(rot, correctionsDe_(c.email), debut, n) };
@@ -90,29 +90,46 @@ function simuNumero_() {
   return pref + ('000' + (max + 1)).slice(-4);
 }
 
+/**
+ * Valide UNE ou DEUX modifications d'un coup (req.lot : [{ uid, debut, periodes, reprise }]) : tout est contrôlé avant d'enregistrer quoi que ce soit,
+ * puis une demande numérotée par agent est créée (même motif, statut en attente) et notifiée par e-mail.
+ */
 function simuValider_(req) {
   var u = Auth.userFromToken(req.token);
   if (simuNiveau_(u) < 2) throw simuDroits_();
-  var c = simuCible_(u, req.uid);
-  var rot = rotationDe_(c.email); if (!rot) throw new Error('Cet agent n\'a pas encore renseigné sa rotation');
-  var m = simuModif_(req), auj = Dates.today();
-  var err = Simulation.valider(m, rot, auj); if (err) throw new Error(err);
+  var lot = Array.isArray(req.lot) && req.lot.length ? req.lot : [req];
+  if (lot.length > 2) throw new Error('Deux agents au maximum par simulation');
   var motif = String(req.motif || 'Raison de service').replace(/\s+/g, ' ').trim().slice(0, 120);
   if (motif.length < 3) throw new Error('Indiquez le motif de la demande');
-  var corr = correctionsDe_(c.email), t = simuTableaux_(rot, corr, m);
+  var auj = Dates.today(), vus = {};
+  var prets = lot.map(function (it) {
+    var c = simuCible_(u, it.uid);
+    if (vus[c.uid]) throw new Error('Le même agent ne peut pas être modifié deux fois');
+    vus[c.uid] = true;
+    var rot = rotationDe_(c.email); if (!rot) throw new Error(Annuaire.nomAffichable(c.nom, c.email) + ' n\'a pas encore renseigné sa rotation');
+    var m = simuModif_(it), err = Simulation.valider(m, rot, auj);
+    if (err) throw new Error(Annuaire.nomAffichable(c.nom, c.email) + ' : ' + err);
+    return { c: c, m: m, t: simuTableaux_(rot, correctionsDe_(c.email), m) };
+  });
   var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
   if (lock) lock.waitLock(15000);
-  var numero;
+  var numeros = [];
   try {
-    numero = simuNumero_();
-    Store.maj('Modifications', { numero: numero }, {
-      cree_le: new Date().toISOString(), email: c.email, emetteur: u.email, motif: motif, debut: m.debut, periodes: JSON.stringify(m.periodes), reprise: m.reprise,
-      partenaire: String(req.partenaire || '').slice(0, 40), actuel: JSON.stringify(t.actuel), modifie: JSON.stringify(t.modifie), statut: 'en_attente', decide_par: '', decide_le: '', commentaire: ''
+    prets.forEach(function (p, i) {
+      var numero = simuNumero_(), autre = prets[1 - i];
+      Store.maj('Modifications', { numero: numero }, {
+        cree_le: new Date().toISOString(), email: p.c.email, emetteur: u.email, motif: motif, debut: p.m.debut, periodes: JSON.stringify(p.m.periodes), reprise: p.m.reprise,
+        partenaire: autre ? String(autre.c.uid) : String(req.partenaire || '').slice(0, 40), actuel: JSON.stringify(p.t.actuel), modifie: JSON.stringify(p.t.modifie), statut: 'en_attente', decide_par: '', decide_le: '', commentaire: ''
+      });
+      numeros.push(numero);
     });
   } finally { if (lock) lock.releaseLock(); }
-  Store.journal('modification_demandee', u.email, numero + ' ' + c.email + ' du ' + m.debut);
-  var row = simuLigne_(numero);
-  return { numero: numero, emails: simuNotifier_(row, 'demandee', u), demande: simuDemandeDe_(row) };
+  var emails = 0, demandes = [];
+  numeros.forEach(function (numero, i) {
+    Store.journal('modification_demandee', u.email, numero + ' ' + prets[i].c.email + ' du ' + prets[i].m.debut);
+    var row = simuLigne_(numero); demandes.push(simuDemandeDe_(row)); emails = Math.max(emails, simuNotifier_(row, 'demandee', u));
+  });
+  return { numero: numeros[0], numeros: numeros, emails: emails, demande: demandes[0], demandes: demandes };
 }
 
 function simuLigne_(numero) {

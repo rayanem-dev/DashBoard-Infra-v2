@@ -55,6 +55,8 @@ test('droits : un agent ne simule pas ; un chef de service ne voit que son servi
   assert.throws(() => appel(m, 'simuDonnees_', 'chef.s1@x.dz', { uid: 'u4' }), /Droits/); // agent d'un autre service
   const d = appel(m, 'simuDonnees_', 'chef.s1@x.dz', { uid: 'u3', debut: '2026-09-01', jours: 60 });
   assert.strictEqual(d.grille.length, 60); assert.strictEqual(d.grille.charAt(0), 'T'); assert.strictEqual(d.rotation.jours_travail, 28);
+  const e = appel(m, 'simuDonnees_', 'chef.div@x.dz', { uid: 'u4', debut: '2026-09-01', jours: 60 });
+  assert.strictEqual(e.debut, d.debut, 'même fenêtre pour tous les agents'); assert.strictEqual(e.grille.slice(0, 14), '.'.repeat(14), 'avant le début de sa rotation : « . »');
 });
 
 test('valider : demande numérotée en attente, e-mail unique aux 4 destinataires, contrôles', () => {
@@ -107,4 +109,21 @@ test('refus : archivé, planning inchangé ; liste et document : visibles par l\
   assert.strictEqual(appel(m, 'simuDemande_', 'agent.a@x.dz', { numero }).demande.statut, 'refusee');
   assert.throws(() => appel(m, 'simuDemande_', 'agent.b@x.dz', { numero }), /Droits/);
   assert.throws(() => appel(m, 'simuDemande_', 'chef.s1@x.dz', { numero: 'MOD-0000-0000' }), /introuvable/);
+});
+
+test('lot de deux agents : tout est contrôlé avant d\'enregistrer ; deux demandes liées ; un seul refus bloque tout', () => {
+  const m = monde();
+  const B = { uid: 'u4', debut: '2026-10-20', periodes: [{ type: 'T', jours: 7 }], reprise: 'R' };
+  const A = { uid: 'u3', debut: '2026-10-20', periodes: [{ type: 'R', jours: 7 }], reprise: 'T' };
+  // le chef de service S1 n'a pas le droit sur u4 (S2) : rien n'est enregistré, même pour u3
+  assert.throws(() => appel(m, 'simuValider_', 'chef.s1@x.dz', { lot: [A, B], motif: 'Raison service' }), /Droits/);
+  assert.strictEqual(m.tables.Modifications.length, 0);
+  // un lot dont le 2e est invalide n'enregistre pas le 1er
+  assert.throws(() => appel(m, 'simuValider_', 'chef.div@x.dz', { lot: [A, Object.assign({}, B, { periodes: [] })], motif: 'Raison service' }), /au moins une période/);
+  assert.strictEqual(m.tables.Modifications.length, 0);
+  assert.throws(() => appel(m, 'simuValider_', 'chef.div@x.dz', { lot: [A, A], motif: 'Raison service' }), /deux fois/);
+  const r = appel(m, 'simuValider_', 'chef.div@x.dz', { lot: [A, B], motif: 'Raison service' });
+  assert.strictEqual(r.numeros.length, 2); assert.strictEqual(m.tables.Modifications.length, 2);
+  assert.deepStrictEqual(m.tables.Modifications.map(x => x.partenaire), ['u4', 'u3']);
+  assert.strictEqual(m.mails.length, 2);
 });
