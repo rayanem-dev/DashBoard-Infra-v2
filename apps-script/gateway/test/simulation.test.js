@@ -136,7 +136,7 @@ test('priorités des propositions : 1) vis-à-vis établi au plus tôt, 2) moins
   assert.ok(res.length > 0 && res.every(p => p.A || p.B), 'jamais « aucune modification »');
   assert.ok(res.every(p => p.stable && p.etabliLe === '2026-11-08'), 'vis-à-vis établi dès la date choisie');
   for (let i = 1; i < res.length; i++) assert.ok(res[i - 1].etabliLe < res[i].etabliLe || res[i - 1].pire <= res[i].pire, 'le plus fort reliquat atteint est classé en dernier');
-  assert.deepStrictEqual([...new Set(res.map(p => p.concession))], [28], 'phases identiques : décaler d\'un demi-cycle coûte 28 j au total');
+  assert.strictEqual(Math.min(...res.map(p => p.concession)), 28, 'phases identiques : décaler d\'un demi-cycle coûte 28 j au total, au mieux');
   // deux semaines de transition au maximum : on ne propose rien de plus long
   assert.ok(Simulation.proposerPaire(Object.assign({}, base, { maxTotal: 14 })).every(p => (p.A ? Simulation.totalJours(p.A) : 0) <= 14 && (p.B ? Simulation.totalJours(p.B) : 0) <= 14));
   // phases identiques : décaler d'un demi-cycle sans faire travailler personne en plus est impossible dans cette limite

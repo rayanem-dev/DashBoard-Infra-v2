@@ -243,7 +243,7 @@ var Simulation = (function () {
       if (pref === 'positif' && (rA < 0 || rB < 0)) return;   // personne ne rallonge son congé : congés écourtés / travail en plus seulement
       var c = analyser(gA, gB, depuisIdx, tolC, tolV), tr = (a.modif ? totalJours(a.modif) : 0) + (b.modif ? totalJours(b.modif) : 0);
       var stable = c.dernier < c.n - cyMax; // les conflits cessent bien avant la fin de l'horizon : le vis-à-vis finit par s'établir
-      res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), pire: Math.max(Math.abs(rA), Math.abs(rB)), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, stable: stable, etabli: c.dernier + 1 < depuisIdx ? depuisIdx : c.dernier + 1, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
+      res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), pire: Math.max(Math.abs(rA), Math.abs(rB)), petit: Math.min(Math.abs(rA), Math.abs(rB)), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, stable: stable, etabli: c.dernier + 1 < depuisIdx ? depuisIdx : c.dernier + 1, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
     }
     var i, j, B0 = cB.un[0], A0 = cA.un[0];
     for (i = 1; i < AU.length; i += 1) essayer(AU[i], B0);
@@ -252,14 +252,14 @@ var Simulation = (function () {
     var LA = plein ? AU : cA.un, LB = plein ? BU : cB.un;
     for (i = 1; i < LA.length; i += 1) for (j = 1; j < LB.length; j += 1) essayer(LA[i], LB[j]);
     // Priorités : 1) le vis-à-vis s'établit le plus TÔT possible ; 2) le plus fort reliquat atteint (par un des deux agents) classé EN DERNIER, donc le plus petit pire reliquat d'abord ;
-    // 3) le moins de reliquat concédé au total (les deux agents) ; 4) la transition la plus courte ; 5) le moins d'agents modifiés. Sans vis-à-vis stable : les plus proches (plus longue série à tolérer), puis le moins de jours en conflit.
+    // 3) puis le plus petit reliquat de l'autre agent (jamais de somme) ; 4) la transition la plus courte ; 5) le moins d'agents modifiés. Sans vis-à-vis stable : les plus proches (plus longue série à tolérer), puis le moins de jours en conflit.
     res.sort(function (p, q) {
       if (p.stable !== q.stable) return p.stable ? -1 : 1;
-      if (p.stable) return p.etabli - q.etabli || p.pire - q.pire || p.concession - q.concession || p.transition - q.transition || p.agents - q.agents;
+      if (p.stable) return p.etabli - q.etabli || p.pire - q.pire || p.petit - q.petit || p.transition - q.transition || p.agents - q.agents;
       return Math.max(p.maxChev, p.maxTrou) - Math.max(q.maxChev, q.maxTrou) || p.conflits - q.conflits || p.concession - q.concession || p.transition - q.transition;
     });
     var vus = {}, out = [];
-    for (i = 0; i < res.length && out.length < (opts.max || 6); i += 1) {
+    for (i = 0; i < res.length && out.length < (opts.max || 10); i += 1) {
       var r = res[i], k = r.a.grille + '|' + r.b.grille; if (vus[k]) continue; vus[k] = true;
       out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, reliquatA: r.reliquatA, reliquatB: r.reliquatB, concession: r.concession, pire: r.pire,
                  tolChevMin: r.maxChev, tolTrouMin: r.maxTrou, stable: r.stable, etabliLe: addDays(opts.debutF, r.etabli), jusquEtabli: r.etabli - depuisIdx, depuis: depuisDate });

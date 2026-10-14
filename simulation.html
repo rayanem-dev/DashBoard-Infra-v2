@@ -115,7 +115,7 @@
           <div><label for="pref">Reliquat accepté</label><select id="pref"><option value="indifferent" selected>Indifférent (+ ou −)</option><option value="negatif">Congés prolongés seulement (reliquat − : personne ne travaille plus)</option><option value="positif">Congés écourtés / travail en plus seulement (reliquat +)</option></select></div>
         </div>
         <div class="actions"><button class="btn-s" id="proposer" type="button">💡 Proposer une combinaison en vis-à-vis (pour les deux)</button><span class="aide" id="prop-aide" style="margin:0"></span></div>
-        <p class="aide" style="margin:8px 0 0">Classement des propositions : <b>1)</b> le vis-à-vis s'établit le plus tôt possible, <b>2)</b> le plus fort reliquat atteint par un agent classé en dernier (+ congé écourté / travail en plus, − congé prolongé), <b>3)</b> le moins de reliquat au total, <b>4)</b> la transition la plus courte.</p>
+        <p class="aide" style="margin:8px 0 0">Classement des propositions : <b>1)</b> le vis-à-vis s'établit le plus tôt possible, <b>2)</b> on ne les additionne pas : le planning qui ménage le plus les deux passe d'abord, celui où un agent atteint le plus fort reliquat est classé en dernier, <b>3)</b> puis la transition la plus courte.</p>
         <div class="props" id="props"></div>
       </div>
     </div>
@@ -257,6 +257,13 @@
     dessinerFrise(eA, eB);
   }
 
+  // Reliquat d'un agent : vert gras si +, noir gras si 0, rouge gras si − (jamais additionné avec celui de l'autre)
+  function spanReliquat(nom, n) {
+    var sp = el('span', null, (nom ? nom + ' ' : '') + (n > 0 ? '+' + n + ' j' : n < 0 ? '−' + (-n) + ' j' : '0 j'));
+    sp.style.fontWeight = '800'; sp.style.color = n > 0 ? '#15803D' : n < 0 ? '#DC2626' : '#111'; sp.title = n > 0 ? n + ' j de travail en plus (congé écourté) : reliquat à récupérer' : n < 0 ? (-n) + ' j de repos en plus (congé prolongé)' : 'aucun reliquat'; return sp;
+  }
+  function ligneReliquat(prefixe, items) { var d = el('div', 'l'); d.appendChild(document.createTextNode(prefixe)); items.forEach(function (x, i) { if (i) d.appendChild(document.createTextNode(' · ')); d.appendChild(spanReliquat(x[0], x[1])); }); return d; }
+
   // ---------- Frise ----------
   function ligne(libelle, g, i0, n, extra) {
     var l = el('div', 'ligne'); l.appendChild(el('div', 'etiq', libelle)); l.lastChild.title = libelle; var j = el('div', 'jours');
@@ -302,11 +309,10 @@
         bilan.appendChild(ul);
       }
     }
-    function sg(n) { return n > 0 ? '+' + n + ' j (' + n + ' j de travail en plus)' : n < 0 ? '−' + (-n) + ' j (' + (-n) + ' j de repos en plus)' : '0 j'; }
-    var parts = [];
-    if (eA.m && !eA.err) parts.push(A.nom + ' ' + sg(Simulation.reliquat(A.grille, eA.mod, A.debut, eA.m)));
-    if (P && eB && eB.m && !eB.err) parts.push(P.nom + ' ' + sg(Simulation.reliquat(P.grille, eB.mod, P.debut, eB.m)));
-    if (parts.length) { var rq = el('div', null, 'Reliquat concédé pendant la transition : ' + parts.join(' · ') + '  (+ : congé écourté ou jours travaillés en plus, à récupérer ; − : congé prolongé, jours de repos en plus)'); rq.style.cssText = 'margin-top:6px;font-weight:700'; bilan.appendChild(rq); }
+    var items = [];
+    if (eA.m && !eA.err) items.push([A.nom, Simulation.reliquat(A.grille, eA.mod, A.debut, eA.m)]);
+    if (P && eB && eB.m && !eB.err) items.push([P.nom, Simulation.reliquat(P.grille, eB.mod, P.debut, eB.m)]);
+    if (items.length) { var rq = ligneReliquat('Reliquat concédé pendant la transition : ', items); rq.style.marginTop = '6px'; bilan.appendChild(rq); var ex = el('div', null, '+ : congé écourté ou jours travaillés en plus (à récupérer) · − : congé prolongé (jours de repos en plus)'); ex.style.cssText = 'font-weight:400;color:#6B7280;font-size:12px'; bilan.appendChild(ex); }
     var lg = $('legende'); lg.textContent = ''; leg.forEach(function (x) { var s = el('span'); var i2 = document.createElement('i'); i2.style.background = x[0]; s.appendChild(i2); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
   }
 
@@ -331,9 +337,7 @@
         t.appendChild(el('div', 'l', libModif(A.nom, r.A))); t.appendChild(el('div', 'l', libModif(B.nom, r.B)));
         var info = r.stable ? '✔ Vis-à-vis établi ' + (r.jusquEtabli <= 0 ? 'dès le ' + fr(r.etabliLe) + ' (immédiat)' : 'dès le ' + fr(r.etabliLe) + ' (dans ' + r.jusquEtabli + ' j)')
           : '✖ ' + r.conflits + ' j en conflit (aucun en tolérant ' + r.tolChevMin + ' j de chevauchement et ' + r.tolTrouMin + ' j de trou)';
-        function sg(n) { return n > 0 ? '+' + n + ' j (' + n + ' j de travail en plus)' : n < 0 ? '−' + (-n) + ' j (' + (-n) + ' j de repos en plus)' : '0 j'; }
-        var rq = el('div', 'l'); rq.style.fontWeight = '700';
-        rq.textContent = 'Reliquat concédé : ' + A.nom + ' ' + sg(r.reliquatA) + ' · ' + B.nom + ' ' + sg(r.reliquatB) + ' (total ' + r.concession + ' j, le plus fort : ' + r.pire + ' j)'; rq.title = '+ : congé écourté ou jours travaillés en plus (reliquat à récupérer) ; − : congé prolongé (jours de repos en plus).';
+        var rq = ligneReliquat('Reliquat concédé : ', [[A.nom, r.reliquatA], [B.nom, r.reliquatB]]);
         t.appendChild(rq);
         t.appendChild(el('small', null, info + ' · ' + r.transition + ' jour(s) de transition · ' + r.agents + ' agent(s) modifié(s)'));
         d.appendChild(t);
