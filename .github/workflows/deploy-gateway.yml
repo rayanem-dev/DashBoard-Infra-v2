@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Copier le moteur de simulation (partagé avec le site : js/simulation.js)
+      - name: "Copier le moteur de simulation (partagé avec le site, js/simulation.js)"
         run: cp js/simulation.js apps-script/gateway/Simulation.gs
 
       - name: Tests

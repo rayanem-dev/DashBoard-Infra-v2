@@ -41,6 +41,7 @@ function route_(req) {
     case 'me':      { var um = Auth.userFromToken(req.token); return { user: pubUser_(um), acces: acces_(um) }; }
     case 'menu': {
       var u = Auth.userFromToken(req.token);
+      if (typeof preparerSimulation_ === 'function') preparerSimulation_();
       return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
     }
     case 'emettreCode': {

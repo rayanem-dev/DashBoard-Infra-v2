@@ -102,10 +102,11 @@
 
   // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
   function raccourcis(menu) {
-    var m = (menu || []).filter(function (x) { return x.id === 'planning'; })[0], nav = $('raccourcis'); nav.textContent = '';
-    if (!m) { nav.hidden = true; return; }
-    [['📅', 'Mon planning', 'planning.html?moi=1', 1], ['👥', 'Planning des équipes', 'planning.html', 2]].forEach(function (x) {
-      if (m.niveau < x[3]) return;
+    var nav = $('raccourcis'); nav.textContent = '';
+    function niv(id) { var m = (menu || []).filter(function (x) { return x.id === id; })[0]; return m ? m.niveau : 0; }
+    [['📅', 'Mon planning', 'planning.html?moi=1', niv('planning') >= 1], ['👥', 'Planning des équipes', 'planning.html', niv('planning') >= 2],
+     ['🧪', 'Simulation de planning', 'simulation.html', niv('simulation') >= 2]].forEach(function (x) {
+      if (!x[3]) return;
       var a = el('a', 'raccourci', x[0]); a.href = x[2]; a.title = x[1]; a.setAttribute('aria-label', x[1]); a.appendChild(el('span', null, x[1])); nav.appendChild(a);
     });
     nav.hidden = !nav.children.length;

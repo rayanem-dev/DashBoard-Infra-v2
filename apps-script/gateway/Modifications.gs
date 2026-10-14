@@ -44,6 +44,7 @@ function correctionsParEmail_() {
 function correctionsDe_(email) { return correctionsParEmail_()[String(email).toLowerCase()] || []; }
 
 function simuAgents_(req) {
+  if (typeof preparerSimulation_ === 'function') preparerSimulation_();
   var u = Auth.userFromToken(req.token);
   if (simuNiveau_(u) < 2) throw simuDroits_();
   var rots = {}; Store.table('Rotations').forEach(function (r) { rots[String(r.email).toLowerCase()] = true; });

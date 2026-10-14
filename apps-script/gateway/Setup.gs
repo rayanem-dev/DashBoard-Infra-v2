@@ -46,6 +46,27 @@ function ajouterModuleSimulation() {
   Logger.log('Module simulation prêt (' + nouveaux.length + ' droit(s) ajouté(s)).');
 }
 
+/**
+ * Prépare le module « simulation » tout seul au premier passage (onglet Modifications, module, droits par défaut, carte) : plus besoin de lancer
+ * mettreAJourStructure pour l'ouvrir. Idempotent ; la propriété SIMU_PRET évite de le refaire. Ne touche à aucun réglage existant.
+ */
+function preparerSimulation_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('SIMU_PRET') === '1') return;
+  var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
+  try {
+    if (lock) lock.waitLock(20000);
+    if (props.getProperty('SIMU_PRET') === '1') return;
+    var db = SpreadsheetApp.openById(prop_('DB_ID'));
+    if (!db.getSheetByName('Modifications')) { var sh = db.insertSheet('Modifications'); sh.appendRow(SCHEMA_.Modifications); sh.setFrozenRows(1); sh.getRange('A:Z').setNumberFormat('@'); }
+    ajouterModuleSimulation();
+    ajouterApplicationsManquantes();
+    props.setProperty('SIMU_PRET', '1');
+    ['TBL_Modules', 'TBL_DroitsRole', 'TBL_Applications', 'TBL_Modifications'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+  } catch (e) { /* on réessaiera à la requête suivante ; le reste du portail n'est pas affecté */ }
+  finally { if (lock) { try { lock.releaseLock(); } catch (e2) {} } }
+}
+
 /** Remplit l'onglet « Roles » avec les rôles d'origine s'il est vide. */
 function ajouterRolesParDefaut() {
   var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Roles');

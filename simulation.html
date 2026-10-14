@@ -356,6 +356,7 @@
   charger().then(listeDemandes).catch(function (e) {
     if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
     if (e.code === 'DROITS') { location.replace('portail.html'); return; }
+    $('ident').textContent = '⚠ Impossible de charger la liste des agents : ' + e.message + (/inconnue/i.test(e.message) ? ' (la passerelle n\'est pas encore à jour : attendez la fin du déploiement « Déployer la passerelle »)' : '');
     toast(e.message, true);
   });
 })();
