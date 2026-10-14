@@ -423,3 +423,15 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .syn-puces { margin: 0; padding-left: 20px; color: var(--text-muted); }
 @media (max-width: 1100px) { .syntheses { grid-template-columns: repeat(2, minmax(0, 1fr)); } .syn-journal-boite { grid-column: 1 / -1; } }
 @media (max-width: 700px) { .syntheses { grid-template-columns: 1fr; } }
+
+/* ===== Accueil : les modules se rangent côte à côte (un module à une seule carte ne prend plus toute la largeur) ===== */
+#modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px 22px; align-items: start; grid-auto-flow: row dense; }
+#modules > .module { margin-bottom: 22px; grid-column: span 1; min-width: 0; }
+#modules > .module[data-n="2"] { grid-column: span 2; }
+#modules > .module[data-n="3"] { grid-column: 1 / -1; }
+#modules > .vide { grid-column: 1 / -1; }
+#modules .module .grille { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+#modules > .module[data-n="1"] .grille { grid-template-columns: 1fr; }
+@media (max-width: 720px) { #modules { grid-template-columns: 1fr; } #modules > .module, #modules > .module[data-n="2"], #modules > .module[data-n="3"] { grid-column: auto; } }
+#modules .module h3 { flex-wrap: wrap; row-gap: 4px; }
+#modules .module h3 .niveau { white-space: nowrap; }

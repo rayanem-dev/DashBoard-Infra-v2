@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-16-02",
+    "date": "2026-10-16",
+    "title": "Version 4.7.1 — Accueil plus compact",
+    "changes": [
+      "Les rubriques de l'accueil se rangent maintenant côte à côte au lieu d'être empilées.",
+      "L'étiquette orange indique désormais votre droit sur la rubrique (« Droit : administration »), pour ne plus la confondre avec un nom de rubrique."
+    ]
+  },
+  {
     "id": "2026-10-16-01",
     "date": "2026-10-16",
     "title": "Version 4.7 — Le texte du rapport hebdomadaire prêt à copier",

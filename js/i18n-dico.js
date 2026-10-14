@@ -263,6 +263,10 @@
     ['Version 4.7 — Le texte du rapport hebdomadaire prêt à copier', 'Version 4.7 — Weekly report text ready to copy', 'الإصدار 4.7 — نص التقرير الأسبوعي جاهز للنسخ'],
     ['Sur la page « Dossiers CPM », une nouvelle section prépare, pour chaque semaine (du samedi au vendredi), le texte des observations (O.B.S) des trois tableaux du rapport : DAO et CF, contrats d\'application, convention cadre.', 'On the “CPM Files” page, a new section prepares, for each week (Saturday to Friday), the observation text (O.B.S) of the report\'s three tables: DAO and CF, application contracts, framework agreement.', 'في صفحة «ملفات CPM» قسم جديد يعدّ لكل أسبوع (من السبت إلى الجمعة) نص الملاحظات (O.B.S) للجداول الثلاثة في التقرير: DAO وCF، عقود التطبيق، الاتفاقية الإطارية.'],
     ['Un bouton « Copier » met le texte en gras, prêt à coller dans la diapositive.', 'A “Copy” button puts the text in bold, ready to paste into the slide.', 'زر «نسخ» يضع النص بالخط الغليظ جاهزًا للصق في الشريحة.'],
+    ['Droit : lecture', 'Right: read', 'الحق: قراءة'], ['Droit : saisie', 'Right: entry', 'الحق: إدخال'], ['Droit : administration', 'Right: administration', 'الحق: إدارة'],
+    ['Version 4.7.1 — Accueil plus compact', 'Version 4.7.1 — More compact home page', 'الإصدار 4.7.1 — صفحة رئيسية أكثر إحكامًا'],
+    ['Les rubriques de l\'accueil se rangent maintenant côte à côte au lieu d\'être empilées.', 'The home page sections are now placed side by side instead of stacked.', 'أصبحت أقسام الصفحة الرئيسية متجاورة بدل أن تكون متراصّة فوق بعضها.'],
+    ['L\'étiquette orange indique désormais votre droit sur la rubrique (« Droit : administration »), pour ne plus la confondre avec un nom de rubrique.', 'The orange label now shows your right on the section (“Right: administration”), so it is no longer mistaken for a section name.', 'تُظهر العلامة البرتقالية الآن حقك في القسم («الحق: إدارة») حتى لا تُخلط باسم قسم.'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];

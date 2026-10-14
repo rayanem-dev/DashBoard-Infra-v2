@@ -79,7 +79,7 @@
   if (Api.demo) $('demo').hidden = false;
   if (window.SIJIL_URL) $('sijil').href = window.SIJIL_URL;
   var ROLES = { agent: 'Agent', conducteur: 'Conducteur des travaux', chef_service: 'Chef de service', chef_division: 'Chef de division', secretariat: 'Secrétariat', cpm: 'Cellule Passation de marché' };
-  var NIVEAUX = { 1: 'Lecture', 2: 'Saisie', 3: 'Administration' };
+  var NIVEAUX = { 1: 'Droit : lecture', 2: 'Droit : saisie', 3: 'Droit : administration' }; // droit de la personne sur ce module (pas le nom d'un module)
 
   function el(tag, cls, texte) { var e = document.createElement(tag); if (cls) e.className = cls; if (texte != null) e.textContent = texte; return e; }
   // N'autorise que http(s) et les pages relatives du site : jamais javascript: ni data:
@@ -173,7 +173,7 @@
     var zone = $('modules'); zone.textContent = ''; outilsAccueil(r.menu);
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
     r.menu.forEach(function (m) {
-      var sec = el('section', 'module'); sec.dataset.m = m.id;
+      var sec = el('section', 'module'); sec.dataset.m = m.id; sec.dataset.n = String(Math.min((m.apps || []).length, 3));
       var h = el('h3', null, (m.icone || '') + ' ' + m.titre); h.appendChild(el('span', 'niveau', NIVEAUX[m.niveau] || '')); sec.appendChild(h);
       var g = el('div', 'grille');
       if (!m.apps.length) g.appendChild(el('p', 'vide', 'Bientôt disponible.'));
