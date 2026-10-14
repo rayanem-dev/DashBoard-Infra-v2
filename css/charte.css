@@ -378,3 +378,31 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .annuaire-groupe { margin-bottom: 10px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-card); padding: 4px 14px 12px; }
 .annuaire-groupe summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
 .annuaire-groupe .contact { box-shadow: none; border: 1px solid var(--border); border-left: 4px solid #00897B; }
+
+/* ===== Fiche agent : deux moitiés égales (identité | rotation) ===== */
+.agent::before { display: none; }
+.agent-corps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 14px 16px 6px; align-items: stretch; }
+.agent-gauche { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.agent-gauche .agent-entete { padding: 0; gap: 12px; align-items: center; }
+.agent-gauche .avatar { width: 52px; height: 52px; font-size: 18px; }
+.agent-gauche .agent-id h2 { font-size: 18px; }
+.agent-gauche .agent-poste { font-size: 12.5px; }
+.agent-gauche .agent-badges { margin-top: 3px; }
+.agent-gauche .agent-infos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; padding: 12px 0 0; border-top: 1px solid var(--border); }
+.agent-gauche .agent-infos span { font-size: 9.5px; }
+.agent-gauche .agent-infos b { font-size: 13px; margin-top: 2px; }
+.agent .jauge-bloc { position: relative; padding: 16px 18px 26px; gap: 16px; align-items: center; justify-content: center; background: var(--surface-2); border-radius: 14px; }
+.agent .jauge { width: 92px; height: 92px; }
+.agent .jauge::before { inset: 8px; }
+.agent .jauge .j-centre b { font-size: 26px; }
+.agent .jauge-texte { gap: 6px; flex: 1; }
+.agent .jauge-texte p { font-size: 12.5px; line-height: 1.4; }
+.agent .jauge-texte #phrase { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.agent .etat-pill { font-size: 12px; padding: 3px 11px; }
+.agent .jauge-barre { height: 5px; }
+.agent .jauge-bloc .btn-s { padding: 5px 12px; font-size: 12px; margin-top: 2px; }
+.agent .par-sijil { position: absolute; right: 12px; bottom: 7px; }
+.agent-gauche .raccourcis { margin-inline-start: auto; align-self: flex-start; }
+@media (max-width: 900px) { .agent-corps { grid-template-columns: 1fr; } .agent-gauche .agent-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .agent .jauge-bloc { flex-direction: column; text-align: center; } .agent .jauge-texte { align-items: center; } }
+@media (max-width: 420px) { .agent .jauge-bloc { padding-bottom: 34px; } }

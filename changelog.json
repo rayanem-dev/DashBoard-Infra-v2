@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-14-03",
+    "date": "2026-10-14",
+    "title": "Version 4.2.1 — Fiche personnelle plus claire",
+    "changes": [
+      "Votre fiche est maintenant partagée en deux moitiés égales : vos informations à gauche, votre rotation à droite."
+    ]
+  },
+  {
     "id": "2026-10-14-02",
     "date": "2026-10-14",
     "title": "Version 4.2 — Annuaire, langues et mode sombre",

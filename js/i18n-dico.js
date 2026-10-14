@@ -242,6 +242,8 @@
     ['Un mode sombre est disponible : bouton soleil / lune en bas à droite.', 'A dark mode is available: sun / moon button at the bottom right.', 'الوضع الداكن متوفر: زر الشمس / القمر أسفل اليمين.'],
     ['Annuaire', 'Directory', 'الدليل'],
     ['(nouveautés)', '(what\'s new)', '(المستجدات)'],
+    ['Version 4.2.1 — Fiche personnelle plus claire', 'Version 4.2.1 — Clearer personal profile', 'الإصدار 4.2.1 — بطاقة شخصية أوضح'],
+    ['Votre fiche est maintenant partagée en deux moitiés égales : vos informations à gauche, votre rotation à droite.', 'Your profile is now split into two equal halves: your information on the left, your rotation on the right.', 'بطاقتك مقسّمة الآن إلى نصفين متساويين: معلوماتك على اليسار وتناوبك على اليمين.'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];
