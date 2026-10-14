@@ -21,6 +21,7 @@ class FauxSheet {
     };
   }
   getLastRow() { return this.v.length; }
+  getLastColumn() { return Math.max(0, ...this.v.map(r => r.length)); }
   clearContents() { this.v = []; }
 }
 
@@ -43,8 +44,8 @@ function monde(opts = {}) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'CpmJournal.gs'), 'utf8'), ctx);
   return { ctx, mails, props, feuilles, set: l => { source = feuille(l); }, run: c => vm.runInContext(c, ctx) };
 }
-const A = ligne({ 2: 'D1', 3: 'Réhabilitation réseau', 8: 'Dossier en cours', 7: '10 %' });
-const B = ligne({ 2: 'D2', 3: 'Fourniture pièces', 8: 'Attribué', 12: 'Atlas', 14: '3 400 000' });
+const A = ligne({ 1: 'Dossier Appel Offre DAO', 2: 'D1', 3: 'Réhabilitation réseau', 8: 'Dossier en cours', 7: '10 %' });
+const B = ligne({ 1: 'Consultation Fournisseur CF', 2: 'D2', 3: 'Fourniture pièces', 8: 'Attribué', 12: 'Atlas', 14: '3 400 000' });
 
 test('premier instantané : état de départ mémorisé, aucun changement inventé', () => {
   const m = monde({ depart: [A, B] });
@@ -103,4 +104,13 @@ test('rapport hebdomadaire : envoyé à la direction active (sans doublon), essa
   assert.throws(() => m.run("cpmJournalListe_({ token: 'c' })"), /Droits insuffisants/);
   assert.throws(() => m.run("cpmInstantaneMaintenant_({ token: 'a' })"), /Droits insuffisants/);
   assert.ok(m.run("cpmJournalListe_({ token: 'a' })").evenements);
+});
+
+test('chaque événement porte le type du dossier (colonne B) et son N° de dossier ; un ancien onglet reçoit les nouvelles colonnes', () => {
+  const m = monde({ depart: [A, B] }); m.run('cpmInstantane_()');
+  m.feuilles.CpmJournal.v = [['date', 'cle', 'dossier', 'type', 'champ', 'libelle', 'avant', 'apres']]; // ancien format
+  const A2 = ligne({ 1: 'Dossier Appel Offre DAO', 2: 'D1', 3: 'Réhabilitation réseau', 8: 'Attribué', 7: '10 %' });
+  m.set([A2, B]); m.run('cpmInstantane_()');
+  assert.strictEqual(m.feuilles.CpmJournal.v[0].length, 10);
+  const l = m.feuilles.CpmJournal.v[1]; assert.strictEqual(l[8], 'Dossier Appel Offre DAO'); assert.strictEqual(l[9], 'D1');
 });

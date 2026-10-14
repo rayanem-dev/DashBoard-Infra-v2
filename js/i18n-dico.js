@@ -260,6 +260,9 @@
     ['L\'accueil montre maintenant, côte à côte : l\'avancement des chantiers, le suivi CPM et le journal des changements du CPM.', 'The home page now shows, side by side: site progress, CPM tracking and the CPM change log.', 'تعرض الصفحة الرئيسية الآن جنبًا إلى جنب: تقدّم الأشغال ومتابعة CPM وسجل تغييرات CPM.'],
     ['Le journal regroupe les changements par semaine, du samedi au vendredi.', 'The log groups changes by week, from Saturday to Friday.', 'يجمع السجل التغييرات حسب الأسبوع، من السبت إلى الجمعة.'],
     ['Le résumé par e-mail part le samedi matin et couvre la semaine qui vient de se terminer.', 'The e-mail summary goes out on Saturday morning and covers the week that has just ended.', 'يُرسل الملخص بالبريد الإلكتروني صباح السبت ويغطي الأسبوع الذي انتهى للتو.'],
+    ['Version 4.7 — Le texte du rapport hebdomadaire prêt à copier', 'Version 4.7 — Weekly report text ready to copy', 'الإصدار 4.7 — نص التقرير الأسبوعي جاهز للنسخ'],
+    ['Sur la page « Dossiers CPM », une nouvelle section prépare, pour chaque semaine (du samedi au vendredi), le texte des observations (O.B.S) des trois tableaux du rapport : DAO et CF, contrats d\'application, convention cadre.', 'On the “CPM Files” page, a new section prepares, for each week (Saturday to Friday), the observation text (O.B.S) of the report\'s three tables: DAO and CF, application contracts, framework agreement.', 'في صفحة «ملفات CPM» قسم جديد يعدّ لكل أسبوع (من السبت إلى الجمعة) نص الملاحظات (O.B.S) للجداول الثلاثة في التقرير: DAO وCF، عقود التطبيق، الاتفاقية الإطارية.'],
+    ['Un bouton « Copier » met le texte en gras, prêt à coller dans la diapositive.', 'A “Copy” button puts the text in bold, ready to paste into the slide.', 'زر «نسخ» يضع النص بالخط الغليظ جاهزًا للصق في الشريحة.'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];

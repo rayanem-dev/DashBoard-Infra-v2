@@ -85,6 +85,43 @@ var Synthese = (function () {
     return e.dossier + ' — ' + e.libelle + ' : ' + v(e.avant) + ' → ' + v(e.apres);
   }
 
+  // ---------- texte pour le rapport hebdomadaire (colonne O.B.S des trois derniers tableaux du PowerPoint) ----------
+  var GROUPES_RAPPORT = [
+    { cle: 'daocf', titre: 'DAO et CF' }, { cle: 'application', titre: 'Les contrats d\'application' },
+    { cle: 'cadre', titre: 'Contrats d\'application convention cadre' }, { cle: 'autres', titre: 'Autres types (non repris dans le rapport)' }
+  ];
+  /** Tableau du rapport où classer un dossier d'après son Type (colonne B de la feuille Suivi CPM). */
+  function groupeRapport(categorie) {
+    var n = norm(categorie);
+    if (n.indexOf('convention') !== -1) return 'cadre';
+    if (n.indexOf('application') !== -1) return 'application';
+    if (/\bdao\b|appel d.?offre|consultation fournisseur|\bcf\b/.test(n)) return 'daocf';
+    return 'autres';
+  }
+  /** Ce qui est écrit dans la colonne O.B.S pour un changement. */
+  function ligneRapport(e) {
+    var v = function (x) { return x === '' || x == null ? '(vide)' : x; };
+    if (e.type === 'nouveau') return 'Nouveau dossier' + (e.apres ? ' — ' + e.apres : '');
+    if (e.type === 'retire') return 'Dossier retiré du suivi';
+    if (e.champ === 'statut') return 'Statut : ' + v(e.avant) + ' → ' + v(e.apres);
+    if (e.champ === 'commentaire' || e.champ === 'etape') return (e.champ === 'etape' ? 'Étape : ' : '') + v(e.apres);
+    return e.libelle + ' : ' + v(e.avant) + ' → ' + v(e.apres);
+  }
+  /** Changements de la semaine (samedi `debut` → vendredi) classés par tableau du rapport puis par dossier. */
+  function rapportSemaine(evenements, debut) {
+    var fin = plusJours(debut, 6), groupes = GROUPES_RAPPORT.map(function (g) { return { cle: g.cle, titre: g.titre, dossiers: [], index: {} }; });
+    evenements.filter(function (e) { return e.date >= debut && e.date <= fin; }).slice().reverse().forEach(function (e) { // du plus ancien au plus récent
+      var g = groupes.filter(function (x) { return x.cle === groupeRapport(e.categorie); })[0];
+      var d = g.index[e.cle]; if (!d) { d = g.index[e.cle] = { numero: e.n_dossier || '', intitule: e.dossier, lignes: [] }; g.dossiers.push(d); }
+      d.lignes.push(ligneRapport(e));
+    });
+    return { debut: debut, fin: fin, groupes: groupes.map(function (g) { return { cle: g.cle, titre: g.titre, dossiers: g.dossiers }; }) };
+  }
+  function echapper(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  /** Texte gras d'un dossier, prêt à coller dans le PowerPoint : une ligne par changement. */
+  function htmlObs(dossier) { return dossier.lignes.map(function (l) { return '<b>' + echapper(l) + '</b>'; }).join('<br>'); }
+  function texteObs(dossier) { return dossier.lignes.join('\n'); }
+
   // ---------- affichage (navigateur) ----------
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function pct(n, t) { return t > 0 ? Math.round((n / t) * 100) + '% du total' : '—'; }
@@ -143,6 +180,6 @@ var Synthese = (function () {
     }).catch(function () { sub.textContent = 'Données indisponibles pour l\'instant'; });
   }
 
-  return { debutSemaine: debutSemaine, semaines: semaines, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
+  return { groupeRapport: groupeRapport, ligneRapport: ligneRapport, rapportSemaine: rapportSemaine, htmlObs: htmlObs, texteObs: texteObs, debutSemaine: debutSemaine, semaines: semaines, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
 })();
 if (typeof module !== 'undefined') module.exports = Synthese;

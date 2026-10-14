@@ -42,3 +42,25 @@ test('journal : semaines du samedi au vendredi, phrases simples', () => {
   assert.strictEqual(Synthese.phrase(ev[2]), 'B — Montant : (vide) → 10');
   assert.strictEqual(Synthese.phrase(ev[3]), 'Dossier retiré du suivi : R');
 });
+
+test('rapport hebdomadaire : classement par type de dossier, texte O.B.S en gras, changements de la semaine seulement', () => {
+  assert.strictEqual(Synthese.groupeRapport('Dossier Appel Offre DAO'), 'daocf');
+  assert.strictEqual(Synthese.groupeRapport('Consultation Fournisseur CF'), 'daocf');
+  assert.strictEqual(Synthese.groupeRapport("Gré à Gré Contrat d\\'application"), 'application');
+  assert.strictEqual(Synthese.groupeRapport('Gré à Gré Convention Cadre'), 'cadre');
+  assert.strictEqual(Synthese.groupeRapport('Bon De Commande'), 'autres');
+  const ev = [ // du plus récent au plus ancien
+    { date: '2026-10-16', cle: 'N:a', n_dossier: 'N°39/SH', dossier: 'Génie civil', type: 'modifie', champ: 'commentaire', libelle: 'Commentaire', avant: '', apres: 'Réserves levées le 16/09/2026', categorie: 'Dossier Appel Offre DAO' },
+    { date: '2026-10-12', cle: 'N:a', n_dossier: 'N°39/SH', dossier: 'Génie civil', type: 'modifie', champ: 'statut', libelle: 'Statut', avant: 'Dossier en cours', apres: 'Attribué', categorie: 'Dossier Appel Offre DAO' },
+    { date: '2026-10-11', cle: 'N:b', n_dossier: '', dossier: 'Réseau <eau>', type: 'nouveau', apres: 'Non démarré', categorie: 'Gré à Gré Convention Cadre' },
+    { date: '2026-10-09', cle: 'N:c', n_dossier: 'X', dossier: 'Hors semaine', type: 'retire', categorie: 'Bon De Commande' }];
+  const r = Synthese.rapportSemaine(ev, '2026-10-10');
+  assert.deepStrictEqual([r.debut, r.fin], ['2026-10-10', '2026-10-16']);
+  const daocf = r.groupes.find(g => g.cle === 'daocf');
+  assert.strictEqual(daocf.dossiers.length, 1);
+  assert.deepStrictEqual([...daocf.dossiers[0].lignes], ['Statut : Dossier en cours → Attribué', 'Réserves levées le 16/09/2026']);
+  assert.strictEqual(Synthese.htmlObs(daocf.dossiers[0]), '<b>Statut : Dossier en cours → Attribué</b><br><b>Réserves levées le 16/09/2026</b>');
+  assert.strictEqual(r.groupes.find(g => g.cle === 'cadre').dossiers.length, 1);
+  assert.strictEqual(r.groupes.find(g => g.cle === 'autres').dossiers.length, 0); // le 09/10 est dans la semaine précédente
+  assert.match(Synthese.htmlObs({ lignes: ['A <b>'] }), /A &lt;b&gt;/);
+});

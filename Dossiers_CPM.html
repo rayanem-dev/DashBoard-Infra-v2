@@ -104,6 +104,13 @@
   .journal[hidden] { display: none; }
   .journal summary { cursor: pointer; font-weight: 800; font-size: 14.5px; padding: 14px 0; }
   .journal-info { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .rapport-barre { margin: 6px 0 10px; font-size: 13px; } .rapport-barre select { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); color: var(--text-dark); font: inherit; }
+  .rapport-groupe { font-size: 14px; font-weight: 800; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid #E85D04; }
+  .rapport-dossier { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .rapport-etiq { font-size: 11.5px; color: var(--text-muted); margin-bottom: 2px; }
+  .rapport-obs { font-size: 13.5px; line-height: 1.5; font-weight: 700; overflow-wrap: anywhere; }
+  .rapport-copier { flex: none; border: 1.5px solid var(--border); background: var(--white); color: var(--text-dark); border-radius: 8px; padding: 5px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .rapport-copier.ok { background: #16A34A; border-color: #16A34A; color: #fff; }
   .syn-semaine { font-size: 13px; font-weight: 800; margin: 14px 0 4px; }
   .syn-puces { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
   .syn-puces li { margin-bottom: 2px; }
@@ -138,6 +145,12 @@
     <summary>🕘 Le journal des changements du CPM (90 derniers jours)</summary>
     <p class="journal-info" id="journal-info"></p>
     <div id="journal-liste"></div>
+  </details>
+  <details class="journal" id="rapport" hidden>
+    <summary>📋 Texte pour le rapport hebdomadaire (colonne O.B.S du PowerPoint)</summary>
+    <p class="journal-info">Choisissez la semaine (du samedi au vendredi), puis cliquez sur « Copier » à côté d'un dossier et collez dans la case O.B.S de la diapositive : le texte est déjà en <b>gras</b>.</p>
+    <div class="rapport-barre"><label for="rapport-semaine">Semaine</label> <select id="rapport-semaine"></select></div>
+    <div id="rapport-contenu"></div>
   </details>
 </main>
 
@@ -450,11 +463,52 @@ init();
 // Journal des changements (chaque nuit, la passerelle compare la feuille CPM à la veille) — semaines du samedi au vendredi
 (function () {
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function fr(iso) { var p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  /** Copie du texte riche (gras conservé dans PowerPoint / Word) avec repli en texte simple. */
+  function copier(bouton, html, texte) {
+    function fait() { var t = bouton.textContent; bouton.textContent = 'Copié ✓'; bouton.classList.add('ok'); setTimeout(function () { bouton.textContent = t; bouton.classList.remove('ok'); }, 1800); }
+    function repli() {
+      var d = document.createElement('div'); d.innerHTML = html; d.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(d);
+      var r = document.createRange(); r.selectNodeContents(d); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      try { document.execCommand('copy'); fait(); } catch (e) { /* rien */ } sel.removeAllRanges(); document.body.removeChild(d);
+    }
+    if (navigator.clipboard && window.ClipboardItem) {
+      navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([texte], { type: 'text/plain' }) })]).then(fait, repli);
+    } else repli();
+  }
+  function dessinerRapport(evenements, debut) {
+    var zone = document.getElementById('rapport-contenu'); zone.textContent = '';
+    var r = Synthese.rapportSemaine(evenements, debut), total = 0;
+    r.groupes.forEach(function (g) {
+      if (!g.dossiers.length) return; total += g.dossiers.length;
+      zone.appendChild(el('div', 'rapport-groupe', g.titre + ' (' + g.dossiers.length + ')'));
+      g.dossiers.forEach(function (d) {
+        var ligne = el('div', 'rapport-dossier'), txt = el('div');
+        txt.appendChild(el('div', 'rapport-etiq', (d.numero ? d.numero + ' — ' : '') + d.intitule));
+        var obs = el('div', 'rapport-obs'); d.lignes.forEach(function (l, i) { if (i) obs.appendChild(document.createElement('br')); obs.appendChild(document.createTextNode(l)); }); txt.appendChild(obs);
+        var b = el('button', 'rapport-copier', 'Copier'); b.type = 'button'; b.addEventListener('click', function () { copier(b, Synthese.htmlObs(d), Synthese.texteObs(d)); });
+        ligne.appendChild(txt); ligne.appendChild(b); zone.appendChild(ligne);
+      });
+    });
+    if (!total) zone.appendChild(el('p', 'journal-info', 'Aucun changement cette semaine.'));
+  }
   Api.call('cpm_journal').then(function (r) {
     var box = document.getElementById('journal'), liste = document.getElementById('journal-liste'); box.hidden = false;
     document.getElementById('journal-info').textContent = r.dernier_instantane ? 'Dernière lecture de la feuille : ' + new Date(r.dernier_instantane).toLocaleString('fr-FR') : 'Le journal démarre à la première lecture de la feuille (chaque nuit).';
     if (!r.evenements.length) liste.appendChild(el('p', 'journal-info', 'Aucun changement enregistré pour le moment.')); else Synthese.listeSemaines(liste, r.evenements);
+    // Rapport hebdomadaire : semaines proposées = celles qui ont des changements + la dernière semaine terminée
+    var rap = document.getElementById('rapport'); rap.hidden = false;
+    var auj = new Date().toISOString().slice(0, 10), debuts = Synthese.semaines(r.evenements).map(function (w) { return w.debut; });
+    var derniere = Synthese.debutSemaine(new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)); if (debuts.indexOf(derniere) === -1) debuts.push(derniere);
+    debuts.sort().reverse();
+    var sel = document.getElementById('rapport-semaine');
+    debuts.forEach(function (d) { var o = document.createElement('option'); o.value = d; var f = new Date(d + 'T00:00:00Z'); f.setUTCDate(f.getUTCDate() + 6); o.textContent = 'Du ' + fr(d) + ' au ' + fr(f.toISOString().slice(0, 10)); sel.appendChild(o); });
+    // semaine proposée par défaut : la dernière semaine terminée (samedi → vendredi écoulé)
+    sel.value = debuts.indexOf(derniere) !== -1 ? derniere : debuts[0];
+    sel.addEventListener('change', function () { dessinerRapport(r.evenements, sel.value); });
+    dessinerRapport(r.evenements, sel.value);
     if (location.hash === '#journal') { box.open = true; box.scrollIntoView(); }
+    if (location.hash === '#rapport') { rap.open = true; rap.scrollIntoView(); }
   }).catch(function () { /* pas de droit ou journal indisponible : on n'affiche rien */ });
 })();
 </script>

@@ -182,10 +182,12 @@
         throw erreur('Données de démonstration non disponibles pour cette source');
       case 'cpm_journal': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { dernier_instantane: new Date().toISOString(), evenements: [
-          { date: '2026-10-13', cle: 'a', dossier: 'Fourniture de pièces détachées', type: 'modifie', champ: 'statut', libelle: 'Statut', avant: 'Dossier en cours', apres: 'Attribué' },
-          { date: '2026-10-13', cle: 'b', dossier: 'Nettoyage des bacs', type: 'nouveau', champ: '', libelle: '', avant: '', apres: 'Non démarré' },
-          { date: '2026-10-12', cle: 'c', dossier: 'Location d\'engins', type: 'modifie', champ: 'echeance', libelle: 'Échéance du contrat', avant: '', apres: '15/03/2027' },
-          { date: '2026-10-09', cle: 'd', dossier: 'Ancien dossier test', type: 'retire', champ: '', libelle: '', avant: 'Non démarré', apres: '' } ] };
+          { date: '2026-10-13', cle: 'a', n_dossier: 'N°39/SH-PROD/RNS/INFRA/2025', categorie: 'Dossier Appel Offre DAO', dossier: 'Travaux et prestations en génie civil', type: 'modifie', champ: 'commentaire', libelle: 'Commentaire', avant: '', apres: 'Réserves non suspensives levées le 16/09/2026' },
+          { date: '2026-10-13', cle: 'a', n_dossier: 'N°39/SH-PROD/RNS/INFRA/2025', categorie: 'Dossier Appel Offre DAO', dossier: 'Travaux et prestations en génie civil', type: 'modifie', champ: 'statut', libelle: 'Statut', avant: 'Dossier en cours', apres: 'Attribué' },
+          { date: '2026-10-13', cle: 'b', n_dossier: '', categorie: 'Gré à Gré Contrat d\'application', dossier: 'Nettoyage des bacs', type: 'nouveau', champ: '', libelle: '', avant: '', apres: 'Non démarré' },
+          { date: '2026-10-12', cle: 'c', n_dossier: 'N°55/RNS/2026', categorie: 'Gré à Gré Contrat d\'application', dossier: 'Clôtures rigides des installations', type: 'modifie', champ: 'commentaire', libelle: 'Commentaire', avant: 'Contrat signé par l\'entrepreneur', apres: 'Contrat signé par Mr le Directeur de la Division Production' },
+          { date: '2026-10-12', cle: 'e', n_dossier: 'CF N°38/SH/RNS/INFRA/2026', categorie: 'Gré à Gré Convention Cadre', dossier: 'Réfection de l\'étanchéité des infrastructures', type: 'modifie', champ: 'echeance_g', libelle: 'Échéance (passation)', avant: '19/09/2026', apres: '03/10/2026' },
+          { date: '2026-10-09', cle: 'd', n_dossier: 'X', categorie: 'Bon De Commande', dossier: 'Ancien dossier test', type: 'retire', champ: '', libelle: '', avant: 'Non démarré', apres: '' } ] };
       case 'logout': demoState.user = null; return {};
       case 'changer_mdp': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.ancien !== 'Demo2026!' && p.ancien !== '0000') throw erreur('Ancien mot de passe incorrect');

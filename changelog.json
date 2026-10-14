@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-16-01",
+    "date": "2026-10-16",
+    "title": "Version 4.7 — Le texte du rapport hebdomadaire prêt à copier",
+    "changes": [
+      "Sur la page « Dossiers CPM », une nouvelle section prépare, pour chaque semaine (du samedi au vendredi), le texte des observations (O.B.S) des trois tableaux du rapport : DAO et CF, contrats d'application, convention cadre.",
+      "Un bouton « Copier » met le texte en gras, prêt à coller dans la diapositive."
+    ]
+  },
+  {
     "id": "2026-10-15-04",
     "date": "2026-10-15",
     "title": "Version 4.6 — Le journal des changements sur l'accueil",

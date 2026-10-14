@@ -15,7 +15,7 @@ var CPM_CHAMPS_ = [
   { k: 'n_contrat', c: 13, l: 'N° de contrat' }, { k: 'montant', c: 14, l: 'Montant' }, { k: 'date_signature', c: 15, l: 'Date de signature' },
   { k: 'date_ods', c: 16, l: 'Date ODS' }, { k: 'duree_contrat', c: 17, l: 'Durée du contrat (mois)' }, { k: 'echeance', c: 18, l: 'Échéance du contrat' }
 ];
-var CPM_COL_N_DOSSIER_ = 2;
+var CPM_COL_N_DOSSIER_ = 2, CPM_COL_TYPE_ = 1;
 var CPM_URL_PORTAIL_ = 'https://rayanem-dev.github.io/DashBoard-Infra-v2/Dossiers_CPM.html';
 
 // ---------- logique pure (testée en Node) ----------
@@ -34,7 +34,7 @@ function cpmEnregistrements_(lignes) {
     var n = cpmVal_(r[CPM_COL_N_DOSSIER_]);
     var cle = n ? 'N:' + cpmNorm_(n) : 'T:' + cpmNorm_(intitule);
     if (vus[cle]) { vus[cle] += 1; cle += '#' + vus[cle]; } else vus[cle] = 1;
-    var rec = { cle: cle, n_dossier: n };
+    var rec = { cle: cle, n_dossier: n, categorie: cpmVal_(r[CPM_COL_TYPE_]) };
     CPM_CHAMPS_.forEach(function (f) { rec[f.k] = cpmVal_(r[f.c]); });
     dossiers[cle] = rec; ordre.push(cle);
   });
@@ -48,13 +48,13 @@ function cpmDiff_(avant, apres, dateIso) {
   var ev = [];
   Object.keys(apres.dossiers).forEach(function (cle) {
     var n = apres.dossiers[cle], a = avant.dossiers[cle];
-    if (!a) { ev.push({ date: dateIso, cle: cle, dossier: n.intitule || n.n_dossier, type: 'nouveau', champ: '', libelle: '', avant: '', apres: n.statut }); return; }
+    if (!a) { ev.push({ date: dateIso, cle: cle, dossier: n.intitule || n.n_dossier, type: 'nouveau', champ: '', libelle: '', avant: '', apres: n.statut, categorie: n.categorie, n_dossier: n.n_dossier }); return; }
     CPM_CHAMPS_.forEach(function (f) {
-      if (!cpmEgal_(a[f.k], n[f.k])) ev.push({ date: dateIso, cle: cle, dossier: n.intitule || a.intitule, type: 'modifie', champ: f.k, libelle: f.l, avant: a[f.k], apres: n[f.k] });
+      if (!cpmEgal_(a[f.k], n[f.k])) ev.push({ date: dateIso, cle: cle, dossier: n.intitule || a.intitule, type: 'modifie', champ: f.k, libelle: f.l, avant: a[f.k], apres: n[f.k], categorie: n.categorie, n_dossier: n.n_dossier });
     });
   });
   Object.keys(avant.dossiers).forEach(function (cle) {
-    if (!apres.dossiers[cle]) { var a = avant.dossiers[cle]; ev.push({ date: dateIso, cle: cle, dossier: a.intitule || a.n_dossier, type: 'retire', champ: '', libelle: '', avant: a.statut, apres: '' }); }
+    if (!apres.dossiers[cle]) { var a = avant.dossiers[cle]; ev.push({ date: dateIso, cle: cle, dossier: a.intitule || a.n_dossier, type: 'retire', champ: '', libelle: '', avant: a.statut, apres: '', categorie: a.categorie, n_dossier: a.n_dossier }); }
   });
   return ev;
 }
@@ -119,12 +119,13 @@ function cpmRapport_(evenements, echeances, duIso, auIso) {
 
 // ---------- parties liées à Google (feuilles, e-mail, déclencheurs) ----------
 var CPM_ENTETES_ETAT_ = ['cle', 'donnees'];
-var CPM_ENTETES_JOURNAL_ = ['date', 'cle', 'dossier', 'type', 'champ', 'libelle', 'avant', 'apres'];
+var CPM_ENTETES_JOURNAL_ = ['date', 'cle', 'dossier', 'type', 'champ', 'libelle', 'avant', 'apres', 'categorie', 'n_dossier'];
 
 function cpmFeuille_(nom, entetes) {
   var db = SpreadsheetApp.openById(prop_('DB_ID'));
   var sh = db.getSheetByName(nom);
   if (!sh) { sh = db.insertSheet(nom); sh.appendRow(entetes); sh.setFrozenRows(1); sh.getRange('A:Z').setNumberFormat('@'); }
+  else if (sh.getLastColumn() < entetes.length) sh.getRange(1, 1, 1, entetes.length).setValues([entetes]); // onglet créé par une version plus ancienne : colonnes ajoutées
   return sh;
 }
 function cpmAujourdhui_() { return Utilities.formatDate(new Date(), 'Africa/Algiers', 'yyyy-MM-dd'); }
