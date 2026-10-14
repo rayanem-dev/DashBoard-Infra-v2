@@ -6,6 +6,8 @@
 <title>Organigramme – Division Infrastructure RNS</title>
 <meta name="theme-color" content="#E85D04">
 <link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="css/charte.css">
 <style>
   .barre-o { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
@@ -102,5 +104,6 @@
   Api.call('menu').then(function (r) { var m = (r.menu || []).filter(function (x) { return x.id === 'affectation'; })[0]; if (m && m.niveau >= 2) $('l-aff').hidden = false; }).catch(function () {});
 })();
 </script>
+<script src="js/pied.js"></script>
 </body>
 </html>

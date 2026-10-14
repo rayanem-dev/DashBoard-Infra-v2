@@ -6,13 +6,15 @@
 <title>Portail – Division Infrastructure RNS</title>
 <meta name="theme-color" content="#E85D04">
 <link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="css/charte.css">
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">SH</div>
     <div class="logo-text"><h1>Tableau de Bord – Division Infrastructure</h1><p>Sonatrach · RNS · Version 4.0 (en construction)</p></div></div>
-  <div class="bandeau-droite"><span id="qui"></span><button class="btn-ghost" id="quitter" type="button">Se déconnecter</button></div>
+  <div class="bandeau-droite"><span id="zone-installer"></span><span id="qui"></span><button class="btn-ghost" id="quitter" type="button">Se déconnecter</button></div>
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 
@@ -46,6 +48,13 @@
     <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
   </section>
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
+  <section class="syntheses" id="syntheses"><div class="syn" id="syn-cpm" hidden></div><div class="syn" id="syn-chantiers" hidden></div></section>
+  <div class="outils" id="outils" hidden>
+    <input type="search" id="recherche" placeholder="Rechercher une application…" aria-label="Rechercher une application" autocomplete="off">
+    <span class="date-badge" id="date-badge"></span>
+    <div class="onglets-modules" id="onglets-modules"></div>
+  </div>
+  <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
   <div id="modules"></div>
 </main>
 
@@ -53,6 +62,8 @@
 <script src="js/api.js"></script>
 <script src="js/rotation.js"></script>
 <script src="js/employeurs.js"></script>
+<script src="js/synthese.js"></script>
+<script src="js/boutoninstaller.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -112,18 +123,45 @@
     nav.hidden = !nav.children.length;
   }
 
+  // ---------- Recherche, filtres par module, date, synthèses (comme l'ancien accueil) ----------
+  var modulesFiltre = '', verrouContenu = false, aDesApps = false;
+  function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache; $('syntheses').hidden = cache; $('outils').hidden = cache || !aDesApps; }
+  function filtrer() {
+    var q = norme($('recherche').value).trim(), vus = 0;
+    document.querySelectorAll('#modules .module').forEach(function (sec) {
+      var dansModule = !modulesFiltre || sec.dataset.m === modulesFiltre, n = 0;
+      sec.querySelectorAll('.app').forEach(function (c) { var ok = dansModule && (!q || c.dataset.t.indexOf(q) !== -1); c.classList.toggle('cache', !ok); if (ok) n += 1; });
+      sec.classList.toggle('cache', n === 0 && (q || modulesFiltre)); vus += n;
+    });
+    $('aucun-resultat').hidden = !(q || modulesFiltre) || vus > 0;
+  }
+  function outilsAccueil(menu) {
+    aDesApps = menu.some(function (m) { return m.apps.length; }); afficherContenu();
+    $('date-badge').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var on = $('onglets-modules'); on.textContent = '';
+    function bouton(id, lib) { var b = el('button', modulesFiltre === id ? 'actif' : '', lib); b.type = 'button'; b.addEventListener('click', function () { modulesFiltre = id; on.querySelectorAll('button').forEach(function (x) { x.classList.remove('actif'); }); b.classList.add('actif'); filtrer(); }); on.appendChild(b); }
+    bouton('', 'Tout'); menu.forEach(function (m) { if (m.apps.length) bouton(m.id, (m.icone || '') + ' ' + m.titre); });
+    // Synthèses : seulement pour qui a accès aux applications correspondantes
+    var urls = []; menu.forEach(function (m) { m.apps.forEach(function (a) { urls.push(String(a.url)); }); });
+    function a(f) { return urls.some(function (u) { return u.indexOf(f) !== -1; }); }
+    if (a('Dossiers_CPM.html')) Synthese.monterCpm($('syn-cpm'));
+    if (a('Avancement_des_Chantiers.html')) Synthese.monterChantiers($('syn-chantiers'));
+  }
+  $('recherche').addEventListener('input', filtrer);
+
   function dessiner(r) {
     dessinerFiche(r.user); raccourcis(r.menu);
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
-    var zone = $('modules'); zone.textContent = '';
+    var zone = $('modules'); zone.textContent = ''; outilsAccueil(r.menu);
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
     r.menu.forEach(function (m) {
-      var sec = el('section', 'module');
+      var sec = el('section', 'module'); sec.dataset.m = m.id;
       var h = el('h3', null, (m.icone || '') + ' ' + m.titre); h.appendChild(el('span', 'niveau', NIVEAUX[m.niveau] || '')); sec.appendChild(h);
       var g = el('div', 'grille');
       if (!m.apps.length) g.appendChild(el('p', 'vide', 'Bientôt disponible.'));
       m.apps.forEach(function (a) {
-        var c = el('a', 'app'); c.href = lienSur(a.url);
+        var c = el('a', 'app'); c.href = lienSur(a.url); c.dataset.t = norme((a.titre || '') + ' ' + (a.description || '') + ' ' + (m.titre || ''));
         // Pages du site : même onglet (la session est propre à l'onglet) ; sites externes : nouvel onglet.
         if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
         c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));
@@ -186,7 +224,7 @@
   // Tant que le planning est vierge : modules masqués et fenêtre OBLIGATOIRE (ni Annuler, ni Échap) ; l'accès s'ouvre dès l'enregistrement.
   var verrou = false, verrouRel = false;
   function verrouiller(on, nomAffiche) {
-    $('modules').hidden = on;
+    verrouContenu = on; afficherContenu();
     var bandeau = $('verrou'); if (bandeau) bandeau.hidden = !on;
     if (on && !verrou) {
       verrou = true;
@@ -198,7 +236,7 @@
     return Api.call('situation').then(function (r) {
       var box = $('statut'); if (!r.acces) { box.hidden = true; return; }
       verrouiller(r.acces && !r.configuree, nomAffiche);
-      if (r.acces && r.configuree && r.reliquat_renseigne === false && !verrouRel) { verrouRel = true; $('modules').hidden = true; Rotation.reliquat({ onOk: function () { verrouRel = false; $('modules').hidden = false; dessinerStatut(nomAffiche); } }); }
+      if (r.acces && r.configuree && r.reliquat_renseigne === false && !verrouRel) { verrouRel = true; verrouContenu = true; afficherContenu(); Rotation.reliquat({ onOk: function () { verrouRel = false; verrouContenu = false; afficherContenu(); dessinerStatut(nomAffiche); } }); }
       box.hidden = false;
       var j = $('jauge'), s = r.configuree ? r.situation : null;
       var pill = $('j-etat'), dates = $('j-dates'), barre = $('j-barre'), bi = $('j-barre-i');
@@ -229,6 +267,7 @@
     }).catch(function () { $('statut').hidden = true; });
   }
 
+  if (window.BoutonInstaller) BoutonInstaller.monter({ cible: '#zone-installer', langue: 'fr', serviceWorker: 'sw.js' });
   Api.call('menu').then(function (r) { dessiner(r); return dessinerStatut(r.user.nom); }).catch(function (e) {
     if (e.code === 'SESSION' || !Api.token() && !Api.demo) { Api.setToken(''); location.replace('connexion.html'); return; }
     $('nom-agent').textContent = 'Erreur : ' + e.message;
@@ -239,5 +278,6 @@
   });
 })();
 </script>
+<script src="js/pied.js"></script>
 </body>
 </html>

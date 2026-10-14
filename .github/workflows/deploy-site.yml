@@ -29,6 +29,8 @@ jobs:
         run: |
           mkdir _site
           cp -r *.html *.json *.png sw.js css js img _site/
+          # version.json = version de js/version.js (compare par le pied de page : ✓ à jour / ⚠ à déployer)
+          node -e "const v=require('fs').readFileSync('js/version.js','utf8').match(/PORTAIL_VERSION = '([^']+)'/)[1]; require('fs').writeFileSync('_site/version.json', JSON.stringify({version: v}))"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
