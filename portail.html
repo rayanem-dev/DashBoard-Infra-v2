@@ -184,7 +184,7 @@
   $('b-mdp').addEventListener('click', ouvrirMdp);
 
   // Tant que le planning est vierge : modules masqués et fenêtre OBLIGATOIRE (ni Annuler, ni Échap) ; l'accès s'ouvre dès l'enregistrement.
-  var verrou = false;
+  var verrou = false, verrouRel = false;
   function verrouiller(on, nomAffiche) {
     $('modules').hidden = on;
     var bandeau = $('verrou'); if (bandeau) bandeau.hidden = !on;
@@ -198,6 +198,7 @@
     return Api.call('situation').then(function (r) {
       var box = $('statut'); if (!r.acces) { box.hidden = true; return; }
       verrouiller(r.acces && !r.configuree, nomAffiche);
+      if (r.acces && r.configuree && r.reliquat_renseigne === false && !verrouRel) { verrouRel = true; $('modules').hidden = true; Rotation.reliquat({ onOk: function () { verrouRel = false; $('modules').hidden = false; dessinerStatut(nomAffiche); } }); }
       box.hidden = false;
       var j = $('jauge'), s = r.configuree ? r.situation : null;
       var pill = $('j-etat'), dates = $('j-dates'), barre = $('j-barre'), bi = $('j-barre-i');

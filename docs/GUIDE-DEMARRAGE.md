@@ -40,3 +40,9 @@ Le site actuel, tous les fichiers d'origine et le fichier Organigramme (traité 
 - Changer le service d'une personne : écrit **d'abord dans BDDORGA** (cellule « Service » de sa ligne, repérée par l'e-mail), puis dans la passerelle ; si BDDORGA refuse l'écriture, rien n'est modifié (sinon la synchronisation quotidienne remettrait l'ancien service). Historique dans l'onglet `Affectations` ; e-mail à l'intéressé, à l'auteur, au chef de division et au secrétariat.
 - Un service qui n'existe pas encore demande une confirmation de création. Le module se prépare tout seul au premier passage (onglet, module, droits, carte).
 - Limite : la page `Organigramme.html` (arbre dépliable) est écrite à la main et ne suit pas encore BDDORGA.
+
+## Reliquat initial et impression PDF
+
+- **Reliquat initial** (jours de congé dus : +, pris en avance : −) : champ « 4. Reliquat initial » dans le formulaire de rotation (valeur par défaut **0**) ; les agents déjà inscrits le voient une seule fois, au premier passage sur le portail (fenêtre « Votre reliquat de congé », 0 par défaut). Il est stocké dans l'onglet `Rotations` (colonne `reliquat`, ajoutée toute seule).
+- **Solde** d'un agent = reliquat initial + reliquat laissé (net) par ses demandes de modification **approuvées** (colonnes `reliquat` et `reliquat_net` de l'onglet `Modifications`). Les propositions de la simulation sont classées sur le solde **après** modification.
+- **Impression / PDF** : bouton « 🖨 Imprimer / PDF » sur la page Planning (tableau de la période affichée) et sur la page Simulation (périodes + frise + reliquats) ; dans la fenêtre d'impression choisir « Enregistrer au format PDF », format A4 paysage.

@@ -192,14 +192,19 @@
         if (p.niveau !== null && p.niveau !== '' && p.niveau !== undefined) demoExceptions.push({ email: p.email, module: p.module, niveau: Number(p.niveau) }); return {};
       case 'situation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var rr = demoRots()[demoState.user.email];
-        return rr ? { acces: true, configuree: true, nom: demoState.user.nom, rotation: rr, situation: demoSituation(rr) } : { acces: true, configuree: false, nom: demoState.user.nom }; }
+        return rr ? { acces: true, configuree: true, nom: demoState.user.nom, rotation: rr, reliquat: rr.reliquat === undefined ? null : rr.reliquat, reliquat_renseigne: rr.reliquat !== undefined, situation: demoSituation(rr) } : { acces: true, configuree: false, nom: demoState.user.nom }; }
+      case 'reliquat_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var tr = demoRots(), me = tr[demoState.user.email];
+        if (!me) throw erreur('Renseignez d\'abord votre rotation'); var rl = Number(p.reliquat);
+        if (p.reliquat === '' || p.reliquat == null || !isFinite(rl) || Math.floor(rl) !== rl || Math.abs(rl) > 365) throw erreur('Reliquat : un nombre entier de jours entre −365 et 365 (0 si vous n\'en avez pas)');
+        me.reliquat = rl; saveRots(tr); return { acces: true, configuree: true, reliquat: rl, reliquat_renseigne: true }; }
       case 'rotation_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var cible = p.email || demoState.user.email;
         if (cible !== demoState.user.email && demoState.user.role !== 'chef_division') throw erreur('Droits insuffisants', 'DROITS');
         if (p.statut !== 'T' && p.statut !== 'R') throw erreur('Indiquez si vous êtes en travail ou en repos');
         if (!p.depuis || p.depuis > auj()) throw erreur('La date ne peut pas être dans le futur');
         if (!(p.jours_travail >= 1 && p.jours_travail <= 90 && p.jours_repos >= 1 && p.jours_repos <= 90)) throw erreur('Rotation invalide (1 à 90 jours)');
-        var tous = demoRots(); tous[cible] = { statut: p.statut, depuis: p.depuis, jours_travail: p.jours_travail, jours_repos: p.jours_repos }; saveRots(tous);
+        var tous = demoRots(), ancienRel = tous[cible] && tous[cible].reliquat; tous[cible] = { statut: p.statut, depuis: p.depuis, jours_travail: p.jours_travail, jours_repos: p.jours_repos };
+        if (p.reliquat !== undefined && p.reliquat !== null && p.reliquat !== '') tous[cible].reliquat = Number(p.reliquat); else if (ancienRel !== undefined) tous[cible].reliquat = ancienRel; saveRots(tous);
         return { acces: true, configuree: true }; }
       case 'planning': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var tousP = demoState.user.role === 'chef_division', d0 = p.debut || plus(auj(), -7), n = Math.min(370, Math.max(7, Number(p.jours) || 35)), all = demoRots();
@@ -237,7 +242,8 @@
       case 'simu_donnees': { exigerAdmin(); var cu = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0], rr0 = cu && demoRots()[cu.email];
         if (!rr0) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
         var d0s = /^\d{4}-\d{2}-\d{2}$/.test(p.debut || '') ? p.debut : plus(auj(), -35), ns = Math.max(30, Math.min(400, Number(p.jours) || 240));
-        return { uid: cu.uid, nom: cu.nom, service: cu.service, fonction: cu.fonction || '', rotation: rr0, aujourdhui: auj(), debut: d0s, jours: ns, grille: demoGrilleDe(cu.email, d0s, ns) }; }
+        var netsA = 0; demoMods().forEach(function (m) { if (m.statut === 'approuvee' && m.email === cu.email) netsA += m.rq_net || 0; });
+        return { uid: cu.uid, nom: cu.nom, service: cu.service, fonction: cu.fonction || '', rotation: rr0, aujourdhui: auj(), debut: d0s, jours: ns, grille: demoGrilleDe(cu.email, d0s, ns), reliquat_initial: rr0.reliquat === undefined ? null : rr0.reliquat, solde: (rr0.reliquat || 0) + netsA }; }
       case 'simu_valider': { exigerAdmin(); var itemsV = Array.isArray(p.lot) && p.lot.length ? p.lot : [p], motifV = String(p.motif || 'Raison de service').trim();
         if (motifV.length < 3) throw erreur('Indiquez le motif de la demande');
         var prepV = itemsV.map(function (it) {
@@ -247,12 +253,12 @@
           var cy = rv.jours_travail + rv.jours_repos, F = plus(mv.debut, -(cy + 30)); if (F < rv.depuis) F = rv.depuis;
           var fin = plus(Simulation.dateReprise(mv), 2 * cy - 1), nn = ecart(F, fin) + 1, off = demoGrilleDe(cv.email, F, nn), mod = Simulation.appliquer(off, F, mv, rv);
           var du = mv.debut; if (du > F) { var ii = ecart(F, du) - 1, cc = off.charAt(ii); while (ii > 0 && off.charAt(ii - 1) === cc) ii -= 1; du = plus(F, ii); }
-          return { cv: cv, mv: mv, actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14) };
+          return { cv: cv, mv: mv, rq: Simulation.reliquatDetail(off, mod, F, mv), actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14) };
         });
         var lm = demoMods(), numerosV = [], docsV = [];
         prepV.forEach(function (q) {
           var numero = 'MOD-' + new Date().getFullYear() + '-' + ('000' + (lm.length + 1)).slice(-4);
-          var nm = { numero: numero, cree_le: new Date().toISOString(), email: q.cv.email, emetteur: demoState.user.email, motif: motifV, modif: q.mv, statut: 'en_attente', actuel: q.actuel, modifie: q.modifie };
+          var nm = { numero: numero, cree_le: new Date().toISOString(), email: q.cv.email, emetteur: demoState.user.email, motif: motifV, modif: q.mv, statut: 'en_attente', rq_net: q.rq.net, actuel: q.actuel, modifie: q.modifie };
           lm.push(nm); numerosV.push(numero); docsV.push(demoDoc(nm));
         });
         saveMods(lm); return { numero: numerosV[0], numeros: numerosV, emails: 4, demande: docsV[0], demandes: docsV }; }

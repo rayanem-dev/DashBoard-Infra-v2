@@ -17,12 +17,14 @@
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 
 <main class="portail">
+  <div class="titre-impression"><h1 id="t-imp">Planning & rotations</h1><p id="s-imp"></p></div>
   <div class="stats" id="stats"></div>
   <div class="barre" id="barre-vue">
     <div class="vues" role="group" aria-label="Vue" id="vues">
       <button data-v="1">Mois</button><button data-v="3">3 mois</button><button data-v="6">6 mois</button><button data-v="12">1 an</button>
     </div>
     <div class="nav-periode"><button class="btn-s" id="prec" type="button" aria-label="Période précédente">‹</button><b id="periode"></b><button class="btn-s" id="suiv" type="button" aria-label="Période suivante">›</button><button class="btn-s" id="auj" type="button">Aujourd'hui</button></div>
+    <button class="btn-s no-print" id="imprimer" type="button" title="Imprimer ou enregistrer en PDF">🖨 Imprimer / PDF</button>
     <div class="legende"><span><i style="background:var(--c-T)"></i>Travail</span><span><i style="background:var(--c-R)"></i>Repos</span><span><i style="background:var(--c-ABS)"></i>Absence</span><span><i style="background:var(--c-T-prevu);border:1px solid #BFE3B1"></i><i style="background:var(--c-R-prevu);border:1px solid #F4C3A5"></i>Prévu (à venir)</span></div>
   </div>
   <div class="barre" id="barre-filtres" hidden>
@@ -33,7 +35,7 @@
     <select id="etat" aria-label="Situation"><option value="">Toutes les situations</option><option value="T">Au travail</option><option value="R">En repos</option><option value="N">Non configurés</option></select>
   </div>
   <section class="panneau" style="padding:0">
-    <div style="overflow:auto;max-height:70vh"><table class="plan2" id="tab"></table></div>
+    <div class="defile" style="overflow:auto;max-height:70vh"><table class="plan2" id="tab"></table></div>
   </section>
   <p class="aide" id="aide" style="margin-top:12px"></p>
 </main>
@@ -199,6 +201,11 @@
 
   // ---------- Chargement ----------
   var MOI = /[?&]moi=1(&|$)/.test(location.search); // « Mon planning » depuis la fiche du portail : seule ma ligne, même si j'ai le droit de voir les équipes
+  $('imprimer').addEventListener('click', function () {
+    $('t-imp').textContent = ($('titre').textContent || 'Planning & rotations') + ' — Division Infrastructure RNS';
+    $('s-imp').textContent = ($('periode').textContent || '') + ' · imprimé le ' + new Date().toLocaleDateString('fr-FR') + (Api.demo ? ' · données fictives' : '');
+    window.print();
+  });
   function charger() {
     var b = bornes();
     return Api.call('planning', { debut: b.debut, jours: b.jours }).then(function (r) {

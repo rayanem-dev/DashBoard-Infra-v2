@@ -166,8 +166,8 @@ var Simulation = (function () {
    *  - plusieurs périodes : on cumule, et on retient le PLUS FORT reliquat atteint (28 j de travail en plus suivis de 28 j de repos en plus : +28, pas 0).
    * + = jours travaillés en plus, reliquat à récupérer ; − = jours de repos en plus. 0 si pas de modification.
    */
-  function reliquat(off, mod, debutF, m) {
-    if (!m) return 0;
+  function reliquatDetail(off, mod, debutF, m) {
+    if (!m) return { pic: 0, net: 0 };
     var total = 0, pic = 0, d = m.debut;
     m.periodes.forEach(function (p) {
       var i = diff(debutF, d), st = i >= 0 && i < off.length ? off.charAt(i) : '', sg = p.type === 'T' ? 1 : -1;
@@ -178,8 +178,9 @@ var Simulation = (function () {
       if (Math.abs(total) > Math.abs(pic)) pic = total; // on retient le plus fort reliquat atteint (un travail en plus compensé ensuite par du repos reste concédé le temps de la transition)
       d = addDays(d, p.jours);
     });
-    return pic;
+    return { pic: pic, net: total }; // pic : reliquat concédé pendant la transition ; net : solde laissé une fois la transition terminée
   }
+  function reliquat(off, mod, debutF, m) { return reliquatDetail(off, mod, debutF, m).pic; }
 
   /** Une passe : { conflits (jours), maxChev, maxTrou (plus longues séries), dernier (index du dernier jour en conflit, −1 si aucun) } à partir de depuisIdx. */
   function analyser(gA, gB, depuisIdx, tolC, tolV) {
@@ -224,7 +225,8 @@ var Simulation = (function () {
 
   /**
    * Propose des modifications de A et/ou de B (les deux ensemble si cela raccourcit la transition) qui les mettent en vis-à-vis.
-   * opts : { offA, offB, debutF, rotA, rotB, debut, tolChev, tolTrou, pas (1 ou 7 : ajustement au jour ou par semaine), alignerReleve, maxTransition, max }.
+   * opts : { offA, offB, debutF, rotA, rotB, debut, tolChev, tolTrou, pas (1 ou 7 : ajustement au jour ou par semaine), alignerReleve, maxTransition, maxTotal, preference, soldeA, soldeB, max }.
+   * soldeA / soldeB : reliquat déjà détenu par chaque agent ; le classement porte sur le solde APRÈS modification (solde + reliquat concédé).
    * Classement : jours en conflit, puis jours de transition au total, puis nombre d'agents modifiés.
    * Retourne [{ A: modif|null, B: modif|null, grilleA, grilleB, conflits, transition, agents }].
    */
@@ -234,16 +236,17 @@ var Simulation = (function () {
     // Le vis-à-vis est exigé à partir de la date choisie : un candidat qui attend la prochaine relève laisse des conflits d'ici là, ce que la priorité « établi au plus tôt » compte.
     var depuisIdx = Math.max(0, diff(opts.debutF, opts.debut)), depuisDate = addDays(opts.debutF, depuisIdx);
     var cyMax = Math.max(Number(opts.rotA.jours_travail) + Number(opts.rotA.jours_repos), Number(opts.rotB.jours_travail) + Number(opts.rotB.jours_repos));
+    var sA = Number(opts.soldeA) || 0, sB = Number(opts.soldeB) || 0; // reliquat déjà détenu par chaque agent (+ : jours dus, − : jours pris en avance)
     var AU = cA.un.concat(cA.deux), BU = cB.un.concat(cB.deux), res = [];
     function essayer(a, b) {
       if (!a.modif && !b.modif) return; // aucune modification : ce n'est pas une proposition
       var gA = a.grille, gB = b.grille;
-      var rA = reliquat(opts.offA, gA, opts.debutF, a.modif), rB = reliquat(opts.offB, gB, opts.debutF, b.modif);
+      var rA = reliquat(opts.offA, gA, opts.debutF, a.modif), rB = reliquat(opts.offB, gB, opts.debutF, b.modif), tA = sA + rA, tB = sB + rB; // solde existant + reliquat concédé
       if (pref === 'negatif' && (rA > 0 || rB > 0)) return;   // personne ne travaille plus que prévu : congés prolongés seulement
       if (pref === 'positif' && (rA < 0 || rB < 0)) return;   // personne ne rallonge son congé : congés écourtés / travail en plus seulement
       var c = analyser(gA, gB, depuisIdx, tolC, tolV), tr = (a.modif ? totalJours(a.modif) : 0) + (b.modif ? totalJours(b.modif) : 0);
       var stable = c.dernier < c.n - cyMax; // les conflits cessent bien avant la fin de l'horizon : le vis-à-vis finit par s'établir
-      res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), pire: Math.max(Math.abs(rA), Math.abs(rB)), petit: Math.min(Math.abs(rA), Math.abs(rB)), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, stable: stable, etabli: c.dernier + 1 < depuisIdx ? depuisIdx : c.dernier + 1, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
+      res.push({ a: a, b: b, reliquatA: rA, reliquatB: rB, concession: Math.abs(rA) + Math.abs(rB), soldeA: tA, soldeB: tB, pire: Math.max(Math.abs(tA), Math.abs(tB)), petit: Math.min(Math.abs(tA), Math.abs(tB)), conflits: c.conflits, maxChev: c.maxChev, maxTrou: c.maxTrou, stable: stable, etabli: c.dernier + 1 < depuisIdx ? depuisIdx : c.dernier + 1, transition: tr, agents: (a.modif ? 1 : 0) + (b.modif ? 1 : 0) });
     }
     var i, j, B0 = cB.un[0], A0 = cA.un[0];
     for (i = 1; i < AU.length; i += 1) essayer(AU[i], B0);
@@ -261,13 +264,13 @@ var Simulation = (function () {
     var vus = {}, out = [];
     for (i = 0; i < res.length && out.length < (opts.max || 10); i += 1) {
       var r = res[i], k = r.a.grille + '|' + r.b.grille; if (vus[k]) continue; vus[k] = true;
-      out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, reliquatA: r.reliquatA, reliquatB: r.reliquatB, concession: r.concession, pire: r.pire,
+      out.push({ A: r.a.modif, B: r.b.modif, grilleA: r.a.grille, grilleB: r.b.grille, conflits: r.conflits, transition: r.transition, agents: r.agents, reliquatA: r.reliquatA, reliquatB: r.reliquatB, concession: r.concession, pire: r.pire, soldeApresA: r.soldeA, soldeApresB: r.soldeB,
                  tolChevMin: r.maxChev, tolTrouMin: r.maxTrou, stable: r.stable, etabliLe: addDays(opts.debutF, r.etabli), jusquEtabli: r.etabli - depuisIdx, depuis: depuisDate });
     }
     return out;
   }
 
-  return { reliquat: reliquat, proposerPaire: proposerPaire, prochaineReleve: prochaineReleve, addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
+  return { reliquatDetail: reliquatDetail, reliquat: reliquat, proposerPaire: proposerPaire, prochaineReleve: prochaineReleve, addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
            corrections: corrections, tableau: tableau, conflits: conflits, proposer: proposer };
 })();
 

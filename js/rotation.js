@@ -55,6 +55,10 @@
       ligne.hidden = true; var p = sRot.value.split('/'); jt.value = p[0]; jr.value = p[1];
     });
 
+    var iRel = document.createElement('input'); iRel.type = 'number'; iRel.min = -365; iRel.max = 365; iRel.step = 1; iRel.value = v.reliquat == null ? 0 : v.reliquat;
+    f.appendChild(champ('4. Reliquat initial (jours)', iRel));
+    f.appendChild(el('p', 'aide', 'Jours de congé qui vous sont dus (+), ou jours pris en avance (−) à ce jour. Laissez 0 si vous n\'avez ni l\'un ni l\'autre : il sert à proposer des plannings qui tiennent compte de votre reliquat.'));
+
     var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
     var boutons = el('div', 'boutons');
     var ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
@@ -63,7 +67,7 @@
 
     f.addEventListener('submit', function (e) {
       e.preventDefault(); ok.disabled = true; msg.className = 'msg';
-      var p = { statut: sStat.value, depuis: iDate.value, jours_travail: Number(jt.value), jours_repos: Number(jr.value) };
+      var p = { statut: sStat.value, depuis: iDate.value, jours_travail: Number(jt.value), jours_repos: Number(jr.value), reliquat: iRel.value === '' ? 0 : Number(iRel.value) };
       if (options.email) p.email = options.email;
       Api.call('rotation_enregistrer', p).then(function () { try { localStorage.setItem('infra_v2_derniere_rotation', JSON.stringify({ statut: p.statut, jours_travail: p.jours_travail, jours_repos: p.jours_repos })); } catch (e) {} dlg.close(); if (options.onOk) options.onOk(); })
         .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
@@ -74,9 +78,32 @@
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   }
 
-  /** Les autres pages exigent une rotation renseignée : sinon retour au portail, où elle est demandée avant tout accès. */
+  /** Les autres pages exigent une rotation ET un reliquat renseignés : sinon retour au portail, où ils sont demandés avant tout accès. */
   function exiger() {
-    Api.call('situation').then(function (r) { if (r.acces && !r.configuree) location.replace('portail.html'); }).catch(function () {});
+    Api.call('situation').then(function (r) { if (r.acces && (!r.configuree || r.reliquat_renseigne === false)) location.replace('portail.html'); }).catch(function () {});
   }
-  window.Rotation = { exiger: exiger, phrase: phrase, ouvrir: ouvrir, frDate: frDate, aujourdhui: aujourdhui };
+
+  /**
+   * Fenêtre « Votre reliquat » (obligatoire, valeur par défaut 0) pour ceux dont la rotation est déjà enregistrée mais qui n'ont pas encore indiqué leur reliquat.
+   * options : { onOk() }
+   */
+  function reliquat(options) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
+    f.appendChild(el('h2', null, 'Votre reliquat de congé'));
+    f.appendChild(el('p', 'sous', 'Une seule fois : combien de jours de congé vous sont dus (+) ou avez-vous pris en avance (−) ? Laissez 0 si vous n\'en avez pas.'));
+    var i = document.createElement('input'); i.type = 'number'; i.min = -365; i.max = 365; i.step = 1; i.value = 0;
+    f.appendChild(champ('Reliquat initial (jours)', i));
+    f.appendChild(el('p', 'aide', 'Ex. : +14 si vous avez 14 jours de congé non pris ; −7 si vous avez pris 7 jours de congé en avance. Il sert à proposer des plannings qui tiennent compte de votre reliquat. Vous pourrez le modifier en changeant votre rotation.'));
+    var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
+    var b = el('div', 'boutons'), ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit'; b.appendChild(ok); f.appendChild(b);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); ok.disabled = true; msg.className = 'msg';
+      Api.call('reliquat_enregistrer', { reliquat: i.value === '' ? 0 : Number(i.value) }).then(function () { dlg.close(); if (options && options.onOk) options.onOk(); })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('cancel', function (e) { e.preventDefault(); });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg);
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+  window.Rotation = { reliquat: reliquat, exiger: exiger, phrase: phrase, ouvrir: ouvrir, frDate: frDate, aujourdhui: aujourdhui };
 })();

@@ -96,6 +96,30 @@ function preparerSimulation_() {
   finally { if (lock) { try { lock.releaseLock(); } catch (e2) {} } }
 }
 
+/**
+ * Ajoute, une fois par version de structure (propriété STRUCT_V), les colonnes manquantes de chaque onglet existant (ex. « reliquat » dans Rotations).
+ * Idempotent, ne touche à aucune donnée. Appelée au premier passage du portail : plus besoin de lancer mettreAJourStructure.
+ */
+var STRUCT_VERSION_ = '1';
+function preparerStructure_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('STRUCT_V') === STRUCT_VERSION_) return;
+  var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
+  try {
+    if (lock) lock.waitLock(20000);
+    if (props.getProperty('STRUCT_V') === STRUCT_VERSION_) return;
+    var db = SpreadsheetApp.openById(prop_('DB_ID'));
+    Object.keys(SCHEMA_).forEach(function (n) {
+      var sh = db.getSheetByName(n); if (!sh) return;
+      var entetes = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0].map(String);
+      SCHEMA_[n].forEach(function (c) { if (entetes.indexOf(c) === -1) { sh.getRange(1, entetes.length + 1).setValue(c); entetes.push(c); } });
+      try { CacheService.getScriptCache().remove('TBL_' + n); } catch (e) {}
+    });
+    props.setProperty('STRUCT_V', STRUCT_VERSION_);
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+  finally { if (lock) { try { lock.releaseLock(); } catch (e2) {} } }
+}
+
 /** Remplit l'onglet « Roles » avec les rôles d'origine s'il est vide. */
 function ajouterRolesParDefaut() {
   var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Roles');
@@ -124,10 +148,10 @@ var SCHEMA_ = {
   Roles: ['id', 'libelle', 'niveau_max', 'interdits'],
   DroitsRole: ['role', 'module', 'niveau'],
   Exceptions: ['email', 'module', 'niveau'],
-  Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le'],
+  Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le', 'reliquat'],
   Chantiers: ['id', 'nom', 'service', 'actif'],
   Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le'],
-  Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire'],
+  Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire', 'reliquat', 'reliquat_net'],
   Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
   Journal: ['date', 'action', 'email', 'detail']
 };

@@ -41,6 +41,15 @@ function correctionsParEmail_() {
     });
   return out;
 }
+/**
+ * Solde de reliquat d'un agent : reliquat initial saisi + reliquat laissé (net) par ses demandes APPROUVÉES.
+ */
+function soldeDe_(email) {
+  var rot = rotationDe_(email), solde = rot && rot.reliquat !== null ? rot.reliquat : 0, l = [];
+  try { l = Store.table('Modifications'); } catch (e) { l = []; }
+  l.forEach(function (r) { if (String(r.statut) === 'approuvee' && String(r.email).toLowerCase() === String(email).toLowerCase()) solde += Number(r.reliquat_net) || 0; });
+  return { initial: rot && rot.reliquat !== null ? rot.reliquat : null, solde: solde };
+}
 function correctionsDe_(email) { return correctionsParEmail_()[String(email).toLowerCase()] || []; }
 
 function simuAgents_(req) {
@@ -65,7 +74,7 @@ function simuDonnees_(req) {
   // la fenêtre commence à la même date pour tous les agents (avant le début de sa rotation, la grille est faite de « . ») : deux grilles se superposent toujours
   var n = Math.max(30, Math.min(400, Number(req.jours) || 240));
   return { uid: String(c.uid), nom: Annuaire.nomAffichable(c.nom, c.email), service: c.service || '', fonction: c.fonction || '', rotation: rot,
-           aujourdhui: auj, debut: debut, jours: n, grille: Planning.grille(rot, correctionsDe_(c.email), debut, n) };
+           aujourdhui: auj, debut: debut, jours: n, grille: Planning.grille(rot, correctionsDe_(c.email), debut, n), reliquat_initial: soldeDe_(c.email).initial, solde: soldeDe_(c.email).solde };
 }
 
 function simuModif_(req) {
@@ -81,7 +90,8 @@ function simuTableaux_(rot, corr, m) {
   var off = Planning.grille(rot, corr, F, n), mod = Simulation.appliquer(off, F, m, rot);
   var du = m.debut; // début de la période en cours la veille de la modification : repère pour le lecteur
   if (du > F) { var c = off.charAt(Simulation.diff(F, du) - 1); var i = Simulation.diff(F, du) - 1; while (i > 0 && off.charAt(i - 1) === c) i -= 1; du = Dates.addDays(F, i); }
-  return { actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14), reprise: rep };
+  var rq = Simulation.reliquatDetail(off, mod, F, m);
+  return { actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14), reprise: rep, reliquat: rq.pic, reliquat_net: rq.net };
 }
 
 function simuNumero_() {
@@ -119,7 +129,7 @@ function simuValider_(req) {
       var numero = simuNumero_(), autre = prets[1 - i];
       Store.maj('Modifications', { numero: numero }, {
         cree_le: new Date().toISOString(), email: p.c.email, emetteur: u.email, motif: motif, debut: p.m.debut, periodes: JSON.stringify(p.m.periodes), reprise: p.m.reprise,
-        partenaire: autre ? String(autre.c.uid) : String(req.partenaire || '').slice(0, 40), actuel: JSON.stringify(p.t.actuel), modifie: JSON.stringify(p.t.modifie), statut: 'en_attente', decide_par: '', decide_le: '', commentaire: ''
+        partenaire: autre ? String(autre.c.uid) : String(req.partenaire || '').slice(0, 40), actuel: JSON.stringify(p.t.actuel), modifie: JSON.stringify(p.t.modifie), statut: 'en_attente', decide_par: '', decide_le: '', commentaire: '', reliquat: p.t.reliquat, reliquat_net: p.t.reliquat_net
       });
       numeros.push(numero);
     });

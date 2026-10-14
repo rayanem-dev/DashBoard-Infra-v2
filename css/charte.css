@@ -293,3 +293,22 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent-actions { padding: 0 14px 6px; }
 .agent-actions .lien { font-size: 11px; }
 @media (max-width: 820px) { .agent-corps { grid-template-columns: 1fr; } .jauge-bloc { padding: 8px 0 14px; } }
+
+/* ===== Impression / PDF (planning, simulation) ===== */
+.titre-impression { display: none; }
+@media print {
+  @page { size: A4 landscape; margin: 9mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff !important; }
+  .bandeau, .demo-banner, .toast, .no-print, .barre, #barre-filtres, #barre-vue, footer.pied, .onglets, .raccourcis, dialog { display: none !important; }
+  main.portail { padding: 0 !important; max-width: none !important; }
+  .titre-impression { display: block !important; margin: 0 0 8px; }
+  .titre-impression h1 { font-size: 16px; margin: 0; } .titre-impression p { margin: 2px 0 0; font-size: 11px; color: #444; }
+  .defile { overflow: visible !important; max-height: none !important; }
+  .panneau, .bloc { box-shadow: none !important; border: 0 !important; }
+  .plan2 { font-size: 8px !important; }
+  /* simulation : on n'imprime que les périodes et le résultat */
+  body.imp-simu #b-qui, body.imp-simu #b-valider, body.imp-simu #z-prop, body.imp-simu #ajout, body.imp-simu #ajout-b, body.imp-simu .periode button, body.imp-simu #z-modb > label, body.imp-simu #p-dem, body.imp-simu .succes { display: none !important; }
+  body.imp-simu .frise-zone { overflow: visible !important; } body.imp-simu .frise { zoom: .8; }
+  body.imp-simu .bloc { break-inside: avoid; }
+}

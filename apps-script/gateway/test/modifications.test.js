@@ -127,3 +127,28 @@ test('lot de deux agents : tout est contrôlé avant d\'enregistrer ; deux deman
   assert.deepStrictEqual(m.tables.Modifications.map(x => x.partenaire), ['u4', 'u3']);
   assert.strictEqual(m.mails.length, 2);
 });
+
+test('reliquat initial : saisie validée, présent dans la situation ; solde = initial + reliquat net des demandes approuvées', () => {
+  const m = monde();
+  const sit0 = m.run("situationDe_(Store.utilisateur('agent.a@x.dz'))");
+  assert.strictEqual(sit0.reliquat_renseigne, false); assert.strictEqual(sit0.reliquat, null);
+  assert.throws(() => appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 'abc' }), /nombre entier/);
+  assert.throws(() => appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 1.5 }), /nombre entier/);
+  assert.throws(() => appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 999 }), /365/);
+  assert.throws(() => appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: '' }), /nombre entier/);
+  const sit = appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: -4 });
+  assert.strictEqual(sit.reliquat, -4); assert.strictEqual(sit.reliquat_renseigne, true);
+  assert.strictEqual(appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 0 }).reliquat_renseigne, true, '0 est une réponse valable');
+  appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 12 });
+  // la rotation peut être resaisie sans écraser le reliquat
+  appel(m, 'rotationEnregistrer_', 'agent.a@x.dz', { statut: 'T', depuis: '2026-09-01', jours_travail: 28, jours_repos: 28 });
+  assert.strictEqual(m.run("situationDe_(Store.utilisateur('agent.a@x.dz'))").reliquat, 12);
+  const d0 = appel(m, 'simuDonnees_', 'chef.div@x.dz', { uid: 'u3', debut: '2026-09-01', jours: 200 });
+  assert.strictEqual(d0.reliquat_initial, 12); assert.strictEqual(d0.solde, 12);
+  const { numero } = appel(m, 'simuValider_', 'chef.s1@x.dz', MODIF);
+  const row = m.tables.Modifications.find(x => x.numero === numero);
+  assert.ok(row.reliquat !== undefined && row.reliquat_net !== undefined, 'le reliquat de la demande est enregistré');
+  assert.strictEqual(appel(m, 'simuDonnees_', 'chef.div@x.dz', { uid: 'u3', debut: '2026-09-01', jours: 200 }).solde, 12, 'pas modifié tant que la demande n\'est pas approuvée');
+  appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'approuvee' });
+  assert.strictEqual(appel(m, 'simuDonnees_', 'chef.div@x.dz', { uid: 'u3', debut: '2026-09-01', jours: 200 }).solde, 12 + Number(row.reliquat_net));
+});

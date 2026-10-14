@@ -43,6 +43,7 @@ function route_(req) {
     case 'me':      { var um = Auth.userFromToken(req.token); return { user: pubUser_(um), acces: acces_(um) }; }
     case 'menu': {
       var u = Auth.userFromToken(req.token);
+      if (typeof preparerStructure_ === 'function') preparerStructure_();
       if (typeof preparerSimulation_ === 'function') preparerSimulation_();
       if (typeof preparerAffectation_ === 'function') preparerAffectation_();
       return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
@@ -56,6 +57,7 @@ function route_(req) {
     case 'profil_enregistrer': return profilEnregistrer_(req);
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
     case 'rotation_enregistrer': return rotationEnregistrer_(req);
+    case 'reliquat_enregistrer': return reliquatEnregistrer_(req);
     case 'planning': return planning_(req);
     case 'organigramme': return organigramme_(req);
     case 'aff_personnes': return affPersonnes_(req);
@@ -147,7 +149,8 @@ function jour_(v) {
 function rotationDe_(email) {
   var l = Store.table('Rotations'); email = String(email).toLowerCase();
   for (var i = 0; i < l.length; i += 1) if (String(l[i].email).toLowerCase() === email) {
-    return { statut: String(l[i].statut), depuis: jour_(l[i].depuis), jours_travail: Number(l[i].jours_travail), jours_repos: Number(l[i].jours_repos) };
+    var rq = l[i].reliquat;
+    return { statut: String(l[i].statut), depuis: jour_(l[i].depuis), jours_travail: Number(l[i].jours_travail), jours_repos: Number(l[i].jours_repos), reliquat: (rq === '' || rq == null || isNaN(Number(rq))) ? null : Number(rq) };
   }
   return null;
 }
@@ -155,7 +158,7 @@ function situationDe_(u) {
   if ((acces_(u).planning || 0) < 1) return { acces: false };
   var rot = rotationDe_(u.email);
   if (!rot) return { acces: true, configuree: false, nom: u.nom };
-  return { acces: true, configuree: true, nom: u.nom, rotation: rot, situation: Planning.situation(rot, correctionsDe_(u.email), Dates.today()) };
+  return { acces: true, configuree: true, nom: u.nom, rotation: rot, reliquat: rot.reliquat, reliquat_renseigne: rot.reliquat !== null, situation: Planning.situation(rot, correctionsDe_(u.email), Dates.today()) };
 }
 function rotationEnregistrer_(req) {
   var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;
@@ -164,9 +167,26 @@ function rotationEnregistrer_(req) {
   else if (niv < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
   var rot = { statut: String(req.statut), depuis: String(req.depuis), jours_travail: Number(req.jours_travail), jours_repos: Number(req.jours_repos) };
   var err = Planning.valider(rot, Dates.today()); if (err) throw new Error(err);
-  Store.maj('Rotations', { email: email }, { statut: rot.statut, depuis: rot.depuis, jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, maj_par: u.email, maj_le: new Date().toISOString() });
+  var champsRot = { statut: rot.statut, depuis: rot.depuis, jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, maj_par: u.email, maj_le: new Date().toISOString() };
+  if (req.reliquat !== undefined && req.reliquat !== null && req.reliquat !== '') champsRot.reliquat = reliquatValide_(req.reliquat); // sinon le reliquat déjà saisi est conservé
+  Store.maj('Rotations', { email: email }, champsRot);
   Store.journal('rotation', u.email, email + ' ' + rot.statut + ' depuis ' + rot.depuis + ' (' + rot.jours_travail + '/' + rot.jours_repos + ')');
   return situationDe_(Store.utilisateur(email));
+}
+/** Reliquat initial : entier de jours (+ : jours de congé dus, − : jours pris en avance). */
+function reliquatValide_(x) {
+  var n = Number(x);
+  if (x === '' || x === null || x === undefined || !isFinite(n) || Math.floor(n) !== n || Math.abs(n) > 365) throw new Error('Reliquat : un nombre entier de jours entre −365 et 365 (0 si vous n\'en avez pas)');
+  return n;
+}
+function reliquatEnregistrer_(req) {
+  var u = Auth.userFromToken(req.token);
+  if ((acces_(u).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  if (!rotationDe_(u.email)) throw new Error('Renseignez d\'abord votre rotation');
+  var v = reliquatValide_(req.reliquat);
+  Store.maj('Rotations', { email: u.email }, { reliquat: v, maj_par: u.email, maj_le: new Date().toISOString() });
+  Store.journal('reliquat', u.email, 'reliquat initial : ' + v);
+  return situationDe_(u);
 }
 function planning_(req) {
   var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;
@@ -186,7 +206,7 @@ function planning_(req) {
     if (!rot) return l;
     var corr = mods[String(x.email).toLowerCase()] || [];
     var s = Planning.situation(rot, corr, auj);
-    l.configuree = true; l.rotation = { jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, statut: rot.statut, depuis: rot.depuis };
+    l.configuree = true; l.rotation = { jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, statut: rot.statut, depuis: rot.depuis, reliquat: rot.reliquat };
     l.situation = s; l.grille = Planning.grille(rot, corr, debut, n);
     return l;
   });
