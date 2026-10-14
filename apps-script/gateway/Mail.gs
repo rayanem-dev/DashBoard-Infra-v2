@@ -35,7 +35,17 @@ var Mail = (function () {
         '<p>— Tableau de bord Division Infrastructure</p>'
     });
   }
-  return { masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande };
+  /** Changement d'affectation : à l'intéressé, à l'auteur, au chef de division et au secrétariat. */
+  function envoyerAffectation(dest, a) {
+    if (!dest.length) return;
+    MailApp.sendEmail({
+      to: dest.join(','), name: 'Division Infrastructure RNS', subject: '[Affectation] ' + a.nom + ' : ' + a.ancien + ' → ' + a.nouveau,
+      htmlBody: '<p><b>Changement d\'affectation</b> n° ' + esc(a.id) + '</p><p>Agent : <b>' + esc(a.nom) + '</b><br>Ancien service : ' + esc(a.ancien || '—') + '<br>Nouveau service : <b>' + esc(a.nouveau) + '</b>' +
+        (a.date_effet ? '<br>Date d\'effet : ' + esc(fr(a.date_effet)) : '') + (a.motif ? '<br>Motif : ' + esc(a.motif) : '') + '<br>Enregistré par : ' + esc(a.par) + '</p>' +
+        '<p>Le service est modifié dans l\'Organigramme (BDDORGA) et dans le portail.</p><p>— Tableau de bord Division Infrastructure</p>'
+    });
+  }
+  return { masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande, envoyerAffectation: envoyerAffectation };
 })();
 
 if (typeof module !== 'undefined') module.exports = Mail;

@@ -178,3 +178,10 @@ test('écriture dans BDDORGA : sans écraser, colonne SAP créée, NIN seulement
   assert.strictEqual(Annuaire.planEcriture(src, 'marie.durand@sonatrach.dz', { matricule: 'AUTRE' }).ecritures.length, 0, 'matricule déjà dans le fichier : intact');
   assert.match(Annuaire.planEcriture(src, 'inconnu@x.dz', { matricule: 'X' }).erreur, /absente/);
 });
+
+test('affectation : la cellule Service de la bonne ligne, rien d\'autre', () => {
+  const p = Annuaire.planAffectation(SRC, 'BENOIT.MARTIN463@gmail.com', '  Service   Construction ');
+  assert.strictEqual(p.ligne, 3); assert.strictEqual(p.col, 4); assert.strictEqual(p.ancien, 'CPM'); // colonne « Service » = 4e
+  assert.match(Annuaire.planAffectation(SRC, 'inconnu@x.dz', 'CPM').erreur, /absente/);
+  assert.match(Annuaire.planAffectation(SRC, 'benoit.martin463@gmail.com', '  ').erreur, /vide/);
+});

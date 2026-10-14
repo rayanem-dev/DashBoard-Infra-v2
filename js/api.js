@@ -28,6 +28,8 @@
         { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
       { id: 'simulation', titre: 'Simulation de planning', icone: '🧪', niveau: 3, apps: [
         { titre: 'Simulation de planning', description: 'Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande à signer.', emoji: '🧪', url: 'simulation.html' } ] },
+      { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [
+        { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
         { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
@@ -94,6 +96,13 @@
     return { statut: x.st, depuis: plus(a, -(x.jour - 1)), jour: x.jour, total: x.total, restants: rest, prochain: { date: plus(a, rest), statut: x.st === 'T' ? 'R' : 'T' }, prevu: true };
   }
   function demoGrille(rot, debut, n) { var o = ''; for (var i = 0; i < n; i += 1) { var x = statutAu(rot, plus(debut, i)); o += x ? x.st : '.'; } return o; }
+
+  // Affectations de démonstration (le service modifié est gardé dans le navigateur ; le vrai changement écrit dans BDDORGA côté passerelle).
+  var CLE_AFF = 'infra_v2_demo_aff';
+  function demoAff() { try { return JSON.parse(localStorage.getItem(CLE_AFF) || 'null') || { services: {}, hist: [] }; } catch (e) { return { services: {}, hist: [] }; } }
+  function saveAff(o) { try { localStorage.setItem(CLE_AFF, JSON.stringify(o)); } catch (e) {} }
+  function demoService(u) { return demoAff().services[u.uid] || u.service; }
+  function demoServices() { var s = {}; DEMO_USERS.forEach(function (u) { s[demoService(u)] = true; }); return Object.keys(s).sort(); }
 
   // Demandes de modification de planning de démonstration (stockées dans le navigateur ; le calcul réel est celui de Simulation / Modifications.gs).
   var CLE_MOD = 'infra_v2_demo_modifs';
@@ -204,6 +213,17 @@
           if (!c[1].test(v)) throw erreur(c[2] + ' : format invalide.'); dp[c[0]] = v; fait += 1; });
         if (!fait) throw erreur('Rien à enregistrer : ces champs sont déjà renseignés (pour les corriger, contactez le secrétariat).');
         return { user: pub(demoState.user) }; }
+      case 'aff_personnes': exigerAdmin();
+        return { niveau: 3, moi: demoState.user.uid, services: demoServices(), personnes: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: demoService(x), fonction: x.fonction || '', dependance: x.dependance || '' }; }) };
+      case 'aff_changer': { exigerAdmin(); var ca = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0]; if (!ca) throw erreur('Personne inconnue');
+        var nsv = String(p.service || '').replace(/\s+/g, ' ').trim(), asv = demoService(ca);
+        if (nsv.length < 2) throw erreur('Service : de 2 à 60 caractères'); if (nsv.toLowerCase() === asv.toLowerCase()) throw erreur('Cette personne est déjà dans ce service');
+        var ex = demoServices().filter(function (x) { return x.toLowerCase() === nsv.toLowerCase(); })[0];
+        if (ex) nsv = ex; else if (!p.creer) throw erreur('Ce service n\'existe pas encore : confirmez sa création');
+        var ov = demoAff(); ov.services[ca.uid] = nsv; var idA = 'AFF-' + new Date().getFullYear() + '-' + ('000' + (ov.hist.length + 1)).slice(-4);
+        ov.hist.unshift({ id: idA, date: new Date().toISOString(), nom: ca.nom, ancien: asv, nouveau: nsv, par: demoState.user.nom, motif: String(p.motif || ''), date_effet: p.date_effet || '' }); saveAff(ov);
+        return { id: idA, ancien: asv, nouveau: nsv, emails: 4 }; }
+      case 'aff_historique': exigerAdmin(); return { historique: demoAff().hist };
       case 'simu_agents': exigerAdmin();
         return { niveau: 3, moi: demoState.user.uid, agents: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', configuree: !!demoRots()[x.email] }; }) };
       case 'simu_donnees': { exigerAdmin(); var cu = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0], rr0 = cu && demoRots()[cu.email];

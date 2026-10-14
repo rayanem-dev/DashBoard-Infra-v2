@@ -4,6 +4,7 @@
  * Réponse : { ok: true, ... } ou { ok: false, erreur, code }.
  *
  * Planning (module « planning ») : situation, rotation_enregistrer (soi-même : niveau 1 ; autrui : niveau 3), planning (niveau 2 : tout le monde).
+ * Affectation du personnel (module « affectation », voir Affectations.gs) : aff_personnes, aff_changer, aff_historique.
  * Simulation de planning (module « simulation », voir Modifications.gs) : simu_agents, simu_donnees, simu_valider, simu_liste, simu_demande, simu_decider.
  * Rapports journaliers (module « rapports ») : rapports_chantiers, rapport_enregistrer, rapports_liste, rapport_viser, rapports_synthese (niveau 3).
  * Administration (niveau 3 sur le module « securite ») : admin_etat, admin_role, admin_actif, admin_droit, admin_exception, emettreCode.
@@ -42,6 +43,7 @@ function route_(req) {
     case 'menu': {
       var u = Auth.userFromToken(req.token);
       if (typeof preparerSimulation_ === 'function') preparerSimulation_();
+      if (typeof preparerAffectation_ === 'function') preparerAffectation_();
       return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
     }
     case 'emettreCode': {
@@ -54,6 +56,9 @@ function route_(req) {
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
     case 'rotation_enregistrer': return rotationEnregistrer_(req);
     case 'planning': return planning_(req);
+    case 'aff_personnes': return affPersonnes_(req);
+    case 'aff_changer': return affChanger_(req);
+    case 'aff_historique': return affHistorique_(req);
     case 'simu_agents': return simuAgents_(req);
     case 'simu_donnees': return simuDonnees_(req);
     case 'simu_valider': return simuValider_(req);

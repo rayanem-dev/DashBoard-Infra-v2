@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Affectation du personnel – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+<style>
+  .onglets { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; margin-bottom: 16px; }
+  .onglets button { border: 0; background: #fff; padding: 9px 18px; font: inherit; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+  .onglets button + button { border-left: 1.5px solid var(--border); }
+  .onglets button.actif { background: var(--orange-main); color: #fff; }
+  .bloc { background: #fff; border-radius: 14px; box-shadow: var(--shadow-card); padding: 18px 20px; margin-bottom: 16px; }
+  .bloc h2 { font-size: 15px; margin: 0 0 12px; }
+  .gf { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 18px; align-items: end; }
+  .gf label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 4px; }
+  .gf input, .gf select { width: 100%; padding: 9px 11px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: #fff; }
+  .res { max-height: 260px; overflow: auto; border: 1.5px solid var(--border); border-radius: 10px; margin-top: 8px; }
+  .res button { display: flex; width: 100%; justify-content: space-between; gap: 10px; text-align: left; border: 0; border-bottom: 1px solid #F1F3F5; background: #fff; padding: 8px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .res button:hover, .res button.sel { background: #FFF3E8; }
+  .res small { color: var(--text-muted); }
+  .btn-p { padding: 10px 18px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(232,93,4,.3); }
+  .btn-p:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+  .succes { background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+  .choisi { background: #F8FAFC; border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-top: 10px; }
+  table.h { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.h th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1.5px solid var(--border); }
+  table.h td { padding: 9px 10px; border-bottom: 1px solid #F1F3F5; vertical-align: top; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Affectation du personnel</h1><p>Sonatrach · RNS · Changement de service dans l'Organigramme (BDDORGA)</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+
+<main class="portail">
+  <div class="onglets" role="tablist"><button class="actif" id="o-aff" type="button">Affecter</button><button id="o-his" type="button">Historique</button></div>
+
+  <section id="p-aff">
+    <div class="succes" id="succes" hidden></div>
+    <div class="bloc">
+      <h2>1 · Qui ?</h2>
+      <div class="gf"><div><label for="q">Rechercher une personne</label><input type="text" id="q" placeholder="Nom, prénom ou service…" autocomplete="off"></div></div>
+      <div class="res" id="res"></div>
+      <div class="choisi" id="choisi" hidden></div>
+    </div>
+    <div class="bloc" id="b-ou" hidden>
+      <h2>2 · Dans quel service ?</h2>
+      <div class="gf">
+        <div><label for="service">Nouveau service</label><select id="service"></select></div>
+        <div id="z-autre" hidden><label for="autre">Nom du nouveau service</label><input type="text" id="autre" maxlength="60" placeholder="ex. Service Génie Civil"></div>
+        <div><label for="date-effet">Date d'effet (facultatif)</label><input type="date" id="date-effet"></div>
+        <div style="grid-column: 1 / -1"><label for="motif">Motif (facultatif)</label><input type="text" id="motif" maxlength="120" placeholder="ex. Réorganisation de la division"></div>
+      </div>
+      <p class="aide" id="aide" style="margin:10px 0 0"></p>
+      <div style="margin-top:12px"><button class="btn-p" id="valider" type="button" disabled>✔ Enregistrer l'affectation</button></div>
+      <p class="aide" style="margin:10px 0 0">Le service est modifié <b>dans l'Organigramme (BDDORGA)</b> puis dans le portail ; si l'écriture dans BDDORGA échoue, rien n'est modifié. L'intéressé, le chef de division et le secrétariat reçoivent un e-mail, et l'opération est conservée dans l'historique. Les droits du planning par service suivent le nouveau service.</p>
+    </div>
+  </section>
+
+  <section id="p-his" hidden><div class="bloc" style="padding:0;overflow:auto"><table class="h" id="t-his"></table></div></section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function fr(d) { return d ? String(d).slice(8, 10) + '/' + String(d).slice(5, 7) + '/' + String(d).slice(0, 4) : ''; }
+  function toast(t, err) { var z = $('toast'); z.textContent = t; z.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { z.className = 'toast'; }, 4500); }
+  function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  var D = { personnes: [], services: [] }, choisi = null, niveau = 0, moi = '';
+
+  function charger() {
+    return Api.call('aff_personnes').then(function (r) { D = r; niveau = r.niveau; moi = r.moi; dessinerListe(); }).catch(function (e) {
+      if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+      if (e.code === 'DROITS') { location.replace('portail.html'); return; }
+      $('res').textContent = '⚠ ' + e.message + (/inconnue/i.test(e.message) ? ' (la passerelle n\'est pas encore à jour : attendez la fin du déploiement)' : '');
+    });
+  }
+  function dessinerListe() {
+    var f = norm($('q').value), z = $('res'); z.textContent = '';
+    var l = D.personnes.filter(function (p) { return !f || norm(p.nom + ' ' + p.service).indexOf(f) !== -1; }).slice(0, 60);
+    if (!l.length) { z.appendChild(el('div', 'aide', 'Aucune personne trouvée.')).style.padding = '10px 12px'; return; }
+    l.forEach(function (p) {
+      var b = el('button'); b.type = 'button'; if (choisi && choisi.uid === p.uid) b.className = 'sel';
+      b.appendChild(el('span', null, p.nom + (p.dependance && p.dependance !== 'SONATRACH' ? ' · ' + p.dependance : ''))); b.appendChild(el('small', null, p.service || '(sans service)'));
+      b.addEventListener('click', function () { selectionner(p); }); z.appendChild(b);
+    });
+  }
+  function selectionner(p) {
+    choisi = p; dessinerListe();
+    var c = $('choisi'); c.hidden = false; c.textContent = ''; c.appendChild(document.createTextNode('Personne : ')); c.appendChild(el('b', null, p.nom)); c.appendChild(document.createTextNode(' — service actuel : ')); c.appendChild(el('b', null, p.service || '(sans service)'));
+    var s = $('service'); s.textContent = ''; s.appendChild(new Option('Choisissez un service…', ''));
+    D.services.forEach(function (x) { if (x.toLowerCase() !== (p.service || '').toLowerCase()) s.appendChild(new Option(x, x)); });
+    s.appendChild(new Option('➕ Autre service (nouveau)…', '__autre')); $('z-autre').hidden = true; $('autre').value = '';
+    $('b-ou').hidden = false; maj();
+  }
+  function cible() { return $('service').value === '__autre' ? $('autre').value.replace(/\s+/g, ' ').trim() : $('service').value; }
+  function maj() {
+    $('z-autre').hidden = $('service').value !== '__autre';
+    var c = cible(), ok = !!choisi && c.length >= 2 && c.toLowerCase() !== (choisi.service || '').toLowerCase();
+    $('valider').disabled = !ok;
+    $('aide').textContent = ok ? (choisi.nom + ' passera de « ' + (choisi.service || '—') + ' » à « ' + c + ' »' + ($('service').value === '__autre' ? ' (nouveau service : sa création sera confirmée).' : '.')) : '';
+  }
+  function valider() {
+    var nouveau = $('service').value === '__autre';
+    if (nouveau && !confirm('Le service « ' + cible() + ' » n\'existe pas encore. Le créer ?')) return;
+    var btn = $('valider'); btn.disabled = true;
+    Api.call('aff_changer', { uid: choisi.uid, service: cible(), creer: nouveau, motif: $('motif').value, date_effet: $('date-effet').value }).then(function (r) {
+      var s = $('succes'); s.hidden = false; s.textContent = ''; s.appendChild(el('b', null, 'Affectation ' + r.id + ' enregistrée : '));
+      s.appendChild(document.createTextNode(choisi.nom + ' — « ' + (r.ancien || '—') + ' » → « ' + r.nouveau + ' » dans BDDORGA et dans le portail. ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s).' : '')));
+      choisi = null; $('choisi').hidden = true; $('b-ou').hidden = true; $('motif').value = ''; $('date-effet').value = ''; $('q').value = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' }); return charger().then(historique);
+    }).catch(function (e) { toast(e.message, true); btn.disabled = false; });
+  }
+  function historique() {
+    return Api.call('aff_historique').then(function (r) {
+      var t = $('t-his'); t.textContent = ''; var h = el('thead'), hr = el('tr'); ['Date', 'Personne', 'Ancien service', 'Nouveau service', 'Par', 'Motif'].forEach(function (x) { hr.appendChild(el('th', null, x)); }); h.appendChild(hr); t.appendChild(h);
+      var b = el('tbody'); if (!r.historique.length) { var tr0 = el('tr'), td = el('td', null, 'Aucune affectation enregistrée.'); td.colSpan = 6; tr0.appendChild(td); b.appendChild(tr0); }
+      r.historique.forEach(function (x) { var tr = el('tr'); [fr(x.date_effet || x.date), x.nom, x.ancien || '—', x.nouveau, x.par, x.motif].forEach(function (v) { tr.appendChild(el('td', null, v)); }); b.appendChild(tr); });
+      t.appendChild(b);
+    }).catch(function () {});
+  }
+  $('q').addEventListener('input', dessinerListe); $('service').addEventListener('change', maj); $('autre').addEventListener('input', maj); $('valider').addEventListener('click', valider);
+  $('o-aff').addEventListener('click', function () { $('p-aff').hidden = false; $('p-his').hidden = true; $('o-aff').classList.add('actif'); $('o-his').classList.remove('actif'); });
+  $('o-his').addEventListener('click', function () { $('p-aff').hidden = true; $('p-his').hidden = false; $('o-his').classList.add('actif'); $('o-aff').classList.remove('actif'); });
+  charger().then(historique);
+})();
+</script>
+</body>
+</html>

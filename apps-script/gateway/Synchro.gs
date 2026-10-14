@@ -92,3 +92,14 @@ function ecrireDansBddorga_(email, champs) {
 /** À lancer UNIQUEMENT après avoir restreint le partage du fichier Organigramme (plus de « tous les utilisateurs disposant du lien »). */
 function autoriserEcritureNIN() { PropertiesService.getScriptProperties().setProperty('ORGA_ECRIRE_NIN', '1'); Logger.log('Écriture du NIN dans BDDORGA : ACTIVÉE'); }
 function interdireEcritureNIN() { PropertiesService.getScriptProperties().deleteProperty('ORGA_ECRIRE_NIN'); Logger.log('Écriture du NIN dans BDDORGA : désactivée'); }
+
+/** Écrit le nouveau SERVICE d'une personne dans BDDORGA (cellule « Service » de sa ligne). Retourne l'ancien service. Lève une erreur si impossible. */
+function ecrireServiceBddorga_(email, service) {
+  var id = PropertiesService.getScriptProperties().getProperty('ORGA_ID') || ORGA_ID_DEFAUT;
+  var sh = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
+  if (!sh) throw new Error('Onglet BDDORGA introuvable');
+  var plan = Annuaire.planAffectation(sh.getDataRange().getValues(), email, service);
+  if (plan.erreur) throw new Error(plan.erreur);
+  var cell = sh.getRange(plan.ligne, plan.col); cell.setNumberFormat('@'); cell.setValue(String(service));
+  return plan.ancien;
+}

@@ -171,7 +171,22 @@ var Annuaire = (function () {
     return { ligne: ligne + 1, ecritures: ecritures };
   }
 
-  return { nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
+  /**
+   * Plan d'écriture d'un CHANGEMENT DE SERVICE dans BDDORGA : { ligne, col (1-based), ancien } ou { erreur }.
+   * Ne touche qu'à la cellule « Service » de la ligne de la personne (repérée par son e-mail).
+   */
+  function planAffectation(valeurs, email, service) {
+    var c = colonnes(valeurs || []);
+    if (c.erreur) return { erreur: c.erreur };
+    var mail = t(email).toLowerCase(), nouveau = t(service);
+    if (!nouveau) return { erreur: 'Service vide' };
+    for (var r = c.ligne + 1; r < valeurs.length; r += 1) {
+      if (t(valeurs[r][c.idx.email]).toLowerCase() === mail) return { ligne: r + 1, col: c.idx.service + 1, ancien: t(valeurs[r][c.idx.service]) };
+    }
+    return { erreur: 'Adresse absente de BDDORGA : ' + mail };
+  }
+
+  return { planAffectation: planAffectation, nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Annuaire;

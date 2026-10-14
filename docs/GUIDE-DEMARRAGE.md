@@ -33,3 +33,10 @@ Le site actuel, tous les fichiers d'origine et le fichier Organigramme (traité 
    refusée → archivée sans effet.
 5. Le moteur est `js/simulation.js` (source unique) : le workflow de la passerelle le copie en `Simulation.gs` avant le déploiement ; il est testé contre le moteur de Sijil (parité).
    Le lien envoyé par e-mail utilise la propriété de script `SITE_URL` (par défaut l'adresse GitHub Pages du portail).
+
+## Affectation du personnel (module « affectation »)
+
+- Page `affectation.html` (carte « Affectation du personnel », module « Affectation (Organigramme) »). Droits par défaut : chef de division et secrétariat = niveau 3 (tout le personnel) ; le niveau 2 (les personnes de **son** service) s'accorde dans Privilèges.
+- Changer le service d'une personne : écrit **d'abord dans BDDORGA** (cellule « Service » de sa ligne, repérée par l'e-mail), puis dans la passerelle ; si BDDORGA refuse l'écriture, rien n'est modifié (sinon la synchronisation quotidienne remettrait l'ancien service). Historique dans l'onglet `Affectations` ; e-mail à l'intéressé, à l'auteur, au chef de division et au secrétariat.
+- Un service qui n'existe pas encore demande une confirmation de création. Le module se prépare tout seul au premier passage (onglet, module, droits, carte).
+- Limite : la page `Organigramme.html` (arbre dépliable) est écrite à la main et ne suit pas encore BDDORGA.

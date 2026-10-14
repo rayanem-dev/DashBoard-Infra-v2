@@ -46,6 +46,35 @@ function ajouterModuleSimulation() {
   Logger.log('Module simulation prêt (' + nouveaux.length + ' droit(s) ajouté(s)).');
 }
 
+// Module « affectation » : niveau 3 = tout le personnel (chef de division, secrétariat). Le niveau 2 (son service) s'accorde dans Privilèges.
+var DROITS_AFFECTATION_ = [['chef_division', 'affectation', 3], ['secretariat', 'affectation', 3]];
+function ajouterModuleAffectation() {
+  var db = SpreadsheetApp.openById(prop_('DB_ID'));
+  var mo = db.getSheetByName('Modules');
+  if (!mo.getDataRange().getValues().slice(1).some(function (l) { return String(l[0]).toLowerCase() === 'affectation'; })) mo.appendRow(['affectation', 'Affectation (Organigramme)', '🔀', 8, 1]);
+  var dr = db.getSheetByName('DroitsRole'), v = dr.getDataRange().getValues().slice(1);
+  var nouveaux = DROITS_AFFECTATION_.filter(function (r) { return !v.some(function (l) { return Droits.roleCanon(l[0]) === r[0] && String(l[1]).toLowerCase() === 'affectation'; }); });
+  if (nouveaux.length) dr.getRange(dr.getLastRow() + 1, 1, nouveaux.length, 3).setValues(nouveaux);
+  CacheService.getScriptCache().removeAll(['TBL_Modules', 'TBL_DroitsRole']);
+}
+/** Prépare le module « affectation » tout seul au premier passage (onglet Affectations, module, droits, carte). Idempotent. */
+function preparerAffectation_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('AFFECT_PRET') === '1') return;
+  var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
+  try {
+    if (lock) lock.waitLock(20000);
+    if (props.getProperty('AFFECT_PRET') === '1') return;
+    var db = SpreadsheetApp.openById(prop_('DB_ID'));
+    if (!db.getSheetByName('Affectations')) { var sh = db.insertSheet('Affectations'); sh.appendRow(SCHEMA_.Affectations); sh.setFrozenRows(1); sh.getRange('A:Z').setNumberFormat('@'); }
+    ajouterModuleAffectation();
+    ajouterApplicationsManquantes();
+    props.setProperty('AFFECT_PRET', '1');
+    ['TBL_Modules', 'TBL_DroitsRole', 'TBL_Applications', 'TBL_Affectations'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+  finally { if (lock) { try { lock.releaseLock(); } catch (e2) {} } }
+}
+
 /**
  * Prépare le module « simulation » tout seul au premier passage (onglet Modifications, module, droits par défaut, carte) : plus besoin de lancer
  * mettreAJourStructure pour l'ouvrir. Idempotent ; la propriété SIMU_PRET évite de le refaire. Ne touche à aucun réglage existant.
@@ -99,6 +128,7 @@ var SCHEMA_ = {
   Chantiers: ['id', 'nom', 'service', 'actif'],
   Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le'],
   Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire'],
+  Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
   Journal: ['date', 'action', 'email', 'detail']
 };
 
@@ -109,7 +139,7 @@ function formaterTextes_(db) {
   if (us && us.getLastColumn() > 0) { var en = us.getRange(1, 1, 1, us.getLastColumn()).getValues()[0].map(String); ['date_integration', 'matricule', 'sap', 'nin', 'sona', 'wifi_user'].forEach(function (nomCol) { var ci = en.indexOf(nomCol); if (ci >= 0) us.getRange(2, ci + 1, Math.max(1, us.getMaxRows() - 1), 1).setNumberFormat('@'); }); }
   var sh = db.getSheetByName('Rotations'); if (sh) { sh.getRange('C:C').setNumberFormat('@'); sh.getRange('G:G').setNumberFormat('@'); }
   // Rapports et chantiers : tout en TEXTE brut (aucune formule possible, aucune date convertie).
-  ['Rapports', 'Chantiers', 'Modifications'].forEach(function (n) { var x = db.getSheetByName(n); if (x) x.getRange('A:Z').setNumberFormat('@'); });
+  ['Rapports', 'Chantiers', 'Modifications', 'Affectations'].forEach(function (n) { var x = db.getSheetByName(n); if (x) x.getRange('A:Z').setNumberFormat('@'); });
 }
 
 /**
@@ -131,6 +161,7 @@ function mettreAJourStructure() {
   ajouterRolesParDefaut();
   ajouterDroitsParDefaut();
   ajouterModuleSimulation();
+  ajouterModuleAffectation();
   ajouterChantiersParDefaut();
   rangerCartes();
 }
