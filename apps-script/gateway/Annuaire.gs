@@ -160,10 +160,11 @@ var Annuaire = (function () {
     if (ligne < 0) return { erreur: 'Adresse absente de BDDORGA : ' + mail };
     var largeur = valeurs.reduce(function (m, row) { return Math.max(m, row.length); }, 0), ecritures = [];
     var autorises = ['matricule', 'sap']; if (options && options.nin) autorises.push('nin');
+    if (options && options.etendu) autorises.push('telephone', 'sona'); // contrôle de l'annuaire : compléter les cases vides, colonnes existantes seulement
     autorises.forEach(function (k) {
       var v = t(champs && champs[k]); if (!v) return;
       var col = c.idx[k], neuf = false;
-      if (col < 0) { if (k === 'matricule') return; col = largeur; neuf = true; largeur += 1; }
+      if (col < 0) { if (k === 'matricule' || k === 'telephone' || k === 'sona') return; col = largeur; neuf = true; largeur += 1; }
       if (!neuf && t(valeurs[ligne][col])) return; // déjà renseigné dans le fichier : on n'y touche pas
       var e = { col: col + 1, valeur: v }; if (neuf) { e.entete = k === 'nin' ? 'NIN' : 'Matricule SAP'; e.ligneEntete = c.ligne + 1; }
       ecritures.push(e);

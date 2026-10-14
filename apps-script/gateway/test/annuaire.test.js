@@ -185,3 +185,13 @@ test('affectation : la cellule Service de la bonne ligne, rien d\'autre', () => 
   assert.match(Annuaire.planAffectation(SRC, 'inconnu@x.dz', 'CPM').erreur, /absente/);
   assert.match(Annuaire.planAffectation(SRC, 'benoit.martin463@gmail.com', '  ').erreur, /vide/);
 });
+
+test('planEcriture étendu : téléphone et SONA seulement dans des cases vides, colonnes existantes, jamais d\'écrasement', () => {
+  const vals = [['Service', 'E-Mail', 'Nom', 'Matricule', 'Téléphone', 'SONA'], ['S1', 'a@x.dz', 'ALPHA', '', '', ''], ['S1', 'b@x.dz', 'BETA', 'M1', '0600000000', 'sona9']];
+  const p = Annuaire.planEcriture(vals, 'a@x.dz', { telephone: '0660514275', sona: 'sona1', matricule: '77N' }, { etendu: true });
+  assert.deepStrictEqual(p.ecritures.map(e => [e.col, e.valeur]).sort(), [[4, '77N'], [5, '0660514275'], [6, 'sona1']].sort());
+  const q = Annuaire.planEcriture(vals, 'b@x.dz', { telephone: '0700000000', sona: 'zz', matricule: 'M2' }, { etendu: true });
+  assert.strictEqual(q.ecritures.length, 0);
+  const r = Annuaire.planEcriture(vals, 'a@x.dz', { telephone: '0660514275' }, {}); // sans l'option : le téléphone n'est pas écrit
+  assert.strictEqual(r.ecritures.length, 0);
+});

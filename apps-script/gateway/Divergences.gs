@@ -85,7 +85,7 @@ var Divergences = (function () {
       if (!p) { sansBdd.push({ nom: c.nom, employeur: c.employeur, section: c.section, tels: c.tels, email: c.email, carte: c }); return; }
       appariees += 1; utilises[String(p.email).toLowerCase()] = true;
       if (confirmees[jetons(c.nom)] && String(confirmees[jetons(c.nom)]).toLowerCase() === String(p.email).toLowerCase()) rapproches.push({ nom: c.nom, bddorga: p.nom, email: p.email });
-      function noter(champ, fiche, bdd, types) { div.push({ nom: c.nom, champ: champ, fiche: fiche, bddorga: bdd, genre: types }); }
+      function noter(champ, fiche, bdd, types) { div.push({ nom: c.nom, champ: champ, fiche: fiche, bddorga: bdd, genre: types, email_bddorga: p.email, valeur_fiche: champ === 'Téléphone' ? (c.tels.length ? '0' + c.tels[0] : '') : champ === 'Identifiant SONA' ? c.sona : champ === 'Matricule' ? c.matricule : '' }); }
       var tb = neuf(p.telephone);
       if (c.tels.length && tb) { if (c.tels.indexOf(tb) === -1) noter('Téléphone', c.tels.join(' / '), p.telephone, 'different'); }
       else if (tb && !c.tels.length) noter('Téléphone', '', p.telephone, 'manque_fiche');
@@ -147,4 +147,24 @@ function contactsConfirmer_(req) {
   if (ligne) sh.getRange(ligne, 1, 1, 4).setValues([rec]); else sh.appendRow(rec);
   Store.journal('contact_rapproche', u.email, nom + ' → ' + email);
   return { enregistre: true };
+}
+
+/**
+ * Action « contacts_completer » : recopie dans BDDORGA les valeurs des fiches pour les cases VIDES (téléphone, identifiant SONA, matricule).
+ * N'écrase jamais une case déjà remplie. { appliquer: false } (défaut) = aperçu ; { appliquer: true } = écriture. Réservé à l'administration de la sécurité.
+ */
+function contactsCompleter_(req) {
+  var u = Auth.userFromToken(req.token);
+  if ((acces_(u).securite || 0) < 3) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  var rapport = contactsDivergences_(req), champs = { 'Téléphone': 'telephone', 'Identifiant SONA': 'sona', 'Matricule': 'matricule' };
+  var plan = rapport.divergences.filter(function (d) { return d.genre === 'manque_bddorga' && champs[d.champ] && d.valeur_fiche; })
+    .map(function (d) { return { nom: d.nom, email: d.email_bddorga, champ: d.champ, cle: champs[d.champ], valeur: d.valeur_fiche }; });
+  if (req.appliquer !== true) return { appliquer: false, plan: plan.map(function (x) { return { nom: x.nom, champ: x.champ, valeur: x.valeur }; }) };
+  var parPersonne = {}; plan.forEach(function (x) { (parPersonne[x.email] = parPersonne[x.email] || { nom: x.nom, champs: {} }).champs[x.cle] = x.valeur; });
+  var ecrites = 0, echecs = [];
+  Object.keys(parPersonne).forEach(function (email) {
+    try { ecrites += ecrireDansBddorga_(email, parPersonne[email].champs, true); } catch (e) { echecs.push(parPersonne[email].nom + ' : ' + e.message); }
+  });
+  Store.journal('bddorga_complete', u.email, ecrites + ' case(s) vide(s) remplie(s) depuis les fiches contact' + (echecs.length ? ' ; échecs : ' + echecs.join(' | ') : ''));
+  return { appliquer: true, ecrites: ecrites, echecs: echecs };
 }

@@ -183,6 +183,9 @@
         throw erreur('Données de démonstration non disponibles pour cette source');
       case 'contacts_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoState.rapproches = demoState.rapproches || {};
         if (p.email) demoState.rapproches[p.nom] = p.email; else delete demoState.rapproches[p.nom]; return { enregistre: true };
+      case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'HADJADJ Lamine', champ: 'Téléphone', valeur: '0660514275' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Identifiant SONA', valeur: 'sona29432' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Matricule', valeur: '77589N' }] };
+        return { appliquer: true, ecrites: 3, echecs: [] };
       case 'contacts_divergences': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var rap = demoState.rapproches || {}, khat = !!rap['KHATIRI Mohammed Sadek Elslam'];
         return { appariees: khat ? 42 : 41, fiches_personnes: 49, bddorga: 52, prestataires_non_compares: 58,
