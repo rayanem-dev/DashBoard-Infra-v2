@@ -2,11 +2,12 @@
 
 Mis à jour : 2026-10-18. Légende : ✅ fait · 🔄 en cours · ⏳ à faire · ⛔ bloqué (en attente de toi)
 
-## Étape 1 — Dotation Vivres & Eau (EN COURS)
-- ⛔ Il me faut le **code** de l'application Dotation. Je peux lire tes Docs, Sheets et fichiers texte dans le dossier Drive « Suivi » (sec.infra.rns), mais **pas** les projets Apps Script eux-mêmes.
-  - Ce que j'ai trouvé : seulement d'anciennes versions texte du script « Autorisation / Macaron » (`Code source/5.5 à 5.8.txt`), pas la dotation.
-  - À faire par toi : ouvrir https://script.google.com/home → trouver le projet de la dotation → *Paramètres du projet* ▸ **ID de script** → me l'envoyer (ou coller le code). Voir `docs/ORGANISATION.md`.
-- ⏳ Cause probable de la panne : nouveau format de l'onglet `BDDORGA` (colonne « NOM ET PRENOM » unique, E-Mail en colonne A). À confirmer avec le code.
+## Étape 1 — Dotation Vivres & Eau (CORRIGÉE, en attente de test)
+- ✅ Code importé dans `apps-script/dotation/` (ID de script `1KwAr_pkeQnocXG5ksMX8engvF_6PyhzwEZpC_i_tpXdIycKw7mxqZFNu`).
+- ✅ Cause : le script lisait `BDDORGA` par numéro de colonne (B = service, D = dépendance, E = nom) ; le fichier a maintenant E-Mail en A et « NOM ET PRENOM » en C. Corrigé : lecture par **nom d'en-tête**, ancien et nouveau format acceptés, message clair si une colonne manque. 3 tests.
+- ✅ Déploiement automatique (`deploy-dotation.yml`) sur la même adresse /exec.
+- ⏳ À toi : tester la dotation après le déploiement.
+- ⚠️ À vérifier : `ENTRETIEN_TEMPLATE_ID` (`1waO8d_…`) est un fichier .docx, or `DocumentApp` ne sait ouvrir qu'un Google Doc : utiliser le Google Doc « DOTATION PRODUITS D'ENTRETIEN » (`11DHNDUKWdfv5l3DLGl51eJUPG3KF7pTQ7no4CXv9rPg`) si la dotation Entretien échoue.
 
 ## Étape 2 — Regrouper tous les scripts dans le dépôt
 - ✅ Workflow « Importer des scripts » (Actions) + règle anti-secrets, dépôt public.

@@ -9,16 +9,21 @@ const DIVISION_TEMPLATE_ID = '16ZwFUJrw_-UjbeEeKfiy8YErNst2tYPvkY9MUXKLtYQ';
 const SHEET_ID = '1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA';
 const SHEET_TAB = 'BDDORGA';
 
-const COL_SERVICE = 1;     // colonne B
-const COL_DEPENDANCE = 3;  // colonne D
-const COL_NOM = 4;         // colonne E
+// Les colonnes sont repérées par le NOM de leur en-tête (et non par leur numéro) : le fichier Organigramme peut être réorganisé sans casser la dotation.
+// Plusieurs libellés sont acceptés pour chaque colonne (ancien et nouveau format).
+const ENTETES_ = {
+  nom: ['nom et prenom', 'nom prenom', 'nom'],
+  service: ['service'],
+  dependance: ['dependance', 'employeur']
+};
 
 function normalizeService(raw) {
   raw = (raw || '').toString().trim();
   if (raw === '' || raw.indexOf('Division Infrastructures') !== -1) return 'Division Infrastructure';
-  if (raw.indexOf('Génie Civil') !== -1) return 'Service Construction (Génie Civil)';
-  if (raw.indexOf('Travaux Entretien') !== -1) return 'Service Travaux Entretien';
-  if (raw.toLowerCase().indexOf('electrom') !== -1) return 'Service Electromécanique';
+  const t = normalizeTxt_(raw);
+  if (t.indexOf('genie civil') !== -1 || t.indexOf('construction') !== -1) return 'Service Construction (Génie Civil)';
+  if (t.indexOf('entretien') !== -1) return 'Service Travaux Entretien';
+  if (t.indexOf('electrom') !== -1) return 'Service Electromécanique';
   return raw;
 }
 
@@ -42,24 +47,36 @@ function doGet() {
     .setTitle('Dotations - Division Infrastructure');
 }
 
+// Lignes de BDDORGA sous la forme { nom, service, dependance }, d'après les en-têtes de la première ligne.
 function getOrgData_() {
-  const values = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_TAB).getDataRange().getValues();
-  values.shift();
-  return values;
+  const feuille = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_TAB);
+  if (!feuille) throw new Error('Onglet « ' + SHEET_TAB + ' » introuvable dans le fichier Organigramme.');
+  return lireOrg_(feuille.getDataRange().getValues());
+}
+
+function lireOrg_(values) {
+  const entetes = (values[0] || []).map(normalizeTxt_);
+  const idx = {};
+  Object.keys(ENTETES_).forEach(k => {
+    idx[k] = -1;
+    ENTETES_[k].some(nom => { const i = entetes.indexOf(nom); if (i >= 0) { idx[k] = i; return true; } return false; });
+    if (idx[k] < 0) throw new Error('Colonne « ' + ENTETES_[k][0] + ' » introuvable dans l\'onglet ' + SHEET_TAB + ' (en-têtes lus : ' + (values[0] || []).join(' | ') + ').');
+  });
+  return values.slice(1).map(r => ({ nom: r[idx.nom], service: r[idx.service], dependance: r[idx.dependance] }));
 }
 
 function getServices() {
   return SERVICES_VIVRES_EAU;
 }
 
-// Ne retourne que le personnel Sonatrach (colonne D = "SONATRACH"),
+// Ne retourne que le personnel Sonatrach (colonne « dependance » = "SONATRACH"),
 // les sous-traitants (ACOSCO, GTP, etc.) sont exclus.
 function getPersonnel(service) {
   const noms = [];
   getOrgData_().forEach(r => {
-    const nom = (r[COL_NOM] || '').toString().trim();
-    const dependance = (r[COL_DEPENDANCE] || '').toString().trim().toUpperCase();
-    if (normalizeService(r[COL_SERVICE]) === service && nom && dependance === 'SONATRACH') {
+    const nom = (r.nom || '').toString().trim();
+    const dependance = (r.dependance || '').toString().trim().toUpperCase();
+    if (normalizeService(r.service) === service && nom && dependance === 'SONATRACH') {
       noms.push(nom);
     }
   });
