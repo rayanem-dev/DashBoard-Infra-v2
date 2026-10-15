@@ -10,7 +10,8 @@ window.BADGES_CONFIG = {
   logo: 'logo-sonatrach.png',
   qr: { actif: true, face: 'verso' },
   photo: { actif: true },
-  arabe: { actif: false }
+  arabe: { actif: false },
+  police: { famille: 'Berlin Sans FB', taille: 11 }
   // Autres réglages possibles : carte {largeur, hauteur}, grille {colonnes, lignes, pasX, pasY}, decalage {x, y},
   // verso {miroir: 'colonnes' | 'lignes' | 'aucun', decalage {x, y}}, chiffres, numeroDepart, libelles {…} — voir README.md
 };

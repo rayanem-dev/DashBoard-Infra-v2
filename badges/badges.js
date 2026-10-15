@@ -21,7 +21,8 @@ var Badges = (function () {
     bordure: true,
     qr: { actif: true, face: 'verso', modele: '{ref}|{prenom} {nom}|{entreprise}|{contrat}' },
     photo: { actif: true },
-    arabe: { actif: false }
+    arabe: { actif: false },
+    police: { famille: 'Berlin Sans FB', taille: 11 }   // police d'impression (doit être installée sur le poste qui imprime ; sinon Calibri / Arial)
   };
 
   function fusion(base, sur) {
@@ -181,23 +182,25 @@ var Badges = (function () {
   }
   function cartesHtml(it, cfg, verso, opts) {
     opts = opts || {};
-    var L = cfg.libelles, W = cfg.carte.largeur, logo = '<img class="bdg-logo" src="' + esc(opts.logoUrl || cfg.logo) + '" alt="">';
+    var L = cfg.libelles, T = cfg.police.taille, W = cfg.carte.largeur, logo = '<img class="bdg-logo" src="' + esc(opts.logoUrl || cfg.logo) + '" alt="">';
     var qr = '';
     if (cfg.qr.actif && opts.qr && ((verso && cfg.qr.face !== 'recto') || (!verso && cfg.qr.face === 'recto'))) {
       var txt = String(cfg.qr.modele).replace('{ref}', it.ref || '').replace('{prenom}', it.prenom || '').replace('{nom}', it.nom || '').replace('{entreprise}', it.entreprise || '').replace('{contrat}', it.contrat || '').replace('{fonction}', it.fonction || '');
       qr = '<div class="bdg-qr">' + opts.qr(txt) + '</div>';
     }
-    var pied = '<div class="bdg-trait bdg-trait-pied"></div><div class="bdg-pied">' + esc(it.ref || '') + '</div>';
+    var tp = Math.min(T, Math.round((W - 8) / (Math.max(String(it.ref || '').length, 1) * 0.6 * 0.3528) * 10) / 10), // la référence tient sur une ligne
+        pied = '<div class="bdg-trait bdg-trait-pied"></div><div class="bdg-pied" style="font-size:' + tp + 'pt">' + esc(it.ref || '') + '</div>';
     if (verso) {
       var contrat = L.contrat + (it.contrat ? (/^N°/.test(it.contrat) ? ' ' : '') + it.contrat : '');
-      return logo + '<div class="bdg-trait bdg-trait-haut"></div><div class="bdg-contrat" style="font-size:' + taillePolice(contrat, 8.5, 34) + 'pt">' + esc(contrat) + '</div>' +
+      return logo + '<div class="bdg-trait bdg-trait-haut"></div><div class="bdg-contrat" style="font-size:' + taillePolice(contrat, T, 34 * 8.5 / T) + 'pt">' + esc(contrat) + '</div>' +
         '<div class="bdg-visas"><span>' + esc(L.visaPrestataire) + '</span><span>' + esc(L.visaStructure) + '</span></div>' + qr + pied;
     }
     var photo = (cfg.photo.actif && it.photo) ? '<img class="bdg-photo" src="' + esc(it.photo) + '" alt="">' : (cfg.photo.actif && opts.cadrePhoto ? '<div class="bdg-photo bdg-photo-vide"></div>' : '');
     var largeurChamps = W - 8 - (photo ? 25 : 0), k = photo ? 0.72 : 1;
-    var champs = ligneChamp(L.nom, majuscules(it.nom), cfg, taillePolice(it.nom, 8.5, 22 * k)) + ligneChamp(L.prenom, it.prenom, cfg, taillePolice(it.prenom, 8.5, 22 * k)) +
-      ligneChamp(L.fonction, it.fonction, cfg, taillePolice(it.fonction, 8.5, 26 * k)) + ligneChamp(L.entreprise, it.entreprise, cfg, taillePolice(it.entreprise, 8.5, 24 * k)) +
-      ligneChamp(L.structure, it.structure || cfg.structure, cfg, taillePolice(it.structure || cfg.structure, 8.5, 24 * k));
+    var f = 8.5 / T * k, // nombre de lettres tenant sur une ligne : proportionnel à la taille de police
+        champs = ligneChamp(L.nom, majuscules(it.nom), cfg, taillePolice(it.nom, T, 22 * f)) + ligneChamp(L.prenom, it.prenom, cfg, taillePolice(it.prenom, T, 22 * f)) +
+      ligneChamp(L.fonction, it.fonction, cfg, taillePolice(it.fonction, T, 26 * f)) + ligneChamp(L.entreprise, it.entreprise, cfg, taillePolice(it.entreprise, T, 24 * f)) +
+      ligneChamp(L.structure, it.structure || cfg.structure, cfg, taillePolice(it.structure || cfg.structure, T, 24 * f));
     var ar = (cfg.arabe.actif && (it.nomAr || it.prenomAr)) ? '<div class="bdg-ar" dir="rtl">' + esc((it.prenomAr || '') + ' ' + (it.nomAr || '')) + '</div>' : '';
     return logo + '<div class="bdg-titre">' + esc(cfg.titre) + '</div><div class="bdg-trait bdg-trait-haut"></div>' +
       '<div class="bdg-champs" style="width:' + mm(largeurChamps) + '">' + champs + ar + '</div>' + photo + qr + pied;
@@ -226,27 +229,27 @@ var Badges = (function () {
     return feuillesHtml(items, cfg, opts);
   }
   function css(cfg) {
-    var W = cfg.carte.largeur, H = cfg.carte.hauteur, c = cfg.couleur;
+    var W = cfg.carte.largeur, H = cfg.carte.hauteur, c = cfg.couleur, T = cfg.police.taille;
     return '@page{size:' + cfg.page.largeur + 'mm ' + cfg.page.hauteur + 'mm;margin:0}' +
       '.bdg-feuille{position:relative;width:' + cfg.page.largeur + 'mm;height:' + cfg.page.hauteur + 'mm;overflow:hidden;background:#fff;page-break-after:always;break-after:page;margin:0 auto 6mm}' +
-      '.bdg-carte{position:absolute;width:' + mm(W) + ';height:' + mm(H) + ';box-sizing:border-box;' + (cfg.bordure ? 'border:0.25mm solid #222;' : '') + 'color:#000;font-family:"Berlin Sans FB",Calibri,Arial,sans-serif;background:#fff;overflow:hidden}' +
+      '.bdg-carte{position:absolute;width:' + mm(W) + ';height:' + mm(H) + ';box-sizing:border-box;' + (cfg.bordure ? 'border:0.25mm solid #222;' : '') + 'color:#000;font-family:"' + String(cfg.police.famille).replace(/"/g, '') + '",Calibri,Arial,sans-serif;background:#fff;overflow:hidden}' +
       '.bdg-carte *{box-sizing:border-box}' +
       '.bdg-logo{position:absolute;left:4mm;top:3mm;width:9mm}' +
-      '.bdg-titre{position:absolute;left:16mm;top:3.2mm;font-size:11pt;font-weight:700;letter-spacing:.3pt;white-space:nowrap}' +
+      '.bdg-titre{position:absolute;left:16mm;top:3.2mm;font-size:' + (T + 2) + 'pt;font-weight:700;letter-spacing:.3pt;white-space:nowrap}' +
       '.bdg-contrat{position:absolute;right:3mm;left:16mm;top:3.2mm;text-align:right;font-weight:700;white-space:nowrap}' +
       '.bdg-trait{position:absolute;height:0.9mm;background:' + c + '}' +
       '.bdg-trait-haut{left:16mm;right:0;top:11.2mm}' +
       '.bdg-trait-pied{left:4mm;width:45%;bottom:8.2mm}' +
       '.bdg-champs{position:absolute;left:4mm;top:17.6mm}' +
-      '.bdg-l{display:flex;align-items:baseline;line-height:1;height:4.3mm;white-space:nowrap}' +
-      '.bdg-e{display:inline-block;width:20mm;font-size:8pt;font-weight:700;flex:none}' +
-      '.bdg-s{width:2.5mm;flex:none;font-size:8pt;font-weight:700}' +
+      '.bdg-l{display:flex;align-items:baseline;line-height:1;height:' + mm(T * 0.4) + ';white-space:nowrap}' +
+      '.bdg-e{display:inline-block;width:' + mm(20 * T / 8.5) + ';font-size:' + T + 'pt;font-weight:700;flex:none}' +
+      '.bdg-s{width:2.5mm;flex:none;font-size:' + T + 'pt;font-weight:700}' +
       '.bdg-v{font-weight:700;overflow:hidden;flex:1;min-width:0}' +
       '.bdg-ar{margin-top:.4mm;font-size:8.5pt;font-weight:700;white-space:nowrap;font-family:"Segoe UI",Tahoma,Arial,sans-serif}' +
       '.bdg-photo{position:absolute;right:4mm;top:15mm;width:20mm;height:25.5mm;object-fit:cover;border:0.2mm solid #999}' +
       '.bdg-photo-vide{background:#f4f4f4}' +
       '.bdg-pied{position:absolute;left:4mm;bottom:3mm;font-size:7.5pt;font-weight:700;white-space:nowrap}' +
-      '.bdg-visas{position:absolute;left:5mm;right:5mm;top:24mm;display:flex;justify-content:space-between;font-size:9pt;font-weight:700}' +
+      '.bdg-visas{position:absolute;left:5mm;right:5mm;top:24mm;display:flex;justify-content:space-between;font-size:' + T + 'pt;font-weight:700}' +
       '.bdg-qr{position:absolute;right:4mm;bottom:3mm;width:15mm;height:15mm}.bdg-qr svg{width:100%;height:100%;display:block}' +
       '.bdg-feuille:last-child{page-break-after:auto;break-after:auto}' +
       '@media screen{.bdg-feuille{box-shadow:0 1px 6px rgba(0,0,0,.25);margin-bottom:10px;transform-origin:top left}}';

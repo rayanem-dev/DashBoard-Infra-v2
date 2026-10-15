@@ -292,6 +292,8 @@ var BadgesApp = (function () {
         ['decalage.x', 'Calage recto — horizontal (mm)'], ['decalage.y', 'Calage recto — vertical (mm)'], ['verso.decalage.x', 'Calage verso — horizontal (mm)'], ['verso.decalage.y', 'Calage verso — vertical (mm)']];
       function chemin(o, p) { return p.split('.').reduce(function (a, k) { return a && a[k]; }, o); }
       dims.forEach(function (d) { var i = saisie(chemin(c, d[0]), 'number'); i.step = '0.1'; I[d[0]] = i; g.appendChild(champ(d[1], i)); });
+      I.pfam = saisie(c.police.famille); g.appendChild(champ('Police (installée sur le poste qui imprime)', I.pfam));
+      I.ptai = saisie(c.police.taille, 'number'); I.ptai.step = '0.5'; g.appendChild(champ('Taille de la police (pt)', I.ptai));
       var mi = el('select'); [['colonnes', 'Retournement par le bord court (colonnes inversées)'], ['lignes', 'Retournement par le bord long (lignes inversées)'], ['aucun', 'Pas d\'inversion']].forEach(function (o) { mi.appendChild(new Option(o[1], o[0])); }); mi.value = c.verso.miroir; g.appendChild(champ('Recto-verso', mi));
       function coche(lib, val) { var i = el('input'); i.type = 'checkbox'; i.checked = !!val; var l = el('label', 'bdg-coche'); l.appendChild(i); l.appendChild(document.createTextNode(' ' + lib)); g.appendChild(l); return i; }
       var qr = coche('QR code de vérification (verso)', c.qr.actif), ph = coche('Emplacement photo (recto)', c.photo.actif), ar = coche('Nom et prénom en arabe (recto)', c.arabe.actif);
@@ -302,7 +304,7 @@ var BadgesApp = (function () {
         CHAMPS.forEach(function (f) { o[f[0]] = f[2] === 'number' ? Number(I[f[0]].value) : I[f[0]].value; });
         function poser(p, val) { var k = p.split('.'), t = o; k.slice(0, -1).forEach(function (x) { t[x] = t[x] || {}; t = t[x]; }); t[k[k.length - 1]] = Number(val); }
         dims.forEach(function (d) { poser(d[0], I[d[0]].value || 0); });
-        o.verso = Object.assign({ miroir: mi.value }, o.verso); o.verso.miroir = mi.value; o.qr = { actif: qr.checked }; o.photo = { actif: ph.checked }; o.arabe = { actif: ar.checked };
+        o.police = { famille: I.pfam.value || 'Berlin Sans FB', taille: Number(I.ptai.value) || 11 }; o.verso = Object.assign({ miroir: mi.value }, o.verso); o.verso.miroir = mi.value; o.qr = { actif: qr.checked }; o.photo = { actif: ph.checked }; o.arabe = { actif: ar.checked };
         return o;
       }
       bar.appendChild(bouton('Enregistrer les réglages', function () { var o = lireForm(); ecrire(cleReglages, o); S.cfg = B.config(Object.assign({}, window.BADGES_CONFIG || {}, o)); dire('Réglages enregistrés (dans ce navigateur)'); dessiner(); }, 'prim'));
