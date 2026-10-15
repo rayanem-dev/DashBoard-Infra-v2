@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-19-01",
+    "date": "2026-10-19",
+    "title": "Version 5.1 — Badges prestataires",
+    "changes": [
+      "Nouvelle application « Badges prestataires » : choisissez des personnes, l'application prépare les badges recto-verso (9 par feuille A4) selon la charte, avec numéro automatique et QR code.",
+      "Les entreprises et contrats viennent du suivi CPM ; les noms et fonctions viennent des Enquêtes administratives.",
+      "Chaque badge imprimé est enregistré dans un historique (exportable en Excel) ; une réimpression garde le même numéro.",
+      "Une version autonome et vierge est aussi disponible pour partager avec d'autres sites (dossier « badges »)."
+    ]
+  },
+  {
     "id": "2026-10-18-02",
     "date": "2026-10-18",
     "title": "Version 5.0.1 — Connexion plus fiable",
