@@ -14,8 +14,10 @@ var Badges = (function () {
     couleur: '#E18500', logo: 'logo-sonatrach.png',
     libelles: { nom: 'NOM', prenom: 'PRENOM', fonction: 'FONCTION', entreprise: 'ENTREPRISE', structure: 'STRUCTURE', contrat: 'CONTRAT N°', visaPrestataire: 'Visa prestataire', visaStructure: 'Visa structure' },
     page: { largeur: 297, hauteur: 210 },          // A4 paysage, en mm
-    carte: { largeur: 86, hauteur: 54 },
-    grille: { colonnes: 3, lignes: 3, pasX: 90, pasY: 56 },
+    // Dimensions du MODÈLE (diapositive PowerPoint) : carte 97,6 × 58,7 mm, pas 99,6 × 62 mm ; imprimées à l'échelle de l'A4 (0,877) => carte 85,6 × 51,5 mm
+    carte: { largeur: 97.6, hauteur: 58.7 },
+    grille: { colonnes: 3, lignes: 3, pasX: 99.6, pasY: 62 },
+    echelle: 0.877,
     decalage: { x: 0, y: 0 },                      // calage fin recto (mm)
     verso: { miroir: 'colonnes', decalage: { x: 0, y: 0 } }, // 'colonnes' : retournement par le bord court ; 'lignes' : par le bord long ; 'aucun'
     bordure: true,
@@ -161,7 +163,7 @@ var Badges = (function () {
   function mm(v) { return (Math.round(v * 100) / 100) + 'mm'; }
   function taillePolice(txt, base, limite) { var n = String(txt || '').length; if (n <= limite) return base; return Math.max(base - 0.2 * (n - limite), base * 0.58); }
   function positions(cfg, verso) {
-    var g = cfg.grille, w = (g.colonnes - 1) * g.pasX + cfg.carte.largeur, h = (g.lignes - 1) * g.pasY + cfg.carte.hauteur;
+    var g = cfg.grille, E = cfg.echelle, w = ((g.colonnes - 1) * g.pasX + cfg.carte.largeur) * E, h = ((g.lignes - 1) * g.pasY + cfg.carte.hauteur) * E;
     var x0 = (cfg.page.largeur - w) / 2 + cfg.decalage.x + (verso ? cfg.verso.decalage.x : 0);
     var y0 = (cfg.page.hauteur - h) / 2 + cfg.decalage.y + (verso ? cfg.verso.decalage.y : 0);
     return { x0: x0, y0: y0 };
@@ -177,33 +179,42 @@ var Badges = (function () {
     }
     return feuilles;
   }
-  function ligneChamp(etiquette, valeur, cfg, taille) {
-    return '<div class="bdg-l"><span class="bdg-e">' + esc(etiquette) + '</span><span class="bdg-s">:</span><span class="bdg-v" style="font-size:' + taille + 'pt">' + esc(valeur) + '</span></div>';
+  // Mise en page IDENTIQUE au modèle BADGE_ENCC.pptx (coordonnées de la diapositive, en mm, relevées dans le fichier) :
+  // Berlin Sans FB 11 pt non gras ; logo 12,65 × 16,85 à (5,1 ; 3,7) ; trait haut à (37,2 ; 7,1) jusqu'au bord droit ; trait bas à (0 ; 50,8), 60,3 de long ;
+  // titre à droite sur la 1re ligne ; NOM / PRENOM / FONCTION / ENTREPRISE / STRUCTURE tous les 5,15 mm à partir de 26,1 ; pied de page tout en bas (54,6).
+  var G = { marge: 1.9, titreX: 52, lignes: [26.1, 31.25, 36.4, 41.55, 46.7], deuxPoints: 24.5, valeur: 27.5, base1: 3.9, pied: 54.6, trait1: { x: 37.2, y: 7.1, w: 60.4, h: 1.23 }, trait2: { x: 0, y: 50.8, w: 60.33, h: 1.28 }, logo: { x: 5.1, y: 3.7, w: 12.65 }, photo: { x: 72.5, y: 11, w: 22, h: 28 }, qr: { x: 79.6, y: 31, t: 16 } };
+  function txt(x, baseline, T, contenu, extra, droite) {
+    var top = baseline - 0.9 * T * 0.3528; // la position donnée est celle de la ligne d'écriture
+    return '<div class="bdg-t" style="' + (droite ? 'right:' + mm(x) : 'left:' + mm(x)) + ';top:' + mm(top) + ';font-size:' + (Math.round(T * 100) / 100) + 'pt;' + (extra || '') + '">' + contenu + '</div>';
   }
   function cartesHtml(it, cfg, verso, opts) {
     opts = opts || {};
-    var L = cfg.libelles, T = cfg.police.taille, W = cfg.carte.largeur, logo = '<img class="bdg-logo" src="' + esc(opts.logoUrl || cfg.logo) + '" alt="">';
-    var qr = '';
+    var L = cfg.libelles, T = cfg.police.taille, W = cfg.carte.largeur, E = cfg.echelle, h = '';
+    h += '<img class="bdg-logo" src="' + esc(opts.logoUrl || cfg.logo) + '" alt="" style="left:' + mm(G.logo.x) + ';top:' + mm(G.logo.y) + ';width:' + mm(G.logo.w) + '">';
+    h += '<div class="bdg-trait" style="left:' + mm(G.trait1.x) + ';top:' + mm(G.trait1.y) + ';width:' + mm(W - G.trait1.x) + ';height:' + mm(G.trait1.h) + '"></div>';
+    h += '<div class="bdg-trait" style="left:' + mm(G.trait2.x) + ';top:' + mm(G.trait2.y) + ';width:' + mm(G.trait2.w) + ';height:' + mm(G.trait2.h) + '"></div>';
+    var ref = String(it.ref || ''), tp = Math.min(T, Math.round((W - 2 * G.marge) / (Math.max(ref.length, 1) * 0.52 * 0.3528) * 10) / 10);
+    h += txt(G.marge, G.pied, tp, esc(ref));
     if (cfg.qr.actif && opts.qr && ((verso && cfg.qr.face !== 'recto') || (!verso && cfg.qr.face === 'recto'))) {
-      var txt = String(cfg.qr.modele).replace('{ref}', it.ref || '').replace('{prenom}', it.prenom || '').replace('{nom}', it.nom || '').replace('{entreprise}', it.entreprise || '').replace('{contrat}', it.contrat || '').replace('{fonction}', it.fonction || '');
-      qr = '<div class="bdg-qr">' + opts.qr(txt) + '</div>';
+      var q = String(cfg.qr.modele).replace('{ref}', it.ref || '').replace('{prenom}', it.prenom || '').replace('{nom}', it.nom || '').replace('{entreprise}', it.entreprise || '').replace('{contrat}', it.contrat || '').replace('{fonction}', it.fonction || '');
+      h += '<div class="bdg-qr" style="left:' + mm(G.qr.x) + ';top:' + mm(G.qr.y) + ';width:' + mm(G.qr.t) + ';height:' + mm(G.qr.t) + '">' + opts.qr(q) + '</div>';
     }
-    var tp = Math.min(T, Math.round((W - 8) / (Math.max(String(it.ref || '').length, 1) * 0.6 * 0.3528) * 10) / 10), // la référence tient sur une ligne
-        pied = '<div class="bdg-trait bdg-trait-pied"></div><div class="bdg-pied" style="font-size:' + tp + 'pt">' + esc(it.ref || '') + '</div>';
     if (verso) {
       var contrat = L.contrat + (it.contrat ? (/^N°/.test(it.contrat) ? ' ' : '') + it.contrat : '');
-      return logo + '<div class="bdg-trait bdg-trait-haut"></div><div class="bdg-contrat" style="font-size:' + taillePolice(contrat, T, 34 * 8.5 / T) + 'pt">' + esc(contrat) + '</div>' +
-        '<div class="bdg-visas"><span>' + esc(L.visaPrestataire) + '</span><span>' + esc(L.visaStructure) + '</span></div>' + qr + pied;
+      h += txt(G.marge, G.base1, taillePolice(contrat, T, (W - G.trait1.x) / (T * 0.5 * 0.3528)), esc(contrat), 'text-align:right', true);
+      h += txt(8.3, G.lignes[0], T, esc(L.visaPrestataire)) + txt(8.3, G.lignes[0], T, esc(L.visaStructure), '', true);
+      return h;
     }
-    var photo = (cfg.photo.actif && it.photo) ? '<img class="bdg-photo" src="' + esc(it.photo) + '" alt="">' : (cfg.photo.actif && opts.cadrePhoto ? '<div class="bdg-photo bdg-photo-vide"></div>' : '');
-    var largeurChamps = W - 8 - (photo ? 25 : 0), k = photo ? 0.72 : 1;
-    var f = 8.5 / T * k, // nombre de lettres tenant sur une ligne : proportionnel à la taille de police
-        champs = ligneChamp(L.nom, majuscules(it.nom), cfg, taillePolice(it.nom, T, 22 * f)) + ligneChamp(L.prenom, it.prenom, cfg, taillePolice(it.prenom, T, 22 * f)) +
-      ligneChamp(L.fonction, it.fonction, cfg, taillePolice(it.fonction, T, 26 * f)) + ligneChamp(L.entreprise, it.entreprise, cfg, taillePolice(it.entreprise, T, 24 * f)) +
-      ligneChamp(L.structure, it.structure || cfg.structure, cfg, taillePolice(it.structure || cfg.structure, T, 24 * f));
-    var ar = (cfg.arabe.actif && (it.nomAr || it.prenomAr)) ? '<div class="bdg-ar" dir="rtl">' + esc((it.prenomAr || '') + ' ' + (it.nomAr || '')) + '</div>' : '';
-    return logo + '<div class="bdg-titre">' + esc(cfg.titre) + '</div><div class="bdg-trait bdg-trait-haut"></div>' +
-      '<div class="bdg-champs" style="width:' + mm(largeurChamps) + '">' + champs + ar + '</div>' + photo + qr + pied;
+    h += txt(G.titreX, G.base1, T, esc(cfg.titre));
+    var photo = cfg.photo.actif && it.photo;
+    if (photo) h += '<img class="bdg-photo" src="' + esc(it.photo) + '" alt="" style="left:' + mm(G.photo.x) + ';top:' + mm(G.photo.y) + ';width:' + mm(G.photo.w) + ';height:' + mm(G.photo.h) + '">';
+    var dispo = (photo ? G.photo.x - 1.5 : W - G.marge) - G.valeur, lim = dispo / (T * 0.5 * 0.3528);
+    var champs = [[L.nom, majuscules(it.nom)], [L.prenom, it.prenom], [L.fonction, it.fonction], [L.entreprise, it.entreprise], [L.structure, it.structure || cfg.structure]];
+    champs.forEach(function (c, i) {
+      h += txt(G.marge, G.lignes[i], T, esc(c[0])) + txt(G.deuxPoints, G.lignes[i], T, ':') + txt(G.valeur, G.lignes[i], taillePolice(c[1], T, lim), esc(c[1]), 'max-width:' + mm(dispo) + ';overflow:hidden');
+    });
+    if (cfg.arabe.actif && (it.nomAr || it.prenomAr)) h += txt(G.marge, G.lignes[4], T * 0.9, esc((it.prenomAr || '') + ' ' + (it.nomAr || '')), 'direction:rtl;font-family:"Segoe UI",Tahoma,Arial,sans-serif', true);
+    return h;
   }
   function feuilleHtml(cases, cfg, verso, opts) {
     var g = cfg.grille, p = positions(cfg, verso), s = '<section class="bdg-feuille' + (verso ? ' bdg-verso' : '') + '">';
@@ -211,7 +222,7 @@ var Badges = (function () {
       var col = c.index % g.colonnes, lig = Math.floor(c.index / g.colonnes);
       if (verso && cfg.verso.miroir === 'colonnes') col = g.colonnes - 1 - col;
       else if (verso && cfg.verso.miroir === 'lignes') lig = g.lignes - 1 - lig;
-      s += '<div class="bdg-carte" style="left:' + mm(p.x0 + col * g.pasX) + ';top:' + mm(p.y0 + lig * g.pasY) + '">' + cartesHtml(c.item, cfg, verso, opts) + '</div>';
+      s += '<div class="bdg-carte" style="left:' + mm(p.x0 + col * g.pasX * cfg.echelle) + ';top:' + mm(p.y0 + lig * g.pasY * cfg.echelle) + '"><div class="bdg-m">' + cartesHtml(c.item, cfg, verso, opts) + '</div></div>';
     });
     return s + '</section>';
   }
@@ -229,30 +240,20 @@ var Badges = (function () {
     return feuillesHtml(items, cfg, opts);
   }
   function css(cfg) {
-    var W = cfg.carte.largeur, H = cfg.carte.hauteur, c = cfg.couleur, T = cfg.police.taille;
+    var W = cfg.carte.largeur, H = cfg.carte.hauteur, E = cfg.echelle, c = cfg.couleur;
     return '@page{size:' + cfg.page.largeur + 'mm ' + cfg.page.hauteur + 'mm;margin:0}' +
       '.bdg-feuille{position:relative;width:' + cfg.page.largeur + 'mm;height:' + cfg.page.hauteur + 'mm;overflow:hidden;background:#fff;page-break-after:always;break-after:page;margin:0 auto 6mm}' +
-      '.bdg-carte{position:absolute;width:' + mm(W) + ';height:' + mm(H) + ';box-sizing:border-box;' + (cfg.bordure ? 'border:0.25mm solid #222;' : '') + 'color:#000;font-family:"' + String(cfg.police.famille).replace(/"/g, '') + '",Calibri,Arial,sans-serif;background:#fff;overflow:hidden}' +
-      '.bdg-carte *{box-sizing:border-box}' +
-      '.bdg-logo{position:absolute;left:4mm;top:3mm;width:9mm}' +
-      '.bdg-titre{position:absolute;left:16mm;top:3.2mm;font-size:' + (T + 2) + 'pt;font-weight:700;letter-spacing:.3pt;white-space:nowrap}' +
-      '.bdg-contrat{position:absolute;right:3mm;left:16mm;top:3.2mm;text-align:right;font-weight:700;white-space:nowrap}' +
-      '.bdg-trait{position:absolute;height:0.9mm;background:' + c + '}' +
-      '.bdg-trait-haut{left:16mm;right:0;top:11.2mm}' +
-      '.bdg-trait-pied{left:4mm;width:45%;bottom:8.2mm}' +
-      '.bdg-champs{position:absolute;left:4mm;top:17.6mm}' +
-      '.bdg-l{display:flex;align-items:baseline;line-height:1;height:' + mm(T * 0.4) + ';white-space:nowrap}' +
-      '.bdg-e{display:inline-block;width:' + mm(20 * T / 8.5) + ';font-size:' + T + 'pt;font-weight:700;flex:none}' +
-      '.bdg-s{width:2.5mm;flex:none;font-size:' + T + 'pt;font-weight:700}' +
-      '.bdg-v{font-weight:700;overflow:hidden;flex:1;min-width:0}' +
-      '.bdg-ar{margin-top:.4mm;font-size:8.5pt;font-weight:700;white-space:nowrap;font-family:"Segoe UI",Tahoma,Arial,sans-serif}' +
-      '.bdg-photo{position:absolute;right:4mm;top:15mm;width:20mm;height:25.5mm;object-fit:cover;border:0.2mm solid #999}' +
-      '.bdg-photo-vide{background:#f4f4f4}' +
-      '.bdg-pied{position:absolute;left:4mm;bottom:3mm;font-size:7.5pt;font-weight:700;white-space:nowrap}' +
-      '.bdg-visas{position:absolute;left:5mm;right:5mm;top:24mm;display:flex;justify-content:space-between;font-size:' + T + 'pt;font-weight:700}' +
-      '.bdg-qr{position:absolute;right:4mm;bottom:3mm;width:15mm;height:15mm}.bdg-qr svg{width:100%;height:100%;display:block}' +
       '.bdg-feuille:last-child{page-break-after:auto;break-after:auto}' +
-      '@media screen{.bdg-feuille{box-shadow:0 1px 6px rgba(0,0,0,.25);margin-bottom:10px;transform-origin:top left}}';
+      '.bdg-carte{position:absolute;width:' + mm(W * E) + ';height:' + mm(H * E) + ';box-sizing:border-box;' + (cfg.bordure ? 'border:' + mm(0.35 * E) + ' solid #000;' : '') + 'overflow:hidden;background:#fff;color:#000}' +
+      // tout est dessiné aux dimensions du modèle puis réduit à l'échelle d'impression
+      '.bdg-m{position:absolute;left:0;top:0;width:' + mm(W) + ';height:' + mm(H) + ';transform:scale(' + E + ');transform-origin:0 0;font-family:"' + String(cfg.police.famille).replace(/"/g, '') + '",Calibri,Arial,sans-serif;font-weight:400}' +
+      '.bdg-m *{box-sizing:border-box}' +
+      '.bdg-t{position:absolute;white-space:nowrap;line-height:1.2;font-weight:400}' +
+      '.bdg-logo{position:absolute;display:block}' +
+      '.bdg-trait{position:absolute;background:' + c + '}' +
+      '.bdg-photo{position:absolute;object-fit:cover;border:0.2mm solid #999}' +
+      '.bdg-qr{position:absolute}.bdg-qr svg{width:100%;height:100%;display:block}' +
+      '@media screen{.bdg-feuille{box-shadow:0 1px 6px rgba(0,0,0,.25);margin-bottom:10px}}';
   }
 
   // ---------- Historique ----------

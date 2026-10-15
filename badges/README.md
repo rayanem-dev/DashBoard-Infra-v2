@@ -10,6 +10,9 @@ Deux façons de s'en servir, **le même moteur** (`badges.js`) :
 | **Dans le portail** | `badges.html` (module « Badges prestataires », niveau 1 = voir, 2 = modifier et imprimer) | entreprises + n° de contrat : suivi CPM ; noms + fonctions : Enquêtes administratives ; corrections et historique : onglets `BadgesPersonnes`, `BadgesEntreprises`, `BadgesHistorique` de `Gateway_DB` |
 | **Application autonome** | `badges/index.html` (aucun serveur, aucun compte) | dans le navigateur de l'utilisateur ; import CSV / collage depuis Excel ; sauvegarde et restauration en un fichier |
 
+## Fidélité au modèle
+La mise en page est celle de `BADGE_ENCC.pptx`, relevée dans le fichier : carte 97,6 × 58,7 mm sur la diapositive (pas 99,6 × 62 mm), Berlin Sans FB 11 pt non gras, logo 12,65 × 16,85 mm, trait orange du haut (à droite du logo, jusqu'au bord), trait du bas (60,3 mm), lignes NOM / PRENOM / FONCTION / ENTREPRISE / STRUCTURE tous les 5,15 mm, pied de page tout en bas, contrat et visas au verso. Le tout est réduit à l'échelle 0,877 (diapositive ajustée à l'A4) : la carte imprimée mesure 85,6 × 51,5 mm. Valeurs dans `badges.js` (`DEFAUT`, `G`) et réglables : `carte`, `grille`, `echelle`, `police`.
+
 ## Numérotation et historique
 - Un numéro **continu pour toute la base**, remis à 01 chaque année : `SH RNS BASE DE VIE CENTRALE-BADGE N° 01/2026`.
 - Même personne (nom + prénom + entreprise) = **même numéro** toute l'année, y compris après une perte (pas de duplicata).

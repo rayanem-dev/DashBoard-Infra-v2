@@ -62,7 +62,7 @@ test('mise en page : 9 par feuille, verso en miroir, case de départ, rien hors 
   const items = Array.from({ length: 11 }, (_, i) => ({ nom: 'N' + i, prenom: 'P', entreprise: 'E', contrat: 'C', ref: 'R' + i }));
   assert.deepStrictEqual(B.planifier(items, cfg, 1).map(x => x.length), [9, 2]);
   assert.deepStrictEqual(B.planifier(items, cfg, 8).map(x => x.length), [2, 9]);
-  const g = cfg.grille, w = (g.colonnes - 1) * g.pasX + cfg.carte.largeur, h = (g.lignes - 1) * g.pasY + cfg.carte.hauteur;
+  const g = cfg.grille, w = ((g.colonnes - 1) * g.pasX + cfg.carte.largeur) * cfg.echelle, h = ((g.lignes - 1) * g.pasY + cfg.carte.hauteur) * cfg.echelle;
   assert.ok(w < cfg.page.largeur && h < cfg.page.hauteur);
   const html = B.feuillesHtml(items, cfg, {});
   assert.strictEqual((html.match(/class="bdg-feuille"/g) || []).length, 2);

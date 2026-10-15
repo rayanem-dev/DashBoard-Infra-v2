@@ -288,12 +288,12 @@ var BadgesApp = (function () {
     function vueReglages() {
       var v = el('div'), c = S.cfg, I = {}, g = el('div', 'bdg-grille');
       CHAMPS.forEach(function (f) { I[f[0]] = saisie(c[f[0]], f[2]); g.appendChild(champ(f[1], I[f[0]])); });
-      var dims = [['carte.largeur', 'Largeur du badge (mm)'], ['carte.hauteur', 'Hauteur du badge (mm)'], ['grille.pasX', 'Pas horizontal (mm)'], ['grille.pasY', 'Pas vertical (mm)'],
+      var dims = [['carte.largeur', 'Largeur du badge dans le modèle (mm)'], ['carte.hauteur', 'Hauteur du badge dans le modèle (mm)'], ['grille.pasX', 'Pas horizontal (mm)'], ['grille.pasY', 'Pas vertical (mm)'], ['echelle', 'Échelle d\'impression (0,877 = A4 ajusté)'],
         ['decalage.x', 'Calage recto — horizontal (mm)'], ['decalage.y', 'Calage recto — vertical (mm)'], ['verso.decalage.x', 'Calage verso — horizontal (mm)'], ['verso.decalage.y', 'Calage verso — vertical (mm)']];
       function chemin(o, p) { return p.split('.').reduce(function (a, k) { return a && a[k]; }, o); }
       dims.forEach(function (d) { var i = saisie(chemin(c, d[0]), 'number'); i.step = '0.1'; I[d[0]] = i; g.appendChild(champ(d[1], i)); });
       I.pfam = saisie(c.police.famille); g.appendChild(champ('Police (installée sur le poste qui imprime)', I.pfam));
-      I.ptai = saisie(c.police.taille, 'number'); I.ptai.step = '0.5'; g.appendChild(champ('Taille de la police (pt)', I.ptai));
+      I.ptai = saisie(c.police.taille, 'number'); I.ptai.step = '0.5'; g.appendChild(champ('Taille de la police dans le modèle (pt)', I.ptai));
       var mi = el('select'); [['colonnes', 'Retournement par le bord court (colonnes inversées)'], ['lignes', 'Retournement par le bord long (lignes inversées)'], ['aucun', 'Pas d\'inversion']].forEach(function (o) { mi.appendChild(new Option(o[1], o[0])); }); mi.value = c.verso.miroir; g.appendChild(champ('Recto-verso', mi));
       function coche(lib, val) { var i = el('input'); i.type = 'checkbox'; i.checked = !!val; var l = el('label', 'bdg-coche'); l.appendChild(i); l.appendChild(document.createTextNode(' ' + lib)); g.appendChild(l); return i; }
       var qr = coche('QR code de vérification (verso)', c.qr.actif), ph = coche('Emplacement photo (recto)', c.photo.actif), ar = coche('Nom et prénom en arabe (recto)', c.arabe.actif);

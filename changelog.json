@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-19-04",
+    "date": "2026-10-19",
+    "title": "Version 5.1.3 — Badges identiques au modèle",
+    "changes": [
+      "Les badges reprennent exactement la mise en page du modèle BADGE_ENCC.pptx : dimensions, positions du logo, des traits orange, des lignes de texte et du pied de page, Berlin Sans FB 11 pt non gras, imprimés à l'échelle de l'A4.",
+      "Le numéro de contrat reste au verso, comme dans le modèle."
+    ]
+  },
+  {
     "id": "2026-10-19-03",
     "date": "2026-10-19",
     "title": "Version 5.1.2 — Badges : police Berlin Sans FB 11",
