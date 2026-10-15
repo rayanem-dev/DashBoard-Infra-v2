@@ -455,3 +455,13 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .outils { margin: 0 0 12px; }
 @media (max-width: 900px) { .barre-haut { order: 3; flex-basis: 100%; max-width: none; } }
 @media (max-width: 480px) { .barre-haut { flex-wrap: wrap; } .barre-haut .date-badge { margin-left: auto; } }
+.barre-haut { flex: 0 1 400px; max-width: 400px; }
+.barre-haut input[type=search] { flex: 1 1 150px; padding: 7px 14px; font-size: 13.5px; }
+@media (max-width: 900px) { .barre-haut { flex: 1 1 100%; max-width: none; } }
+
+.barre-haut { flex: 0 1 330px; max-width: 330px; }
+@media (max-width: 900px) { .barre-haut { flex: 1 1 100%; max-width: none; } }
+
+.barre-haut { flex: 0 0 auto; max-width: none; }
+.barre-haut input[type=search] { flex: 0 0 220px; width: 220px; }
+@media (max-width: 900px) { .barre-haut { flex: 1 1 100%; } .barre-haut input[type=search] { flex: 1 1 160px; width: auto; } }

@@ -280,6 +280,8 @@
     ['La barre de recherche et la date sont remontées en haut de la page d\'accueil.', 'The search bar and the date have moved to the top of the home page.', 'نُقل شريط البحث والتاريخ إلى أعلى الصفحة الرئيسية.'],
     ['Le secrétariat peut voir le journal des connexions et dépanner un compte plus facilement.', 'The secretariat can view the login log and troubleshoot an account more easily.', 'يمكن للأمانة الاطلاع على سجل الدخول وإصلاح الحسابات بسهولة أكبر.'],
     ['modifier', 'edit', 'تعديل'], ['Mon adresse e-mail', 'My e-mail address', 'عنوان بريدي الإلكتروني'], ['Nouvelle adresse e-mail', 'New e-mail address', 'عنوان البريد الجديد'], ['Envoyer le code', 'Send the code', 'إرسال الرمز'],
+    ['Rechercher une appli ou un contact…', 'Search an app or a contact…', 'ابحث عن تطبيق أو جهة اتصال…'],
+    ['Rechercher…', 'Search…', 'بحث…'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];
