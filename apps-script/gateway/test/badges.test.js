@@ -151,3 +151,18 @@ test('passerelle : numéros attribués et chaque impression tracée (réimpressi
   assert.strictEqual(deux.lignes.length, 2);                 // réimpression de B tracée aussi
   assert.strictEqual(deux.lignes[0].date, '2026-10-16');
 });
+
+test('passerelle : mots proches (MHENNI / MEHENNI) et rattachement manuel d\'une entreprise', () => {
+  assert.strictEqual(G('badgesAppariement_', 'ETS MHENNI', ['ETS MEHENNI ABDELKADER', 'ETS MESSAI']), 'ETS MEHENNI ABDELKADER');
+  assert.strictEqual(G('badgesAppariement_', 'ETS MESSAI', ['ETS MEHENNI ABDELKADER', 'ETS MESSAI']), 'ETS MESSAI');
+  assert.strictEqual(G('badgesProche_', 'mhenni', 'mehenni'), true);
+  assert.strictEqual(G('badgesProche_', 'zatout', 'tayeb'), false);
+  const onglets = [{ onglet: 'ATTIA', entreprise: 'SARL ATIA MEHDI', personnes: [{ nom: 'RAMDANI', prenom: 'TAHAR', fonction: 'x' }] }];
+  const cpm = [{ nom: 'SARL ATIA ET FRERES', contrats: [{ numero: '34.INFRA.25', intitule: 'Réseau routier' }] }];
+  const sans = G('badgesFusion_', onglets, cpm, [], []);
+  assert.ok(sans.entreprises.some(e => e.nom === 'SARL ATIA MEHDI'));            // pas rapprochées toutes seules
+  const avec = G('badgesFusion_', onglets, cpm, [], [{ nom: 'SARL ATIA MEHDI', contrats: '[]', supprime: '', alias: 'SARL ATIA ET FRERES' }]);
+  assert.strictEqual(avec.personnes[0].entreprise, 'SARL ATIA ET FRERES');       // rattachées à la main
+  assert.strictEqual(avec.personnes[0].contrat, '34.INFRA.25');
+  assert.ok(!avec.entreprises.some(e => e.nom === 'SARL ATIA MEHDI'));
+});

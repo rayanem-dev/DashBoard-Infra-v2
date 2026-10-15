@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-19-02",
+    "date": "2026-10-19",
+    "title": "Version 5.1.1 — Badges : entreprises rapprochées",
+    "changes": [
+      "Badges : les entreprises écrites avec une petite faute (MHENNI / MEHENNI) sont rapprochées toutes seules.",
+      "Nouveau bouton « C'est la même entreprise que… » pour rattacher une entreprise des Enquêtes à celle du CPM (ex. SARL ATIA MEHDI → SARL ATIA ET FRERES) ; le choix est mémorisé."
+    ]
+  },
+  {
     "id": "2026-10-19-01",
     "date": "2026-10-19",
     "title": "Version 5.1 — Badges prestataires",

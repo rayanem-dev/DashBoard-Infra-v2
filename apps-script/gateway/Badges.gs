@@ -10,7 +10,7 @@
  */
 var BADGES_ENQUETES_DEFAUT_ = '1EQMsT8IeOF9ky9eOx7S3jXoq7jmcikjyVVuwryf0Npo'; // « التحقيقات الادارية » (Google Sheets converti ; la propriété BADGES_ENQUETES_ID, si elle existe, passe avant)
 var BADGES_ENT_P_ = ['id', 'nom', 'prenom', 'fonction', 'entreprise', 'contrat', 'structure', 'nomAr', 'prenomAr', 'supprime', 'photo', 'maj'];
-var BADGES_ENT_E_ = ['nom', 'contrats', 'supprime', 'maj'];
+var BADGES_ENT_E_ = ['nom', 'contrats', 'supprime', 'maj', 'alias'];
 var BADGES_ENT_H_ = ['date', 'ref', 'n', 'annee', 'cle', 'nom', 'prenom', 'fonction', 'entreprise', 'structure', 'contrat', 'imprime_par'];
 var BADGES_MOTS_VIDES_ = { sarl: 1, eurl: 1, spa: 1, sas: 1, snc: 1, ets: 1, etb: 1, etbe: 1, unite: 1, groupe: 1, cie: 1, de: 1, du: 1, des: 1, et: 1, la: 1, le: 1, location: 1, entreprise: 1, societe: 1, corp: 1, algerie: 1, algeria: 1 };
 
@@ -22,11 +22,20 @@ function badgesAppariement_(nom, noms) {
   if (!a.length) return '';
   noms.forEach(function (n) {
     var b = badgesJetons_(n); if (!b.length) return;
-    var commun = a.filter(function (t) { return b.indexOf(t) >= 0 || b.some(function (u) { return t.length >= 4 && u.length >= 4 && (u.indexOf(t) === 0 || t.indexOf(u) === 0); }); }).length;
+    var commun = a.filter(function (t) { return b.indexOf(t) >= 0 || b.some(function (u) { return badgesProche_(t, u) || (t.length >= 4 && u.length >= 4 && (u.indexOf(t) === 0 || t.indexOf(u) === 0)); }); }).length;
     var s = commun / Math.max(a.length, b.length);
     if (commun >= Math.min(a.length, b.length) && s > score) { score = s; meilleur = n; } // l'un des deux noms est inclus dans l'autre (ZATOUT TAYEB ≠ ZATOUT ABDENCER)
   });
   return meilleur;
+}
+/** Deux mots de 5 lettres ou plus qui ne diffèrent que d'une lettre (MHENNI / MEHENNI) sont considérés comme le même. */
+function badgesProche_(a, b) {
+  if (a === b) return true;
+  if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1) return false;
+  var i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i += 1;
+  if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
+  var c = a.length > b.length ? a : b, d = a.length > b.length ? b : a;
+  return c.slice(i + 1) === d.slice(i);
 }
 function badgesHash_(s) { var h = 5381, i; s = String(s); for (i = 0; i < s.length; i += 1) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
 
@@ -45,19 +54,21 @@ function badgesEntreprisesCpm_(enr) {
 function badgesFusion_(onglets, entCpm, surP, surE) {
   var entreprises = entCpm.map(function (e) { return { nom: e.nom, contrats: e.contrats.slice(), source: 'cpm' }; });
   var cpmNoms = entreprises.map(function (e) { return e.nom; });
+  var aliasDe = {}; (surE || []).forEach(function (r) { if (r.alias && String(r.supprime) !== '1') aliasDe[Badges.norm(r.nom)] = String(r.alias); });
   var personnes = [], i;
   onglets.forEach(function (o) {
     if (!o.personnes.length) return;
     var nom = badgesAppariement_(o.entreprise, cpmNoms) || badgesAppariement_(o.onglet, cpmNoms) || o.entreprise;
+    var al = aliasDe[Badges.norm(nom)] || aliasDe[Badges.norm(o.entreprise)]; if (al) nom = al; // rattachement décidé à la main
     if (!entreprises.some(function (e) { return Badges.norm(e.nom) === Badges.norm(nom); })) entreprises.push({ nom: nom, contrats: [], source: 'enquetes' });
     o.personnes.forEach(function (p) {
       personnes.push({ id: 'e' + badgesHash_(o.onglet + '|' + Badges.cle({ nom: p.nom, prenom: p.prenom, entreprise: '' })), nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: nom, contrat: '', structure: '', nomAr: p.nomAr, prenomAr: p.prenomAr, verifier: !!p.verifier, source: 'enquetes', onglet: o.onglet });
     });
   });
   // corrections d'entreprises
-  var sE = {}; (surE || []).forEach(function (r) { sE[Badges.norm(r.nom)] = r; });
+  var sE = {}; (surE || []).forEach(function (r) { if (!r.alias) sE[Badges.norm(r.nom)] = r; });
   entreprises = entreprises.filter(function (e) { var r = sE[Badges.norm(e.nom)]; return !(r && String(r.supprime) === '1'); }).map(function (e) { var r = sE[Badges.norm(e.nom)]; if (r) { try { e.contrats = JSON.parse(r.contrats || '[]'); } catch (x) { /* ligne illisible : ignorée */ } } return e; });
-  (surE || []).forEach(function (r) { if (String(r.supprime) !== '1' && !entreprises.some(function (e) { return Badges.norm(e.nom) === Badges.norm(r.nom); })) { var c = []; try { c = JSON.parse(r.contrats || '[]'); } catch (x) { /* ignoré */ } entreprises.push({ nom: r.nom, contrats: c, source: 'manuel' }); } });
+  (surE || []).forEach(function (r) { if (!r.alias && String(r.supprime) !== '1' && !entreprises.some(function (e) { return Badges.norm(e.nom) === Badges.norm(r.nom); })) { var c = []; try { c = JSON.parse(r.contrats || '[]'); } catch (x) { /* ignoré */ } entreprises.push({ nom: r.nom, contrats: c, source: 'manuel' }); } });
   // un seul contrat connu : repris d'office
   personnes.forEach(function (p) { var e = entreprises.filter(function (x) { return Badges.norm(x.nom) === Badges.norm(p.entreprise); })[0]; if (e && e.contrats.length === 1) p.contrat = e.contrats[0].numero; });
   // corrections de personnes
@@ -142,12 +153,13 @@ function badgesEntreprisesSauver_(req) {
     var sh = cpmFeuille_('BadgesEntreprises', BADGES_ENT_E_), rows = sh.getDataRange().getValues(), pos = {};
     rows.forEach(function (r, i) { if (i) pos[Badges.norm(r[0])] = i + 1; });
     var maj = new Date().toISOString(), ajout = [];
-    function ecrire(nom, contrats, suppr) {
-      var l = [badgesVider_(nom), JSON.stringify((contrats || []).slice(0, 40).map(function (c) { return { numero: badgesVider_(c.numero), intitule: badgesVider_(c.intitule) }; })), suppr ? '1' : '', maj], k = Badges.norm(nom);
+    function ecrire(nom, contrats, suppr, alias) {
+      var l = [badgesVider_(nom), JSON.stringify((contrats || []).slice(0, 40).map(function (c) { return { numero: badgesVider_(c.numero), intitule: badgesVider_(c.intitule) }; })), suppr ? '1' : '', maj, alias ? badgesVider_(alias) : ''], k = Badges.norm(nom);
       if (pos[k] > 0) sh.getRange(pos[k], 1, 1, l.length).setValues([l]); else { ajout.push(l); pos[k] = -1; }
     }
     (req.entreprises || []).slice(0, 300).forEach(function (e) { if (e && e.nom) ecrire(e.nom, e.contrats, false); });
     (req.supprimer || []).slice(0, 300).forEach(function (n) { ecrire(n, [], true); });
+    (req.alias || []).slice(0, 100).forEach(function (a) { if (a && a.de && a.vers) { ecrire(a.de, [], false, a.vers); } });
     if (ajout.length) sh.getRange(sh.getLastRow() + 1, 1, ajout.length, BADGES_ENT_E_.length).setValues(ajout);
     CacheService.getScriptCache().remove('BADGES_SRC');
     return { ok: true };

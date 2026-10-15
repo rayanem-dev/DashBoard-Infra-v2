@@ -46,7 +46,8 @@
       var changes = [], supp = [], noms = {};
       liste.forEach(function (e) { noms[B.norm(e.nom)] = 1; var o = dernier.e[B.norm(e.nom)]; if (!o || JSON.stringify(o.contrats || []) !== JSON.stringify(e.contrats || [])) changes.push(e); });
       Object.keys(dernier.e).forEach(function (k) { if (!noms[k]) supp.push(dernier.e[k].nom); });
-      return Api.call('badges_entreprises_sauver', { entreprises: changes, supprimer: supp });
+      if (info && info.alias) { supp = supp.filter(function (n) { return B.norm(n) !== B.norm(info.alias.de); }); }
+      return Api.call('badges_entreprises_sauver', { entreprises: changes, supprimer: supp, alias: info && info.alias ? [info.alias] : [] });
     },
     numeroter: function (items, annee, cfg) {
       return Api.call('badges_numeroter', { items: items.map(function (p) { return { id: p.id, nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: p.entreprise, contrat: p.contrat, structure: p.structure, nomAr: p.nomAr, prenomAr: p.prenomAr, n: p.n }; }), annee: annee, reimpression: items.some(function (p) { return p.n; }),

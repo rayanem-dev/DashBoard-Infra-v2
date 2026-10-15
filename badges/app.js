@@ -214,8 +214,18 @@ var BadgesApp = (function () {
       var neuf = !e, x = e ? { nom: e.nom, contrats: (e.contrats || []).slice() } : { nom: '', contrats: [] };
       var corps = el('div'), nom = saisie(x.nom), ta = el('textarea'); ta.rows = 5; ta.value = x.contrats.map(function (c) { return c.numero + (c.intitule ? ' | ' + c.intitule : ''); }).join('\n');
       corps.appendChild(champ('Nom (tel qu\'il doit figurer sur le badge)', nom)); corps.appendChild(champ('Contrats — un par ligne : numéro | intitulé (facultatif)', ta));
+      var rat = el('select'); rat.appendChild(new Option('— non —', ''));
+      if (e) S.entreprises.filter(function (q) { return q.nom !== e.nom; }).sort(function (a, b) { return a.nom.localeCompare(b.nom); }).forEach(function (q) { rat.appendChild(new Option(q.nom + ((q.contrats || []).length ? '  (' + q.contrats.length + ' contrat' + (q.contrats.length > 1 ? 's' : '') + ')' : ''), q.nom)); });
+      if (e) { corps.appendChild(champ('C\'est la même entreprise que… (rattacher : ses personnes passent sous l\'autre nom)', rat)); }
       var d, ok = bouton('Enregistrer', function () {
         var n = B.vide(nom.value); if (!n) { dire('Indiquez le nom de l\'entreprise.', true); return; }
+        if (e && rat.value) {
+          var vers = rat.value, reste = S.entreprises.filter(function (q) { return q.nom !== e.nom; });
+          if (!confirm('Rattacher « ' + e.nom + ' » à « ' + vers + ' » ? Ses personnes passeront sous « ' + vers + ' ».')) return;
+          var deplacees = adapter.nom === 'portail' ? null : S.personnes.map(function (p) { if (B.norm(p.entreprise) === B.norm(e.nom)) p.entreprise = vers; return p; });
+          Promise.resolve(deplacees ? adapter.ecrirePersonnes(deplacees, null) : null).then(function () { return adapter.ecrireEntreprises(reste, { alias: { de: e.nom, vers: vers } }); }).then(function () { fermer(d); dire('Rattaché'); return recharger(); }).catch(echec);
+          return;
+        }
         var contrats = ta.value.split('\n').map(function (l) { var p = l.split('|'); return { numero: B.vide(p[0]), intitule: B.vide(p.slice(1).join('|')) }; }).filter(function (c) { return c.numero; });
         var liste = S.entreprises.filter(function (q) { return !e || q.nom !== e.nom; }); liste.push({ nom: n, contrats: contrats });
         var maj = (e && e.nom !== n) ? S.personnes.map(function (p) { if (B.norm(p.entreprise) === B.norm(e.nom)) p.entreprise = n; return p; }) : null;
