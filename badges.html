@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Badges prestataires – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Badges prestataires</h1><p>Sonatrach · RNS · Impression recto-verso et historique</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="portail"><div id="app"></div></main>
+<script src="badges/config.js"></script><script src="badges/badges.js"></script><script src="badges/qrcode.js"></script><script src="badges/app.js"></script>
+<script>
+(function () {
+  if (Api.demo) document.getElementById('demo').hidden = false;
+  // Le portail lit les entreprises / contrats dans le CPM et les noms / fonctions dans les Enquêtes administratives (passerelle) ; l'historique est commun à tous les utilisateurs.
+  var B = window.Badges, dernier = { p: {}, e: {} };
+  var CHAMPS = ['nom', 'prenom', 'fonction', 'entreprise', 'contrat', 'structure', 'nomAr', 'prenomAr', 'photo'];
+  function egal(a, b) { return CHAMPS.every(function (k) { return String(a[k] || '') === String(b[k] || ''); }); }
+  var adaptateur = {
+    nom: 'portail',
+    charger: function () {
+      return Api.call('badges_donnees').then(function (r) {
+        dernier = { p: {}, e: {} }; r.personnes.forEach(function (p) { dernier.p[p.id] = p; }); r.entreprises.forEach(function (e) { dernier.e[B.norm(e.nom)] = e; });
+        return r;
+      });
+    },
+    ecrirePersonnes: function (liste, x, supprimer) {
+      var changes = [], supp = [], ids = {};
+      liste.forEach(function (p) { ids[p.id] = 1; var o = dernier.p[p.id]; if (!o || !egal(o, p)) changes.push(p); });
+      Object.keys(dernier.p).forEach(function (id) { if (!ids[id]) supp.push(id); });
+      if (!changes.length && !supp.length) return Promise.resolve();
+      return Api.call('badges_personnes_sauver', { personnes: changes, supprimer: supp });
+    },
+    ecrireEntreprises: function (liste, info) {
+      var changes = [], supp = [], noms = {};
+      liste.forEach(function (e) { noms[B.norm(e.nom)] = 1; var o = dernier.e[B.norm(e.nom)]; if (!o || JSON.stringify(o.contrats || []) !== JSON.stringify(e.contrats || [])) changes.push(e); });
+      Object.keys(dernier.e).forEach(function (k) { if (!noms[k]) supp.push(dernier.e[k].nom); });
+      return Api.call('badges_entreprises_sauver', { entreprises: changes, supprimer: supp });
+    },
+    numeroter: function (items, annee, cfg) {
+      return Api.call('badges_numeroter', { items: items.map(function (p) { return { id: p.id, nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: p.entreprise, contrat: p.contrat, structure: p.structure, nomAr: p.nomAr, prenomAr: p.prenomAr, n: p.n }; }), annee: annee, reimpression: items.some(function (p) { return p.n; }),
+        cfg: { base: cfg.base, formatNumero: cfg.formatNumero, chiffres: cfg.chiffres, numeroDepart: cfg.numeroDepart, structure: cfg.structure } });
+    }
+  };
+  BadgesApp.monter(document.getElementById('app'), { adapter: adaptateur, actualiser: true, prefixe: 'badges_portail_', logoUrl: 'badges/' + (window.BADGES_CONFIG && BADGES_CONFIG.logo || 'logo-sonatrach.png') });
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

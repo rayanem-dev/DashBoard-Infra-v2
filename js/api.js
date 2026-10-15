@@ -53,6 +53,8 @@
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
         { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
+      { id: 'badges', titre: 'Badges prestataires', icone: '🪪', niveau: 3, apps: [
+        { titre: 'Badges prestataires', description: 'Prépare et imprime les badges (recto-verso), numérotation automatique et historique.', emoji: '🪪', url: 'badges.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
         { titre: 'Contrôle de l\'annuaire', description: 'Compare les fiches contact avec BDDORGA.', emoji: '🔎', url: 'divergences.html' },
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' } ] }
@@ -120,6 +122,19 @@
   function demoGrille(rot, debut, n) { var o = ''; for (var i = 0; i < n; i += 1) { var x = statutAu(rot, plus(debut, i)); o += x ? x.st : '.'; } return o; }
 
   // Affectations de démonstration (le service modifié est gardé dans le navigateur ; le vrai changement écrit dans BDDORGA côté passerelle).
+  var CLE_BDG = 'infra_v2_demo_badges';
+  function demoBdg() {
+    try { var o = JSON.parse(localStorage.getItem(CLE_BDG) || 'null'); if (o) return o; } catch (e) {}
+    var P = function (id, nom, prenom, fonction, entreprise, contrat) { return { id: id, nom: nom, prenom: prenom, fonction: fonction, entreprise: entreprise, contrat: contrat, structure: '', nomAr: '', prenomAr: '', source: 'enquetes' }; };
+    return { ent: [{ nom: 'ENCC SPA', source: 'cpm', contrats: [{ numero: 'I/43/RNS/INFRA/2025', intitule: 'Génie civil base de vie' }] },
+        { nom: 'ENAGEO', source: 'cpm', contrats: [{ numero: 'I/12/RNS/INFRA/2025', intitule: 'Forage' }, { numero: 'I/58/RNS/INFRA/2026', intitule: 'Géophysique' }] },
+        { nom: 'ACOSCO', source: 'enquetes', contrats: [] }],
+      pers: [P('e1', 'KACI', 'Farid', 'Chauffeur', 'ENAGEO', ''), P('e2', 'BOUSSAID', 'Abdallah', 'Chauffeur', 'ENAGEO', ''), P('e3', 'DEBILI', 'Fathi', 'Chauffeur', 'ENAGEO', ''),
+        P('e4', 'BENDJEDDA', 'Athmane', 'Monteur assembleur', 'ENCC SPA', 'I/43/RNS/INFRA/2025'), P('e5', 'HAMOU', 'Wassim', 'Agent d\'entretien polyvalent', 'ENCC SPA', 'I/43/RNS/INFRA/2025'),
+        P('e6', 'GHESKALI', 'Lakhdar', 'Chef de chantier', 'ENCC SPA', 'I/43/RNS/INFRA/2025'), P('e7', 'LACHI', 'Choayb', 'Préparateur', 'ACOSCO', ''), P('e8', 'ZERROUKI', 'Arezki', 'Conducteur de travaux génie civil', 'ACOSCO', '')],
+      hist: [] };
+  }
+  function saveBdg(o) { try { localStorage.setItem(CLE_BDG, JSON.stringify(o)); } catch (e) {} }
   var CLE_AFF = 'infra_v2_demo_aff';
   function demoAff() { try { return JSON.parse(localStorage.getItem(CLE_AFF) || 'null') || { services: {}, hist: [] }; } catch (e) { return { services: {}, hist: [] }; } }
   function saveAff(o) { try { localStorage.setItem(CLE_AFF, JSON.stringify(o)); } catch (e) {} }
@@ -211,6 +226,18 @@
       case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'HADJADJ Lamine', champ: 'Téléphone', valeur: '0660514275' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Identifiant SONA', valeur: 'sona29432' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Matricule', valeur: '77589N' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
+      case 'badges_donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var bd = demoBdg(); return { personnes: bd.pers, entreprises: bd.ent, historique: bd.hist, utilisateur: demoState.user.nom || 'Démo', avertissements: [], niveau: 3 };
+      case 'badges_personnes_sauver': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var bp = demoBdg(); (p.personnes || []).forEach(function (x) { var i = -1; bp.pers.forEach(function (q, k) { if (q.id === x.id) i = k; }); if (i >= 0) bp.pers[i] = x; else bp.pers.push(x); });
+        bp.pers = bp.pers.filter(function (q) { return (p.supprimer || []).indexOf(q.id) < 0; }); saveBdg(bp); return { ok: true };
+      case 'badges_entreprises_sauver': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var be = demoBdg(); (p.entreprises || []).forEach(function (x) { var i = -1; be.ent.forEach(function (q, k) { if (q.nom === x.nom) i = k; }); if (i >= 0) be.ent[i].contrats = x.contrats; else be.ent.push({ nom: x.nom, contrats: x.contrats, source: 'manuel' }); });
+        be.ent = be.ent.filter(function (q) { return (p.supprimer || []).indexOf(q.nom) < 0; }); saveBdg(be); return { ok: true };
+      case 'badges_numeroter': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var bn = demoBdg(), B = window.Badges, cf = B.config(p.cfg || {}), at = B.attribuer(bn.hist, p.items || [], p.annee, cf), jour = new Date().toISOString().slice(0, 10), vus = {};
+        at.items.forEach(function (it) { var k = it.n + '|' + B.cle(it); if (vus[k]) return; vus[k] = 1; bn.hist.push({ date: jour, ref: it.ref, n: it.n, annee: it.annee, cle: B.cle(it), nom: it.nom, prenom: it.prenom, fonction: it.fonction, entreprise: it.entreprise, structure: it.structure || cf.structure, contrat: it.contrat, imprime_par: demoState.user.nom || 'Démo' }); });
+        saveBdg(bn); return { items: at.items, historique: bn.hist };
       case 'contacts_divergences': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var rap = demoState.rapproches || {}, khat = !!rap['KHATIRI Mohammed Sadek Elslam'];
         return { appariees: khat ? 42 : 41, fiches_personnes: 49, bddorga: 52, prestataires_non_compares: 58,
