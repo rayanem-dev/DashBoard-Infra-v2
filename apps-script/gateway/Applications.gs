@@ -4,7 +4,6 @@
  * pointerVersCopies() les remplace par les copies de l'organisation v2 (via Registre_Migration).
  */
 var SEED_APPS = [
- ["badges", "Badges prestataires", "Prépare et imprime les badges des prestataires (recto-verso, A4), numérotation automatique et historique de tout ce qui a été imprimé. Entreprises et contrats lus dans le CPM, noms et fonctions dans les Enquêtes administratives.", "🪪", "badges.html", 1, ""],
  ["rapports", "Rapports journaliers", "Saisie du rapport du jour par chantier (effectif, travaux, difficultés, commentaire) et suivi par la hiérarchie.", "📝", "rapports.html", 1],
  ["planning", "Planning & rotations", "Votre planning et, selon vos droits, celui de la division : 1 mois, 3 mois, 6 mois, 1 an.", "🗓️", "planning.html", 1],
  ["affectation", "Affectation du personnel", "Changez le service d'une personne directement dans l'Organigramme (BDDORGA) et dans le portail, avec historique et e-mail à l'intéressé, au chef de division et au secrétariat.", "🔀", "affectation.html", 2],

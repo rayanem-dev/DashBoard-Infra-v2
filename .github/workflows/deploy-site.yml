@@ -28,7 +28,7 @@ jobs:
       - name: Ne publier que le site
         run: |
           mkdir _site
-          cp -r *.html *.json *.png sw.js css js img badges _site/
+          cp -r *.html *.json *.png sw.js css js img _site/
           rm -f _site/*-ancien.html   # anciennes pages (données non protégées) : non publiées
           # version.json = version de js/version.js (compare par le pied de page : ✓ à jour / ⚠ à déployer)
           node -e "const v=require('fs').readFileSync('js/version.js','utf8').match(/PORTAIL_VERSION = '([^']+)'/)[1]; require('fs').writeFileSync('_site/version.json', JSON.stringify({version: v}))"

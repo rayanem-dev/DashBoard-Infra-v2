@@ -73,10 +73,6 @@ function route_(req) {
     case 'simu_demande': return simuDemande_(req);
     case 'simu_decider': return simuDecider_(req);
     case 'donnees': return donneesCsv_(req);
-    case 'badges_donnees': return badgesDonnees_(req);
-    case 'badges_personnes_sauver': return badgesPersonnesSauver_(req);
-    case 'badges_entreprises_sauver': return badgesEntreprisesSauver_(req);
-    case 'badges_numeroter': return badgesNumeroter_(req);
     case 'contacts_divergences': return contactsDivergences_(req);
     case 'contacts_confirmer': return contactsConfirmer_(req);
     case 'contacts_completer': return contactsCompleter_(req);
