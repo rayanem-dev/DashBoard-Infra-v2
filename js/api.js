@@ -188,6 +188,15 @@
           { nom: 'HADJADJ Lamine', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0660514275', tels_alt: [], email: 'lamine.hadjadj@sonatrach.dz', email2: '', sona: 'sona12551', matricule: '90856S' },
           { nom: 'BOUAZIZ Hocine', employeur: 'GTP', section: '📑 CPM — CELLULE PASSATION MARCHÉ', service: 'CPM', fonction: 'CPM — CELLULE PASSATION MARCHÉ', tel: '0659191322', tels_alt: [], email: 'hocinbouaziz463@gmail.com', email2: '', sona: 'soni0299', matricule: '' },
           { nom: 'LAKKAICHI Noureddine', employeur: 'SONATRACH', section: '', service: 'Travaux Entretien', fonction: '', tel: '0661775887', tels_alt: [], email: 'lakkaichi@gmail.com', email2: 'noureddine.lakkaichi@sonatrach.dz', sona: '', matricule: '' } ] };
+      case 'admin_connexions': exigerAdmin(); return { evenements: [
+        { date: '2026-10-15T08:12:00Z', action: 'connexion', libelle: 'Connexion réussie', email: 'k.benali@exemple.dz', nom: 'BENALI Karim', detail: '' },
+        { date: '2026-10-15T08:05:00Z', action: 'connexion_echec', libelle: 'Connexion refusée', email: 's.brahimi@exemple.dz', nom: 'BRAHIMI Samir', detail: 'mot de passe incorrect' },
+        { date: '2026-10-15T07:58:00Z', action: 'code_echec', libelle: 'Envoi du code impossible', email: 'n.ouali@exemple.dz', nom: 'OUALI Nadia', detail: 'envoi impossible : quota dépassé (quota restant : 0)' },
+        { date: '2026-10-14T16:40:00Z', action: 'code_envoye', libelle: 'Code envoyé par e-mail', email: 'y.tahri@exemple.dz', nom: 'TAHRI Yacine', detail: 'envoyé à y.***@exemple.dz (quota restant : 87)' } ].filter(function (e) { return !p.q || (e.email + e.nom + e.detail).toLowerCase().indexOf(String(p.q).toLowerCase()) !== -1; }) };
+      case 'admin_diagnostic': exigerAdmin(); return { email: p.email, nom: 'Agent de démonstration', actif: true, etat: 'choisi', bloque: false, essais: 1, demandes_code: 2, dernier_login: '2026-10-14T09:00:00Z', dernier_refus: '', dernier_code_envoye: '2026-10-14T08:50:00Z', dernier_code_echec: '', quota_mail: 87,
+        conseils: ['Un code a bien été envoyé : demandez à la personne de regarder ses courriers indésirables (spam).'] };
+      case 'admin_mdp': exigerAdmin(); return { mdp: p.mdp || 'k7m2p9xq' };
+      case 'admin_test_mail': exigerAdmin(); return { envoye: true };
       case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'HADJADJ Lamine', champ: 'Téléphone', valeur: '0660514275' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Identifiant SONA', valeur: 'sona29432' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Matricule', valeur: '77589N' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };

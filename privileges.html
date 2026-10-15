@@ -25,10 +25,17 @@
     <button class="onglet" data-p="p-roles">Droits par rôle</button>
     <button class="onglet" data-p="p-apps">Applications</button>
     <button class="onglet" data-p="p-exc">Exceptions</button>
+    <button class="onglet" data-p="p-cnx" id="o-cnx">Connexions</button>
   </div>
   <section class="panneau" id="p-users">
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
-    <table class="t"><thead><tr><th>Nom</th><th>Service</th><th>Rôle</th><th>Compte</th><th>Accès</th></tr></thead><tbody id="b-users"></tbody></table>
+    <table class="t"><thead><tr><th>Nom</th><th>Service</th><th>Rôle</th><th>Compte</th><th>Accès</th><th>Mot de passe</th></tr></thead><tbody id="b-users"></tbody></table>
+  </section>
+  <section class="panneau" id="p-cnx" hidden>
+    <p class="aide" style="margin-bottom:12px">Journal des connexions (réussies, refusées, codes envoyés ou en échec). Cliquez sur une personne pour voir son <b>diagnostic</b> : adresse e-mail, état du mot de passe, derniers essais, quota d'e-mails, avec des conseils. Aucun mot de passe ni code n'est jamais enregistré dans le journal.</p>
+    <input type="text" id="cnx-filtre" class="filtre" placeholder="Nom, e-mail ou mot-clé (ex. incorrect, échec)…">
+    <div id="cnx-diag" class="fiche" hidden></div>
+    <table class="t"><thead><tr><th>Date</th><th>Personne</th><th>Événement</th><th>Détail</th></tr></thead><tbody id="b-cnx"></tbody></table>
   </section>
   <section class="panneau" id="p-def" hidden>
     <p class="aide" style="margin-bottom:12px">Créez, renommez ou supprimez les rôles. <b>Niveau maximum</b> : plafond absolu du rôle, quoi qu'on configure (ex. « Invité » = lecture seule). <b>Modules interdits</b> : jamais accessibles à ce rôle. Un rôle ne peut être supprimé que si plus personne ne l'utilise.</p>
@@ -103,6 +110,9 @@
         Api.call('emettreCode', { email: u.email }).then(function (r) { window.prompt('Code à usage unique (48 h) pour ' + u.nom + ' — à lui transmettre de vive voix :', r.code); })
           .catch(function (e) { toast(e.message, true); });
       }); ta.appendChild(bk); tr.appendChild(ta);
+      var tm = el('td'); var bm = el('button', 'btn-s', 'Mot de passe'); bm.title = 'Définir un mot de passe provisoire pour ' + u.nom;
+      bm.addEventListener('click', function () { definirMdp(u); }); tm.appendChild(bm);
+      var bd = el('button', 'btn-s', 'Diagnostic'); bd.style.marginLeft = '6px'; bd.addEventListener('click', function () { ouvrirConnexions(u.email); }); tm.appendChild(bd); tr.appendChild(tm);
       b.appendChild(tr);
     });
   }
@@ -191,16 +201,56 @@
     etat.modules.forEach(function (m) { var o = el('option', null, m.titre); o.value = m.id; sm.appendChild(o); });
   }
 
+  // ---- Mot de passe défini par l'administrateur ----
+  function definirMdp(u) {
+    var saisi = window.prompt('Nouveau mot de passe PROVISOIRE pour ' + u.nom + '\n(4 caractères minimum ; laissez vide pour en générer un). La personne devra en choisir un autre à sa prochaine connexion.', '');
+    if (saisi === null) return;
+    Api.call('admin_mdp', { email: u.email, mdp: saisi }).then(function (r) { window.prompt('Mot de passe provisoire de ' + u.nom + ' — à lui transmettre de vive voix ou par message (il ne sera plus affiché) :', r.mdp); toast('Mot de passe défini'); })
+      .catch(function (e) { toast(e.message, true); });
+  }
+  // ---- Journal de connexion et diagnostic ----
+  function dateFr(iso) { var d = new Date(iso); return isNaN(d) ? String(iso) : d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  function chargerConnexions() {
+    var q = $('cnx-filtre').value, b = $('b-cnx'); b.textContent = '';
+    Api.call('admin_connexions', { q: q, limite: 300 }).then(function (r) {
+      if (!r.evenements.length) { var tr = el('tr'); var td = el('td', null, 'Aucun événement pour le moment.'); td.colSpan = 4; tr.appendChild(td); b.appendChild(tr); return; }
+      r.evenements.forEach(function (e) {
+        var tr = el('tr', /echec|bloque|limite/.test(e.action) ? 'inactif' : '');
+        tr.appendChild(el('td', null, dateFr(e.date)));
+        var tp = el('td'); if (e.email) { var a = el('button', 'lien', e.nom || e.email); a.type = 'button'; a.title = e.email; a.addEventListener('click', function () { diagnostic(e.email); }); tp.appendChild(a); } else tp.textContent = '—'; tr.appendChild(tp);
+        tr.appendChild(el('td', null, e.libelle)); tr.appendChild(el('td', null, e.detail)); b.appendChild(tr);
+      });
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  var ETATS = { aucun: 'aucun mot de passe défini', choisi: 'mot de passe choisi par la personne', provisoire: 'mot de passe provisoire (à changer)', provisoire_expire: 'mot de passe par défaut expiré', code_en_attente: 'code en attente de saisie' };
+  function diagnostic(email) {
+    var z = $('cnx-diag'); z.hidden = false; z.textContent = 'Diagnostic en cours…';
+    Api.call('admin_diagnostic', { email: email }).then(function (d) {
+      z.textContent = '';
+      z.appendChild(el('h4', null, d.nom)); z.appendChild(el('p', 'meta', d.email + ' · compte ' + (d.actif ? 'actif' : 'DÉSACTIVÉ')));
+      var l = el('div', 'bloc'); [['Mot de passe', ETATS[d.etat] || d.etat], ['Dernière connexion réussie', d.dernier_login ? dateFr(d.dernier_login) : '—'], ['Dernier refus', d.dernier_refus || '—'],
+        ['Dernier code envoyé', d.dernier_code_envoye ? dateFr(d.dernier_code_envoye) : '—'], ['Dernier échec d\'envoi', d.dernier_code_echec || '—'], ['Essais ratés (15 min)', d.essais + ' sur 5'], ['Demandes de code (1 h)', d.demandes_code + ' sur 3'], ['E-mails restants aujourd\'hui', d.quota_mail === '' ? 'inconnu' : d.quota_mail]]
+        .forEach(function (x) { l.appendChild(el('div', null, x[0] + ' : ' + x[1])); }); z.appendChild(l);
+      var c = el('div', 'visa'); c.style.background = '#FEF3C7'; c.style.color = '#92400E'; d.conseils.forEach(function (x) { c.appendChild(el('div', null, '• ' + x)); }); z.appendChild(c);
+      var act = el('div'); act.style.marginTop = '10px';
+      var bt = el('button', 'btn-s', 'Envoyer un e-mail de test'); bt.addEventListener('click', function () { Api.call('admin_test_mail', { email: email }).then(function () { toast('E-mail de test envoyé à ' + d.email); chargerConnexions(); }).catch(function (e) { toast(e.message, true); chargerConnexions(); }); });
+      var bp = el('button', 'btn-s', 'Définir un mot de passe'); bp.style.marginLeft = '8px'; bp.addEventListener('click', function () { definirMdp({ email: email, nom: d.nom }); });
+      act.appendChild(bt); act.appendChild(bp); z.appendChild(act);
+    }).catch(function (e) { z.textContent = e.message; });
+  }
+  function ouvrirConnexions(email) { $('o-cnx').click(); $('cnx-filtre').value = email; chargerConnexions(); diagnostic(email); }
   function dessiner() { dessinerUsers(); dessinerDef(); dessinerRoles(); dessinerApps(); dessinerExc(); }
   function recharger() { return Api.call('admin_etat').then(function (r) { etat = r; dessiner(); }); }
 
   document.querySelectorAll('.onglet').forEach(function (b) {
     b.addEventListener('click', function () {
       document.querySelectorAll('.onglet').forEach(function (x) { x.classList.toggle('actif', x === b); });
-      ['p-users', 'p-def', 'p-roles', 'p-apps', 'p-exc'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; });
+      ['p-users', 'p-def', 'p-roles', 'p-apps', 'p-exc', 'p-cnx'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; }); if (b.dataset.p === 'p-cnx') chargerConnexions();
     });
   });
   $('filtre').addEventListener('input', dessinerUsers);
+  $('cnx-filtre').addEventListener('input', function () { clearTimeout(tFiltre); tFiltre = setTimeout(chargerConnexions, 300); });
+  var tFiltre;
   $('n-add').addEventListener('click', function () {
     agir('admin_role_enregistrer', { creation: true, libelle: $('n-nom').value, niveau_max: Number($('n-max').value), interdits: [] }, 'Rôle créé').then(function () { $('n-nom').value = ''; });
   });

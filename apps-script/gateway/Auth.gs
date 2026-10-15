@@ -12,6 +12,9 @@ var Auth = (function () {
   }
   function tok_() { return Utilities.getUuid() + Utilities.getUuid().replace(/-/g, ''); }
   function erreur_(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
+  /** Journal de connexion : jamais de mot de passe ni de code dans le détail. */
+  function noter_(action, email, detail) { try { Store.journal(action, email || '', String(detail || '').slice(0, 200)); } catch (e) { /* le journal ne doit jamais bloquer une connexion */ } }
+  function quotaMail_() { try { return typeof MailApp !== 'undefined' && MailApp.getRemainingDailyQuota ? MailApp.getRemainingDailyQuota() : ''; } catch (e) { return ''; } }
   function secrets_() { return SpreadsheetApp.openById(prop_('SECRETS_ID')).getSheetByName('Identifiants'); }
 
   function ligneSecret_(email) {
@@ -22,7 +25,7 @@ var Auth = (function () {
 
   function limiter_(email) {
     var c = CacheService.getScriptCache(); var k = 'T_' + email; var n = Number(c.get(k) || 0);
-    if (n >= CFG.MAX_TENTATIVES) throw erreur_('Trop de tentatives. Réessayez dans quelques minutes.', 'LIMITE');
+    if (n >= CFG.MAX_TENTATIVES) { noter_('connexion_bloque', email, 'trop de tentatives (' + CFG.MAX_TENTATIVES + ' en ' + Math.round(CFG.FENETRE_SECONDES / 60) + ' min)'); throw erreur_('Trop de tentatives. Réessayez dans quelques minutes.', 'LIMITE'); }
     return function echec() { c.put(k, String(n + 1), CFG.FENETRE_SECONDES); };
   }
 
@@ -72,27 +75,34 @@ var Auth = (function () {
   /** Première connexion ou mot de passe oublié : un code à usage unique (30 min) part par e-mail. */
   function demanderCode(ident) {
     var u = resoudre_(ident);
-    if (!u) throw erreur_('Utilisateur inconnu');
+    if (!u) { noter_('code_echec', '', 'demande de code : identifiant inconnu (' + String(ident || '').slice(0, 40) + ')'); throw erreur_('Utilisateur inconnu'); }
     var email = String(u.email || '').trim().toLowerCase();
-    if (!email) throw erreur_('Aucune adresse e-mail pour ce compte : contactez le secrétariat.', 'SANS_EMAIL');
+    if (!email) { noter_('code_echec', '', 'aucune adresse e-mail pour ' + (u.nom || u.uid)); throw erreur_('Aucune adresse e-mail pour ce compte : contactez le secrétariat.', 'SANS_EMAIL'); }
     var c = CacheService.getScriptCache(); var k = 'C_' + email; var n = Number(c.get(k) || 0);
-    if (n >= 3) throw erreur_('Trop de demandes. Réessayez dans une heure.', 'LIMITE');
+    if (n >= 3) { noter_('code_limite', email, '3 demandes de code déjà faites cette heure'); throw erreur_('Trop de demandes. Réessayez dans une heure.', 'LIMITE'); }
     c.put(k, String(n + 1), 3600);
     var code = poserCode_(email, CFG.CODE_EMAIL_MINUTES * 60000);
-    Mail.envoyerCode(email, u.nom, code, CFG.CODE_EMAIL_MINUTES);
-    Store.journal('code_email', email, '');
+    try { Mail.envoyerCode(email, u.nom, code, CFG.CODE_EMAIL_MINUTES); }
+    catch (err) {
+      noter_('code_echec', email, 'envoi impossible : ' + String(err && err.message || err) + ' (quota restant : ' + quotaMail_() + ')');
+      throw erreur_('Le code n\'a pas pu être envoyé par e-mail : contactez le secrétariat (il peut vous remettre un code de secours).', 'MAIL');
+    }
+    noter_('code_envoye', email, 'envoyé à ' + Mail.masquer(email) + ' (quota restant : ' + quotaMail_() + ')');
     return { masque: Mail.masquer(email), minutes: CFG.CODE_EMAIL_MINUTES };
   }
 
   function activer(ident, code, mdp, remember) {
-    var u0 = resoudre_(ident); if (!u0) throw erreur_('Code invalide ou expiré');
+    var u0 = resoudre_(ident); if (!u0) { noter_('activation_echec', '', 'identifiant inconnu'); throw erreur_('Code invalide ou expiré'); }
     var email = String(u0.email || '').trim().toLowerCase();
     var echec = limiter_(email);
     var l = ligneSecret_(email);
-    if (!l || !l.row[3] || Number(l.row[5]) < Date.now() || hash(String(code || ''), l.row[3]) !== l.row[4]) { echec(); throw erreur_('Code invalide ou expiré'); }
+    if (!l || !l.row[3] || Number(l.row[5]) < Date.now() || hash(String(code || ''), l.row[3]) !== l.row[4]) {
+      echec(); noter_('activation_echec', email, !l || !l.row[3] ? 'aucun code en attente' : Number(l.row[5]) < Date.now() ? 'code expiré' : 'code incorrect'); throw erreur_('Code invalide ou expiré');
+    }
     controleMdp_(mdp);
     var sel = Utilities.getUuid().replace(/-/g, '');
     l.sh.getRange(l.ligne, 1, 1, 7).setValues([[email, sel, hash(String(mdp), sel), '', '', '', 0]]);
+    noter_('activation', email, 'mot de passe défini avec le code');
     return connecter_(email, remember);
   }
 
@@ -102,14 +112,14 @@ var Auth = (function () {
   }
 
   function login(ident, mdp, remember) {
-    var u0 = resoudre_(ident); if (!u0) throw erreur_('Identifiant ou mot de passe incorrect');
+    var u0 = resoudre_(ident); if (!u0) { noter_('connexion_echec', '', 'identifiant inconnu ou compte désactivé (' + String(ident || '').slice(0, 40) + ')'); throw erreur_('Identifiant ou mot de passe incorrect'); }
     var email = String(u0.email || '').trim().toLowerCase();
     var echec = limiter_(email);
     var l = ligneSecret_(email);
-    if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); throw erreur_('Identifiant ou mot de passe incorrect'); }
+    if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); noter_('connexion_echec', email, !l || !l.row[1] ? 'aucun mot de passe défini (première connexion à faire)' : 'mot de passe incorrect'); throw erreur_('Identifiant ou mot de passe incorrect'); }
     // doit_changer : 0 = mot de passe choisi · 2 = provisoire SANS expiration (jusqu'à ce que la personne le change) · > 2 = provisoire jusqu'à cette date (ms).
     var exp = Number(l.row[6]) || 0;
-    if (exp > 2 && Date.now() > exp) throw erreur_('Le mot de passe par défaut a expiré : utilisez « Première connexion ou mot de passe oublié ? ».', 'DEFAUT_EXPIRE');
+    if (exp > 2 && Date.now() > exp) { noter_('connexion_echec', email, 'mot de passe par défaut expiré'); throw erreur_('Le mot de passe par défaut a expiré : utilisez « Première connexion ou mot de passe oublié ? ».', 'DEFAUT_EXPIRE'); }
     return connecter_(email, remember);
   }
 
@@ -185,12 +195,34 @@ var Auth = (function () {
     return {};
   }
 
+  /** Administrateur : définit un mot de passe PROVISOIRE (sans expiration ; la personne devra en choisir un autre dès sa connexion) et lève les blocages. */
+  function definirMdpAdmin(email, mdp) {
+    email = String(email || '').trim().toLowerCase();
+    if (!Store.utilisateur(email)) throw erreur_('Utilisateur inconnu');
+    controleMdp_(mdp);
+    var sel = Utilities.getUuid().replace(/-/g, ''), l = ligneSecret_(email), ligne = [email, sel, hash(String(mdp), sel), '', '', '', 2];
+    if (l) l.sh.getRange(l.ligne, 1, 1, 7).setValues([ligne]); else secrets_().appendRow(ligne);
+    var c = CacheService.getScriptCache(); c.remove('T_' + email); c.remove('C_' + email);
+    return true;
+  }
+  /** État du mot de passe d'un compte, sans rien révéler de secret : aucun | choisi | provisoire | provisoire_expire | code_en_attente. */
+  function etatSecret(email) {
+    var l = ligneSecret_(String(email || '').trim().toLowerCase());
+    if (!l) return 'aucun';
+    var exp = Number(l.row[6]) || 0, codeValide = l.row[3] && Number(l.row[5]) > Date.now();
+    if (!l.row[1]) return codeValide ? 'code_en_attente' : 'aucun';
+    if (exp > 2 && Date.now() > exp) return 'provisoire_expire';
+    if (exp === 2 || exp > Date.now()) return 'provisoire';
+    return codeValide ? 'code_en_attente' : 'choisi';
+  }
+  function compteurs(email) { var c = CacheService.getScriptCache(); return { essais: Number(c.get('T_' + email) || 0), demandes_code: Number(c.get('C_' + email) || 0) }; }
+
   function logout(token, rt) {
     if (token) CacheService.getScriptCache().remove('S_' + token);
     if (rt) PropertiesService.getScriptProperties().deleteProperty(rmKey_(rt));
   }
 
-  return { empreinteDe: empreinteDe, estParDefaut: estParDefaut, changerMdp: changerMdp, reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
+  return { definirMdpAdmin: definirMdpAdmin, etatSecret: etatSecret, compteurs: compteurs, empreinteDe: empreinteDe, estParDefaut: estParDefaut, changerMdp: changerMdp, reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
 })();
 
 if (typeof module !== 'undefined') module.exports = Auth;
