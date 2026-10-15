@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-18-02",
+    "date": "2026-10-18",
+    "title": "Version 5.0.1 — Connexion plus fiable",
+    "changes": [
+      "Quand Google répond par une page d'erreur au lieu des données, la recherche et le menu sont rejoués automatiquement, et le message affiché est clair (au lieu de « Unexpected token »)."
+    ]
+  },
+  {
     "id": "2026-10-17-02",
     "date": "2026-10-17",
     "title": "Version 5.0 — Adresse e-mail modifiable et recherche en haut",

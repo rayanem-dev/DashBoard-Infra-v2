@@ -161,6 +161,7 @@
   function niveauRap() { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return NIV_RAP[demoState.user.role] || 0; }
   function vuRap(r, niv) { var u = demoState.user; return niv >= 3 || r.auteur_email === u.email || (niv === 2 && r.service === u.service); }
 
+  var LECTURE = /^(liste|menu|donnees|reprendre|annuaire|cpm_journal|planning|rotations|badges_donnees)/;
   function erreur(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
 
   function demo(action, p) {
@@ -417,8 +418,22 @@
       }
       return (SANS_REPRISE[action] ? Promise.resolve() : pret).then(function () {
       var corps = Object.assign({ action: action, token: self.token() }, params);
-      return fetch(window.GATEWAY_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corps) })
-        .then(function (r) { return r.json(); })
+      // Google répond parfois par une page HTML (surcharge, quota, panne brève) au lieu du JSON : on le dit clairement, et les lectures sont rejouées.
+      function appeler(essai) {
+        return fetch(window.GATEWAY_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corps) })
+          .then(function (r) { return r.text().then(function (t) {
+            try { return JSON.parse(t); } catch (x) {
+              var brut = String(t).replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+              var e = erreur('Le serveur Google n\'a pas répondu correctement' + (brut ? ' (« ' + brut + ' »)' : '') + '. Réessayez dans un instant.', 'SERVEUR'); e.rejouable = true; throw e;
+            }
+          }); })
+          .catch(function (e) {
+            if ((e.rejouable || e instanceof TypeError) && LECTURE.test(action) && essai < 3) return new Promise(function (ok) { setTimeout(ok, 700 * essai); }).then(function () { return appeler(essai + 1); });
+            if (e instanceof TypeError) throw erreur('Connexion au serveur impossible : vérifiez le réseau.', 'RESEAU');
+            throw e;
+          });
+      }
+      return appeler(1)
         .then(function (j) { if (!j.ok) throw erreur(j.erreur || 'Erreur', j.code); return j; })
         .catch(function (e) {
           // Session expirée : on tente une fois de la rouvrir avec « rester connecté », puis on rejoue l'appel.
