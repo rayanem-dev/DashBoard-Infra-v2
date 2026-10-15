@@ -8,7 +8,7 @@
  * Droits (module badges) : 1 = voir, 2 = modifier et imprimer, 3 = tout.
  * Le moteur (numérotation, lecture des Enquêtes) est partagé avec le site : badges/badges.js, copié en BadgesMoteur.gs au déploiement.
  */
-var BADGES_ENQUETES_DEFAUT_ = '1BBT3DzzLUXAyEQT3SEXTei4wRuN9h1UZ';
+var BADGES_ENQUETES_DEFAUT_ = '1EQMsT8IeOF9ky9eOx7S3jXoq7jmcikjyVVuwryf0Npo'; // « التحقيقات الادارية » (Google Sheets converti ; la propriété BADGES_ENQUETES_ID, si elle existe, passe avant)
 var BADGES_ENT_P_ = ['id', 'nom', 'prenom', 'fonction', 'entreprise', 'contrat', 'structure', 'nomAr', 'prenomAr', 'supprime', 'photo', 'maj'];
 var BADGES_ENT_E_ = ['nom', 'contrats', 'supprime', 'maj'];
 var BADGES_ENT_H_ = ['date', 'ref', 'n', 'annee', 'cle', 'nom', 'prenom', 'fonction', 'entreprise', 'structure', 'contrat', 'imprime_par'];

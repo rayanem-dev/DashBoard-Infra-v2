@@ -40,7 +40,7 @@ Ces réglages se font une seule fois par imprimante. « Première case libre » 
 Copier le dossier `badges/` sur n'importe quel hébergement statique (ou ouvrir `index.html` à partir d'un dossier partagé), modifier `config.js` (nom de la base, structure, logo), c'est prêt : l'application est **vierge** (aucune donnée du portail). Importer les personnes (Nom, Prénom, Fonction, Entreprise, Contrat) depuis Excel/CSV ou les saisir à la main. Penser à « Sauvegarder tout » régulièrement : les données restent dans le navigateur.
 
 ## Mise en route dans le portail (une fois)
-1. **Enquêtes administratives** doit être un vrai Google Sheets (un `.xlsx` n'est pas lisible par la passerelle) : *Fichier ▸ Enregistrer en Google Sheets*, puis propriété de script `BADGES_ENQUETES_ID` = identifiant du nouveau fichier ; le fichier doit appartenir au compte du secrétariat ou lui être partagé.
+1. **Enquêtes administratives** doit être un vrai Google Sheets (un `.xlsx` n'est pas lisible par la passerelle). Fichier actuel : `1EQMsT8IeOF9ky9eOx7S3jXoq7jmcikjyVVuwryf0Npo` (constante `BADGES_ENQUETES_DEFAUT_` de `Badges.gs`). Pour changer de fichier : propriété de script `BADGES_ENQUETES_ID`. Le fichier doit appartenir au compte du secrétariat ou lui être partagé.
 2. Lancer `badgesVerifierSources` (éditeur Apps Script) : le journal indique le nombre d'entreprises et de personnes lues.
 3. Lancer `ajouterApplicationsManquantes` pour que la carte apparaisse, et donner le niveau 1 ou 2 du module « badges » aux rôles voulus (page Privilèges).
 
