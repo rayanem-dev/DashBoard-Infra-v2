@@ -1,0 +1,106 @@
+# Rapatrie dans le dépôt le code des applications Apps Script (une par dossier : apps-script/<nom>/), avec le compte déjà utilisé pour la passerelle (secret CLASPRC_JSON).
+# À lancer à la main : Actions ▸ « Importer des scripts » ▸ Run workflow, puis une ligne « nom=identifiant-du-script » par application.
+# L'identifiant du script : éditeur Apps Script ▸ Paramètres du projet ▸ « ID de script ».
+# Le dépôt est PUBLIC : le code est analysé avant d'être enregistré ; s'il contient un mot de passe, une clé ou un jeton, rien n'est enregistré
+# (le journal indique le fichier et la ligne, sans la valeur) — à retirer dans le script d'origine, ou à forcer en connaissance de cause.
+name: Importer des scripts
+
+on:
+  workflow_dispatch:
+    inputs:
+      scripts:
+        description: "Une ligne par application : nom=identifiant-du-script (ex. dotation=1AbC…)"
+        required: true
+        default: "autorisation-macaron=1eRIT8Hevcysn1NKxCjF62MmBf-OX7WSUL-RoPTl3Ts-FwU40Bo0sZk0D"
+      forcer:
+        description: "Enregistrer même si l'analyse trouve des secrets (déconseillé : dépôt public)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  importer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Contrôler le secret CLASPRC_JSON
+        id: fmt
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          OUT: ${{ runner.temp }}/clasprc.json
+        run: |
+          umask 077
+          node -e '
+            const fs = require("fs");
+            let brut = String(process.env.CLASPRC_JSON).trim(), j;
+            try { j = JSON.parse(brut); } catch (e1) { try { j = JSON.parse("{" + brut.replace(/^,|,$/g, "") + "}"); } catch (e2) { console.log("::error::CLASPRC_JSON illisible"); process.exit(1); } }
+            const v3 = !!j.tokens, v2 = !!j.token;
+            if (!v2 && !v3) { console.log("::error::CLASPRC_JSON invalide"); process.exit(1); }
+            fs.writeFileSync(process.env.OUT, JSON.stringify(j), { mode: 0o600 });
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "clasp=" + (v3 ? "3" : "2") + "\n");
+          '
+
+      - name: Installer clasp
+        run: npm install -g @google/clasp@${{ steps.fmt.outputs.clasp }}
+
+      - name: Récupérer le code
+        env:
+          CLASPRC_FILE: ${{ runner.temp }}/clasprc.json
+          LISTE: ${{ inputs.scripts }}
+        run: |
+          umask 077
+          cp "$CLASPRC_FILE" "$HOME/.clasprc.json"
+          rm -rf "$RUNNER_TEMP/import"; mkdir -p "$RUNNER_TEMP/import"
+          echo "$LISTE" | while IFS='=' read -r nom id; do
+            nom=$(echo "$nom" | tr -cd 'a-zA-Z0-9_-'); id=$(echo "$id" | tr -d '[:space:]')
+            [ -z "$nom" ] || [ -z "$id" ] && continue
+            echo "== $nom"
+            mkdir -p "$RUNNER_TEMP/import/$nom" && (cd "$RUNNER_TEMP/import/$nom" && clasp clone "$id" --rootDir . 2>&1 | tail -5 && rm -f .clasp.json) \
+              || echo "::error::Impossible de lire « $nom » : ce compte n'a pas accès à ce script (propriétaire différent ? partager le script avec le compte du secrétariat)"
+          done
+          rm -f "$HOME/.clasprc.json" "$CLASPRC_FILE"
+
+      - name: Rechercher les secrets (dépôt public)
+        id: scan
+        run: |
+          node -e '
+            const fs = require("fs"), path = require("path");
+            const racine = process.env.RUNNER_TEMP + "/import";
+            const motifs = [
+              [/(pass(word|wd)?|mot[_ ]?de[_ ]?passe|mdp|pwd)\s*[:=]\s*["\x27][^"\x27\s]{4,}["\x27]/i, "mot de passe"],
+              [/(api[_-]?key|secret|token|jeton|bearer)\s*[:=]\s*["\x27][A-Za-z0-9_\-\.\/+=]{12,}["\x27]/i, "clé ou jeton"],
+              [/AIza[0-9A-Za-z_\-]{30,}/, "clé API Google"], [/ya29\.[0-9A-Za-z_\-]{20,}/, "jeton Google"], [/gh[pousr]_[A-Za-z0-9]{30,}/, "jeton GitHub"],
+              [/sk-[A-Za-z0-9]{20,}/, "clé API"], [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, "clé privée"], [/Inform@\d+/, "mot de passe connu"]
+            ];
+            let trouves = 0;
+            (function parcourir(d) { for (const f of fs.readdirSync(d)) { const p = path.join(d, f); if (fs.statSync(p).isDirectory()) parcourir(p); else if (/\.(gs|js|html|json)$/.test(f)) {
+              fs.readFileSync(p, "utf8").split("\n").forEach((l, i) => motifs.forEach(([re, nom]) => { if (re.test(l)) { trouves++; console.log("::warning file=" + p.replace(racine + "/", "") + ",line=" + (i + 1) + "::" + nom + " probable (valeur masquée)"); } }));
+            } } })(racine);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "trouves=" + trouves + "\n");
+            console.log(trouves + " ligne(s) suspecte(s)");
+          '
+
+      - name: Enregistrer dans le dépôt
+        if: steps.scan.outputs.trouves == '0' || inputs.forcer
+        run: |
+          for d in "$RUNNER_TEMP"/import/*/; do
+            nom=$(basename "$d"); [ -z "$(ls -A "$d")" ] && continue
+            rm -rf "apps-script/$nom"; mkdir -p "apps-script/$nom"; cp -r "$d". "apps-script/$nom/"
+          done
+          git config user.name "github-actions"; git config user.email "actions@users.noreply.github.com"
+          git add apps-script
+          git diff --cached --quiet && echo "Rien de nouveau" && exit 0
+          git commit -m "Import du code des applications Apps Script dans le dépôt"
+          git push
+
+      - name: Refus (secrets détectés)
+        if: steps.scan.outputs.trouves != '0' && !inputs.forcer
+        run: |
+          echo "::error::Des secrets probables ont été trouvés (voir les avertissements ci-dessus) : rien n'a été enregistré, le dépôt étant public. Retirez-les du script d'origine (propriétés de script) puis relancez."
+          exit 1
