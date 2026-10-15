@@ -4,7 +4,7 @@
 
 const DOC_TEMPLATE_ID = '1woGvBaAaWMTuotbofnsVrr8WVbvdyF_NBAmpPdjqTvI';
 const EAU_TEMPLATE_ID = '1Vp1Ic4TsxX_dktESec-fjXP8x_I6W-fBb16i0JH9dCw';
-const ENTRETIEN_TEMPLATE_ID = '1waO8d_9Vd164oOcgkxfTPnZ18Y92cASL';
+const ENTRETIEN_TEMPLATE_ID = '11DHNDUKWdfv5l3DLGl51eJUPG3KF7pTQ7no4CXv9rPg'; // Google Doc (l'ancien identifiant était un .docx, que DocumentApp ne sait pas ouvrir)
 const DIVISION_TEMPLATE_ID = '16ZwFUJrw_-UjbeEeKfiy8YErNst2tYPvkY9MUXKLtYQ';
 const SHEET_ID = '1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA';
 const SHEET_TAB = 'BDDORGA';
