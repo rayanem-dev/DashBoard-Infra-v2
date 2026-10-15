@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base target="_top">
+<title>Dotations – Division Infrastructure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --orange-main: #E85D04;
+    --orange-light: #F48C06;
+    --orange-pale: #FFE8D6;
+    --blue-main: #0F3460;
+    --blue-pale: #DCE8F5;
+    --green-main: #2D6A4F;
+    --green-light: #40916C;
+    --green-pale: #D8F3DC;
+    --purple-main: #5B21B6;
+    --purple-light: #7C3AED;
+    --purple-pale: #EDE4FB;
+    --gray-light: #F5F5F0;
+    --text-dark: #1C1C1C;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --red: #9D0208;
+    --red-pale: #FBE1E1;
+    --shadow-card: 0 4px 20px rgba(232,93,4,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 32px rgba(232,93,4,0.22), 0 2px 8px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--gray-light);
+    color: var(--text-dark);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  }
+
+  .header-inner {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-circle {
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, var(--orange-main), var(--orange-light));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -1px;
+    box-shadow: 0 4px 14px rgba(232,93,4,0.5);
+    flex-shrink: 0;
+  }
+
+  .logo-text h1 { font-size: 17px; font-weight: 700; color: white; letter-spacing: 0.2px; }
+  .logo-text p {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 2px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  .orange-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, #9D0208, var(--orange-main), var(--orange-light), #FFBA08);
+  }
+
+  main {
+    max-width: 620px;
+    margin: 28px auto 0;
+    padding: 0 24px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 18px;
+    padding: 24px 26px;
+    box-shadow: var(--shadow-card);
+    border: 1.5px solid var(--border);
+  }
+  .card + .card { margin-top: 18px; }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .spacer { flex: 1; }
+
+  /* Sélecteur type de dotation */
+  .type-selector {
+    display: flex;
+    gap: 8px;
+    background: var(--gray-light);
+    padding: 5px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .type-btn {
+    flex: 1;
+    min-width: 90px;
+    text-align: center;
+    padding: 11px 6px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .type-btn.active.vivres {
+    background: white; color: var(--orange-main);
+    box-shadow: 0 2px 8px rgba(232,93,4,0.18);
+  }
+  .type-btn.active.eau {
+    background: white; color: var(--blue-main);
+    box-shadow: 0 2px 8px rgba(15,52,96,0.18);
+  }
+  .type-btn.active.entretien {
+    background: white; color: var(--green-main);
+    box-shadow: 0 2px 8px rgba(45,106,79,0.18);
+  }
+  .type-btn.active.division {
+    background: white; color: var(--purple-main);
+    box-shadow: 0 2px 8px rgba(91,33,182,0.18);
+  }
+
+  label.field-label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 16px;
+    margin-bottom: 6px;
+  }
+  label.field-label:first-child { margin-top: 0; }
+
+  input[type=date], input[type=text], input[type=number], select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type=date]:focus, input[type=text]:focus, input[type=number]:focus, select:focus {
+    border-color: var(--orange-main);
+    box-shadow: 0 0 0 4px rgba(232,93,4,0.10);
+  }
+  input:disabled { background: var(--gray-light); color: var(--text-muted); }
+
+  #personnel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 2px;
+  }
+  #personnel .placeholder { font-size: 13px; color: var(--text-muted); font-style: italic; }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .chip:hover { border-color: var(--orange-light); background: var(--orange-pale); }
+  .chip input { width: 16px; height: 16px; accent-color: var(--orange-main); cursor: pointer; }
+
+  .qte-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .qte-row:last-child { border-bottom: none; }
+  .qte-row span { font-size: 13.5px; font-weight: 600; color: var(--text-dark); }
+  .qte-row input, .qte-row select {
+    width: 160px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    text-align: right;
+  }
+  .qte-row input:focus, .qte-row select:focus { outline: none; border-color: var(--orange-main); }
+  .qte-row.auto input { color: var(--orange-main); font-weight: 700; }
+  .qte-row.auto.eau input { color: var(--blue-main); }
+  .qte-row.auto.division input { color: var(--purple-main); font-weight: 700; }
+  .qte-row.division input { text-align: right; width: 190px; }
+
+  .badge-count {
+    margin-left: auto;
+    background: var(--orange-pale);
+    color: var(--orange-main);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+
+  button.generer {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--orange-main), var(--orange-light));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(232,93,4,0.35);
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+  }
+  button.generer.eau {
+    background: linear-gradient(135deg, var(--blue-main), #1B5FAE);
+    box-shadow: 0 4px 14px rgba(15,52,96,0.35);
+  }
+  button.generer.entretien {
+    background: linear-gradient(135deg, var(--green-main), var(--green-light));
+    box-shadow: 0 4px 14px rgba(45,106,79,0.35);
+  }
+  button.generer.division {
+    background: linear-gradient(135deg, var(--purple-main), var(--purple-light));
+    box-shadow: 0 4px 14px rgba(91,33,182,0.35);
+  }
+  button.generer:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  button.generer:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .alert-fenetre {
+    background: var(--red-pale); color: var(--red); font-size: 13px; font-weight: 600;
+    padding: 12px 14px; border-radius: 10px; margin-bottom: 14px;
+  }
+
+  #resultat { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  #resultat a {
+    text-decoration: none;
+    background: var(--orange-pale);
+    color: var(--orange-main);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 11px 14px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  #resultat a:hover { background: #FFD9B8; }
+  #resultat .error { color: var(--red); font-size: 13px; font-weight: 600; }
+
+  button.btn-supprimer-tout {
+    background: var(--red-pale);
+    color: var(--red);
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button.btn-supprimer-tout:hover { background: #F6C6C6; }
+  button.btn-supprimer-tout:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #historique {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 2px;
+  }
+  #historique .placeholder { font-size: 13px; color: var(--text-muted); font-style: italic; }
+
+  .histo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+  }
+  .histo-tag {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 7px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .histo-tag.vivres { background: var(--orange-pale); color: var(--orange-main); }
+  .histo-tag.eau { background: var(--blue-pale); color: var(--blue-main); }
+  .histo-tag.entretien { background: var(--green-pale); color: var(--green-main); }
+  .histo-tag.division { background: var(--purple-pale); color: var(--purple-main); }
+  .histo-info { flex: 1; min-width: 0; }
+  .histo-nom {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .histo-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .histo-links { display: flex; gap: 6px; flex-shrink: 0; }
+  .histo-links a {
+    text-decoration: none;
+    background: var(--orange-pale);
+    color: var(--orange-main);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 9px;
+    border-radius: 7px;
+    white-space: nowrap;
+  }
+  .histo-links a:hover { background: #FFD9B8; }
+  .btn-suppr-item {
+    background: var(--red-pale);
+    color: var(--red);
+    border: none;
+    border-radius: 7px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .btn-suppr-item:hover { background: #F6C6C6; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-circle">SH</div>
+    <div class="logo-text">
+      <h1>Dotations</h1>
+      <p>Sonatrach · RNS · Division Infrastructure</p>
+    </div>
+  </div>
+</header>
+<div class="orange-stripe"></div>
+
+<main>
+  <div class="card">
+    <div class="type-selector">
+      <button type="button" class="type-btn active vivres" id="btnTypeVivres" onclick="setType('VIVRES')">🍽 Vivres</button>
+      <button type="button" class="type-btn eau" id="btnTypeEau" onclick="setType('EAU')">💧 Eau</button>
+      <button type="button" class="type-btn entretien" id="btnTypeEntretien" onclick="setType('ENTRETIEN')">🧽 Entretien</button>
+      <button type="button" class="type-btn division" id="btnTypeDivision" onclick="setType('DIVISION')">🏢 Division</button>
+    </div>
+  </div>
+
+  <div class="card" id="cardInfosGenerales">
+    <div class="card-title">📋 Informations générales</div>
+    <label class="field-label">Date</label>
+    <input type="date" id="date">
+    <div id="rowDateDebut">
+      <label class="field-label">Date de début (dotation)</label>
+      <input type="date" id="dateDebut">
+    </div>
+    <div id="rowService">
+      <label class="field-label">Service</label>
+      <select id="service" onchange="chargerPersonnel()">
+        <option value="">-- Choisir --</option>
+      </select>
+    </div>
+    <div id="rowPeriodeDivision" style="display:none;">
+      <label class="field-label">Période (quinzaine)</label>
+      <input type="text" id="periodeDivisionAffichee" disabled>
+    </div>
+  </div>
+
+  <div class="card" id="cardPersonnelWrapper">
+    <div class="card-title">
+      👥 Personnel présent
+      <span class="badge-count" id="countBadge">0</span>
+    </div>
+    <div id="personnel"><div class="placeholder">Sélectionnez un service...</div></div>
+  </div>
+
+  <!-- Bloc Vivres -->
+  <div class="card" id="cardVivres">
+    <div class="card-title">☕ Quantités (Vivres)</div>
+    <div class="qte-row auto"><span>Café en poudre</span><input id="qteCafe" placeholder="auto"></div>
+    <div class="qte-row"><span>Sucre en morceaux</span><input id="qteSucre" value="01 boite"></div>
+    <div class="qte-row"><span>Gobelet</span><input id="qteGobelet" value="01 Paquet"></div>
+    <div class="qte-row"><span>Thé</span><input id="qteThe" value="01 paquet"></div>
+    <div class="qte-row"><span>Cuillères jetables</span><input id="qteCuilleres" value="25 pièces"></div>
+    <div class="qte-row"><span>Serviettes en papier</span><input id="qteServiettes" value="01 paquet"></div>
+    <button class="generer" id="btnGenererVivres" onclick="generer('VIVRES')">Générer la dotation Vivres</button>
+  </div>
+
+  <!-- Bloc Eau minérale -->
+  <div class="card" id="cardEau" style="display:none;">
+    <div class="card-title">💧 Quantité (Eau minérale)</div>
+    <div class="qte-row">
+      <span>Format bouteille</span>
+      <select id="formatEau" onchange="majQuantiteEauPreview()">
+        <option value="1L">1 Litre (6 bout./fardeau)</option>
+        <option value="0.5L">0.5 Litre (12 bout./fardeau)</option>
+      </select>
+    </div>
+    <div class="qte-row auto eau"><span>Quantité totale</span><input id="quantiteEauPreview" disabled></div>
+    <button class="generer eau" id="btnGenererEau" onclick="generer('EAU')">Générer la dotation Eau</button>
+  </div>
+
+  <!-- Bloc Produits d'entretien -->
+  <div class="card" id="cardEntretien" style="display:none;">
+    <div class="card-title">🧽 Dotation Produits d'Entretien</div>
+    <div id="alerteFenetre"></div>
+    <label class="field-label">Atelier</label>
+    <select id="atelier" onchange="onAtelierChange()">
+      <option value="">-- Choisir --</option>
+    </select>
+    <label class="field-label">Imputation Analytique</label>
+    <input type="text" id="imputationEntretien" placeholder="Code imputation">
+    <label class="field-label">Période de dotation</label>
+    <input type="text" id="periodeAffichee" disabled>
+    <div id="listeProduits" style="margin-top:14px;"></div>
+    <button class="generer entretien" id="btnGenererEntretien" onclick="generer('ENTRETIEN')">Générer la dotation Entretien</button>
+  </div>
+
+  <!-- Bloc Dotation Division (quinzaine) -->
+  <div class="card" id="cardDivision" style="display:none;">
+    <div class="card-title">🏢 Dotation Division (quinzaine)</div>
+    <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">
+      Période calculée automatiquement : du 01 au 15, ou du 16 à la fin du mois, selon la date choisie.
+      Quantités par défaut modifiables ci-dessous.
+    </p>
+    <div id="listeProduitsDivision"></div>
+    <button class="generer division" id="btnGenererDivision" onclick="generer('DIVISION')">Générer la dotation Division</button>
+  </div>
+
+  <div id="resultat"></div>
+
+  <div class="card">
+    <div class="card-title">
+      🗂 Dotations générées
+      <span class="spacer"></span>
+      <button class="btn-supprimer-tout" id="btnSupprimerTout" onclick="supprimerTout()">🗑 Tout supprimer</button>
+    </div>
+    <div id="historique"><div class="placeholder">Chargement...</div></div>
+  </div>
+</main>
+
+<script>
+let typeActuel = 'VIVRES';
+let produitsDivisionCharges = false;
+
+function setType(type){
+  typeActuel = type;
+  document.getElementById('btnTypeVivres').classList.toggle('active', type === 'VIVRES');
+  document.getElementById('btnTypeEau').classList.toggle('active', type === 'EAU');
+  document.getElementById('btnTypeEntretien').classList.toggle('active', type === 'ENTRETIEN');
+  document.getElementById('btnTypeDivision').classList.toggle('active', type === 'DIVISION');
+
+  document.getElementById('cardVivres').style.display = (type === 'VIVRES') ? 'block' : 'none';
+  document.getElementById('cardEau').style.display = (type === 'EAU') ? 'block' : 'none';
+  document.getElementById('cardEntretien').style.display = (type === 'ENTRETIEN') ? 'block' : 'none';
+  document.getElementById('cardDivision').style.display = (type === 'DIVISION') ? 'block' : 'none';
+
+  document.getElementById('cardPersonnelWrapper').style.display =
+    (type === 'VIVRES' || type === 'EAU') ? 'block' : 'none';
+  document.getElementById('rowDateDebut').style.display =
+    (type === 'VIVRES' || type === 'EAU') ? 'block' : 'none';
+  document.getElementById('rowService').style.display =
+    (type === 'VIVRES' || type === 'EAU') ? 'block' : 'none';
+  document.getElementById('rowPeriodeDivision').style.display =
+    (type === 'DIVISION') ? 'block' : 'none';
+
+  document.getElementById('resultat').innerHTML = '';
+  majQuantiteEauPreview();
+
+  if (type === 'ENTRETIEN') chargerEntretien();
+  if (type === 'DIVISION') chargerDivision();
+}
+
+(function initDates(){
+  const today = new Date();
+  const iso = today.getFullYear() + '-' +
+    String(today.getMonth()+1).padStart(2,'0') + '-' +
+    String(today.getDate()).padStart(2,'0');
+  document.getElementById('date').value = iso;
+  document.getElementById('dateDebut').value = iso;
+})();
+
+google.script.run.withSuccessHandler(function(services){
+  const sel = document.getElementById('service');
+  services.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+}).getServices();
+
+function chargerPersonnel(){
+  const service = document.getElementById('service').value;
+  const div = document.getElementById('personnel');
+  document.getElementById('countBadge').textContent = '0';
+  majCafePlaceholder();
+  majQuantiteEauPreview();
+  if(!service){ div.innerHTML = '<div class="placeholder">Sélectionnez un service...</div>'; return; }
+  div.innerHTML = '<div class="placeholder">Chargement...</div>';
+  google.script.run.withSuccessHandler(function(noms){
+    div.innerHTML = '';
+    if(!noms.length){ div.innerHTML = '<div class="placeholder">Aucune personne trouvée pour ce service.</div>'; return; }
+    noms.forEach(n => {
+      const label = document.createElement('label');
+      label.className = 'chip';
+      label.innerHTML = '<input type="checkbox" class="presence" value="'+n+'" onchange="onPresenceChange()"> '+n;
+      div.appendChild(label);
+    });
+  }).getPersonnel(service);
+}
+
+function onPresenceChange(){
+  majCafePlaceholder();
+  majQuantiteEauPreview();
+}
+
+function majCafePlaceholder(){
+  const n = document.querySelectorAll('.presence:checked').length;
+  document.getElementById('countBadge').textContent = n;
+  document.getElementById('qteCafe').placeholder = n > 0 ? 'auto (' + n + ' pers.)' : 'auto';
+}
+
+function majQuantiteEauPreview(){
+  const n = document.querySelectorAll('.presence:checked').length;
+  const dureeJours = 7;
+  const format = document.getElementById('formatEau') ? document.getElementById('formatEau').value : '1L';
+  const semaines = Math.max(1, Math.ceil(dureeJours / 7));
+  const totalFardeaux = n * semaines;
+  const bouteillesParFardeau = (format === '0.5L') ? 12 : 6;
+  const totalBouteilles = totalFardeaux * bouteillesParFardeau;
+  const champ = document.getElementById('quantiteEauPreview');
+  if (champ) champ.value = n > 0 ? (totalBouteilles + ' Bouteilles ' + format) : '';
+}
+
+let ateliersCharges = false;
+
+function chargerEntretien(){
+  google.script.run.withSuccessHandler(function(fenetre){
+    const div = document.getElementById('alerteFenetre');
+    const btn = document.getElementById('btnGenererEntretien');
+    if(!fenetre.ouvert){
+      div.innerHTML = '<div class="alert-fenetre">⚠️ La demande de dotation produits d\'entretien n\'est ouverte qu\'entre le 01 et le 15 du mois. Nous sommes le ' + fenetre.jour + ' — merci de revenir entre le 01 et le 15.</div>';
+      btn.disabled = true;
+    } else {
+      div.innerHTML = '';
+      btn.disabled = false;
+    }
+  }).verifierFenetreEntretien();
+
+  if (!ateliersCharges) {
+    ateliersCharges = true;
+    google.script.run.withSuccessHandler(function(ateliers){
+      const selAtelier = document.getElementById('atelier');
+      ateliers.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a; opt.textContent = a;
+        selAtelier.appendChild(opt);
+      });
+    }).getAteliers();
+  }
+
+  google.script.run.withSuccessHandler(function(produits){
+    const div = document.getElementById('listeProduits');
+    div.innerHTML = '';
+    produits.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'qte-row';
+      row.innerHTML = '<span>' + p.nom + '</span><input type="number" min="0" class="qte-produit" data-nom="' + p.nom + '" value="' + p.qte + '">';
+      div.appendChild(row);
+    });
+  }).getProduitsEntretien();
+
+  const moisFr = ['JANVIER','FÉVRIER','MARS','AVRIL','MAI','JUIN','JUILLET','AOÛT','SEPTEMBRE','OCTOBRE','NOVEMBRE','DÉCEMBRE'];
+  const now = new Date();
+  document.getElementById('periodeAffichee').value = moisFr[now.getMonth()] + ' ' + now.getFullYear();
+}
+
+function onAtelierChange(){
+  const atelier = document.getElementById('atelier').value;
+  if(!atelier){ document.getElementById('imputationEntretien').value = ''; return; }
+  google.script.run.withSuccessHandler(function(code){
+    document.getElementById('imputationEntretien').value = code;
+  }).getImputationEntretien(atelier);
+}
+
+function chargerDivision(){
+  majPeriodeDivision();
+  if (!produitsDivisionCharges) {
+    produitsDivisionCharges = true;
+    google.script.run.withSuccessHandler(function(produits){
+      const div = document.getElementById('listeProduitsDivision');
+      div.innerHTML = '';
+      produits.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'qte-row division';
+        row.innerHTML = '<span>' + p.nom + '</span><input type="text" class="qte-division" data-nom="' + p.nom + '" value="' + p.qte + '">';
+        div.appendChild(row);
+      });
+    }).getProduitsDivision();
+  }
+}
+
+function majPeriodeDivision(){
+  const date = document.getElementById('date').value;
+  if(!date) return;
+  google.script.run.withSuccessHandler(function(periode){
+    document.getElementById('periodeDivisionAffichee').value = periode.debut + '  Au  ' + periode.fin;
+  }).getPeriodeDivisionPreview(date);
+}
+
+document.getElementById('date').addEventListener('change', function(){
+  if (typeActuel === 'DIVISION') majPeriodeDivision();
+});
+
+function generer(type){
+  const presents = Array.from(document.querySelectorAll('.presence:checked')).map(c => c.value);
+  const form = {
+    type: type,
+    date: document.getElementById('date').value,
+    dateDebut: document.getElementById('dateDebut').value,
+    service: document.getElementById('service').value,
+    presents: presents
+  };
+
+  if(type === 'VIVRES'){
+    form.qteCafeManuel = document.getElementById('qteCafe').value || null;
+    form.qteSucre = document.getElementById('qteSucre').value;
+    form.qteGobelet = document.getElementById('qteGobelet').value;
+    form.qteThe = document.getElementById('qteThe').value;
+    form.qteCuilleres = document.getElementById('qteCuilleres').value;
+    form.qteServiettes = document.getElementById('qteServiettes').value;
+  } else if(type === 'EAU'){
+    form.format = document.getElementById('formatEau').value;
+  } else if(type === 'ENTRETIEN'){
+    form.atelier = document.getElementById('atelier').value;
+    form.imputation = document.getElementById('imputationEntretien').value;
+    form.quantites = {};
+    document.querySelectorAll('.qte-produit').forEach(inp => {
+      form.quantites[inp.dataset.nom] = inp.value;
+    });
+    if(!form.atelier){ alert('Merci de choisir un atelier.'); return; }
+  } else if(type === 'DIVISION'){
+    form.quantites = {};
+    document.querySelectorAll('.qte-division').forEach(inp => {
+      form.quantites[inp.dataset.nom] = inp.value;
+    });
+  }
+
+  if(type === 'VIVRES' || type === 'EAU'){
+    if(!form.date || !form.dateDebut || !form.service){
+      alert('Merci de renseigner les deux dates et le service.');
+      return;
+    }
+    if(!form.presents.length){
+      alert('Merci de sélectionner au moins un agent présent.');
+      return;
+    }
+  } else if(type === 'ENTRETIEN'){
+    if(!form.date){ alert('Merci de renseigner la date.'); return; }
+  } else if(type === 'DIVISION'){
+    if(!form.date){ alert('Merci de renseigner la date.'); return; }
+  }
+
+  const btnId = (type === 'VIVRES') ? 'btnGenererVivres'
+    : (type === 'EAU') ? 'btnGenererEau'
+    : (type === 'ENTRETIEN') ? 'btnGenererEntretien'
+    : 'btnGenererDivision';
+  const btn = document.getElementById(btnId);
+  const texteOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Génération en cours...';
+  document.getElementById('resultat').innerHTML = '';
+
+  google.script.run.withSuccessHandler(function(res){
+    btn.disabled = false; btn.textContent = texteOriginal;
+    if(!res.success){
+      document.getElementById('resultat').innerHTML = '<div class="error">Erreur : ' + res.error + '</div>';
+      return;
+    }
+    document.getElementById('resultat').innerHTML =
+      '<a href="'+res.docUrl+'" target="_blank">📄 Ouvrir le Google Doc</a>' +
+      '<a href="'+res.pdfUrl+'" target="_blank">⬇️ Ouvrir le PDF</a>';
+    chargerHistorique();
+  }).withFailureHandler(function(err){
+    btn.disabled = false; btn.textContent = texteOriginal;
+    document.getElementById('resultat').innerHTML = '<div class="error">Erreur : ' + err.message + '</div>';
+  }).genererDotation(form);
+}
+
+function chargerHistorique(){
+  const div = document.getElementById('historique');
+  google.script.run.withSuccessHandler(function(res){
+    if(!res.success){
+      div.innerHTML = '<div class="placeholder">Erreur : ' + res.error + '</div>';
+      return;
+    }
+    if(!res.fichiers.length){
+      div.innerHTML = '<div class="placeholder">Aucune dotation générée pour le moment.</div>';
+      return;
+    }
+    div.innerHTML = '';
+    res.fichiers.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'histo-item';
+      let links = '';
+      if(f.docId) links += '<a href="https://docs.google.com/document/d/'+f.docId+'/edit" target="_blank">📄 Doc</a>';
+      if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank">⬇️ PDF</a>';
+      const tagClass = (f.type === 'EAU') ? 'eau' : (f.type === 'ENTRETIEN') ? 'entretien' : (f.type === 'DIVISION') ? 'division' : 'vivres';
+      row.innerHTML =
+        '<span class="histo-tag ' + tagClass + '">' + f.type + '</span>' +
+        '<div class="histo-info">' +
+          '<div class="histo-nom">' + f.nom + '</div>' +
+          '<div class="histo-date">' + f.date + '</div>' +
+        '</div>' +
+        '<div class="histo-links">' + links + '</div>' +
+        '<button class="btn-suppr-item" title="Supprimer" onclick="supprimerUn(this, \''+ (f.docId||'') +'\', \''+ (f.pdfId||'') +'\')">🗑</button>';
+      div.appendChild(row);
+    });
+  }).withFailureHandler(function(err){
+    div.innerHTML = '<div class="placeholder">Erreur : ' + err.message + '</div>';
+  }).listerDotationsGenerees();
+}
+
+function supprimerUn(btn, docId, pdfId){
+  if(!confirm('Supprimer cette dotation (Doc + PDF) ?')) return;
+  btn.disabled = true;
+  google.script.run.withSuccessHandler(function(res){
+    if(res.success){ chargerHistorique(); }
+    else { alert('Erreur : ' + res.error); btn.disabled = false; }
+  }).withFailureHandler(function(err){
+    alert('Erreur : ' + err.message); btn.disabled = false;
+  }).supprimerDotation(docId || null, pdfId || null);
+}
+
+function supprimerTout(){
+  if(!confirm('Supprimer TOUTES les dotations générées (Vivres + Eau + Entretien + Division) ? Cette action est irréversible.')) return;
+  const btn = document.getElementById('btnSupprimerTout');
+  btn.disabled = true; btn.textContent = 'Suppression...';
+  google.script.run.withSuccessHandler(function(res){
+    btn.disabled = false; btn.textContent = '🗑 Tout supprimer';
+    if(!res.success){ alert('Erreur : ' + res.error); return; }
+    chargerHistorique();
+  }).withFailureHandler(function(err){
+    btn.disabled = false; btn.textContent = '🗑 Tout supprimer';
+    alert('Erreur : ' + err.message);
+  }).supprimerToutesLesDotations();
+}
+
+chargerHistorique();
+</script>
+</body>
+</html>
