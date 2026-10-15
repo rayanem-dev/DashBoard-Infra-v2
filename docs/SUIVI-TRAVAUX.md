@@ -3,7 +3,7 @@
 Mis à jour : 2026-10-18. Légende : ✅ fait · 🔄 en cours · ⏳ à faire · ⛔ bloqué (en attente de toi)
 
 ## Étape 1 — Dotation Vivres & Eau (CORRIGÉE, en attente de test)
-- ✅ Code importé dans `apps-script/dotation/` (ID de script `1KwAr_pkeQnocXG5ksMX8engvF_6PyhzwEZpC_i_tpXdIycKw7mxqZFNu`).
+- ✅ Code importé dans `apps-script/dotation/` (ID de script `13T5A-618HruENeioh3aHxE7NCWmowtTortJ5NBbxN3a8ZPAWOZ9U7Fje`).
 - ✅ Cause : le script lisait `BDDORGA` par numéro de colonne (B = service, D = dépendance, E = nom) ; le fichier a maintenant E-Mail en A et « NOM ET PRENOM » en C. Corrigé : lecture par **nom d'en-tête**, ancien et nouveau format acceptés, message clair si une colonne manque. 3 tests.
 - ✅ Déploiement automatique (`deploy-dotation.yml`) sur la même adresse /exec.
 - ⏳ À toi : tester la dotation après le déploiement.
