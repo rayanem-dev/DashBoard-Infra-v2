@@ -75,6 +75,24 @@ function preparerPages_() {
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }
+/**
+ * Retire des liens du catalogue le « /u/0/ » (ou /u/1/…) : ce fragment force l'ouverture avec le PREMIER compte Google connecté du navigateur,
+ * qui n'est souvent pas celui qui a accès au fichier → page « Une autorisation est nécessaire » alors que le fichier est bien partagé. Une seule fois. Idempotent.
+ */
+function preparerLiens_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('LIENS_PRET') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
+    var v = sh.getDataRange().getValues(), iU = v[0].map(String).indexOf('url');
+    for (var i = 1; i < v.length; i += 1) {
+      var u = String(v[i][iU]), n = u.replace(/(docs\.google\.com\/(?:spreadsheets|document|presentation|forms))\/u\/\d+\//, '$1/').replace(/([?&])authuser=\d+&?/, '$1').replace(/[?&]$/, '');
+      if (n !== u) sh.getRange(i + 1, iU + 1).setValue(n);
+    }
+    props.setProperty('LIENS_PRET', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera */ }
+}
 /** Ajoute au catalogue la carte « Contrôle de l'annuaire » (administration, secrétariat) une seule fois. Idempotent. */
 function preparerAnnuaire_() {
   var props = PropertiesService.getScriptProperties();

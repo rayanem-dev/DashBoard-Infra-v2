@@ -47,7 +47,7 @@ var SEED_APPS = [
   "Liste Radio INFRA RNS",
   "Répertoire complet des équipements radio, fréquences et affectations au sein de la division Infrastructure RNS.",
   "📡",
-  "https://docs.google.com/spreadsheets/u/0/d/1REasn3g8Tg77GldihvZFeDu6vtAIkm2clJNnjYeVajk/edit",
+  "https://docs.google.com/spreadsheets/d/1REasn3g8Tg77GldihvZFeDu6vtAIkm2clJNnjYeVajk/edit",
   1
  ],
  [
