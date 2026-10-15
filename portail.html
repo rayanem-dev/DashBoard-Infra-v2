@@ -14,16 +14,15 @@
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">SH</div>
     <div class="logo-text"><h1>Tableau de Bord – Division Infrastructure</h1><p>Sonatrach · RNS · Version 4.0 (en construction)</p></div></div>
+  <div class="barre-haut" id="barre-haut" hidden>
+    <input type="search" id="recherche" placeholder="Rechercher une application ou un contact…" aria-label="Rechercher une application ou un contact" autocomplete="off">
+    <span class="date-badge" id="date-badge"></span>
+  </div>
   <div class="bandeau-droite"><span id="zone-installer"></span><span id="qui"></span><button class="btn-ghost" id="quitter" type="button">Se déconnecter</button></div>
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 
 <main class="portail">
-  <div class="outils" id="outils" hidden>
-    <input type="search" id="recherche" placeholder="Rechercher une application ou un contact…" aria-label="Rechercher une application ou un contact" autocomplete="off">
-    <span class="date-badge" id="date-badge"></span>
-    <div class="onglets-modules" id="onglets-modules"></div>
-  </div>
   <section class="agent" id="accueil" aria-label="Ma fiche">
     <div class="agent-corps">
     <div class="agent-gauche">
@@ -54,6 +53,9 @@
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
     <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
   </section>
+  <div class="outils" id="outils" hidden>
+    <div class="onglets-modules" id="onglets-modules"></div>
+  </div>
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
   <section class="syntheses" id="syntheses"><div class="syn" id="syn-chantiers" hidden></div><div class="syn" id="syn-cpm" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
   <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
@@ -139,7 +141,7 @@
   // ---------- Recherche, filtres par module, date, synthèses (comme l'ancien accueil) ----------
   var modulesFiltre = '', verrouContenu = false, aDesApps = false;
   function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
-  function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache || modulesFiltre === '__annuaire'; $('syntheses').hidden = cache; if (cache) $('annuaire-zone').hidden = true; $('outils').hidden = cache || !aDesApps; }
+  function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache || modulesFiltre === '__annuaire'; $('syntheses').hidden = cache; if (cache) $('annuaire-zone').hidden = true; $('outils').hidden = cache || !aDesApps; $('barre-haut').hidden = cache || !aDesApps; }
   function filtrer() {
     var brut = $('recherche').value, q = norme(brut).trim(), vus = 0, zoneA = $('annuaire-zone'), liste = $('annuaire-liste');
     var modeAnnuaire = modulesFiltre === '__annuaire';
