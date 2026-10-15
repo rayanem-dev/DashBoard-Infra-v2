@@ -182,7 +182,7 @@ var Badges = (function () {
   // Mise en page IDENTIQUE au modèle BADGE_ENCC.pptx (coordonnées de la diapositive, en mm, relevées dans le fichier) :
   // Berlin Sans FB 11 pt non gras ; logo 12,65 × 16,85 à (5,1 ; 3,7) ; trait haut à (37,2 ; 7,1) jusqu'au bord droit ; trait bas à (0 ; 50,8), 60,3 de long ;
   // titre à droite sur la 1re ligne ; NOM / PRENOM / FONCTION / ENTREPRISE / STRUCTURE tous les 5,15 mm à partir de 26,1 ; pied de page tout en bas (54,6).
-  var G = { marge: 1.9, titreX: 52, lignes: [26.1, 31.25, 36.4, 41.55, 46.7], deuxPoints: 24.5, valeur: 27.5, base1: 3.9, pied: 54.6, trait1: { x: 37.2, y: 7.1, w: 60.4, h: 1.23 }, trait2: { x: 0, y: 50.8, w: 60.33, h: 1.28 }, logo: { x: 5.1, y: 3.7, w: 12.65 }, photo: { x: 72.5, y: 11, w: 22, h: 28 }, qr: { x: 39.8, y: 30, t: 18 } }; // QR centré entre « Visa prestataire » et « Visa structure » (zones de signature laissées libres)
+  var G = { marge: 1.9, titreX: 52, lignes: [26.1, 31.25, 36.4, 41.55, 46.7], deuxPoints: 24.5, valeur: 27.5, base1: 3.9, pied: 55.9, trait1: { x: 37.2, y: 8.4, w: 60.4, h: 1.23 }, trait2: { x: 0, y: 50.8, w: 60.33, h: 1.28 }, logo: { x: 5.1, y: 3.7, w: 12.65 }, photo: { x: 72.5, y: 11, w: 22, h: 28 }, qr: { x: 39.8, y: 30, t: 18 } }; // QR centré entre « Visa prestataire » et « Visa structure » (zones de signature laissées libres)
   function txt(x, baseline, T, contenu, extra, droite) {
     var top = baseline - 0.9 * T * 0.3528; // la position donnée est celle de la ligne d'écriture
     return '<div class="bdg-t" style="' + (droite ? 'right:' + mm(x) : 'left:' + mm(x)) + ';top:' + mm(top) + ';font-size:' + (Math.round(T * 100) / 100) + 'pt;' + (extra || '') + '">' + contenu + '</div>';

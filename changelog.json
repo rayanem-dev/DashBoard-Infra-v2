@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-19-05",
+    "date": "2026-10-19",
+    "title": "Version 5.1.4 — Badges : traits orange dégagés",
+    "changes": [
+      "Badges : le trait orange du haut est descendu et le pied de page abaissé pour que le texte ne touche plus les traits."
+    ]
+  },
+  {
     "id": "2026-10-19-04",
     "date": "2026-10-19",
     "title": "Version 5.1.3 — Badges identiques au modèle",
