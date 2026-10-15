@@ -10,8 +10,9 @@ Mis à jour : 2026-10-18. Légende : ✅ fait · 🔄 en cours · ⏳ à faire �
 - ⚠️ À vérifier : `ENTRETIEN_TEMPLATE_ID` (`1waO8d_…`) est un fichier .docx, or `DocumentApp` ne sait ouvrir qu'un Google Doc : utiliser le Google Doc « DOTATION PRODUITS D'ENTRETIEN » (`11DHNDUKWdfv5l3DLGl51eJUPG3KF7pTQ7no4CXv9rPg`) si la dotation Entretien échoue.
 
 ## Étape 2 — Regrouper tous les scripts dans le dépôt
-- ✅ Workflow « Importer des scripts » (Actions) + règle anti-secrets, dépôt public.
-- ⏳ IDs de script à fournir : Dotation, Prises en charge + Autorisation, Commande de pièces, Requête transport.
+- ✅ Importés dans `apps-script/` : `gateway`, `dotation`, `prise-en-charge`, `commande-pieces`, `requete-transport` (aucun secret trouvé dans le code). Dépendances relevées dans `docs/ORGANISATION.md`.
+- ⏳ Déploiement automatique pour `prise-en-charge`, `commande-pieces`, `requete-transport` : pas encore (il faut d'abord confirmer que chaque adresse /exec appartient bien au projet importé, comme pour la dotation).
+- ⏳ Rendre `prise-en-charge` (CPM C3:N) et `commande-pieces` insensibles aux changements de colonnes (lecture par en-têtes).
 - ⏳ Ranger le dossier Drive « DashBoard-Infra v2 » (lien non partagé avec mon accès : à partager).
 
 ## Étape 3 — Stabilité de la passerelle (erreur « Unexpected token '<' »)

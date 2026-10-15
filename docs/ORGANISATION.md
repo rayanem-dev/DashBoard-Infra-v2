@@ -18,12 +18,15 @@ Le dépôt est **public** : jamais de mot de passe, clé ou jeton dans le code. 
 3. GitHub ▸ Actions ▸ **Importer des scripts** ▸ Run workflow ▸ une ligne par application : `dotation=<ID de script>`.
 4. Le code arrive dans `apps-script/<nom>/`. Les modifications se font ensuite dans le dépôt.
 
-## Dépendances (à compléter à chaque import)
-| Application | Lit / écrit | Lien |
+## Dépendances (ce que chaque application lit ou écrit)
+| Application (dossier) | Lit / écrit | Secrets |
 |---|---|---|
-| Passerelle | Gateway_DB, Gateway_Secrets, BDDORGA (`1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA`), Suivi CPM (`1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY`), Forage, Terrassement, Électricité | `apps-script/gateway/Donnees.gs`, `Synchro.gs` |
-| Prises en charge + Autorisation d'accès | à relever après import | — |
-| Dotation Vivres & Eau | lit BDDORGA (personnel présent) : à relever après import | — |
-| Commande de pièces / Requête transport | à relever après import | — |
+| Passerelle (`gateway/`) | Gateway_DB, Gateway_Secrets, BDDORGA `1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA`, Suivi CPM `1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY`, Forage, Terrassement, Électricité | propriétés de script |
+| Prises en charge + Autorisation d'accès (`prise-en-charge/`) | **liée à la feuille** « Prises en Charges & Autorisation Acces » `1htHz2rgdyjtH3Ne5E8QNprX2LZKauui4hF25Xse5S18` ; lit Suivi CPM (`SUIVI_CPM_ID`, colonnes C3:N) ; modèles Docs : PEC `1V9e3k4eCCSzRPosjtTrAewCQrErDf2xDX1L0V9979xQ`, autorisation `1U0Xg-_QenJJtCHhJC5O-IyzXU683XMzqtLyykPkAQG4`, macaron `13OFJuvreqXJE0DRrM0TPUS9JO-X9YjYVLuNjjlyDdM4` ; service avancé Drive v3 | `GEMINI_API_KEY` (propriété de script, OK) |
+| Dotation Vivres & Eau (`dotation/`) | BDDORGA (nom, service, dépendance **par en-têtes**) ; 4 modèles Docs (voir `dotation/MODELES.md`) | — |
+| Commande de pièces (`commande-pieces/`) | **liée à une feuille** (`getActiveSpreadsheet`, colonnes A et C à partir de la ligne 5) | — |
+| Requête transport (`requete-transport/`) | modèle Doc `1BCycQMNj0yo_yHElP65Pvd0CZ-STI4g7oLxJX5HSVMk` ; envoie des e-mails (portée `script.send_mail`) | — |
 
-Règle pour que les changements de fichier ne cassent plus rien : une application **lit une feuille par le nom des en-têtes** (pas par numéro de colonne) et **par identifiant tenu dans une seule constante en haut du script**.
+Les fichiers dont dépendent plusieurs applications : **BDDORGA** (passerelle, dotation, annuaire), **Suivi CPM** (passerelle, prises en charge, badges). Toute réorganisation de ces deux fichiers doit être suivie ici.
+
+Règle pour que les changements de fichier ne cassent plus rien : une application **lit une feuille par le nom des en-têtes** (pas par numéro de colonne) et **par identifiant tenu dans une seule constante en haut du script**. À appliquer à `prise-en-charge` (colonnes C3:N du CPM lues par numéro) et `commande-pieces`.
