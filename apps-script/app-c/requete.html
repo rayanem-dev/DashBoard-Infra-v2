@@ -1,0 +1,642 @@
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base target="_top">
+  <title>Formulaire de Requête — Division Infrastructure RNS</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --orange-main: #E85D04;
+      --orange-light: #F48C06;
+      --gray-dark: #1A1A2E;
+      --gray-mid: #2D2D44;
+      --gray-light: #F8F9FA;
+      --white: #FFFFFF;
+      --text-dark: #1C1C1C;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --green: #16A34A;
+      --shadow-card: 0 4px 20px rgba(232,93,4,0.10), 0 1px 4px rgba(0,0,0,0.06);
+      --shadow-hover: 0 8px 32px rgba(232,93,4,0.22), 0 2px 8px rgba(0,0,0,0.10);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #F5F5F0;
+      color: var(--text-dark);
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+
+    .header-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .logo-area { display: flex; align-items: center; gap: 16px; }
+
+    .logo-circle {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--orange-main), var(--orange-light));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: white;
+      box-shadow: 0 4px 14px rgba(232,93,4,0.5);
+    }
+
+    .logo-text h1 { font-size: 18px; font-weight: 700; color: white; }
+    .logo-text p { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+    .nav-link {
+      text-decoration: none;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 16px;
+      border-radius: 10px;
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: background 0.2s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.2); }
+
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    .card {
+      background: white;
+      padding: 32px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border);
+    }
+
+    h2.form-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--gray-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 24px;
+      text-align: center;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--gray-dark);
+    }
+
+    select, input, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      box-sizing: border-box;
+      background: var(--white);
+      color: var(--text-dark);
+      transition: all 0.2s;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--orange-main);
+      box-shadow: 0 0 0 3px rgba(232,93,4,0.1);
+    }
+
+    .row { display: flex; gap: 16px; }
+    .col { flex: 1; min-width: 0; }
+
+    .radio-group {
+      display: flex;
+      gap: 24px;
+      padding: 8px 0;
+    }
+
+    .radio-group label {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .radio-group input[type="radio"] {
+      width: auto;
+      accent-color: var(--orange-main);
+    }
+
+    button[type="submit"] {
+      background: linear-gradient(135deg, var(--orange-main), var(--orange-light));
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(232,93,4,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      margin-top: 10px;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(232,93,4,0.5);
+    }
+
+    button[type="submit"]:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    #message {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      display: none;
+      font-size: 14px;
+    }
+
+    .success { background-color: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .error { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .btn-action {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 140px;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn-action:hover { transform: translateY(-1px); }
+
+    .btn-print {
+      background: linear-gradient(135deg, #1A1A2E, #0F3460);
+      color: white;
+      box-shadow: 0 4px 14px rgba(15,52,96,0.4);
+    }
+
+    .btn-cloud {
+      background: linear-gradient(135deg, #16A34A, #22C55E);
+      color: white;
+      box-shadow: 0 4px 14px rgba(22,163,74,0.4);
+    }
+
+    .btn-mail {
+      background: linear-gradient(135deg, #2563EB, #3B82F6);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+    }
+
+    .btn-delete {
+      background: #FEE2E2;
+      color: #991B1B;
+      border: 1.5px solid #FECACA;
+    }
+
+    .btn-action:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .hint-cloud {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* ====== RESPONSIVE MOBILE ====== */
+    @media (max-width: 640px) {
+      .header-inner { padding: 14px 16px; }
+      .logo-circle { width: 44px; height: 44px; font-size: 16px; border-radius: 12px; }
+      .logo-text h1 { font-size: 15px; }
+      .logo-text p { font-size: 9px; }
+      .nav-link { padding: 8px 12px; font-size: 11px; }
+
+      main { padding: 16px 12px 40px; }
+
+      .card { padding: 20px 16px; border-radius: 16px; }
+
+      h2.form-title { font-size: 15px; margin-bottom: 18px; }
+
+      .row { flex-direction: column; gap: 0; }
+
+      .form-group { margin-bottom: 14px; }
+
+      label { font-size: 12.5px; }
+
+      select, input, textarea {
+        font-size: 16px;
+        padding: 12px 14px;
+      }
+
+      .radio-group {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      button[type="submit"] {
+        padding: 16px;
+        font-size: 16px;
+      }
+
+      #message { font-size: 13px; padding: 14px; }
+
+      .action-buttons { flex-direction: column; }
+      .btn-action { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-circle">FR</div>
+      <div class="logo-text">
+        <h1>Formulaire de Requête</h1>
+        <p>Division Infrastructure — RNS</p>
+      </div>
+    </div>
+    <div>
+      <a href="index.html" class="nav-link">← Retour Acceuil</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2 class="form-title">FORMULAIRE DE REQUÊTE</h2>
+
+    <form id="requeteForm" onsubmit="soumettreFormulaire(event)">
+      <div class="row">
+        <div class="col form-group">
+          <label>Date du jour (En-tête) :</label>
+          <input type="date" id="dateEntete" required>
+        </div>
+        <div class="col form-group">
+          <label>Service :</label>
+          <select id="service" onchange="majService()" required>
+            <option value="">-- Sélectionner --</option>
+            <option value="construction">Service Construction</option>
+            <option value="entretien">Service Travaux Entretien</option>
+            <option value="electromecanique">Service Électromécanique</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col form-group">
+          <label>Formulée par :</label>
+          <select id="agent" disabled required>
+            <option value="">-- Choisir un service d'abord --</option>
+          </select>
+        </div>
+        <div class="col form-group">
+          <label>Imputation Analytique :</label>
+          <input type="text" id="imputation" readonly style="background-color: #F3F4F6; font-weight: bold; color: var(--gray-dark);">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Type de véhicule ou engin demandé :</label>
+        <input type="text" id="vehicule" placeholder="Ex: Grue, Camion plateau..." required>
+      </div>
+
+      <div class="form-group">
+        <label>Type de mission :</label>
+        <div class="radio-group">
+          <label><input type="radio" name="typeMission" value="journee" checked onclick="toggleMission()"> Une journée</label>
+          <label><input type="radio" name="typeMission" value="multi" onclick="toggleMission()"> Période prolongée</label>
+        </div>
+      </div>
+
+      <div id="blocJournee" class="row">
+        <div class="col form-group">
+          <label>Date de l'opération :</label>
+          <input type="date" id="dateOp">
+        </div>
+        <div class="col form-group">
+          <label>Heures :</label>
+          <input type="time" id="heureDeb" value="07:00">
+        </div>
+      </div>
+
+      <div id="blocMulti" class="row" style="display: none;">
+        <div class="col form-group"><label>Du :</label><input type="date" id="dateDeb"></div>
+        <div class="col form-group"><label>Au :</label><input type="date" id="dateFin"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Nature De L’opération De La Mission :</label>
+        <textarea id="nature" rows="4" required></textarea>
+      </div>
+
+      <button type="submit" id="btnSubmit">Injecter dans le Doc et Générer PDF</button>
+    </form>
+
+    <div id="message"></div>
+
+    <div id="actionButtons" class="action-buttons" style="display:none;">
+      <button type="button" class="btn-action btn-print" id="btnImprimer" onclick="imprimerPdf()">🖨️ Imprimer</button>
+      <button type="button" class="btn-action btn-cloud" id="btnEnvoyerImprimante" onclick="envoyerImpression()">📠 Envoyer à l'imprimante</button>
+      <button type="button" class="btn-action btn-mail" id="btnEnvoyerMail" onclick="envoyerVersSecretariat()">✉️ Envoyer par email</button>
+      <button type="button" class="btn-action btn-delete" id="btnSupprimer" onclick="supprimerPdf()">🗑️ Supprimer tout</button>
+    </div>
+
+    <div id="hintCloud" class="hint-cloud" style="display:none;">
+      Après l'envoi, rendez-vous sur l'écran du Xerox, ouvrez l'app <strong>@PrintByXerox</strong> et appuyez sur Imprimer.
+    </div>
+  </div>
+</main>
+
+<script>
+  document.getElementById('dateEntete').valueAsDate = new Date();
+  document.getElementById('dateOp').valueAsDate = new Date();
+  document.getElementById('heureDeb').value = "07:00";
+
+  const donnees = {
+    construction: { label: "Service Construction", imputation: "4300045300", agents: ["BEN MESSAOUD ELFAROUK", "DAMECHE MOHAMMED REDA", "MOHAMMED YACINE", "LEMSADFA MOHAMED"] },
+    entretien: { label: "Service Travaux Entretien", imputation: "4300045200", agents: ["BOUCHIKHI DJELLOUL", "BELHIRANE ABDELBARI", "OUADAN MUSTAPHA ELAMINE", "BOUTI MESSAOUD", "HAMBLI MOHAMED LAMINE"] },
+    electromecanique: { label: "Service Électromécanique", imputation: "4300045100", agents: ["ARIGUE IMAD", "LAHMAR MOHAMMED RYAD", "GUEDDA ALA EDDINE", "REBAHI REDOUANE"] }
+  };
+
+  let currentPdfUrl = '';
+  let currentDownloadUrl = '';
+  let currentFileId = '';
+
+  function formaterDate(dateStr) {
+    if(!dateStr) return "";
+    const parts = dateStr.split('-');
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+  }
+
+  function majService() {
+    const s = document.getElementById('service').value;
+    const agentSelect = document.getElementById('agent');
+    const impInput = document.getElementById('imputation');
+
+    agentSelect.innerHTML = '<option value="">-- Sélectionner l\'agent --</option>';
+
+    if (s && donnees[s]) {
+      impInput.value = donnees[s].imputation;
+      agentSelect.disabled = false;
+      donnees[s].agents.forEach(a => {
+        const opt = document.createElement('option'); opt.value = a; opt.textContent = a;
+        agentSelect.appendChild(opt);
+      });
+    } else {
+      impInput.value = ''; agentSelect.disabled = true;
+    }
+  }
+
+  function toggleMission() {
+    const isJour = document.querySelector('input[name="typeMission"]:checked').value === 'journee';
+    document.getElementById('blocJournee').style.display = isJour ? 'flex' : 'none';
+    document.getElementById('blocMulti').style.display = isJour ? 'none' : 'flex';
+  }
+
+  function soumettreFormulaire(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmit');
+    const msg = document.getElementById('message');
+    const actionButtons = document.getElementById('actionButtons');
+    const hintCloud = document.getElementById('hintCloud');
+
+    btn.disabled = true;
+    btn.innerText = "⏳ Génération en cours... Patientez...";
+    msg.style.display = 'none';
+    actionButtons.style.display = 'none';
+    hintCloud.style.display = 'none';
+
+    const s = document.getElementById('service').value;
+    const isJour = document.querySelector('input[name="typeMission"]:checked').value === 'journee';
+
+    let textePeriode = "";
+    if (isJour) {
+      textePeriode = formaterDate(document.getElementById('dateOp').value) + "      Heures : " + document.getElementById('heureDeb').value;
+    } else {
+      textePeriode = "Du " + formaterDate(document.getElementById('dateDeb').value) + " au " + formaterDate(document.getElementById('dateFin').value);
+    }
+
+    const payload = {
+      dateEntete: formaterDate(document.getElementById('dateEntete').value),
+      serviceLabel: donnees[s].label,
+      serviceName: s,
+      agent: document.getElementById('agent').value,
+      imputation: document.getElementById('imputation').value,
+      vehicule: document.getElementById('vehicule').value,
+      periode: textePeriode,
+      nature: document.getElementById('nature').value
+    };
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.innerText = "Injecter dans le Doc et Générer PDF";
+        msg.style.display = 'block';
+
+        if(res.success) {
+          msg.className = 'success';
+          msg.innerHTML = `✅ <strong>Succès !</strong> Le PDF a été généré.<br><br>
+                           <a href="${res.pdfUrl}" target="_blank" style="color:var(--orange-main); font-weight:bold; text-decoration: underline;">📄 Cliquez ici pour l'ouvrir</a>`;
+
+          currentPdfUrl = res.pdfUrl;
+          currentDownloadUrl = res.downloadUrl;
+          currentFileId = res.fileId;
+          actionButtons.style.display = 'flex';
+          hintCloud.style.display = 'block';
+        } else {
+          msg.className = 'error';
+          msg.innerHTML = `❌ Erreur lors de la génération : ${res.error}`;
+        }
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.innerText = "Injecter dans le Doc et Générer PDF";
+        msg.style.display = 'block';
+        msg.className = 'error';
+        msg.innerHTML = `❌ Erreur : ${err.message}`;
+      })
+      .genererDocument(payload);
+  }
+
+  function imprimerPdf() {
+    if (!currentDownloadUrl) return;
+    window.open(currentDownloadUrl, '_blank');
+  }
+
+  function envoyerImpression() {
+    if (!currentFileId) return;
+
+    const btn = document.getElementById('btnEnvoyerImprimante');
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Envoi en cours...";
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.innerHTML = "📠 Envoyer à l'imprimante";
+        if (res.success) {
+          alert("✅ Document envoyé vers l'imprimante !\n\nRendez-vous sur l'écran de l'imprimante Xerox, ouvrez l'app @PrintByXerox, connectez-vous, et appuyez sur Imprimer.");
+        } else {
+          alert("❌ Erreur lors de l'envoi : " + res.error);
+        }
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = "📠 Envoyer à l'imprimante";
+        alert("❌ Erreur : " + err.message);
+      })
+      .envoyerImpression(currentFileId);
+  }
+
+  function envoyerVersSecretariat() {
+    if (!currentFileId) return;
+
+    const btn = document.getElementById('btnEnvoyerMail');
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Envoi en cours...";
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.innerHTML = "✉️ Envoyer par email";
+        if (res.success) {
+          alert("✅ Document envoyé à sec.infra.rns@gmail.com !");
+        } else {
+          alert("❌ Erreur lors de l'envoi : " + res.error);
+        }
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = "✉️ Envoyer par email";
+        alert("❌ Erreur : " + err.message);
+      })
+      .envoyerVersSecretariat(currentFileId);
+  }
+
+  function supprimerPdf() {
+    const btnSupprimer = document.getElementById('btnSupprimer');
+    btnSupprimer.disabled = true;
+    btnSupprimer.innerText = "⏳ Recherche des documents...";
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res.success) {
+          btnSupprimer.disabled = false;
+          btnSupprimer.innerHTML = "🗑️ Supprimer tout";
+          alert('Erreur : ' + res.error);
+          return;
+        }
+
+        if (res.fichiers.length === 0) {
+          btnSupprimer.disabled = false;
+          btnSupprimer.innerHTML = "🗑️ Supprimer tout";
+          alert("Aucun document généré trouvé dans le répertoire.");
+          return;
+        }
+
+        let liste = "Les documents suivants vont être supprimés :\n\n";
+        res.fichiers.forEach((f, i) => {
+          liste += (i + 1) + ". " + f.name + " (créé le " + f.date + ")\n";
+        });
+        liste += "\nConfirmez-vous la suppression de TOUS ces documents ?";
+
+        if (!confirm(liste)) {
+          btnSupprimer.disabled = false;
+          btnSupprimer.innerHTML = "🗑️ Supprimer tout";
+          return;
+        }
+
+        btnSupprimer.innerText = "⏳ Suppression en cours...";
+
+        google.script.run
+          .withSuccessHandler(function(res2) {
+            btnSupprimer.disabled = false;
+            btnSupprimer.innerHTML = "🗑️ Supprimer tout";
+            if (res2.success) {
+              document.getElementById('actionButtons').style.display = 'none';
+              document.getElementById('hintCloud').style.display = 'none';
+              document.getElementById('message').style.display = 'none';
+              currentPdfUrl = ''; currentDownloadUrl = ''; currentFileId = '';
+              alert(res2.count + " document(s) supprimé(s) avec succès.");
+            } else {
+              alert('Erreur lors de la suppression : ' + res2.error);
+            }
+          })
+          .withFailureHandler(function(err) {
+            btnSupprimer.disabled = false;
+            btnSupprimer.innerHTML = "🗑️ Supprimer tout";
+            alert('Erreur : ' + err.message);
+          })
+          .supprimerToutesLesRequetes();
+      })
+      .withFailureHandler(function(err) {
+        btnSupprimer.disabled = false;
+        btnSupprimer.innerHTML = "🗑️ Supprimer tout";
+        alert('Erreur : ' + err.message);
+      })
+      .listerRequetesGenerees();
+  }
+</script>
+
+</body>
+</html>

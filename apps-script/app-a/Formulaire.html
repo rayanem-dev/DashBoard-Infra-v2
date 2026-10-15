@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prise en Charge — Gestion Prestataires</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  :root {
+    --orange-main: #E85D04; --orange-light: #F48C06; --gray-dark: #1A1A2E; --gray-mid: #2D2D44;
+    --gray-light: #F8F9FA; --white: #FFFFFF; --text-dark: #1C1C1C; --text-muted: #6B7280;
+    --border: #E5E7EB; --green: #16A34A; --blue: #2563EB; --red: #DC2626; --teal: #0D9488; --gray-btn: #4B5563;
+    --shadow-card: 0 4px 20px rgba(232,93,4,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 32px rgba(232,93,4,0.22), 0 2px 8px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #F5F5F0; color: var(--text-dark); min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+  .header-inner { max-width: 1000px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; gap: 16px; }
+  .logo-circle { width: 52px; height: 52px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: white; box-shadow: 0 4px 14px rgba(232,93,4,0.5); flex-shrink: 0; }
+  .logo-text h1 { font-size: 18px; font-weight: 700; color: white; }
+  .logo-text p { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 28px 20px 60px; }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--gray-dark); text-transform: uppercase; letter-spacing: 0.6px; margin: 32px 0 14px; }
+  .section-title:first-child { margin-top: 0; }
+
+  /* Barre d'actions — boutons colorés */
+  .actions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .action-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    border: none; border-radius: 16px; padding: 18px 10px; cursor: pointer; color: white; font-family: inherit;
+    font-size: 12.5px; font-weight: 700; text-align: center; box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s, transform 0.15s; line-height: 1.3;
+  }
+  .action-btn:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .action-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .action-btn .icon { font-size: 24px; }
+  .btn-actualiser { background: linear-gradient(135deg, var(--blue), #3B82F6); }
+  .btn-effacer { background: linear-gradient(135deg, var(--red), #EF4444); }
+  .btn-charger { background: linear-gradient(135deg, var(--green), #22C55E); }
+  .btn-generer { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); }
+  .btn-imprimer { background: linear-gradient(135deg, var(--gray-btn), #6B7280); }
+  .btn-dossier { background: linear-gradient(135deg, var(--teal), #14B8A6); }
+
+  /* Carte formulaire */
+  .form-card { background: var(--white); border-radius: 20px; padding: 24px 26px; box-shadow: var(--shadow-card); border: 1px solid var(--border); }
+  label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 13px; color: var(--gray-dark); }
+  label:first-of-type { margin-top: 0; }
+  select, input[type=text], input[type=date] {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px;
+    font-family: inherit; background: var(--gray-light); transition: border-color 0.15s;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--orange-main); }
+  .ligne-check { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .ligne-check input { width: 18px; height: 18px; accent-color: var(--orange-main); }
+  .ligne-check label { margin: 0; font-weight: 600; }
+
+  /* Rangées compactes : deux champs côte à côte */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .form-row .field label { margin: 0 0 6px; }
+  .form-row .field { display: flex; flex-direction: column; }
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; gap: 0; } }
+
+  fieldset { border: 1.5px solid var(--border); border-radius: 14px; margin-top: 18px; padding: 4px 14px 14px; }
+  legend { font-weight: 700; color: var(--orange-main); padding: 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; border-radius: 10px; overflow: hidden; }
+  th, td { border: 1px solid var(--border); padding: 6px; font-size: 12px; }
+  th { background: var(--gray-light); color: var(--gray-dark); font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.3px; }
+  td input { border: none; width: 100%; padding: 6px; font-size: 12.5px; background: transparent; }
+  td input:focus { outline: 1.5px solid var(--orange-main); border-radius: 4px; }
+
+  /* Bouton hero (générer) */
+  .hero-btn {
+    display: flex; align-items: center; gap: 18px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light));
+    border: none; border-radius: 20px; padding: 22px 26px; width: 100%; cursor: pointer; margin-top: 24px;
+    box-shadow: var(--shadow-card); transition: box-shadow 0.2s, transform 0.15s; font-family: inherit;
+  }
+  .hero-btn:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .hero-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .hero-btn .icon { font-size: 30px; }
+  .hero-btn .txt { text-align: left; }
+  .hero-btn h2 { color: white; font-size: 17px; font-weight: 800; }
+  .hero-btn p { color: rgba(255,255,255,0.85); font-size: 12.5px; margin-top: 2px; }
+  .hero-btn .arrow { margin-left: auto; color: white; font-size: 22px; }
+
+  /* Zones de résultat / toast */
+  #toast, #resultat { margin-top: 16px; padding: 14px 16px; border-radius: 12px; display: none; font-size: 13.5px; font-weight: 600; }
+  #toast.ok, #resultat.ok { background: #E6F4EA; color: #137333; display: block; }
+  #toast.err, #resultat.err { background: #FCE8E6; color: #C5221F; display: block; }
+  #resultat a { display: block; color: var(--orange-main); margin-top: 6px; font-weight: 700; text-decoration: none; }
+  #resultat a:hover { text-decoration: underline; }
+
+  .spinner { display: none; margin: 14px auto; border: 4px solid #eee; border-top: 4px solid var(--orange-main); border-radius: 50%; width: 26px; height: 26px; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modale d'upload PDF */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.show { display: flex; }
+  .modal { background: white; border-radius: 18px; padding: 26px; max-width: 420px; width: 100%; text-align: center; box-shadow: var(--shadow-hover); }
+  .modal h3 { color: var(--gray-dark); margin-bottom: 14px; }
+  .dropzone { border: 2px dashed var(--green); border-radius: 12px; padding: 26px 16px; background: #F0FDF4; }
+  .btn-select-file { background: var(--green); color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: inline-block; font-weight: 700; font-size: 13px; }
+  .btn-fermer { margin-top: 16px; background: none; border: none; color: var(--text-muted); font-weight: 600; cursor: pointer; font-size: 13px; }
+
+  /* Modale générique (confirmation / alerte de résultat) */
+  .modal-icon { font-size: 42px; margin-bottom: 8px; }
+  .modal-boutons { margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
+  .modal-btn { background: var(--orange-main); color: white; border: none; padding: 11px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13.5px; font-family: inherit; transition: background 0.15s; }
+  .modal-btn:hover { background: var(--orange-light); }
+  .modal-btn-secondary { background: var(--gray-light); color: var(--text-dark); border: 1.5px solid var(--border); padding: 11px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13.5px; font-family: inherit; }
+  .modal-btn-secondary:hover { background: #EFEFEF; }
+  .modal-btn-danger { background: var(--red); }
+  .modal-btn-danger:hover { background: #EF4444; }
+  #modaleMessage a { display: block; color: var(--orange-main); font-weight: 700; text-decoration: none; margin-top: 6px; }
+  #modaleMessage a:hover { text-decoration: underline; }
+
+  /* Liste de fichiers PDF (résultats de génération / impression) */
+  .pdf-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; text-align: left; }
+  .pdf-item { display: flex; align-items: center; gap: 10px; background: var(--gray-light); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; transition: background 0.15s; }
+  .pdf-item:hover { background: #FFF3E8; }
+  .pdf-badge { background: var(--red); color: white; font-size: 10px; font-weight: 800; padding: 4px 7px; border-radius: 6px; letter-spacing: 0.3px; flex-shrink: 0; }
+  .pdf-item a { color: var(--gray-dark) !important; font-weight: 600 !important; font-size: 12.5px; text-decoration: none !important; word-break: break-word; margin-top: 0 !important; }
+  .pdf-item a:hover { color: var(--orange-main) !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-circle">PEC</div>
+    <div class="logo-text">
+      <h1>Prise en Charge</h1>
+      <p>Gestion Prestataires</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="section-title">Actions rapides</div>
+  <div class="actions-grid">
+    <button class="action-btn btn-actualiser" id="btnActualiser" onclick="actualiserPrestataires()">
+      <span class="icon">🔄</span> Actualiser<br>Prestataires
+    </button>
+    <button class="action-btn btn-effacer" id="btnEffacer" onclick="effacerTout()">
+      <span class="icon">🗑️</span> Effacer
+    </button>
+    <button class="action-btn btn-charger" id="btnCharger" onclick="ouvrirModalePDF()">
+      <span class="icon">📤</span> Charger<br>demande PDF
+    </button>
+    <button class="action-btn btn-generer" id="btnGenerer" onclick="envoyer()">
+      <span class="icon">⚙️</span> Générer
+    </button>
+    <button class="action-btn btn-imprimer" id="btnImprimer" onclick="imprimerTout()">
+      <span class="icon">🖨️</span> Imprimer
+    </button>
+    <button class="action-btn btn-dossier" id="btnDossier" onclick="ouvrirDossierPDF()">
+      <span class="icon">📁</span> Ouvrir<br>dossier PDF
+    </button>
+  </div>
+  <div id="toast"></div>
+
+  <div class="section-title">Nouvelle demande</div>
+  <div class="form-card">
+
+    <label>Prestataire</label>
+    <select id="prestataire"></select>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Émputation</label>
+        <select id="emputation"></select>
+      </div>
+      <div class="field">
+        <label>Base</label>
+        <select id="base"></select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Date d'arrivée</label>
+        <input type="date" id="dateArrivee">
+      </div>
+      <div class="field">
+        <label>Date de départ <span style="font-weight:400;color:var(--text-muted);font-size:10.5px;text-transform:none;letter-spacing:0;">(auto : +28j)</span></label>
+        <input type="date" id="dateDepart">
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>Documents à générer</legend>
+      <div class="ligne-check" style="flex-wrap:wrap;">
+        <input type="checkbox" id="genererPEC" checked>
+        <label>Prise en charge</label>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">⚠️ Maximum 8 personnes</span>
+      </div>
+      <div id="sousOptionsPEC" style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:8px 0 12px 28px;">
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="hebergement" checked>
+          <label>Hébergement</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="margin:0;font-size:12.5px;font-weight:700;color:var(--gray-dark);">N° chambre</label>
+          <input type="text" id="numeroChambre" style="max-width:90px;padding:6px 8px;font-size:13px;">
+        </div>
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="restauration" checked>
+          <label>Restauration</label>
+        </div>
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="remplacement">
+          <label>Remplacement</label>
+        </div>
+      </div>
+      <div class="ligne-check">
+        <input type="checkbox" id="genererAuto">
+        <label>Autorisation d'accès</label>
+      </div>
+      <div class="ligne-check" id="ligneValable2Mois" style="display:none;">
+        <input type="checkbox" id="valable2Mois">
+        <label>Valable 2 mois</label>
+      </div>
+    </fieldset>
+
+    <label style="margin-top:20px;">Personnes / Véhicules</label>
+    <table>
+      <thead>
+        <tr><th>Nom</th><th>Prénom</th><th>Type véhicule</th><th>Immatriculation</th></tr>
+      </thead>
+      <tbody id="corpsTableau"></tbody>
+    </table>
+  </div>
+
+  <button class="hero-btn" id="btnEnvoyer" onclick="envoyer()">
+    <span class="icon">✅</span>
+    <div class="txt">
+      <h2>Générer les documents</h2>
+      <p>Prise en charge et/ou autorisation d'accès selon les cases cochées</p>
+    </div>
+    <span class="arrow">→</span>
+  </button>
+  <div class="spinner" id="spinner"></div>
+  <div id="resultat"></div>
+</main>
+
+<!-- Modale upload PDF -->
+<div class="overlay" id="overlayPdf">
+  <div class="modal">
+    <h3>Charger la demande PDF du prestataire</h3>
+    <div class="dropzone">
+      <label class="btn-select-file" for="pdfFile">Choisir le PDF</label>
+      <input type="file" id="pdfFile" accept="application/pdf" style="display:none" onchange="traiterFichierPdf(this)">
+      <div id="pdfFileName" style="margin-top:10px;font-size:12px;color:var(--text-muted);"></div>
+    </div>
+    <div class="spinner" id="spinnerPdf"></div>
+    <div id="statusPdf" style="margin-top:12px;font-weight:600;font-size:13px;"></div>
+    <button class="btn-fermer" onclick="fermerModalePDF()">Fermer</button>
+  </div>
+</div>
+
+<!-- Modale générique : confirmation avant action, ou message de résultat après -->
+<div class="overlay" id="overlayModale">
+  <div class="modal">
+    <div class="modal-icon" id="modaleIcone">✅</div>
+    <h3 id="modaleTitre">Titre</h3>
+    <p id="modaleMessage" style="margin-top:8px;color:var(--text-muted);font-size:13.5px;line-height:1.5;"></p>
+    <div class="modal-boutons" id="modaleBoutons"></div>
+  </div>
+</div>
+
+<script>
+  // Construit les 12 lignes du tableau
+  const corps = document.getElementById('corpsTableau');
+  for (let i = 0; i < 12; i++) {
+    corps.innerHTML += `<tr>
+      <td><input data-champ="nom"></td>
+      <td><input data-champ="prenom"></td>
+      <td><input data-champ="typeVehicule"></td>
+      <td><input data-champ="immatriculation"></td>
+    </tr>`;
+  }
+
+  document.getElementById('genererAuto').addEventListener('change', function() {
+    document.getElementById('ligneValable2Mois').style.display = this.checked ? 'flex' : 'none';
+  });
+
+  document.getElementById('genererPEC').addEventListener('change', function() {
+    document.getElementById('sousOptionsPEC').style.display = this.checked ? 'flex' : 'none';
+  });
+
+  // Date de départ = date d'arrivée + 28 jours par défaut, recalculée à chaque changement —
+  // SAUF pour une "Visite sur site" (durée généralement courte et limitée) : dans ce cas
+  // on laisse l'utilisateur saisir librement, sans écraser sa saisie.
+  document.getElementById('dateArrivee').addEventListener('change', function() {
+    if (!this.value) return;
+    const estVisiteSurSite = document.getElementById('prestataire').value.trim().startsWith('Visite sur site');
+    if (estVisiteSurSite) return;
+    const d = new Date(this.value + 'T00:00:00');
+    d.setDate(d.getDate() + 28);
+    document.getElementById('dateDepart').value = d.toISOString().split('T')[0];
+  });
+
+  function remplirDropdowns(opts) {
+    const sPrest = document.getElementById('prestataire');
+    sPrest.innerHTML = '';
+    opts.prestataires.forEach(p => sPrest.innerHTML += `<option>${p}</option>`);
+
+    const sEmp = document.getElementById('emputation');
+    sEmp.innerHTML = '';
+    opts.emputations.forEach(e => sEmp.innerHTML += `<option>${e}</option>`);
+
+    const sBase = document.getElementById('base');
+    sBase.innerHTML = '';
+    opts.bases.forEach(b => sBase.innerHTML += `<option>${b}</option>`);
+  }
+
+  google.script.run.withSuccessHandler(remplirDropdowns).obtenirOptionsFormulaire();
+
+  function afficherToast(res) {
+    const div = document.getElementById('toast');
+    div.className = res.success ? 'ok' : 'err';
+    div.innerText = res.message;
+    div.style.display = 'block';
+    setTimeout(() => { div.style.display = 'none'; }, 6000);
+  }
+
+  // Construit une liste soignée de fichiers PDF (badge + nom cliquable)
+  function construirePdfListe(items) {
+    return '<div class="pdf-list">' + items.map(it =>
+      `<div class="pdf-item"><span class="pdf-badge">PDF</span><a href="${it.url}" target="_blank">${it.nom}</a></div>`
+    ).join('') + '</div>';
+  }
+
+  function bloquerBoutons(bloque) {
+    ['btnActualiser','btnEffacer','btnCharger','btnImprimer','btnDossier','btnGenerer'].forEach(id => {
+      document.getElementById(id).disabled = bloque;
+    });
+  }
+
+  /* ---- Modale générique : confirmation avant action / résultat après ---- */
+  function fermerModaleGenerique() {
+    document.getElementById('overlayModale').classList.remove('show');
+  }
+
+  function afficherAlerteModale(titre, message, type) {
+    type = type || 'ok'; // 'ok' | 'err' | 'warn'
+    const icones = { ok: '✅', err: '❌', warn: '⚠️' };
+    const couleurs = { ok: '#16A34A', err: '#DC2626', warn: '#E85D04' };
+    document.getElementById('modaleIcone').innerText = icones[type];
+    document.getElementById('modaleIcone').style.color = couleurs[type];
+    document.getElementById('modaleTitre').innerText = titre;
+    document.getElementById('modaleMessage').innerHTML = message;
+    document.getElementById('modaleBoutons').innerHTML = '<button class="modal-btn" onclick="fermerModaleGenerique()">OK</button>';
+    document.getElementById('overlayModale').classList.add('show');
+  }
+
+  function afficherConfirmationModale(titre, message, onConfirm) {
+    document.getElementById('modaleIcone').innerText = '⚠️';
+    document.getElementById('modaleIcone').style.color = '#E85D04';
+    document.getElementById('modaleTitre').innerText = titre;
+    document.getElementById('modaleMessage').innerHTML = message;
+    document.getElementById('modaleBoutons').innerHTML =
+      '<button class="modal-btn-secondary" onclick="fermerModaleGenerique()">Annuler</button>' +
+      '<button class="modal-btn modal-btn-danger" id="btnConfirmerModale">Confirmer</button>';
+    document.getElementById('overlayModale').classList.add('show');
+    document.getElementById('btnConfirmerModale').onclick = function() {
+      fermerModaleGenerique();
+      onConfirm();
+    };
+  }
+
+  function actualiserPrestataires() {
+    bloquerBoutons(true);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        bloquerBoutons(false);
+        if (res.success && res.options) remplirDropdowns(res.options);
+        afficherAlerteModale(res.success ? "Liste actualisée" : "Erreur", res.message, res.success ? 'ok' : 'err');
+      })
+      .withFailureHandler(function(err) { bloquerBoutons(false); afficherAlerteModale("Erreur", err.message, 'err'); })
+      .actualiserPrestatairesWeb();
+  }
+
+  function effacerTout() {
+    afficherConfirmationModale(
+      "Supprimer tous les fichiers ?",
+      "Cette action supprime définitivement tous les PDF et documents générés (Prises en charge, Autorisations, Macarons). C'est irréversible.",
+      function() {
+        bloquerBoutons(true);
+        google.script.run
+          .withSuccessHandler(function(res) {
+            bloquerBoutons(false);
+            if (res.success) {
+              // Les liens/résultats affichés précédemment ne sont plus valides
+              const divResultat = document.getElementById('resultat');
+              divResultat.style.display = 'none';
+              divResultat.innerHTML = '';
+              const divToast = document.getElementById('toast');
+              divToast.style.display = 'none';
+              divToast.innerHTML = '';
+            }
+            afficherAlerteModale(res.success ? "Suppression terminée" : "Erreur", res.message, res.success ? 'ok' : 'err');
+          })
+          .withFailureHandler(function(err) { bloquerBoutons(false); afficherAlerteModale("Erreur", err.message, 'err'); })
+          .effacerToutWeb();
+      }
+    );
+  }
+
+  function ouvrirDossierPDF() {
+    bloquerBoutons(true);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        bloquerBoutons(false);
+        if (res.success) window.open(res.url, '_blank');
+        else afficherToast(res);
+      })
+      .withFailureHandler(function(err) { bloquerBoutons(false); afficherToast({success:false, message: err.message}); })
+      .ouvrirDossierPDFWeb();
+  }
+
+  function imprimerTout() {
+    bloquerBoutons(true);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        bloquerBoutons(false);
+        if (!res.success) { afficherAlerteModale("Erreur", res.message, 'err'); return; }
+        const contenu = res.urls.length + " document(s) trouvé(s) :" + construirePdfListe(res.urls);
+        afficherAlerteModale("Documents disponibles", contenu, 'ok');
+      })
+      .withFailureHandler(function(err) { bloquerBoutons(false); afficherAlerteModale("Erreur", err.message, 'err'); })
+      .imprimerToutWeb();
+  }
+
+  function ouvrirModalePDF() {
+    document.getElementById('overlayPdf').classList.add('show');
+    document.getElementById('statusPdf').innerText = '';
+    document.getElementById('pdfFileName').innerText = '';
+  }
+  function fermerModalePDF() {
+    document.getElementById('overlayPdf').classList.remove('show');
+  }
+
+  function traiterFichierPdf(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('pdfFileName').innerText = file.name;
+    document.getElementById('statusPdf').innerText = "Analyse et OCR du PDF en cours...";
+    document.getElementById('statusPdf').style.color = "#0b57d0";
+    document.getElementById('spinnerPdf').style.display = "block";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = e.target.result.split(',')[1];
+      google.script.run
+        .withSuccessHandler(function(res) {
+          document.getElementById('spinnerPdf').style.display = "none";
+          if (!res.success) {
+            document.getElementById('statusPdf').innerText = res.message;
+            document.getElementById('statusPdf').style.color = "#c5221f";
+            return;
+          }
+          // Remplit le tableau du formulaire avec les personnes extraites
+          const lignes = corps.querySelectorAll('tr');
+          res.personnes.forEach((p, i) => {
+            if (!lignes[i]) return;
+            lignes[i].querySelector('[data-champ="nom"]').value = p.nom || '';
+            lignes[i].querySelector('[data-champ="prenom"]').value = p.prenom || '';
+          });
+          // Remplit la date si détectée et champ vide
+          const champDate = document.getElementById('dateArrivee');
+          if (res.dateDetectee && !champDate.value) {
+            const parts = res.dateDetectee.split('/');
+            if (parts.length === 3) champDate.value = parts[2] + '-' + parts[1] + '-' + parts[0];
+          }
+          document.getElementById('statusPdf').innerText = res.personnes.length + " personne(s) extraite(s) et ajoutée(s) au tableau !";
+          document.getElementById('statusPdf').style.color = "#137333";
+          setTimeout(fermerModalePDF, 1800);
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('spinnerPdf').style.display = "none";
+          document.getElementById('statusPdf').innerText = "Erreur : " + err.message;
+          document.getElementById('statusPdf').style.color = "#c5221f";
+        })
+        .traiterPDFUploadPECWeb(data, file.name);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function envoyer() {
+    const personnes = [];
+    corps.querySelectorAll('tr').forEach(tr => {
+      const p = {};
+      tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
+      if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
+    });
+
+    // Garde-fou : le modèle de Prise en charge n'accepte que 6 personnes max
+    if (document.getElementById('genererPEC').checked) {
+      const nbPersonnes = personnes.filter(p => p.nom || p.prenom).length;
+      if (nbPersonnes > 8) {
+        afficherResultat({
+          success: false,
+          message: "Tu as saisi " + nbPersonnes + " personne(s), mais la Prise en charge accepte 8 personnes maximum. Décoche 'Prise en charge' pour ne générer que l'Autorisation d'accès, ou réduis la liste."
+        });
+        return;
+      }
+      if (!document.getElementById('hebergement').checked && !document.getElementById('restauration').checked) {
+        afficherResultat({
+          success: false,
+          message: "Coche au moins 'Hébergement' ou 'Restauration' pour la Prise en charge."
+        });
+        return;
+      }
+    }
+
+    const data = {
+      prestataire: document.getElementById('prestataire').value,
+      emputation: document.getElementById('emputation').value,
+      base: document.getElementById('base').value,
+      remplacement: document.getElementById('remplacement').checked,
+      numeroChambre: document.getElementById('numeroChambre').value,
+      dateArrivee: document.getElementById('dateArrivee').value,
+      dateDepart: document.getElementById('dateDepart').value,
+      genererPEC: document.getElementById('genererPEC').checked,
+      hebergement: document.getElementById('hebergement').checked,
+      restauration: document.getElementById('restauration').checked,
+      genererAuto: document.getElementById('genererAuto').checked,
+      valable2Mois: document.getElementById('valable2Mois').checked,
+      personnes: personnes
+    };
+
+    document.getElementById('btnEnvoyer').disabled = true;
+    document.getElementById('btnGenerer').disabled = true;
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('resultat').style.display = 'none';
+
+    google.script.run
+      .withSuccessHandler(afficherResultat)
+      .withFailureHandler(function(err) { afficherResultat({ success: false, message: err.message }); })
+      .soumettreFormulairePEC(data);
+  }
+
+  function afficherResultat(res) {
+    document.getElementById('btnEnvoyer').disabled = false;
+    document.getElementById('btnGenerer').disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    const div = document.getElementById('resultat');
+    div.className = res.success ? 'ok' : 'err';
+    let contenu = res.message;
+    if (res.success && res.liens) {
+      contenu += construirePdfListe(res.liens);
+    }
+    div.innerHTML = contenu;
+    afficherAlerteModale(res.success ? "Génération terminée" : "Erreur", contenu, res.success ? 'ok' : 'err');
+  }
+</script>
+</body>
+</html>
