@@ -12,6 +12,11 @@ var Auth = (function () {
   }
   function tok_() { return Utilities.getUuid() + Utilities.getUuid().replace(/-/g, ''); }
   function erreur_(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
+  /** Adresse où envoyer les codes : « email_contact » (corrigée par l'agent ou le secrétariat) si elle est valable, sinon l'adresse du compte NETTOYÉE (espaces, caractères invisibles retirés). */
+  function adresseEnvoi_(u) {
+    var c = Annuaire.analyserEmail(u.email_contact); if (c.valide) return c.propre;
+    var d = Annuaire.analyserEmail(u.email); return d.valide ? d.propre : '';
+  }
   /** Journal de connexion : jamais de mot de passe ni de code dans le détail. */
   function noter_(action, email, detail) { try { Store.journal(action, email || '', String(detail || '').slice(0, 200)); } catch (e) { /* le journal ne doit jamais bloquer une connexion */ } }
   function quotaMail_() { try { return typeof MailApp !== 'undefined' && MailApp.getRemainingDailyQuota ? MailApp.getRemainingDailyQuota() : ''; } catch (e) { return ''; } }
@@ -76,19 +81,23 @@ var Auth = (function () {
   function demanderCode(ident) {
     var u = resoudre_(ident);
     if (!u) { noter_('code_echec', '', 'demande de code : identifiant inconnu (' + String(ident || '').slice(0, 40) + ')'); throw erreur_('Utilisateur inconnu'); }
-    var email = String(u.email || '').trim().toLowerCase();
+    var email = String(u.email || '').trim().toLowerCase(), dest = adresseEnvoi_(u);
     if (!email) { noter_('code_echec', '', 'aucune adresse e-mail pour ' + (u.nom || u.uid)); throw erreur_('Aucune adresse e-mail pour ce compte : contactez le secrétariat.', 'SANS_EMAIL'); }
+    if (!dest) {
+      noter_('code_echec', email, 'adresse e-mail inutilisable : ' + Annuaire.analyserEmail(u.email).problemes.join(', '));
+      throw erreur_('L\'adresse e-mail enregistrée pour ce compte n\'est pas valable. Connectez-vous avec le mot de passe fourni par le secrétariat (ou 0000) puis corrigez votre adresse sur la page d\'accueil, ou contactez le secrétariat.', 'ADRESSE');
+    }
     var c = CacheService.getScriptCache(); var k = 'C_' + email; var n = Number(c.get(k) || 0);
     if (n >= 3) { noter_('code_limite', email, '3 demandes de code déjà faites cette heure'); throw erreur_('Trop de demandes. Réessayez dans une heure.', 'LIMITE'); }
     c.put(k, String(n + 1), 3600);
     var code = poserCode_(email, CFG.CODE_EMAIL_MINUTES * 60000);
-    try { Mail.envoyerCode(email, u.nom, code, CFG.CODE_EMAIL_MINUTES); }
+    try { Mail.envoyerCode(dest, u.nom, code, CFG.CODE_EMAIL_MINUTES); }
     catch (err) {
       noter_('code_echec', email, 'envoi impossible : ' + String(err && err.message || err) + ' (quota restant : ' + quotaMail_() + ')');
       throw erreur_('Le code n\'a pas pu être envoyé par e-mail : contactez le secrétariat (il peut vous remettre un code de secours).', 'MAIL');
     }
-    noter_('code_envoye', email, 'envoyé à ' + Mail.masquer(email) + ' (quota restant : ' + quotaMail_() + ')');
-    return { masque: Mail.masquer(email), minutes: CFG.CODE_EMAIL_MINUTES };
+    noter_('code_envoye', email, 'envoyé à ' + Mail.masquer(dest) + (dest !== email ? ' (adresse de contact)' : '') + ' (quota restant : ' + quotaMail_() + ')');
+    return { masque: Mail.masquer(dest), minutes: CFG.CODE_EMAIL_MINUTES };
   }
 
   function activer(ident, code, mdp, remember) {
@@ -158,7 +167,7 @@ var Auth = (function () {
 
   function publique_(u) {
     return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), civilite: u.civilite || '', matricule: u.matricule || '', role: u.role, service: u.service, fonction: u.fonction,
-             dependance: u.dependance || '', telephone: u.telephone || '',
+             dependance: u.dependance || '', telephone: u.telephone || '', email_contact: u.email_contact || '',
              sona: u.sona || '', date_integration: Annuaire.dateIso(u.date_integration),
              wifi_user: u.wifi_user || '', sap: u.sap || '', nin_masque: masquer_(u.nin), nin_renseigne: !!String(u.nin || '').trim() };
   }
@@ -217,12 +226,44 @@ var Auth = (function () {
   }
   function compteurs(email) { var c = CacheService.getScriptCache(); return { essais: Number(c.get('T_' + email) || 0), demandes_code: Number(c.get('C_' + email) || 0) }; }
 
+  /** Agent connecté : demande de changer l'adresse où arrivent ses codes. Un code est envoyé à la NOUVELLE adresse pour la confirmer. */
+  function demanderEmailContact(user, adresse) {
+    var a = Annuaire.analyserEmail(adresse), email = String(user.email).toLowerCase();
+    if (!a.valide) throw erreur_('Adresse e-mail invalide' + (a.problemes.length ? ' : ' + a.problemes[0] : ''), 'ADRESSE');
+    var c = CacheService.getScriptCache(), k = 'ECN_' + email, n = Number(c.get(k) || 0);
+    if (n >= 3) { noter_('code_limite', email, 'changement d\'adresse : 3 demandes cette heure'); throw erreur_('Trop de demandes. Réessayez dans une heure.', 'LIMITE'); }
+    c.put(k, String(n + 1), 3600);
+    var code = String(Math.floor(100000 + Math.random() * 900000)), sel = Utilities.getUuid().replace(/-/g, '');
+    c.put('EC_' + email, JSON.stringify({ a: a.propre, s: sel, h: hash(code, sel) }), 1800);
+    try { Mail.envoyerCode(a.propre, user.nom, code, 30, 'adresse'); }
+    catch (err) { noter_('code_echec', email, 'changement d\'adresse : envoi impossible : ' + String(err && err.message || err)); throw erreur_('Le code n\'a pas pu être envoyé à cette adresse. Vérifiez-la ou contactez le secrétariat.', 'MAIL'); }
+    noter_('email_contact_code', email, 'code envoyé à ' + Mail.masquer(a.propre));
+    return { masque: Mail.masquer(a.propre) };
+  }
+  function confirmerEmailContact(user, code) {
+    var email = String(user.email).toLowerCase(), echec = limiter_(email), c = CacheService.getScriptCache(), v = c.get('EC_' + email), o = null;
+    try { o = v ? JSON.parse(v) : null; } catch (e) { o = null; }
+    if (!o || hash(String(code || '').trim(), o.s) !== o.h) { echec(); noter_('activation_echec', email, 'changement d\'adresse : code ' + (o ? 'incorrect' : 'absent ou expiré')); throw erreur_('Code invalide ou expiré'); }
+    Store.maj('Utilisateurs', { email: user.email }, { email_contact: o.a });
+    c.remove('EC_' + email);
+    noter_('email_contact', email, 'adresse de contact changée : ' + Mail.masquer(o.a));
+    return { email_contact: o.a };
+  }
+  /** Administrateur : fixe l'adresse de contact d'un compte (nettoyée et vérifiée). */
+  function definirEmailContact(email, adresse) {
+    if (!Store.utilisateur(email)) throw erreur_('Utilisateur inconnu');
+    var a = Annuaire.analyserEmail(adresse);
+    if (adresse && !a.valide) throw erreur_('Adresse e-mail invalide' + (a.problemes.length ? ' : ' + a.problemes[0] : ''), 'ADRESSE');
+    Store.maj('Utilisateurs', { email: email }, { email_contact: adresse ? a.propre : '' });
+    return a.propre;
+  }
+
   function logout(token, rt) {
     if (token) CacheService.getScriptCache().remove('S_' + token);
     if (rt) PropertiesService.getScriptProperties().deleteProperty(rmKey_(rt));
   }
 
-  return { definirMdpAdmin: definirMdpAdmin, etatSecret: etatSecret, compteurs: compteurs, empreinteDe: empreinteDe, estParDefaut: estParDefaut, changerMdp: changerMdp, reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
+  return { adresseEnvoi: adresseEnvoi_, demanderEmailContact: demanderEmailContact, confirmerEmailContact: confirmerEmailContact, definirEmailContact: definirEmailContact, definirMdpAdmin: definirMdpAdmin, etatSecret: etatSecret, compteurs: compteurs, empreinteDe: empreinteDe, estParDefaut: estParDefaut, changerMdp: changerMdp, reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
 })();
 
 if (typeof module !== 'undefined') module.exports = Auth;

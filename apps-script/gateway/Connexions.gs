@@ -94,3 +94,34 @@ function connexionsTestMail_(req) {
   Store.journal('test_mail', email, 'envoyé par ' + a.email);
   return { envoye: true };
 }
+
+/** Rend visibles les caractères invisibles d'une adresse (ex. « jean⟦U+00A0⟧x@… »). */
+function emailVisible_(s) { return String(s == null ? '' : s).replace(/[\u200B-\u200F\u2060\u2028\u2029\uFEFF\u00AD\u00A0\u202F\u3000]/g, function (c) { return '⟦U+' + ('0000' + c.charCodeAt(0).toString(16).toUpperCase()).slice(-4) + '⟧'; }); }
+
+/** Action « admin_emails » : contrôle de toutes les adresses e-mail (comptes du portail + lignes ignorées de BDDORGA). Ne modifie rien. */
+function emailsControle_(req) {
+  connexionsAdmin_(req);
+  var us = Store.table('Utilisateurs'), probleme = [], vus = {};
+  us.forEach(function (u) { var p = Annuaire.analyserEmail(u.email_contact || u.email).propre; if (p) (vus[p] = vus[p] || []).push(Annuaire.nomAffichable(u.nom, u.email)); });
+  us.forEach(function (u) {
+    var a = Annuaire.analyserEmail(u.email), c = u.email_contact ? Annuaire.analyserEmail(u.email_contact) : null, pb = a.problemes.slice(), utile = c && c.valide ? c : a;
+    if (c && !c.valide) pb.push('adresse de contact invalide : ' + c.problemes.join(', '));
+    var dup = vus[utile.propre] && vus[utile.propre].length > 1 ? vus[utile.propre] : null;
+    if (dup) pb.push('même adresse que : ' + dup.filter(function (n) { return n !== Annuaire.nomAffichable(u.nom, u.email); }).join(', '));
+    if (!pb.length || (pb.length === 1 && /^majuscules/.test(pb[0]))) return;
+    probleme.push({ email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), brut: emailVisible_(u.email), contact: u.email_contact || '', propre: utile.propre, valide: utile.valide, problemes: pb,
+      suggestion: utile.valide && (u.email_contact ? false : a.propre !== String(u.email).toLowerCase()) ? a.suggestion : (!utile.valide ? utile.suggestion : '') });
+  });
+  var ignores = [];
+  try {
+    var id = PropertiesService.getScriptProperties().getProperty('ORGA_ID') || ORGA_ID_DEFAUT, src = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
+    if (src) { var lu = Annuaire.lire(src.getDataRange().getValues()); if (!lu.erreur) ignores = lu.ignores.filter(function (x) { return /e-mail/.test(x.raison); }).map(function (x) { return { ligne: x.ligne, nom: x.nom, raison: x.raison }; }); }
+  } catch (e) { ignores = []; }
+  return { total: us.length, problemes: probleme, ignores_bddorga: ignores };
+}
+/** Action « admin_email_contact » : { email, contact } fixe (ou efface, si vide) l'adresse de contact d'un compte. */
+function emailContactAdmin_(req) {
+  var a = connexionsAdmin_(req), propre = Auth.definirEmailContact(String(req.email || '').toLowerCase(), String(req.contact || ''));
+  Store.journal('email_contact', String(req.email).toLowerCase(), 'adresse de contact ' + (propre ? 'définie' : 'effacée') + ' par ' + a.email);
+  return { contact: propre };
+}

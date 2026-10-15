@@ -75,3 +75,48 @@ test('conseils : adresse manquante ou invalide, blocage, quota, quarantaine @son
   assert.match(c({ quota_mail: 2 }), /Quota d'e-mails/); assert.match(c({ email: 'b@sonatrach.dz', dernier_code_envoye: '2026-10-15' }), /quarantaine/);
   assert.match(c({ etat: 'aucun' }), /première connexion/); assert.match(c({}), /Rien d'anormal/);
 });
+
+// ---------- adresses e-mail copiées d'un tableur ----------
+const Ann = (() => { const c = { console }; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Annuaire.gs'), 'utf8').replace(/if \(typeof module[^\n]*\n/g, ''), c); return vm.runInContext('Annuaire', c); })();
+test('nettoyage : espaces, espace insécable, caractère invisible, <>, mailto:, ponctuation, majuscules', () => {
+  const n = Ann.nettoyerEmail;
+  assert.strictEqual(n(' Jean.Dupont@Sonatrach.dz '), 'jean.dupont@sonatrach.dz');
+  assert.strictEqual(n('jean .dupont@sonatrach.dz'), 'jean.dupont@sonatrach.dz');
+  assert.strictEqual(n('jean​@gmail.com'), 'jean@gmail.com');
+  assert.strictEqual(n('<jean@gmail.com>;'), 'jean@gmail.com'); assert.strictEqual(n('mailto:jean@gmail.com.'), 'jean@gmail.com');
+  assert.strictEqual(n('jean @ gmail.com'), 'jean@gmail.com'); assert.strictEqual(n(null), '');
+});
+test('analyse : problèmes expliqués, domaines mal écrits corrigés en suggestion, adresses valables sans reproche', () => {
+  const a = Ann.analyserEmail;
+  assert.strictEqual(a('jean@gmail.com').valide, true); assert.deepStrictEqual([...a('jean@gmail.com').problemes], []);
+  const x = a('jean x@gmial.com'); assert.strictEqual(x.valide, true); assert.ok(x.problemes.some(p => /invisibles/.test(p))); assert.ok(x.problemes.some(p => /gmail\.com/.test(p))); assert.strictEqual(x.suggestion, 'jeanx@gmail.com');
+  assert.strictEqual(a('jean.gmail.com').valide, false); assert.ok(a('jean.gmail.com').problemes.some(p => /@/.test(p)));
+  assert.strictEqual(a('jean@gmail').valide, false); assert.ok(a('jean@gmail').problemes.some(p => /domaine incomplet/.test(p)));
+  assert.strictEqual(a('jëan@gmail.com').valide, false); assert.strictEqual(a('a@b.dz; c@d.dz').valide, false); assert.strictEqual(a('').valide, false);
+  assert.strictEqual(a('k@sonatrah.dz').suggestion, 'k@sonatrach.dz');
+});
+test('lecture de BDDORGA : une adresse « sale » est nettoyée au lieu d\'être ignorée ; les comptes existants à adresse sale sont retrouvés (pas de doublon)', () => {
+  const vals = [['E-Mail', 'Service', 'Nom', 'Matricule'], [' A.Test@X.dz ', 'S1', 'ALPHA TEST', 'M1'], ['b.test @x.dz', 'S1', 'BETA TEST', 'M2'], ['pasunmail', 'S1', 'GAMMA', 'M3']];
+  const lu = Ann.lire(vals); assert.deepStrictEqual([...lu.personnes.map(p => p.email)], ['a.test@x.dz', 'b.test@x.dz']); assert.strictEqual(lu.ignores.length, 1);
+  assert.ok(lu.avertissements.some(w => /nettoyé/.test(w.texte)));
+  const f = Ann.fusionner([{ email: 'b.test​@x.dz', nom: 'BETA TEST' }], lu.personnes);
+  assert.strictEqual(f.ajouts.length, 1); assert.strictEqual(f.ajouts[0].email, 'a.test@x.dz'); // BETA n'est pas ajoutée une seconde fois
+});
+test('code envoyé à l\'adresse de contact nettoyée ; adresse inutilisable : message clair et journal', () => {
+  const m = monde(); m.ctx.Store.utilisateur = e => ({ email: e, nom: 'Test', actif: 1, role: 'agent', uid: 'u9' });
+  m.ctx.Store.parUid = u => (u === 'u9' ? { email: 'a@x.dz', nom: 'Test', actif: 1, role: 'agent', uid: 'u9', email_contact: 'Corrige @Gmail.com' } : null);
+  const r = m.Auth.demanderCode('u9'); assert.strictEqual(m.mails[0].to, 'corrige@gmail.com'); assert.match(r.masque, /^co\*\*\*@gmail\.com$/);
+  m.ctx.Store.parUid = () => ({ email: 'pas un mail', nom: 'Test', actif: 1, role: 'agent', uid: 'u9' });
+  const e = echoue(() => m.Auth.demanderCode('u9'), /n'est pas valable/); assert.strictEqual(e.code, 'ADRESSE'); assert.ok(actions(m).includes('code_echec'));
+});
+test('changement d\'adresse par l\'agent : code envoyé à la NOUVELLE adresse, confirmé, enregistré ; mauvais code refusé ; usage unique', () => {
+  const m = monde(); const maj = []; m.ctx.Store.maj = (n, c, v) => maj.push([n, c, v]);
+  const user = { email: 'a@x.dz', nom: 'AICHA', actif: 1, role: 'agent' };
+  echoue(() => m.Auth.demanderEmailContact(user, 'pasunmail'), /invalide/);
+  m.Auth.demanderEmailContact(user, ' Nouvelle@Gmail.com '); assert.strictEqual(m.mails.at(-1).to, 'nouvelle@gmail.com'); assert.match(m.mails.at(-1).subject, /Confirmez votre adresse/);
+  echoue(() => m.Auth.confirmerEmailContact(user, '000000'), /Code invalide/);
+  const code = /(\d{6})$/.exec(m.mails.at(-1).subject)[1];
+  assert.strictEqual(m.Auth.confirmerEmailContact(user, code).email_contact, 'nouvelle@gmail.com');
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(maj[0])), ['Utilisateurs', { email: 'a@x.dz' }, { email_contact: 'nouvelle@gmail.com' }]);
+  echoue(() => m.Auth.confirmerEmailContact(user, code), /Code invalide/);
+});

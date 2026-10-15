@@ -34,6 +34,8 @@
   <section class="panneau" id="p-cnx" hidden>
     <p class="aide" style="margin-bottom:12px">Journal des connexions (réussies, refusées, codes envoyés ou en échec). Cliquez sur une personne pour voir son <b>diagnostic</b> : adresse e-mail, état du mot de passe, derniers essais, quota d'e-mails, avec des conseils. Aucun mot de passe ni code n'est jamais enregistré dans le journal.</p>
     <input type="text" id="cnx-filtre" class="filtre" placeholder="Nom, e-mail ou mot-clé (ex. incorrect, échec)…">
+    <div style="margin:8px 0"><button class="btn-s" id="b-emails" type="button">Contrôler les adresses e-mail de tous les comptes</button></div>
+    <div id="emails-res" class="fiche" hidden></div>
     <div id="cnx-diag" class="fiche" hidden></div>
     <table class="t"><thead><tr><th>Date</th><th>Personne</th><th>Événement</th><th>Détail</th></tr></thead><tbody id="b-cnx"></tbody></table>
   </section>
@@ -238,6 +240,28 @@
       act.appendChild(bt); act.appendChild(bp); z.appendChild(act);
     }).catch(function (e) { z.textContent = e.message; });
   }
+  // Contrôle des adresses e-mail (espaces, caractères invisibles copiés d'Excel, fautes de domaine, doublons…)
+  function controleEmails() {
+    var z = $('emails-res'); z.hidden = false; z.textContent = 'Contrôle en cours…';
+    Api.call('admin_emails').then(function (r) {
+      z.textContent = '';
+      z.appendChild(el('h4', null, r.problemes.length ? r.problemes.length + ' adresse(s) à corriger sur ' + r.total + ' comptes' : 'Toutes les adresses (' + r.total + ') sont correctes'));
+      if (r.problemes.length) {
+        z.appendChild(el('p', 'meta', 'Le portail nettoie déjà automatiquement les espaces et caractères invisibles à l\'envoi des codes ; les cas ci-dessous sont ceux qui restent bloquants ou douteux. « Corriger » enregistre l\'adresse proposée comme adresse de contact (sans toucher à BDDORGA).'));
+        var t = el('table', 't'), h = el('tr'); ['Personne', 'Adresse enregistrée', 'Problème', 'Proposition', ''].forEach(function (x) { h.appendChild(el('th', null, x)); }); t.appendChild(h);
+        r.problemes.forEach(function (x) {
+          var tr = el('tr'); tr.appendChild(el('td', null, x.nom)); tr.appendChild(el('td', null, x.brut + (x.contact ? ' → contact : ' + x.contact : ''))); tr.appendChild(el('td', null, x.problemes.join(' ; ')));
+          var tp = el('td', null, x.suggestion || '—'); tr.appendChild(tp); var ta = el('td');
+          var bc = el('button', 'btn-s', x.suggestion ? 'Corriger' : 'Saisir…'); bc.addEventListener('click', function () {
+            var v = x.suggestion || window.prompt('Adresse e-mail à utiliser pour ' + x.nom + ' :', ''); if (!v) return;
+            Api.call('admin_email_contact', { email: x.email, contact: v }).then(function (res) { toast('Adresse de contact : ' + res.contact); controleEmails(); }).catch(function (e) { toast(e.message, true); });
+          }); ta.appendChild(bc); tr.appendChild(ta); t.appendChild(tr);
+        });
+        z.appendChild(t);
+      }
+      if (r.ignores_bddorga.length) { z.appendChild(el('h4', null, 'Lignes de BDDORGA sans adresse exploitable (ces personnes n\'ont pas de compte)')); var u = el('ul'); r.ignores_bddorga.forEach(function (x) { u.appendChild(el('li', null, 'ligne ' + x.ligne + ' — ' + (x.nom || '(sans nom)') + ' : ' + x.raison)); }); z.appendChild(u); }
+    }).catch(function (e) { z.textContent = e.message; });
+  }
   function ouvrirConnexions(email) { $('o-cnx').click(); $('cnx-filtre').value = email; chargerConnexions(); diagnostic(email); }
   function dessiner() { dessinerUsers(); dessinerDef(); dessinerRoles(); dessinerApps(); dessinerExc(); }
   function recharger() { return Api.call('admin_etat').then(function (r) { etat = r; dessiner(); }); }
@@ -249,6 +273,7 @@
     });
   });
   $('filtre').addEventListener('input', dessinerUsers);
+  $('b-emails').addEventListener('click', controleEmails);
   $('cnx-filtre').addEventListener('input', function () { clearTimeout(tFiltre); tFiltre = setTimeout(chargerConnexions, 300); });
   var tFiltre;
   $('n-add').addEventListener('click', function () {

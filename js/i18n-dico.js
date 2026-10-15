@@ -275,6 +275,11 @@
     ['Version 4.9 — Annuaire toujours à jour', 'Version 4.9 — Always up-to-date directory', 'الإصدار 4.9 — دليل محدَّث دائمًا'],
     ['Les fiches du personnel se mettent à jour toutes seules depuis BDDORGA : numéro de téléphone, e-mail, matricule et identifiant SONA.', 'Staff cards now update themselves from BDDORGA: phone number, e-mail, registration number and SONA ID.', 'تتحدّث بطاقات المستخدمين تلقائيًا من BDDORGA: رقم الهاتف والبريد الإلكتروني ورقم التسجيل ومعرّف SONA.'],
     ['Les informations qui manquaient d\'un côté sont complétées par l\'autre, et les numéros s\'affichent avec le 0 au début.', 'Information missing on one side is completed by the other, and numbers are displayed with the leading 0.', 'تُستكمل المعلومات الناقصة من جهة بمعلومات الجهة الأخرى، وتظهر الأرقام مع الصفر في البداية.'],
+    ['Version 5.0 — Adresse e-mail modifiable et recherche en haut', 'Version 5.0 — Editable e-mail address and search at the top', 'الإصدار 5.0 — عنوان بريد قابل للتعديل والبحث في الأعلى'],
+    ['Vous pouvez corriger vous-même l\'adresse e-mail où arrivent vos codes de connexion, depuis votre fiche sur la page d\'accueil (bouton « modifier »).', 'You can correct yourself the e-mail address where your login codes arrive, from your profile on the home page (“edit” button).', 'يمكنك تصحيح عنوان البريد الذي تصلك عليه رموز الدخول بنفسك من بطاقتك في الصفحة الرئيسية (زر «تعديل»).'],
+    ['La barre de recherche et la date sont remontées en haut de la page d\'accueil.', 'The search bar and the date have moved to the top of the home page.', 'نُقل شريط البحث والتاريخ إلى أعلى الصفحة الرئيسية.'],
+    ['Le secrétariat peut voir le journal des connexions et dépanner un compte plus facilement.', 'The secretariat can view the login log and troubleshoot an account more easily.', 'يمكن للأمانة الاطلاع على سجل الدخول وإصلاح الحسابات بسهولة أكبر.'],
+    ['modifier', 'edit', 'تعديل'], ['Mon adresse e-mail', 'My e-mail address', 'عنوان بريدي الإلكتروني'], ['Nouvelle adresse e-mail', 'New e-mail address', 'عنوان البريد الجديد'], ['Envoyer le code', 'Send the code', 'إرسال الرمز'],
     ['Reliquat', 'Balance', 'الرصيد'], ['Reliquat initial', 'Initial balance', 'الرصيد الأولي'],
     ['Aujourd\'hui', 'Today', 'اليوم']
   ];

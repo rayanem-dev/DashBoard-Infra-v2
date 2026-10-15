@@ -6,13 +6,14 @@ var Mail = (function () {
     return (l.length <= 2 ? l.charAt(0) : l.slice(0, 2)) + '***@' + p[1];
   }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function envoyerCode(email, nom, code, minutes) {
+  function envoyerCode(email, nom, code, minutes, objet) {
+    var adresse = objet === 'adresse';
     MailApp.sendEmail({
       to: email,
       name: 'Division Infrastructure RNS',
-      subject: 'Votre code de connexion : ' + code,
+      subject: (adresse ? 'Confirmez votre adresse e-mail : ' : 'Votre code de connexion : ') + code,
       htmlBody: '<p>Bonjour ' + esc(nom) + ',</p>' +
-        '<p>Votre code à usage unique pour définir votre mot de passe :</p>' +
+        '<p>' + (adresse ? 'Votre code à usage unique pour confirmer cette adresse e-mail dans le portail :' : 'Votre code à usage unique pour définir votre mot de passe :') + '</p>' +
         '<p style="font-size:28px;letter-spacing:6px;font-weight:700">' + code + '</p>' +
         '<p>Il est valable ' + minutes + ' minutes. Si vous n\'êtes pas à l\'origine de cette demande, ignorez ce message : rien ne sera modifié.</p>' +
         '<p>— Tableau de bord Division Infrastructure</p>'

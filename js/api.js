@@ -188,6 +188,17 @@
           { nom: 'HADJADJ Lamine', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0660514275', tels_alt: [], email: 'lamine.hadjadj@sonatrach.dz', email2: '', sona: 'sona12551', matricule: '90856S' },
           { nom: 'BOUAZIZ Hocine', employeur: 'GTP', section: '📑 CPM — CELLULE PASSATION MARCHÉ', service: 'CPM', fonction: 'CPM — CELLULE PASSATION MARCHÉ', tel: '0659191322', tels_alt: [], email: 'hocinbouaziz463@gmail.com', email2: '', sona: 'soni0299', matricule: '' },
           { nom: 'LAKKAICHI Noureddine', employeur: 'SONATRACH', section: '', service: 'Travaux Entretien', fonction: '', tel: '0661775887', tels_alt: [], email: 'lakkaichi@gmail.com', email2: 'noureddine.lakkaichi@sonatrach.dz', sona: '', matricule: '' } ] };
+      case 'email_contact_demander': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(p.adresse || '').replace(/\s+/g, ''))) throw erreur('Adresse e-mail invalide', 'ADRESSE');
+        demoState.ec = String(p.adresse).replace(/\s+/g, '').toLowerCase(); return { masque: demoState.ec.slice(0, 2) + '***@' + demoState.ec.split('@')[1] };
+      case 'email_contact_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        if (String(p.code) !== '123456' || !demoState.ec) throw erreur('Code invalide ou expiré'); return { email_contact: demoState.ec };
+      case 'admin_emails': exigerAdmin(); return { total: 6, problemes: [
+        { email: 'a.test@exemple.dz', nom: 'OUALI Nadia', brut: 'n.ouali⟦U+00A0⟧@exemple.dz', contact: '', propre: 'n.ouali@exemple.dz', valide: true, problemes: ['caractères invisibles (espace insécable, caractère de largeur nulle…)'], suggestion: 'n.ouali@exemple.dz' },
+        { email: 's.brahimi@gmial.com', nom: 'BRAHIMI Samir', brut: 's.brahimi@gmial.com', contact: '', propre: 's.brahimi@gmial.com', valide: true, problemes: ['domaine suspect : « gmial.com » ressemble à « gmail.com »'], suggestion: 's.brahimi@gmail.com' },
+        { email: 'y.tahri', nom: 'TAHRI Yacine', brut: 'y.tahri', contact: '', propre: 'y.tahri', valide: false, problemes: ['pas de « @ »'], suggestion: '' } ],
+        ignores_bddorga: [{ ligne: 41, nom: 'NOUVEAU Karim', raison: 'e-mail manquant ou invalide' }] };
+      case 'admin_email_contact': exigerAdmin(); return { contact: String(p.contact || '').replace(/\s+/g, '').toLowerCase() };
       case 'admin_connexions': exigerAdmin(); return { evenements: [
         { date: '2026-10-15T08:12:00Z', action: 'connexion', libelle: 'Connexion réussie', email: 'k.benali@exemple.dz', nom: 'BENALI Karim', detail: '' },
         { date: '2026-10-15T08:05:00Z', action: 'connexion_echec', libelle: 'Connexion refusée', email: 's.brahimi@exemple.dz', nom: 'BRAHIMI Samir', detail: 'mot de passe incorrect' },

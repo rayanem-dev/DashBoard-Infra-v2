@@ -9,6 +9,44 @@ var Annuaire = (function () {
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   var CHAMPS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone', 'sona', 'date_integration', 'wifi_user', 'sap', 'nin'];
 
+  // ---- adresses e-mail copiées d'un tableur : espaces, espaces insécables, caractères invisibles, <>, « mailto: », ponctuation finale… ----
+  var INVISIBLES = /[\u200B-\u200F\u2060\u2028\u2029\uFEFF\u00AD\u00A0\u202F\u3000]/g;
+  var DOMAINES = ['gmail.com', 'hotmail.com', 'hotmail.fr', 'yahoo.fr', 'yahoo.com', 'outlook.com', 'outlook.fr', 'live.fr', 'icloud.com', 'sonatrach.dz'];
+  function lev(a, b) { var m = a.length, nn = b.length, d = [], i, j; for (i = 0; i <= m; i += 1) d[i] = [i]; for (j = 1; j <= nn; j += 1) d[0][j] = j;
+    for (i = 1; i <= m; i += 1) for (j = 1; j <= nn; j += 1) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1)); return d[m][nn]; }
+  /** Adresse nettoyée (minuscules, sans espace ni caractère invisible) ; chaîne vide si rien d'exploitable. */
+  function nettoyerEmail(v) {
+    var x = String(v == null ? '' : v).replace(/\uFF20/g, '@').replace(INVISIBLES, '').replace(/\s+/g, '');
+    x = x.replace(/^mailto:/i, '').replace(/^[<\("'«]+/, '').replace(/[>\)"'».,;:]+$/, '').toLowerCase();
+    return x;
+  }
+  /** { propre, valide, problemes: [texte], suggestion } : ce qui empêche d'envoyer un code à cette adresse et ce qu'il faudrait écrire. */
+  function analyserEmail(v) {
+    var brut = String(v == null ? '' : v), propre = nettoyerEmail(brut), pb = [];
+    if (!brut.trim()) return { propre: '', valide: false, problemes: ['adresse absente'], suggestion: '' };
+    if (INVISIBLES.test(brut.replace(/ /g, ''))) { pb.push('caractères invisibles (espace insécable, caractère de largeur nulle…)'); INVISIBLES.lastIndex = 0; }
+    INVISIBLES.lastIndex = 0;
+    if (/\s/.test(brut.trim())) pb.push('espace à l\'intérieur de l\'adresse');
+    if (brut !== brut.trim()) pb.push('espace avant ou après');
+    if (/[.,;:]$/.test(brut.trim())) pb.push('ponctuation à la fin');
+    if (/^mailto:|^[<("'«]|[>)"'»]$/i.test(brut.trim())) pb.push('crochets, guillemets ou « mailto: » autour');
+    if (/[;,]/.test(propre)) pb.push('plusieurs adresses ou virgule/point-virgule dans la cellule');
+    var valide = EMAIL.test(propre) && !/[;,]/.test(propre) && /^[\x21-\x7E]+$/.test(propre) && propre.split('@').length === 2 && /\.[a-z]{2,}$/.test(propre);
+    if (propre && !valide) {
+      if (propre.split('@').length !== 2) pb.push(propre.indexOf('@') === -1 ? 'pas de « @ »' : 'plusieurs « @ »');
+      else if (!/\.[a-z]{2,}$/.test(propre)) pb.push('domaine incomplet (ex. « .com » ou « .dz » manquant)');
+      else if (!/^[\x21-\x7E]+$/.test(propre)) pb.push('caractères accentués ou non ASCII');
+      else pb.push('format invalide');
+    }
+    var suggestion = propre, dom = propre.split('@')[1] || '';
+    if (dom && DOMAINES.indexOf(dom) === -1) {
+      var proche = DOMAINES.filter(function (d) { return lev(dom, d) <= 2 && Math.abs(dom.length - d.length) <= 2; })[0];
+      if (proche) { pb.push('domaine suspect : « ' + dom + ' » ressemble à « ' + proche + ' »'); suggestion = propre.split('@')[0] + '@' + proche; }
+    }
+    if (propre && brut.trim() !== brut.trim().toLowerCase() && !pb.length) pb.push('majuscules (sans gravité : l\'adresse est mise en minuscules)');
+    return { propre: propre, valide: valide, problemes: pb, suggestion: suggestion };
+  }
+
   function n(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
   function t(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
 
@@ -107,12 +145,13 @@ var Annuaire = (function () {
     function cell(row, k) { return k >= 0 ? row[k] : ''; }
     for (var r = c.ligne + 1; r < valeurs.length; r += 1) {
       var row = valeurs[r];
-      var email = t(cell(row, i.email)).toLowerCase();
+      var emailBrut = String(cell(row, i.email) == null ? '' : cell(row, i.email)), email = nettoyerEmail(emailBrut);
       var nom = '', brut = '', deduit = false;
       i.noms.forEach(function (c) { var v = t(cell(row, c)); if (v && !brut) brut = v; if (!nom && ressembleNom(v)) nom = v; }); // un numéro n'est JAMAIS pris pour un nom
       if (!nom && !brut && !email) continue; // ligne vide
       if (!nom && EMAIL.test(email)) { nom = depuisEmail(email); deduit = true; avertissements.push({ ligne: r + 1, texte: 'nom absent ou numérique : nom déduit de l\'e-mail (« ' + nom + ' »)' }); }
       if (!EMAIL.test(email)) { ignores.push({ ligne: r + 1, nom: nom, raison: 'e-mail manquant ou invalide' }); continue; }
+      if (email !== t(emailBrut).toLowerCase()) avertissements.push({ ligne: r + 1, texte: 'e-mail nettoyé (espaces ou caractères invisibles retirés) : « ' + email + ' »' });
       if (vus[email]) { ignores.push({ ligne: r + 1, nom: nom, raison: 'e-mail en double (ligne ' + vus[email] + ')' }); continue; }
       vus[email] = r + 1;
       personnes.push({ nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
@@ -128,7 +167,7 @@ var Annuaire = (function () {
    * Une valeur vide dans la source n'efface jamais une valeur existante.
    */
   function fusionner(existants, personnes) {
-    var parEmail = {}; existants.forEach(function (u) { parEmail[String(u.email).toLowerCase()] = u; });
+    var parEmail = {}; existants.forEach(function (u) { parEmail[String(u.email).toLowerCase()] = u; var p = nettoyerEmail(u.email); if (p && !parEmail[p]) parEmail[p] = u; });
     var dansSource = {}, ajouts = [], maj = [], inchanges = 0;
     personnes.forEach(function (p) {
       dansSource[p.email] = true;
@@ -156,7 +195,7 @@ var Annuaire = (function () {
     var c = colonnes(valeurs || []);
     if (c.erreur) return { erreur: c.erreur };
     var mail = t(email).toLowerCase(), ligne = -1;
-    for (var r = c.ligne + 1; r < valeurs.length; r += 1) if (t(valeurs[r][c.idx.email]).toLowerCase() === mail) { ligne = r; break; }
+    for (var r = c.ligne + 1; r < valeurs.length; r += 1) if (nettoyerEmail(valeurs[r][c.idx.email]) === nettoyerEmail(mail)) { ligne = r; break; }
     if (ligne < 0) return { erreur: 'Adresse absente de BDDORGA : ' + mail };
     var largeur = valeurs.reduce(function (m, row) { return Math.max(m, row.length); }, 0), ecritures = [];
     var autorises = ['matricule', 'sap']; if (options && options.nin) autorises.push('nin');
@@ -182,12 +221,12 @@ var Annuaire = (function () {
     var mail = t(email).toLowerCase(), nouveau = t(service);
     if (!nouveau) return { erreur: 'Service vide' };
     for (var r = c.ligne + 1; r < valeurs.length; r += 1) {
-      if (t(valeurs[r][c.idx.email]).toLowerCase() === mail) return { ligne: r + 1, col: c.idx.service + 1, ancien: t(valeurs[r][c.idx.service]) };
+      if (nettoyerEmail(valeurs[r][c.idx.email]) === nettoyerEmail(mail)) return { ligne: r + 1, col: c.idx.service + 1, ancien: t(valeurs[r][c.idx.service]) };
     }
     return { erreur: 'Adresse absente de BDDORGA : ' + mail };
   }
 
-  return { planAffectation: planAffectation, nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
+  return { nettoyerEmail: nettoyerEmail, analyserEmail: analyserEmail, planAffectation: planAffectation, nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Annuaire;

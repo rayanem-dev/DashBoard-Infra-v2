@@ -79,6 +79,10 @@ function route_(req) {
     case 'admin_connexions': return connexionsListe_(req);
     case 'admin_diagnostic': return connexionsDiagnostic_(req);
     case 'admin_mdp': return connexionsMdp_(req);
+    case 'admin_emails': return emailsControle_(req);
+    case 'admin_email_contact': return emailContactAdmin_(req);
+    case 'email_contact_demander': { var ue = Auth.userFromToken(req.token); if (typeof preparerStructure_ === 'function') preparerStructure_(); return Auth.demanderEmailContact(ue, req.adresse); }
+    case 'email_contact_confirmer': { var uc = Auth.userFromToken(req.token); if (typeof preparerStructure_ === 'function') preparerStructure_(); return Auth.confirmerEmailContact(uc, req.code); }
     case 'admin_test_mail': return connexionsTestMail_(req);
     case 'annuaire_personnes': return annuairePersonnes_(req);
     case 'cpm_journal': return cpmJournalListe_(req);

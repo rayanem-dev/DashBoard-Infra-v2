@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-17-02",
+    "date": "2026-10-17",
+    "title": "Version 5.0 — Adresse e-mail modifiable et recherche en haut",
+    "changes": [
+      "Vous pouvez corriger vous-même l'adresse e-mail où arrivent vos codes de connexion, depuis votre fiche sur la page d'accueil (bouton « modifier »).",
+      "La barre de recherche et la date sont remontées en haut de la page d'accueil.",
+      "Le secrétariat peut voir le journal des connexions et dépanner un compte plus facilement."
+    ]
+  },
+  {
     "id": "2026-10-17-01",
     "date": "2026-10-17",
     "title": "Version 4.9 — Annuaire toujours à jour",
