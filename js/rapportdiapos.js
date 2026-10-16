@@ -40,38 +40,37 @@ var RapportDiapos = (function () {
   function frIso(iso) { var p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
   function couleurJauge(p) { return p >= 70 ? C.vert : p >= 40 ? C.ambre : C.orange; }
 
-  /** Dessine les diapositives dans `pptx` (PptxGenJS) ; retourne le nombre de diapositives ajoutées. */
+  /** Dessine les diapositives dans `pptx` (PptxGenJS) ; retourne le nombre de diapositives ajoutées. Présentation « tableau » sobre, comme les autres diapositives du rapport. */
   function construire(pptx, rapport) {
     pptx.layout = 'LAYOUT_16x9'; // 10 × 5,625 po
-    var n = 0, total = 0;
+    var n = 0, total = 0, F = 'Calibri';
     rapport.groupes.forEach(function (g) { total += Math.ceil(g.dossiers.length / PAR_DIAPO); });
+    var X = [0.4, 1.95, 4.75, 6.55], W = [1.55, 2.8, 1.8, 3.05]; // N° | Intitulé | Avancement | Commentaire
     rapport.groupes.forEach(function (g) {
       var pages = Math.ceil(g.dossiers.length / PAR_DIAPO);
       for (var p = 0; p < pages; p += 1) {
         var s = pptx.addSlide(); n += 1; s.background = { color: 'FFFFFF' };
-        s.addShape('rect', { x: 0, y: 0, w: 10, h: 0.85, fill: { color: C.nuit }, line: { color: C.nuit, width: 0 } });
-        s.addShape('rect', { x: 0, y: 0.85, w: 10, h: 0.05, fill: { color: C.orange }, line: { color: C.orange, width: 0 } });
-        s.addText('Dossiers CPM non achevés — ' + g.titre + (pages > 1 ? '  (' + (p + 1) + '/' + pages + ')' : ''), { x: 0.4, y: 0.12, w: 7.4, h: 0.4, fontFace: 'Calibri', fontSize: 18, bold: true, color: 'FFFFFF', margin: 0 });
-        s.addText('Semaine du ' + frIso(rapport.debut) + ' au ' + frIso(rapport.fin), { x: 0.4, y: 0.5, w: 7.4, h: 0.28, fontFace: 'Calibri', fontSize: 11, color: 'F4B183', margin: 0 });
-        s.addText(g.dossiers.length + ' dossier' + (g.dossiers.length > 1 ? 's' : ''), { x: 7.8, y: 0.2, w: 1.8, h: 0.45, align: 'right', fontFace: 'Calibri', fontSize: 14, bold: true, color: 'FFFFFF', margin: 0 });
-        var X = { num: 0.4, int: 1.95, jau: 4.75, com: 6.45 }, W = { num: 1.45, int: 2.65, jau: 1.6, com: 3.2 };
-        [['N° Dossier', 'num'], ['Intitulé', 'int'], ['Avancement', 'jau'], ['Commentaire', 'com']].forEach(function (c) {
-          s.addText(c[0], { x: X[c[1]], y: 1.0, w: W[c[1]], h: 0.28, fontFace: 'Calibri', fontSize: 10, bold: true, color: C.orange, margin: 0 });
+        s.addText('Division Infrastructures', { x: 0.4, y: 0.18, w: 5, h: 0.25, fontFace: F, fontSize: 10, bold: true, color: C.orange, margin: 0 });
+        s.addText('RNS : ' + frIso(rapport.fin), { x: 6.6, y: 0.18, w: 3, h: 0.25, align: 'right', fontFace: F, fontSize: 10, color: C.doux, margin: 0 });
+        s.addText('Situation des dossiers CPM non achevés', { x: 0.4, y: 0.45, w: 9.2, h: 0.45, fontFace: F, fontSize: 24, bold: true, color: C.nuit, margin: 0 });
+        s.addText(g.titre + (pages > 1 ? '  —  ' + (p + 1) + ' / ' + pages : '') + '   ·   ' + g.dossiers.length + ' dossier' + (g.dossiers.length > 1 ? 's' : '') + '   ·   semaine du ' + frIso(rapport.debut) + ' au ' + frIso(rapport.fin), { x: 0.4, y: 0.92, w: 9.2, h: 0.28, fontFace: F, fontSize: 12, color: C.doux, margin: 0 });
+        s.addShape('line', { x: 0.4, y: 1.27, w: 9.2, h: 0, line: { color: C.orange, width: 2 } });
+        s.addShape('rect', { x: 0.4, y: 1.4, w: 9.2, h: 0.36, fill: { color: C.nuit }, line: { color: C.nuit, width: 0 } });
+        ['N° Dossier', 'Intitulé', 'Avancement', 'Commentaire'].forEach(function (t, i) {
+          s.addText(t, { x: X[i] + 0.08, y: 1.4, w: W[i] - 0.1, h: 0.36, valign: 'middle', align: i === 2 ? 'center' : 'left', fontFace: F, fontSize: 11, bold: true, color: 'FFFFFF', margin: 0 });
         });
-        s.addShape('line', { x: 0.4, y: 1.3, w: 9.2, h: 0, line: { color: C.orange, width: 1 } });
         g.dossiers.slice(p * PAR_DIAPO, (p + 1) * PAR_DIAPO).forEach(function (d, i) {
-          var y = 1.38 + i * 0.64;
-          if (i % 2 === 0) s.addShape('rect', { x: 0.3, y: y - 0.03, w: 9.4, h: 0.62, fill: { color: C.bande }, line: { color: C.bande, width: 0 } });
-          if (d.change) s.addShape('rect', { x: 0.3, y: y - 0.03, w: 0.05, h: 0.62, fill: { color: C.orange }, line: { color: C.orange, width: 0 } });
-          s.addText(d.numero || '—', { x: X.num, y: y, w: W.num, h: 0.56, valign: 'middle', fontFace: 'Calibri', fontSize: 8.5, color: C.doux, margin: 0 });
-          s.addText(couper(d.intitule, 78), { x: X.int, y: y, w: W.int, h: 0.56, valign: 'middle', fontFace: 'Calibri', fontSize: 10.5, bold: true, color: C.texte, margin: 0 });
-          s.addShape('roundRect', { x: X.jau, y: y + 0.2, w: 1.1, h: 0.16, rectRadius: 0.08, fill: { color: C.gris }, line: { color: C.gris, width: 0 } });
-          if (d.pct > 0) s.addShape('roundRect', { x: X.jau, y: y + 0.2, w: Math.max(0.16, 1.1 * d.pct / 100), h: 0.16, rectRadius: 0.08, fill: { color: couleurJauge(d.pct) }, line: { color: couleurJauge(d.pct), width: 0 } });
-          s.addText(Math.round(d.pct) + ' %', { x: X.jau + 1.15, y: y, w: 0.5, h: 0.56, valign: 'middle', fontFace: 'Calibri', fontSize: 11, bold: true, color: C.texte, margin: 0 });
-          s.addText(couper(d.commentaire, 150) || '—', { x: X.com, y: y, w: W.com, h: 0.56, valign: 'middle', fontFace: 'Calibri', fontSize: 8.5, bold: d.change, color: d.change ? C.texte : C.doux, margin: 0 });
+          var y = 1.76 + i * 0.5;
+          s.addShape('line', { x: 0.4, y: y + 0.5, w: 9.2, h: 0, line: { color: 'D1D5DB', width: 0.75 } });
+          s.addText(d.numero || '—', { x: X[0] + 0.08, y: y, w: W[0] - 0.12, h: 0.5, valign: 'middle', fontFace: F, fontSize: 8, color: C.doux, margin: 0 });
+          s.addText(couper(d.intitule, 70), { x: X[1] + 0.08, y: y, w: W[1] - 0.12, h: 0.5, valign: 'middle', fontFace: F, fontSize: 10, bold: true, color: C.texte, margin: 0 });
+          s.addShape('roundRect', { x: X[2] + 0.1, y: y + 0.17, w: 1.05, h: 0.16, rectRadius: 0.08, fill: { color: C.gris }, line: { color: C.gris, width: 0 } });
+          if (d.pct > 0) s.addShape('roundRect', { x: X[2] + 0.1, y: y + 0.17, w: Math.max(0.16, 1.05 * d.pct / 100), h: 0.16, rectRadius: 0.08, fill: { color: couleurJauge(d.pct) }, line: { color: couleurJauge(d.pct), width: 0 } });
+          s.addText(Math.round(d.pct) + ' %', { x: X[2] + 1.2, y: y, w: 0.55, h: 0.5, valign: 'middle', fontFace: F, fontSize: 11, bold: true, color: C.texte, margin: 0 });
+          s.addText(couper(d.commentaire, 140) || '—', { x: X[3] + 0.08, y: y, w: W[3] - 0.1, h: 0.5, valign: 'middle', fontFace: F, fontSize: 8.5, bold: d.change, color: d.change ? C.texte : C.doux, margin: 0 });
         });
-        s.addText('Commentaire en gras = dossier modifié cette semaine', { x: 0.4, y: 5.28, w: 6, h: 0.25, fontFace: 'Calibri', fontSize: 8, italic: true, color: C.doux, margin: 0 });
-        s.addText('Division Infrastructures — RNS   ·   ' + n + '/' + total, { x: 6.2, y: 5.28, w: 3.4, h: 0.25, align: 'right', fontFace: 'Calibri', fontSize: 8, color: C.doux, margin: 0 });
+        s.addText('Commentaire en gras : dossier modifié pendant la semaine', { x: 0.4, y: 5.25, w: 6, h: 0.22, fontFace: F, fontSize: 8, italic: true, color: C.doux, margin: 0 });
+        s.addText(n + ' / ' + total, { x: 8.6, y: 5.25, w: 1, h: 0.22, align: 'right', fontFace: F, fontSize: 8, color: C.doux, margin: 0 });
       }
     });
     return n;

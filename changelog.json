@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-07",
+    "date": "2026-10-20",
+    "title": "Version 5.2.1 — Diapositives du rapport : présentation en tableau",
+    "changes": [
+      "Rapport hebdomadaire : les diapositives « dossiers non achevés » reprennent une présentation de tableau sobre (en-tête sombre, jauge d'avancement, commentaire en gras si modifié cette semaine)."
+    ]
+  },
+  {
     "id": "2026-10-20-06",
     "date": "2026-10-20",
     "title": "Version 5.2.0 — Rapport hebdomadaire : diapositives des dossiers non achevés",
