@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-09",
+    "date": "2026-10-20",
+    "title": "Version 5.2.3 — Accueil plus rapide",
+    "changes": [
+      "Accueil : le menu, la rotation et les feuilles de suivi (CPM, chantiers) sont demandés en même temps et en une seule requête pour les feuilles, au lieu d'une suite d'appels ; les feuilles lues sont gardées 2 minutes dans l'onglet (retour sur l'accueil instantané) ; connexion au serveur Google préparée à l'avance."
+    ]
+  },
+  {
     "id": "2026-10-20-08",
     "date": "2026-10-20",
     "title": "Version 5.2.2 — Rapport hebdomadaire : injection directe dans Google Slides",

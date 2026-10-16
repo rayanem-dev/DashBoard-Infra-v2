@@ -427,9 +427,13 @@
     reprendre: function () {
       var self = this; var rt = this.remember();
       if (!rt) return Promise.resolve(false);
-      return this.call('reprendre', { rt: rt }).then(function (r) {
+      if (this._reprise) return this._reprise; // plusieurs appels en parallèle : une seule reprise (le jeton « rester connecté » change à chaque fois)
+      var fin = function () { self._reprise = null; };
+      this._reprise = this.call('reprendre', { rt: rt }).then(function (r) {
         self.setToken(r.token); if (r.remember) self.setRemember(r.remember); return true;
       }).catch(function (e) { if (e.code === 'SESSION') self.setRemember(''); return false; });
+      this._reprise.then(fin, fin);
+      return this._reprise;
     },
     token: function () { try { return sessionStorage.getItem(CLE) || ''; } catch (e) { return ''; } },
     setToken: function (t) { try { t ? sessionStorage.setItem(CLE, t) : sessionStorage.removeItem(CLE); } catch (e) { /* stockage indisponible */ } },
