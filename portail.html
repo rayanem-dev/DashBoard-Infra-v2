@@ -10,6 +10,9 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/charte.css">
 </head>
 <body>
@@ -325,7 +328,7 @@
   // En parallèle (au lieu de l'une après l'autre) : le menu, la situation de rotation et la lecture groupée des feuilles de suivi
   var situation = Api.call('situation').then(function (r) { return { r: r }; }, function () { return { r: null }; });
   Donnees.prefetch(['cpm', 'forage', 'terrassement', 'electricite']);
-  Api.call('menu').then(function (r) { dessiner(r); return situation.then(function (s) { return dessinerStatut(r.user.nom, s.r); }); }).catch(function (e) {
+  Api.call('menu').then(function (r) { try { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(String(a.url || '').split(/[?#]/)[0].split('/').pop().toLowerCase()); }); }); sessionStorage.setItem('gm_pages', JSON.stringify({ t: Date.now(), f: f })); } catch (e) { /* stockage indisponible */ } dessiner(r); return situation.then(function (s) { return dessinerStatut(r.user.nom, s.r); }); }).catch(function (e) {
     if (e.code === 'SESSION' || !Api.token() && !Api.demo) { Api.setToken(''); location.replace('connexion.html'); return; }
     $('nom-agent').textContent = 'Erreur : ' + e.message;
   });

@@ -24,6 +24,6 @@ var Donnees = (function () {
     manquantes.forEach(function (s) { enCours[s] = p.then(function () { var v = lire(s); if (v == null) return csv(s, true); return v; }); var fin = function () { delete enCours[s]; }; enCours[s].then(fin, fin); });
     return p;
   }
-  function vider() { try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf(PREFIXE) === 0) sessionStorage.removeItem(k); }); } catch (e) { /* rien */ } enCours = {}; }
+  function vider() { try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf(PREFIXE) === 0) sessionStorage.removeItem(k); }); } catch (e) { /* rien */ } enCours = {}; try { sessionStorage.removeItem('gm_pages'); } catch (e) { /* rien */ } }
   return { csv: csv, prefetch: prefetch, vider: vider };
 })();

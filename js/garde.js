@@ -16,13 +16,21 @@
   }
   function fichier(u) { return String(u || '').split(/[?#]/)[0].split('/').pop().toLowerCase(); }
   if (!window.Api) { location.replace('connexion.html'); return; }
-  function autorise(r) { return (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return fichier(a.url) === page; }); }); }
+  var CLE_MENU = 'gm_pages', TTL_MENU = 600000;
+  function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
+  function autorise(r) { return pagesDe(r).indexOf(page) !== -1; }
+  function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return !!(o && Date.now() - o.t < TTL_MENU && o.f.indexOf(page) !== -1); } catch (e) { return false; } }
+  function retenir(r) { try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), f: pagesDe(r) })); } catch (e) { /* stockage indisponible */ } }
+  function oublier() { try { sessionStorage.removeItem(CLE_MENU); } catch (e) { /* rien */ } }
+  var affichee = connu(); if (affichee) afficher(); // accès déjà vérifié il y a peu : la page s'affiche tout de suite, la vérification se refait en arrière-plan
   // Un « non » n'est cru qu'après une seconde lecture (le menu peut être incomplet un instant quand Google est lent)
   Api.call('menu').then(function (r) { return autorise(r) ? r : new Promise(function (ok) { setTimeout(ok, 900); }).then(function () { return Api.call('menu'); }); }).then(function (r) {
-    if (autorise(r)) { afficher(); return; }
+    if (autorise(r)) { retenir(r); afficher(); return; }
+    oublier();
     message('Vous n\'avez pas accès à cette page avec votre compte.', 'portail.html', '← Retour au portail');
   }).catch(function (e) {
-    if (e && e.code === 'SESSION') { location.replace('connexion.html'); return; }
+    if (e && e.code === 'SESSION') { oublier(); location.replace('connexion.html'); return; }
+    if (affichee) return; // page déjà affichée : une panne passagère de la vérification ne la masque pas
     message('Impossible de vérifier votre accès pour le moment : ' + (e && e.message ? e.message : 'erreur'), 'portail.html', '← Retour au portail');
   });
 })();

@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Dossiers CPM — Détail — Division Infrastructure RNS</title>
 <script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/synthese.js"></script><script src="js/garde.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/sombre-ancien.css">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
   :root {
     --orange-main: #E85D04; --orange-light: #F48C06; --gray-dark: #1A1A2E; --gray-mid: #2D2D44;
     --gray-light: #F8F9FA; --white: #FFFFFF; --text-dark: #1C1C1C; --text-muted: #6B7280;
@@ -371,7 +373,7 @@ function renderToolbarAndSummary() {
 function attachEvents() {
   const input = document.getElementById('search-input');
   if (input) {
-    input.addEventListener('input', renderAll);
+    let minuteur = 0; input.addEventListener('input', () => { clearTimeout(minuteur); minuteur = setTimeout(renderAll, 180); }); // recherche différée : on ne redessine pas toutes les cartes à chaque lettre
     input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
   }

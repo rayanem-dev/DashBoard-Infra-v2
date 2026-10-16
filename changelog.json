@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-11",
+    "date": "2026-10-20",
+    "title": "Version 5.2.5 — Pages plus rapides à s'afficher",
+    "changes": [
+      "Dossiers CPM et pages reprises : la page s'affiche tout de suite quand l'accès a été vérifié il y a moins de 10 minutes (la vérification se refait en arrière-plan) ; la police Inter ne bloque plus l'affichage ; la recherche de dossiers n'est plus recalculée à chaque lettre."
+    ]
+  },
+  {
     "id": "2026-10-20-10",
     "date": "2026-10-20",
     "title": "Version 5.2.4 — Pages du site : vérification d'accès plus fiable",
