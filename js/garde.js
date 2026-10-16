@@ -16,9 +16,10 @@
   }
   function fichier(u) { return String(u || '').split(/[?#]/)[0].split('/').pop().toLowerCase(); }
   if (!window.Api) { location.replace('connexion.html'); return; }
-  Api.call('menu').then(function (r) {
-    var ok = (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return fichier(a.url) === page; }); });
-    if (ok) { afficher(); return; }
+  function autorise(r) { return (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return fichier(a.url) === page; }); }); }
+  // Un « non » n'est cru qu'après une seconde lecture (le menu peut être incomplet un instant quand Google est lent)
+  Api.call('menu').then(function (r) { return autorise(r) ? r : new Promise(function (ok) { setTimeout(ok, 900); }).then(function () { return Api.call('menu'); }); }).then(function (r) {
+    if (autorise(r)) { afficher(); return; }
     message('Vous n\'avez pas accès à cette page avec votre compte.', 'portail.html', '← Retour au portail');
   }).catch(function (e) {
     if (e && e.code === 'SESSION') { location.replace('connexion.html'); return; }

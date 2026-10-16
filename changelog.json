@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-10",
+    "date": "2026-10-20",
+    "title": "Version 5.2.4 — Pages du site : vérification d'accès plus fiable",
+    "changes": [
+      "Pages reprises de l'ancien site (Dossiers CPM, Avancement…) : un refus d'accès n'est affiché qu'après une seconde vérification, pour éviter un faux « Vous n'avez pas accès » quand le serveur Google répond de façon incomplète."
+    ]
+  },
+  {
     "id": "2026-10-20-09",
     "date": "2026-10-20",
     "title": "Version 5.2.3 — Accueil plus rapide",
