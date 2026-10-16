@@ -5,7 +5,7 @@
  * Droits : il faut avoir au moins le niveau 1 sur l'un des modules de la source.
  */
 var SOURCES_ = {
-  cpm:          { fichier: '1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY', gid: 1963142469, modules: ['cpm', 'pilotage'], libelle: 'Suivi CPM V5' },
+  cpm:          { fichier: '1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I', gid: 1963142469, onglet: 'suivi', modules: ['cpm', 'pilotage'], libelle: 'Suivi CPM V5' },
   forage:       { fichier: '1gD_aQEw7YUU2DBGMrJchqUGvuFuEeyn8EG9XHf7gxkw', gid: 1809509458, modules: ['pilotage'], libelle: 'Forage RNS' },
   terrassement: { fichier: '1_bL3vv2dtYJWmvs0ZqZqq2agACVEZdAr14UP2unoUhM', gid: 2117456852, modules: ['pilotage'], libelle: 'Terrassement RNS' },
   electricite:  { fichier: '1Pk0n5UNT8yf5A7yZNe8rwHyevn7XHsB4', gid: 627222972, modules: ['pilotage'], libelle: 'Maintenance installations électriques' }
@@ -27,7 +27,7 @@ function lignesSource_(cle) {
   var ss;
   try { ss = SpreadsheetApp.openById(src.fichier); }
   catch (e) { throw new Error('La feuille « ' + src.libelle + ' » n\'est pas lisible par la passerelle (fichier Office .xlsx à convertir en Google Sheets, ou accès non partagé avec le secrétariat).'); }
-  var feuille = ss.getSheets().filter(function (s) { return s.getSheetId() === src.gid; })[0];
+  var feuille = ss.getSheets().filter(function (s) { return s.getSheetId() === src.gid; })[0] || (src.onglet ? ss.getSheetByName(src.onglet) : null); // repli sur le nom de l'onglet si le fichier a été recopié (identifiants d'onglet différents)
   if (!feuille) throw new Error('Onglet introuvable dans « ' + src.libelle + ' »');
   return feuille.getDataRange().getDisplayValues();
 }
@@ -53,7 +53,7 @@ function verifierSourcesDonnees() {
     var s = SOURCES_[k];
     try {
       var ss = SpreadsheetApp.openById(s.fichier);
-      var f = ss.getSheets().filter(function (x) { return x.getSheetId() === s.gid; })[0];
+      var f = ss.getSheets().filter(function (x) { return x.getSheetId() === s.gid; })[0] || (s.onglet ? ss.getSheetByName(s.onglet) : null);
       Logger.log((f ? 'OK      ' : 'ONGLET ? ') + k + ' — ' + s.libelle + (f ? ' (' + f.getLastRow() + ' lignes)' : ''));
     } catch (e) { Logger.log('ÉCHEC   ' + k + ' — ' + s.libelle + ' : ' + e.message); }
   });

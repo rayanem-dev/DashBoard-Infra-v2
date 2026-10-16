@@ -1,7 +1,7 @@
 /******************************
  *  CONFIGURATION GLOBALE
  ******************************/
-const SUIVI_CPM_ID = "1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY";
+const SUIVI_CPM_ID = "1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I";
 const SUIVI_CPM_TAB = "suivi";
 const TEMPLATE_PEC_ID = "1V9e3k4eCCSzRPosjtTrAewCQrErDf2xDX1L0V9979xQ";
 

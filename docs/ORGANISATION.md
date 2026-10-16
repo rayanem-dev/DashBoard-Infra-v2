@@ -21,7 +21,7 @@ Le dépôt est **public** : jamais de mot de passe, clé ou jeton dans le code. 
 ## Dépendances (ce que chaque application lit ou écrit)
 | Application (dossier) | Lit / écrit | Secrets |
 |---|---|---|
-| Passerelle (`gateway/`) | Gateway_DB, Gateway_Secrets, BDDORGA `1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA`, Suivi CPM `1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY`, Forage, Terrassement, Électricité | propriétés de script |
+| Passerelle (`gateway/`) | Gateway_DB, Gateway_Secrets, BDDORGA `1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA`, Suivi CPM `1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I`, Forage, Terrassement, Électricité | propriétés de script |
 | Prises en charge + Autorisation d'accès (`prise-en-charge/`) | **liée à la feuille** « Prises en Charges & Autorisation Acces » `1htHz2rgdyjtH3Ne5E8QNprX2LZKauui4hF25Xse5S18` ; lit Suivi CPM (`SUIVI_CPM_ID`, colonnes C3:N) ; modèles Docs : PEC `1V9e3k4eCCSzRPosjtTrAewCQrErDf2xDX1L0V9979xQ`, autorisation `1U0Xg-_QenJJtCHhJC5O-IyzXU683XMzqtLyykPkAQG4`, macaron `13OFJuvreqXJE0DRrM0TPUS9JO-X9YjYVLuNjjlyDdM4` ; service avancé Drive v3 | `GEMINI_API_KEY` (propriété de script, OK) |
 | Dotation Vivres & Eau (`dotation/`) | BDDORGA (nom, service, dépendance **par en-têtes**) ; 4 modèles Docs (voir `dotation/MODELES.md`) | — |
 | Commande de pièces (`commande-pieces/`) | **liée à une feuille** (`getActiveSpreadsheet`, colonnes A et C à partir de la ligne 5) | — |

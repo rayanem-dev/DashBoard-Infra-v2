@@ -128,7 +128,7 @@ var SEED_APPS = [
   "Suivi CPM V5",
   "Préparation et suivi des projets via l'outil CPM. Gestion des délais, jalons et livrables des projets d'infrastructure.",
   "📋",
-  "https://docs.google.com/spreadsheets/d/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY/edit?usp=sharing",
+  "https://docs.google.com/spreadsheets/d/1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I/edit?usp=sharing",
   1
  ],
  [
