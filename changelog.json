@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-01",
+    "date": "2026-10-20",
+    "title": "Version 5.1.5 — Badges : logo remonté",
+    "changes": [
+      "Badges : le logo est remonté de 1,5 mm."
+    ]
+  },
+  {
     "id": "2026-10-19-05",
     "date": "2026-10-19",
     "title": "Version 5.1.4 — Badges : traits orange dégagés",
