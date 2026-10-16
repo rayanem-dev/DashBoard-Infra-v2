@@ -13,7 +13,7 @@
 | logistique | Commande de Pièces – Service Électromécanique | Apps Script | https://script.google.com/macros/s/AKfycbwNIhTZ7NwMJfoAVeDjpUEC6mriA85kcd0lz9l2hFFyU4DXJi2KoctyXXWFRAhDpvRA/exec |
 | logistique | Générateur Requête Transport | Apps Script | https://script.google.com/macros/s/AKfycbzdT9ccbrUmHZfTHCdFC09ZFG-KX3TR95qvpe5fyuIjE_tSMe-1hVEQDKknD629KHoU/exec |
 | logistique | Dotation Vivres & Eau Minérale | Apps Script | https://script.google.com/macros/s/AKfycbzwhfoD33zKvmQ2Vv_XhNJWIAMWlBys3NbfolmI_SXc5wFoaxptw-leI18IaHK8sC7M/exec |
-| pilotage | Rapport Hebdomadaire Infra | Google Slides | https://docs.google.com/presentation/d/1CF4JWBYkPvvlU0XiwVN_sQhxxdM29pgH/edit?usp=sharing&ouid=114100570299093678332&rtpof=true&sd=true |
+| pilotage | Rapport Hebdomadaire Infra | Google Slides | https://docs.google.com/presentation/d/1SyC226_iZHhAs01-NHtR-wyEtFOTAmOkzpSjPo1jm20/edit?usp=sharing&ouid=114100570299093678332&rtpof=true&sd=true |
 | pilotage | Avancement Chantiers | GitHub Pages | https://rayanem-dev.github.io/DashBoard-Infra/Avancement_des_Chantiers.html |
 | pilotage | 🗂️ Suivi Chantier | GitHub Pages | https://rayanem-dev.github.io/DashBoard-Infra/Suivi_Chantier.html |
 | pilotage | Suivi des Tâches Journalières | Google Sheet | https://docs.google.com/spreadsheets/d/1Jlz8LmaawE4Fz7Dj1opxkg9kuk4G5fsO0UP4FOiRRWc/edit?usp=sharing |

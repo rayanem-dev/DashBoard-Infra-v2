@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-08",
+    "date": "2026-10-20",
+    "title": "Version 5.2.2 — Rapport hebdomadaire : injection directe dans Google Slides",
+    "changes": [
+      "Dossiers CPM : le bouton « Injecter dans la diapo hebdomadaire » ajoute les diapositives des dossiers non achevés à la fin du rapport (Google Slides), dans le style du rapport ; relancer remplace les diapositives précédentes. Le téléchargement .pptx reste disponible."
+    ]
+  },
+  {
     "id": "2026-10-20-07",
     "date": "2026-10-20",
     "title": "Version 5.2.1 — Diapositives du rapport : présentation en tableau",

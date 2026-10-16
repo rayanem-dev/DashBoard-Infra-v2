@@ -1,11 +1,16 @@
 const test = require('node:test'), assert = require('node:assert');
-const R = require('../../../js/rapportdiapos.js'), S = require('../../../js/synthese.js');
-const E = ['', 'Type', 'N°', 'Intitule', '', '', '', '%', 'Statut', 'Commentaire'];
-const L = (t, n, i, p, c) => ['', t, n, i, '', '', '', p, 'En cours', c];
-const rows = [['x'], E, L('Dossier Appel Offre DAO', 'N1', 'Lot 1', '98%', 'a'), L('Dossier Appel Offre DAO', 'N1', 'Lot 2', '95%', 'b'), L('Dossier Appel Offre DAO', 'N2', 'Fini', '100%', 'c'), L('Gré à Gré Convention Cadre', 'N3', 'Cadre', '10%', '')];
-test('dossiers à moins de 100 %, classés par tableau ; changement de la semaine seulement pour le bon dossier', () => {
-  const r = R.preparer(rows, [{ date: '2026-10-12', type: 'modifie', champ: 'pourcent', n_dossier: 'N1', dossier: 'Lot 1' }, { date: '2026-10-01', type: 'modifie', champ: 'commentaire', n_dossier: 'N1', dossier: 'Lot 2' }], '2026-10-10', S);
-  assert.deepStrictEqual(r.groupes.map(g => [g.cle, g.dossiers.length]), [['daocf', 2], ['cadre', 1]]);
-  assert.deepStrictEqual(r.groupes[0].dossiers.map(d => d.change), [true, false]);
-  assert.strictEqual(r.fin, '2026-10-16');
+const { rdPlan_, rdNettoyer_ } = require('../RapportDiapos.gs');
+const rap = { debut: '2026-10-10', fin: '2026-10-16', groupes: [{ titre: 'DAO et CF', dossiers: Array.from({ length: 8 }, (_, i) => ({ numero: 'N' + i, intitule: 'Dossier ' + i, pct: 10 * i + 5, commentaire: 'c' + i, change: i === 0 })) }, { titre: 'Autres', dossiers: [] }] };
+test('nettoyage : groupes vides retirés, pourcentage borné, refus si aucun dossier', () => {
+  const r = rdNettoyer_(Object.assign({}, rap, { groupes: rap.groupes.concat([{ titre: 'X', dossiers: [{ pct: 250 }] }]) }));
+  assert.strictEqual(r.groupes.length, 2); assert.ok(r.groupes[1].dossiers[0].pct < 100);
+  assert.throws(() => rdNettoyer_({ groupes: [{ titre: 'A', dossiers: [] }] }), /Aucun dossier/);
+});
+test('plan : 8 dossiers = 2 diapositives, tout reste dans la page 720 × 540, gras seulement pour le dossier modifié', () => {
+  const plan = rdPlan_(rdNettoyer_(rap));
+  assert.strictEqual(plan.length, 2);
+  plan.forEach(d => d.elements.forEach(e => { assert.ok(e.x >= 0 && e.x + e.w <= 720 && e.y >= 0 && e.y + (e.h || 0) <= 540, JSON.stringify(e)); }));
+  const com = plan[0].elements.filter(e => e.t === 'rect' && e.texte && /^c\d$/.test(e.texte));
+  assert.deepStrictEqual(com.map(e => e.gras), [true, false, false, false, false, false]);
+  assert.match(plan[0].note, /^diapos-cpm-auto semaine=2026-10-10/);
 });

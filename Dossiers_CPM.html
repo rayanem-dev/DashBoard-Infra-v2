@@ -150,7 +150,8 @@
     <summary>📋 Texte pour le rapport hebdomadaire (colonne O.B.S du PowerPoint)</summary>
     <p class="journal-info">Choisissez la semaine (du samedi au vendredi), puis cliquez sur « Copier » à côté d'un dossier et collez dans la case O.B.S de la diapositive : le texte est déjà en <b>gras</b>.</p>
     <div class="rapport-barre"><label for="rapport-semaine">Semaine</label> <select id="rapport-semaine"></select>
-      <button type="button" id="rapport-diapos" class="rapport-copier" style="margin-left:10px" title="Crée les diapositives « dossiers non achevés » à ajouter à la fin du rapport hebdomadaire">📥 Injecter dans la diapo hebdomadaire</button> <span id="rapport-diapos-etat" class="journal-info"></span></div>
+      <button type="button" id="rapport-diapos" class="rapport-copier" style="margin-left:10px" title="Ajoute à la fin du rapport hebdomadaire (Google Slides) les diapositives des dossiers non achevés">📥 Injecter dans la diapo hebdomadaire</button>
+      <button type="button" id="rapport-pptx" class="rapport-copier" title="Télécharge les mêmes diapositives en fichier PowerPoint">⬇ .pptx</button> <span id="rapport-diapos-etat" class="journal-info"></span></div>
     <div id="rapport-contenu"></div>
   </details>
 </main>
@@ -515,14 +516,29 @@ init();
       if (window.PptxGenJS) return Promise.resolve();
       return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'; s.onload = ok; s.onerror = function () { ko(new Error('bibliothèque PowerPoint indisponible')); }; document.head.appendChild(s); });
     }
-    bd.addEventListener('click', function () {
-      bd.disabled = true; etat.textContent = 'Création des diapositives…';
-      Promise.all([Donnees.csv(CPM_CSV_URL), chargerPptx()]).then(function (v) {
-        var rap = RapportDiapos.preparer(Synthese.parseCSV(v[0]), r.evenements, sel.value, Synthese);
+    function preparer() { return Donnees.csv(CPM_CSV_URL).then(function (t) { return RapportDiapos.preparer(Synthese.parseCSV(t), r.evenements, sel.value, Synthese); }); }
+    function lancer(bouton, action) {
+      bouton.disabled = true; etat.textContent = 'Création des diapositives…';
+      preparer().then(function (rap) {
         if (!rap.groupes.length) { etat.textContent = 'Aucun dossier à moins de 100 %.'; return; }
-        var p = new PptxGenJS(), n = RapportDiapos.construire(p, rap);
-        return p.writeFile({ fileName: 'Rapport hebdo - dossiers non achevés - ' + sel.value + '.pptx' }).then(function () { etat.textContent = n + ' diapositive' + (n > 1 ? 's' : '') + ' créée' + (n > 1 ? 's' : '') + ' : à ajouter à la fin du rapport (Accueil → Nouvelle diapositive → Réutiliser les diapositives).'; });
-      }).catch(function (e) { etat.textContent = 'Impossible : ' + (e && e.message ? e.message : 'erreur'); }).then(function () { bd.disabled = false; });
+        return action(rap);
+      }).catch(function (e) { etat.textContent = 'Impossible : ' + (e && e.message ? e.message : 'erreur'); }).then(function () { bouton.disabled = false; });
+    }
+    bd.addEventListener('click', function () {
+      lancer(bd, function (rap) {
+        return Api.call('rapport_diapos', { rapport: rap }).then(function (res) {
+          etat.textContent = res.diapositives + ' diapositive' + (res.diapositives > 1 ? 's' : '') + ' ajoutée' + (res.diapositives > 1 ? 's' : '') + ' à la fin du rapport' + (res.remplacees ? ' (' + res.remplacees + ' ancienne' + (res.remplacees > 1 ? 's' : '') + ' remplacée' + (res.remplacees > 1 ? 's' : '') + ')' : '') + ' — ';
+          var a = document.createElement('a'); a.href = res.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ouvrir le rapport'; etat.appendChild(a);
+        });
+      });
+    });
+    document.getElementById('rapport-pptx').addEventListener('click', function () {
+      lancer(this, function (rap) {
+        return chargerPptx().then(function () {
+          var p = new PptxGenJS(), n = RapportDiapos.construire(p, rap);
+          return p.writeFile({ fileName: 'Rapport hebdo - dossiers non achevés - ' + sel.value + '.pptx' }).then(function () { etat.textContent = n + ' diapositive(s) téléchargée(s).'; });
+        });
+      });
     });
     if (location.hash === '#journal') { box.open = true; box.scrollIntoView(); }
     if (location.hash === '#rapport') { rap.open = true; rap.scrollIntoView(); }
