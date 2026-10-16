@@ -50,6 +50,13 @@ function badgesEntreprisesCpm_(enr) {
   });
   return ordre.map(function (c) { return par[c]; });
 }
+/** Contrat porté par un onglet normalisé « ENTREPRISE · 60.INFRA.26 » (repris tel que dans le CPM si connu) ; '' pour un ancien nom d'onglet. */
+function badgesContratOnglet_(onglet, contrats) {
+  var p = String(onglet || '').split(' · '); if (p.length < 2) return '';
+  var c = p.slice(1).join(' · ').trim(), k = Badges.norm(c).replace(/ /g, '');
+  var connu = (contrats || []).filter(function (x) { return Badges.norm(x.numero).replace(/ /g, '') === k; })[0];
+  return connu ? connu.numero : c;
+}
 /** Assemble : Enquêtes (un résultat par onglet) + entreprises CPM + corrections manuelles. */
 function badgesFusion_(onglets, entCpm, surP, surE) {
   var entreprises = entCpm.map(function (e) { return { nom: e.nom, contrats: e.contrats.slice(), source: 'cpm' }; });
@@ -61,8 +68,9 @@ function badgesFusion_(onglets, entCpm, surP, surE) {
     var nom = badgesAppariement_(o.entreprise, cpmNoms) || badgesAppariement_(o.onglet, cpmNoms) || o.entreprise;
     var al = aliasDe[Badges.norm(nom)] || aliasDe[Badges.norm(o.entreprise)]; if (al) nom = al; // rattachement décidé à la main
     if (!entreprises.some(function (e) { return Badges.norm(e.nom) === Badges.norm(nom); })) entreprises.push({ nom: nom, contrats: [], source: 'enquetes' });
+    var contratOnglet = badgesContratOnglet_(o.onglet, (entreprises.filter(function (e) { return Badges.norm(e.nom) === Badges.norm(nom); })[0] || { contrats: [] }).contrats);
     o.personnes.forEach(function (p) {
-      personnes.push({ id: 'e' + badgesHash_(o.onglet + '|' + Badges.cle({ nom: p.nom, prenom: p.prenom, entreprise: '' })), nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: nom, contrat: '', structure: '', nomAr: p.nomAr, prenomAr: p.prenomAr, verifier: !!p.verifier, source: 'enquetes', onglet: o.onglet });
+      personnes.push({ id: 'e' + badgesHash_(o.onglet + '|' + Badges.cle({ nom: p.nom, prenom: p.prenom, entreprise: '' })), nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: nom, contrat: contratOnglet, structure: '', nomAr: p.nomAr, prenomAr: p.prenomAr, verifier: !!p.verifier, source: 'enquetes', onglet: o.onglet });
     });
   });
   // corrections d'entreprises

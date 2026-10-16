@@ -863,6 +863,15 @@ function genererPEC(ss, silencieux) {
     try { nomCell.removeChild(nomCell.getChild(i)); } catch (e) { /* dernière ligne de la cellule, on ne peut pas la retirer */ }
   }
 
+  // Noms toujours au milieu de leur case : centrés horizontalement et verticalement
+  try {
+    nomCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+    for (let i = 0; i < nomCell.getNumChildren(); i++) {
+      const enfant = nomCell.getChild(i);
+      if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    }
+  } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
+
   doc.saveAndClose();
   const pdf = copie.getAs("application/pdf");
   const pdfFile = pdfFolder.createFile(pdf).setName(nomFichier + ".pdf");

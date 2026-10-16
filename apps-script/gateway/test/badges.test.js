@@ -166,3 +166,11 @@ test('passerelle : mots proches (MHENNI / MEHENNI) et rattachement manuel d\'une
   assert.strictEqual(avec.personnes[0].contrat, '34.INFRA.25');
   assert.ok(!avec.entreprises.some(e => e.nom === 'SARL ATIA MEHDI'));
 });
+
+test('contrat lu dans le nom d\'un onglet normalisé : deux onglets de la même entreprise gardent chacun leur contrat', () => {
+  const pers = (n) => [{ nom: n, prenom: 'X', fonction: '', nomAr: '', prenomAr: '', verifier: false }];
+  const onglets = [{ onglet: 'ZAATOUT · 54.INFRA.25', entreprise: 'ETB ZAATOUT ABDENCER', personnes: pers('A') }, { onglet: 'ZAATOUT · 53.INFRA.25', entreprise: 'ETB ZAATOUT ABDENCER', personnes: pers('B') }, { onglet: 'ANCIEN', entreprise: 'SARL TEST', personnes: pers('C') }];
+  const cpm = [{ nom: 'ZAATOUT ABDENCER', contrats: [{ numero: '53.INFRA.25', intitule: 'T' }, { numero: '54.INFRA.25', intitule: 'D' }] }, { nom: 'SARL TEST', contrats: [{ numero: '1.INFRA.25', intitule: 'a' }, { numero: '2.INFRA.25', intitule: 'b' }] }];
+  const f = G('badgesFusion_', onglets, cpm, [], []);
+  assert.deepStrictEqual(f.personnes.map(p => [p.nom, p.contrat]), [['A', '54.INFRA.25'], ['B', '53.INFRA.25'], ['C', '']]);
+});

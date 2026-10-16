@@ -48,21 +48,119 @@ function enqTrouver_(index, nom, prenom) {
   for (var i = 0; i < index.length; i += 1) if (enqMemePersonne_(voulu, index[i].nom + ' ' + index[i].prenom)) return index[i];
   return null;
 }
-/** Onglet du prestataire : le plus proche du nom d'entreprise (titre de l'onglet ou nom de l'onglet). Pas de correspondance sûre = '' (rien n'est écrit au hasard). */
-function enqOngletPour_(onglets, entreprise) {
-  var a = enqJetons_(entreprise).filter(function (t) { return !ENQ_MOTS_VIDES_[t]; }), meilleur = '', score = 0;
-  if (!a.length) return '';
+/** Contrat porté par le nom d'un onglet normalisé « ENTREPRISE · 60.INFRA.26 » ; '' pour un ancien nom sans contrat. */
+function enqContratOnglet_(nomOnglet) {
+  var p = String(nomOnglet || '').split(' · ');
+  return p.length > 1 ? p.slice(1).join(' · ').trim() : '';
+}
+function enqMemeContrat_(a, b) { return Badges.norm(a).replace(/ /g, '') === Badges.norm(b).replace(/ /g, '') && Badges.norm(a) !== ''; }
+/** Rapprochement entreprise ↔ entreprise : part de mots communs (0 si l'un n'est pas inclus dans l'autre). */
+function enqScoreEntreprise_(x, y) {
+  var a = enqJetons_(x).filter(function (t) { return !ENQ_MOTS_VIDES_[t]; }), b = enqJetons_(y).filter(function (t) { return !ENQ_MOTS_VIDES_[t]; });
+  if (!a.length || !b.length) return 0;
+  var commun = a.filter(function (t) { return b.some(function (u) { return enqProche_(t, u); }); }).length;
+  return commun >= Math.min(a.length, b.length) ? commun / Math.max(a.length, b.length) : 0;
+}
+/**
+ * Onglet du prestataire : le plus proche du nom d'entreprise (titre de l'onglet ou nom de l'onglet).
+ * Si le contrat est connu : un onglet qui porte le même contrat l'emporte, et un onglet qui porte un AUTRE contrat n'est jamais choisi
+ * (un nouveau contrat de la même entreprise aura son propre onglet). Pas de correspondance sûre = '' (rien n'est écrit au hasard).
+ */
+function enqOngletPour_(onglets, entreprise, contrat) {
+  var meilleur = '', score = 0, exact = '', scoreExact = 0;
   onglets.forEach(function (o) {
-    [o.entreprise, o.onglet].forEach(function (nom) {
-      var b = enqJetons_(nom).filter(function (t) { return !ENQ_MOTS_VIDES_[t]; });
-      if (!b.length) return;
-      var commun = a.filter(function (t) { return b.some(function (u) { return enqProche_(t, u); }); }).length;
-      var s = commun / Math.max(a.length, b.length);
-      if (commun >= Math.min(a.length, b.length) && s > score) { score = s; meilleur = o.onglet; }
-    });
+    var s = Math.max(enqScoreEntreprise_(entreprise, o.entreprise), enqScoreEntreprise_(entreprise, o.onglet));
+    if (!s) return;
+    var c = enqContratOnglet_(o.onglet);
+    if (contrat && c) { if (enqMemeContrat_(c, contrat)) { if (s > scoreExact) { scoreExact = s; exact = o.onglet; } } return; }
+    if (s > score) { score = s; meilleur = o.onglet; }
   });
+  return exact || meilleur;
+}
+/** Nom d'onglet normalisé : « ENTREPRISE · contrat » (sans les caractères interdits dans un nom d'onglet, 100 caractères au plus). */
+function enqNomOnglet_(entreprise, contrat) {
+  var propre = function (t) { return String(t || '').replace(/[\[\]*?:\/\\]+/g, '-').replace(/\s+/g, ' ').trim(); };
+  var e = propre(entreprise).toUpperCase(), c = propre(contrat);
+  return (c ? e + ' · ' + c : e).slice(0, 100);
+}
+
+/** Numéro d'agent : colonne (à gauche des noms) dont les cellules sont, pour la plupart, des numéros 1, 2, 3… ; -1 si introuvable. */
+function enqColNumero_(lignes, col) {
+  var meilleur = -1, score = 0;
+  for (var c = 0; c < col.fr; c += 1) {
+    var n = 0, tot = 0;
+    for (var i = col.h + 1; i < lignes.length; i += 1) { var v = Badges.vide((lignes[i] || [])[c]); if (!v) continue; tot += 1; if (/^\d{1,4}$/.test(v)) n += 1; }
+    if (tot && n / tot >= 0.5 && n > score) { score = n; meilleur = c; }
+  }
   return meilleur;
 }
+/** Prochain numéro d'agent : le plus grand numéro déjà présent + 1. */
+function enqProchainNumero_(lignes, col, colNum) {
+  var max = 0;
+  for (var i = col.h + 1; i < lignes.length; i += 1) { var v = Number(Badges.vide((lignes[i] || [])[colNum])); if (v > max) max = v; }
+  return max + 1;
+}
+
+/** Translittération APPROCHÉE en arabe (prénoms et noms courants d'abord, puis règles simples) : à relire, jamais une traduction officielle. */
+var ENQ_AR_MOTS_ = { mohamed: 'محمد', mohammed: 'محمد', muhammad: 'محمد', ahmed: 'أحمد', ahmad: 'أحمد', ali: 'علي', omar: 'عمر', amine: 'أمين', yacine: 'ياسين', yassine: 'ياسين', yasser: 'ياسر', rayane: 'ريان', rayan: 'ريان', madani: 'مداني', madni: 'مدني',
+  karim: 'كريم', rachid: 'رشيد', youcef: 'يوسف', youssef: 'يوسف', brahim: 'إبراهيم', ibrahim: 'إبراهيم', mustapha: 'مصطفى', mostefa: 'مصطفى', lamine: 'لمين', nacer: 'ناصر', nasser: 'ناصر', salim: 'سليم', samir: 'سمير', farid: 'فريد', hamza: 'حمزة', ismail: 'إسماعيل',
+  said: 'سعيد', khaled: 'خالد', fouad: 'فؤاد', walid: 'وليد', abdelkader: 'عبد القادر', abdelmadjid: 'عبد المجيد', abdelhak: 'عبد الحق', abderrahmane: 'عبد الرحمان', abderrahim: 'عبد الرحيم', abdelaziz: 'عبد العزيز', abdelghani: 'عبد الغني', abdelhamid: 'عبد الحميد', abdellatif: 'عبد اللطيف',
+  abdelouahab: 'عبد الوهاب', abdelkrim: 'عبد الكريم', abdelmoumen: 'عبد المومن', abdennour: 'عبد النور', aissa: 'عيسى', ayoub: 'أيوب', bilal: 'بلال', djamel: 'جمال', fares: 'فارس', hicham: 'هشام', houcine: 'حسين', hocine: 'حسين', idir: 'إدير', ilyes: 'إلياس', lyes: 'إلياس', mehdi: 'مهدي',
+  merouane: 'مروان', nabil: 'نبيل', nadir: 'نادر', redouane: 'رضوان', riad: 'رياض', sofiane: 'سفيان', tarek: 'طارق', toufik: 'توفيق', zinedine: 'زين الدين', chems: 'شمس', eddine: 'الدين', eddin: 'الدين', nour: 'نور', salah: 'صلاح', sid: 'سيد', ben: 'بن', bel: 'بل', ould: 'ولد', el: 'ال', al: 'ال' };
+var ENQ_AR_LETTRES_ = [['ou', 'و'], ['ch', 'ش'], ['kh', 'خ'], ['gh', 'غ'], ['dj', 'ج'], ['th', 'ث'], ['dh', 'ذ'], ['sh', 'ش'], ['ai', 'ي'], ['ei', 'ي'], ['a', 'ا'], ['b', 'ب'], ['c', 'ك'], ['d', 'د'], ['e', ''], ['f', 'ف'], ['g', 'ق'], ['h', 'ه'], ['i', 'ي'], ['j', 'ج'], ['k', 'ك'], ['l', 'ل'], ['m', 'م'],
+  ['n', 'ن'], ['o', 'و'], ['p', 'ب'], ['q', 'ق'], ['r', 'ر'], ['s', 'س'], ['t', 'ت'], ['u', 'و'], ['v', 'ف'], ['w', 'و'], ['x', 'كس'], ['y', 'ي'], ['z', 'ز']];
+function enqArabeMot_(mot) {
+  var m = Badges.norm(mot).replace(/ /g, '');
+  if (!m) return '';
+  if (ENQ_AR_MOTS_[m]) return ENQ_AR_MOTS_[m];
+  var out = '', i = 0;
+  while (i < m.length) {
+    var trouve = false;
+    for (var k = 0; k < ENQ_AR_LETTRES_.length; k += 1) {
+      var l = ENQ_AR_LETTRES_[k][0];
+      if (m.substr(i, l.length) === l) { out += ENQ_AR_LETTRES_[k][1]; i += l.length; trouve = true; break; }
+    }
+    if (!trouve) i += 1;
+  }
+  return out;
+}
+function enqArabe_(texte) { return String(texte || '').split(/[\s\-]+/).filter(Boolean).map(enqArabeMot_).filter(Boolean).join(' '); }
+
+/**
+ * Plan de normalisation des noms d'onglets : { onglet, nouveau, contrat, etat } avec etat = 'ok' (déjà normalisé), 'renommer', 'inconnu' (entreprise absente du CPM) ou 'ambigu' (plusieurs contrats possibles).
+ * cpm : [{ entreprise, contrat, intitule }]. Le contrat est reconnu par les mots du nom de l'onglet qui restent après l'entreprise (ex. « Z.ABD Manuel » → « manuel » → « Dessablage manuel »).
+ */
+function enqPrefixeMot_(t, w) {
+  if (t.length < 3) return false;
+  if (w.indexOf(t) === 0) return true;
+  if (t.length < 5) return false;
+  var a = t, b = w.slice(0, t.length + 1), i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i += 1;
+  return a.slice(i + 1) === b.slice(i + 1) || a.slice(i) === b.slice(i + 1) || a.slice(i + 1) === b.slice(i);
+}
+function enqPlanNoms_(onglets, cpm) {
+  var res = [], pris = {};
+  onglets.forEach(function (o) {
+    if (o.erreur || !o.personnes) { return; }
+    if (enqContratOnglet_(o.onglet)) { res.push({ onglet: o.onglet, nouveau: o.onglet, contrat: enqContratOnglet_(o.onglet), etat: 'ok' }); pris[o.onglet] = 1; return; }
+    var cands = cpm.filter(function (c) { return Math.max(enqScoreEntreprise_(o.entreprise, c.entreprise), enqScoreEntreprise_(o.onglet, c.entreprise)) > 0; });
+    if (!cands.length) { res.push({ onglet: o.onglet, nouveau: o.onglet, contrat: '', etat: 'inconnu' }); return; }
+    var choix = cands;
+    if (cands.length > 1) {
+      var entJ = enqJetons_(cands[0].entreprise);
+      var reste = enqJetons_(o.onglet).filter(function (t) { return !entJ.some(function (u) { return u.indexOf(t) === 0; }); });
+      var notes = cands.map(function (c) { var w = enqJetons_(c.intitule); return reste.filter(function (t) { return w.some(function (x) { return enqPrefixeMot_(t, x); }); }).length; });
+      var max = Math.max.apply(null, notes), meilleurs = cands.filter(function (c, i) { return notes[i] === max; });
+      choix = max > 0 && meilleurs.length === 1 ? meilleurs : [];
+    }
+    if (choix.length !== 1) { res.push({ onglet: o.onglet, nouveau: o.onglet, contrat: '', etat: 'ambigu' }); return; }
+    var nouveau = enqNomOnglet_(choix[0].entreprise, choix[0].contrat);
+    if (pris[nouveau]) { res.push({ onglet: o.onglet, nouveau: o.onglet, contrat: choix[0].contrat, etat: 'ambigu' }); return; }
+    pris[nouveau] = 1;
+    res.push({ onglet: o.onglet, nouveau: nouveau, contrat: choix[0].contrat, etat: nouveau === o.onglet ? 'ok' : 'renommer' });
+  });
+  return res;
+}
+
 /** « 12.3.INFRA.25 - ENCC SPA - Génie civil » → « ENCC SPA » ; « Visite sur site… » → '' (pas un prestataire). */
 function enqEntrepriseDe_(prestataire) {
   var t = String(prestataire || '').trim();
@@ -82,6 +180,7 @@ function enqResume_(r) {
   var t = [];
   if (r.ajoutes.length) t.push('Enquêtes : ' + r.ajoutes.length + ' personne(s) ajoutée(s) (' + r.ajoutes.join(', ') + ')');
   if (r.existants.length) t.push(r.existants.length + ' déjà présente(s), non modifiée(s)');
+  if (r.crees && r.crees.length) t.push('Onglet créé : ' + r.crees.join(', '));
   if (r.sansOnglet.length) t.push('Aucun onglet trouvé pour « ' + r.entreprise + ' » : ' + r.sansOnglet.join(', ') + ' non ajouté(s) — créez l\'onglet du prestataire dans les Enquêtes');
   if (r.erreur) t.push('Enquêtes : ' + r.erreur);
   return t.join(' · ');
@@ -116,34 +215,96 @@ function rechercherPersonnes(texte) {
   } catch (e) { return { ok: false, message: e.message, personnes: [] }; }
 }
 
+/**
+ * Crée l'onglet d'un prestataire à partir d'un onglet existant pris comme modèle (mise en forme, en-têtes, lignes numérotées) :
+ * noms effacés, titre remplacé par l'entreprise. Retourne le nom du nouvel onglet.
+ */
+function enqCreerOnglet_(ss, onglets, entreprise, contrat) {
+  var modele = null;
+  onglets.forEach(function (o) { if (!modele && !o.erreur && o.onglet !== 'Liste' && Badges.colonnesEnquetes(ss.getSheetByName(o.onglet).getDataRange().getDisplayValues())) modele = o.onglet; });
+  if (!modele) throw new Error('aucun onglet modèle exploitable dans les Enquêtes');
+  var nom = enqNomOnglet_(entreprise, contrat), n = 1, base = nom;
+  while (ss.getSheetByName(nom)) { n += 1; nom = base.slice(0, 94) + ' (' + n + ')'; }
+  var sh = ss.getSheetByName(modele).copyTo(ss).setName(nom);
+  var lignes = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(lignes), derniere = lignes.length;
+  [col.fr, col.fonction, col.prenomAr, col.nomAr].forEach(function (c) { if (c >= 0 && derniere > col.h + 1) sh.getRange(col.h + 2, c + 1, derniere - col.h - 1, 1).clearContent(); });
+  for (var i = 0; i < col.h; i += 1) { // titre : la partie latine devient le nom de l'entreprise
+    for (var j = 0; j < lignes[i].length; j += 1) {
+      var c = String(lignes[i][j] || '');
+      if (c.indexOf('القائمة') >= 0 && /[A-Za-z]{2}/.test(c)) {
+        sh.getRange(i + 1, j + 1).setValue(c.replace(/[A-Za-z][A-Za-z0-9 .&'’()\/\-]*[A-Za-z0-9.)]/, String(entreprise).toUpperCase()));
+        return nom;
+      }
+    }
+  }
+  return nom;
+}
+
 /** Ajoute aux Enquêtes les personnes de la demande qui n'y figurent pas encore. Ne lève jamais d'erreur : le résultat dit ce qui a été fait. */
 function injecterEnquetes_(formData) {
-  var r = { ajoutes: [], existants: [], sansOnglet: [], entreprise: enqEntrepriseDe_(formData.prestataire), erreur: '' };
+  var r = { ajoutes: [], existants: [], sansOnglet: [], crees: [], entreprise: enqEntrepriseDe_(formData.prestataire), erreur: '' };
   try {
     var gens = (formData.personnes || []).filter(function (p) { return Badges.vide(p.nom) && (Badges.vide(p.prenom) || /\s/.test(Badges.vide(p.nom))); });
     if (!gens.length) return r;
     if (!r.entreprise) { r.erreur = 'visite sur site : rien à ajouter'; return r; }
+    var contrat = String(formData.prestataire || '').split(' - ')[0].trim();
     var lock = LockService.getScriptLock(); lock.waitLock(30000);
     try {
-      var ss = enqClasseur_(), onglets = enqLireTout_(ss), idx = enqIndex_(onglets), cible = enqOngletPour_(onglets, r.entreprise);
+      var ss = enqClasseur_(), onglets = enqLireTout_(ss), idx = enqIndex_(onglets), cible = enqOngletPour_(onglets, r.entreprise, contrat);
       gens.forEach(function (p) {
         var nom = Badges.vide(p.nom), prenom = Badges.vide(p.prenom), nomComplet = enqNomComplet_(nom, prenom);
         if (enqTrouver_(idx, nom, prenom)) { r.existants.push(nomComplet); return; }
-        if (!cible) { r.sansOnglet.push(nomComplet); return; }
+        if (!cible) { // pas d'onglet pour ce prestataire (et ce contrat) : on le crée
+          try { cible = enqCreerOnglet_(ss, onglets, r.entreprise, contrat); r.crees.push(cible); onglets.push({ onglet: cible, entreprise: r.entreprise.toUpperCase(), personnes: [] }); }
+          catch (e) { r.erreur = 'création de l\'onglet impossible : ' + e.message; r.sansOnglet.push(nomComplet); return; }
+        }
         var sh = ss.getSheetByName(cible), lignes = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(lignes);
         if (!col || col.fr < 0) { r.sansOnglet.push(nomComplet); return; }
-        var i = enqLigneLibre_(lignes, col), ligne = i + 1;
+        var i = enqLigneLibre_(lignes, col), ligne = i + 1, colNum = enqColNumero_(lignes, col);
         if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
         sh.getRange(ligne, col.fr + 1).setValue(nomComplet);
+        if (colNum >= 0 && !Badges.vide((lignes[i] || [])[colNum])) { /* ligne déjà numérotée : on garde son numéro */ }
+        else if (colNum >= 0) sh.getRange(ligne, colNum + 1).setValue(enqProchainNumero_(lignes, col, colNum)); // numéro d'agent suivant
         if (col.fonction >= 0 && Badges.vide(p.fonction)) sh.getRange(ligne, col.fonction + 1).setValue(Badges.vide(p.fonction));
+        var ar = { nomAr: enqArabe_(nom), prenomAr: enqArabe_(prenom) }; // approché : à relire
+        if (col.nomAr >= 0 && ar.nomAr) sh.getRange(ligne, col.nomAr + 1).setValue(ar.nomAr);
+        if (col.prenomAr >= 0 && ar.prenomAr) sh.getRange(ligne, col.prenomAr + 1).setValue(ar.prenomAr);
         idx.push({ nom: nom, prenom: prenom, fonction: p.fonction, entreprise: r.entreprise, onglet: cible });
         r.ajoutes.push(nomComplet);
       });
     } finally { lock.releaseLock(); }
-    if (r.ajoutes.length) CacheService.getScriptCache().remove('ENQ_IDX');
+    if (r.ajoutes.length || r.crees.length) { var c = CacheService.getScriptCache(); c.remove('ENQ_IDX'); }
   } catch (e) { r.erreur = e.message; }
   return r;
 }
+
+/**
+ * Normalise les noms d'onglets des Enquêtes en « ENTREPRISE · contrat » (le contrat vient du Suivi CPM).
+ * apercuNormalisationOnglets() : montre ce qui serait renommé, sans rien changer (à lancer en premier).
+ * normaliserOngletsEnquetes() : renomme (jamais un onglet « ambigu » ou « inconnu » : ils sont seulement listés).
+ */
+function enqCpmContrats_() {
+  var cpm = SpreadsheetApp.openById(SUIVI_CPM_ID).getSheetByName(SUIVI_CPM_TAB), data = cpm.getRange('C3:N' + cpm.getLastRow()).getValues(), out = [], vus = {};
+  data.forEach(function (r) {
+    var ent = Badges.vide(r[10]), num = Badges.vide(r[11]); if (!ent || !num) return;
+    var k = Badges.norm(ent) + '|' + Badges.norm(num); if (vus[k]) return; vus[k] = 1;
+    out.push({ entreprise: ent, contrat: num, intitule: Badges.vide(r[1]) });
+  });
+  return out;
+}
+function normalisationOnglets_(appliquer) {
+  var ss = enqClasseur_(), plan = enqPlanNoms_(enqLireTout_(ss), enqCpmContrats_()), faits = 0, l = [];
+  plan.forEach(function (p) {
+    if (p.etat === 'renommer') { l.push('« ' + p.onglet + ' » → « ' + p.nouveau + ' »'); if (appliquer) { ss.getSheetByName(p.onglet).setName(p.nouveau); faits += 1; } }
+  });
+  Logger.log((appliquer ? 'RENOMMÉS (' + faits + ')' : 'APERÇU (rien n\'est renommé)') + ' : ' + (l.join(' ; ') || 'aucun'));
+  Logger.log('Déjà normalisés : ' + plan.filter(function (p) { return p.etat === 'ok'; }).map(function (p) { return p.onglet; }).join(' ; '));
+  Logger.log('Entreprise absente du Suivi CPM (non renommés) : ' + (plan.filter(function (p) { return p.etat === 'inconnu'; }).map(function (p) { return p.onglet; }).join(' ; ') || 'aucun'));
+  Logger.log('Plusieurs contrats possibles (à renommer à la main, ex. « ENTREPRISE · 60.INFRA.26 ») : ' + (plan.filter(function (p) { return p.etat === 'ambigu'; }).map(function (p) { return p.onglet; }).join(' ; ') || 'aucun'));
+  if (appliquer) { var c = CacheService.getScriptCache(); c.remove('ENQ_IDX'); c.remove('BADGES_SRC'); }
+}
+function apercuNormalisationOnglets() { normalisationOnglets_(false); }
+function normaliserOngletsEnquetes() { normalisationOnglets_(true); }
 
 /** Une ligne par personne et par demande, dans l'onglet « Journal_PEC » (créé au premier passage). */
 function journaliserPEC_(ss, formData, enq) {

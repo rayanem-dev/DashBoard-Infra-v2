@@ -55,3 +55,41 @@ test('résumé lisible', () => {
   assert.ok(/1 personne\(s\) ajoutée/.test(t) && /2 déjà présente/.test(t));
   assert.ok(/Aucun onglet/.test(E('enqResume_', { ajoutes: [], existants: [], sansOnglet: ['Z'], entreprise: 'X', erreur: '' })));
 });
+
+// ---------- onglets normalisés, numéro d'agent, arabe ----------
+const ONG = [{ onglet: 'Z.ABD Manuel', entreprise: 'ETB ZAATOUT ABDENCER', personnes: [] }, { onglet: 'Z.ABD Terass', entreprise: 'ETB ZAATOUT ABDENCER', personnes: [] }, { onglet: 'Z.ABD Mec', entreprise: 'ETB ZAATOUT ABDENCER', personnes: [] },
+  { onglet: 'MHENNI', entreprise: 'ETS MHENNI', personnes: [] }, { onglet: 'GCB', entreprise: 'GCB DIRECTION', personnes: [] }, { onglet: 'Liste', entreprise: 'Liste', personnes: [] }];
+const CPM = [{ entreprise: 'ZAATOUT ABDENCER', contrat: '53.INFRA.25', intitule: 'Terrassement & plates-formes tuf Rhourde' }, { entreprise: 'ZAATOUT ABDENCER', contrat: '54.INFRA.25', intitule: 'Dessablage manuel production Rhourde' },
+  { entreprise: 'ZAATOUT ABDENCER', contrat: '58.INFRA.25', intitule: 'Dessablage méca. accès puits Rhourde' }, { entreprise: 'ETS MEHENNI ABDELKADER', contrat: '11.INFRA.26', intitule: 'Rénovation de deux piscines' },
+  { entreprise: 'GCB', contrat: '51.INFRA.26', intitule: 'Routes' }, { entreprise: 'GCB', contrat: '52.INFRA.26', intitule: 'Routes périphérie' }];
+test('nom d\'onglet normalisé : ENTREPRISE · contrat, sans caractère interdit', () => {
+  assert.strictEqual(E('enqNomOnglet_', 'Eurl Alko Construction', '80.INFRA.26'), 'EURL ALKO CONSTRUCTION · 80.INFRA.26');
+  assert.strictEqual(E('enqNomOnglet_', 'A/B [x]', 'N°I/51/RNS'), 'A-B -X- · N°I-51-RNS');
+});
+test('normalisation : un contrat reconnu par le mot restant du nom d\'onglet, sinon « ambigu » ; jamais deux onglets au même nom', () => {
+  const plan = E('enqPlanNoms_', ONG, CPM), p = n => plan.find(x => x.onglet === n);
+  assert.strictEqual(p('Z.ABD Manuel').nouveau, 'ZAATOUT ABDENCER · 54.INFRA.25');
+  assert.strictEqual(p('Z.ABD Terass').nouveau, 'ZAATOUT ABDENCER · 53.INFRA.25');
+  assert.strictEqual(p('Z.ABD Mec').nouveau, 'ZAATOUT ABDENCER · 58.INFRA.25');
+  assert.strictEqual(p('MHENNI').nouveau, 'ETS MEHENNI ABDELKADER · 11.INFRA.26');
+  assert.strictEqual(p('GCB').etat, 'ambigu');   // deux contrats GCB, rien dans le nom qui les distingue
+});
+test('l\'onglet est choisi par le contrat quand le nom le porte ; un autre contrat = autre onglet', () => {
+  const o = [{ onglet: 'ENCC SPA · 12.INFRA.25', entreprise: 'ENCC SPA' }, { onglet: 'ENCC SPA · 99.INFRA.26', entreprise: 'ENCC SPA' }, { onglet: 'ATTIA', entreprise: 'SARL ATTIA MEHDI' }];
+  assert.strictEqual(E('enqOngletPour_', o, 'ENCC SPA', '99.INFRA.26'), 'ENCC SPA · 99.INFRA.26');
+  assert.strictEqual(E('enqOngletPour_', o, 'ENCC SPA', '77.INFRA.27'), '');            // nouveau contrat : un onglet sera créé
+  assert.strictEqual(E('enqOngletPour_', o, 'ATTIA MEHDI', '14.INFRA.25'), 'ATTIA');    // ancien nom sans contrat : accepté
+});
+test('numéro d\'agent : colonne numérotée à gauche des noms, prochain = plus grand + 1', () => {
+  const l = [['', '', 'x'], ['رقم', 'بالفرنسية', ''], ['1', 'A B', ''], ['2', 'C D', ''], ['3', '', '']];
+  const col = { h: 1, fr: 1 };
+  assert.strictEqual(E('enqColNumero_', l, col), 0);
+  assert.strictEqual(E('enqProchainNumero_', l, col, 0), 4);
+  assert.strictEqual(E('enqColNumero_', [['', 'بالفرنسية'], ['', 'A B']], { h: 0, fr: 1 }), -1);
+});
+test('arabe approché : prénoms courants et règles simples', () => {
+  assert.strictEqual(E('enqArabe_', 'RAYANE'), 'ريان');
+  assert.strictEqual(E('enqArabe_', 'Chems Eddine'), 'شمس الدين');
+  assert.ok(/^[؀-ۿ ]+$/.test(E('enqArabe_', 'Boukhalfa')));
+  assert.strictEqual(E('enqArabe_', ''), '');
+});
