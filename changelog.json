@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-05",
+    "date": "2026-10-20",
+    "title": "Version 5.1.9 — Journal et rapport hebdomadaire sans les lignes « Étape »",
+    "changes": [
+      "Texte du rapport hebdomadaire (colonne O.B.S) et journal de l'accueil : les lignes « Étape » ne sont plus affichées ; il reste l'avancement (97% → 98%) et le commentaire."
+    ]
+  },
+  {
     "id": "2026-10-20-04",
     "date": "2026-10-20",
     "title": "Version 5.1.8 — Journal du CPM : aperçu plus clair",

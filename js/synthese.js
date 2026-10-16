@@ -104,13 +104,13 @@ var Synthese = (function () {
     if (e.type === 'nouveau') return 'Nouveau dossier' + (e.apres ? ' — ' + e.apres : '');
     if (e.type === 'retire') return 'Dossier retiré du suivi';
     if (e.champ === 'statut') return 'Statut : ' + v(e.avant) + ' → ' + v(e.apres);
-    if (e.champ === 'commentaire' || e.champ === 'etape') return (e.champ === 'etape' ? 'Étape : ' : '') + v(e.apres);
+    if (e.champ === 'commentaire') return v(e.apres);
     return e.libelle + ' : ' + v(e.avant) + ' → ' + v(e.apres);
   }
   /** Changements de la semaine (samedi `debut` → vendredi) classés par tableau du rapport puis par dossier. */
   function rapportSemaine(evenements, debut) {
     var fin = plusJours(debut, 6), groupes = GROUPES_RAPPORT.map(function (g) { return { cle: g.cle, titre: g.titre, dossiers: [], index: {} }; });
-    evenements.filter(function (e) { return e.date >= debut && e.date <= fin; }).slice().reverse().forEach(function (e) { // du plus ancien au plus récent
+    evenements.filter(function (e) { return e.date >= debut && e.date <= fin && e.champ !== 'etape'; }).slice().reverse().forEach(function (e) { // du plus ancien au plus récent
       var g = groupes.filter(function (x) { return x.cle === groupeRapport(e.categorie); })[0];
       var d = g.index[e.cle]; if (!d) { d = g.index[e.cle] = { numero: e.n_dossier || '', intitule: e.dossier, lignes: [] }; g.dossiers.push(d); }
       d.lignes.push(ligneRapport(e));
@@ -169,14 +169,14 @@ var Synthese = (function () {
     var v = function (x) { return x === '' || x == null ? '(vide)' : x; };
     if (e.type === 'nouveau') return 'Nouveau dossier' + (e.apres ? ' — ' + e.apres : '');
     if (e.type === 'retire') return 'Retiré du suivi';
-    if (e.champ === 'commentaire' || e.champ === 'etape') return v(e.apres);
+    if (e.champ === 'commentaire') return v(e.apres);
     if (e.champ === 'pourcent') return v(e.avant) + ' → ' + v(e.apres);
     if (e.champ === 'statut') return v(e.avant) + ' → ' + v(e.apres);
     return e.libelle + ' : ' + v(e.avant) + ' → ' + v(e.apres);
   }
   function listeCompacte(ul, evenements) {
     var ordre = [], par = {};
-    evenements.forEach(function (e) { var k = e.cle || e.dossier; if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(e); });
+    evenements.filter(function (e) { return e.champ !== 'etape'; }).forEach(function (e) { var k = e.cle || e.dossier; if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(e); });
     ordre.forEach(function (k) {
       var li = el('li', 'syn-dos'); li.appendChild(el('strong', null, par[k][0].dossier));
       par[k].forEach(function (e) { li.appendChild(el('div', 'syn-chg', changement(e))); });
