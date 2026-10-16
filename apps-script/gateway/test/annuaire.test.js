@@ -195,3 +195,17 @@ test('planEcriture étendu : téléphone et SONA seulement dans des cases vides,
   const r = Annuaire.planEcriture(vals, 'a@x.dz', { telephone: '0660514275' }, {}); // sans l'option : le téléphone n'est pas écrit
   assert.strictEqual(r.ecritures.length, 0);
 });
+
+test('lignes fantômes : doublons d\'une personne déjà présente avec e-mail ; les autres sont seulement listées', () => {
+  const users = [
+    { uid: 'a', email: 'yasser.aries@sonatrach.dz', nom: 'ARIES YASSER', matricule: '' },
+    { uid: '', email: '', nom: 'ARIES Yasser', matricule: '' },                 // même nom, ordre / casse différents
+    { uid: 'b', email: 'lamine.fartass@sonatrach.dz', nom: 'FARTASS LAMINE', matricule: '83041487' },
+    { uid: '', email: '', nom: 'F. L.', matricule: '83041487' },                // même matricule
+    { uid: '', email: '', nom: 'MAHALOU IBRAHIM', matricule: '' },             // seul : conservé
+    { uid: '', email: '', nom: '', matricule: '' },                              // vide : ignoré
+    { uid: 'c', email: 'x@y.dz', nom: 'DUPONT', matricule: '' }];
+  const f = JSON.parse(JSON.stringify(Annuaire.fantomes(users)));
+  assert.deepStrictEqual(f.doublons.map(d => [d.ligne, d.avec]), [[3, 'yasser.aries@sonatrach.dz'], [5, 'lamine.fartass@sonatrach.dz']]);
+  assert.deepStrictEqual(f.seuls.map(d => d.nom), ['MAHALOU IBRAHIM']);
+});

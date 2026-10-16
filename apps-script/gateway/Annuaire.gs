@@ -187,6 +187,26 @@ var Annuaire = (function () {
   }
 
   /**
+   * Lignes « fantômes » de la table Utilisateurs : ni uid ni e-mail (collées à la main avant la synchronisation, elles ne peuvent ni se connecter ni recevoir un rôle).
+   * Retourne { doublons: [{ ligne, nom, avec }] (même personne déjà présente avec un e-mail : à supprimer), seuls: [{ ligne, nom }] (aucune autre ligne : à compléter dans BDDORGA) }.
+   * `existants` : lignes de la table dans l'ordre (la 1re ligne de données = ligne 2).
+   */
+  function fantomes(existants) {
+    var cle = function (u) { return n(u.nom).split(' ').filter(Boolean).sort().join(' '); };
+    var vide = function (x) { return !t(x.email) && !t(x.uid); };
+    var avecMail = existants.filter(function (u) { return !vide(u) && t(u.email); });
+    var parNom = {}, parMat = {};
+    avecMail.forEach(function (u) { if (cle(u)) parNom[cle(u)] = u; var m = n(u.matricule); if (m) parMat[m] = u; });
+    var doublons = [], seuls = [];
+    existants.forEach(function (u, i) {
+      if (!vide(u) || (!t(u.nom) && !t(u.matricule))) return;
+      var autre = parNom[cle(u)] || parMat[n(u.matricule)];
+      if (autre) doublons.push({ ligne: i + 2, nom: t(u.nom), avec: t(autre.email), role: t(u.role), roleAvec: t(autre.role) }); else seuls.push({ ligne: i + 2, nom: t(u.nom) });
+    });
+    return { doublons: doublons, seuls: seuls };
+  }
+
+  /**
    * Plan d'écriture dans BDDORGA des champs saisis par l'agent (matricule, matricule SAP, NIN) : jamais d'écrasement d'une cellule déjà remplie,
    * colonnes « Matricule SAP » / « NIN » créées à droite si elles n'existent pas. Le NIN n'est écrit que si options.nin est vrai
    * (propriété ORGA_ECRIRE_NIN, à activer APRÈS avoir restreint le partage du fichier). Retourne { ligne, ecritures: [{ col, valeur, entete?, ligneEntete? }] } (1-based) ou { erreur }.
@@ -226,7 +246,7 @@ var Annuaire = (function () {
     return { erreur: 'Adresse absente de BDDORGA : ' + mail };
   }
 
-  return { nettoyerEmail: nettoyerEmail, analyserEmail: analyserEmail, planAffectation: planAffectation, nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
+  return { fantomes: fantomes, nettoyerEmail: nettoyerEmail, analyserEmail: analyserEmail, planAffectation: planAffectation, nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Annuaire;

@@ -103,3 +103,26 @@ function ecrireServiceBddorga_(email, service) {
   var cell = sh.getRange(plan.ligne, plan.col); cell.setNumberFormat('@'); cell.setValue(String(service));
   return plan.ancien;
 }
+
+/**
+ * Nettoyage de la table Utilisateurs : lignes sans uid ni e-mail (anciennes lignes collées à la main).
+ * Celles dont la personne existe déjà avec un e-mail sont des DOUBLONS (le même nom apparaît deux fois dans « Gestion des privilèges ») ;
+ * les autres sont seulement listées : il faut leur adresse dans BDDORGA, puis une synchronisation.
+ * apercuFantomes() : liste sans rien modifier (à lancer en premier). supprimerFantomes() : supprime uniquement les doublons.
+ */
+function fantomes_(supprimer) {
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Utilisateurs');
+  var v = sh.getDataRange().getValues(), h = v[0].map(String);
+  var lignes = v.slice(1).map(function (r) { var o = {}; h.forEach(function (c, i) { o[c] = r[i]; }); return o; });
+  var f = Annuaire.fantomes(lignes);
+  if (supprimer) {
+    f.doublons.map(function (d) { return d.ligne; }).sort(function (a, b) { return b - a; }).forEach(function (l) { sh.deleteRow(l); });
+    CacheService.getScriptCache().remove('TBL_Utilisateurs');
+    Store.journal('nettoyage_fantomes', 'script', f.doublons.length + ' doublon(s) supprimé(s)');
+  }
+  Logger.log((supprimer ? 'SUPPRIMÉS' : 'APERÇU (rien n\'est supprimé)') + ' — doublons sans e-mail (' + f.doublons.length + ') : ' + (f.doublons.map(function (d) { return d.nom + ' (ligne ' + d.ligne + ', existe avec ' + d.avec + (d.role !== d.roleAvec ? ' — RÔLE DIFFÉRENT : fantôme « ' + (d.role || 'aucun') + ' », compte « ' + (d.roleAvec || 'aucun') + ' » : vérifiez le rôle du compte' : '') + ')'; }).join(' ; ') || 'aucun'));
+  Logger.log('Lignes sans e-mail, sans autre ligne pour la personne (' + f.seuls.length + ', conservées) : ' + (f.seuls.map(function (d) { return d.nom + ' (ligne ' + d.ligne + ')'; }).join(' ; ') || 'aucune'));
+  return f;
+}
+function apercuFantomes() { fantomes_(false); }
+function supprimerFantomes() { fantomes_(true); }
