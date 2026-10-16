@@ -418,6 +418,7 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .syn-barre { margin-top: 8px; height: 6px; }
 .syn-journal { max-height: 190px; overflow-y: auto; padding-right: 4px; }
 .syn-journal .syn-semaine { font-size: 12.5px; margin: 8px 0 3px; } .syn-journal .syn-semaine:first-child { margin-top: 0; }
+.syn-journal .syn-dos { margin-bottom: 5px; } .syn-journal .syn-dos strong { font-size: 13px; color: var(--text-main, inherit); } .syn-journal .syn-chg { font-size: 12px; opacity: .85; }
 .syn-journal .syn-puces { font-size: 12px; padding-left: 16px; line-height: 1.45; }
 .syn-semaine { font-size: 13px; font-weight: 800; }
 .syn-puces { margin: 0; padding-left: 20px; color: var(--text-muted); }

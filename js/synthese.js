@@ -164,9 +164,29 @@ var Synthese = (function () {
   }
 
   /** Remplit `zone` (ul par semaine) ; limite = nombre de semaines affichées. */
-  function listeSemaines(zone, evenements, limite) {
+  /** Aperçu de l'accueil : l'intitulé en gras, puis le changement seul (avancement « 97% → 98% », commentaire / étape : le nouveau texte). */
+  function changement(e) {
+    var v = function (x) { return x === '' || x == null ? '(vide)' : x; };
+    if (e.type === 'nouveau') return 'Nouveau dossier' + (e.apres ? ' — ' + e.apres : '');
+    if (e.type === 'retire') return 'Retiré du suivi';
+    if (e.champ === 'commentaire' || e.champ === 'etape') return v(e.apres);
+    if (e.champ === 'pourcent') return v(e.avant) + ' → ' + v(e.apres);
+    if (e.champ === 'statut') return v(e.avant) + ' → ' + v(e.apres);
+    return e.libelle + ' : ' + v(e.avant) + ' → ' + v(e.apres);
+  }
+  function listeCompacte(ul, evenements) {
+    var ordre = [], par = {};
+    evenements.forEach(function (e) { var k = e.cle || e.dossier; if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(e); });
+    ordre.forEach(function (k) {
+      var li = el('li', 'syn-dos'); li.appendChild(el('strong', null, par[k][0].dossier));
+      par[k].forEach(function (e) { li.appendChild(el('div', 'syn-chg', changement(e))); });
+      ul.appendChild(li);
+    });
+  }
+  function listeSemaines(zone, evenements, limite, compact) {
     semaines(evenements).slice(0, limite || 99).forEach(function (w) {
       zone.appendChild(el('h4', 'syn-semaine', 'Semaine du ' + frIso(w.debut) + ' au ' + frIso(w.fin)));
+      if (compact) { var ul0 = el('ul', 'syn-puces'); listeCompacte(ul0, w.evenements); zone.appendChild(ul0); return; }
       var ul = el('ul', 'syn-puces'); w.evenements.forEach(function (e) { ul.appendChild(el('li', null, phrase(e))); }); zone.appendChild(ul);
     });
   }
@@ -186,7 +206,7 @@ var Synthese = (function () {
     return Api.call('cpm_journal').then(function (r) {
       sub.textContent = 'Semaines du samedi au vendredi';
       var corps = el('div', 'syn-journal');
-      if (!r.evenements.length) corps.appendChild(el('p', 'syn-sous', 'Aucun changement enregistré pour le moment.')); else listeSemaines(corps, r.evenements, 4);
+      if (!r.evenements.length) corps.appendChild(el('p', 'syn-sous', 'Aucun changement enregistré pour le moment.')); else listeSemaines(corps, r.evenements, 4, true);
       zone.appendChild(corps);
     }).catch(function (e) { sub.textContent = 'Données indisponibles pour l\'instant' + (e && e.message ? ' — ' + e.message : ''); });
   }

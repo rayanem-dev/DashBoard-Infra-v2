@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-04",
+    "date": "2026-10-20",
+    "title": "Version 5.1.8 — Journal du CPM : aperçu plus clair",
+    "changes": [
+      "Accueil : dans le journal des changements du CPM, l'intitulé du dossier est en gras, suivi du seul changement (avancement « 97% → 98% », ou le nouveau commentaire). La page « Tout voir » ne change pas."
+    ]
+  },
+  {
     "id": "2026-10-20-03",
     "date": "2026-10-20",
     "title": "Version 5.1.7 — Journal du CPM : bouton Actualiser",
