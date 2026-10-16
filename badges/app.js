@@ -50,6 +50,24 @@ var BadgesApp = (function () {
     function echec(e) { dire((e && e.message) ? e.message : 'Échec', true); }
 
     function numeroDe(p) { var k = B.cle(p), r = null; S.hist.forEach(function (h) { if (Number(h.annee) === annee && (h.cle || B.cle(h)) === k) r = h; }); return r; }
+    // Une « entreprise » se choisit AVEC son numéro de contrat : une entreprise qui a plusieurs contrats apparaît une fois par contrat.
+    function combos() {
+      var o = [];
+      S.entreprises.slice().sort(function (a, b) { return a.nom.localeCompare(b.nom); }).forEach(function (e) {
+        var c = e.contrats || [];
+        if (!c.length) o.push({ nom: e.nom, numero: '', intitule: '' }); else c.forEach(function (k) { o.push({ nom: e.nom, numero: k.numero, intitule: k.intitule || '' }); });
+      });
+      return o;
+    }
+    function etiquette(c) { return c.nom + (c.numero ? ' — ' + c.numero : '') + (c.intitule ? ' (' + (c.intitule.length > 38 ? c.intitule.slice(0, 38) + '…' : c.intitule) + ')' : ''); }
+    function sansContrat(p) { var e = entrepriseDe(p.entreprise); return !p.contrat && !!e && (e.contrats || []).length > 0; }
+    function selectCombos(valeur, vide) {
+      var sel = el('select'), liste = combos(); sel.appendChild(new Option(vide, ''));
+      liste.forEach(function (c, i) { sel.appendChild(new Option(etiquette(c), String(i))); });
+      liste.forEach(function (c, i) { if (valeur && B.norm(c.nom) === B.norm(valeur.entreprise) && (c.numero || '') === (valeur.contrat || '')) sel.value = String(i); });
+      sel.combo = function () { return sel.value === '' ? null : liste[Number(sel.value)]; };
+      return sel;
+    }
     function entrepriseDe(nom) { var k = B.norm(nom), r = null; S.entreprises.forEach(function (e) { if (B.norm(e.nom) === k) r = e; }); return r; }
 
     function recharger() {
@@ -73,7 +91,11 @@ var BadgesApp = (function () {
     function visibles() {
       var q = B.norm(S.q);
       return S.personnes.filter(function (p) {
-        if (S.fe && B.norm(p.entreprise) !== B.norm(S.fe)) return false;
+        if (S.fe) {
+          var f = S.fe.split('||');
+          if (B.norm(p.entreprise) !== B.norm(f[0])) return false;
+          if (f[1] === '?' ? !!p.contrat : (f[1] && p.contrat !== f[1])) return false;
+        }
         return !q || B.norm([p.nom, p.prenom, p.fonction, p.entreprise, p.contrat].join(' ')).indexOf(q) >= 0;
       });
     }
@@ -84,8 +106,11 @@ var BadgesApp = (function () {
       rech.oninput = function () { S.q = rech.value; var pos = rech.selectionStart; dessiner(); var n = zone.querySelector('.bdg-rech'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } };
       tete.appendChild(rech);
       var sel = el('select', 'bdg-filtre'); sel.appendChild(new Option('Toutes les entreprises', ''));
-      var noms = {}; S.personnes.forEach(function (p) { if (p.entreprise) noms[p.entreprise] = 1; });
-      Object.keys(noms).sort().forEach(function (n) { sel.appendChild(new Option(n, n)); }); sel.value = S.fe; sel.onchange = function () { S.fe = sel.value; dessiner(); };
+      var vusE = {};
+      combos().forEach(function (c) { sel.appendChild(new Option(etiquette(c), c.nom + '||' + c.numero)); vusE[B.norm(c.nom)] = 1; });
+      S.entreprises.forEach(function (e) { if ((e.contrats || []).length > 1) { var o = new Option(e.nom + ' — (contrat à choisir)', e.nom + '||?'); sel.appendChild(o); } });
+      S.personnes.forEach(function (p) { if (p.entreprise && !vusE[B.norm(p.entreprise)]) { vusE[B.norm(p.entreprise)] = 1; sel.appendChild(new Option(p.entreprise, p.entreprise + '||')); } });
+      sel.value = S.fe; if (sel.value !== S.fe) { S.fe = ''; sel.value = ''; } sel.onchange = function () { S.fe = sel.value; dessiner(); };
       tete.appendChild(sel);
       if (!S.lecture) { tete.appendChild(bouton('+ Ajouter', function () { editer(null); }, 'prim')); tete.appendChild(bouton('Importer…', importer, '', 'Coller depuis Excel ou charger un fichier CSV')); }
       if (opts.actualiser) tete.appendChild(bouton('↻ Actualiser les sources', function () { dire('Lecture des sources…'); recharger().then(function () { dire('Sources relues'); }); }));
@@ -94,6 +119,7 @@ var BadgesApp = (function () {
       act.appendChild(bouton('Tout sélectionner', function () { liste.forEach(function (p) { S.sel[p.id] = true; }); dessiner(); }));
       act.appendChild(bouton('Non imprimés', function () { S.sel = {}; liste.forEach(function (p) { if (!numeroDe(p)) S.sel[p.id] = true; }); dessiner(); }, '', 'Sélectionne les personnes sans badge cette année'));
       act.appendChild(bouton('Rien', function () { S.sel = {}; dessiner(); }));
+      if (!S.lecture && nbSel()) act.appendChild(bouton('Définir l\'entreprise / contrat (' + nbSel() + ')', function () { definirContrat(); }, '', 'Applique le même contrat à toutes les personnes cochées'));
       var n = nbSel(), imp = bouton('🖨 Aperçu et impression (' + n + ')', function () { apercu(S.personnes.filter(function (p) { return S.sel[p.id]; })); }, 'prim'); imp.disabled = !n;
       if (!S.lecture) act.appendChild(imp); else act.appendChild(el('span', 'bdg-note', 'Lecture seule : l\'impression demande le niveau 2 du module Badges.'));
       act.appendChild(el('span', 'bdg-note', liste.length + ' personne(s) affichée(s) · ' + S.personnes.length + ' au total'));
@@ -149,6 +175,9 @@ var BadgesApp = (function () {
       var neuf = !p, x = p ? Object.assign({}, p) : { id: id(), structure: '', entreprise: S.fe || '', contrat: '' };
       var corps = el('div', 'bdg-grille'), I = {};
       [['nom', 'Nom'], ['prenom', 'Prénom'], ['fonction', 'Fonction']].forEach(function (c) { I[c[0]] = saisie(x[c[0]]); corps.appendChild(champ(c[1], I[c[0]])); });
+      var choix = selectCombos(x, '— choisir l\'entreprise et son contrat —');
+      choix.onchange = function () { var c = choix.combo(); if (c) { I.entreprise.value = c.nom; I.contrat.value = c.numero; } };
+      var cc = el('div', 'bdg-champ-large'); cc.appendChild(champ('Entreprise — contrat', choix)); corps.appendChild(cc);
       I.entreprise = saisie(x.entreprise); I.entreprise.setAttribute('list', 'bdg-dl-ent'); corps.appendChild(champ('Entreprise', I.entreprise));
       var dl = el('datalist'); dl.id = 'bdg-dl-ent'; S.entreprises.forEach(function (e) { dl.appendChild(new Option(e.nom)); }); corps.appendChild(dl);
       I.contrat = saisie(x.contrat); I.contrat.setAttribute('list', 'bdg-dl-ctr'); corps.appendChild(champ('N° de contrat', I.contrat));
@@ -164,6 +193,7 @@ var BadgesApp = (function () {
       var d, ok = bouton('Enregistrer', function () {
         ['nom', 'prenom', 'fonction', 'entreprise', 'contrat', 'structure', 'nomAr', 'prenomAr'].forEach(function (k) { x[k] = B.vide(I[k].value); });
         if (!x.nom && !x.prenom) { dire('Indiquez au moins un nom.', true); return; }
+        if (sansContrat(x)) { dire('Choisissez le contrat de « ' + x.entreprise + ' » : cette entreprise en a plusieurs.', true); return; }
         x.verifier = false;
         var liste = S.personnes.slice(); if (neuf) liste.push(x); else liste = liste.map(function (q) { return q.id === x.id ? x : q; });
         adapter.ecrirePersonnes(liste, x).then(function () { dire('Enregistré'); fermer(d); return recharger(); }).catch(echec);
@@ -171,6 +201,16 @@ var BadgesApp = (function () {
       var bs = [bouton('Annuler', function () { fermer(d); })];
       if (!neuf) bs.push(bouton('Supprimer', function () { if (!confirm('Supprimer cette personne de la liste ? L\'historique est conservé.')) return; adapter.ecrirePersonnes(S.personnes.filter(function (q) { return q.id !== x.id; }), x, true).then(function () { fermer(d); return recharger(); }).catch(echec); }, 'danger'));
       bs.push(ok); d = fenetre(neuf ? 'Nouvelle personne' : 'Modifier', corps, bs);
+    }
+    function definirContrat() {
+      var ids = Object.keys(S.sel).filter(function (k) { return S.sel[k]; }), corps = el('div'), sel = selectCombos(null, '— choisir l\'entreprise et son contrat —');
+      corps.appendChild(champ('Entreprise — contrat à appliquer à ' + ids.length + ' personne(s)', sel));
+      var d, ok = bouton('Appliquer', function () {
+        var c = sel.combo(); if (!c) { dire('Choisissez un contrat dans la liste.', true); return; }
+        var liste = S.personnes.map(function (q) { return ids.indexOf(q.id) >= 0 ? Object.assign({}, q, { entreprise: c.nom, contrat: c.numero }) : q; }); // copies : l'adaptateur compare avec l'état chargé
+        adapter.ecrirePersonnes(liste, null).then(function () { fermer(d); dire('Contrat appliqué à ' + ids.length + ' personne(s)'); return recharger(); }).catch(echec);
+      }, 'prim');
+      d = fenetre('Définir l\'entreprise et le contrat', corps, [bouton('Annuler', function () { fermer(d); }), ok]);
     }
     function importer() {
       var corps = el('div'), ta = el('textarea'); ta.rows = 9; ta.placeholder = 'Collez ici les lignes copiées depuis Excel (Nom, Prénom, Fonction, Entreprise, Contrat), ou un onglet « Enquêtes administratives » entier.';
@@ -201,11 +241,14 @@ var BadgesApp = (function () {
       ['Entreprise', 'Contrat(s)', 'Personnes', ''].forEach(function (x) { th.appendChild(el('th', null, x)); }); t.appendChild(el('thead')).appendChild(th);
       var tb = el('tbody');
       S.entreprises.slice().sort(function (a, b) { return a.nom.localeCompare(b.nom); }).forEach(function (e) {
-        var tr = el('tr'), n = S.personnes.filter(function (p) { return B.norm(p.entreprise) === B.norm(e.nom); }).length;
-        tr.appendChild(el('td', 'fort', e.nom));
-        var c = el('td', 'bdg-petit'); (e.contrats || []).forEach(function (k) { c.appendChild(el('div', null, k.numero + (k.intitule ? ' — ' + k.intitule : ''))); }); if (!(e.contrats || []).length) c.textContent = '—'; tr.appendChild(c);
-        tr.appendChild(el('td', null, String(n)));
-        var a = el('td'); if (!S.lecture) a.appendChild(bouton('Modifier', function () { editerEntreprise(e); }, 'mini')); tr.appendChild(a); tb.appendChild(tr);
+        var cs = (e.contrats || []).slice(), pe = S.personnes.filter(function (p) { return B.norm(p.entreprise) === B.norm(e.nom); }), lignes = [];
+        cs.forEach(function (k) { lignes.push({ c: k.numero + (k.intitule ? ' — ' + k.intitule : ''), n: pe.filter(function (p) { return p.contrat === k.numero; }).length }); });
+        var libres = pe.filter(function (p) { return !p.contrat; }).length;
+        if (!cs.length) lignes.push({ c: '—', n: pe.length }); else if (libres) lignes.push({ c: '⚠ contrat à choisir', n: libres, alerte: true });
+        lignes.forEach(function (l, i) {
+          var tr = el('tr'); tr.appendChild(el('td', 'fort', e.nom)); tr.appendChild(el('td', 'bdg-petit' + (l.alerte ? ' bdg-alerte' : ''), l.c)); tr.appendChild(el('td', null, String(l.n)));
+          var a = el('td'); if (!S.lecture && i === 0) a.appendChild(bouton('Modifier', function () { editerEntreprise(e); }, 'mini')); tr.appendChild(a); tb.appendChild(tr);
+        });
       });
       t.appendChild(tb); v.appendChild(t); if (!S.entreprises.length) v.appendChild(el('p', 'bdg-note', 'Aucune entreprise pour l\'instant.'));
       return v;
@@ -222,13 +265,13 @@ var BadgesApp = (function () {
         if (e && rat.value) {
           var vers = rat.value, reste = S.entreprises.filter(function (q) { return q.nom !== e.nom; });
           if (!confirm('Rattacher « ' + e.nom + ' » à « ' + vers + ' » ? Ses personnes passeront sous « ' + vers + ' ».')) return;
-          var deplacees = adapter.nom === 'portail' ? null : S.personnes.map(function (p) { if (B.norm(p.entreprise) === B.norm(e.nom)) p.entreprise = vers; return p; });
+          var deplacees = adapter.nom === 'portail' ? null : S.personnes.map(function (p) { return B.norm(p.entreprise) === B.norm(e.nom) ? Object.assign({}, p, { entreprise: vers }) : p; });
           Promise.resolve(deplacees ? adapter.ecrirePersonnes(deplacees, null) : null).then(function () { return adapter.ecrireEntreprises(reste, { alias: { de: e.nom, vers: vers } }); }).then(function () { fermer(d); dire('Rattaché'); return recharger(); }).catch(echec);
           return;
         }
         var contrats = ta.value.split('\n').map(function (l) { var p = l.split('|'); return { numero: B.vide(p[0]), intitule: B.vide(p.slice(1).join('|')) }; }).filter(function (c) { return c.numero; });
         var liste = S.entreprises.filter(function (q) { return !e || q.nom !== e.nom; }); liste.push({ nom: n, contrats: contrats });
-        var maj = (e && e.nom !== n) ? S.personnes.map(function (p) { if (B.norm(p.entreprise) === B.norm(e.nom)) p.entreprise = n; return p; }) : null;
+        var maj = (e && e.nom !== n) ? S.personnes.map(function (p) { return B.norm(p.entreprise) === B.norm(e.nom) ? Object.assign({}, p, { entreprise: n }) : p; }) : null;
         Promise.resolve(maj ? adapter.ecrirePersonnes(maj, null) : null).then(function () { return adapter.ecrireEntreprises(liste, { ancien: e && e.nom, nom: n }); }).then(function () { fermer(d); dire('Enregistré'); return recharger(); }).catch(echec);
       }, 'prim');
       var bs = [bouton('Annuler', function () { fermer(d); })];
@@ -353,7 +396,9 @@ var BadgesApp = (function () {
       dep.oninput = function () { etat.depart = Math.max(1, Math.min(B.casesParFeuille(S.cfg), Number(dep.value) || 1)); dessinerApercu(); };
       ci.onchange = function () { etat.arabe = ci.checked; dessinerApercu(); }; cri.onchange = function () { etat.recto = cri.checked; dessinerApercu(); };
       var d, go = bouton('🖨 Imprimer', function () {
-        var r = calculer(); go.disabled = true;
+        var r = calculer(), manque = items.filter(sansContrat).length;
+        if (manque && !confirm(manque + ' badge(s) n\'ont pas de numéro de contrat alors que leur entreprise en a plusieurs (le verso sera incomplet). Imprimer quand même ?')) return;
+        go.disabled = true;
         adapter.numeroter(items, annee, r.cfg, S.util).then(function (res) {
           S.hist = res.historique || S.hist; var finals = res.items.map(function (x, i) { return Object.assign({}, items[i], x); });
           imprimerHtml(B.feuillesHtml(finals, r.cfg, rendu({ caseDepart: etat.depart, recto: etat.recto })));
@@ -387,7 +432,7 @@ var BadgesApp = (function () {
     '.bdg-btn{font:inherit;font-size:13px;font-weight:700;padding:8px 13px;border-radius:9px;border:1.5px solid var(--border,#d1d5db);background:var(--surface,#fff);color:inherit;cursor:pointer}' +
     '.bdg-btn:hover{border-color:var(--orange-main,#E85D04)}.bdg-btn[disabled]{opacity:.45;cursor:not-allowed}' +
     '.bdg-btn.prim{background:var(--orange-main,#E85D04);border-color:var(--orange-main,#E85D04);color:#fff}.bdg-btn.danger{color:#b91c1c;border-color:#fca5a5}.bdg-btn.mini{padding:4px 9px;font-size:12px}' +
-    '.bdg-alerte{color:#b45309;font-weight:800}.bdg-note{font-size:12.5px;color:var(--text-muted,#6b7280);margin:6px 0}.bdg-ok{font-weight:800;color:#047857}.bdg-petit{font-size:12px}' +
+    '.bdg-champ-large{grid-column:1/-1}.bdg-alerte{color:#b45309;font-weight:800}.bdg-note{font-size:12.5px;color:var(--text-muted,#6b7280);margin:6px 0}.bdg-ok{font-weight:800;color:#047857}.bdg-petit{font-size:12px}' +
     '.bdg-table{width:100%;border-collapse:collapse;background:var(--surface,#fff);border-radius:10px;overflow:hidden;font-size:13px}' +
     '.bdg-table th,.bdg-table td{padding:7px 10px;border-bottom:1px solid var(--border,#e5e7eb);text-align:start;vertical-align:top;overflow-wrap:anywhere}' +
     '.bdg-table th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted,#6b7280);background:var(--surface-2,#f8fafc)}.bdg-table .fort{font-weight:700}' +

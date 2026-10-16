@@ -178,6 +178,9 @@
       </div>
     </div>
 
+    <label>Fonction <span style="font-weight:400;color:var(--text-muted);font-size:10.5px;text-transform:none;letter-spacing:0;">(facultatif : appliquée aux personnes sans fonction)</span></label>
+    <input type="text" id="fonctionDefaut" placeholder="ex. Conducteur de travaux">
+
     <div class="form-row">
       <div class="field">
         <label>Date d'arrivée</label>
@@ -222,12 +225,17 @@
         <input type="checkbox" id="valable2Mois">
         <label>Valable 2 mois</label>
       </div>
+      <div class="ligne-check">
+        <input type="checkbox" id="injecterEnquetes" checked>
+        <label>Injecter dans les Enquêtes administratives</label>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">seules les personnes absentes des Enquêtes sont ajoutées</span>
+      </div>
     </fieldset>
 
     <label style="margin-top:20px;">Personnes / Véhicules</label>
     <table>
       <thead>
-        <tr><th>Nom</th><th>Prénom</th><th>Type véhicule</th><th>Immatriculation</th></tr>
+        <tr><th>Nom</th><th>Prénom</th><th>Fonction</th><th>Type véhicule</th><th>Immatriculation</th></tr>
       </thead>
       <tbody id="corpsTableau"></tbody>
     </table>
@@ -277,10 +285,64 @@
     corps.innerHTML += `<tr>
       <td><input data-champ="nom"></td>
       <td><input data-champ="prenom"></td>
+      <td><input data-champ="fonction" placeholder="auto"></td>
       <td><input data-champ="typeVehicule"></td>
       <td><input data-champ="immatriculation"></td>
     </tr>`;
   }
+
+  // ---- Détection de la personne pendant la saisie : recherche dans les Enquêtes administratives ----
+  const sugg = document.createElement('div');
+  sugg.style.cssText = 'position:absolute;z-index:50;background:#fff;border:1.5px solid var(--orange-main);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:240px;overflow:auto;display:none;min-width:320px;font-size:12.5px';
+  document.body.appendChild(sugg);
+  let minuteurRecherche = null, derniereRecherche = '';
+  function fermerSugg() { sugg.style.display = 'none'; sugg.innerHTML = ''; }
+  function ligneDe(el) { return el.closest('tr'); }
+  function proposer(input, personnes) {
+    sugg.innerHTML = '';
+    if (!personnes.length) { fermerSugg(); return; }
+    personnes.forEach(function(p) {
+      const d = document.createElement('div');
+      d.style.cssText = 'padding:7px 11px;cursor:pointer;border-bottom:1px solid #eee';
+      d.innerHTML = '<b>' + p.nom.replace(/</g, '&lt;') + ' ' + p.prenom.replace(/</g, '&lt;') + '</b> <span style="color:#6b7280">— ' + (p.fonction || 'fonction non renseignée').replace(/</g, '&lt;') + ' · ' + (p.entreprise || '').replace(/</g, '&lt;') + '</span>';
+      d.onmousedown = function(ev) {
+        ev.preventDefault();
+        const tr = ligneDe(input);
+        tr.querySelector('[data-champ=nom]').value = p.nom;
+        tr.querySelector('[data-champ=prenom]').value = p.prenom;
+        if (p.fonction) tr.querySelector('[data-champ=fonction]').value = p.fonction;
+        tr.dataset.connu = '1';
+        marquer(tr);
+        fermerSugg();
+      };
+      sugg.appendChild(d);
+    });
+    const r = input.getBoundingClientRect();
+    sugg.style.left = (r.left + window.scrollX) + 'px';
+    sugg.style.top = (r.bottom + window.scrollY + 2) + 'px';
+    sugg.style.display = 'block';
+  }
+  function marquer(tr) {
+    const nom = tr.querySelector('[data-champ=nom]').value.trim();
+    tr.querySelector('[data-champ=nom]').style.background = tr.dataset.connu ? '#ECFDF5' : '';
+    tr.querySelector('[data-champ=nom]').title = tr.dataset.connu ? 'Trouvée dans les Enquêtes administratives' : (nom ? 'Pas encore dans les Enquêtes : sera ajoutée si la case est cochée' : '');
+  }
+  corps.addEventListener('input', function(ev) {
+    const input = ev.target;
+    if (!input.matches('[data-champ=nom],[data-champ=prenom]')) return;
+    const tr = ligneDe(input); delete tr.dataset.connu; marquer(tr);
+    const texte = (tr.querySelector('[data-champ=nom]').value + ' ' + tr.querySelector('[data-champ=prenom]').value).trim();
+    clearTimeout(minuteurRecherche);
+    if (texte.replace(/\s+/g, '').length < 3) { fermerSugg(); return; }
+    minuteurRecherche = setTimeout(function() {
+      derniereRecherche = texte;
+      google.script.run.withSuccessHandler(function(r) {
+        if (texte !== derniereRecherche || !r || !r.ok) { if (r && !r.ok) fermerSugg(); return; }
+        proposer(input, r.personnes);
+      }).rechercherPersonnes(texte);
+    }, 300);
+  });
+  corps.addEventListener('focusout', function() { setTimeout(fermerSugg, 150); });
 
   document.getElementById('genererAuto').addEventListener('change', function() {
     document.getElementById('ligneValable2Mois').style.display = this.checked ? 'flex' : 'none';
@@ -494,6 +556,7 @@
     corps.querySelectorAll('tr').forEach(tr => {
       const p = {};
       tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
+      if (p.nom && !p.fonction) p.fonction = document.getElementById('fonctionDefaut').value.trim();
       if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
     });
 
@@ -529,6 +592,7 @@
       restauration: document.getElementById('restauration').checked,
       genererAuto: document.getElementById('genererAuto').checked,
       valable2Mois: document.getElementById('valable2Mois').checked,
+      injecterEnquetes: document.getElementById('injecterEnquetes').checked,
       personnes: personnes
     };
 
@@ -549,7 +613,7 @@
     document.getElementById('spinner').style.display = 'none';
     const div = document.getElementById('resultat');
     div.className = res.success ? 'ok' : 'err';
-    let contenu = res.message;
+    let contenu = String(res.message || '').replace(/\n/g, '<br>');
     if (res.success && res.liens) {
       contenu += construirePdfListe(res.liens);
     }

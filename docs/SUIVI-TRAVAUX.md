@@ -23,7 +23,7 @@ Mis à jour : 2026-10-18. Légende : ✅ fait · 🔄 en cours · ⏳ à faire �
 - ✅ Code complet et testé (moteur, application autonome, page portail, passerelle) — retiré provisoirement du déploiement (commit c7cb9e4, à remettre).
 - ⏳ Remettre en ligne en 2 temps (site seul, puis passerelle) après l'étape 3.
 - ⏳ Mise en route : convertir « Enquêtes administratives » en Google Sheets, propriété `BADGES_ENQUETES_ID`, `badgesVerifierSources`, `ajouterApplicationsManquantes`, droits du module « badges ».
-- ⏳ Application « Prise en charge » : champ « fonction », détection de la personne, journal + injection dans Enquêtes (code de l'application nécessaire).
+- ✅ Application « Prise en charge » : champ « fonction » (par personne + valeur par défaut), recherche de la personne dans les Enquêtes pendant la saisie, case « Injecter dans les Enquêtes » cochée par défaut (seules les personnes absentes des Enquêtes sont ajoutées, dans l'onglet du prestataire), journal « Journal_PEC ». Déploiement automatique `deploy-prise-en-charge.yml` ; à tester par l'utilisateur.
 
 ## Autres rappels
 - ⏳ Révoquer la clé de déploiement `CLASPRC_JSON` avant la mise en production (je te guide pas à pas).

@@ -1,0 +1,64 @@
+# Déploiement automatique de l'application Dotation (Apps Script) : tests -> clasp push -> nouvelle version sur la MÊME adresse /exec.
+name: Déployer Prises en charge
+
+on:
+  push:
+    branches: [claude/exciting-ritchie-u1o1dl, main]
+    paths: ['apps-script/prise-en-charge/**', 'badges/badges.js', '.github/workflows/deploy-prise-en-charge.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prise-en-charge
+  cancel-in-progress: false
+
+env:
+  SCRIPT_ID: 1_Ibz6QVLRnt4eOLaoQX1a7ifaSGviK9dm0vZ1CoZ_iPOByHTrC3Jm1Y6
+  DEPLOYMENT_ID: AKfycbyda46CXhmCrzE9MOvR7ARj77gsrS8BHgiekhInVJrgNwQi1rO2Tc9XnPktopvLEsX4
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Tests
+        run: node --test apps-script/prise-en-charge/test/*.test.js
+
+      - name: "Copier le moteur de lecture des Enquêtes (partagé avec les badges)"
+        run: cp badges/badges.js apps-script/prise-en-charge/BadgesMoteur.gs
+
+      - name: Contrôler le secret CLASPRC_JSON
+        id: fmt
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          OUT: ${{ runner.temp }}/clasprc.json
+        run: |
+          umask 077
+          node -e '
+            const fs = require("fs");
+            let brut = String(process.env.CLASPRC_JSON).trim(), j;
+            try { j = JSON.parse(brut); } catch (e1) { try { j = JSON.parse("{" + brut.replace(/^,|,$/g, "") + "}"); } catch (e2) { console.log("::error::CLASPRC_JSON illisible"); process.exit(1); } }
+            const v3 = !!j.tokens, v2 = !!j.token;
+            if (!v2 && !v3) { console.log("::error::CLASPRC_JSON invalide"); process.exit(1); }
+            fs.writeFileSync(process.env.OUT, JSON.stringify(j), { mode: 0o600 });
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "clasp=" + (v3 ? "3" : "2") + "\n");
+          '
+
+      - name: Installer clasp
+        run: npm install -g @google/clasp@${{ steps.fmt.outputs.clasp }}
+
+      - name: Envoyer le code et publier une nouvelle version
+        working-directory: apps-script/prise-en-charge
+        env:
+          CLASPRC_FILE: ${{ runner.temp }}/clasprc.json
+        run: |
+          umask 077
+          cp "$CLASPRC_FILE" "$HOME/.clasprc.json"
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
+          printf 'test/**\n' > .claspignore
+          clasp push --force
+          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7} — $(git log -1 --pretty=%s | cut -c1-60)"
+          rm -f "$HOME/.clasprc.json" "$CLASPRC_FILE" .clasp.json .claspignore

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-20-02",
+    "date": "2026-10-20",
+    "title": "Version 5.1.6 — Badges : entreprise choisie avec son contrat",
+    "changes": [
+      "Badges : l'entreprise se choisit avec son numéro de contrat (une entreprise qui a plusieurs contrats apparaît une fois par contrat), dans la liste, le filtre et la fiche.",
+      "Nouveau bouton « Définir l'entreprise / contrat » pour appliquer le même contrat à plusieurs personnes d'un coup ; avertissement avant d'imprimer des badges sans contrat.",
+      "L'onglet Entreprises affiche une ligne par contrat avec le nombre de personnes."
+    ]
+  },
+  {
     "id": "2026-10-20-01",
     "date": "2026-10-20",
     "title": "Version 5.1.5 — Badges : logo remonté",

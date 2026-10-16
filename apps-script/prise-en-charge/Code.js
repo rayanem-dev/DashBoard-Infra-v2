@@ -430,7 +430,17 @@ function soumettreFormulairePEC(formData) {
       }
     }
 
-    return { success: true, message: "Génération terminée avec succès.", liens: liens };
+    // Enquêtes administratives : on ajoute seulement les personnes absentes de toutes les Enquêtes (jamais de doublon) ; ne bloque jamais la génération
+    let message = "Génération terminée avec succès.";
+    let enq = null;
+    if (formData.injecterEnquetes) {
+      enq = injecterEnquetes_(formData);
+      const resume = enqResume_(enq);
+      if (resume) message += "\n" + resume;
+    }
+    journaliserPEC_(ss, formData, enq);
+
+    return { success: true, message: message, liens: liens };
 
   } catch (err) {
     return { success: false, message: err.message };

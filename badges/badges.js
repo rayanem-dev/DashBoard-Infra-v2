@@ -85,14 +85,15 @@ var Badges = (function () {
 
   // ---------- Lecture des « Enquêtes administratives » (un onglet par prestataire) ----------
   function sansEsp(s) { return String(s == null ? '' : s).replace(/\s+/g, ''); }
-  function analyserEnquetes(lignes, onglet) {
+  /** Repère la ligne d'en-têtes d'un onglet « Enquêtes » et ses colonnes utiles (par leur texte arabe) : { h, fr, fonction, prenomAr, nomAr } ou null. */
+  function colonnesEnquetes(lignes) {
     lignes = lignes || [];
-    var h = -1, i, j;
+    var h = -1, i;
     for (i = 0; i < Math.min(lignes.length, 12) && h < 0; i += 1) {
       if ((lignes[i] || []).some(function (c) { return sansEsp(c).indexOf('بالفرنسية') >= 0; })) h = i;
     }
-    if (h < 0) return { onglet: onglet, entreprise: vide(onglet), personnes: [], erreur: 'en-têtes introuvables' };
-    var col = { fr: -1, fonction: -1, prenomAr: -1, nomAr: -1 };
+    if (h < 0) return null;
+    var col = { h: h, fr: -1, fonction: -1, prenomAr: -1, nomAr: -1 };
     (lignes[h] || []).forEach(function (c, x) {
       var s = sansEsp(c);
       if (s.indexOf('بالفرنسية') >= 0) col.fr = x;
@@ -100,6 +101,13 @@ var Badges = (function () {
       else if (s === 'الإسم' || s === 'الاسم') col.prenomAr = x;
       else if (s === 'اللقب') col.nomAr = x;
     });
+    return col;
+  }
+  function analyserEnquetes(lignes, onglet) {
+    lignes = lignes || [];
+    var col = colonnesEnquetes(lignes), i, j;
+    if (!col) return { onglet: onglet, entreprise: vide(onglet), personnes: [], erreur: 'en-têtes introuvables' };
+    var h = col.h;
     var societe = '';
     for (i = 0; i < h && !societe; i += 1) {
       for (j = 0; j < (lignes[i] || []).length && !societe; j += 1) {
@@ -266,7 +274,7 @@ var Badges = (function () {
   }
 
   var api = { DEFAUT: DEFAUT, config: config, vide: vide, norm: norm, cle: cle, esc: esc, formaterRef: formaterRef, prochain: prochain, attribuer: attribuer, decouperNom: decouperNom,
-    analyserEnquetes: analyserEnquetes, lireCsv: lireCsv, personnesDepuisTableau: personnesDepuisTableau, planifier: planifier, positions: positions, casesParFeuille: casesParFeuille,
+    analyserEnquetes: analyserEnquetes, colonnesEnquetes: colonnesEnquetes, lireCsv: lireCsv, personnesDepuisTableau: personnesDepuisTableau, planifier: planifier, positions: positions, casesParFeuille: casesParFeuille,
     feuillesHtml: feuillesHtml, calibrageHtml: calibrageHtml, css: css, csvHistorique: csvHistorique, ENTETE_HISTO: ENTETE_HISTO };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   return api;
