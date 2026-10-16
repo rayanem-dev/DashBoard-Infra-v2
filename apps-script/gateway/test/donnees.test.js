@@ -16,7 +16,7 @@ function monde(options = {}) {
     SpreadsheetApp: { openById: id => {
       if (options.illisible) throw new Error('Impossible d\'ouvrir');
       ctx.__ouvertures = (ctx.__ouvertures || 0) + 1;
-      return { getSheets: () => [{ getSheetId: () => 111, getDataRange: () => ({ getDisplayValues: () => [['autre']] }) }, { getSheetId: () => options.gid || 1963142469, getDataRange: () => ({ getDisplayValues: () => lignes }) }] };
+      return { getSheets: () => [{ getSheetId: () => 111, getDataRange: () => ({ getDisplayValues: () => [['autre']] }) }, { getSheetId: () => options.gid || 1963142469, getDataRange: () => ({ getDisplayValues: () => lignes }) }], getSheetByName: () => null };
     } },
   };
   vm.createContext(ctx);
