@@ -95,7 +95,8 @@ var Annuaire = (function () {
         }
       }
       var iTel = Math.max(h.indexOf('numero telephone'), h.indexOf('telephone'));
-      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration'), wifi_user: h.indexOf('wifi user'), sap: h.indexOf('matricule sap'), nin: iNin } };
+      return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration'), wifi_user: h.indexOf('wifi user'), sap: h.indexOf('matricule sap'), nin: iNin,
+        role: h.indexOf('role'), actif: h.indexOf('actif'), email_contact: Math.max(h.indexOf('e mail de contact'), h.indexOf('email de contact'), h.indexOf('email contact')), civilite: h.indexOf('civilite') } };
     }
     return { erreur: 'En-têtes introuvables dans BDDORGA (colonnes « Service » et « E-Mail » attendues)' };
   }
@@ -154,7 +155,7 @@ var Annuaire = (function () {
       if (email !== t(emailBrut).toLowerCase()) avertissements.push({ ligne: r + 1, texte: 'e-mail nettoyé (espaces ou caractères invisibles retirés) : « ' + email + ' »' });
       if (vus[email]) { ignores.push({ ligne: r + 1, nom: nom, raison: 'e-mail en double (ligne ' + vus[email] + ')' }); continue; }
       vus[email] = r + 1;
-      personnes.push({ nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
+      personnes.push({ ligne: r + 1, role: t(cell(row, i.role)), actif: t(cell(row, i.actif)), email_contact: t(cell(row, i.email_contact)).toLowerCase(), civilite: t(cell(row, i.civilite)), nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
                        fonction: t(cell(row, i.fonction)), dependance: t(cell(row, i.dependance)), telephone: telephone(cell(row, i.telephone)),
                        sona: t(cell(row, i.sona)).replace(/[\u200B-\u200D\uFEFF]/g, ''), date_integration: dateIso(cell(row, i.date_integration)), wifi_user: t(cell(row, i.wifi_user)), sap: t(cell(row, i.sap)), nin: nin(cell(row, i.nin)) });
     }

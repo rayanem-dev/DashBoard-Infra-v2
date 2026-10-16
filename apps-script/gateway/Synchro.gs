@@ -18,6 +18,7 @@ function uidPour_(email) {
 }
 
 function synchro_(appliquer) {
+  if (appliquer && PropertiesService.getScriptProperties().getProperty('UTILISATEURS_SOURCE') === 'bddorga') { Logger.log('Synchronisation inutile : les utilisateurs sont lus directement dans BDDORGA.'); return null; }
   var id = PropertiesService.getScriptProperties().getProperty('ORGA_ID') || ORGA_ID_DEFAUT;
   var src = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
   if (!src) throw new Error('Onglet BDDORGA introuvable dans le fichier Organigramme');
@@ -126,3 +127,48 @@ function fantomes_(supprimer) {
 }
 function apercuFantomes() { fantomes_(false); }
 function supprimerFantomes() { fantomes_(true); }
+
+/**
+ * BDDORGA comme base unique des utilisateurs (voir UtilisateursBDDORGA.gs).
+ * 1) apercuMigrationBDDORGA()  : montre ce qui sera copié, sans rien écrire.
+ * 2) migrerVersBDDORGA()       : crée les colonnes Rôle / Actif / E-mail de contact / Civilité dans BDDORGA et y copie les valeurs de l'ancienne table (cases vides seulement).
+ * 3) activerBDDORGADirect()    : la passerelle lit désormais BDDORGA ; desactiverBDDORGADirect() revient à l'ancienne table.
+ */
+function migrationBddorga_(appliquer) {
+  var id = PropertiesService.getScriptProperties().getProperty('ORGA_ID') || ORGA_ID_DEFAUT;
+  var sh = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
+  var v = sh.getDataRange().getValues(), c = Annuaire.colonnes(v), lu = Annuaire.lire(v);
+  if (lu.erreur) throw new Error(lu.erreur);
+  var db = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Utilisateurs'), dv = db.getDataRange().getValues(), dh = dv[0].map(String);
+  var anciens = dv.slice(1).filter(function (r) { return r.join('') !== ''; }).map(function (r) { var o = {}; dh.forEach(function (k, i) { o[k] = r[i]; }); return o; });
+  var parEmail = {}; anciens.forEach(function (u) { if (u.email) parEmail[String(u.email).toLowerCase()] = u; });
+  var copies = 0, sansCompte = [], horsFichier = [], vus = {};
+  lu.personnes.forEach(function (p) {
+    vus[p.email] = true; var a = parEmail[p.email];
+    if (!a) { sansCompte.push(p.nom); return; }
+    var champs = {};
+    if (!p.role && a.role) champs.role = a.role;
+    if (p.actif === '' && a.actif !== '' && a.actif !== undefined) champs.actif = a.actif;
+    if (!p.email_contact && a.email_contact) champs.email_contact = a.email_contact;
+    if (!p.civilite && a.civilite) champs.civilite = a.civilite;
+    if (!Object.keys(champs).length) return;
+    copies += 1;
+    if (appliquer) { v = sh.getDataRange().getValues(); var plan = UBD.planEcriture(v, p.email, champs, {}); if (plan.erreur) throw new Error(plan.erreur);
+      plan.ecritures.forEach(function (e) { if (e.entete) sh.getRange(e.ligneEntete, e.col).setValue(e.entete); var cell = sh.getRange(plan.ligne, e.col); cell.setNumberFormat('@'); cell.setValue(e.valeur); }); }
+  });
+  anciens.forEach(function (a) { var e = String(a.email || '').toLowerCase(); if (e && !vus[e]) horsFichier.push(a.nom + ' <' + e + '> rôle « ' + (a.role || 'aucun') + ' »'); });
+  if (appliquer) { CacheService.getScriptCache().remove('TBL_Utilisateurs'); Store.journal('migration_bddorga', 'script', copies + ' personne(s) copiée(s) dans BDDORGA'); }
+  Logger.log((appliquer ? 'MIGRATION APPLIQUÉE' : 'APERÇU (rien n\'est écrit)') + ' — personnes dans BDDORGA : ' + lu.personnes.length + ' ; à compléter (rôle/actif/contact/civilité) : ' + copies);
+  Logger.log('Dans BDDORGA mais sans compte dans la passerelle (' + sansCompte.length + ', créés sans rôle à l\'activation) : ' + (sansCompte.join(' ; ') || 'aucun'));
+  Logger.log('Dans la passerelle mais ABSENTS de BDDORGA (' + horsFichier.length + ', conservés tels quels, à ajouter dans BDDORGA) : ' + (horsFichier.join(' ; ') || 'aucun'));
+}
+function apercuMigrationBDDORGA() { migrationBddorga_(false); }
+function migrerVersBDDORGA() { migrationBddorga_(true); }
+function activerBDDORGADirect() {
+  PropertiesService.getScriptProperties().setProperty('UTILISATEURS_SOURCE', 'bddorga'); CacheService.getScriptCache().remove('TBL_Utilisateurs');
+  Store.journal('bddorga_direct', 'script', 'activé'); Logger.log('Utilisateurs lus directement dans BDDORGA : ACTIVÉ (lancez migrerVersBDDORGA avant si ce n\'est pas fait).');
+}
+function desactiverBDDORGADirect() {
+  PropertiesService.getScriptProperties().deleteProperty('UTILISATEURS_SOURCE'); CacheService.getScriptCache().remove('TBL_Utilisateurs');
+  Store.journal('bddorga_direct', 'script', 'désactivé'); Logger.log('Retour à la table Utilisateurs de Gateway_DB.');
+}

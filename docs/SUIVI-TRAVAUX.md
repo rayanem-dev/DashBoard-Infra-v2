@@ -30,3 +30,8 @@ Mis à jour : 2026-10-18. Légende : ✅ fait · 🔄 en cours · ⏳ à faire �
 - ⏳ Droits de partage Drive : SUIVI VH, Ecarts INFRA à partager ; fichiers « anyone writer » à restreindre ; Suivi CPM V5 à remettre en « Restreint ».
 - ⏳ Mots de passe en clair dans « Organigrame Div Infra » (onglets WiFi, Personnel Division Infra, Feuille 5) : à retirer ou restreindre.
 - ⏳ Traduction arabe/anglais de la page Badges.
+
+## BDDORGA comme base unique des utilisateurs (passerelle)
+- Code : `UtilisateursBDDORGA.gs`, `Store.gs` (lecture/écriture), `Synchro.gs` (fonctions de migration). Désactivé tant que la propriété `UTILISATEURS_SOURCE` n'est pas `bddorga`.
+- Mise en service (éditeur de la passerelle) : `apercuMigrationBDDORGA` → `migrerVersBDDORGA` → `activerBDDORGADirect`. Retour arrière : `desactiverBDDORGADirect`.
+- Colonnes ajoutées à droite de BDDORGA : Rôle, Actif, E-mail de contact, Civilité (elles font foi une fois créées). Mots de passe : toujours dans Gateway_Secrets.

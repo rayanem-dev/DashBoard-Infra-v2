@@ -53,7 +53,7 @@ test('SÉCURITÉ : aucun mot de passe n\'est recopié ; le NIN (18 chiffres) est
   for (const secret of ['MOT-DE-PASSE-SECRET']) assert.ok(!j.includes(secret), secret);
   assert.strictEqual(Annuaire.lire(SRC).personnes[0].nin, NUM);
   assert.strictEqual(Annuaire.lire(SRC).personnes[0].nom, 'DURAND MARIE');
-  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['date_integration', 'dependance', 'email', 'fonction', 'matricule', 'nin', 'nom', 'nomDeduit', 'sap', 'service', 'sona', 'telephone', 'wifi_user']);
+  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['actif', 'civilite', 'date_integration', 'dependance', 'email', 'email_contact', 'fonction', 'ligne', 'matricule', 'nin', 'nom', 'nomDeduit', 'role', 'sap', 'service', 'sona', 'telephone', 'wifi_user']);
 });
 
 // ----- Ancienne disposition (nom puis numéro côte à côte après « dépendance ») : doit marcher aussi
