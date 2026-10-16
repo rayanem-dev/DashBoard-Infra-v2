@@ -48,7 +48,7 @@
     ['DAO et CF', 'DAO and CF', 'DAO و CF'], ['Les contrats d\'application', 'Application contracts', 'عقود التطبيق'], ['Contrats d\'application convention cadre', 'Framework agreement application contracts', 'عقود تطبيق الاتفاقية الإطارية'],
     ['Autres types (non repris dans le rapport)', 'Other types (not included in the report)', 'أنواع أخرى (غير مدرجة في التقرير)'],
     ['🕘 Le journal des changements du CPM (90 derniers jours)', '🕘 The CPM change log (last 90 days)', '🕘 سجل تغييرات CPM (آخر 90 يومًا)'],
-    ['Le journal des changements du CPM', 'The CPM change log', 'سجل تغييرات CPM'], ['Semaines du samedi au vendredi', 'Weeks from Saturday to Friday', 'أسابيع من السبت إلى الجمعة'], ['Tout voir', 'See all', 'عرض الكل'],
+    ['Le journal des changements du CPM', 'The CPM change log', 'سجل تغييرات CPM'], ['↻ Actualiser', '↻ Refresh', '↻ تحديث'], ['Mise à jour…', 'Updating…', 'جارٍ التحديث…'], ['Relire le suivi CPM maintenant', 'Reload the CPM tracking now', 'إعادة قراءة متابعة CPM الآن'], ['Semaines du samedi au vendredi', 'Weeks from Saturday to Friday', 'أسابيع من السبت إلى الجمعة'], ['Tout voir', 'See all', 'عرض الكل'],
     ['Suivi Chantier', 'Site Tracking', 'متابعة الورشة'], ['Avancement Chantiers', 'Site Progress', 'تقدّم الأشغال'], ['📊 Avancement Chantiers', '📊 Site Progress', '📊 تقدّم الأشغال'], ['📋 Suivi CPM', '📋 CPM Tracking', '📋 متابعة CPM'],
     ['FICHE SUIVEUSE GLOBALE', 'GLOBAL TRACKING SHEET', 'بطاقة المتابعة العامة']
   ];

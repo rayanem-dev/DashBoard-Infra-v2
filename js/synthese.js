@@ -172,12 +172,23 @@ var Synthese = (function () {
   }
   function monterJournal(zone) {
     var sub = panneau(zone, '🕘', 'Le journal des changements du CPM', null, [['Tout voir', 'Dossiers_CPM.html#journal']]);
+    // Bouton « Actualiser » : relit le suivi CPM maintenant (au lieu d'attendre l'instantané de la nuit), puis réaffiche le journal
+    var liens = zone.querySelector('.syn-liens');
+    if (liens) {
+      var b = el('button', 'syn-actu', '↻ Actualiser'); b.type = 'button'; b.title = 'Relire le suivi CPM maintenant';
+      b.onclick = function () {
+        b.disabled = true; b.textContent = 'Mise à jour…';
+        Api.call('cpm_instantane').then(function () { return monterJournal(zone); })
+          .catch(function (e) { b.disabled = false; b.textContent = '↻ Actualiser'; sub.textContent = 'Mise à jour impossible : ' + (e && e.message ? e.message : 'erreur'); });
+      };
+      liens.insertBefore(b, liens.firstChild);
+    }
     return Api.call('cpm_journal').then(function (r) {
       sub.textContent = 'Semaines du samedi au vendredi';
       var corps = el('div', 'syn-journal');
       if (!r.evenements.length) corps.appendChild(el('p', 'syn-sous', 'Aucun changement enregistré pour le moment.')); else listeSemaines(corps, r.evenements, 4);
       zone.appendChild(corps);
-    }).catch(function () { sub.textContent = 'Données indisponibles pour l\'instant'; });
+    }).catch(function (e) { sub.textContent = 'Données indisponibles pour l\'instant' + (e && e.message ? ' — ' + e.message : ''); });
   }
 
   return { groupeRapport: groupeRapport, ligneRapport: ligneRapport, rapportSemaine: rapportSemaine, htmlObs: htmlObs, texteObs: texteObs, debutSemaine: debutSemaine, semaines: semaines, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };

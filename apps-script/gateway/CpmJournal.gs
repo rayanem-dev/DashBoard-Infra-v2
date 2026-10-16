@@ -205,6 +205,9 @@ function cpmJournalListe_(req) {
 }
 function cpmInstantaneMaintenant_(req) {
   var u = Auth.userFromToken(req.token);
-  if ((acces_(u).cpm || 0) < 3) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  if ((acces_(u).cpm || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  // bouton « Actualiser » du portail : au plus un instantané par minute (les clics répétés ne relisent pas la feuille pour rien)
+  var dernier = Date.parse(PropertiesService.getScriptProperties().getProperty('CPM_DERNIER_INSTANTANE') || '');
+  if (dernier && Date.now() - dernier < 60000) return { recent: true, base: false, evenements: 0, dossiers: 0 };
   return cpmInstantane_();
 }

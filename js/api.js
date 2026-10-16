@@ -254,6 +254,7 @@
             { nom: 'MEKKI Sofiane', champ: 'Matricule', fiche: '90210X', bddorga: '', genre: 'manque_bddorga' } ].concat(khat ? [{ nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Téléphone', fiche: '562303481', bddorga: '0562000000', genre: 'different' }] : []),
           fiches_sans_bddorga: [{ nom: 'INCONNU Paul', employeur: 'SONATRACH', section: 'SECTION FROID' }],
           bddorga_sans_fiche: [{ nom: 'NOUVEAU Karim', service: 'Travaux Entretien', employeur: 'ACOSCO' }] };
+      case 'cpm_instantane': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { base: false, evenements: 0, dossiers: 52 };
       case 'cpm_journal': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { dernier_instantane: new Date().toISOString(), evenements: [
           { date: '2026-10-13', cle: 'a', n_dossier: 'N°39/SH-PROD/RNS/INFRA/2025', categorie: 'Dossier Appel Offre DAO', dossier: 'Travaux et prestations en génie civil', type: 'modifie', champ: 'commentaire', libelle: 'Commentaire', avant: '', apres: 'Réserves non suspensives levées le 16/09/2026' },

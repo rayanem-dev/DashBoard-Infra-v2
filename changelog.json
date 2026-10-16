@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-03",
+    "date": "2026-10-20",
+    "title": "Version 5.1.7 — Journal du CPM : bouton Actualiser",
+    "changes": [
+      "Accueil : le panneau « Le journal des changements du CPM » a un bouton « Actualiser » qui relit le suivi CPM tout de suite (au lieu d'attendre la nuit), et affiche la raison quand les données sont indisponibles."
+    ]
+  },
+  {
     "id": "2026-10-20-02",
     "date": "2026-10-20",
     "title": "Version 5.1.6 — Badges : entreprise choisie avec son contrat",

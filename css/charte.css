@@ -465,3 +465,6 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .barre-haut { flex: 0 0 auto; max-width: none; }
 .barre-haut input[type=search] { flex: 0 0 220px; width: 220px; }
 @media (max-width: 900px) { .barre-haut { flex: 1 1 100%; } .barre-haut input[type=search] { flex: 1 1 160px; width: auto; } }
+
+.syn-actu { font: inherit; font-size: 12px; font-weight: 700; color: var(--orange-main); background: none; border: 1.5px solid var(--orange-main); border-radius: 999px; padding: 2px 10px; margin-left: 10px; cursor: pointer; }
+.syn-actu:hover { background: var(--orange-pale); } .syn-actu[disabled] { opacity: .55; cursor: wait; }
