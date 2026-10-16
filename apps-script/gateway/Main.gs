@@ -91,7 +91,6 @@ function route_(req) {
     case 'annuaire_personnes': return annuairePersonnes_(req);
     case 'cpm_journal': return cpmJournalListe_(req);
     case 'cpm_instantane': return cpmInstantaneMaintenant_(req);
-    case 'donnees_multi': return donneesMulti_(req);
     case 'rapport_diapos': return rapportDiaposInjecter_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);

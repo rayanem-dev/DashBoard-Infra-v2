@@ -47,23 +47,6 @@ function donneesCsv_(req) {
   return { csv: csv, maj: maj };
 }
 
-/** Plusieurs feuilles en une requête (accueil plus rapide) : { sources: [..] } → { csv: { source: texte } } ; les sources interdites ou illisibles sont simplement absentes. */
-function donneesMulti_(req) {
-  var u = Auth.userFromToken(req.token), acces = acces_(u), liste = Array.isArray(req.sources) ? req.sources.slice(0, 8) : [], res = {};
-  liste.forEach(function (cle) {
-    var src = SOURCES_[String(cle)]; if (!src) return;
-    if (!src.modules.some(function (m) { return (acces[m] || 0) >= 1; })) return;
-    try {
-      var k = 'CSV_' + cle, cache = CacheService.getScriptCache(), vu = cache.get(k);
-      if (vu) { res[cle] = JSON.parse(vu).csv; return; }
-      var csv = csvDepuisLignes_(lignesSource_(cle));
-      if (csv.length < 90000) { try { cache.put(k, JSON.stringify({ csv: csv, maj: new Date().toISOString() }), 120); } catch (e) {} }
-      res[cle] = csv;
-    } catch (e) { /* illisible : la page la redemandera seule et affichera l'erreur */ }
-  });
-  return { csv: res };
-}
-
 /** À lancer une fois depuis l'éditeur : vérifie que la passerelle lit bien chaque feuille (journal d'exécution). */
 function verifierSourcesDonnees() {
   Object.keys(SOURCES_).forEach(function (k) {
