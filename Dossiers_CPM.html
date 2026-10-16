@@ -149,7 +149,8 @@
   <details class="journal" id="rapport" hidden>
     <summary>📋 Texte pour le rapport hebdomadaire (colonne O.B.S du PowerPoint)</summary>
     <p class="journal-info">Choisissez la semaine (du samedi au vendredi), puis cliquez sur « Copier » à côté d'un dossier et collez dans la case O.B.S de la diapositive : le texte est déjà en <b>gras</b>.</p>
-    <div class="rapport-barre"><label for="rapport-semaine">Semaine</label> <select id="rapport-semaine"></select></div>
+    <div class="rapport-barre"><label for="rapport-semaine">Semaine</label> <select id="rapport-semaine"></select>
+      <button type="button" id="rapport-diapos" class="rapport-copier" style="margin-left:10px" title="Crée les diapositives « dossiers non achevés » à ajouter à la fin du rapport hebdomadaire">📥 Injecter dans la diapo hebdomadaire</button> <span id="rapport-diapos-etat" class="journal-info"></span></div>
     <div id="rapport-contenu"></div>
   </details>
 </main>
@@ -459,6 +460,7 @@ init();
 </script>
 
 <script src="js/pied.js"></script>
+<script src="js/rapportdiapos.js"></script>
 <script>
 // Journal des changements (chaque nuit, la passerelle compare la feuille CPM à la veille) — semaines du samedi au vendredi
 (function () {
@@ -507,6 +509,21 @@ init();
     sel.value = debuts.indexOf(derniere) !== -1 ? derniere : debuts[0];
     sel.addEventListener('change', function () { dessinerRapport(r.evenements, sel.value); });
     dessinerRapport(r.evenements, sel.value);
+    // Diapositives « dossiers non achevés » (jauges) : un .pptx à ajouter à la fin du rapport hebdomadaire
+    var bd = document.getElementById('rapport-diapos'), etat = document.getElementById('rapport-diapos-etat');
+    function chargerPptx() {
+      if (window.PptxGenJS) return Promise.resolve();
+      return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'; s.onload = ok; s.onerror = function () { ko(new Error('bibliothèque PowerPoint indisponible')); }; document.head.appendChild(s); });
+    }
+    bd.addEventListener('click', function () {
+      bd.disabled = true; etat.textContent = 'Création des diapositives…';
+      Promise.all([Donnees.csv(CPM_CSV_URL), chargerPptx()]).then(function (v) {
+        var rap = RapportDiapos.preparer(Synthese.parseCSV(v[0]), r.evenements, sel.value, Synthese);
+        if (!rap.groupes.length) { etat.textContent = 'Aucun dossier à moins de 100 %.'; return; }
+        var p = new PptxGenJS(), n = RapportDiapos.construire(p, rap);
+        return p.writeFile({ fileName: 'Rapport hebdo - dossiers non achevés - ' + sel.value + '.pptx' }).then(function () { etat.textContent = n + ' diapositive' + (n > 1 ? 's' : '') + ' créée' + (n > 1 ? 's' : '') + ' : à ajouter à la fin du rapport (Accueil → Nouvelle diapositive → Réutiliser les diapositives).'; });
+      }).catch(function (e) { etat.textContent = 'Impossible : ' + (e && e.message ? e.message : 'erreur'); }).then(function () { bd.disabled = false; });
+    });
     if (location.hash === '#journal') { box.open = true; box.scrollIntoView(); }
     if (location.hash === '#rapport') { rap.open = true; rap.scrollIntoView(); }
   }).catch(function () { /* pas de droit ou journal indisponible : on n'affiche rien */ });

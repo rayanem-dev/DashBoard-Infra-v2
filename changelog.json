@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-20-06",
+    "date": "2026-10-20",
+    "title": "Version 5.2.0 — Rapport hebdomadaire : diapositives des dossiers non achevés",
+    "changes": [
+      "Dossiers CPM, section « Texte pour le rapport hebdomadaire » : bouton « Injecter dans la diapo hebdomadaire » qui crée des diapositives (N° de dossier, intitulé, avancement en jauge, commentaire en gras si modifié cette semaine) pour tous les dossiers à moins de 100 %, à ajouter à la fin du PowerPoint."
+    ]
+  },
+  {
     "id": "2026-10-20-05",
     "date": "2026-10-20",
     "title": "Version 5.1.9 — Journal et rapport hebdomadaire sans les lignes « Étape »",
