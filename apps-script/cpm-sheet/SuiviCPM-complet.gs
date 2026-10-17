@@ -524,33 +524,100 @@ function creerTriggerQuotidienSiAbsent() {
   }
 }
 
-// ---------- Rafraîchissement quotidien (et manuel) ----------
+// ---------- Rafraîchissement quotidien (et manuel) : EN BLOC (toute la feuille lue puis écrite en quelques appels, quelques secondes) ----------
 function rafraichirTouteLaFeuille() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()
     .find(function (s) { return s.getName().toLowerCase().includes('suivi'); });
   if (!sheet) return;
   var map = buildColumnMap(sheet);
-  var lastRow = sheet.getLastRow();
   var erreurs = [];
 
-  for (var row = DATA_START_ROW; row <= lastRow; row++) {
-    try {
-      processRow(sheet, row, map);
-    } catch (err) {
-      erreurs.push('Ligne ' + row + ' : ' + err.message);
-    }
-  }
+  try { rafraichirEnBloc(sheet, map); } catch (err) { erreurs.push('Rafraîchissement : ' + err.message); }
 
   // 📚 Classement par statut une fois toutes les lignes à jour
   try { trierParStatut(sheet, map); } catch (err) { erreurs.push('Tri : ' + err.message); }
 
   if (erreurs.length > 0) {
-    SpreadsheetApp.getUi().alert(
-      '⚠️ Rafraîchissement terminé avec ' + erreurs.length + ' erreur(s)',
-      erreurs.slice(0, 15).join('\n') + (erreurs.length > 15 ? '\n... (' + (erreurs.length - 15) + ' de plus)' : ''),
-      SpreadsheetApp.getUi().ButtonSet.OK
-    );
+    SpreadsheetApp.getUi().alert('⚠️ Rafraîchissement terminé avec ' + erreurs.length + ' erreur(s)', erreurs.join('\n'), SpreadsheetApp.getUi().ButtonSet.OK);
   } else {
-    SpreadsheetApp.getUi().alert('✅ Rafraîchissement terminé sans erreur (' + (lastRow - DATA_START_ROW + 1) + ' lignes).');
+    SpreadsheetApp.getUi().alert('✅ Rafraîchissement terminé sans erreur (' + Math.max(0, sheet.getLastRow() - DATA_START_ROW + 1) + ' lignes).');
   }
+}
+
+// Mêmes règles que processRow (statut à 100 %, échéance dépassée, dead line, couleurs, champs obligatoires, durée de passation), mais sur toute la feuille d'un coup
+function rafraichirEnBloc(sheet, map) {
+  var nb = sheet.getLastRow() - DATA_START_ROW + 1;
+  if (nb < 1) return;
+  var nbCol = sheet.getLastColumn();
+  var plage = sheet.getRange(DATA_START_ROW, 1, nb, nbCol);
+  var V = plage.getValues(), B = plage.getBackgrounds(), F = plage.getFontColors();
+  var cDebut = col(map, H.DEBUT_CDC, true) - 1, cStatut = col(map, H.STATUT, true) - 1, cPct = col(map, H.POURCENT, true) - 1,
+      cLim = col(map, H.DATE_LIMITE, true) - 1, cDead = cLim + 1, cAttr = col(map, H.ATTRIBUTION, true) - 1, cEch = col(map, H.ECHEANCE, true) - 1,
+      cAF = col(map, H.ATTRIB_FINALE, true) - 1, cODS = col(map, H.DATE_ODS, true) - 1, cDur = col(map, H.DUREE_CONTRAT, true) - 1, cPass = col(map, H.DUREE_PASSATION, true) - 1;
+  var auj = new Date(); auj.setHours(0, 0, 0, 0);
+  var JOUR = 1000 * 60 * 60 * 24;
+  function minuit(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+  function plusMois(d, n) { var x = new Date(d); x.setMonth(x.getMonth() + Number(n)); return x; }
+
+  for (var i = 0; i < nb; i++) {
+    var v = V[i];
+    if (!(v[cDebut] instanceof Date)) continue; // ligne sans Date Début CDC : rien ne change
+
+    // 1) 100 % → Contrat en exécution
+    var pct = v[cPct];
+    var cent = (typeof pct === 'number') ? (pct === 1 || pct === 100) : normalize(pct).replace(/[\s%]/g, '') === '100';
+    var st = normalize(v[cStatut]);
+    if (cent && (st.includes('attribue') || st.includes('en cours'))) { v[cStatut] = 'Contrat en exécution'; st = normalize(v[cStatut]); }
+
+    // 2) échéance dépassée → Contrat échu
+    if (st.includes('execution')) {
+      var ech0 = v[cEch] instanceof Date ? v[cEch] : ((v[cODS] instanceof Date && v[cDur]) ? plusMois(v[cODS], v[cDur]) : null);
+      if (ech0 && minuit(ech0) < auj) { v[cStatut] = STATUT_ECHU_LABEL; st = normalize(v[cStatut]); }
+    }
+
+    // 3) couleur de ligne selon le statut
+    var coul = '#ffffff';
+    if (st.includes('infructueux')) coul = '#3d3d3d';
+    else if (st.includes('bloque')) coul = '#b10202';
+    else if (st.includes('attribue')) coul = '#7cd5b0';
+    else if (st.includes('execution')) coul = '#bfe1f6';
+    else if (st.includes('en cours')) coul = '#d4edbc';
+    else if (st.includes('echu') || st.includes('termine')) coul = '#8b8d91';
+    else if (st.includes('non demarre')) coul = '#fff6e8';
+    for (var c = 0; c < nbCol; c++) B[i][c] = coul;
+
+    // 4) Dead Line (colonne après « Date Limite »)
+    if (v[cLim] instanceof Date) {
+      var diff = Math.ceil((minuit(v[cLim]) - auj) / JOUR);
+      if (diff <= 0) { v[cDead] = 0; B[i][cDead] = '#000000'; F[i][cDead] = '#ffffff'; }
+      else { v[cDead] = diff; B[i][cDead] = diff <= 7 ? '#ea4335' : (diff <= 15 ? '#fbbc04' : '#34a853'); F[i][cDead] = '#000000'; }
+    } else { v[cDead] = ''; B[i][cDead] = '#ffffff'; F[i][cDead] = '#000000'; }
+
+    // 5) champs obligatoires (Attribué / En exécution / Échu) + échéance calculée
+    if (st.includes('attribue') || st.includes('execution') || st.includes('echu') || st.includes('termine')) {
+      for (var k = cAttr; k <= cEch; k++) B[i][k] = v[k] ? coul : '#ff0000';
+      B[i][cAF] = v[cAF] ? coul : '#ff0000';
+      if (!v[cODS] || !v[cDur]) { v[cEch] = ''; B[i][cEch] = '#ff0000'; }
+      else {
+        var ech = plusMois(v[cODS], v[cDur]);
+        v[cEch] = ech;
+        var restant = Math.round((minuit(ech) - auj) / JOUR);
+        B[i][cEch] = restant > 365 ? '#7cd5b0' : (restant >= 182 ? '#fbbc04' : '#ea4335');
+      }
+    }
+
+    // 6) Durée de passation = Date Attribution Finale − Date Début CDC
+    if (v[cAF] instanceof Date) {
+      var dj = Math.round((v[cAF] - v[cDebut]) / JOUR);
+      v[cPass] = dj;
+      B[i][cPass] = dj <= SEUIL_PASSATION_BON ? '#7cd5b0' : (dj <= SEUIL_PASSATION_MOYEN ? '#fbbc04' : '#f28b82');
+    } else { v[cPass] = ''; B[i][cPass] = '#ffffff'; }
+  }
+
+  // Écriture : uniquement les colonnes calculées (les autres valeurs ne sont pas réécrites), puis couleurs
+  [cStatut, cDead, cEch, cPass].forEach(function (c) {
+    sheet.getRange(DATA_START_ROW, c + 1, nb, 1).setValues(V.map(function (r) { return [r[c]]; }));
+  });
+  plage.setBackgrounds(B);
+  plage.setFontColors(F);
 }
