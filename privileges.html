@@ -32,6 +32,11 @@
   </div>
   <section class="panneau" id="p-users">
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
+    <div style="margin:8px 0;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn-s" id="b-mdp0000" type="button" title="Donne le mot de passe 0000 aux comptes qui n'en ont encore aucun (jamais connectés) ; chacun le change à sa première connexion">🔑 Donner 0000 aux comptes sans mot de passe</button>
+      <label style="font-size:12px;display:flex;gap:5px;align-items:center"><input type="checkbox" id="c-mdp-large"> inclure les comptes à large accès (secrétariat, chefs, sécurité)</label>
+      <span id="r-mdp0000" style="font-size:12.5px"></span>
+    </div>
     <table class="t"><thead><tr><th>Nom</th><th>Service</th><th>Rôle</th><th>Compte</th><th>Accès</th><th>Mot de passe</th></tr></thead><tbody id="b-users"></tbody></table>
   </section>
   <section class="panneau" id="p-cnx" hidden>
@@ -277,6 +282,15 @@
   });
   $('filtre').addEventListener('input', dessinerUsers);
   $('b-emails').addEventListener('click', controleEmails);
+  $('b-mdp0000').addEventListener('click', function () {
+    var b = this, res = $('r-mdp0000'), inclure = $('c-mdp-large').checked;
+    if (!confirm('Donner le mot de passe provisoire 0000 à tous les comptes qui n\'ont encore aucun mot de passe' + (inclure ? ', y compris les comptes à large accès' : '') + ' ?')) return;
+    b.disabled = true; res.textContent = 'En cours…';
+    Api.call('admin_mdp_defaut', { inclure: inclure }).then(function (r) {
+      res.textContent = r.donnes + ' compte(s) mis à 0000 · ' + r.deja + ' avaient déjà un mot de passe' + (r.exclus && r.exclus.length ? ' · exclus (large accès) : ' + r.exclus.join(' ; ') : '') + '.';
+      return recharger();
+    }).catch(function (e) { res.textContent = ''; toast(e.message, true); }).then(function () { b.disabled = false; });
+  });
   $('cnx-filtre').addEventListener('input', function () { clearTimeout(tFiltre); tFiltre = setTimeout(chargerConnexions, 300); });
   var tFiltre;
   $('n-add').addEventListener('click', function () {

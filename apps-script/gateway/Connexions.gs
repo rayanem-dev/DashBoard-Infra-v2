@@ -82,6 +82,13 @@ function connexionsMdp_(req) {
   Store.journal('mdp_admin', String(req.email).toLowerCase(), 'défini par ' + a.email + ' (provisoire : à changer à la prochaine connexion)');
   return { mdp: mdp };
 }
+/** Donne le mot de passe provisoire (0000) à tous les comptes actifs qui n'ont encore AUCUN mot de passe. Les comptes à large accès en sont exclus sauf demande explicite. */
+function connexionsMdpDefautTous_(req) {
+  var a = connexionsAdmin_(req);
+  var r = definirMotDePasseParDefaut(0, req.inclure === true);
+  Store.journal('mdp_defaut_admin', a.email, r.donnes + ' compte(s)' + (req.inclure === true ? ' (comptes à large accès inclus)' : ''));
+  return r;
+}
 function connexionsTestMail_(req) {
   var a = connexionsAdmin_(req), email = String(req.email || '').trim().toLowerCase();
   if (!Store.utilisateur(email)) throw new Error('Utilisateur inconnu');

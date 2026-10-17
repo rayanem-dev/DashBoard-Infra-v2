@@ -84,6 +84,7 @@ function route_(req) {
     case 'admin_connexions': return connexionsListe_(req);
     case 'admin_diagnostic': return connexionsDiagnostic_(req);
     case 'admin_mdp': return connexionsMdp_(req);
+    case 'admin_mdp_defaut': return connexionsMdpDefautTous_(req);
     case 'admin_emails': return emailsControle_(req);
     case 'admin_email_contact': return emailContactAdmin_(req);
     case 'email_contact_demander': { var ue = Auth.userFromToken(req.token); if (typeof preparerStructure_ === 'function') preparerStructure_(); return Auth.demanderEmailContact(ue, req.adresse); }

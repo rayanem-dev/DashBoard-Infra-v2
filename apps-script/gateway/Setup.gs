@@ -376,10 +376,11 @@ function definirMotDePasseParDefaut(jours, inclurePrivilegies) {
     if (k !== undefined) v[k] = ligne; else { index[email] = v.length; v.push(ligne); }
     nb += 1;
   });
-  sec.getRange(1, 1, v.length, 7).setValues(v);
+  if (v.length) sec.getRange(1, 1, v.length, 7).setValues(v);
   Store.journal('mdp_defaut', 'script', nb + ' comptes, ' + (jours > 0 ? 'expire dans ' + jours + ' j' : 'sans expiration'));
   Logger.log('Mot de passe provisoire donné à ' + nb + ' compte(s), ' + (jours > 0 ? 'valable jusqu\'au ' + new Date(expire).toLocaleString('fr-FR') : 'SANS expiration (jusqu\'à ce que chacun le change)') +
     '. Ignorés (ont déjà un mot de passe) : ' + deja + '. Exclus (large visibilité) : ' + exclus.length + (exclus.length ? ' → ' + exclus.join(' ; ') : ''));
+  return { donnes: nb, deja: deja, exclus: exclus };
 }
 
 /** Coupe-circuit : retire immédiatement le mot de passe provisoire de tous les comptes qui l'utilisent encore. */

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-10",
+    "date": "2026-10-21",
+    "title": "Version 5.4.5 — Privilèges : 0000 pour les comptes sans mot de passe",
+    "changes": [
+      "Gestion des privilèges : bouton « Donner 0000 aux comptes sans mot de passe » (jamais connectés). Les comptes à large accès (secrétariat, chefs, sécurité) en sont exclus sauf case cochée ; le résultat indique combien de comptes ont été mis à jour."
+    ]
+  },
+  {
     "id": "2026-10-21-09",
     "date": "2026-10-21",
     "title": "Version 5.4.4 — Durée des contrats en mois ou en jours",

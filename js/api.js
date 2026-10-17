@@ -209,6 +209,7 @@
         demoState.ec = String(p.adresse).replace(/\s+/g, '').toLowerCase(); return { masque: demoState.ec.slice(0, 2) + '***@' + demoState.ec.split('@')[1] };
       case 'email_contact_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (String(p.code) !== '123456' || !demoState.ec) throw erreur('Code invalide ou expiré'); return { email_contact: demoState.ec };
+      case 'admin_mdp_defaut': exigerAdmin(); return { donnes: 3, deja: 12, exclus: p.inclure ? [] : ['SECRÉTAIRE TEST (secretariat)'] };
       case 'admin_emails': exigerAdmin(); return { total: 6, problemes: [
         { email: 'a.test@exemple.dz', nom: 'OUALI Nadia', brut: 'n.ouali⟦U+00A0⟧@exemple.dz', contact: '', propre: 'n.ouali@exemple.dz', valide: true, problemes: ['caractères invisibles (espace insécable, caractère de largeur nulle…)'], suggestion: 'n.ouali@exemple.dz' },
         { email: 's.brahimi@gmial.com', nom: 'BRAHIMI Samir', brut: 's.brahimi@gmial.com', contact: '', propre: 's.brahimi@gmial.com', valide: true, problemes: ['domaine suspect : « gmial.com » ressemble à « gmail.com »'], suggestion: 's.brahimi@gmail.com' },
