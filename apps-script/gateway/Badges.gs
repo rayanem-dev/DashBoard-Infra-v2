@@ -134,12 +134,35 @@ function badgesCfg_(c) {
   return Badges.config({ base: String(c.base || '').slice(0, 80) || undefined, formatNumero: String(c.formatNumero || '').slice(0, 80) || undefined, chiffres: Number(c.chiffres) > 0 && Number(c.chiffres) < 8 ? Number(c.chiffres) : undefined, numeroDepart: Number(c.numeroDepart) > 0 ? Number(c.numeroDepart) : undefined, structure: String(c.structure || '').slice(0, 60) || undefined });
 }
 
+function badgesSaisieCharge_(req) {
+  var ent = Badges.vide(req.entreprise), ctr = Badges.vide(req.contrat), tit = Badges.vide(req.intitule);
+  if (!ent) throw new Error('Indiquez l\'entreprise.');
+  var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { return { nom: Badges.vide(p.nom).slice(0, 200), prenom: Badges.vide(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; }).filter(function (p) { return p.nom; });
+  return { prestataire: [ctr, ent, tit].join(' - '), personnes: gens, ignorerEnquetes: Array.isArray(req.ignorer) ? req.ignorer.map(String) : [], entreprise: ent };
+}
 // ---------- actions ----------
 function badgesDonnees_(req) {
   var u = badgesDroit_(req, 1);
   if (req.force) CacheService.getScriptCache().remove('BADGES_SRC'); // « Actualiser les sources » : relire tout de suite les Enquêtes et le suivi CPM
   var f = badgesCharger_();
   return { personnes: f.personnes, entreprises: f.entreprises, historique: badgesHistorique_(), utilisateur: u.nom || u.email, avertissements: f.avertissements, niveau: acces_(u).badges || 0 };
+}
+/**
+ * Saisie d'entreprises hors suivi CPM (ex. chef DSP sécurité) : les personnes sont ajoutées aux Enquêtes administratives (onglet « ENTREPRISE · contrat »).
+ * Le code d'injection est celui de Prises en charge : apps-script/prise-en-charge/Enquetes.gs, copié ici au déploiement (EnquetesPartage.gs).
+ */
+function badgesEnquetesVerifier_(req) {
+  badgesDroit_(req, 2);
+  var f = badgesSaisieCharge_(req), r = verifierEnquetes(f);
+  if (!r.ok) throw new Error(r.message || 'Vérification impossible');
+  return { deja: r.deja };
+}
+function badgesEnquetesSaisir_(req) {
+  var u = badgesDroit_(req, 2), f = badgesSaisieCharge_(req);
+  if (!f.personnes.length) throw new Error('Aucune personne à ajouter.');
+  var r = injecterEnquetes_(f);
+  CacheService.getScriptCache().remove('BADGES_SRC');
+  return { ajoutes: r.ajoutes, existants: r.existants, crees: r.crees, resume: enqResume_(r), par: u.email || u.nom || '' };
 }
 function badgesVider_(s) { return Badges.vide(s).slice(0, 200); }
 function badgesPersonnesSauver_(req) {

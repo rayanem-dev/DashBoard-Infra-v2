@@ -5,7 +5,7 @@ name: Déployer la passerelle
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths: ['apps-script/gateway/**', 'js/simulation.js', 'js/annuaire-data.js', 'badges/badges.js', '.github/workflows/deploy-gateway.yml']
+    paths: ['apps-script/gateway/**', 'js/simulation.js', 'js/annuaire-data.js', 'badges/badges.js', 'apps-script/prise-en-charge/Enquetes.gs', '.github/workflows/deploy-gateway.yml']
   workflow_dispatch:
 
 concurrency:
@@ -29,6 +29,9 @@ jobs:
 
       - name: "Copier le moteur des badges (partagé avec le site, badges/badges.js)"
         run: cp badges/badges.js apps-script/gateway/BadgesMoteur.gs
+
+      - name: "Copier l'injection dans les Enquêtes (partagée avec Prises en charge)"
+        run: cp apps-script/prise-en-charge/Enquetes.gs apps-script/gateway/EnquetesPartage.gs
 
       - name: Tests
         run: node --test apps-script/gateway/test/*.test.js

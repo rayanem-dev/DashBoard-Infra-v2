@@ -38,6 +38,8 @@
         return r;
       });
     },
+    verifierEnquetes: function (payload) { return Api.call('badges_enquetes_verifier', payload); },
+    saisirEnquetes: function (payload) { return Api.call('badges_enquetes_saisir', payload); },
     ecrirePersonnes: function (liste, x, supprimer) {
       var changes = [], supp = [], ids = {};
       liste.forEach(function (p) { ids[p.id] = 1; var o = dernier.p[p.id]; if (!o || !egal(o, p)) changes.push(p); });

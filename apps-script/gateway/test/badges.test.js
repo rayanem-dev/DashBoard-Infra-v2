@@ -174,3 +174,13 @@ test('contrat lu dans le nom d\'un onglet normalisé : deux onglets de la même 
   const f = G('badgesFusion_', onglets, cpm, [], []);
   assert.deepStrictEqual(f.personnes.map(p => [p.nom, p.contrat]), [['A', '54.INFRA.25'], ['B', '53.INFRA.25'], ['C', '']]);
 });
+
+test('passerelle : saisie Enquêtes → format « contrat - entreprise - intitulé » attendu par l\'injection', () => {
+  const r = G('badgesSaisieCharge_', { entreprise: ' SARL TEST ', contrat: '12.DSP.26', intitule: 'Gardiennage', personnes: [{ nom: 'A', prenom: 'B', fonction: 'F' }, { nom: '', prenom: 'X' }], ignorer: ['A B'] });
+  assert.strictEqual(r.prestataire, '12.DSP.26 - SARL TEST - Gardiennage');
+  assert.strictEqual(r.personnes.length, 1);
+  assert.deepStrictEqual(r.ignorerEnquetes, ['A B']);
+  const sans = G('badgesSaisieCharge_', { entreprise: 'SARL TEST', personnes: [{ nom: 'A', prenom: 'B' }] });
+  assert.strictEqual(sans.prestataire, ' - SARL TEST - ');
+  assert.throws(() => G('badgesSaisieCharge_', { entreprise: '', personnes: [] }));
+});

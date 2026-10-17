@@ -77,7 +77,10 @@ var BadgesApp = (function () {
     // ----- Barre d'onglets -----
     function onglets() {
       var nav = el('div', 'bdg-onglets');
-      [['badges', 'Badges'], ['entreprises', 'Entreprises & contrats'], ['historique', 'Historique'], ['reglages', 'Réglages']].forEach(function (o) {
+      var liste = [['badges', 'Badges'], ['entreprises', 'Entreprises & contrats']];
+      if (adapter.saisirEnquetes && !S.lecture) liste.push(['saisie', 'Saisie Enquêtes']);
+      liste.push(['historique', 'Historique'], ['reglages', 'Réglages']);
+      liste.forEach(function (o) {
         var b = el('button', 'bdg-onglet' + (S.onglet === o[0] ? ' actif' : ''), o[1]); b.type = 'button';
         b.onclick = function () { S.onglet = o[0]; dessiner(); }; nav.appendChild(b);
       });
@@ -238,6 +241,81 @@ var BadgesApp = (function () {
         adapter.ecrirePersonnes(S.personnes.concat(neufs), neufs).then(function () { return adapter.ecrireEntreprises(nouvEnt); }).then(function () { dire(neufs.length + ' personne(s) ajoutée(s)'); fermer(d); return recharger(); }).catch(echec);
       }, 'prim');
       d = fenetre('Importer des personnes', corps, [bouton('Annuler', function () { fermer(d); }), ok]);
+    }
+
+
+    // ----- Onglet Saisie Enquêtes : saisir (ou détecter dans un PDF) les personnes d'une entreprise, les injecter dans les Enquêtes, imprimer la liste -----
+    function vueSaisie() {
+      var X = S.saisie = S.saisie || { entreprise: '', contrat: '', intitule: '', lignes: [{ nom: '', prenom: '', fonction: '' }] };
+      var v = el('div', 'bdg-saisie');
+      v.appendChild(el('p', 'bdg-note', 'Saisissez les personnes d\'une entreprise (même hors suivi CPM) : elles sont ajoutées à l\'onglet « ENTREPRISE · contrat » des Enquêtes administratives (créé s\'il n\'existe pas), à la suite des personnes déjà inscrites, avec la date d\'enregistrement.'));
+      var dl = el('datalist'); dl.id = 'bdg-dl-ent'; S.entreprises.forEach(function (e) { var o = el('option'); o.value = e.nom; dl.appendChild(o); }); v.appendChild(dl);
+      var dc = el('datalist'); dc.id = 'bdg-dl-ctr'; v.appendChild(dc);
+      function contrats() { dc.innerHTML = ''; var e = S.entreprises.filter(function (x) { return B.norm(x.nom) === B.norm(X.entreprise); })[0]; ((e && e.contrats) || []).forEach(function (c) { var o = el('option'); o.value = c.numero; o.label = c.intitule || ''; dc.appendChild(o); }); }
+      var ent = saisie(X.entreprise, 'text', 'Entreprise'), ctr = saisie(X.contrat, 'text', 'N° de contrat (facultatif)'), tit = saisie(X.intitule, 'text', 'Intitulé du contrat (facultatif)');
+      ent.setAttribute('list', 'bdg-dl-ent'); ctr.setAttribute('list', 'bdg-dl-ctr');
+      ent.oninput = function () { X.entreprise = ent.value; contrats(); }; ctr.oninput = function () { X.contrat = ctr.value; }; tit.oninput = function () { X.intitule = tit.value; }; contrats();
+      var tete = el('div', 'bdg-grille'); tete.appendChild(champ('Entreprise', ent)); tete.appendChild(champ('N° de contrat', ctr)); tete.appendChild(champ('Intitulé', tit)); v.appendChild(tete);
+      var t = el('table', 'bdg-table'), th = el('tr'); ['N°', 'Nom', 'Prénom', 'Fonction', ''].forEach(function (x) { th.appendChild(el('th', null, x)); }); t.appendChild(el('thead')).appendChild(th);
+      var tb = el('tbody');
+      X.lignes.forEach(function (l, i) {
+        var tr = el('tr'); tr.appendChild(el('td', null, String(i + 1)));
+        ['nom', 'prenom', 'fonction'].forEach(function (k) { var inp = saisie(l[k], 'text', k === 'nom' ? 'NOM' : k === 'prenom' ? 'Prénom' : 'Fonction'); inp.oninput = function () { l[k] = inp.value; }; var td = el('td'); td.appendChild(inp); tr.appendChild(td); });
+        var td = el('td'); td.appendChild(bouton('✕', function () { X.lignes.splice(i, 1); if (!X.lignes.length) X.lignes.push({ nom: '', prenom: '', fonction: '' }); dessiner(); }, 'mini', 'Retirer cette ligne')); tr.appendChild(td); tb.appendChild(tr);
+      });
+      t.appendChild(tb); v.appendChild(t);
+      var barre = el('div', 'bdg-barre');
+      barre.appendChild(bouton('+ Ligne', function () { X.lignes.push({ nom: '', prenom: '', fonction: '' }); dessiner(); }));
+      var pdf = el('input'); pdf.type = 'file'; pdf.accept = '.pdf,application/pdf'; pdf.style.display = 'none';
+      pdf.onchange = function () {
+        var f = pdf.files[0]; if (!f) return; if (!window.AutoDetect) { dire('Module de détection absent.', true); return; } dire('Lecture du PDF…');
+        AutoDetect.depuisFichier(f).then(function (r) {
+          if (r.entreprise) X.entreprise = r.entreprise; if (r.contrat) X.contrat = r.contrat; if (r.intitule && !X.intitule) X.intitule = r.intitule;
+          var neuves = r.personnes.map(function (p) { return { nom: p.nom, prenom: p.prenom, fonction: p.fonction || '' }; });
+          X.lignes = X.lignes.filter(function (l) { return B.vide(l.nom) || B.vide(l.prenom); }).concat(neuves); if (!X.lignes.length) X.lignes.push({ nom: '', prenom: '', fonction: '' });
+          dessiner(); dire(r.personnes.length + ' personne(s) détectée(s) — vérifiez avant d\'injecter.' + (r.avertissements.length ? ' ⚠ ' + r.avertissements.join(' ') : ''), !r.personnes.length);
+        }).catch(function (e) { dire('Lecture impossible : ' + e.message, true); });
+      };
+      barre.appendChild(bouton('📄 Détecter depuis un PDF', function () { pdf.click(); }, null, 'Prise en charge, demande de prise en charge ou liste')); barre.appendChild(pdf);
+      barre.appendChild(bouton('Vider', function () { S.saisie = null; dessiner(); }));
+      barre.appendChild(bouton('🖨 Imprimer la liste (PDF)', function () { imprimerListe(X); }, null, 'Ouvre l\'impression : choisir « Enregistrer au format PDF »'));
+      barre.appendChild(bouton('Injecter dans les Enquêtes', function () { injecter(X); }, 'prim'));
+      v.appendChild(barre);
+      return v;
+    }
+    function personnesSaisies(X) { return X.lignes.map(function (l) { return { nom: B.vide(l.nom), prenom: B.vide(l.prenom), fonction: B.vide(l.fonction) }; }).filter(function (l) { return l.nom; }); }
+    function injecter(X) {
+      var gens = personnesSaisies(X);
+      if (!B.vide(X.entreprise)) { dire('Indiquez l\'entreprise.', true); return; }
+      if (!gens.length) { dire('Saisissez au moins une personne (nom et prénom).', true); return; }
+      var base = { entreprise: B.vide(X.entreprise), contrat: B.vide(X.contrat), intitule: B.vide(X.intitule), personnes: gens };
+      dire('Vérification dans les Enquêtes…');
+      adapter.verifierEnquetes(base).then(function (r) {
+        var deja = (r && r.deja) || [];
+        if (!deja.length) return base;
+        return new Promise(function (ok) {
+          var corps = el('div'), ul = el('ul'); deja.forEach(function (d) { ul.appendChild(el('li', null, d.nomComplet + ' — « ' + d.onglet + ' »')); });
+          corps.appendChild(el('p', 'bdg-note', 'Ces agents figurent déjà dans les Enquêtes :')); corps.appendChild(ul);
+          var dlg, ig = bouton('Ignorer (ne pas les ajouter)', function () { fermer(dlg); base.ignorer = deja.map(function (d) { return d.nomComplet; }); ok(base); });
+          var go = bouton('OK, ajouter quand même', function () { fermer(dlg); ok(base); }, 'prim');
+          dlg = fenetre('Déjà enregistré', corps, [ig, go]);
+        });
+      }).then(function (payload) {
+        dire('Injection en cours…'); return adapter.saisirEnquetes(payload);
+      }).then(function (r) { dire(r.resume || 'Terminé'); return recharger(true); }).catch(echec);
+    }
+    function imprimerListe(X) {
+      var gens = personnesSaisies(X); if (!gens.length) { dire('Rien à imprimer : saisissez au moins une personne.', true); return; }
+      var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+      var jour = new Date().toLocaleDateString('fr-FR'), lignes = gens.map(function (g, i) { return '<tr><td class="c">' + (i + 1) + '</td><td><b>' + esc(g.nom.toUpperCase()) + '</b></td><td>' + esc(g.prenom) + '</td><td>' + esc(g.fonction) + '</td><td></td></tr>'; }).join('');
+      var logo = opts.logoUrl ? '<img src="' + esc(new URL(opts.logoUrl, location.href).href) + '" alt="" style="height:16mm;float:left;margin-right:6mm">' : '';
+      var w = window.open('', '_blank'); if (!w) { dire('Autorisez les fenêtres pop-up pour imprimer.', true); return; }
+      w.document.write('<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Liste des personnes — ' + esc(X.entreprise) + '</title><style>@page{size:A4;margin:14mm}body{font:12pt Arial,sans-serif;color:#111}h1{font-size:15pt;text-align:center;margin:10mm 0 4mm}.tete{overflow:hidden;font-size:10pt}.info{margin:4mm 0 6mm;font-size:11pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:3mm 2.5mm;font-size:11pt}th{background:#eee}td.c{text-align:center;width:10mm}.visas{display:flex;justify-content:space-between;margin-top:18mm;font-weight:700;font-size:10.5pt}.visas div{width:45%;min-height:28mm}</style></head><body>' +
+        '<div class="tete">' + logo + '<b>SONATRACH — Division Infrastructure RNS</b><br>Enquêtes administratives</div><h1>LISTE DES PERSONNES</h1>' +
+        '<div class="info"><b>Entreprise :</b> ' + esc(X.entreprise) + (X.contrat ? '<br><b>Contrat :</b> ' + esc(X.contrat) + (X.intitule ? ' — ' + esc(X.intitule) : '') : '') + '<br><b>Date :</b> ' + jour + '</div>' +
+        '<table><thead><tr><th>N°</th><th>Nom</th><th>Prénom</th><th>Fonction</th><th>Observations</th></tr></thead><tbody>' + lignes + '</tbody></table>' +
+        '<div class="visas"><div>Le chef de la sécurité</div><div style="text-align:right">Le chef de division infrastructures</div></div><script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
+      w.document.close();
     }
 
     // ----- Onglet Entreprises -----
@@ -422,7 +500,7 @@ var BadgesApp = (function () {
     // ----- Dessin général -----
     function dessiner() {
       vider(zone); zone.appendChild(onglets());
-      var v = S.onglet === 'entreprises' ? vueEntreprises() : S.onglet === 'historique' ? vueHistorique() : S.onglet === 'reglages' ? vueReglages() : vueBadges();
+      var v = S.onglet === 'saisie' && adapter.saisirEnquetes ? vueSaisie() : S.onglet === 'entreprises' ? vueEntreprises() : S.onglet === 'historique' ? vueHistorique() : S.onglet === 'reglages' ? vueReglages() : vueBadges();
       zone.appendChild(v);
       if (S.info) zone.appendChild(el('p', 'bdg-note', S.info));
     }

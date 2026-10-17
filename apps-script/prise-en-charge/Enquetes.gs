@@ -219,7 +219,7 @@ function enqResume_(r) {
 
 // ---------- accès aux feuilles ----------
 function enqClasseur_() {
-  var id = PropertiesService.getScriptProperties().getProperty('ENQUETES_ID') || ENQUETES_ID_DEFAUT_;
+  var pr = PropertiesService.getScriptProperties(), id = pr.getProperty('ENQUETES_ID') || pr.getProperty('BADGES_ENQUETES_ID') || ENQUETES_ID_DEFAUT_; // BADGES_ENQUETES_ID : même fichier que les badges (passerelle)
   try { return SpreadsheetApp.openById(id); }
   catch (e) { throw new Error('Le fichier « Enquêtes administratives » n\'est pas lisible (il doit être un Google Sheets partagé avec le compte de l\'application).'); }
 }

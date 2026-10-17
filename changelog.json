@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-21-24",
+    "date": "2026-10-21",
+    "title": "Version 5.7.0 — Badges : saisie des Enquêtes",
+    "changes": [
+      "Badges : nouvel onglet « Saisie Enquêtes » (niveau 2 du module badges). On saisit une entreprise (même hors suivi CPM), son contrat et ses personnes, ou on les détecte dans un PDF ; elles sont ajoutées à l'onglet « ENTREPRISE · contrat » des Enquêtes administratives, avec avertissement si un agent y figure déjà.",
+      "Impression de la liste des personnes d'une entreprise (A4, enregistrable en PDF)."
+    ]
+  },
+  {
     "id": "2026-10-21-23",
     "date": "2026-10-21",
     "title": "Version 5.6.1 — Badges : actualisation immédiate",
