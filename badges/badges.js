@@ -93,10 +93,15 @@ var Badges = (function () {
       if ((lignes[i] || []).some(function (c) { return sansEsp(c).indexOf('بالفرنسية') >= 0; })) h = i;
     }
     if (h < 0) return null;
-    var col = { h: h, fr: -1, fonction: -1, prenomAr: -1, nomAr: -1, naiss: -1, lieu: -1, pere: -1, mere: -1, structure: -1 };
+    var col = { h: h, fr: -1, fonction: -1, prenomAr: -1, nomAr: -1, naiss: -1, lieu: -1, pere: -1, mere: -1, structure: -1, adresse: -1, embauche: -1, nin: -1, acte: -1, tel: -1 };
     (lignes[h] || []).forEach(function (c, x) {
       var s = sansEsp(c), a = s.replace(/[إأآ]/g, 'ا');
       if (/تاريخ.*ازدياد/.test(a)) { col.naiss = x; return; }
+      if (/تاريخ.*توظيف/.test(a)) { col.embauche = x; return; }
+      if (/رقم.*التعريف/.test(a)) { col.nin = x; return; }
+      if (/رقم.*شهادة/.test(a)) { col.acte = x; return; }
+      if (/رقم.*الهاتف/.test(a)) { col.tel = x; return; }
+      if (a === 'العنوان') { col.adresse = x; return; }
       if (/مكان.*ازدياد/.test(a)) { col.lieu = x; return; }
       if (a === 'الاب') { col.pere = x; return; }
       if (a === 'الام') { col.mere = x; return; }

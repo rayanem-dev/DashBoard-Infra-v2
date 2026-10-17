@@ -36,6 +36,8 @@
       <button class="btn-s" id="b-mdp0000" type="button" title="Donne le mot de passe 0000 aux comptes qui n'en ont encore aucun (jamais connectés) ; chacun le change à sa première connexion">🔑 Donner 0000 aux comptes sans mot de passe</button>
       <label style="font-size:12px;display:flex;gap:5px;align-items:center"><input type="checkbox" id="c-mdp-large"> inclure les comptes à large accès (secrétariat, chefs, sécurité)</label>
       <span id="r-mdp0000" style="font-size:12.5px"></span>
+      <button class="btn-s" id="b-inviter-tous" type="button" title="Envoie à chaque compte actif de la liste affichée (filtre compris) un e-mail d'invitation : lien, première connexion, applications accordées">✉ Inviter les comptes affichés</button>
+      <span id="r-inviter" style="font-size:12.5px"></span>
     </div>
     <table class="t"><thead><tr><th>Nom</th><th>Service</th><th>Rôle</th><th>Compte</th><th>Accès</th><th>Mot de passe</th></tr></thead><tbody id="b-users"></tbody></table>
   </section>
@@ -123,6 +125,8 @@
       var tm = el('td'); var bm = el('button', 'btn-s', 'Mot de passe'); bm.title = 'Définir un mot de passe provisoire pour ' + u.nom;
       bm.addEventListener('click', function () { definirMdp(u); }); tm.appendChild(bm);
       var bd = el('button', 'btn-s', 'Diagnostic'); bd.style.marginLeft = '6px'; bd.addEventListener('click', function () { ouvrirConnexions(u.email); }); tm.appendChild(bd);
+      var bi = el('button', 'btn-s', '✉ Inviter'); bi.style.marginLeft = '6px'; bi.title = 'Envoyer à ' + u.nom + ' un e-mail : lien, première connexion et applications accordées';
+      bi.addEventListener('click', function () { inviter([u], bi); }); if (!u.actif) bi.disabled = true; tm.appendChild(bi);
       var bs = el('button', 'btn-s', '👤 Se connecter en tant que'); bs.style.marginLeft = '6px'; bs.title = 'Ouvrir le portail comme ' + u.nom + ' (support, 2 h)';
       bs.addEventListener('click', function () { usurper(u); }); if (!u.actif) bs.disabled = true; tm.appendChild(bs); tr.appendChild(tm);
       b.appendChild(tr);
@@ -272,6 +276,16 @@
       if (r.ignores_bddorga.length) { z.appendChild(el('h4', null, 'Lignes de BDDORGA sans adresse exploitable (ces personnes n\'ont pas de compte)')); var u = el('ul'); r.ignores_bddorga.forEach(function (x) { u.appendChild(el('li', null, 'ligne ' + x.ligne + ' — ' + (x.nom || '(sans nom)') + ' : ' + x.raison)); }); z.appendChild(u); }
     }).catch(function (e) { z.textContent = e.message; });
   }
+  /** Invitation par e-mail (lien, première connexion, applications accordées) ; 60 comptes au plus par envoi. */
+  function inviter(liste, bouton) {
+    var actifs = liste.filter(function (u) { return u.actif; }); if (!actifs.length) { toast('Aucun compte actif à inviter', true); return; }
+    if (!window.confirm('Envoyer une invitation par e-mail à ' + (actifs.length === 1 ? actifs[0].nom : actifs.length + ' comptes') + ' ?\nElle contient le lien du portail, la première connexion et la liste des applications accordées.')) return;
+    if (bouton) bouton.disabled = true;
+    Api.call('admin_inviter', { emails: actifs.slice(0, 60).map(function (u) { return u.email; }) }).then(function (r) {
+      var m = r.envoyes.length + ' invitation(s) envoyée(s)' + (r.echecs.length ? ' · ' + r.echecs.length + ' échec(s) : ' + r.echecs.slice(0, 3).join(' ; ') : '') + (actifs.length > 60 ? ' (60 au plus par envoi)' : '');
+      $('r-inviter').textContent = m; toast(m, !!r.echecs.length && !r.envoyes.length);
+    }).catch(function (e) { toast(e.message, true); }).then(function () { if (bouton) bouton.disabled = false; });
+  }
   /** Mode support : session ouverte au nom d'un utilisateur. Le jeton de l'administrateur est gardé pour revenir (bandeau « Mode support » sur chaque page). */
   function usurper(u) {
     if (!window.confirm('Ouvrir le portail au nom de ' + u.nom + ' ?\nVous verrez exactement ce qu\'il voit. L\'opération est enregistrée dans le journal.')) return;
@@ -294,6 +308,10 @@
   });
   $('filtre').addEventListener('input', dessinerUsers);
   $('b-emails').addEventListener('click', controleEmails);
+  $('b-inviter-tous').addEventListener('click', function () {
+    var f = $('filtre').value.toLowerCase();
+    inviter(etat.utilisateurs.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '') + ' ' + (u.fonction || '')).toLowerCase().indexOf(f) !== -1; }), this);
+  });
   $('b-mdp0000').addEventListener('click', function () {
     var b = this, res = $('r-mdp0000'), inclure = $('c-mdp-large').checked;
     if (!confirm('Donner le mot de passe provisoire 0000 à tous les comptes qui n\'ont encore aucun mot de passe' + (inclure ? ', y compris les comptes à large accès' : '') + ' ?')) return;

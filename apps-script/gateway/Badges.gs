@@ -166,6 +166,56 @@ function badgesEnquetesSaisir_(req) {
   CacheService.getScriptCache().remove('BADGES_SRC');
   return { ajoutes: r.ajoutes, existants: r.existants, crees: r.crees, resume: enqResume_(r), par: u.email || u.nom || '' };
 }
+/** Fiche complète d'une personne des Enquêtes (lue à la demande, jamais dans la liste) : { ligne, champs: { naissance, lieu, pere, mere, adresse, embauche, nin, acte, tel, nomAr, prenomAr, fonction, structure } }. */
+var BADGES_FICHE_ = [['naissance', 'naiss'], ['lieu', 'lieu'], ['pere', 'pere'], ['mere', 'mere'], ['adresse', 'adresse'], ['embauche', 'embauche'], ['nin', 'nin'], ['acte', 'acte'], ['tel', 'tel'], ['nomAr', 'nomAr'], ['prenomAr', 'prenomAr'], ['fonction', 'fonction'], ['structure', 'structure']];
+function badgesLigneEnquete_(req) {
+  var sh = enqClasseur_().getSheetByName(String(req.onglet || ''));
+  if (!sh) throw new Error('Onglet introuvable dans les Enquêtes : ' + req.onglet);
+  var lignes = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(lignes);
+  if (!col || col.fr < 0) throw new Error('Onglet illisible : ' + req.onglet);
+  var voulu = badgesVider_(req.nom) + ' ' + badgesVider_(req.prenom);
+  for (var i = col.h + 1; i < lignes.length; i += 1) { var fr = Badges.vide((lignes[i] || [])[col.fr]); if (fr && enqMemePersonne_(voulu, fr)) return { sh: sh, lignes: lignes, col: col, i: i }; }
+  throw new Error('Personne introuvable dans l\'onglet « ' + req.onglet + ' »');
+}
+function badgesFiche_(req) {
+  badgesDroit_(req, 2);
+  var f = badgesLigneEnquete_(req), champs = {};
+  BADGES_FICHE_.forEach(function (c) { var x = f.col[c[1]]; champs[c[0]] = x >= 0 ? Badges.vide((f.lignes[f.i] || [])[x]) : ''; });
+  return { ligne: f.i + 1, champs: champs, colonnes: BADGES_FICHE_.filter(function (c) { return f.col[c[1]] >= 0; }).map(function (c) { return c[0]; }) };
+}
+/** Renseigne les informations manquantes d'une personne dans les Enquêtes : jamais d'effacement (une valeur vide est ignorée). */
+function badgesFicheMaj_(req) {
+  badgesDroit_(req, 2);
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var f = badgesLigneEnquete_(req), ch = req.champs || {}, ecrits = [];
+    BADGES_FICHE_.forEach(function (c) {
+      var v = badgesVider_(ch[c[0]]); if (!v) return;
+      var x = f.col[c[1]];
+      if (x < 0 && c[0] === 'structure') x = enqColonne_(f.sh, f.lignes, f.col.h, /^الهيكل|structure/i, 'الهيكل — Structure');
+      if (x < 0) return; // colonne absente de cet onglet : rien n'est inventé
+      var cell = f.sh.getRange(f.i + 1, x + 1); if (Badges.vide(cell.getDisplayValue()) === v) return;
+      cell.setNumberFormat('@').setValue(v); ecrits.push(c[0]);
+    });
+    CacheService.getScriptCache().remove('BADGES_SRC');
+    return { ecrits: ecrits, ligne: f.i + 1 };
+  } finally { lock.releaseLock(); }
+}
+/** Classement des photos : dossier « Photos badges » à côté du fichier Enquêtes, un sous-dossier par entreprise. Facultatif : sans droit sur Drive, la photo reste simplement dans Badges. */
+function badgesPhotoArchiver_(req) {
+  badgesDroit_(req, 2);
+  try {
+    var m = /^data:image\/jpeg;base64,(.+)$/.exec(String(req.photo || '')); if (!m) return { ok: false, message: 'photo invalide' };
+    var parent = DriveApp.getFileById(enqClasseur_().getId()).getParents().next();
+    var it = parent.getFoldersByName('Photos badges'), racine = it.hasNext() ? it.next() : parent.createFolder('Photos badges');
+    var ent = badgesVider_(req.entreprise).replace(/[\\/:*?"<>|]+/g, '-') || 'Sans entreprise';
+    var it2 = racine.getFoldersByName(ent), dossier = it2.hasNext() ? it2.next() : racine.createFolder(ent);
+    var nom = (badgesVider_(req.nom).toUpperCase() + ' ' + badgesVider_(req.prenom)).trim().replace(/[\\/:*?"<>|]+/g, '-') + '.jpg';
+    var ex = dossier.getFilesByName(nom); while (ex.hasNext()) ex.next().setTrashed(true);
+    dossier.createFile(Utilities.newBlob(Utilities.base64Decode(m[1]), 'image/jpeg', nom));
+    return { ok: true, dossier: 'Photos badges/' + ent };
+  } catch (e) { return { ok: false, message: e.message }; }
+}
 function badgesVider_(s) { return Badges.vide(s).slice(0, 200); }
 function badgesPersonnesSauver_(req) {
   badgesDroit_(req, 2);

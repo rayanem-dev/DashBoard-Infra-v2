@@ -38,6 +38,9 @@
         return r;
       });
     },
+    ficheEnquetes: function (payload) { return Api.call('badges_fiche', payload); },
+    majEnquetes: function (payload) { return Api.call('badges_fiche_maj', payload); },
+    archiverPhoto: function (payload) { return Api.call('badges_photo_archiver', payload); },
     verifierEnquetes: function (payload) { return Api.call('badges_enquetes_verifier', payload); },
     saisirEnquetes: function (payload) { return Api.call('badges_enquetes_saisir', payload); },
     ecrirePersonnes: function (liste, x, supprimer) {

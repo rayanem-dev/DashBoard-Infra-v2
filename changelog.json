@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-21-29",
+    "date": "2026-10-21",
+    "title": "Version 5.9.0 — Badges : fiche des Enquêtes, photos, ordre des onglets ; invitations",
+    "changes": [
+      "Badges › Modifier : les informations des Enquêtes (naissance, lieu, père, mère, adresse, date d'embauche, n° d'identification, acte de naissance, téléphone) sont affichées et peuvent être renseignées ; elles sont écrites dans l'onglet de la personne, sans jamais rien effacer.",
+      "Photos : recadrées au format du badge (22 × 28 mm, 264 × 336 px, moins de 40 ko) ; une copie est classée dans « Photos badges / entreprise » à côté du fichier Enquêtes quand l'accès à Drive est autorisé.",
+      "Badges : onglets dans l'ordre du travail (Saisie, Entreprises & contrats, Badges) ; l'onglet utilisé en dernier est retenu.",
+      "Privilèges : bouton « Inviter » (par compte, ou pour les comptes affichés) : e-mail avec le lien, la première connexion et la liste des applications accordées."
+    ]
+  },
+  {
     "id": "2026-10-21-28",
     "date": "2026-10-21",
     "title": "Version 5.8.2 — Liste imprimée : signataires",

@@ -40,7 +40,7 @@ var BadgesApp = (function () {
   // ---------- Application ----------
   function monter(racine, opts) {
     opts = opts || {};
-    var adapter = opts.adapter || adaptateurLocal(), cleReglages = (opts.prefixe || 'badges_') + 'reglages';
+    var adapter = opts.adapter || adaptateurLocal(), cleReglages = (opts.prefixe || 'badges_') + 'reglages', cleOnglet = (opts.prefixe || 'badges_') + 'onglet';
     var S = { cfg: B.config(Object.assign({}, window.BADGES_CONFIG || {}, lire(cleReglages, {}))), personnes: [], entreprises: [], hist: [], sel: {}, onglet: 'badges', q: '', fe: '', util: '', info: '' };
     var annee = new Date().getFullYear();
     racine.className = (racine.className ? racine.className + ' ' : '') + 'bdg-app';
@@ -70,19 +70,24 @@ var BadgesApp = (function () {
     }
     function entrepriseDe(nom) { var k = B.norm(nom), r = null; S.entreprises.forEach(function (e) { if (B.norm(e.nom) === k) r = e; }); return r; }
 
+    function ongletInitial() {
+      var m = ''; try { m = localStorage.getItem(cleOnglet) || ''; } catch (e) { m = ''; }
+      var ok = { entreprises: 1, badges: 1, historique: 1, reglages: 1 }; if (adapter.saisirEnquetes && !S.lecture) ok.saisie = 1;
+      return ok[m] ? m : (ok.saisie ? 'saisie' : 'badges');
+    }
     function recharger(force) {
-      return adapter.charger(force).then(function (d) { S.personnes = d.personnes || []; S.entreprises = d.entreprises || []; S.hist = d.historique || []; S.util = d.utilisateur || ''; S.lecture = d.niveau !== undefined && d.niveau < 2; S.info = d.info || ''; S.avert = d.avertissements || []; dessiner(); }).catch(echec);
+      return adapter.charger(force).then(function (d) { S.personnes = d.personnes || []; S.entreprises = d.entreprises || []; S.hist = d.historique || []; S.util = d.utilisateur || ''; S.lecture = d.niveau !== undefined && d.niveau < 2; S.info = d.info || ''; S.avert = d.avertissements || []; if (!S.initialise) { S.initialise = true; S.onglet = ongletInitial(); } dessiner(); }).catch(echec);
     }
 
     // ----- Barre d'onglets -----
     function onglets() {
       var nav = el('div', 'bdg-onglets');
-      var liste = [['badges', 'Badges'], ['entreprises', 'Entreprises & contrats']];
+      var liste = []; // ordre du travail : saisir, vérifier l'entreprise, imprimer
       if (adapter.saisirEnquetes && !S.lecture) liste.push(['saisie', 'Saisie Enquêtes']);
-      liste.push(['historique', 'Historique'], ['reglages', 'Réglages']);
+      liste.push(['entreprises', 'Entreprises & contrats'], ['badges', 'Badges'], ['historique', 'Historique'], ['reglages', 'Réglages']);
       liste.forEach(function (o) {
         var b = el('button', 'bdg-onglet' + (S.onglet === o[0] ? ' actif' : ''), o[1]); b.type = 'button';
-        b.onclick = function () { S.onglet = o[0]; dessiner(); }; nav.appendChild(b);
+        b.onclick = function () { S.onglet = o[0]; try { localStorage.setItem(cleOnglet, o[0]); } catch (e) { /* rien */ } dessiner(); }; nav.appendChild(b);
       });
       return nav;
     }
@@ -161,14 +166,17 @@ var BadgesApp = (function () {
       return d;
     }
     function fermer(d) { if (d.close) d.close(); else d.remove(); }
+    /** Photo prête pour le badge : recadrée au format de la case (22 × 28 mm) autour du centre, 264 × 336 px, JPEG léger (moins de 40 ko) : plus aucune taille à gérer. */
     function reduirePhoto(fichier, fin) {
       var r = new FileReader();
       r.onload = function () {
         var im = new Image();
         im.onload = function () {
-          var max = 260, k = Math.min(1, max / Math.max(im.width, im.height)), cv = document.createElement('canvas');
-          cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
-          fin(cv.toDataURL('image/jpeg', 0.82));
+          var W = 264, H = 336, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+          var k = Math.max(W / im.width, H / im.height), sw = W / k, sh = H / k, g = cv.getContext('2d');
+          g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.drawImage(im, (im.width - sw) / 2, Math.max(0, (im.height - sh) / 3), sw, sh, 0, 0, W, H); // un peu plus haut que le centre : le visage
+          var q = 0.86, u = cv.toDataURL('image/jpeg', q); while (u.length > 45000 && q > 0.4) { q -= 0.08; u = cv.toDataURL('image/jpeg', q); }
+          fin(u);
         };
         im.onerror = function () { dire('Image illisible', true); }; im.src = r.result;
       };
@@ -193,13 +201,33 @@ var BadgesApp = (function () {
       var ph = el('div', 'bdg-photo-ed'), vue = el('img'); vue.alt = ''; if (x.photo) vue.src = x.photo; else vue.hidden = true;
       var fi = el('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.onchange = function () { if (fi.files[0]) reduirePhoto(fi.files[0], function (u) { x.photo = u; vue.src = u; vue.hidden = false; }); };
       ph.appendChild(vue); ph.appendChild(champ('Photo (facultatif)', fi)); ph.appendChild(bouton('Retirer la photo', function () { x.photo = ''; vue.hidden = true; }, 'mini')); corps.appendChild(ph);
+      // Informations des Enquêtes (naissance, parents, adresse…) : lues à la demande dans l'onglet de la personne, pour renseigner ce qui manque
+      var ENQ = [['naissance', 'Date de naissance'], ['lieu', 'Lieu de naissance'], ['pere', 'Père'], ['mere', 'Mère'], ['adresse', 'Adresse'], ['embauche', 'Date d\'embauche'], ['nin', 'N° d\'identification national'], ['acte', 'N° acte de naissance'], ['tel', 'Téléphone']];
+      var FI = null, F0 = {}, zoneEnq = null;
+      if (!neuf && p.source === 'enquetes' && adapter.ficheEnquetes && !S.lecture) {
+        zoneEnq = el('div', 'bdg-champ-large'); zoneEnq.appendChild(el('p', 'bdg-note', 'Informations des Enquêtes administratives : lecture…')); corps.appendChild(zoneEnq);
+        adapter.ficheEnquetes({ onglet: p.onglet, nom: p.nom, prenom: p.prenom }).then(function (r) {
+          zoneEnq.textContent = ''; zoneEnq.appendChild(el('h4', null, 'Enquêtes administratives — ligne ' + r.ligne)); FI = {};
+          var g = el('div', 'bdg-grille');
+          ENQ.forEach(function (c) { if (r.colonnes.indexOf(c[0]) < 0) return; F0[c[0]] = r.champs[c[0]] || ''; FI[c[0]] = saisie(F0[c[0]]); g.appendChild(champ(c[1] + (F0[c[0]] ? '' : ' — à renseigner'), FI[c[0]])); });
+          zoneEnq.appendChild(g); zoneEnq.appendChild(el('p', 'bdg-note', 'Ce que vous renseignez ici est écrit dans l\'onglet des Enquêtes (rien n\'est effacé).'));
+        }).catch(function (e) { zoneEnq.textContent = ''; zoneEnq.appendChild(el('p', 'bdg-note bdg-err', 'Fiche des Enquêtes indisponible : ' + e.message)); });
+      }
       var d, ok = bouton('Enregistrer', function () {
         ['nom', 'prenom', 'fonction', 'entreprise', 'contrat', 'structure', 'nomAr', 'prenomAr'].forEach(function (k) { x[k] = B.vide(I[k].value); });
         if (!x.nom && !x.prenom) { dire('Indiquez au moins un nom.', true); return; }
         if (sansContrat(x)) { dire('Choisissez le contrat de « ' + x.entreprise + ' » : cette entreprise en a plusieurs.', true); return; }
         x.verifier = false;
         var liste = S.personnes.slice(); if (neuf) liste.push(x); else liste = liste.map(function (q) { return q.id === x.id ? x : q; });
-        adapter.ecrirePersonnes(liste, x).then(function () { dire('Enregistré'); fermer(d); return recharger(); }).catch(echec);
+        // mise à jour des Enquêtes : champs renseignés ici + nom / prénom arabes, fonction, structure modifiés (jamais d'effacement)
+        var majEnq = null;
+        if (FI && adapter.majEnquetes) {
+          var ch = {}; Object.keys(FI).forEach(function (k) { var v = B.vide(FI[k].value); if (v && v !== F0[k]) ch[k] = v; });
+          ['nomAr', 'prenomAr', 'fonction', 'structure'].forEach(function (k) { if (x[k] && x[k] !== (p[k] || '')) ch[k] = x[k]; });
+          if (Object.keys(ch).length) majEnq = { onglet: p.onglet, nom: p.nom, prenom: p.prenom, champs: ch };
+        }
+        if (x.photo && x.photo !== (p && p.photo) && /^data:image/.test(x.photo) && adapter.archiverPhoto) adapter.archiverPhoto({ entreprise: x.entreprise, nom: x.nom, prenom: x.prenom, photo: x.photo }).catch(function () { /* classement Drive facultatif */ });
+        adapter.ecrirePersonnes(liste, x).then(function () { return majEnq ? adapter.majEnquetes(majEnq) : null; }).then(function (r) { dire(r && r.ecrits && r.ecrits.length ? 'Enregistré · Enquêtes mises à jour (' + r.ecrits.length + ' champ(s))' : 'Enregistré'); fermer(d); return recharger(true); }).catch(echec);
       }, 'prim');
       var bs = [bouton('Annuler', function () { fermer(d); })];
       if (!neuf) bs.push(bouton('Supprimer', function () { if (!confirm('Supprimer cette personne de la liste ? L\'historique est conservé.')) return; adapter.ecrirePersonnes(S.personnes.filter(function (q) { return q.id !== x.id; }), x, true).then(function () { fermer(d); return recharger(); }).catch(echec); }, 'danger'));

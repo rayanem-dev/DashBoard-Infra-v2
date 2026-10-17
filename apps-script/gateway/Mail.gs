@@ -46,7 +46,21 @@ var Mail = (function () {
         '<p>Le service est modifié dans l\'Organigramme (BDDORGA) et dans le portail.</p><p>— Tableau de bord Division Infrastructure</p>'
     });
   }
-  return { masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande, envoyerAffectation: envoyerAffectation };
+  /** Invitation à se connecter : lien, première connexion, et brève présentation des applications accordées (menu = Droits.menu). */
+  function corpsInvitation(nom, menu, lien, mdpDefaut) {
+    var apps = [];
+    (menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { apps.push('<li><b>' + esc(a.titre) + '</b>' + (a.description ? ' — ' + esc(String(a.description).slice(0, 140)) : '') + '</li>'); }); });
+    return '<p>Bonjour ' + esc(nom) + ',</p>' +
+      '<p>Votre accès au <b>portail de la Division Infrastructure</b> est ouvert.</p>' +
+      '<p><b>Se connecter :</b> <a href="' + esc(lien) + '">' + esc(lien) + '</a></p>' +
+      '<p><b>Première connexion :</b> saisissez votre adresse e-mail professionnelle' + (mdpDefaut ? ' et le mot de passe provisoire <b>0000</b>, puis choisissez votre mot de passe.' : ', puis « mot de passe oublié » pour recevoir un code à usage unique et choisir votre mot de passe.') + '</p>' +
+      (apps.length ? '<p>Voici les applications auxquelles vous avez accès :</p><ul>' + apps.join('') + '</ul>' : '<p>Aucune application ne vous est accordée pour le moment ; elles apparaîtront ici dès que vos droits seront configurés.</p>') +
+      '<p>Besoin d\'aide ? Répondez à ce message ou contactez le secrétariat.</p><p>— Division Infrastructure RNS</p>';
+  }
+  function envoyerInvitation(email, nom, menu, lien, mdpDefaut) {
+    MailApp.sendEmail({ to: email, name: 'Division Infrastructure RNS', subject: 'Invitation : votre accès au portail Division Infrastructure', htmlBody: corpsInvitation(nom, menu, lien, mdpDefaut) });
+  }
+  return { corpsInvitation: corpsInvitation, envoyerInvitation: envoyerInvitation, masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande, envoyerAffectation: envoyerAffectation };
 })();
 
 if (typeof module !== 'undefined') module.exports = Mail;

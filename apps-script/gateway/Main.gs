@@ -79,6 +79,9 @@ function route_(req) {
     case 'badges_donnees': return badgesDonnees_(req);
     case 'badges_enquetes_verifier': return badgesEnquetesVerifier_(req);
     case 'badges_enquetes_saisir': return badgesEnquetesSaisir_(req);
+    case 'badges_fiche': return badgesFiche_(req);
+    case 'badges_fiche_maj': return badgesFicheMaj_(req);
+    case 'badges_photo_archiver': return badgesPhotoArchiver_(req);
     case 'badges_personnes_sauver': return badgesPersonnesSauver_(req);
     case 'badges_entreprises_sauver': return badgesEntreprisesSauver_(req);
     case 'badges_numeroter': return badgesNumeroter_(req);
@@ -114,6 +117,23 @@ function route_(req) {
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles) }; }),
         utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
       };
+    }
+    case 'admin_inviter': {
+      // Invitation par e-mail : lien, première connexion et applications accordées. { emails: [...] } ou { email }
+      var ai = admin_(req), cibles = Array.isArray(req.emails) ? req.emails : (req.email ? [req.email] : []);
+      var lienSite = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/';
+      lienSite = lienSite.replace(/\/?$/, '/') + 'connexion.html';
+      var envoyes = [], echecs = [], quota = typeof MailApp !== 'undefined' && MailApp.getRemainingDailyQuota ? MailApp.getRemainingDailyQuota() : 100;
+      cibles.slice(0, 60).forEach(function (em) {
+        try {
+          var ui = Store.utilisateur(em); if (!ui || String(ui.actif) === '0') { echecs.push(em + ' : compte inactif ou inconnu'); return; }
+          var dest = Auth.adresseEnvoi(ui); if (!dest) { echecs.push(em + ' : pas d\'adresse e-mail valide'); return; }
+          if (envoyes.length >= quota) { echecs.push(em + ' : quota d\'envoi du jour atteint'); return; }
+          Mail.envoyerInvitation(dest, Annuaire.nomAffichable(ui.nom, ui.email), Droits.menu(acces_(ui), Store.table('Modules'), Store.table('Applications'), ui.role), lienSite, Auth.estParDefaut(ui.email));
+          Store.journal('invitation', ai.email, ui.email); envoyes.push(ui.email);
+        } catch (e) { echecs.push(em + ' : ' + e.message); }
+      });
+      return { envoyes: envoyes, echecs: echecs };
     }
     case 'admin_usurper': {
       var au = admin_(req); cible_(req.email);
