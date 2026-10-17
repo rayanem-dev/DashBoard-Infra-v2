@@ -83,3 +83,21 @@ test('rafraîchissement en bloc = traitement ligne par ligne', () => {
   assert.match(com(22), /ARRÊT DE CHANTIER depuis le .*reprise à venir.*à calculer à la reprise/);
   assert.match(com(17), /prolongation de 30 j/);
 });
+
+test('onEdit : le reclassement se déclenche dès que le statut change, même si la colonne modifiée n\'est pas celle du statut', () => {
+  const lignes = [[jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'U', jours(-330), jours(-330), 6, '', '', '', '', '', '', 200, '']];
+  const essai = (colonneModifiee, lignesTest) => {
+    const F = fabrique(lignesTest || lignes); let tri = 0;
+    ctx.trierParStatut = () => { tri += 1; };
+    ctx.__F = F.sheet; ctx.__col = colonneModifiee;
+    const feuille = Object.assign({}, F.sheet, { getName: () => 'Suivi CPM' });
+    ctx.__e = { source: { getActiveSheet: () => feuille, getSheetByName: () => null }, range: { getRow: () => 3, getNumRows: () => 1, getColumn: () => colonneModifiee, getNumColumns: () => 1 } };
+    vm.runInContext('onEdit(__e)', ctx);
+    return tri;
+  };
+  assert.strictEqual(essai(18), 1);   // colonne « Prolongation 1 (jours) » : échu → exécution → reclassement
+  const stable = [[jours(-100), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'V', jours(-100), jours(-100), 6, '', '', '', '', '', '', '', '']];
+  assert.strictEqual(essai(8, stable), 0);   // colonne « Attribution » sans changement de statut : pas de tri
+  const durée = [[jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'W', jours(-330), jours(-330), 6, '', '', '', '', '', '', 200, '']];
+  assert.strictEqual(essai(11, durée), 1);   // colonne « Durée » : le statut change tout seul → reclassement
+});

@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  SCRIPT SUIVI CPM — VERSION 5.4          (à chaque modification : augmenter VERSION_SCRIPT ci-dessous et ajouter une ligne ici)
+ *  SCRIPT SUIVI CPM — VERSION 5.5          (à chaque modification : augmenter VERSION_SCRIPT ci-dessous et ajouter une ligne ici)
  *  Historique :
  *   5.0  Colonnes retrouvées par leur en-tête, Dead Line, couleurs, échéance, durée de passation, tri des colonnes de saisie
  *   5.1  À 100 % d'avancement : le statut passe en « Contrat en exécution »
@@ -8,6 +8,7 @@
  *   5.3  Rafraîchissement complet en bloc (quelques secondes) ; durée en mois ou en jours (« Unité durée », fin incluse) ;
  *        prolongations (durée ou date de fin) ; un contrat échu prolongé repasse en exécution
  *   5.4  Arrêts / reprises de chantier (jusqu'à 2) ; commentaire automatique tant que le contrat est en exécution ; menu « Suivi CPM »
+ *   5.5  Reclassement automatique dès que le statut change, quelle que soit la colonne modifiée (prolongation, arrêt, durée, dates…)
  * ============================================================
  *  Les colonnes sont retrouvées par leur NOM D'EN-TÊTE (ligne 2)
  *  et non par numéro fixe : plus aucun risque de décalage si une
@@ -47,7 +48,7 @@
  * ============================================================
  */
 
-const VERSION_SCRIPT = '5.4';
+const VERSION_SCRIPT = '5.5';
 const HEADER_ROW = 2;
 const DATA_START_ROW = 3;
 
@@ -133,6 +134,10 @@ function onEdit(e) {
   var startCol = range.getColumn();
   var numCols = range.getNumColumns();
 
+  // statuts des lignes modifiées AVANT traitement : si l'un change (quelle que soit la colonne éditée), la feuille est reclassée
+  var statutCol0 = col(map, H.STATUT, true), premiere = Math.max(startRow, DATA_START_ROW), nbLignes = startRow + numRows - premiere;
+  var statutsAvant = nbLignes > 0 ? sheet.getRange(premiere, statutCol0, nbLignes, 1).getValues() : [];
+
   for (var r = 0; r < numRows; r++) {
     var row = startRow + r;
     if (row < DATA_START_ROW) continue;
@@ -177,7 +182,8 @@ function onEdit(e) {
 
   // 📚 Classement automatique : quand le Statut (ou ce qui le fait changer) est modifié
   var touche = [col(map, H.STATUT, true), col(map, H.ETAPE, true), col(map, H.POURCENT, true), col(map, H.TYPE, true), map[H.PJ1], map[H.PJ2], map[H.PROLONG1], map[H.PROLONG2], map[H.ARRET1], map[H.REPRISE1], map[H.ARRET2], map[H.REPRISE2]].filter(Boolean).some(function (c) { return c >= startCol && c < startCol + numCols; });
-  if (touche && startRow + numRows - 1 >= DATA_START_ROW) trierParStatut(sheet, map);
+  var statutChange = nbLignes > 0 && sheet.getRange(premiere, statutCol0, nbLignes, 1).getValues().some(function (x, i) { return x[0] !== statutsAvant[i][0]; });
+  if ((touche || statutChange) && startRow + numRows - 1 >= DATA_START_ROW) trierParStatut(sheet, map);
 }
 
 // ---------- Convertit un numéro de colonne (1, 2, 3...) en lettre (A, B, C...) ----------
