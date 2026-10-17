@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="css/charte.css?v=5.4.2">
+<link rel="stylesheet" href="css/charte.css?v=5.4.3">
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
@@ -338,7 +338,14 @@
         $('b-rot').textContent = 'Modifier ma rotation';
       }
       $('b-rot').onclick = function () { Rotation.ouvrir({ valeurs: r.rotation, onOk: function () { dessinerStatut(nomAffiche); } }); };
-    }).catch(function () { $('statut').hidden = true; });
+    }).catch(function () {
+      // Lecture impossible (réseau, serveur Google lent) : on le dit et on propose de réessayer, au lieu de faire disparaître le volet
+      var box = $('statut'); box.hidden = false;
+      $('j-reste').textContent = '–'; $('j-lib').textContent = ''; $('jauge').className = 'jauge vide'; $('j-barre').hidden = true; $('j-dates').textContent = '';
+      var pill = $('j-etat'); pill.className = 'etat-pill neutre'; pill.textContent = 'Indisponible';
+      $('phrase').textContent = 'Votre rotation n\'a pas pu être lue pour le moment (serveur Google lent).';
+      $('b-rot').textContent = 'Réessayer'; $('b-rot').onclick = function () { dessinerStatut(nomAffiche); };
+    });
   }
 
   if (window.BoutonInstaller) BoutonInstaller.monter({ cible: '#zone-installer', langue: 'fr', serviceWorker: 'sw.js' });

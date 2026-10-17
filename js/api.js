@@ -176,7 +176,7 @@
   function niveauRap() { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return NIV_RAP[demoState.user.role] || 0; }
   function vuRap(r, niv) { var u = demoState.user; return niv >= 3 || r.auteur_email === u.email || (niv === 2 && r.service === u.service); }
 
-  var LECTURE = /^(liste|menu|donnees|reprendre|annuaire|cpm_journal|planning|rotations|badges_donnees)/;
+  var LECTURE = /^(liste|menu|situation|donnees|reprendre|annuaire|cpm_journal|planning|rotations|badges_donnees)/;
   function erreur(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
 
   function demo(action, p) {

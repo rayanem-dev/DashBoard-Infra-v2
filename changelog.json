@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-08",
+    "date": "2026-10-21",
+    "title": "Version 5.4.3 — Rotation : relecture automatique et message de secours",
+    "changes": [
+      "Accueil : la lecture de la rotation est rejouée automatiquement si le serveur Google répond mal, et le volet ne disparaît plus : il affiche « Indisponible » avec un bouton « Réessayer »."
+    ]
+  },
+  {
     "id": "2026-10-21-07",
     "date": "2026-10-21",
     "title": "Version 5.4.2 — Fiche personnelle encore plus compacte",
