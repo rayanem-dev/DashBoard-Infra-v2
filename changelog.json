@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-20",
+    "date": "2026-10-21",
+    "title": "Version 5.5.6 — Enquêtes : plus d'avertissement pour un agent déjà au bon contrat",
+    "changes": [
+      "Prises en charge : un agent déjà inscrit dans l'onglet de son prestataire et de son contrat est ignoré directement, sans fenêtre d'avertissement. L'avertissement n'apparaît que s'il figure chez un autre prestataire ou un autre contrat."
+    ]
+  },
+  {
     "id": "2026-10-21-19",
     "date": "2026-10-21",
     "title": "Version 5.5.5 — Prises en charge : numéro de chambre",

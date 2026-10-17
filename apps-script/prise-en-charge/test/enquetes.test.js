@@ -137,3 +137,10 @@ test('numéro d\'agent : « رقم الهاتف » n\'est pas la colonne du num�
   const lignes = [['رقم الهاتف', 'رقم', 'بالفرنسية', 'اللقب'], ['0555', '', 'A B', 'x']];
   assert.equal(E('enqColNumero_', lignes, { h: 0, fr: 2, fonction: -1, prenomAr: -1, nomAr: 3 }), 1);
 });
+
+test('déjà chez ce contrat : ignoré sans avertir', () => {
+  const idx = [{ nom: 'CHAREF', prenom: 'Kamel', onglet: 'SARL ACOSCO · 24.INFRA.25' }, { nom: 'DUPONT', prenom: 'Paul', onglet: 'ENAGEO' }];
+  assert.equal(E('enqDejaChezCeContrat_', idx, 'SARL ACOSCO · 24.INFRA.25', 'CHAREF', 'Kamel'), true);
+  assert.equal(E('enqDejaChezCeContrat_', idx, 'SARL ACOSCO · 24.INFRA.25', 'DUPONT', 'Paul'), false);
+  assert.equal(E('enqDejaChezCeContrat_', idx, '', 'CHAREF', 'Kamel'), false);
+});
