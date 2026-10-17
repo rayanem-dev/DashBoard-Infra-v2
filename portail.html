@@ -54,6 +54,10 @@
         </div>
         <a class="par-sijil" id="sijil" href="https://rayanem-dev.github.io/pointage-app/" target="_blank" rel="noopener" title="Sijil — gestion des pointages et des rotations"><img src="img/sijil-symbole.png" alt="" width="14" height="14"><span>Propulsé par <b>Sijil</b></span></a>
       </div>
+      <aside class="mes-apps" id="mes-apps" aria-label="Mes applications" hidden>
+        <h3>Mes applications <small id="mes-apps-n"></small></h3>
+        <div class="mes-apps-grille" id="mes-apps-grille"></div>
+      </aside>
     </div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
     <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
@@ -132,6 +136,19 @@
   }
 
   // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
+  // Mes applications : une icône par application autorisée pour cet utilisateur (nom au survol), même ouverture que les cartes du bas
+  function mesApps(menu) {
+    var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0; g.textContent = '';
+    (menu || []).forEach(function (m) {
+      (m.apps || []).forEach(function (a) {
+        var u = lienSur(a.url); if (u === '#' || vues[u]) return; vues[u] = 1; n += 1;
+        var c = el('a', 'mes-app', a.emoji || '📄'); c.href = u; c.dataset.nom = a.titre || ''; c.title = a.titre || ''; c.setAttribute('aria-label', a.titre || '');
+        if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
+        g.appendChild(c);
+      });
+    });
+    $('mes-apps-n').textContent = n ? '(' + n + ')' : ''; box.hidden = !n;
+  }
   function raccourcis(menu) {
     var nav = $('raccourcis'); nav.textContent = '';
     function niv(id) { var m = (menu || []).filter(function (x) { return x.id === id; })[0]; return m ? m.niveau : 0; }
@@ -181,7 +198,7 @@
   Annuaire.charger().then(function () { filtrer(); });
 
   function dessiner(r) {
-    dessinerFiche(r.user); raccourcis(r.menu);
+    dessinerFiche(r.user); raccourcis(r.menu); mesApps(r.menu);
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
     var zone = $('modules'); zone.textContent = ''; outilsAccueil(r.menu);
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }

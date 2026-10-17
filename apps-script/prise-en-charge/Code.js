@@ -418,7 +418,10 @@ function soumettreFormulairePEC(formData) {
     let liens = [];
 
     if (formData.genererPEC) {
-      const resultatPEC = genererPEC(ss, true);
+      // Fonction(s) des personnes, écrite(s) sous la base dans la case « Observations » (case à cocher, facultatif)
+      const fonctions = [];
+      (formData.personnes || []).forEach(p => { const f = (p.fonction || "").toString().trim(); if (p.nom && f && fonctions.indexOf(f) === -1) fonctions.push(f); });
+      const resultatPEC = genererPEC(ss, true, { observation: formData.fonctionObservation ? fonctions.join(" / ") : "" });
       if (resultatPEC && resultatPEC.url) liens.push({ nom: "Prise en charge (PDF)", url: resultatPEC.url });
     }
 
@@ -715,9 +718,10 @@ function extraireDonneesPEC(doc) {
 /******************************
  *  GÉNÉRATION DE LA PRISE EN CHARGE
  ******************************/
-function genererPEC(ss, silencieux) {
+function genererPEC(ss, silencieux, options) {
   ss = ss || SpreadsheetApp.getActiveSpreadsheet();
   silencieux = silencieux || false;
+  options = options || {};
   const sheet = ss.getSheetByName("PEC");
 
   const prestataireCell = sheet.getRange("C2").getValue();
@@ -861,6 +865,11 @@ function genererPEC(ss, silencieux) {
   // le tableau ne garde pas un grand espace inutilisé quand il y a peu de monde.
   for (let i = totalSlots - 1; i >= totalUtilise; i--) {
     try { nomCell.removeChild(nomCell.getChild(i)); } catch (e) { /* dernière ligne de la cellule, on ne peut pas la retirer */ }
+  }
+
+  // Observations : la fonction, sous la base de vie / remplacement / chambre (si demandé)
+  if (options.observation) {
+    try { dataRow.getCell(dataRow.getNumCells() - 1).appendParagraph(options.observation).setAlignment(DocumentApp.HorizontalAlignment.CENTER); } catch (e) { /* facultatif : ne bloque jamais la génération */ }
   }
 
   // Noms toujours au milieu de leur case : centrés horizontalement et verticalement

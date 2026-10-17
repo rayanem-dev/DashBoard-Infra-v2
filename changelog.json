@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-21-01",
+    "date": "2026-10-21",
+    "title": "Version 5.3.0 — Accueil en trois volets : « Mes applications »",
+    "changes": [
+      "Accueil : la fiche de l'agent est divisée en trois volets — fiche, rotation et « Mes applications » (une icône par application autorisée, nom au survol).",
+      "Le lien « Rapport Hebdomadaire Infra » ouvre le rapport Google Slides actuel (diapositive 14) ; le lien du Suivi CPM pointe sur le bon fichier.",
+      "Prises en charge : option « fonction dans la case Observations » ; noms centrés ; onglets des Enquêtes créés et normalisés (ENTREPRISE · contrat)."
+    ]
+  },
+  {
     "id": "2026-10-20-11",
     "date": "2026-10-20",
     "title": "Version 5.2.5 — Pages plus rapides à s'afficher",

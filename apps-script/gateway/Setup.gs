@@ -93,6 +93,24 @@ function preparerLiens_() {
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera */ }
 }
+/** Anciennes adresses → adresses actuelles (fichiers remplacés : rapport hebdomadaire, Suivi CPM). Pur : testé en Node. */
+var REMPLACEMENTS_LIENS_ = [
+  [/docs\.google\.com\/presentation\/d\/(?:1FLFP453C8F1Sb8hZBnxboqoJtSq33rEu|1CF4JWBYkPvvlU0XiwVN_sQhxxdM29pgH)\/[^\s"]*/, 'docs.google.com/presentation/d/1SyC226_iZHhAs01-NHtR-wyEtFOTAmOkzpSjPo1jm20/edit?slide=id.p14#slide=id.p14'],
+  [/docs\.google\.com\/spreadsheets\/d\/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY\/[^\s"]*/, 'docs.google.com/spreadsheets/d/1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I/edit?usp=sharing']
+];
+function lienActuel_(url) { var u = String(url == null ? '' : url); REMPLACEMENTS_LIENS_.forEach(function (r) { u = u.replace(r[0], r[1]); }); return u; }
+/** Met à jour, une seule fois, les liens du catalogue vers le rapport hebdomadaire (Google Slides) et le Suivi CPM actuels. Idempotent. */
+function preparerLiensRapport_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('LIENS_RAPPORT_PRET') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
+    var v = sh.getDataRange().getValues(), iU = v[0].map(String).indexOf('url');
+    for (var i = 1; i < v.length; i += 1) { var u = String(v[i][iU]), n = lienActuel_(u); if (n !== u) sh.getRange(i + 1, iU + 1).setValue(n); }
+    props.setProperty('LIENS_RAPPORT_PRET', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera */ }
+}
 /** Ajoute au catalogue la carte « Contrôle de l'annuaire » (administration, secrétariat) une seule fois. Idempotent. */
 function preparerAnnuaire_() {
   var props = PropertiesService.getScriptProperties();
@@ -398,3 +416,4 @@ function diagnostiquerCompte(email) {
   else l.push('mot de passe : choisi par la personne (le provisoire ne s\'applique pas)');
   Logger.log(l.join('\n'));
 }
+if (typeof module !== 'undefined') module.exports = { lienActuel_: lienActuel_ };

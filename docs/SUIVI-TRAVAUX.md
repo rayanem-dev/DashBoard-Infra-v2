@@ -35,3 +35,8 @@ Mis à jour : 2026-10-18. Légende : ✅ fait · 🔄 en cours · ⏳ à faire �
 - Code : `UtilisateursBDDORGA.gs`, `Store.gs` (lecture/écriture), `Synchro.gs` (fonctions de migration). Désactivé tant que la propriété `UTILISATEURS_SOURCE` n'est pas `bddorga`.
 - Mise en service (éditeur de la passerelle) : `apercuMigrationBDDORGA` → `migrerVersBDDORGA` → `activerBDDORGADirect`. Retour arrière : `desactiverBDDORGADirect`.
 - Colonnes ajoutées à droite de BDDORGA : Rôle, Actif, E-mail de contact, Civilité (elles font foi une fois créées). Mots de passe : toujours dans Gateway_Secrets.
+
+## Base unique (Gateway_DB → BDDORGA)
+- Fichier `apps-script/gateway/BaseUnique.gs` : `apercuFusionBase` → `fusionnerBase` → `activerBaseUnique` (recopie finale puis `DB_ID` = BDDORGA, ancien identifiant gardé dans `DB_ID_ANCIEN`) ; retour : `desactiverBaseUnique`.
+- Les empreintes de mots de passe restent dans Gateway_Secrets (jamais copiées). Les onglets déjà présents dans BDDORGA ne sont jamais écrasés.
+- Avant d'ouvrir plus largement BDDORGA : retirer les mots de passe en clair des onglets WiFi / Personnel / Feuille 5.

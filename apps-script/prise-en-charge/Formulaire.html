@@ -180,6 +180,11 @@
 
     <label>Fonction <span style="font-weight:400;color:var(--text-muted);font-size:10.5px;text-transform:none;letter-spacing:0;">(facultatif : appliquée aux personnes sans fonction)</span></label>
     <input type="text" id="fonctionDefaut" placeholder="ex. Conducteur de travaux">
+    <div class="ligne-check" style="margin:6px 0 2px;">
+      <input type="checkbox" id="fonctionObs">
+      <label>Écrire la fonction dans la case « Observations » de la prise en charge</label>
+      <span style="font-size:11px;color:var(--text-muted);font-weight:500;">facultatif</span>
+    </div>
 
     <div class="form-row">
       <div class="field">
@@ -593,6 +598,7 @@
       genererAuto: document.getElementById('genererAuto').checked,
       valable2Mois: document.getElementById('valable2Mois').checked,
       injecterEnquetes: document.getElementById('injecterEnquetes').checked,
+      fonctionObservation: document.getElementById('fonctionObs').checked,
       personnes: personnes
     };
 
