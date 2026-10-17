@@ -3,7 +3,7 @@ const test = require('node:test'), assert = require('node:assert'), vm = require
 const code = fs.readFileSync(path.join(__dirname, '..', 'SuiviCPM-complet.gs'), 'utf8');
 
 function fabrique(lignes) {
-  const entetes = ['Date debut Cahier des Charges', 'Type', 'Etape', 'Date Limite', '', '% Réalisé', 'Statut', 'Attribution', 'Date signature de contrat', 'Date ODS', 'Durée du contrat (mois)', 'Échéance', 'Date Attribution Finale', 'Durée Passation (jours)'];
+  const entetes = ['Date debut Cahier des Charges', 'Type', 'Etape', 'Date Limite', '', '% Réalisé', 'Statut', 'Attribution', 'Date signature de contrat', 'Date ODS', 'Durée du contrat (mois)', 'Échéance', 'Date Attribution Finale', 'Durée Passation (jours)', 'Fin après prolongation 1', 'Fin après prolongation 2'];
   const nc = entetes.length, grille = [[], entetes.map(h => ({ v: h, bg: '#ffffff', fc: '#000000' }))];
   grille[0] = entetes.map(() => ({ v: '', bg: '#ffffff', fc: '#000000' }));
   lignes.forEach(l => grille.push(entetes.map((_, i) => ({ v: l[i] === undefined ? '' : l[i], bg: '#ffffff', fc: '#000000' }))));
@@ -35,7 +35,11 @@ const LIGNES = [
   ['', 'DAO', 'x', jours(5), '', 1, 'Attribué', '', '', '', '', '', '', ''],                                                 // pas de Date Début : intouchée
   [jours(-60), 'CF', 'x', jours(10), '', 0.3, 'Bloqué', '', '', '', '', '', jours(-10), ''],                                // bloqué + durée de passation
   [jours(-10), 'CF', 'x', '', '', 0, 'infructueux', '', '', '', '', '', '', ''],
-  [jours(-10), 'CF', 'x', '', '', 0, '', '', '', '', '', '', '', '']                                                         // statut vide
+  [jours(-10), 'CF', 'x', '', '', 0, '', '', '', '', '', '', '', ''],                                                        // statut vide
+  [jours(-900), 'CF', 'x', '', '', '95%', 'Contrat en exécution', 'ENT P', jours(-800), jours(-700), 6, '', jours(-850), '', jours(40), ''],   // base échue mais prolongé : reste en exécution
+  [jours(-900), 'CF', 'x', '', '', '95%', 'Contrat échu', 'ENT Q', jours(-800), jours(-700), 6, '', jours(-850), '', jours(60), ''],           // échu puis prolongé : de nouveau en exécution
+  [jours(-900), 'CF', 'x', '', '', '95%', 'Contrat échu', 'ENT R', jours(-800), jours(-700), 6, '', jours(-850), '', jours(-20), ''],          // prolongation déjà passée : reste échu
+  [jours(-900), 'CF', 'x', '', '', '95%', 'Contrat en exécution', 'ENT S', jours(-800), jours(-700), 6, '', jours(-850), '', jours(-100), jours(90)] // deux prolongations : la plus tardive compte
 ];
 test('rafraîchissement en bloc = traitement ligne par ligne', () => {
   const A = fabrique(LIGNES), B = fabrique(LIGNES);
@@ -46,4 +50,8 @@ test('rafraîchissement en bloc = traitement ligne par ligne', () => {
   assert.deepStrictEqual(aplat(B.grille), aplat(A.grille));
   assert.strictEqual(B.grille[2][6].v, 'Contrat en exécution');   // ligne 1
   assert.strictEqual(B.grille[3][6].v, 'Contrat échu');           // ligne 2
+  const st = i => B.grille[2 + i][6].v;
+  assert.deepStrictEqual([st(8), st(9), st(10), st(11)], ['Contrat en exécution', 'Contrat en exécution', 'Contrat échu', 'Contrat en exécution']);
+  assert.strictEqual(B.grille[2 + 8][11].v.getTime(), LIGNES[8][14].getTime());   // l'échéance affichée est la fin prolongée
+  assert.strictEqual(B.grille[2 + 11][11].v.getTime(), LIGNES[11][15].getTime()); // la plus tardive des deux
 });
