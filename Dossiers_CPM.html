@@ -410,7 +410,9 @@ async function init() {
         let echeanceDate = parseFrDate(r[COL.ECHEANCE]);
         if (!echeanceDate && dateODS && dureeMois) {
           echeanceDate = new Date(dateODS);
-          echeanceDate.setMonth(echeanceDate.getMonth() + Math.round(dureeMois));
+          // durée de plus de 60 = en JOURS (ex. 580), sinon en mois ; la date de fin est incluse (ODS + 18 mois → veille)
+          if (dureeMois > 60) echeanceDate.setDate(echeanceDate.getDate() + Math.round(dureeMois) - 1);
+          else { echeanceDate.setMonth(echeanceDate.getMonth() + Math.round(dureeMois)); echeanceDate.setDate(echeanceDate.getDate() - 1); }
         }
 
         let pctConsomme = null, joursRestants = null;

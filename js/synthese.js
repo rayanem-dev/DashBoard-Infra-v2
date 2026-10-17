@@ -48,7 +48,7 @@ var Synthese = (function () {
       var k = cleStatut(r[8]); comptes[k] += 1;
       if (k !== 'execution') return;
       var ods = dateFr(r[16]), duree = parseFloat(String(r[17] || '').replace(',', '.')) || null, ech = dateFr(r[18]);
-      if (!ech && ods && duree) { ech = new Date(ods); ech.setMonth(ech.getMonth() + Math.round(duree)); }
+      if (!ech && ods && duree) { ech = new Date(ods); if (duree > 60) ech.setDate(ech.getDate() + Math.round(duree) - 1); else { ech.setMonth(ech.getMonth() + Math.round(duree)); ech.setDate(ech.getDate() - 1); } } // plus de 60 = des jours
       if (ech && ods) {
         var total = Math.round((ech - ods) / 864e5), restants = Math.round((ech - auj) / 864e5);
         if (total > 0 && Math.max(0, Math.min(100, Math.round(((total - restants) / total) * 100))) >= 60) proche += 1;

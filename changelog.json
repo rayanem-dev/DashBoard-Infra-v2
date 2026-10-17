@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-09",
+    "date": "2026-10-21",
+    "title": "Version 5.4.4 — Durée des contrats en mois ou en jours",
+    "changes": [
+      "Suivi CPM : une durée de plus de 60 est comprise comme un nombre de jours (ex. 580), sinon comme des mois ; la date de fin est incluse (01/05/2025 + 18 mois = 31/10/2026)."
+    ]
+  },
+  {
     "id": "2026-10-21-08",
     "date": "2026-10-21",
     "title": "Version 5.4.3 — Rotation : relecture automatique et message de secours",
