@@ -58,7 +58,7 @@ test('ligne libre : toujours à la suite de la dernière personne (jamais dans u
 test('résumé lisible', () => {
   const t = E('enqResume_', { ajoutes: ['A B'], existants: ['C D', 'E F'], sansOnglet: [], entreprise: 'X', erreur: '' });
   assert.ok(/1 personne\(s\) ajoutée/.test(t) && /2 déjà présente/.test(t));
-  assert.ok(/Aucun onglet/.test(E('enqResume_', { ajoutes: [], existants: [], sansOnglet: ['Z'], entreprise: 'X', erreur: '' })));
+  assert.ok(/NON ajouté/.test(E('enqResume_', { ajoutes: [], existants: [], sansOnglet: ['Z'], entreprise: 'X', erreur: '' })));
 });
 
 // ---------- onglets normalisés, numéro d'agent, arabe ----------

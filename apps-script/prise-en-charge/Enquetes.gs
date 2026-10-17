@@ -195,8 +195,9 @@ function enqResume_(r) {
   if (r.ajoutes.length) t.push('Enquêtes : ' + r.ajoutes.length + ' personne(s) ajoutée(s) (' + r.ajoutes.join(', ') + ')');
   if (r.existants.length) t.push(r.existants.length + ' déjà présente(s), non modifiée(s)');
   if (r.crees && r.crees.length) t.push('Onglet créé : ' + r.crees.join(', '));
-  if (r.sansOnglet.length) t.push('Aucun onglet trouvé pour « ' + r.entreprise + ' » : ' + r.sansOnglet.join(', ') + ' non ajouté(s) — créez l\'onglet du prestataire dans les Enquêtes');
+  if (r.sansOnglet.length) t.push('NON ajouté(s) pour « ' + r.entreprise + ' » : ' + r.sansOnglet.join(', '));
   if (r.erreur) t.push('Enquêtes : ' + r.erreur);
+  if (r.details && r.details.length) t.push('Détail : ' + r.details.join(' ; '));
   return t.join(' · ');
 }
 
@@ -279,7 +280,7 @@ function enqCreerOnglet_(ss, onglets, entreprise, contrat) {
 
 /** Ajoute aux Enquêtes les personnes de la demande qui n'y figurent pas encore. Ne lève jamais d'erreur : le résultat dit ce qui a été fait. */
 function injecterEnquetes_(formData) {
-  var r = { ajoutes: [], existants: [], sansOnglet: [], crees: [], entreprise: enqEntrepriseDe_(formData.prestataire), erreur: '' };
+  var r = { ajoutes: [], existants: [], sansOnglet: [], crees: [], details: [], entreprise: enqEntrepriseDe_(formData.prestataire), erreur: '' };
   try {
     var gens = (formData.personnes || []).filter(function (p) { return Badges.vide(p.nom) && (Badges.vide(p.prenom) || /\s/.test(Badges.vide(p.nom))); });
     if (!gens.length) return r;
@@ -295,17 +296,23 @@ function injecterEnquetes_(formData) {
           try { cible = enqCreerOnglet_(ss, onglets, r.entreprise, contrat); r.crees.push(cible); onglets.push({ onglet: cible, entreprise: r.entreprise.toUpperCase(), personnes: [] }); }
           catch (e) { r.erreur = 'création de l\'onglet impossible : ' + e.message; r.sansOnglet.push(nomComplet); return; }
         }
-        var sh = ss.getSheetByName(cible), lignes = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(lignes);
-        if (!col || col.fr < 0) { r.sansOnglet.push(nomComplet); return; }
-        var i = enqLigneLibre_(lignes, col), ligne = i + 1, colNum = enqColNumero_(lignes, col);
-        if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
-        sh.getRange(ligne, col.fr + 1).setValue(nomComplet);
-        if (colNum >= 0 && !Badges.vide((lignes[i] || [])[colNum])) { /* ligne déjà numérotée : on garde son numéro */ }
-        else if (colNum >= 0) sh.getRange(ligne, colNum + 1).setValue(enqProchainNumero_(lignes, col, colNum)); // numéro d'agent suivant
-        if (col.fonction >= 0 && Badges.vide(p.fonction)) sh.getRange(ligne, col.fonction + 1).setValue(Badges.vide(p.fonction));
-        var ar = { nomAr: enqArabe_(nom), prenomAr: enqArabe_(prenom) }; // approché : à relire
-        if (col.nomAr >= 0 && ar.nomAr) sh.getRange(ligne, col.nomAr + 1).setValue(ar.nomAr);
-        if (col.prenomAr >= 0 && ar.prenomAr) sh.getRange(ligne, col.prenomAr + 1).setValue(ar.prenomAr);
+        try {
+          var sh = ss.getSheetByName(cible), lignes = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(lignes);
+          if (!col || col.fr < 0) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : colonne « بالفرنسية » introuvable dans « ' + cible + ' »'); return; }
+          var i = enqLigneLibre_(lignes, col), ligne = i + 1, colNum = enqColNumero_(lignes, col);
+          if (ligne > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), ligne - sh.getMaxRows()); // jamais d'écriture hors de la grille
+          if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+          sh.getRange(ligne, col.fr + 1).setValue(nomComplet);
+          if (colNum >= 0 && !Badges.vide((lignes[i] || [])[colNum])) { /* ligne déjà numérotée : on garde son numéro */ }
+          else if (colNum >= 0) sh.getRange(ligne, colNum + 1).setValue(enqProchainNumero_(lignes, col, colNum)); // numéro d'agent suivant
+          if (col.fonction >= 0 && Badges.vide(p.fonction)) sh.getRange(ligne, col.fonction + 1).setValue(Badges.vide(p.fonction));
+          var ar = { nomAr: enqArabe_(nom), prenomAr: enqArabe_(prenom) }; // approché : à relire
+          if (col.nomAr >= 0 && ar.nomAr) sh.getRange(ligne, col.nomAr + 1).setValue(ar.nomAr);
+          if (col.prenomAr >= 0 && ar.prenomAr) sh.getRange(ligne, col.prenomAr + 1).setValue(ar.prenomAr);
+          SpreadsheetApp.flush();
+          if (Badges.vide(sh.getRange(ligne, col.fr + 1).getDisplayValue()) !== nomComplet) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : écriture non retenue (ligne ' + ligne + ' de « ' + cible + ' » protégée ?)'); return; }
+          r.details.push(nomComplet + ' → « ' + cible + ' », ligne ' + ligne);
+        } catch (e) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : ' + e.message); return; }
         idx.push({ nom: nom, prenom: prenom, fonction: p.fonction, entreprise: r.entreprise, onglet: cible });
         r.ajoutes.push(nomComplet);
       });
