@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-21-02",
+    "date": "2026-10-21",
+    "title": "Version 5.3.1 — Prises en charge : un seul champ Fonction",
+    "changes": [
+      "Prises en charge : un seul champ Fonction (celui du tableau des personnes) ; une seule case « Fonction dans Observations » dans les options de la prise en charge.",
+      "Le lien « Rapport Hebdomadaire Infra » ouvre le rapport à la diapositive 1."
+    ]
+  },
+  {
     "id": "2026-10-21-01",
     "date": "2026-10-21",
     "title": "Version 5.3.0 — Accueil en trois volets : « Mes applications »",

@@ -178,14 +178,6 @@
       </div>
     </div>
 
-    <label>Fonction <span style="font-weight:400;color:var(--text-muted);font-size:10.5px;text-transform:none;letter-spacing:0;">(facultatif : appliquée aux personnes sans fonction)</span></label>
-    <input type="text" id="fonctionDefaut" placeholder="ex. Conducteur de travaux">
-    <div class="ligne-check" style="margin:6px 0 2px;">
-      <input type="checkbox" id="fonctionObs">
-      <label>Écrire la fonction dans la case « Observations » de la prise en charge</label>
-      <span style="font-size:11px;color:var(--text-muted);font-weight:500;">facultatif</span>
-    </div>
-
     <div class="form-row">
       <div class="field">
         <label>Date d'arrivée</label>
@@ -220,6 +212,10 @@
         <div class="ligne-check" style="margin-top:0;">
           <input type="checkbox" id="remplacement">
           <label>Remplacement</label>
+        </div>
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="fonctionObs">
+          <label>Fonction dans Observations</label>
         </div>
       </div>
       <div class="ligne-check">
@@ -561,7 +557,6 @@
     corps.querySelectorAll('tr').forEach(tr => {
       const p = {};
       tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
-      if (p.nom && !p.fonction) p.fonction = document.getElementById('fonctionDefaut').value.trim();
       if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
     });
 

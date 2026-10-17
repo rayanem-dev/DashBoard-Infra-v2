@@ -88,7 +88,7 @@ var SEED_APPS = [
   "Rapport Hebdomadaire Infra",
   "Suivi régulier des activités et avancement des projets. Synthèse hebdomadaire destinée à la direction.",
   "📈",
-  "https://docs.google.com/presentation/d/1SyC226_iZHhAs01-NHtR-wyEtFOTAmOkzpSjPo1jm20/edit?slide=id.p14#slide=id.p14",
+  "https://docs.google.com/presentation/d/1SyC226_iZHhAs01-NHtR-wyEtFOTAmOkzpSjPo1jm20/edit?slide=id.p1#slide=id.p1",
   1
  ],
  [
