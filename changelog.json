@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-21-30",
+    "date": "2026-10-21",
+    "title": "Version 5.10.0 — Badges : import / export Excel, wilaya, lien des Enquêtes",
+    "changes": [
+      "Saisie Enquêtes : « Importer (Excel) » et « Exporter (Excel) » au format des onglets des Enquêtes (titre, wilaya, en-têtes arabes). L'import remplit seulement le formulaire : à l'injection, l'onglet « ENTREPRISE · contrat » est créé s'il n'existe pas, sinon seules les personnes manquantes sont ajoutées. Rien n'est jamais écrasé.",
+      "Saisie Enquêtes : wilaya par défaut « إليزي » (reprise dans l'en-tête des onglets créés) et champs supplémentaires : adresse, date d'embauche, n° d'identification, acte de naissance, téléphone.",
+      "Entreprises & contrats : bouton « ⬇ Excel » pour exporter l'onglet d'une entreprise.",
+      "Menu : l'ancien lien cassé des Enquêtes administratives est remplacé par le Google Sheets actuel."
+    ]
+  },
+  {
     "id": "2026-10-21-29",
     "date": "2026-10-21",
     "title": "Version 5.9.0 — Badges : fiche des Enquêtes, photos, ordre des onglets ; invitations",

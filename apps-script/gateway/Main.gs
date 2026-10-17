@@ -80,6 +80,7 @@ function route_(req) {
     case 'badges_enquetes_verifier': return badgesEnquetesVerifier_(req);
     case 'badges_enquetes_saisir': return badgesEnquetesSaisir_(req);
     case 'badges_fiche': return badgesFiche_(req);
+    case 'badges_enquetes_export': return badgesEnquetesExport_(req);
     case 'badges_fiche_maj': return badgesFicheMaj_(req);
     case 'badges_photo_archiver': return badgesPhotoArchiver_(req);
     case 'badges_personnes_sauver': return badgesPersonnesSauver_(req);

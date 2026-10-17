@@ -96,18 +96,20 @@ function preparerLiens_() {
 /** Anciennes adresses → adresses actuelles (fichiers remplacés : rapport hebdomadaire, Suivi CPM). Pur : testé en Node. */
 var REMPLACEMENTS_LIENS_ = [
   [/docs\.google\.com\/presentation\/d\/(?:1FLFP453C8F1Sb8hZBnxboqoJtSq33rEu|1CF4JWBYkPvvlU0XiwVN_sQhxxdM29pgH|1SyC226_iZHhAs01-NHtR-wyEtFOTAmOkzpSjPo1jm20)\/[^\s"]*/, 'docs.google.com/presentation/d/1SyC226_iZHhAs01-NHtR-wyEtFOTAmOkzpSjPo1jm20/edit?slide=id.p1#slide=id.p1'],
-  [/docs\.google\.com\/spreadsheets\/d\/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY\/[^\s"]*/, 'docs.google.com/spreadsheets/d/1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I/edit?usp=sharing']
+  [/docs\.google\.com\/spreadsheets\/d\/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY\/[^\s"]*/, 'docs.google.com/spreadsheets/d/1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I/edit?usp=sharing'],
+  // Enquêtes administratives : l'ancien fichier (cassé) → le Google Sheets actuel
+  [/docs\.google\.com\/spreadsheets\/d\/1BBT3DzzLUXAyEQT3SEXTei4wRuN9h1UZ\/?[^\s"]*/, 'docs.google.com/spreadsheets/d/1EQMsT8IeOF9ky9eOx7S3jXoq7jmcikjyVVuwryf0Npo/']
 ];
 function lienActuel_(url) { var u = String(url == null ? '' : url); REMPLACEMENTS_LIENS_.forEach(function (r) { u = u.replace(r[0], r[1]); }); return u; }
 /** Met à jour, une seule fois, les liens du catalogue vers le rapport hebdomadaire (Google Slides) et le Suivi CPM actuels. Idempotent. */
 function preparerLiensRapport_() {
   var props = PropertiesService.getScriptProperties();
-  if (props.getProperty('LIENS_RAPPORT_PRET') === '2') return;
+  if (props.getProperty('LIENS_RAPPORT_PRET') === '3') return;
   try {
     var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
     var v = sh.getDataRange().getValues(), iU = v[0].map(String).indexOf('url');
     for (var i = 1; i < v.length; i += 1) { var u = String(v[i][iU]), n = lienActuel_(u); if (n !== u) sh.getRange(i + 1, iU + 1).setValue(n); }
-    props.setProperty('LIENS_RAPPORT_PRET', '2');
+    props.setProperty('LIENS_RAPPORT_PRET', '3');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera */ }
 }

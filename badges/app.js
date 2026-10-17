@@ -272,9 +272,47 @@ var BadgesApp = (function () {
     }
 
 
+    // ----- Excel (SheetJS, chargé à la demande) : export / import au format des onglets des Enquêtes ; jamais d'écrasement : l'import remplit seulement le formulaire de saisie -----
+    function chargerXlsx() {
+      if (window.XLSX) return Promise.resolve();
+      return new Promise(function (ok, ko) { var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload = ok; sc.onerror = function () { ko(new Error('bibliothèque Excel indisponible (réseau)')); }; document.head.appendChild(sc); });
+    }
+    function nomFichier(t) { return String(t || 'liste').replace(/[\\/:*?"<>|\[\]]+/g, '-').trim().slice(0, 100) || 'liste'; }
+    function ecrireExcel(lignes, nomOnglet) {
+      return chargerXlsx().then(function () {
+        var ws = XLSX.utils.aoa_to_sheet(lignes.map(function (l) { return l.map(function (c) { return String(c == null ? '' : c); }); })); // tout en texte : les grands numéros restent intacts
+        ws['!cols'] = lignes[3] ? lignes[3].map(function (_, i) { return { wch: i === 7 ? 30 : 18 }; }) : [];
+        var wb = XLSX.utils.book_new(); wb.Props = { Title: nomOnglet }; wb.Workbook = { Views: [{ RTL: true }] };
+        XLSX.utils.book_append_sheet(wb, ws, nomFichier(nomOnglet).slice(0, 31)); XLSX.writeFile(wb, nomFichier(nomOnglet) + '.xlsx');
+      });
+    }
+    function exporterSaisie(X) {
+      var gens = personnesSaisies(X); if (!gens.length) { dire('Rien à exporter : saisissez au moins une personne.', true); return; }
+      var nom = B.vide(X.entreprise) + (B.vide(X.contrat) ? ' · ' + B.vide(X.contrat) : '');
+      ecrireExcel(B.versFeuilleEnquetes({ entreprise: X.entreprise, wilaya: X.wilaya, personnes: gens }), nom).then(function () { dire('Fichier Excel « ' + nomFichier(nom) + '.xlsx » créé'); }).catch(echec);
+    }
+    function exporterOnglet(onglet) {
+      if (!adapter.exporterEnquetes) return; dire('Lecture de l\'onglet…');
+      adapter.exporterEnquetes({ onglet: onglet }).then(function (r) { return ecrireExcel(r.lignes, r.onglet); }).then(function () { dire('Fichier Excel « ' + nomFichier(onglet) + '.xlsx » créé'); }).catch(echec);
+    }
+    function importerExcel(X, fichier) {
+      dire('Lecture du fichier…');
+      chargerXlsx().then(function () { return fichier.arrayBuffer(); }).then(function (buf) {
+        var wb = XLSX.read(buf, { type: 'array' }), choisi = null, nb = 0;
+        wb.SheetNames.forEach(function (n) {
+          var aoa = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: '' });
+          if (!B.colonnesEnquetes(aoa)) return; nb += 1;
+          if (!choisi) choisi = B.depuisFeuilleEnquetes(aoa, wb.SheetNames.length === 1 && wb.Props && wb.Props.Title ? wb.Props.Title : n);
+        });
+        if (!choisi) throw new Error('Format non reconnu : aucune feuille ne contient la ligne d\'en-têtes des Enquêtes (« الاسم و اللقب بالفرنسية »).');
+        if (choisi.entreprise) X.entreprise = choisi.entreprise; if (choisi.contrat) X.contrat = choisi.contrat; if (choisi.wilaya) X.wilaya = choisi.wilaya;
+        X.lignes = choisi.personnes.length ? choisi.personnes : [{ nom: '', prenom: '', fonction: '' }]; X.plus = true;
+        dessiner(); dire(choisi.personnes.length + ' personne(s) lue(s) — vérifiez, puis « Injecter dans les Enquêtes » : seules celles qui manquent sont ajoutées, rien n\'est écrasé.' + (nb > 1 ? ' (1re feuille sur ' + nb + ')' : '') + (choisi.avertissements.length ? ' ⚠ ' + choisi.avertissements.join(' ') : ''), !choisi.personnes.length);
+      }).catch(echec);
+    }
     // ----- Onglet Saisie Enquêtes : saisir (ou détecter dans un PDF) les personnes d'une entreprise, les injecter dans les Enquêtes, imprimer la liste -----
     function vueSaisie() {
-      var X = S.saisie = S.saisie || { entreprise: '', contrat: '', intitule: '', lignes: [{ nom: '', prenom: '', fonction: '' }] };
+      var X = S.saisie = S.saisie || { entreprise: '', contrat: '', intitule: '', wilaya: (function () { try { return localStorage.getItem('badges_wilaya') || 'إليزي'; } catch (e) { return 'إليزي'; } })(), lignes: [{ nom: '', prenom: '', fonction: '' }] };
       var v = el('div', 'bdg-saisie');
       v.appendChild(el('p', 'bdg-note', 'Saisissez les personnes d\'une entreprise : elles sont ajoutées à l\'onglet « ENTREPRISE · contrat » des Enquêtes administratives (créé s\'il n\'existe pas), à la suite des personnes déjà inscrites, avec la date d\'enregistrement.'));
       var dl = el('datalist'); dl.id = 'bdg-dl-ent'; S.entreprises.forEach(function (e) { var o = el('option'); o.value = e.nom; dl.appendChild(o); }); v.appendChild(dl);
@@ -283,9 +321,10 @@ var BadgesApp = (function () {
       var ent = saisie(X.entreprise, 'text', 'Entreprise'), ctr = saisie(X.contrat, 'text', 'N° de contrat (facultatif)'), tit = saisie(X.intitule, 'text', 'Intitulé du contrat (facultatif)');
       ent.setAttribute('list', 'bdg-dl-ent'); ctr.setAttribute('list', 'bdg-dl-ctr');
       ent.oninput = function () { X.entreprise = ent.value; contrats(); }; ctr.oninput = function () { X.contrat = ctr.value; }; tit.oninput = function () { X.intitule = tit.value; }; contrats();
-      var tete = el('div', 'bdg-grille'); tete.appendChild(champ('Entreprise', ent)); tete.appendChild(champ('N° de contrat', ctr)); tete.appendChild(champ('Intitulé', tit)); v.appendChild(tete);
+      var wil = saisie(X.wilaya, 'text', 'Wilaya'); wil.dir = 'rtl'; wil.oninput = function () { X.wilaya = wil.value; try { localStorage.setItem('badges_wilaya', wil.value); } catch (e) { /* rien */ } };
+      var tete = el('div', 'bdg-grille'); tete.appendChild(champ('Entreprise', ent)); tete.appendChild(champ('N° de contrat', ctr)); tete.appendChild(champ('Intitulé', tit)); tete.appendChild(champ('Wilaya (en-tête de l\'onglet créé)', wil)); v.appendChild(tete);
       var CH = [['nom', 'Nom', 'NOM'], ['prenom', 'Prénom', 'Prénom'], ['fonction', 'Fonction', 'Fonction'], ['structure', 'Structure', S.cfg.structure || 'Structure']];
-      var PLUS = [['nomAr', 'Nom (arabe)', 'اللقب'], ['prenomAr', 'Prénom (arabe)', 'الاسم'], ['naissance', 'Date de naissance', 'jj/mm/aaaa'], ['lieu', 'Lieu de naissance', 'Lieu'], ['pere', 'Père', 'Prénom du père'], ['mere', 'Mère', 'Nom de la mère']];
+      var PLUS = [['nomAr', 'Nom (arabe)', 'اللقب'], ['prenomAr', 'Prénom (arabe)', 'الاسم'], ['naissance', 'Date de naissance', 'jj/mm/aaaa'], ['lieu', 'Lieu de naissance', 'Lieu'], ['pere', 'Père', 'Prénom du père'], ['mere', 'Mère', 'Nom de la mère'], ['adresse', 'Adresse', 'Adresse'], ['embauche', 'Date d\'embauche', 'jj/mm/aaaa'], ['nin', 'N° identification national', '18 chiffres'], ['acte', 'N° acte de naissance', 'N°'], ['tel', 'Téléphone', '05…']];
       var cols = CH.concat(X.plus ? PLUS : []);
       var t = el('table', 'bdg-table bdg-saisie-t'), th = el('tr'); ['#'].concat(cols.map(function (c) { return c[1]; }), ['']).forEach(function (x) { th.appendChild(el('th', null, x)); }); t.appendChild(el('thead')).appendChild(th);
       var tb = el('tbody');
@@ -309,18 +348,21 @@ var BadgesApp = (function () {
         }).catch(function (e) { dire('Lecture impossible : ' + e.message, true); });
       };
       barre.appendChild(bouton('📄 Détecter depuis un PDF', function () { pdf.click(); }, null, 'Prise en charge, demande de prise en charge ou liste')); barre.appendChild(pdf);
+      var xl = el('input'); xl.type = 'file'; xl.accept = '.xlsx,.xls,.csv'; xl.style.display = 'none'; xl.onchange = function () { if (xl.files[0]) importerExcel(X, xl.files[0]); xl.value = ''; };
+      barre.appendChild(bouton('⬆ Importer (Excel)', function () { xl.click(); }, null, 'Fichier au format des Enquêtes (nommez la feuille « ENTREPRISE · contrat ») : remplit le formulaire, sans rien écrire dans les Enquêtes')); barre.appendChild(xl);
+      barre.appendChild(bouton('⬇ Exporter (Excel)', function () { exporterSaisie(X); }, null, 'Fichier Excel au format des Enquêtes'));
       barre.appendChild(bouton('Vider', function () { S.saisie = null; dessiner(); }));
       barre.appendChild(bouton('🖨 Imprimer la liste (PDF)', function () { imprimerListe(X); }, null, 'Ouvre l\'impression : choisir « Enregistrer au format PDF »'));
       barre.appendChild(bouton('Injecter dans les Enquêtes', function () { injecter(X); }, 'prim'));
       v.appendChild(barre);
       return v;
     }
-    function personnesSaisies(X) { return X.lignes.map(function (l) { var o = {}; ['nom', 'prenom', 'fonction', 'structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere'].forEach(function (k) { o[k] = B.vide(l[k]); }); return o; }).filter(function (l) { return l.nom; }); }
+    function personnesSaisies(X) { return X.lignes.map(function (l) { var o = {}; ['nom', 'prenom', 'fonction', 'structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere', 'adresse', 'embauche', 'nin', 'acte', 'tel'].forEach(function (k) { o[k] = B.vide(l[k]); }); return o; }).filter(function (l) { return l.nom; }); }
     function injecter(X) {
       var gens = personnesSaisies(X);
       if (!B.vide(X.entreprise)) { dire('Indiquez l\'entreprise.', true); return; }
       if (!gens.length) { dire('Saisissez au moins une personne (nom et prénom).', true); return; }
-      var base = { entreprise: B.vide(X.entreprise), contrat: B.vide(X.contrat), intitule: B.vide(X.intitule), personnes: gens };
+      var base = { entreprise: B.vide(X.entreprise), contrat: B.vide(X.contrat), intitule: B.vide(X.intitule), wilaya: B.vide(X.wilaya), personnes: gens };
       dire('Vérification dans les Enquêtes…');
       adapter.verifierEnquetes(base).then(function (r) {
         var deja = (r && r.deja) || [];
@@ -376,6 +418,8 @@ var BadgesApp = (function () {
           var tr = el('tr'); tr.appendChild(el('td', 'fort', e.nom)); tr.appendChild(el('td', 'bdg-petit' + (l.alerte ? ' bdg-alerte' : ''), l.c)); tr.appendChild(el('td', null, String(l.n)));
           var a = el('td'); if (!S.lecture && i === 0) a.appendChild(bouton('Modifier', function () { editerEntreprise(e); }, 'mini'));
           if (l.n) a.appendChild(bouton('🖨 Imprimer', function () { imprimerListe({ entreprise: e.nom, contrat: l.contrat, intitule: l.intitule, lignes: l.ps }); }, 'mini', 'Imprimer la liste des ' + l.n + ' personne(s) (PDF)'));
+          var on = (l.ps.filter(function (q) { return q.onglet; })[0] || {}).onglet;
+          if (on && adapter.exporterEnquetes && !S.lecture) a.appendChild(bouton('⬇ Excel', function () { exporterOnglet(on); }, 'mini', 'Exporter l\'onglet « ' + on + ' » des Enquêtes (format Excel)'));
           tr.appendChild(a); tb.appendChild(tr);
         });
       });

@@ -5,3 +5,9 @@ test('anciens liens (rapport pptx, Suivi CPM) remplacés par les actuels ; les a
   assert.ok(lienActuel_('https://docs.google.com/spreadsheets/d/1QFoEEsoosl3vGdwyAlzmQbHt3Vv76llfWfrO-prmAuY/edit?usp=sharing').includes('1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I'));
   assert.strictEqual(lienActuel_('Dossiers_CPM.html'), 'Dossiers_CPM.html');
 });
+
+test('lien des Enquêtes administratives : l\'ancien fichier est remplacé par le Google Sheets actuel', () => {
+  const ancien = 'https://docs.google.com/spreadsheets/d/1BBT3DzzLUXAyEQT3SEXTei4wRuN9h1UZ/edit?usp=sharing';
+  assert.strictEqual(lienActuel_(ancien), 'https://docs.google.com/spreadsheets/d/1EQMsT8IeOF9ky9eOx7S3jXoq7jmcikjyVVuwryf0Npo/');
+  assert.strictEqual(lienActuel_('https://docs.google.com/spreadsheets/d/1BBT3DzzLUXAyEQT3SEXTei4wRuN9h1UZ/'), 'https://docs.google.com/spreadsheets/d/1EQMsT8IeOF9ky9eOx7S3jXoq7jmcikjyVVuwryf0Npo/');
+});

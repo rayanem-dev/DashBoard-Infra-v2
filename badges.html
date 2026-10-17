@@ -38,6 +38,7 @@
         return r;
       });
     },
+    exporterEnquetes: function (payload) { return Api.call('badges_enquetes_export', payload); },
     ficheEnquetes: function (payload) { return Api.call('badges_fiche', payload); },
     majEnquetes: function (payload) { return Api.call('badges_fiche_maj', payload); },
     archiverPhoto: function (payload) { return Api.call('badges_photo_archiver', payload); },

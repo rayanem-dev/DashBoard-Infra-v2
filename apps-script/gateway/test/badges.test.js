@@ -193,3 +193,20 @@ test('Enquêtes : colonnes naissance, lieu, père, mère, structure repérées p
   const a = B.analyserEnquetes([ent, ['1', 'ع', 'م', '', '', '', '', 'AMANI Brahim', 'Gardien', 'DSP']], 'ONGLET');
   assert.strictEqual(a.personnes[0].structure, 'DSP');
 });
+
+test('Excel au format des Enquêtes : export puis import redonnent les mêmes personnes', () => {
+  const pers = [{ nom: 'KACI', prenom: 'Farid', fonction: 'Chauffeur', nomAr: 'قاسي', prenomAr: 'فريد', naissance: '1979/11/02', lieu: 'واضية', nin: '109790526012970007' }, { nom: 'AIT SLIMANE', prenom: 'Yanis', fonction: 'Gardien' }];
+  const l = B.versFeuilleEnquetes({ entreprise: 'Atlas saharienne', wilaya: '', personnes: pers });
+  assert.strictEqual(l[3][7], 'الاسم و اللقب بالفرنسية'); assert.ok(l[2][0].includes('إليزي')); assert.ok(l[0][0].includes('ATLAS SAHARIENNE'));
+  const r = B.depuisFeuilleEnquetes(l, 'ATLAS SAHARIENNE · 81.INFRA.25');
+  assert.strictEqual(r.entreprise, 'ATLAS SAHARIENNE'); assert.strictEqual(r.contrat, '81.INFRA.25'); assert.strictEqual(r.wilaya, 'إليزي');
+  assert.deepStrictEqual(r.personnes.map(p => [p.nom, p.prenom, p.fonction, p.nomAr, p.naissance, p.nin]), [['KACI', 'Farid', 'Chauffeur', 'قاسي', '1979/11/02', '109790526012970007'], ['AIT SLIMANE', 'Yanis', 'Gardien', '', '', '']]);
+  assert.strictEqual(r.avertissements.length, 0);
+});
+test('import Excel : entreprise lue dans le titre, numéros abîmés par Excel ignorés, format inconnu signalé', () => {
+  const l = [['القائمة الإسمية لأعوان شركة ENAGEO'], [], ['ولاية إليزي'], ['رقم', 'اللقب', 'الإسم', 'الاسم و اللقب بالفرنسية', 'رقم التعريف الوطني', 'رقم الهاتف'], ['1', 'قاسي', 'فريد', 'KACI Farid', '1,09771E+17', '—']];
+  const r = B.depuisFeuilleEnquetes(l, 'Sheet1');
+  assert.strictEqual(r.entreprise, 'ENAGEO'); assert.strictEqual(r.contrat, ''); assert.strictEqual(r.personnes[0].nin, ''); assert.strictEqual(r.personnes[0].tel, '');
+  assert.ok(r.avertissements.some(a => /notation scientifique/.test(a)));
+  assert.ok(B.depuisFeuilleEnquetes([['a', 'b']], 'X').avertissements[0].includes('Format non reconnu'));
+});

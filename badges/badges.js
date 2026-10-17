@@ -177,6 +177,56 @@ var Badges = (function () {
     return { personnes: out, ignorees: ign };
   }
 
+
+  // ---------- Import / export au format des « Enquêtes administratives » ----------
+  var ENTETE_ENQ = [['numero', 'رقم'], ['nomAr', 'اللقب'], ['prenomAr', 'الإسم'], ['naissance', 'تاريخ الإزدياد'], ['lieu', 'مكان الإزدياد'], ['pere', 'الأب'], ['mere', 'الأم'], ['fr', 'الاسم و اللقب بالفرنسية'], ['adresse', 'العنوان'], ['fonction', 'الوظيفة المقترحة'], ['embauche', 'تاريخ التوظيف'], ['nin', 'رقم التعريف الوطني'], ['acte', 'رقم شهادة الميلاد'], ['tel', 'رقم الهاتف'], ['structure', 'الهيكل — Structure']];
+  var CHAMPS_ENQ = ['naissance', 'lieu', 'pere', 'mere', 'adresse', 'embauche', 'nin', 'acte', 'tel'];
+  /** Personnes → tableau (lignes de cellules) dans la mise en page d'un onglet des Enquêtes : titre, wilaya, en-têtes, une ligne par personne. */
+  function versFeuilleEnquetes(d) {
+    var pers = d.personnes || [], avecStr = pers.some(function (p) { return vide(p.structure); }), cols = ENTETE_ENQ.filter(function (c) { return c[0] !== 'structure' || avecStr; });
+    var larg = cols.length, vierge = function () { var r = []; for (var i = 0; i < larg; i += 1) r.push(''); return r; };
+    var l1 = vierge(); l1[0] = 'القائمة الإسمية لأعوان شركة ' + vide(d.entreprise).toUpperCase();
+    var l3 = vierge(); l3[0] = 'ولاية   ' + (vide(d.wilaya) || 'إليزي');
+    var lignes = [l1, vierge(), l3, cols.map(function (c) { return c[1]; })];
+    pers.forEach(function (p, i) {
+      lignes.push(cols.map(function (c) {
+        if (c[0] === 'numero') return String(i + 1);
+        if (c[0] === 'fr') return (vide(p.nom).toUpperCase() + ' ' + vide(p.prenom)).trim();
+        return vide(p[c[0]]);
+      }));
+    });
+    return lignes;
+  }
+  /** Tableau (une feuille Excel au format des Enquêtes) → { entreprise, contrat, wilaya, personnes, avertissements }. nomFeuille : « ENTREPRISE · contrat » si l'onglet porte ce nom. */
+  function depuisFeuilleEnquetes(lignes, nomFeuille) {
+    lignes = lignes || []; var av = [], col = colonnesEnquetes(lignes);
+    if (!col) return { entreprise: '', contrat: '', wilaya: '', personnes: [], avertissements: ['Format non reconnu : la ligne d\'en-têtes (« الاسم و اللقب بالفرنسية ») est introuvable.'] };
+    var ent = '', ctr = '', wil = '', nom = vide(nomFeuille), p = nom.split(' · ');
+    if (p.length > 1) { ent = vide(p[0]); ctr = vide(p.slice(1).join(' · ')); } else if (nom && nom.indexOf('Sheet') !== 0 && nom.indexOf('Feuil') !== 0) ent = nom;
+    for (var i = 0; i < col.h; i += 1) (lignes[i] || []).forEach(function (c) {
+      var t = String(c == null ? '' : c);
+      if (!ent && t.indexOf('القائمة') >= 0) { var lat = t.replace(/[؀-ۿ‏‎]+/g, ' ').replace(/\s+/g, ' ').trim(); if (/[A-Za-z]{2}/.test(lat)) ent = lat; }
+      if (!wil && /^\s*ولاية/.test(t)) wil = vide(t.replace(/^\s*ولاية/, ''));
+    });
+    var pers = [], sci = 0;
+    for (var r = col.h + 1; r < lignes.length; r += 1) {
+      var l = lignes[r] || [], fr = col.fr >= 0 ? vide(l[col.fr]) : ''; if (!fr) continue;
+      var nomAr = col.nomAr >= 0 ? vide(l[col.nomAr]) : '', d = decouperNom(fr, nomAr);
+      var o = { nom: d.nom, prenom: d.prenom, fonction: col.fonction >= 0 ? vide(l[col.fonction]) : '', nomAr: nomAr, prenomAr: col.prenomAr >= 0 ? vide(l[col.prenomAr]) : '', structure: col.structure >= 0 ? vide(l[col.structure]) : '' };
+      CHAMPS_ENQ.forEach(function (k) {
+        var x = col[k === 'naissance' ? 'naiss' : k], v = x >= 0 ? vide(l[x]) : '';
+        if (/^\d[\d.,]*e\+\d+$/i.test(v)) { sci += 1; v = ''; } // un grand numéro abîmé par Excel (1,09E+17) : mieux vaut le laisser vide que faux
+        if (v === '—' || v === '-') v = '';
+        o[k] = v;
+      });
+      pers.push(o);
+    }
+    if (sci) av.push(sci + ' numéro(s) abîmé(s) par Excel (notation scientifique) ignoré(s) : à ressaisir en texte.');
+    if (!ent) av.push('Entreprise non reconnue : nommez la feuille « ENTREPRISE · contrat ».');
+    if (!pers.length) av.push('Aucune personne trouvée sous les en-têtes.');
+    return { entreprise: ent, contrat: ctr, wilaya: wil, personnes: pers, avertissements: av };
+  }
+
   // ---------- Mise en page ----------
   function mm(v) { return (Math.round(v * 100) / 100) + 'mm'; }
   function taillePolice(txt, base, limite) { var n = String(txt || '').length; if (n <= limite) return base; return Math.max(base - 0.2 * (n - limite), base * 0.58); }
@@ -284,7 +334,7 @@ var Badges = (function () {
   }
 
   var api = { DEFAUT: DEFAUT, config: config, vide: vide, norm: norm, cle: cle, esc: esc, formaterRef: formaterRef, prochain: prochain, attribuer: attribuer, decouperNom: decouperNom,
-    analyserEnquetes: analyserEnquetes, colonnesEnquetes: colonnesEnquetes, lireCsv: lireCsv, personnesDepuisTableau: personnesDepuisTableau, planifier: planifier, positions: positions, casesParFeuille: casesParFeuille,
+    analyserEnquetes: analyserEnquetes, colonnesEnquetes: colonnesEnquetes, versFeuilleEnquetes: versFeuilleEnquetes, depuisFeuilleEnquetes: depuisFeuilleEnquetes, lireCsv: lireCsv, personnesDepuisTableau: personnesDepuisTableau, planifier: planifier, positions: positions, casesParFeuille: casesParFeuille,
     feuillesHtml: feuillesHtml, calibrageHtml: calibrageHtml, css: css, csvHistorique: csvHistorique, ENTETE_HISTO: ENTETE_HISTO };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   return api;

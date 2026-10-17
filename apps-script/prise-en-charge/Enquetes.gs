@@ -266,7 +266,7 @@ function enqChoisirModele_(onglets) {
  * et toute autre cellule purement latine ou numérique (ancien contrat, date, nom de projet…) est vidée. Les libellés arabes ne bougent pas.
  * lignes : valeurs affichées de l'onglet ; h : indice (0) de la ligne d'en-têtes du tableau. Retourne [{ ligne, col, valeur }] (1 = première ligne / colonne).
  */
-function enqCorrectionsEntete_(lignes, h, entreprise) {
+function enqCorrectionsEntete_(lignes, h, entreprise, wilaya) {
   var out = [], titreFait = false;
   for (var i = 0; i < h; i += 1) {
     for (var j = 0; j < (lignes[i] || []).length; j += 1) {
@@ -275,7 +275,8 @@ function enqCorrectionsEntete_(lignes, h, entreprise) {
       var arabe = /[\u0600-\u06ff]/.test(c), latin = /[A-Za-z0-9]/.test(c);
       if (arabe && c.indexOf('القائمة') >= 0 && /[A-Za-z]{2}/.test(c) && !titreFait) {
         out.push({ ligne: i + 1, col: j + 1, valeur: c.replace(/[A-Za-z][A-Za-z0-9 .&'’()\/\-]*[A-Za-z0-9.)]/, String(entreprise).toUpperCase()) }); titreFait = true;
-      } else if (!arabe && latin) out.push({ ligne: i + 1, col: j + 1, valeur: '' });
+      } else if (arabe && wilaya && /^\s*ولاية/.test(c)) out.push({ ligne: i + 1, col: j + 1, valeur: 'ولاية   ' + wilaya }); // « ولاية إليزي » : la wilaya choisie
+      else if (!arabe && latin) out.push({ ligne: i + 1, col: j + 1, valeur: '' });
     }
   }
   return out;
@@ -286,7 +287,7 @@ function enqCorrectionsEntete_(lignes, h, entreprise) {
  * (noms, fonctions, arabe, numéros, autres colonnes, notes, images) ; seules 25 lignes mises en forme sont gardées ; le titre reprend l'entreprise.
  * Les numéros d'agent sont écrits au fur et à mesure des ajouts. Retourne le nom du nouvel onglet.
  */
-function enqCreerOnglet_(ss, onglets, entreprise, contrat) {
+function enqCreerOnglet_(ss, onglets, entreprise, contrat, wilaya) {
   var modele = null;
   enqChoisirModele_(onglets).some(function (nomOnglet) { if (Badges.colonnesEnquetes(ss.getSheetByName(nomOnglet).getDataRange().getDisplayValues())) { modele = nomOnglet; return true; } return false; });
   if (!modele) throw new Error('aucun onglet modèle exploitable dans les Enquêtes');
@@ -300,7 +301,7 @@ function enqCreerOnglet_(ss, onglets, entreprise, contrat) {
     if (derniere - premiere + 1 > GARDEES) { try { sh.deleteRows(premiere + GARDEES, derniere - premiere + 1 - GARDEES); } catch (e) { /* lignes figées : on les laisse vides */ } }
   }
   try { sh.getImages().forEach(function (img) { img.remove(); }); } catch (e) { /* pas d'image : rien à faire */ }
-  enqCorrectionsEntete_(lignes, col.h, entreprise).forEach(function (x) { sh.getRange(x.ligne, x.col).setValue(x.valeur); });
+  enqCorrectionsEntete_(lignes, col.h, entreprise, wilaya).forEach(function (x) { sh.getRange(x.ligne, x.col).setValue(x.valeur); });
   return nom;
 }
 
@@ -321,7 +322,7 @@ function injecterEnquetes_(formData) {
         if (enqDejaChezCeContrat_(idx, cible, nom, prenom)) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : déjà dans « ' + cible + ' »'); return; }
         if (ignorer.indexOf(nomComplet) >= 0) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : ignoré (déjà enregistré, à ta demande)'); return; }
         if (!cible) { // pas d'onglet pour ce prestataire (et ce contrat) : on le crée
-          try { cible = enqCreerOnglet_(ss, onglets, r.entreprise, contrat); r.crees.push(cible); onglets.push({ onglet: cible, entreprise: r.entreprise.toUpperCase(), personnes: [] }); }
+          try { cible = enqCreerOnglet_(ss, onglets, r.entreprise, contrat, Badges.vide(formData.wilaya)); r.crees.push(cible); onglets.push({ onglet: cible, entreprise: r.entreprise.toUpperCase(), personnes: [] }); }
           catch (e) { r.erreur = 'création de l\'onglet impossible : ' + e.message; r.sansOnglet.push(nomComplet); return; }
         }
         try {
@@ -339,7 +340,7 @@ function injecterEnquetes_(formData) {
           var ar = { nomAr: Badges.vide(p.nomAr) || enqArabe_(nom), prenomAr: Badges.vide(p.prenomAr) || enqArabe_(prenom) }; // saisis, sinon approchés (à relire)
           if (col.nomAr >= 0 && ar.nomAr) sh.getRange(ligne, col.nomAr + 1).setValue(ar.nomAr);
           if (col.prenomAr >= 0 && ar.prenomAr) sh.getRange(ligne, col.prenomAr + 1).setValue(ar.prenomAr);
-          [['naissance', col.naiss], ['lieu', col.lieu], ['pere', col.pere], ['mere', col.mere]].forEach(function (c) { if (c[1] >= 0 && Badges.vide(p[c[0]])) sh.getRange(ligne, c[1] + 1).setNumberFormat('@').setValue(Badges.vide(p[c[0]])); }); // texte : une date saisie reste telle quelle
+          [['naissance', col.naiss], ['lieu', col.lieu], ['pere', col.pere], ['mere', col.mere], ['adresse', col.adresse], ['embauche', col.embauche], ['nin', col.nin], ['acte', col.acte], ['tel', col.tel]].forEach(function (c) { if (c[1] >= 0 && Badges.vide(p[c[0]])) sh.getRange(ligne, c[1] + 1).setNumberFormat('@').setValue(Badges.vide(p[c[0]])); }); // texte : une date saisie reste telle quelle
           if (cs >= 0 && Badges.vide(p.structure)) sh.getRange(ligne, cs + 1).setValue(Badges.vide(p.structure));
           sh.getRange(ligne, cd + 1).setNumberFormat('dd/MM/yyyy').setValue(Utilities.formatDate(new Date(), 'Africa/Algiers', 'dd/MM/yyyy'));
           SpreadsheetApp.flush();

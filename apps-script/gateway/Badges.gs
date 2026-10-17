@@ -139,8 +139,8 @@ function badgesCfg_(c) {
 function badgesSaisieCharge_(req) {
   var ent = Badges.vide(req.entreprise), ctr = Badges.vide(req.contrat), tit = Badges.vide(req.intitule);
   if (!ent) throw new Error('Indiquez l\'entreprise.');
-  var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { var o = { nom: Badges.vide(p.nom).slice(0, 200), prenom: Badges.vide(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; ['structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere'].forEach(function (k) { o[k] = Badges.vide(p[k]).slice(0, 200); }); return o; }).filter(function (p) { return p.nom; });
-  return { prestataire: [ctr, ent, tit].join(' - '), personnes: gens, ignorerEnquetes: Array.isArray(req.ignorer) ? req.ignorer.map(String) : [], entreprise: ent };
+  var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { var o = { nom: Badges.vide(p.nom).slice(0, 200), prenom: Badges.vide(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; ['structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere', 'adresse', 'embauche', 'nin', 'acte', 'tel'].forEach(function (k) { o[k] = Badges.vide(p[k]).slice(0, 200); }); return o; }).filter(function (p) { return p.nom; });
+  return { prestataire: [ctr, ent, tit].join(' - '), personnes: gens, ignorerEnquetes: Array.isArray(req.ignorer) ? req.ignorer.map(String) : [], entreprise: ent, wilaya: Badges.vide(req.wilaya).slice(0, 60) };
 }
 // ---------- actions ----------
 function badgesDonnees_(req) {
@@ -176,6 +176,15 @@ function badgesLigneEnquete_(req) {
   var voulu = badgesVider_(req.nom) + ' ' + badgesVider_(req.prenom);
   for (var i = col.h + 1; i < lignes.length; i += 1) { var fr = Badges.vide((lignes[i] || [])[col.fr]); if (fr && enqMemePersonne_(voulu, fr)) return { sh: sh, lignes: lignes, col: col, i: i }; }
   throw new Error('Personne introuvable dans l\'onglet « ' + req.onglet + ' »');
+}
+/** Export : le contenu d'un onglet des Enquêtes tel qu'il est affiché (titres, en-têtes, personnes), pour en faire un fichier Excel. Lecture seule. */
+function badgesEnquetesExport_(req) {
+  badgesDroit_(req, 2);
+  var sh = enqClasseur_().getSheetByName(String(req.onglet || ''));
+  if (!sh) throw new Error('Onglet introuvable dans les Enquêtes : ' + req.onglet);
+  var l = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(l), fin = l.length;
+  if (col) { while (fin > col.h + 1 && !Badges.vide((l[fin - 1] || [])[col.fr])) fin -= 1; } // sans les lignes vides du bas
+  return { onglet: sh.getName(), lignes: l.slice(0, Math.min(fin, 1500)) };
 }
 function badgesFiche_(req) {
   badgesDroit_(req, 2);
