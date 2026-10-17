@@ -43,11 +43,16 @@ test('entreprise tirée du prestataire du formulaire ; visite sur site ignorée'
   assert.strictEqual(E('enqEntrepriseDe_', 'Visite sur site - Direction'), '');
   assert.strictEqual(E('enqEntrepriseDe_', ''), '');
 });
-test('ligne libre : première ligne sans nom sous les en-têtes (lignes numérotées vides du modèle), sinon à la suite', () => {
+test('ligne libre : toujours à la suite de la dernière personne (jamais dans un trou, jamais sur une ligne remplie)', () => {
   const col = { h: 2, fr: 1, fonction: 0 };
   const lignes = [['t'], [''], ['الوظيفة', 'بالفرنسية'], ['Chauffeur', 'KACI Farid'], ['', '', '2'], ['', '', '3']];
-  assert.strictEqual(E('enqLigneLibre_', lignes, col), 4);
-  assert.strictEqual(E('enqLigneLibre_', lignes.slice(0, 4), col), 4);
+  assert.strictEqual(E('enqLigneLibre_', lignes, col), 4);                  // ligne numérotée vide qui suit la dernière personne
+  assert.strictEqual(E('enqLigneLibre_', lignes.slice(0, 4), col), 4);      // fin du tableau : on ajoute en bas
+  const trou = [['t'], [''], ['الوظيفة', 'بالفرنسية'], ['', 'A B'], ['', ''], ['', 'C D'], ['', '']];
+  assert.strictEqual(E('enqLigneLibre_', trou, col), 6);                    // le trou de la ligne 5 n'est pas rempli : on continue après C D
+  const pleine = [['t'], [''], ['الوظيفة', 'بالفرنسية'], ['', 'A B'], ['Maçon', '']];
+  assert.strictEqual(E('enqLigneLibre_', pleine, col), 5);                  // la ligne qui suit porte déjà une fonction : on n'écrase pas
+  assert.strictEqual(E('enqLigneLibre_', [['t'], [''], ['الوظيفة', 'بالفرنسية']], col), 3);   // onglet vide : première ligne sous l'en-tête
   assert.strictEqual(E('enqNomComplet_', 'kaci', 'Farid'), 'KACI Farid');
 });
 test('résumé lisible', () => {

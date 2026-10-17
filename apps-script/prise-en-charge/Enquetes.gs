@@ -168,9 +168,19 @@ function enqEntrepriseDe_(prestataire) {
   var p = t.split(' - ');
   return (p.length > 1 ? p[1] : p[0]).trim();
 }
-/** Ligne où écrire dans un onglet : la première ligne sans nom (les lignes numérotées vides du modèle), sinon la suivante après la dernière. */
+/**
+ * Ligne où écrire dans un onglet : TOUJOURS à la suite de la dernière personne déjà inscrite (jamais dans un trou au milieu, jamais sur une ligne remplie).
+ * La ligne qui suit est utilisée si elle est vide (lignes numérotées du modèle), sinon on ajoute en bas.
+ */
 function enqLigneLibre_(lignes, col) {
-  for (var i = col.h + 1; i < lignes.length; i += 1) { if (Badges.vide((lignes[i] || [])[col.fr])) continue; return i; }
+  var derniere = col.h;
+  for (var i = lignes.length - 1; i > col.h; i -= 1) { if (Badges.vide((lignes[i] || [])[col.fr])) { derniere = i; break; } }
+  var suivante = derniere + 1;
+  if (suivante < lignes.length) {
+    var l = lignes[suivante] || [];
+    var occupee = [col.fr, col.fonction, col.prenomAr, col.nomAr].some(function (c) { return c >= 0 && Badges.vide(l[c]); });
+    if (!occupee) return suivante;
+  }
   return lignes.length;
 }
 function enqNomComplet_(nom, prenom) { return (Badges.vide(nom).toLocaleUpperCase('fr') + ' ' + Badges.vide(prenom)).trim(); }
