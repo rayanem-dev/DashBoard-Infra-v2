@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-07",
+    "date": "2026-10-21",
+    "title": "Version 5.4.2 — Fiche personnelle encore plus compacte",
+    "changes": [
+      "Accueil : la fiche personnelle est encore réduite (trois colonnes d'informations à toutes les largeurs, textes et photo plus petits)."
+    ]
+  },
+  {
     "id": "2026-10-21-06",
     "date": "2026-10-21",
     "title": "Version 5.4.1 — Mes applications : anciennes icônes, sans ascenseur",

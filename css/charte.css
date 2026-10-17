@@ -525,3 +525,17 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .mes-apps-grille { grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 5px; max-height: none; overflow: visible; padding: 0; }
 .mes-app { height: 34px; font-size: 16px; border-radius: 10px; }
 .mes-app::after { bottom: 40px; }
+
+/* ===== Fiche personnelle : encore plus compacte, à toutes les largeurs (3 colonnes d'informations, jamais 2) ===== */
+.agent .agent-gauche { gap: 4px; }
+.agent .agent-gauche .agent-entete { align-items: center; gap: 8px; }
+.agent .agent-gauche .avatar { width: 32px; height: 32px; font-size: 12px; }
+.agent .agent-gauche .agent-id h2 { font-size: 13.5px; }
+.agent .agent-gauche .agent-poste { font-size: 10px; }
+.agent .agent-gauche .agent-badges > * { font-size: 9px; padding: 0 6px; }
+.agent .agent-gauche .agent-infos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 8px; padding: 4px 0 0; }
+.agent .agent-gauche .agent-infos span { font-size: 8px; letter-spacing: .3px; }
+.agent .agent-gauche .agent-infos b { font-size: 10.5px; line-height: 1.2; }
+.agent .agent-gauche .agent-infos .a-completer { font-size: 10px; margin-top: 0; }
+@media (max-width: 900px) { .agent .agent-gauche .agent-infos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .agent .agent-gauche .agent-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
