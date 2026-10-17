@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-18",
+    "date": "2026-10-21",
+    "title": "Version 5.5.4 — Traduction des applications",
+    "changes": [
+      "Requête transport, Commande de pièces, Dotation et Prises en charge sont traduites en arabe et en anglais (titres, champs, boutons, messages). Le changement est pris en compte sans recoller les fichiers dans Apps Script."
+    ]
+  },
+  {
     "id": "2026-10-21-17",
     "date": "2026-10-21",
     "title": "Version 5.5.3 — Requête transport",

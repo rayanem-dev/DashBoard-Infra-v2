@@ -21,7 +21,7 @@
       document.head.appendChild(s);
     });
   }
-  var TRADUCTION = ['js/i18n.js', 'js/i18n-dico.js', 'js/i18n-apps.js', 'js/i18n-suivi.js'];
+  var TRADUCTION = ['js/i18n.js', 'js/i18n-dico.js', 'js/i18n-apps.js', 'js/i18n-suivi.js', 'js/i18n-formulaires.js'];
   /** Moteur et dictionnaires de traduction : chargés seulement quand la langue n'est pas le français (≈ 130 ko économisés sinon). */
   function avecTraduction(suite) { if (window.I18n) { suite(); return; } chargerTout(TRADUCTION, suite); }
   function langueMemorisee() { try { return localStorage.getItem('infra-lang') || 'fr'; } catch (e) { return 'fr'; } }
