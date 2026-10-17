@@ -55,8 +55,9 @@
         <a class="par-sijil" id="sijil" href="https://rayanem-dev.github.io/pointage-app/" target="_blank" rel="noopener" title="Sijil — gestion des pointages et des rotations"><img src="img/sijil-symbole.png" alt="" width="14" height="14"><span>Propulsé par <b>Sijil</b></span></a>
       </div>
       <aside class="mes-apps" id="mes-apps" aria-label="Mes applications" hidden>
-        <h3>Mes applications <small id="mes-apps-n"></small></h3>
-        <div class="mes-apps-grille" id="mes-apps-grille"></div>
+        <div class="mes-apps-tete"><h3>Mes applications <small id="mes-apps-n"></small></h3><span class="mes-apps-nav" id="mes-apps-nav"></span></div>
+        <div class="mes-apps-pages" id="mes-apps-grille"></div>
+        <div class="mes-apps-points" id="mes-apps-points" hidden></div>
       </aside>
     </div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
@@ -82,6 +83,7 @@
 <script src="js/annuaire.js"></script>
 <script src="js/rotation.js"></script>
 <script src="js/employeurs.js"></script>
+<script src="js/icones.js"></script>
 <script src="js/synthese.js"></script>
 <script src="js/boutoninstaller.js"></script>
 <script>
@@ -136,18 +138,34 @@
   }
 
   // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
-  // Mes applications : une icône par application autorisée pour cet utilisateur (nom au survol), même ouverture que les cartes du bas
+  // Mes applications : écran « tablette » — une tuile par application autorisée (icône + nom), 12 par page, pages par glissement ou par les points
+  var PAR_PAGE = 12;
+  function courtTitre(t) { return String(t || '').split(/\s[–—-]\s|\s\(|\s\/\s/)[0].trim(); }
   function mesApps(menu) {
-    var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0; g.textContent = '';
+    var box = $('mes-apps'), g = $('mes-apps-grille'), pts = $('mes-apps-points'), nav = $('mes-apps-nav'), vues = {}, liste = [];
+    g.textContent = ''; pts.textContent = ''; nav.textContent = '';
     (menu || []).forEach(function (m) {
       (m.apps || []).forEach(function (a) {
-        var u = lienSur(a.url); if (u === '#' || vues[u]) return; vues[u] = 1; n += 1;
-        var c = el('a', 'mes-app', a.emoji || '📄'); c.href = u; c.dataset.nom = a.titre || ''; c.title = a.titre || ''; c.setAttribute('aria-label', a.titre || '');
-        if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
-        g.appendChild(c);
+        var u = lienSur(a.url); if (u === '#' || vues[u]) return; vues[u] = 1; liste.push({ a: a, u: u, m: m.id });
       });
     });
-    $('mes-apps-n').textContent = n ? '(' + n + ')' : ''; box.hidden = !n;
+    $('mes-apps-n').textContent = liste.length ? '(' + liste.length + ')' : ''; box.hidden = !liste.length;
+    var nb = Math.ceil(liste.length / PAR_PAGE), page = null;
+    liste.forEach(function (x, i) {
+      if (i % PAR_PAGE === 0) { page = el('div', 'mes-apps-page'); g.appendChild(page); }
+      var c = el('a', 'mes-app'); c.href = x.u; c.title = x.a.titre || ''; c.setAttribute('aria-label', x.a.titre || '');
+      if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
+      var ic = el('span', 'mes-app-ic'); ic.style.background = Icones.couleur(x.m); ic.appendChild(Icones.svg(Icones.pour(x.a.titre), 24)); c.appendChild(ic);
+      c.appendChild(el('span', 'mes-app-nom', courtTitre(x.a.titre))); page.appendChild(c);
+    });
+    if (nb < 2) { pts.hidden = true; return; }
+    pts.hidden = false;
+    var boutons = [];
+    function aller(i) { g.scrollTo({ left: Math.max(0, Math.min(nb - 1, i)) * g.clientWidth, behavior: 'smooth' }); }
+    for (var k = 0; k < nb; k += 1) { (function (i) { var b = el('button', 'mes-point'); b.type = 'button'; b.setAttribute('aria-label', 'Page ' + (i + 1)); b.addEventListener('click', function () { aller(i); }); pts.appendChild(b); boutons.push(b); })(k); }
+    [['chevron-left', -1], ['chevron-right', 1]].forEach(function (d) { var b = el('button', 'mes-nav'); b.type = 'button'; b.setAttribute('aria-label', d[1] < 0 ? 'Page précédente' : 'Page suivante'); b.appendChild(Icones.svg(d[0], 16)); b.addEventListener('click', function () { aller(Math.round(g.scrollLeft / g.clientWidth) + d[1]); }); nav.appendChild(b); });
+    function maj() { var p = Math.round(g.scrollLeft / Math.max(1, g.clientWidth)); boutons.forEach(function (b, i) { b.classList.toggle('actif', i === p); }); }
+    g.addEventListener('scroll', maj); maj();
   }
   function raccourcis(menu) {
     var nav = $('raccourcis'); nav.textContent = '';

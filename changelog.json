@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-21-05",
+    "date": "2026-10-21",
+    "title": "Version 5.4.0 — Mes applications en écran « tablette »",
+    "changes": [
+      "Accueil : « Mes applications » devient un écran de tuiles (icône colorée par module + nom), 12 par page, avec pages par glissement, flèches ou points — plus d'ascenseur.",
+      "Nouveau pack d'icônes (Lucide) enregistré sur le site : aucune requête externe."
+    ]
+  },
+  {
     "id": "2026-10-21-04",
     "date": "2026-10-21",
     "title": "Version 5.3.3 — Fiche personnelle compacte",
