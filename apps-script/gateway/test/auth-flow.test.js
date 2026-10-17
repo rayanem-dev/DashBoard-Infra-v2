@@ -99,3 +99,15 @@ test('aucun mot de passe en clair dans la feuille des identifiants', () => {
   assert.ok(!JSON.stringify(m.feuille).includes('MonSecret42'));
   assert.ok(m.feuille[1][2].length > 20);
 });
+
+test('mode support : session au nom d\'un autre compte, tracée, jamais pour soi-même', () => {
+  const m = monde();
+  const admin = { email: 'admin@x.dz', nom: 'Admin' };
+  const r = m.Auth.usurper(admin, 'a@x.dz');
+  assert.ok(r.token); assert.strictEqual(r.user.email, 'a@x.dz'); assert.strictEqual(r.par, 'admin@x.dz');
+  assert.strictEqual(m.Auth.userFromToken(r.token).email, 'a@x.dz'); // la session ouvre bien le compte cible
+  assert.strictEqual(m.Auth.estUsurpation(r.token), true);
+  assert.strictEqual(m.Auth.estUsurpation('inconnu'), false);
+  echoue(() => m.Auth.usurper({ email: 'a@x.dz' }, 'a@x.dz'), /déjà votre compte/);
+  echoue(() => m.Auth.usurper(admin, 'absent@x.dz'), /inconnu/);
+});

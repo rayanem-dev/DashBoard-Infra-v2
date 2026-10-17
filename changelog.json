@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-21-26",
+    "date": "2026-10-21",
+    "title": "Version 5.8.0 — Mode support",
+    "changes": [
+      "Privilèges : bouton « Se connecter en tant que » sur chaque utilisateur actif, pour l'aider ou tester son environnement. La session dure 2 h, un bandeau rouge « Mode support » reste affiché avec « Revenir à mon compte », et chaque ouverture est inscrite au journal.",
+      "En mode support, le changement de mot de passe, de l'e-mail de contact et toute action d'administration sont interdits."
+    ]
+  },
+  {
     "id": "2026-10-21-25",
     "date": "2026-10-21",
     "title": "Version 5.7.1 — Badges : contrats en exécution et impression des listes",

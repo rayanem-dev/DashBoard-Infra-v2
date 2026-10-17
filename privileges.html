@@ -122,7 +122,9 @@
       }); ta.appendChild(bk); tr.appendChild(ta);
       var tm = el('td'); var bm = el('button', 'btn-s', 'Mot de passe'); bm.title = 'Définir un mot de passe provisoire pour ' + u.nom;
       bm.addEventListener('click', function () { definirMdp(u); }); tm.appendChild(bm);
-      var bd = el('button', 'btn-s', 'Diagnostic'); bd.style.marginLeft = '6px'; bd.addEventListener('click', function () { ouvrirConnexions(u.email); }); tm.appendChild(bd); tr.appendChild(tm);
+      var bd = el('button', 'btn-s', 'Diagnostic'); bd.style.marginLeft = '6px'; bd.addEventListener('click', function () { ouvrirConnexions(u.email); }); tm.appendChild(bd);
+      var bs = el('button', 'btn-s', '👤 Se connecter en tant que'); bs.style.marginLeft = '6px'; bs.title = 'Ouvrir le portail comme ' + u.nom + ' (support, 2 h)';
+      bs.addEventListener('click', function () { usurper(u); }); if (!u.actif) bs.disabled = true; tm.appendChild(bs); tr.appendChild(tm);
       b.appendChild(tr);
     });
   }
@@ -269,6 +271,16 @@
       }
       if (r.ignores_bddorga.length) { z.appendChild(el('h4', null, 'Lignes de BDDORGA sans adresse exploitable (ces personnes n\'ont pas de compte)')); var u = el('ul'); r.ignores_bddorga.forEach(function (x) { u.appendChild(el('li', null, 'ligne ' + x.ligne + ' — ' + (x.nom || '(sans nom)') + ' : ' + x.raison)); }); z.appendChild(u); }
     }).catch(function (e) { z.textContent = e.message; });
+  }
+  /** Mode support : session ouverte au nom d'un utilisateur. Le jeton de l'administrateur est gardé pour revenir (bandeau « Mode support » sur chaque page). */
+  function usurper(u) {
+    if (!window.confirm('Ouvrir le portail au nom de ' + u.nom + ' ?\nVous verrez exactement ce qu\'il voit. L\'opération est enregistrée dans le journal.')) return;
+    Api.call('admin_usurper', { email: u.email }).then(function (r) {
+      try { sessionStorage.setItem('infra_v2_support', JSON.stringify({ retour: Api.token(), nom: u.nom, email: u.email, fin: Date.now() + (r.expire_s || 7200) * 1000 })); } catch (e) { /* stockage indisponible */ }
+      Api.setToken(r.token); try { sessionStorage.removeItem('gm_pages'); } catch (e) { /* rien */ }
+      if (window.Donnees && Donnees.vider) Donnees.vider();
+      location.href = 'portail.html';
+    }).catch(function (e) { toast(e.message, true); });
   }
   function ouvrirConnexions(email) { $('o-cnx').click(); $('cnx-filtre').value = email; chargerConnexions(); diagnostic(email); }
   function dessiner() { dessinerUsers(); dessinerDef(); dessinerRoles(); dessinerApps(); dessinerExc(); }

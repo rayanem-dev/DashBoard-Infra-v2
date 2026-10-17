@@ -32,6 +32,8 @@ function doGet() {
 
 function route_(req) {
   chargerRoles_();
+  // Mode support : pas de changement de mot de passe, d'e-mail de contact ni d'administration au nom du compte emprunté
+  if (req.token && /^(admin_|changer_mdp$|email_contact_)/.test(String(req.action)) && Auth.estUsurpation(req.token)) throw new Error('Action interdite en mode support : revenez à votre compte.');
   switch (req.action) {
     case 'liste':        return Auth.liste(req.q);
     case 'demanderCode': return Auth.demanderCode(req.ident);
@@ -112,6 +114,13 @@ function route_(req) {
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles) }; }),
         utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
       };
+    }
+    case 'admin_usurper': {
+      var au = admin_(req); cible_(req.email);
+      // SUPER_ADMINS (propriété du script, e-mails séparés par des virgules) : si elle est renseignée, seuls ces comptes peuvent ouvrir une session de support
+      var sa = String(PropertiesService.getScriptProperties().getProperty('SUPER_ADMINS') || '').toLowerCase().split(/[,;\s]+/).filter(Boolean);
+      if (sa.length && sa.indexOf(String(au.email).toLowerCase()) === -1) throw Object.assign(new Error('Réservé aux super-administrateurs'), { code: 'DROITS' });
+      return Auth.usurper(au, req.email);
     }
     case 'admin_role_enregistrer': return roleEnregistrer_(req);
     case 'admin_role_supprimer': return roleSupprimer_(req);

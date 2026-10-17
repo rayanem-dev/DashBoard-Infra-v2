@@ -172,6 +172,22 @@ var Auth = (function () {
              wifi_user: u.wifi_user || '', sap: u.sap || '', nin_masque: masquer_(u.nin), nin_renseigne: !!String(u.nin || '').trim() };
   }
 
+  /**
+   * Mode support : une session au nom d'un autre compte, ouverte par un administrateur (jamais pour son propre compte), 2 h au plus.
+   * La session garde la trace de qui l'a ouverte (« I_<jeton> ») : elle ne peut ni changer de mot de passe, ni toucher aux privilèges, ni en ouvrir une autre.
+   */
+  function usurper(admin, email) {
+    var cible = Store.utilisateur(email);
+    if (!cible) throw erreur_('Utilisateur inconnu');
+    if (String(cible.actif) === '0') throw erreur_('Compte désactivé : réactivez-le d\'abord');
+    if (String(cible.email).toLowerCase() === String(admin.email).toLowerCase()) throw erreur_('C\'est déjà votre compte');
+    var t = tok_(), c = CacheService.getScriptCache(), duree = Math.min(CFG.SESSION_SECONDS, 2 * 3600);
+    c.put('S_' + t, cible.email, duree); c.put('I_' + t, admin.email, duree);
+    noter_('support_usurpation', admin.email, 'au nom de ' + cible.email);
+    return { token: t, user: publique_(cible), par: admin.email, expire_s: duree };
+  }
+  function estUsurpation(token) { return !!(token && CacheService.getScriptCache().get('I_' + token)); }
+
   function userFromToken(token) {
     var email = token ? CacheService.getScriptCache().get('S_' + token) : null;
     if (!email) throw erreur_('Session expirée', 'SESSION');
@@ -263,7 +279,7 @@ var Auth = (function () {
     if (rt) PropertiesService.getScriptProperties().deleteProperty(rmKey_(rt));
   }
 
-  return { adresseEnvoi: adresseEnvoi_, demanderEmailContact: demanderEmailContact, confirmerEmailContact: confirmerEmailContact, definirEmailContact: definirEmailContact, definirMdpAdmin: definirMdpAdmin, etatSecret: etatSecret, compteurs: compteurs, empreinteDe: empreinteDe, estParDefaut: estParDefaut, changerMdp: changerMdp, reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, logout: logout, publique: publique_ };
+  return { adresseEnvoi: adresseEnvoi_, demanderEmailContact: demanderEmailContact, confirmerEmailContact: confirmerEmailContact, definirEmailContact: definirEmailContact, definirMdpAdmin: definirMdpAdmin, etatSecret: etatSecret, compteurs: compteurs, empreinteDe: empreinteDe, estParDefaut: estParDefaut, changerMdp: changerMdp, reprendre: reprendre, controleMdp: controleMdp_, liste: liste, demanderCode: demanderCode, login: login, activer: activer, emettreCode: emettreCode, userFromToken: userFromToken, usurper: usurper, estUsurpation: estUsurpation, logout: logout, publique: publique_ };
 })();
 
 if (typeof module !== 'undefined') module.exports = Auth;
