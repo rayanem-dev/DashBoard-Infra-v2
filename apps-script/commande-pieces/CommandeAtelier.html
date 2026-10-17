@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Commande de Pièces – Service Électromécanique</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   :root {
     --orange-main: #E85D04; --orange-light: #F48C06; --orange-pale: #FFE8D6;
     --orange-dark: #9D0208; --border: #E5E7EB;
@@ -316,7 +316,7 @@
       resultDiv.className = "success";
       resultDiv.style.display = "block";
       resultDiv.innerHTML = `<strong>Commande enregistrée !</strong><br>N° : <b>${response.numCommande}</b><br>
-        <a href="${response.pdfUrl}" target="_blank" class="download-btn">Ouvrir / Télécharger le PDF</a>`;
+        <a href="${response.pdfUrl}" target="_blank" rel="noopener" class="download-btn">Ouvrir / Télécharger le PDF</a>`;
       window.open(response.pdfUrl, '_blank');
     }).withFailureHandler(function(err) {
       btn.disabled = false;

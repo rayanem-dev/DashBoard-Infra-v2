@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Prise en Charge — Gestion Prestataires</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   :root {
     --orange-main: #E85D04; --orange-light: #F48C06; --gray-dark: #1A1A2E; --gray-mid: #2D2D44;
     --gray-light: #F8F9FA; --white: #FFFFFF; --text-dark: #1C1C1C; --text-muted: #6B7280;
@@ -392,7 +392,7 @@
   // Construit une liste soignée de fichiers PDF (badge + nom cliquable)
   function construirePdfListe(items) {
     return '<div class="pdf-list">' + items.map(it =>
-      `<div class="pdf-item"><span class="pdf-badge">PDF</span><a href="${it.url}" target="_blank">${it.nom}</a></div>`
+      `<div class="pdf-item"><span class="pdf-badge">PDF</span><a href="${it.url}" target="_blank" rel="noopener">${it.nom}</a></div>`
     ).join('') + '</div>';
   }
 

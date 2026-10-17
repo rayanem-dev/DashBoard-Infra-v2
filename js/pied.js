@@ -12,7 +12,19 @@
       'html[data-theme="dark"] body > header { filter: none; }';
     document.head.appendChild(st);
   }
-  function charger(src, suite) { var s = document.createElement('script'); s.src = BASE + src; s.onload = suite; s.onerror = suite; document.head.appendChild(s); }
+  /** Télécharge toutes les pièces en parallèle ; elles s'exécutent dans l'ordre de la liste (async=false). */
+  function chargerTout(liste, suite) {
+    var restant = liste.length; if (!restant) { suite(); return; }
+    liste.forEach(function (src) {
+      var s = document.createElement('script'); s.src = BASE + src; s.async = false;
+      s.onload = s.onerror = function () { restant -= 1; if (!restant) suite(); };
+      document.head.appendChild(s);
+    });
+  }
+  var TRADUCTION = ['js/i18n.js', 'js/i18n-dico.js', 'js/i18n-apps.js', 'js/i18n-suivi.js'];
+  /** Moteur et dictionnaires de traduction : chargés seulement quand la langue n'est pas le français (≈ 130 ko économisés sinon). */
+  function avecTraduction(suite) { if (window.I18n) { suite(); return; } chargerTout(TRADUCTION, suite); }
+  function langueMemorisee() { try { return localStorage.getItem('infra-lang') || 'fr'; } catch (e) { return 'fr'; } }
   function monter() {
     if (!window.BasDePage) return;
     BasDePage.monter({
@@ -22,13 +34,17 @@
       copyright: '© 2026 JawlaDev — Tous droits réservés', copyrightLien: { texte: 'JawlaDev', href: 'https://rayanem-dev.github.io/JawlaDev/' },
       actualiser: function () { location.reload(); },
       langues: [['fr', 'Français'], ['ar', 'العربية'], ['en', 'English']], langue: 'fr',
-      surLangue: function (code) { if (window.I18n) I18n.appliquer(code); },
+      surLangue: function (code) { if (code === 'fr' && !window.I18n) return; avecTraduction(function () { if (window.I18n) I18n.appliquer(code); }); },
       t: function (texte) { return window.I18n ? I18n.t(texte) : texte; },
       surTheme: function () { document.dispatchEvent(new Event('infra-theme')); },
       cle: 'infra'
     });
-    if (window.I18n) I18n.appliquer(BasDePage.langue()); // langue mémorisée (basdepage règle lang/dir, la traduction du texte est faite ici)
+    var l = BasDePage.langue(); if (l !== 'fr') avecTraduction(function () { I18n.appliquer(l); }); // langue mémorisée (basdepage règle lang/dir, la traduction du texte est faite ici)
   }
-  // version → nouveautés → traduction (moteur + dictionnaire) → pied de page (qui applique la langue mémorisée)
-  charger('js/version.js', function () { var bv = document.getElementById('bandeau-version'); if (bv && window.PORTAIL_VERSION) bv.textContent = 'Sonatrach · RNS · Version ' + window.PORTAIL_VERSION; charger('js/nouveautes.js', function () { charger('js/i18n.js', function () { charger('js/i18n-dico.js', function () { charger('js/i18n-apps.js', function () { charger('js/i18n-suivi.js', function () { charger('js/basdepage.js', monter); }); }); }); }); }); });
+  // version, nouveautés et pied de page ; la traduction n'est chargée qu'en arabe / anglais (avant le pied de page, pour que ses textes soient traduits)
+  var pieces = ['js/version.js', 'js/nouveautes.js'].concat(langueMemorisee() === 'fr' ? [] : TRADUCTION, ['js/basdepage.js']);
+  chargerTout(pieces, function () {
+    var bv = document.getElementById('bandeau-version'); if (bv && window.PORTAIL_VERSION) bv.textContent = 'Sonatrach · RNS · Version ' + window.PORTAIL_VERSION;
+    monter();
+  });
 })();

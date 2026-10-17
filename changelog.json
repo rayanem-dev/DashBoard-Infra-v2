@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-21-15",
+    "date": "2026-10-21",
+    "title": "Version 5.5.1 — Site plus rapide",
+    "changes": [
+      "Chargement du pied de page en parallèle ; les dictionnaires de traduction (≈ 130 ko) ne sont plus téléchargés en français, seulement en arabe ou en anglais.",
+      "Lecture groupée des feuilles de suivi rétablie : une seule requête au lieu d'une par feuille à l'ouverture du portail.",
+      "Police : poids 300 inutilisé retiré ; tous les liens externes s'ouvrent désormais avec « noopener »."
+    ]
+  },
+  {
     "id": "2026-10-21-14",
     "date": "2026-10-21",
     "title": "Version 5.5.0 — Pied de page, langue et thème sur toutes les applications",

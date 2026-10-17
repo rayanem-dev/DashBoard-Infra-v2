@@ -5,7 +5,7 @@
   <base target="_top">
   <title>Formulaire de Requête — Division Infrastructure RNS</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     :root {
       --orange-main: #E85D04;
@@ -496,7 +496,7 @@
         if(res.success) {
           msg.className = 'success';
           msg.innerHTML = `✅ <strong>Succès !</strong> Le PDF a été généré.<br><br>
-                           <a href="${res.pdfUrl}" target="_blank" style="color:var(--orange-main); font-weight:bold; text-decoration: underline;">📄 Cliquez ici pour l'ouvrir</a>`;
+                           <a href="${res.pdfUrl}" target="_blank" rel="noopener" style="color:var(--orange-main); font-weight:bold; text-decoration: underline;">📄 Cliquez ici pour l'ouvrir</a>`;
 
           currentPdfUrl = res.pdfUrl;
           currentDownloadUrl = res.downloadUrl;

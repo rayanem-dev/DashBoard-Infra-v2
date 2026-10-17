@@ -6,7 +6,7 @@
 <base target="_top">
 <title>Dotations – Division Infrastructure</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
   :root {
     --orange-main: #E85D04;
@@ -727,8 +727,8 @@ function generer(type){
       return;
     }
     document.getElementById('resultat').innerHTML =
-      '<a href="'+res.docUrl+'" target="_blank">📄 Ouvrir le Google Doc</a>' +
-      '<a href="'+res.pdfUrl+'" target="_blank">⬇️ Ouvrir le PDF</a>';
+      '<a href="'+res.docUrl+'" target="_blank" rel="noopener">📄 Ouvrir le Google Doc</a>' +
+      '<a href="'+res.pdfUrl+'" target="_blank" rel="noopener">⬇️ Ouvrir le PDF</a>';
     chargerHistorique();
   }).withFailureHandler(function(err){
     btn.disabled = false; btn.textContent = texteOriginal;
@@ -752,8 +752,8 @@ function chargerHistorique(){
       const row = document.createElement('div');
       row.className = 'histo-item';
       let links = '';
-      if(f.docId) links += '<a href="https://docs.google.com/document/d/'+f.docId+'/edit" target="_blank">📄 Doc</a>';
-      if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank">⬇️ PDF</a>';
+      if(f.docId) links += '<a href="https://docs.google.com/document/d/'+f.docId+'/edit" target="_blank" rel="noopener">📄 Doc</a>';
+      if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank" rel="noopener">⬇️ PDF</a>';
       const tagClass = (f.type === 'EAU') ? 'eau' : (f.type === 'ENTRETIEN') ? 'entretien' : (f.type === 'DIVISION') ? 'division' : 'vivres';
       row.innerHTML =
         '<span class="histo-tag ' + tagClass + '">' + f.type + '</span>' +
