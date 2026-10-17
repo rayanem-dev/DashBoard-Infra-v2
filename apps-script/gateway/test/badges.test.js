@@ -185,3 +185,11 @@ test('passerelle : saisie Enquêtes → format « contrat - entreprise - intitul
   assert.strictEqual(sans.prestataire, ' - SARL TEST - ');
   assert.throws(() => G('badgesSaisieCharge_', { entreprise: '', personnes: [] }));
 });
+
+test('Enquêtes : colonnes naissance, lieu, père, mère, structure repérées par leur en-tête', () => {
+  const ent = ['رقم', 'اللقب', 'الإسم', 'تاريخ الإزدياد', 'مكان الإزدياد', 'الأب', 'الأم', 'الاسم و اللقب بالفرنسية', 'الوظيفة المقترحة', 'الهيكل — Structure'];
+  const col = B.colonnesEnquetes([ent, ['1', 'ع', 'م', '1984/03/04', 'Adrar', 'أحمد', 'فاطمة', 'AMANI Brahim', 'Gardien', 'DSP']]);
+  assert.deepStrictEqual([col.nomAr, col.prenomAr, col.naiss, col.lieu, col.pere, col.mere, col.fr, col.fonction, col.structure], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const a = B.analyserEnquetes([ent, ['1', 'ع', 'م', '', '', '', '', 'AMANI Brahim', 'Gardien', 'DSP']], 'ONGLET');
+  assert.strictEqual(a.personnes[0].structure, 'DSP');
+});

@@ -93,9 +93,14 @@ var Badges = (function () {
       if ((lignes[i] || []).some(function (c) { return sansEsp(c).indexOf('بالفرنسية') >= 0; })) h = i;
     }
     if (h < 0) return null;
-    var col = { h: h, fr: -1, fonction: -1, prenomAr: -1, nomAr: -1 };
+    var col = { h: h, fr: -1, fonction: -1, prenomAr: -1, nomAr: -1, naiss: -1, lieu: -1, pere: -1, mere: -1, structure: -1 };
     (lignes[h] || []).forEach(function (c, x) {
-      var s = sansEsp(c);
+      var s = sansEsp(c), a = s.replace(/[إأآ]/g, 'ا');
+      if (/تاريخ.*ازدياد/.test(a)) { col.naiss = x; return; }
+      if (/مكان.*ازدياد/.test(a)) { col.lieu = x; return; }
+      if (a === 'الاب') { col.pere = x; return; }
+      if (a === 'الام') { col.mere = x; return; }
+      if (/^الهيكل|structure/i.test(a)) { col.structure = x; return; }
       if (s.indexOf('بالفرنسية') >= 0) col.fr = x;
       else if (s.indexOf('الوظيفة') >= 0) col.fonction = x;
       else if (s === 'الإسم' || s === 'الاسم') col.prenomAr = x;
@@ -121,7 +126,7 @@ var Badges = (function () {
       if (!fr) continue;
       var nomAr = col.nomAr >= 0 ? vide(l[col.nomAr]) : '', prenomAr = col.prenomAr >= 0 ? vide(l[col.prenomAr]) : '';
       var d = decouperNom(fr, nomAr);
-      personnes.push({ nom: d.nom, prenom: d.prenom, fonction: col.fonction >= 0 ? vide(l[col.fonction]) : '', nomAr: nomAr, prenomAr: prenomAr, verifier: d.verifier, onglet: onglet, ligne: i + 1 });
+      personnes.push({ nom: d.nom, prenom: d.prenom, fonction: col.fonction >= 0 ? vide(l[col.fonction]) : '', nomAr: nomAr, prenomAr: prenomAr, structure: col.structure >= 0 ? vide(l[col.structure]) : '', verifier: d.verifier, onglet: onglet, ligne: i + 1 });
     }
     return { onglet: onglet, entreprise: societe || vide(onglet), personnes: personnes };
   }

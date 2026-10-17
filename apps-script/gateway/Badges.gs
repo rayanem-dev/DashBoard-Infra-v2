@@ -72,7 +72,7 @@ function badgesFusion_(onglets, entCpm, surP, surE) {
     if (!entreprises.some(function (e) { return Badges.norm(e.nom) === Badges.norm(nom); })) entreprises.push({ nom: nom, contrats: [], source: 'enquetes' });
     var contratOnglet = badgesContratOnglet_(o.onglet, (entreprises.filter(function (e) { return Badges.norm(e.nom) === Badges.norm(nom); })[0] || { contrats: [] }).contrats);
     o.personnes.forEach(function (p) {
-      personnes.push({ id: 'e' + badgesHash_(o.onglet + '|' + Badges.cle({ nom: p.nom, prenom: p.prenom, entreprise: '' })), nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: nom, contrat: contratOnglet, structure: '', nomAr: p.nomAr, prenomAr: p.prenomAr, verifier: !!p.verifier, source: 'enquetes', onglet: o.onglet });
+      personnes.push({ id: 'e' + badgesHash_(o.onglet + '|' + Badges.cle({ nom: p.nom, prenom: p.prenom, entreprise: '' })), nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: nom, contrat: contratOnglet, structure: p.structure || '', nomAr: p.nomAr, prenomAr: p.prenomAr, verifier: !!p.verifier, source: 'enquetes', onglet: o.onglet });
     });
   });
   // corrections d'entreprises
@@ -139,7 +139,7 @@ function badgesCfg_(c) {
 function badgesSaisieCharge_(req) {
   var ent = Badges.vide(req.entreprise), ctr = Badges.vide(req.contrat), tit = Badges.vide(req.intitule);
   if (!ent) throw new Error('Indiquez l\'entreprise.');
-  var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { return { nom: Badges.vide(p.nom).slice(0, 200), prenom: Badges.vide(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; }).filter(function (p) { return p.nom; });
+  var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { var o = { nom: Badges.vide(p.nom).slice(0, 200), prenom: Badges.vide(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; ['structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere'].forEach(function (k) { o[k] = Badges.vide(p[k]).slice(0, 200); }); return o; }).filter(function (p) { return p.nom; });
   return { prestataire: [ctr, ent, tit].join(' - '), personnes: gens, ignorerEnquetes: Array.isArray(req.ignorer) ? req.ignorer.map(String) : [], entreprise: ent };
 }
 // ---------- actions ----------

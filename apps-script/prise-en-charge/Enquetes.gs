@@ -108,6 +108,16 @@ function enqColNumero_(lignes, col) {
   }
   return meilleur;
 }
+/** Colonne repérée par son en-tête (regex sur le texte sans espaces), créée à droite du tableau (avec le style de l'en-tête voisin) si elle manque ; renvoie son indice (0 = A). */
+function enqColonne_(sh, lignes, h, regex, titre) {
+  var ent = lignes[h] || [];
+  for (var c = 0; c < ent.length; c += 1) { if (regex.test(Badges.norm(ent[c]).replace(/ /g, '') + '|' + String(ent[c] == null ? '' : ent[c]).replace(/\s+/g, ''))) return c; }
+  var n = Math.max(sh.getLastColumn(), ent.length);
+  if (n + 1 > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), n + 1 - sh.getMaxColumns()); // jamais hors de la grille
+  sh.getRange(h + 1, n, 1, 1).copyTo(sh.getRange(h + 1, n + 1, 1, 1), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+  sh.getRange(h + 1, n + 1).setValue(titre);
+  return n;
+}
 /** Colonne « date d'enregistrement » : repérée par son en-tête (« تاريخ التسجيل » / « Date d'enregistrement ») ; -1 si absente (elle est alors créée à droite du tableau). */
 function enqColDate_(lignes, col) {
   var entete = lignes[col.h] || [];
@@ -319,21 +329,18 @@ function injecterEnquetes_(formData) {
           if (!col || col.fr < 0) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : colonne « بالفرنسية » introuvable dans « ' + cible + ' »'); return; }
           var i = enqLigneLibre_(lignes, col), ligne = i + 1, colNum = enqColNumero_(lignes, col);
           if (ligne > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), ligne - sh.getMaxRows()); // jamais d'écriture hors de la grille
-          var cd = enqColDate_(lignes, col);
-          if (cd < 0) { // première fois sur cet onglet : on ajoute la colonne à droite, avec le style de l'en-tête voisin
-            cd = Math.max(sh.getLastColumn(), (lignes[col.h] || []).length);
-            if (cd + 1 > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cd + 1 - sh.getMaxColumns()); // jamais hors de la grille
-            sh.getRange(col.h + 1, cd, 1, 1).copyTo(sh.getRange(col.h + 1, cd + 1, 1, 1), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
-            sh.getRange(col.h + 1, cd + 1).setValue('تاريخ التسجيل — Date d\'enregistrement');
-          }
+          var cd = enqColonne_(sh, lignes, col.h, /تاريخالتسجيل|dateenregistrement|dateinscription/, 'تاريخ التسجيل — Date d\'enregistrement');
+          var cs = Badges.vide(p.structure) ? enqColonne_(sh, lignes, col.h, /^الهيكل|structure/i, 'الهيكل — Structure') : (col.structure >= 0 ? col.structure : -1);
           if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
           sh.getRange(ligne, col.fr + 1).setValue(nomComplet);
           if (colNum >= 0 && !Badges.vide((lignes[i] || [])[colNum])) { /* ligne déjà numérotée : on garde son numéro */ }
           else if (colNum >= 0) sh.getRange(ligne, colNum + 1).setNumberFormat('00').setValue(enqProchainNumero_(lignes, col, colNum)); // numéro d'agent suivant
           if (col.fonction >= 0 && Badges.vide(p.fonction)) sh.getRange(ligne, col.fonction + 1).setValue(Badges.vide(p.fonction));
-          var ar = { nomAr: enqArabe_(nom), prenomAr: enqArabe_(prenom) }; // approché : à relire
+          var ar = { nomAr: Badges.vide(p.nomAr) || enqArabe_(nom), prenomAr: Badges.vide(p.prenomAr) || enqArabe_(prenom) }; // saisis, sinon approchés (à relire)
           if (col.nomAr >= 0 && ar.nomAr) sh.getRange(ligne, col.nomAr + 1).setValue(ar.nomAr);
           if (col.prenomAr >= 0 && ar.prenomAr) sh.getRange(ligne, col.prenomAr + 1).setValue(ar.prenomAr);
+          [['naissance', col.naiss], ['lieu', col.lieu], ['pere', col.pere], ['mere', col.mere]].forEach(function (c) { if (c[1] >= 0 && Badges.vide(p[c[0]])) sh.getRange(ligne, c[1] + 1).setNumberFormat('@').setValue(Badges.vide(p[c[0]])); }); // texte : une date saisie reste telle quelle
+          if (cs >= 0 && Badges.vide(p.structure)) sh.getRange(ligne, cs + 1).setValue(Badges.vide(p.structure));
           sh.getRange(ligne, cd + 1).setNumberFormat('dd/MM/yyyy').setValue(Utilities.formatDate(new Date(), 'Africa/Algiers', 'dd/MM/yyyy'));
           SpreadsheetApp.flush();
           if (Badges.vide(sh.getRange(ligne, col.fr + 1).getDisplayValue()) !== nomComplet) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : écriture non retenue (ligne ' + ligne + ' de « ' + cible + ' » protégée ?)'); return; }

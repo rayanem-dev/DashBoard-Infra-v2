@@ -248,7 +248,7 @@ var BadgesApp = (function () {
     function vueSaisie() {
       var X = S.saisie = S.saisie || { entreprise: '', contrat: '', intitule: '', lignes: [{ nom: '', prenom: '', fonction: '' }] };
       var v = el('div', 'bdg-saisie');
-      v.appendChild(el('p', 'bdg-note', 'Saisissez les personnes d\'une entreprise (même hors suivi CPM) : elles sont ajoutées à l\'onglet « ENTREPRISE · contrat » des Enquêtes administratives (créé s\'il n\'existe pas), à la suite des personnes déjà inscrites, avec la date d\'enregistrement.'));
+      v.appendChild(el('p', 'bdg-note', 'Saisissez les personnes d\'une entreprise : elles sont ajoutées à l\'onglet « ENTREPRISE · contrat » des Enquêtes administratives (créé s\'il n\'existe pas), à la suite des personnes déjà inscrites, avec la date d\'enregistrement.'));
       var dl = el('datalist'); dl.id = 'bdg-dl-ent'; S.entreprises.forEach(function (e) { var o = el('option'); o.value = e.nom; dl.appendChild(o); }); v.appendChild(dl);
       var dc = el('datalist'); dc.id = 'bdg-dl-ctr'; v.appendChild(dc);
       function contrats() { dc.innerHTML = ''; var e = S.entreprises.filter(function (x) { return B.norm(x.nom) === B.norm(X.entreprise); })[0]; ((e && e.contrats) || []).forEach(function (c) { var o = el('option'); o.value = c.numero; o.label = c.intitule || ''; dc.appendChild(o); }); }
@@ -256,16 +256,20 @@ var BadgesApp = (function () {
       ent.setAttribute('list', 'bdg-dl-ent'); ctr.setAttribute('list', 'bdg-dl-ctr');
       ent.oninput = function () { X.entreprise = ent.value; contrats(); }; ctr.oninput = function () { X.contrat = ctr.value; }; tit.oninput = function () { X.intitule = tit.value; }; contrats();
       var tete = el('div', 'bdg-grille'); tete.appendChild(champ('Entreprise', ent)); tete.appendChild(champ('N° de contrat', ctr)); tete.appendChild(champ('Intitulé', tit)); v.appendChild(tete);
-      var t = el('table', 'bdg-table'), th = el('tr'); ['N°', 'Nom', 'Prénom', 'Fonction', ''].forEach(function (x) { th.appendChild(el('th', null, x)); }); t.appendChild(el('thead')).appendChild(th);
+      var CH = [['nom', 'Nom', 'NOM'], ['prenom', 'Prénom', 'Prénom'], ['fonction', 'Fonction', 'Fonction'], ['structure', 'Structure', S.cfg.structure || 'Structure']];
+      var PLUS = [['nomAr', 'Nom (arabe)', 'اللقب'], ['prenomAr', 'Prénom (arabe)', 'الاسم'], ['naissance', 'Date de naissance', 'jj/mm/aaaa'], ['lieu', 'Lieu de naissance', 'Lieu'], ['pere', 'Père', 'Prénom du père'], ['mere', 'Mère', 'Nom de la mère']];
+      var cols = CH.concat(X.plus ? PLUS : []);
+      var t = el('table', 'bdg-table bdg-saisie-t'), th = el('tr'); ['#'].concat(cols.map(function (c) { return c[1]; }), ['']).forEach(function (x) { th.appendChild(el('th', null, x)); }); t.appendChild(el('thead')).appendChild(th);
       var tb = el('tbody');
       X.lignes.forEach(function (l, i) {
         var tr = el('tr'); tr.appendChild(el('td', null, String(i + 1)));
-        ['nom', 'prenom', 'fonction'].forEach(function (k) { var inp = saisie(l[k], 'text', k === 'nom' ? 'NOM' : k === 'prenom' ? 'Prénom' : 'Fonction'); inp.oninput = function () { l[k] = inp.value; }; var td = el('td'); td.appendChild(inp); tr.appendChild(td); });
+        cols.forEach(function (c) { var k = c[0], inp = saisie(l[k], 'text', c[2]); if (k === 'nomAr' || k === 'prenomAr') inp.dir = 'rtl'; inp.oninput = function () { l[k] = inp.value; }; var td = el('td'); td.appendChild(inp); tr.appendChild(td); });
         var td = el('td'); td.appendChild(bouton('✕', function () { X.lignes.splice(i, 1); if (!X.lignes.length) X.lignes.push({ nom: '', prenom: '', fonction: '' }); dessiner(); }, 'mini', 'Retirer cette ligne')); tr.appendChild(td); tb.appendChild(tr);
       });
-      t.appendChild(tb); v.appendChild(t);
+      t.appendChild(tb); var defile = el('div'); defile.style.cssText = 'overflow-x:auto'; defile.appendChild(t); v.appendChild(defile);
       var barre = el('div', 'bdg-barre');
       barre.appendChild(bouton('+ Ligne', function () { X.lignes.push({ nom: '', prenom: '', fonction: '' }); dessiner(); }));
+      barre.appendChild(bouton(X.plus ? '− Moins de champs' : '+ Plus de champs', function () { X.plus = !X.plus; dessiner(); }, null, 'Nom et prénom en arabe, date et lieu de naissance, père, mère : écrits dans les colonnes correspondantes des Enquêtes'));
       var pdf = el('input'); pdf.type = 'file'; pdf.accept = '.pdf,application/pdf'; pdf.style.display = 'none';
       pdf.onchange = function () {
         var f = pdf.files[0]; if (!f) return; if (!window.AutoDetect) { dire('Module de détection absent.', true); return; } dire('Lecture du PDF…');
@@ -283,7 +287,7 @@ var BadgesApp = (function () {
       v.appendChild(barre);
       return v;
     }
-    function personnesSaisies(X) { return X.lignes.map(function (l) { return { nom: B.vide(l.nom), prenom: B.vide(l.prenom), fonction: B.vide(l.fonction) }; }).filter(function (l) { return l.nom; }); }
+    function personnesSaisies(X) { return X.lignes.map(function (l) { var o = {}; ['nom', 'prenom', 'fonction', 'structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere'].forEach(function (k) { o[k] = B.vide(l[k]); }); return o; }).filter(function (l) { return l.nom; }); }
     function injecter(X) {
       var gens = personnesSaisies(X);
       if (!B.vide(X.entreprise)) { dire('Indiquez l\'entreprise.', true); return; }
@@ -307,13 +311,13 @@ var BadgesApp = (function () {
     function imprimerListe(X) {
       var gens = personnesSaisies(X); if (!gens.length) { dire('Rien à imprimer : saisissez au moins une personne.', true); return; }
       var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-      var jour = new Date().toLocaleDateString('fr-FR'), lignes = gens.map(function (g, i) { return '<tr><td class="c">' + (i + 1) + '</td><td><b>' + esc(g.nom.toUpperCase()) + '</b></td><td>' + esc(g.prenom) + '</td><td>' + esc(g.fonction) + '</td><td></td></tr>'; }).join('');
+      var jour = new Date().toLocaleDateString('fr-FR'), avecStr = gens.some(function (g) { return g.structure; }), lignes = gens.map(function (g, i) { return '<tr><td class="c">' + (i + 1) + '</td><td><b>' + esc(g.nom.toUpperCase()) + '</b></td><td>' + esc(g.prenom) + '</td><td>' + esc(g.fonction) + '</td>' + (avecStr ? '<td>' + esc(g.structure) + '</td>' : '') + '<td></td></tr>'; }).join('');
       var logo = opts.logoUrl ? '<img src="' + esc(new URL(opts.logoUrl, location.href).href) + '" alt="" style="height:16mm;float:left;margin-right:6mm">' : '';
       var w = window.open('', '_blank'); if (!w) { dire('Autorisez les fenêtres pop-up pour imprimer.', true); return; }
       w.document.write('<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Liste des personnes — ' + esc(X.entreprise) + '</title><style>@page{size:A4;margin:14mm}body{font:12pt Arial,sans-serif;color:#111}h1{font-size:15pt;text-align:center;margin:10mm 0 4mm}.tete{overflow:hidden;font-size:10pt}.info{margin:4mm 0 6mm;font-size:11pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:3mm 2.5mm;font-size:11pt}th{background:#eee}td.c{text-align:center;width:10mm}.visas{display:flex;justify-content:space-between;margin-top:18mm;font-weight:700;font-size:10.5pt}.visas div{width:45%;min-height:28mm}</style></head><body>' +
         '<div class="tete">' + logo + '<b>SONATRACH — Division Infrastructure RNS</b><br>Enquêtes administratives</div><h1>LISTE DES PERSONNES</h1>' +
         '<div class="info"><b>Entreprise :</b> ' + esc(X.entreprise) + (X.contrat ? '<br><b>Contrat :</b> ' + esc(X.contrat) + (X.intitule ? ' — ' + esc(X.intitule) : '') : '') + '<br><b>Date :</b> ' + jour + '</div>' +
-        '<table><thead><tr><th>N°</th><th>Nom</th><th>Prénom</th><th>Fonction</th><th>Observations</th></tr></thead><tbody>' + lignes + '</tbody></table>' +
+        '<table><thead><tr><th>N°</th><th>Nom</th><th>Prénom</th><th>Fonction</th>' + (avecStr ? '<th>Structure</th>' : '') + '<th>Observations</th></tr></thead><tbody>' + lignes + '</tbody></table>' +
         '<div class="visas"><div>Le chef de la sécurité</div><div style="text-align:right">Le chef de division infrastructures</div></div><script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
       w.document.close();
     }

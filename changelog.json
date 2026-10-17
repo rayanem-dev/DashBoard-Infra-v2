@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-27",
+    "date": "2026-10-21",
+    "title": "Version 5.8.1 — Saisie Enquêtes : plus de champs",
+    "changes": [
+      "Saisie Enquêtes : colonne Structure (celle du badge) et, avec « + Plus de champs », nom et prénom en arabe, date et lieu de naissance, père, mère. Ils sont écrits dans les colonnes correspondantes des Enquêtes ; la structure ajoute une colonne « الهيكل — Structure » à l'onglet, relue ensuite par Badges."
+    ]
+  },
+  {
     "id": "2026-10-21-26",
     "date": "2026-10-21",
     "title": "Version 5.8.0 — Mode support",
