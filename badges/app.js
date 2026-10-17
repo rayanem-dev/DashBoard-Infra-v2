@@ -323,22 +323,29 @@ var BadgesApp = (function () {
       var v = el('div'), bar = el('div', 'bdg-barre');
       if (!S.lecture) bar.appendChild(bouton('+ Entreprise', function () { editerEntreprise(null); }, 'prim'));
       if (opts.actualiser) bar.appendChild(bouton('↻ Actualiser les sources', function () { recharger(true).then(function () { dire('Sources relues'); }); }));
-      bar.appendChild(el('span', 'bdg-note', opts.actualiser ? 'Entreprises et contrats lus dans le suivi CPM (attribution et n° de contrat) ; vous pouvez en ajouter.' : 'Un contrat par ligne ; un badge reprend le contrat choisi pour la personne.'));
+      var tous = el('input'); tous.type = 'checkbox'; tous.checked = !!S.tousContrats; tous.onchange = function () { S.tousContrats = tous.checked; dessiner(); };
+      var lt = el('label', 'bdg-note'); lt.appendChild(tous); lt.appendChild(document.createTextNode(' afficher aussi les contrats non en exécution')); bar.appendChild(lt);
+      bar.appendChild(el('span', 'bdg-note', opts.actualiser ? 'Contrats « en exécution » du suivi CPM, et entreprises des Enquêtes ; vous pouvez en ajouter.' : 'Un contrat par ligne ; un badge reprend le contrat choisi pour la personne.'));
       v.appendChild(bar);
       var t = el('table', 'bdg-table'), th = el('tr');
       ['Entreprise', 'Contrat(s)', 'Personnes', ''].forEach(function (x) { th.appendChild(el('th', null, x)); }); t.appendChild(el('thead')).appendChild(th);
-      var tb = el('tbody');
+      var tb = el('tbody'), nbCache = 0;
       S.entreprises.slice().sort(function (a, b) { return a.nom.localeCompare(b.nom); }).forEach(function (e) {
-        var cs = (e.contrats || []).slice(), pe = S.personnes.filter(function (p) { return B.norm(p.entreprise) === B.norm(e.nom); }), lignes = [];
-        cs.forEach(function (k) { lignes.push({ c: k.numero + (k.intitule ? ' — ' + k.intitule : ''), n: pe.filter(function (p) { return p.contrat === k.numero; }).length }); });
-        var libres = pe.filter(function (p) { return !p.contrat; }).length;
-        if (!cs.length) lignes.push({ c: '—', n: pe.length }); else if (libres) lignes.push({ c: '⚠ contrat à choisir', n: libres, alerte: true });
+        var tousCs = (e.contrats || []).slice(), cs = S.tousContrats ? tousCs : tousCs.filter(function (k) { return k.actif !== false; });
+        if (tousCs.length && !cs.length) { nbCache += 1; return; } // entreprise dont aucun contrat n'est en exécution : masquée
+        var pe = S.personnes.filter(function (p) { return B.norm(p.entreprise) === B.norm(e.nom); }), lignes = [];
+        cs.forEach(function (k) { var ps = pe.filter(function (p) { return p.contrat === k.numero; }); lignes.push({ c: k.numero + (k.intitule ? ' — ' + k.intitule : '') + (k.actif === false ? ' (non en exécution)' : ''), n: ps.length, ps: ps, contrat: k.numero, intitule: k.intitule || '' }); });
+        var libresPs = pe.filter(function (p) { return !p.contrat; }), libres = libresPs.length;
+        if (!tousCs.length) lignes.push({ c: '—', n: pe.length, ps: pe, contrat: '', intitule: '' }); else if (libres) lignes.push({ c: '⚠ contrat à choisir', n: libres, alerte: true, ps: libresPs, contrat: '', intitule: '' });
         lignes.forEach(function (l, i) {
           var tr = el('tr'); tr.appendChild(el('td', 'fort', e.nom)); tr.appendChild(el('td', 'bdg-petit' + (l.alerte ? ' bdg-alerte' : ''), l.c)); tr.appendChild(el('td', null, String(l.n)));
-          var a = el('td'); if (!S.lecture && i === 0) a.appendChild(bouton('Modifier', function () { editerEntreprise(e); }, 'mini')); tr.appendChild(a); tb.appendChild(tr);
+          var a = el('td'); if (!S.lecture && i === 0) a.appendChild(bouton('Modifier', function () { editerEntreprise(e); }, 'mini'));
+          if (l.n) a.appendChild(bouton('🖨 Imprimer', function () { imprimerListe({ entreprise: e.nom, contrat: l.contrat, intitule: l.intitule, lignes: l.ps }); }, 'mini', 'Imprimer la liste des ' + l.n + ' personne(s) (PDF)'));
+          tr.appendChild(a); tb.appendChild(tr);
         });
       });
       t.appendChild(tb); v.appendChild(t); if (!S.entreprises.length) v.appendChild(el('p', 'bdg-note', 'Aucune entreprise pour l\'instant.'));
+      if (nbCache) v.appendChild(el('p', 'bdg-note', nbCache + ' entreprise(s) sans contrat en exécution masquée(s) — cochez « afficher aussi les contrats non en exécution » pour les voir.'));
       return v;
     }
     function editerEntreprise(e) {

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-21-25",
+    "date": "2026-10-21",
+    "title": "Version 5.7.1 — Badges : contrats en exécution et impression des listes",
+    "changes": [
+      "Badges › Entreprises & contrats : seuls les contrats « en exécution » du suivi CPM sont affichés (case pour voir aussi les autres) ; les entreprises sans contrat en exécution sont masquées.",
+      "Bouton « Imprimer » sur chaque ligne : liste des personnes de l'entreprise et du contrat (A4, enregistrable en PDF)."
+    ]
+  },
+  {
     "id": "2026-10-21-24",
     "date": "2026-10-21",
     "title": "Version 5.7.0 — Badges : saisie des Enquêtes",

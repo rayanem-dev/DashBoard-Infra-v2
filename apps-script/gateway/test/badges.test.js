@@ -106,13 +106,14 @@ test('passerelle : appariement des noms d\'entreprise (Enquêtes ↔ CPM)', () =
 });
 test('passerelle : entreprises et contrats depuis le CPM', () => {
   const enr = { ordre: ['a', 'b', 'c', 'd'], dossiers: {
-    a: { attribue_a: 'ENCC SPA', n_contrat: 'I/43/RNS/INFRA/2025', intitule: 'Génie civil' },
-    b: { attribue_a: 'ENCC SPA', n_contrat: 'I/50/RNS/INFRA/2025', intitule: 'Bâtiment' },
+    a: { attribue_a: 'ENCC SPA', n_contrat: 'I/43/RNS/INFRA/2025', intitule: 'Génie civil', statut: 'Contrat en exécution' },
+    b: { attribue_a: 'ENCC SPA', n_contrat: 'I/50/RNS/INFRA/2025', intitule: 'Bâtiment', statut: 'Contrat échu' },
     c: { attribue_a: 'encc spa ', n_contrat: 'I/43/RNS/INFRA/2025', intitule: 'doublon' },
     d: { attribue_a: '', n_contrat: 'X', intitule: 'sans attribution' } } };
   const r = G('badgesEntreprisesCpm_', enr);
   assert.strictEqual(r.length, 1);
   assert.deepStrictEqual(r[0].contrats.map(c => c.numero), ['I/43/RNS/INFRA/2025', 'I/50/RNS/INFRA/2025']);
+  assert.deepStrictEqual(r[0].contrats.map(c => c.actif), [true, false]);
 });
 test('passerelle : fusion Enquêtes + CPM + corrections manuelles', () => {
   const onglets = [

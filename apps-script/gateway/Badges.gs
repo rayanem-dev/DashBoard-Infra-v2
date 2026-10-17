@@ -45,8 +45,10 @@ function badgesEntreprisesCpm_(enr) {
   enr.ordre.forEach(function (k) {
     var d = enr.dossiers[k], nom = Badges.vide(d.attribue_a); if (!nom) return;
     var cle = Badges.norm(nom); if (!par[cle]) { par[cle] = { nom: nom, contrats: [] }; ordre.push(cle); }
-    var num = Badges.vide(d.n_contrat);
-    if (num && !par[cle].contrats.some(function (c) { return c.numero === num; })) par[cle].contrats.push({ numero: num, intitule: Badges.vide(d.intitule) });
+    var num = Badges.vide(d.n_contrat), actif = Badges.norm(d.statut).indexOf('execution') >= 0; // « Contrat en exécution »
+    var deja = par[cle].contrats.filter(function (c) { return c.numero === num; })[0];
+    if (num && !deja) par[cle].contrats.push({ numero: num, intitule: Badges.vide(d.intitule), actif: actif });
+    else if (deja && actif) deja.actif = true;
   });
   return ordre.map(function (c) { return par[c]; });
 }
