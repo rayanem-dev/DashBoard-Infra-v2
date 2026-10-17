@@ -92,6 +92,10 @@ function enqColNumero_(lignes, col) {
     for (var i = col.h + 1; i < lignes.length; i += 1) { var v = Badges.vide((lignes[i] || [])[c]); if (!v) continue; tot += 1; if (/^\d{1,4}$/.test(v)) n += 1; }
     if (tot && n / tot >= 0.5 && n > score) { score = n; meilleur = c; }
   }
+  if (meilleur < 0) { // onglet vierge (aucun numéro encore) : colonne repérée par son en-tête (« الرقم », « رقم », « N° »)
+    var entete = lignes[col.h] || [];
+    for (var k = 0; k < col.fr; k += 1) { var t = String(entete[k] == null ? '' : entete[k]).replace(/\s+/g, ''); if (/رقم|^n[°o]?$|^num/i.test(t)) { meilleur = k; break; } }
+  }
   return meilleur;
 }
 /** Prochain numéro d'agent : le plus grand numéro déjà présent + 1. */
@@ -225,28 +229,51 @@ function rechercherPersonnes(texte) {
   } catch (e) { return { ok: false, message: e.message, personnes: [] }; }
 }
 
+/** Onglet le plus petit (le moins de personnes) parmi ceux dont la structure est lisible : le meilleur modèle pour un onglet VIERGE. */
+function enqChoisirModele_(onglets) {
+  return onglets.filter(function (o) { return !o.erreur && o.onglet !== 'Liste' && o.personnes; })
+    .sort(function (a, b) { return a.personnes.length - b.personnes.length; }).map(function (o) { return o.onglet; });
+}
 /**
- * Crée l'onglet d'un prestataire à partir d'un onglet existant pris comme modèle (mise en forme, en-têtes, lignes numérotées) :
- * noms effacés, titre remplacé par l'entreprise. Retourne le nom du nouvel onglet.
+ * Corrections à faire dans l'EN-TÊTE d'un onglet copié (lignes au-dessus du tableau) : la partie latine du titre devient l'entreprise,
+ * et toute autre cellule purement latine ou numérique (ancien contrat, date, nom de projet…) est vidée. Les libellés arabes ne bougent pas.
+ * lignes : valeurs affichées de l'onglet ; h : indice (0) de la ligne d'en-têtes du tableau. Retourne [{ ligne, col, valeur }] (1 = première ligne / colonne).
+ */
+function enqCorrectionsEntete_(lignes, h, entreprise) {
+  var out = [], titreFait = false;
+  for (var i = 0; i < h; i += 1) {
+    for (var j = 0; j < (lignes[i] || []).length; j += 1) {
+      var c = String(lignes[i][j] == null ? '' : lignes[i][j]);
+      if (!c.trim()) continue;
+      var arabe = /[\u0600-\u06ff]/.test(c), latin = /[A-Za-z0-9]/.test(c);
+      if (arabe && c.indexOf('القائمة') >= 0 && /[A-Za-z]{2}/.test(c) && !titreFait) {
+        out.push({ ligne: i + 1, col: j + 1, valeur: c.replace(/[A-Za-z][A-Za-z0-9 .&'’()\/\-]*[A-Za-z0-9.)]/, String(entreprise).toUpperCase()) }); titreFait = true;
+      } else if (!arabe && latin) out.push({ ligne: i + 1, col: j + 1, valeur: '' });
+    }
+  }
+  return out;
+}
+
+/**
+ * Crée l'onglet VIERGE d'un prestataire : copie du plus petit onglet existant (mise en forme, en-têtes, colonnes), puis TOUT le contenu du tableau est effacé
+ * (noms, fonctions, arabe, numéros, autres colonnes, notes, images) ; seules 25 lignes mises en forme sont gardées ; le titre reprend l'entreprise.
+ * Les numéros d'agent sont écrits au fur et à mesure des ajouts. Retourne le nom du nouvel onglet.
  */
 function enqCreerOnglet_(ss, onglets, entreprise, contrat) {
   var modele = null;
-  onglets.forEach(function (o) { if (!modele && !o.erreur && o.onglet !== 'Liste' && Badges.colonnesEnquetes(ss.getSheetByName(o.onglet).getDataRange().getDisplayValues())) modele = o.onglet; });
+  enqChoisirModele_(onglets).some(function (nomOnglet) { if (Badges.colonnesEnquetes(ss.getSheetByName(nomOnglet).getDataRange().getDisplayValues())) { modele = nomOnglet; return true; } return false; });
   if (!modele) throw new Error('aucun onglet modèle exploitable dans les Enquêtes');
   var nom = enqNomOnglet_(entreprise, contrat), n = 1, base = nom;
   while (ss.getSheetByName(nom)) { n += 1; nom = base.slice(0, 94) + ' (' + n + ')'; }
   var sh = ss.getSheetByName(modele).copyTo(ss).setName(nom);
-  var lignes = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(lignes), derniere = lignes.length;
-  [col.fr, col.fonction, col.prenomAr, col.nomAr].forEach(function (c) { if (c >= 0 && derniere > col.h + 1) sh.getRange(col.h + 2, c + 1, derniere - col.h - 1, 1).clearContent(); });
-  for (var i = 0; i < col.h; i += 1) { // titre : la partie latine devient le nom de l'entreprise
-    for (var j = 0; j < lignes[i].length; j += 1) {
-      var c = String(lignes[i][j] || '');
-      if (c.indexOf('القائمة') >= 0 && /[A-Za-z]{2}/.test(c)) {
-        sh.getRange(i + 1, j + 1).setValue(c.replace(/[A-Za-z][A-Za-z0-9 .&'’()\/\-]*[A-Za-z0-9.)]/, String(entreprise).toUpperCase()));
-        return nom;
-      }
-    }
+  var lignes = sh.getDataRange().getDisplayValues(), col = Badges.colonnesEnquetes(lignes), premiere = col.h + 2, derniere = sh.getLastRow(), nbCol = Math.max(sh.getLastColumn(), 1);
+  if (derniere >= premiere) {
+    sh.getRange(premiere, 1, derniere - premiere + 1, nbCol).clearContent().clearNote();
+    var GARDEES = 25;
+    if (derniere - premiere + 1 > GARDEES) { try { sh.deleteRows(premiere + GARDEES, derniere - premiere + 1 - GARDEES); } catch (e) { /* lignes figées : on les laisse vides */ } }
   }
+  try { sh.getImages().forEach(function (img) { img.remove(); }); } catch (e) { /* pas d'image : rien à faire */ }
+  enqCorrectionsEntete_(lignes, col.h, entreprise).forEach(function (x) { sh.getRange(x.ligne, x.col).setValue(x.valeur); });
   return nom;
 }
 

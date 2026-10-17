@@ -98,3 +98,18 @@ test('arabe approché : prénoms courants et règles simples', () => {
   assert.ok(/^[؀-ۿ ]+$/.test(E('enqArabe_', 'Boukhalfa')));
   assert.strictEqual(E('enqArabe_', ''), '');
 });
+
+test('onglet vierge : modèle = le plus petit onglet ; en-tête : titre remplacé, restes latins / numériques vidés, libellés arabes gardés', () => {
+  const ong = [{ onglet: 'ENAGEO', personnes: new Array(70).fill(1) }, { onglet: 'Liste', personnes: new Array(5).fill(1) }, { onglet: 'RADJAA', personnes: new Array(8).fill(1) }, { onglet: 'CASSE', erreur: 'x', personnes: [] }];
+  assert.deepStrictEqual(E('enqChoisirModele_', ong), ['RADJAA', 'ENAGEO']);
+  const l = [['القائمة الإسمية للعمال ETS ANCIEN SPA'], ['', 'رقم العقد', '12.INFRA.25'], ['المشروع', 'Terrassement Rhourde'], ['', '', '05/10/2025'], ['الرقم', 'بالفرنسية']];
+  assert.deepStrictEqual(E('enqCorrectionsEntete_', l, 4, 'eurl alko'), [
+    { ligne: 1, col: 1, valeur: 'القائمة الإسمية للعمال EURL ALKO' },
+    { ligne: 2, col: 3, valeur: '' }, { ligne: 3, col: 2, valeur: '' }, { ligne: 4, col: 3, valeur: '' }]);
+});
+
+test('numéro d\'agent dans un onglet vierge : colonne trouvée par son en-tête', () => {
+  const vierge = [['t'], ['الرقم', 'بالفرنسية', 'الوظيفة'], ['', '', ''], ['', '', '']];
+  assert.strictEqual(E('enqColNumero_', vierge, { h: 1, fr: 1 }), 0);
+  assert.strictEqual(E('enqProchainNumero_', vierge, { h: 1, fr: 1 }, 0), 1);
+});
