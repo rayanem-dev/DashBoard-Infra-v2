@@ -43,9 +43,14 @@ function enqChercher_(index, texte, max) {
   res.sort(function (a, b) { return a.long - b.long; });
   return res.slice(0, max || 8).map(function (r) { return r.p; });
 }
-function enqTrouver_(index, nom, prenom) {
+function enqTrouver_(index, nom, prenom, entreprise) {
   var voulu = nom + ' ' + prenom;
-  for (var i = 0; i < index.length; i += 1) if (enqMemePersonne_(voulu, index[i].nom + ' ' + index[i].prenom)) return index[i];
+  for (var i = 0; i < index.length; i += 1) {
+    if (!enqMemePersonne_(voulu, index[i].nom + ' ' + index[i].prenom)) continue;
+    // avec une entreprise : seule une personne déjà listée chez CE prestataire compte comme doublon (une personne peut travailler pour plusieurs prestataires)
+    if (entreprise && !(enqScoreEntreprise_(entreprise, index[i].entreprise) || enqScoreEntreprise_(entreprise, index[i].onglet))) continue;
+    return index[i];
+  }
   return null;
 }
 /** Contrat porté par le nom d'un onglet normalisé « ENTREPRISE · 60.INFRA.26 » ; '' pour un ancien nom sans contrat. */
@@ -291,7 +296,8 @@ function injecterEnquetes_(formData) {
       var ss = enqClasseur_(), onglets = enqLireTout_(ss), idx = enqIndex_(onglets), cible = enqOngletPour_(onglets, r.entreprise, contrat);
       gens.forEach(function (p) {
         var nom = Badges.vide(p.nom), prenom = Badges.vide(p.prenom), nomComplet = enqNomComplet_(nom, prenom);
-        if (enqTrouver_(idx, nom, prenom)) { r.existants.push(nomComplet); return; }
+        var deja = enqTrouver_(idx, nom, prenom, r.entreprise);
+        if (deja) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : déjà dans « ' + deja.onglet + ' »'); return; }
         if (!cible) { // pas d'onglet pour ce prestataire (et ce contrat) : on le crée
           try { cible = enqCreerOnglet_(ss, onglets, r.entreprise, contrat); r.crees.push(cible); onglets.push({ onglet: cible, entreprise: r.entreprise.toUpperCase(), personnes: [] }); }
           catch (e) { r.erreur = 'création de l\'onglet impossible : ' + e.message; r.sansOnglet.push(nomComplet); return; }

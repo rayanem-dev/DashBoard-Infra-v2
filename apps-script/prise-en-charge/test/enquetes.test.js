@@ -113,3 +113,10 @@ test('numéro d\'agent dans un onglet vierge : colonne trouvée par son en-tête
   assert.strictEqual(E('enqColNumero_', vierge, { h: 1, fr: 1 }), 0);
   assert.strictEqual(E('enqProchainNumero_', vierge, { h: 1, fr: 1 }, 0), 1);
 });
+
+test('doublon : seulement chez le même prestataire', () => {
+  const idx = [{ nom: 'BENALI', prenom: 'Karim', entreprise: 'ENAGEO', onglet: 'ENAGEO' }];
+  assert.ok(E('enqTrouver_', idx, 'BENALI', 'Karim'));
+  assert.ok(E('enqTrouver_', idx, 'BENALI', 'Karim', 'ENAGEO'));
+  assert.equal(E('enqTrouver_', idx, 'BENALI', 'Karim', 'CEERI SARMOUK'), null);
+});
