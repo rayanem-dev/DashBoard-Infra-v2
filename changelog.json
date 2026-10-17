@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-21",
+    "date": "2026-10-21",
+    "title": "Version 5.5.7 — Enquêtes : colonne de date",
+    "changes": [
+      "Enquêtes : l'ajout de la colonne « Date d'enregistrement » ne sort plus de la grille de la feuille, et se fait avant l'écriture de la personne (plus de ligne à moitié remplie)."
+    ]
+  },
+  {
     "id": "2026-10-21-20",
     "date": "2026-10-21",
     "title": "Version 5.5.6 — Enquêtes : plus d'avertissement pour un agent déjà au bon contrat",
