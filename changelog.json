@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-19",
+    "date": "2026-10-21",
+    "title": "Version 5.5.5 — Prises en charge : numéro de chambre",
+    "changes": [
+      "Un numéro de chambre comme « 04/09 » reste un texte au lieu d'être transformé en date dans la prise en charge."
+    ]
+  },
+  {
     "id": "2026-10-21-18",
     "date": "2026-10-21",
     "title": "Version 5.5.4 — Traduction des applications",

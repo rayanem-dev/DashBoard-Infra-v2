@@ -370,7 +370,7 @@ function soumettreFormulairePEC(formData) {
     sheet.getRange("D5").setValue(!!formData.remplacement);
 
     // D6 Numéro de chambre
-    sheet.getRange("D6").setValue(formData.numeroChambre || "");
+    sheet.getRange("D6").setNumberFormat("@").setValue(String(formData.numeroChambre || "")); // texte : « 04/09 » ne doit pas devenir une date
 
     // D7 Date d'arrivée (input HTML type="date" -> "AAAA-MM-JJ")
     if (formData.dateArrivee) {
@@ -732,7 +732,7 @@ function genererPEC(ss, silencieux, options) {
   const codeEmputation = sheet.getRange("D3").getValue();
   const base = sheet.getRange("C4").getValue();
   const estRemplacement = sheet.getRange("D5").getValue();
-  const numeroChambre = sheet.getRange("D6").getValue();
+  const numeroChambre = sheet.getRange("D6").getDisplayValue();
   const hebergement = sheet.getRange("H7").getValue();
   const restauration = sheet.getRange("H8").getValue();
 
