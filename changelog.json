@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-23",
+    "date": "2026-10-21",
+    "title": "Version 5.6.1 — Badges : actualisation immédiate",
+    "changes": [
+      "Badges : « Actualiser les sources » relit tout de suite les Enquêtes administratives et le suivi CPM (avant, les personnes ajoutées par Prises en charge pouvaient mettre jusqu'à 5 minutes à apparaître)."
+    ]
+  },
+  {
     "id": "2026-10-21-22",
     "date": "2026-10-21",
     "title": "Version 5.6.0 — Badges : détection automatique depuis un PDF",

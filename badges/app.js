@@ -70,8 +70,8 @@ var BadgesApp = (function () {
     }
     function entrepriseDe(nom) { var k = B.norm(nom), r = null; S.entreprises.forEach(function (e) { if (B.norm(e.nom) === k) r = e; }); return r; }
 
-    function recharger() {
-      return adapter.charger().then(function (d) { S.personnes = d.personnes || []; S.entreprises = d.entreprises || []; S.hist = d.historique || []; S.util = d.utilisateur || ''; S.lecture = d.niveau !== undefined && d.niveau < 2; S.info = d.info || ''; S.avert = d.avertissements || []; dessiner(); }).catch(echec);
+    function recharger(force) {
+      return adapter.charger(force).then(function (d) { S.personnes = d.personnes || []; S.entreprises = d.entreprises || []; S.hist = d.historique || []; S.util = d.utilisateur || ''; S.lecture = d.niveau !== undefined && d.niveau < 2; S.info = d.info || ''; S.avert = d.avertissements || []; dessiner(); }).catch(echec);
     }
 
     // ----- Barre d'onglets -----
@@ -113,7 +113,7 @@ var BadgesApp = (function () {
       sel.value = S.fe; if (sel.value !== S.fe) { S.fe = ''; sel.value = ''; } sel.onchange = function () { S.fe = sel.value; dessiner(); };
       tete.appendChild(sel);
       if (!S.lecture) { tete.appendChild(bouton('+ Ajouter', function () { editer(null); }, 'prim')); tete.appendChild(bouton('Importer…', importer, '', 'Coller depuis Excel ou charger un fichier CSV')); }
-      if (opts.actualiser) tete.appendChild(bouton('↻ Actualiser les sources', function () { dire('Lecture des sources…'); recharger().then(function () { dire('Sources relues'); }); }));
+      if (opts.actualiser) tete.appendChild(bouton('↻ Actualiser les sources', function () { dire('Lecture des sources…'); recharger(true).then(function () { dire('Sources relues'); }); }));
       v.appendChild(tete);
       var act = el('div', 'bdg-barre');
       act.appendChild(bouton('Tout sélectionner', function () { liste.forEach(function (p) { S.sel[p.id] = true; }); dessiner(); }));
@@ -244,7 +244,7 @@ var BadgesApp = (function () {
     function vueEntreprises() {
       var v = el('div'), bar = el('div', 'bdg-barre');
       if (!S.lecture) bar.appendChild(bouton('+ Entreprise', function () { editerEntreprise(null); }, 'prim'));
-      if (opts.actualiser) bar.appendChild(bouton('↻ Actualiser les sources', function () { recharger().then(function () { dire('Sources relues'); }); }));
+      if (opts.actualiser) bar.appendChild(bouton('↻ Actualiser les sources', function () { recharger(true).then(function () { dire('Sources relues'); }); }));
       bar.appendChild(el('span', 'bdg-note', opts.actualiser ? 'Entreprises et contrats lus dans le suivi CPM (attribution et n° de contrat) ; vous pouvez en ajouter.' : 'Un contrat par ligne ; un badge reprend le contrat choisi pour la personne.'));
       v.appendChild(bar);
       var t = el('table', 'bdg-table'), th = el('tr');

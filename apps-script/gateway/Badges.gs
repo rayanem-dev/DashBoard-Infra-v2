@@ -136,7 +136,9 @@ function badgesCfg_(c) {
 
 // ---------- actions ----------
 function badgesDonnees_(req) {
-  var u = badgesDroit_(req, 1), f = badgesCharger_();
+  var u = badgesDroit_(req, 1);
+  if (req.force) CacheService.getScriptCache().remove('BADGES_SRC'); // « Actualiser les sources » : relire tout de suite les Enquêtes et le suivi CPM
+  var f = badgesCharger_();
   return { personnes: f.personnes, entreprises: f.entreprises, historique: badgesHistorique_(), utilisateur: u.nom || u.email, avertissements: f.avertissements, niveau: acces_(u).badges || 0 };
 }
 function badgesVider_(s) { return Badges.vide(s).slice(0, 200); }
