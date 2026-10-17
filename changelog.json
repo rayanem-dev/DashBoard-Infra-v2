@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-14",
+    "date": "2026-10-21",
+    "title": "Version 5.5.0 — Pied de page, langue et thème sur toutes les applications",
+    "changes": [
+      "Prises en charge, Dotation, Commande de pièces, Requête transport et la page Demande de modification : même pied de page (version, copyright), sélecteur de langue et bascule clair / sombre que le portail."
+    ]
+  },
+  {
     "id": "2026-10-21-13",
     "date": "2026-10-21",
     "title": "Version 5.4.8 — Enquêtes : numéro d'agent",

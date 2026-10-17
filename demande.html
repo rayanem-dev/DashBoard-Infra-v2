@@ -32,6 +32,7 @@
   .statut { margin-top: 18px; font: 13px/1.5 Arial, sans-serif; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; }
   .statut.approuvee { background: #F0FDF4; border-color: #86EFAC; } .statut.refusee { background: #FEF2F2; border-color: #FCA5A5; } .statut.en_attente { background: #FFFBEB; border-color: #FCD34D; }
   .pied-doc { margin-top: 16px; font: 11px Arial, sans-serif; color: #666; }
+  html[data-theme="dark"] .page { background: #fff; color: #111; } /* le document reste blanc (impression) */
   @media print {
     body { background: #fff; } .barre-outils, #demo, .bandeau { display: none !important; }
     .page { box-shadow: none; margin: 0; padding: 18mm 16mm; width: auto; min-height: 0; }
@@ -95,5 +96,6 @@
   });
 })();
 </script>
+<script src="js/pied.js"></script>
 </body>
 </html>
