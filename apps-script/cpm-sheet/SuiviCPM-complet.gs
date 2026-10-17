@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  SCRIPT SUIVI CPM — VERSION 5.5          (à chaque modification : augmenter VERSION_SCRIPT ci-dessous et ajouter une ligne ici)
+ *  SCRIPT SUIVI CPM — VERSION 5.6          (à chaque modification : augmenter VERSION_SCRIPT ci-dessous et ajouter une ligne ici)
  *  Historique :
  *   5.0  Colonnes retrouvées par leur en-tête, Dead Line, couleurs, échéance, durée de passation, tri des colonnes de saisie
  *   5.1  À 100 % d'avancement : le statut passe en « Contrat en exécution »
@@ -9,6 +9,7 @@
  *        prolongations (durée ou date de fin) ; un contrat échu prolongé repasse en exécution
  *   5.4  Arrêts / reprises de chantier (jusqu'à 2) ; commentaire automatique tant que le contrat est en exécution ; menu « Suivi CPM »
  *   5.5  Reclassement automatique dès que le statut change, quelle que soit la colonne modifiée (prolongation, arrêt, durée, dates…)
+ *   5.6  Un contrat « échu » dont la fin calculée est encore à venir (ou à l'arrêt) repasse tout seul en exécution : une erreur de saisie corrigée n'est plus définitive
  * ============================================================
  *  Les colonnes sont retrouvées par leur NOM D'EN-TÊTE (ligne 2)
  *  et non par numéro fixe : plus aucun risque de décalage si une
@@ -48,7 +49,7 @@
  * ============================================================
  */
 
-const VERSION_SCRIPT = '5.5';
+const VERSION_SCRIPT = '5.6';
 const HEADER_ROW = 2;
 const DATA_START_ROW = 3;
 
@@ -417,7 +418,7 @@ function verifierEcheanceDepassee(sheet, row, map) {
   var echCompare = new Date(echeanceDate); echCompare.setHours(0, 0, 0, 0);
 
   if (enExecution && !arret && echCompare < today) sheet.getRange(row, statutCol).setValue(STATUT_ECHU_LABEL);
-  else if (echu && prolonge && echCompare >= today) sheet.getRange(row, statutCol).setValue('Contrat en exécution');
+  else if (echu && (arret || echCompare >= today)) sheet.getRange(row, statutCol).setValue('Contrat en exécution'); // fin encore à venir (erreur de saisie corrigée, prolongation, arrêt) : le contrat court
 }
 
 // ---------- Commentaire automatique d'un contrat en exécution (ODS, fin prévue, puis arrêt / reprise / prolongation) ----------
@@ -750,7 +751,7 @@ function rafraichirEnBloc(sheet, map) {
       else { ech0 = v[cEch] instanceof Date ? echeanceProlongee(v[cEch], 0, dateFin) : dateFin; prolonge = !!dateFin; }
       if (ech0) {
         if (enExec && !arret && minuit(ech0) < auj) { v[cStatut] = STATUT_ECHU_LABEL; st = normalize(v[cStatut]); }
-        else if (echu && prolonge && minuit(ech0) >= auj) { v[cStatut] = 'Contrat en exécution'; st = normalize(v[cStatut]); }
+        else if (echu && (arret || minuit(ech0) >= auj)) { v[cStatut] = 'Contrat en exécution'; st = normalize(v[cStatut]); }
       }
     }
 

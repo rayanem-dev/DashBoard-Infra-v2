@@ -52,7 +52,8 @@ const LIGNES = [
   [jours(-100), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'T5', jours(-100), jours(-100), 6, '', '', '', '', '', '', '', '', jours(-60), jours(-30), '', '', 'ancien commentaire'],   // 21 : arrêt puis reprise = 30 j de plus
   [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'T6', jours(-330), jours(-330), 6, '', '', '', '', '', '', '', '', jours(-20), '', '', ''],                            // 22 : à l'arrêt, jamais échu
   [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T7', jours(-330), jours(-330), 6, '', '', '', '', '', '', '', '', jours(-100), jours(-10), '', ''],                            // 23 : 90 j d'arrêt, fin encore dépassée → reste échu
-  [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T8', jours(-330), jours(-330), 6, '', '', '', '', '', '', '', '', jours(-200), jours(-10), '', '']                             // 24 : 190 j d'arrêt → de nouveau en exécution
+  [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T8', jours(-330), jours(-330), 6, '', '', '', '', '', '', '', '', jours(-200), jours(-10), '', ''],                            // 24 : 190 j d'arrêt → de nouveau en exécution
+  [jours(-100), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T9', jours(-100), jours(-100), 540, '', '', '', '', '', '', '', '', '', '', '', '']                // 25 : échu par erreur de saisie, durée corrigée (540 j, fin à venir) → de nouveau en exécution
 ];
 test('rafraîchissement en bloc = traitement ligne par ligne', () => {
   const A = fabrique(LIGNES), B = fabrique(LIGNES);
@@ -76,6 +77,7 @@ test('rafraîchissement en bloc = traitement ligne par ligne', () => {
   assert.deepStrictEqual([ecart(17), ecart(18)], [30, 75]);                         // 30 j ; « 2 mois » (60) + 15 j
   assert.deepStrictEqual([st(19), st(20)], ['Contrat échu', 'Contrat en exécution']);
   assert.deepStrictEqual([st(21), st(22), st(23), st(24)], ['Contrat en exécution', 'Contrat en exécution', 'Contrat échu', 'Contrat en exécution']);
+  assert.strictEqual(st(25), 'Contrat en exécution');                               // erreur de saisie corrigée : plus « échu »
   assert.strictEqual(ecart(21), 30);                                                // arrêt de 30 j : la fin recule de 30 j
   const com = i => B.grille[2 + i][23].v;
   assert.match(com(16), /^En cours d'exécution — ODS le \d\d\/\d\d\/\d{4}, durée 6 mois, fin prévue le /);
