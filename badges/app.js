@@ -313,12 +313,15 @@ var BadgesApp = (function () {
       var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
       var jour = new Date().toLocaleDateString('fr-FR'), avecStr = gens.some(function (g) { return g.structure; }), lignes = gens.map(function (g, i) { return '<tr><td class="c">' + (i + 1) + '</td><td><b>' + esc(g.nom.toUpperCase()) + '</b></td><td>' + esc(g.prenom) + '</td><td>' + esc(g.fonction) + '</td>' + (avecStr ? '<td>' + esc(g.structure) + '</td>' : '') + '<td></td></tr>'; }).join('');
       var logo = opts.logoUrl ? '<img src="' + esc(new URL(opts.logoUrl, location.href).href) + '" alt="" style="height:16mm;float:left;margin-right:6mm">' : '';
+      // signataires : par défaut la sécurité et la division ; si les personnes dépendent d'une structure (entreprise saisie), c'est cette structure qui signe avec la sûreté interne
+      var strs = []; gens.forEach(function (g) { if (g.structure && strs.indexOf(g.structure) < 0) strs.push(g.structure); });
+      var visaG = strs.length === 1 ? 'Le chef de la sécurité interne<br>ou l\'assistant Sûreté Interne' : 'Le chef de la sécurité', visaD = strs.length === 1 ? 'Le chef de la structure<br>' + esc(strs[0]) : 'Le chef de division infrastructures';
       var w = window.open('', '_blank'); if (!w) { dire('Autorisez les fenêtres pop-up pour imprimer.', true); return; }
       w.document.write('<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Liste des personnes — ' + esc(X.entreprise) + '</title><style>@page{size:A4;margin:14mm}body{font:12pt Arial,sans-serif;color:#111}h1{font-size:15pt;text-align:center;margin:10mm 0 4mm}.tete{overflow:hidden;font-size:10pt}.info{margin:4mm 0 6mm;font-size:11pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:3mm 2.5mm;font-size:11pt}th{background:#eee}td.c{text-align:center;width:10mm}.visas{display:flex;justify-content:space-between;margin-top:18mm;font-weight:700;font-size:10.5pt}.visas div{width:45%;min-height:28mm}</style></head><body>' +
         '<div class="tete">' + logo + '<b>SONATRACH — Division Infrastructure RNS</b><br>Enquêtes administratives</div><h1>LISTE DES PERSONNES</h1>' +
         '<div class="info"><b>Entreprise :</b> ' + esc(X.entreprise) + (X.contrat ? '<br><b>Contrat :</b> ' + esc(X.contrat) + (X.intitule ? ' — ' + esc(X.intitule) : '') : '') + '<br><b>Date :</b> ' + jour + '</div>' +
         '<table><thead><tr><th>N°</th><th>Nom</th><th>Prénom</th><th>Fonction</th>' + (avecStr ? '<th>Structure</th>' : '') + '<th>Observations</th></tr></thead><tbody>' + lignes + '</tbody></table>' +
-        '<div class="visas"><div>Le chef de la sécurité</div><div style="text-align:right">Le chef de division infrastructures</div></div><script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
+        '<div class="visas"><div>' + visaG + '</div><div style="text-align:right">' + visaD + '</div></div><script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
       w.document.close();
     }
 

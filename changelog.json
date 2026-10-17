@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-28",
+    "date": "2026-10-21",
+    "title": "Version 5.8.2 — Liste imprimée : signataires",
+    "changes": [
+      "Liste des personnes imprimée : si les personnes dépendent d'une structure (entreprise saisie), les visas deviennent « Le chef de la sécurité interne ou l'assistant Sûreté Interne » et « Le chef de la structure … ». Sans structure, rien ne change."
+    ]
+  },
+  {
     "id": "2026-10-21-27",
     "date": "2026-10-21",
     "title": "Version 5.8.1 — Saisie Enquêtes : plus de champs",
