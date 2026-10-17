@@ -216,7 +216,17 @@ var BadgesApp = (function () {
       var corps = el('div'), ta = el('textarea'); ta.rows = 9; ta.placeholder = 'Collez ici les lignes copiées depuis Excel (Nom, Prénom, Fonction, Entreprise, Contrat), ou un onglet « Enquêtes administratives » entier.';
       var fi = el('input'); fi.type = 'file'; fi.accept = '.csv,.txt,.tsv'; fi.onchange = function () { if (fi.files[0]) { var r = new FileReader(); r.onload = function () { ta.value = r.result; }; r.readAsText(fi.files[0], 'utf-8'); } };
       var ent = saisie('', 'text', 'Entreprise (si absente du tableau)'), ctr = saisie('', 'text', 'N° de contrat (si absent du tableau)');
-      corps.appendChild(ta); corps.appendChild(champ('ou charger un fichier CSV', fi)); corps.appendChild(champ('Entreprise par défaut', ent)); corps.appendChild(champ('Contrat par défaut', ctr));
+      // détection automatique : un PDF (prise en charge, demande de prise en charge, liste) remplit le tableau ci-dessus, à vérifier avant d'importer
+      var pdf = el('input'); pdf.type = 'file'; pdf.accept = '.pdf,application/pdf'; var note = el('p', 'bdg-note', '');
+      pdf.onchange = function () {
+        var f = pdf.files[0]; if (!f) return; note.textContent = 'Lecture du PDF… (un PDF scanné prend quelques secondes de plus)';
+        var charge = window.AutoDetect ? Promise.resolve() : Promise.reject(new Error('module de détection absent'));
+        charge.then(function () { return AutoDetect.depuisFichier(f); }).then(function (r) {
+          ta.value = AutoDetect.versTsv(r); if (r.entreprise) ent.value = r.entreprise; if (r.contrat) ctr.value = r.contrat;
+          note.textContent = r.personnes.length + ' personne(s) détectée(s)' + (r.entreprise ? ' · ' + r.entreprise : '') + (r.contrat ? ' · contrat ' + r.contrat : '') + (r.source === 'ocr' ? ' (lecture d\'image)' : '') + '. Vérifiez avant d\'importer.' + (r.avertissements.length ? ' ⚠ ' + r.avertissements.join(' ') : '');
+        }).catch(function (e) { note.textContent = 'Lecture impossible : ' + e.message; });
+      };
+      corps.appendChild(ta); corps.appendChild(champ('ou charger un PDF (prise en charge, demande) : détection automatique', pdf)); corps.appendChild(note); corps.appendChild(champ('ou charger un fichier CSV', fi)); corps.appendChild(champ('Entreprise par défaut', ent)); corps.appendChild(champ('Contrat par défaut', ctr));
       corps.appendChild(el('p', 'bdg-note', 'Les personnes déjà présentes (même nom, prénom et entreprise) sont ignorées : pas de doublon.'));
       var d, ok = bouton('Importer', function () {
         var r = B.personnesDepuisTableau(B.lireCsv(ta.value), { entreprise: B.vide(ent.value), contrat: B.vide(ctr.value) });

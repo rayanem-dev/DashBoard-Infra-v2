@@ -17,7 +17,7 @@
 <body>
 <header><img src="logo-sonatrach.png" alt=""><div><h1>Badges prestataires</h1><p id="sous-titre">Préparation et impression recto-verso</p></div></header>
 <main><div id="app"></div></main>
-<script src="config.js"></script><script src="badges.js"></script><script src="qrcode.js"></script><script src="app.js"></script>
+<script src="config.js"></script><script src="badges.js"></script><script src="qrcode.js"></script><script src="autodetect.js"></script><script src="app.js"></script>
 <script>
   BadgesApp.monter(document.getElementById('app'), { prefixe: 'badges_' });
   if (window.BADGES_CONFIG && BADGES_CONFIG.base) document.getElementById('sous-titre').textContent = BADGES_CONFIG.base + ' — préparation et impression recto-verso';

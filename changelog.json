@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-22",
+    "date": "2026-10-21",
+    "title": "Version 5.6.0 — Badges : détection automatique depuis un PDF",
+    "changes": [
+      "Badges, « Importer des personnes » : on peut charger un PDF (prise en charge, demande de prise en charge, liste). Nom, prénom, fonction, entreprise et contrat sont détectés et placés dans le tableau, à vérifier avant d'importer. Les PDF scannés sont lus par reconnaissance de caractères."
+    ]
+  },
+  {
     "id": "2026-10-21-21",
     "date": "2026-10-21",
     "title": "Version 5.5.7 — Enquêtes : colonne de date",
