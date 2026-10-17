@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-21-12",
+    "date": "2026-10-21",
+    "title": "Version 5.4.7 — Enquêtes : avertissement avant injection, date d'enregistrement, numéro d'agent",
+    "changes": [
+      "Prises en charge : avant de générer, les agents déjà présents dans les Enquêtes sont signalés avec le nom de leur onglet ; au choix « OK, générer et ajouter quand même » ou « Ignorer ».",
+      "Enquêtes : une colonne « Date d'enregistrement » est ajoutée à l'onglet du prestataire (créée au premier ajout) et remplie à chaque injection.",
+      "Enquêtes : le numéro d'agent suivant est maintenant trouvé même quand la colonne des numéros est à droite des noms."
+    ]
+  },
+  {
     "id": "2026-10-21-11",
     "date": "2026-10-21",
     "title": "Version 5.4.6 — Version dans l'en-tête, Enquêtes plus claires",

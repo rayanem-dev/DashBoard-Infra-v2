@@ -57,7 +57,7 @@ test('ligne libre : toujours à la suite de la dernière personne (jamais dans u
 });
 test('résumé lisible', () => {
   const t = E('enqResume_', { ajoutes: ['A B'], existants: ['C D', 'E F'], sansOnglet: [], entreprise: 'X', erreur: '' });
-  assert.ok(/1 personne\(s\) ajoutée/.test(t) && /2 déjà présente/.test(t));
+  assert.ok(/1 personne\(s\) ajoutée/.test(t) && /2 ignorée/.test(t));
   assert.ok(/NON ajouté/.test(E('enqResume_', { ajoutes: [], existants: [], sansOnglet: ['Z'], entreprise: 'X', erreur: '' })));
 });
 
@@ -119,4 +119,16 @@ test('doublon : seulement chez le même prestataire', () => {
   assert.ok(E('enqTrouver_', idx, 'BENALI', 'Karim'));
   assert.ok(E('enqTrouver_', idx, 'BENALI', 'Karim', 'ENAGEO'));
   assert.equal(E('enqTrouver_', idx, 'BENALI', 'Karim', 'CEERI SARMOUK'), null);
+});
+
+test('numéro d\'agent : colonne à droite des noms, repérée par son en-tête ou ses entiers qui se suivent', () => {
+  const ent = ['ADRESSE', 'بالفرنسية', 'الوظيفة', 'تاريخ', 'الإسم', 'اللقب', 'الرقم'];
+  const lignes = [ent, ['x', 'A B', 'f', '1984/03/04', 'ا', 'ب', '1'], ['x', 'C D', 'f', '1988/11/22', 'ا', 'ب', '2']];
+  const col = { h: 0, fr: 1, fonction: 2, prenomAr: 4, nomAr: 5 };
+  assert.equal(E('enqColNumero_', lignes, col), 6);
+  assert.equal(E('enqProchainNumero_', lignes, col, 6), 3);
+  const sansEnt = [['ADRESSE', 'بالفرنسية', 'الوظيفة', 'تاريخ', 'الإسم', 'اللقب', ''], lignes[1], lignes[2]];
+  assert.equal(E('enqColNumero_', sansEnt, col), 6);
+  assert.equal(E('enqColDate_', [['a', 'تاريخ التسجيل']], { h: 0 }), 1);
+  assert.equal(E('enqColDate_', [['a', 'تاريخ']], { h: 0 }), -1);
 });

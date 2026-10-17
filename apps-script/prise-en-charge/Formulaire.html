@@ -602,10 +602,36 @@
     document.getElementById('spinner').style.display = 'block';
     document.getElementById('resultat').style.display = 'none';
 
+    if (!data.injecterEnquetes) { envoyerPEC(data); return; }
+    // avant de générer : les personnes déjà enregistrées dans les Enquêtes (chez ce prestataire ou un autre) sont signalées
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.deja || !r.deja.length) { envoyerPEC(data); return; }
+        demanderDoublons(r.deja, function(ignorer) { data.ignorerEnquetes = ignorer ? r.deja.map(function(d) { return d.nomComplet; }) : []; envoyerPEC(data); });
+      })
+      .withFailureHandler(function() { envoyerPEC(data); })
+      .verifierEnquetes(data);
+  }
+
+  function envoyerPEC(data) {
     google.script.run
       .withSuccessHandler(afficherResultat)
       .withFailureHandler(function(err) { afficherResultat({ success: false, message: err.message }); })
       .soumettreFormulairePEC(data);
+  }
+
+  function demanderDoublons(deja, suite) {
+    const fond = document.createElement('div');
+    fond.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    const boite = document.createElement('div');
+    boite.style.cssText = 'background:#fff;border-radius:14px;max-width:520px;width:100%;padding:22px;font-family:inherit;box-shadow:0 10px 40px rgba(0,0,0,.3)';
+    const echap = function(t) { return String(t).replace(/[&<>]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
+    boite.innerHTML = '<h3 style="margin:0 0 8px">Déjà enregistré dans les Enquêtes</h3><p style="margin:0 0 10px;color:#555">Ces agents figurent déjà avec un prestataire :</p><ul style="margin:0 0 14px;padding-left:20px">' +
+      deja.map(function(d) { return '<li><b>' + echap(d.nomComplet) + '</b> — « ' + echap(d.onglet) + ' »' + (d.date ? ' (enregistré le ' + echap(d.date) + ')' : '') + '</li>'; }).join('') +
+      '</ul><div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button type="button" id="dbIgnorer" style="padding:10px 16px;border-radius:8px;border:1px solid #bbb;background:#fff;cursor:pointer">Ignorer (ne pas les ajouter)</button><button type="button" id="dbOk" style="padding:10px 16px;border-radius:8px;border:0;background:#e8610a;color:#fff;font-weight:700;cursor:pointer">OK, générer et ajouter quand même</button></div>';
+    fond.appendChild(boite); document.body.appendChild(fond);
+    boite.querySelector('#dbOk').onclick = function() { fond.remove(); suite(false); };
+    boite.querySelector('#dbIgnorer').onclick = function() { fond.remove(); suite(true); };
   }
 
   function afficherResultat(res) {

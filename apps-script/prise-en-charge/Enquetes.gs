@@ -91,17 +91,28 @@ function enqNomOnglet_(entreprise, contrat) {
 
 /** Numéro d'agent : colonne (à gauche des noms) dont les cellules sont, pour la plupart, des numéros 1, 2, 3… ; -1 si introuvable. */
 function enqColNumero_(lignes, col) {
-  var meilleur = -1, score = 0;
-  for (var c = 0; c < col.fr; c += 1) {
-    var n = 0, tot = 0;
-    for (var i = col.h + 1; i < lignes.length; i += 1) { var v = Badges.vide((lignes[i] || [])[c]); if (!v) continue; tot += 1; if (/^\d{1,4}$/.test(v)) n += 1; }
-    if (tot && n / tot >= 0.5 && n > score) { score = n; meilleur = c; }
+  var pris = [col.fr, col.fonction, col.prenomAr, col.nomAr], largeur = 0, c, i;
+  lignes.forEach(function (l) { if ((l || []).length > largeur) largeur = l.length; });
+  var entete = lignes[col.h] || [];
+  for (c = 0; c < largeur; c += 1) { // 1) colonne dont l'en-tête dit « numéro » (« الرقم », « رقم », « N° »), de n'importe quel côté
+    if (pris.indexOf(c) >= 0) continue;
+    var t = String(entete[c] == null ? '' : entete[c]).replace(/\s+/g, '');
+    if (/رقم|^n[°o]?$|^num/i.test(t)) return c;
   }
-  if (meilleur < 0) { // onglet vierge (aucun numéro encore) : colonne repérée par son en-tête (« الرقم », « رقم », « N° »)
-    var entete = lignes[col.h] || [];
-    for (var k = 0; k < col.fr; k += 1) { var t = String(entete[k] == null ? '' : entete[k]).replace(/\s+/g, ''); if (/رقم|^n[°o]?$|^num/i.test(t)) { meilleur = k; break; } }
+  var meilleur = -1, score = 0; // 2) sinon colonne de petits entiers qui se suivent (1, 2, 3…)
+  for (c = 0; c < largeur; c += 1) {
+    if (pris.indexOf(c) >= 0) continue;
+    var n = 0, tot = 0, max = 0;
+    for (i = col.h + 1; i < lignes.length; i += 1) { var v = Badges.vide((lignes[i] || [])[c]); if (!v) continue; tot += 1; if (/^\d{1,4}$/.test(v)) { n += 1; if (Number(v) > max) max = Number(v); } }
+    if (tot && n / tot >= 0.8 && max <= n + 5 && n > score) { score = n; meilleur = c; }
   }
   return meilleur;
+}
+/** Colonne « date d'enregistrement » : repérée par son en-tête (« تاريخ التسجيل » / « Date d'enregistrement ») ; -1 si absente (elle est alors créée à droite du tableau). */
+function enqColDate_(lignes, col) {
+  var entete = lignes[col.h] || [];
+  for (var c = 0; c < entete.length; c += 1) { var t = Badges.norm(entete[c]).replace(/ /g, ''); if (/تاريخالتسجيل|dateenregistrement|dateinscription/.test(t)) return c; }
+  return -1;
 }
 /** Prochain numéro d'agent : le plus grand numéro déjà présent + 1. */
 function enqProchainNumero_(lignes, col, colNum) {
@@ -198,7 +209,7 @@ function enqNomComplet_(nom, prenom) { return (Badges.vide(nom).toLocaleUpperCas
 function enqResume_(r) {
   var t = [];
   if (r.ajoutes.length) t.push('Enquêtes : ' + r.ajoutes.length + ' personne(s) ajoutée(s) (' + r.ajoutes.join(', ') + ')');
-  if (r.existants.length) t.push(r.existants.length + ' déjà présente(s), non modifiée(s)');
+  if (r.existants.length) t.push(r.existants.length + ' ignorée(s) (déjà enregistrée(s))');
   if (r.crees && r.crees.length) t.push('Onglet créé : ' + r.crees.join(', '));
   if (r.sansOnglet.length) t.push('NON ajouté(s) pour « ' + r.entreprise + ' » : ' + r.sansOnglet.join(', '));
   if (r.erreur) t.push('Enquêtes : ' + r.erreur);
@@ -290,14 +301,14 @@ function injecterEnquetes_(formData) {
     var gens = (formData.personnes || []).filter(function (p) { return Badges.vide(p.nom) && (Badges.vide(p.prenom) || /\s/.test(Badges.vide(p.nom))); });
     if (!gens.length) return r;
     if (!r.entreprise) { r.erreur = 'visite sur site : rien à ajouter'; return r; }
+    var ignorer = formData.ignorerEnquetes || [];
     var contrat = String(formData.prestataire || '').split(' - ')[0].trim();
     var lock = LockService.getScriptLock(); lock.waitLock(30000);
     try {
       var ss = enqClasseur_(), onglets = enqLireTout_(ss), idx = enqIndex_(onglets), cible = enqOngletPour_(onglets, r.entreprise, contrat);
       gens.forEach(function (p) {
         var nom = Badges.vide(p.nom), prenom = Badges.vide(p.prenom), nomComplet = enqNomComplet_(nom, prenom);
-        var deja = enqTrouver_(idx, nom, prenom, r.entreprise);
-        if (deja) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : déjà dans « ' + deja.onglet + ' »'); return; }
+        if (ignorer.indexOf(nomComplet) >= 0) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : ignoré (déjà enregistré, à ta demande)'); return; }
         if (!cible) { // pas d'onglet pour ce prestataire (et ce contrat) : on le crée
           try { cible = enqCreerOnglet_(ss, onglets, r.entreprise, contrat); r.crees.push(cible); onglets.push({ onglet: cible, entreprise: r.entreprise.toUpperCase(), personnes: [] }); }
           catch (e) { r.erreur = 'création de l\'onglet impossible : ' + e.message; r.sansOnglet.push(nomComplet); return; }
@@ -315,6 +326,13 @@ function injecterEnquetes_(formData) {
           var ar = { nomAr: enqArabe_(nom), prenomAr: enqArabe_(prenom) }; // approché : à relire
           if (col.nomAr >= 0 && ar.nomAr) sh.getRange(ligne, col.nomAr + 1).setValue(ar.nomAr);
           if (col.prenomAr >= 0 && ar.prenomAr) sh.getRange(ligne, col.prenomAr + 1).setValue(ar.prenomAr);
+          var cd = enqColDate_(lignes, col);
+          if (cd < 0) { // première fois sur cet onglet : on ajoute la colonne à droite, avec le style de l'en-tête voisin
+            cd = Math.max(sh.getLastColumn(), (lignes[col.h] || []).length);
+            sh.getRange(col.h + 1, cd, 1, 1).copyTo(sh.getRange(col.h + 1, cd + 1, 1, 1), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+            sh.getRange(col.h + 1, cd + 1).setValue('تاريخ التسجيل — Date d\'enregistrement');
+          }
+          sh.getRange(ligne, cd + 1).setNumberFormat('dd/MM/yyyy').setValue(Utilities.formatDate(new Date(), 'Africa/Algiers', 'dd/MM/yyyy'));
           SpreadsheetApp.flush();
           if (Badges.vide(sh.getRange(ligne, col.fr + 1).getDisplayValue()) !== nomComplet) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : écriture non retenue (ligne ' + ligne + ' de « ' + cible + ' » protégée ?)'); return; }
           r.details.push(nomComplet + ' → « ' + cible + ' », ligne ' + ligne);
@@ -369,4 +387,18 @@ function journaliserPEC_(ss, formData, enq) {
     });
     if (lignes.length) sh.getRange(sh.getLastRow() + 1, 1, lignes.length, 10).setValues(lignes);
   } catch (e) { /* le journal ne doit jamais bloquer une génération */ }
+}
+
+/** Avant la génération : agents déjà présents dans les Enquêtes (chez ce prestataire ou un autre), avec l'onglet et la date d'enregistrement si elle existe. */
+function verifierEnquetes(formData) {
+  try {
+    var gens = (formData.personnes || []).filter(function (p) { return Badges.vide(p.nom); });
+    if (!gens.length || !enqEntrepriseDe_(formData.prestataire)) return { ok: true, deja: [] };
+    var idx = enqIndex_(enqLireTout_(enqClasseur_())), deja = [];
+    gens.forEach(function (p) {
+      var t = enqTrouver_(idx, Badges.vide(p.nom), Badges.vide(p.prenom));
+      if (t) deja.push({ nomComplet: enqNomComplet_(p.nom, p.prenom), onglet: t.onglet, date: t.date || '' });
+    });
+    return { ok: true, deja: deja };
+  } catch (e) { return { ok: false, deja: [], message: e.message }; }
 }
