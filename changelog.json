@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-21-11",
+    "date": "2026-10-21",
+    "title": "Version 5.4.6 — Version dans l'en-tête, Enquêtes plus claires",
+    "changes": [
+      "L'en-tête du portail affiche désormais le numéro de version à jour (au lieu de « Version 4.0 (en construction) »).",
+      "Prises en charge : l'injection dans les Enquêtes indique l'onglet et la ligne écrits, ou la raison exacte d'un échec."
+    ]
+  },
+  {
     "id": "2026-10-21-10",
     "date": "2026-10-21",
     "title": "Version 5.4.5 — Privilèges : 0000 pour les comptes sans mot de passe",

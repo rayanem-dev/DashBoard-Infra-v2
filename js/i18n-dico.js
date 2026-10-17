@@ -300,6 +300,7 @@
     function tr(w) { return w === 'travail' ? trav : rep; }
     function nom(x) { return I18n.t(x); }
     return [
+      [/^Sonatrach · RNS · Version (\d+(?:\.\d+)*)$/, function (v) { return en ? 'Sonatrach · RNS · Version ' + v : 'سوناطراك · RNS · الإصدار ' + v; }],
       [/^(.+) ([+−]\d+|0) j$/, function (n, v) { return n + ' ' + v + ' ' + U; }],
       [/^(.+) : inchangé$/, function (n) { return n + (en ? ': unchanged' : ': دون تغيير'); }],
       [/^(.+) · (actuel|inchangé|simulé)$/, function (n, w) { var d = { actuel: ['current', 'الحالي'], 'inchangé': ['unchanged', 'دون تغيير'], 'simulé': ['simulated', 'محاكى'] }[w]; return n + ' · ' + d[en ? 0 : 1]; }],
