@@ -496,3 +496,27 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 /* Raccourcis du planning : dans le volet « rotation / planning », en haut à droite (plus dans la fiche personnelle) */
 .jauge-bloc .raccourcis { position: absolute; top: 10px; inset-inline-end: 12px; margin: 0; z-index: 2; }
 .jauge-bloc:has(.raccourcis:not([hidden])) { padding-top: 50px; }
+
+/* ===== Fiche personnelle : réduite au minimum (le reste de la place va à la rotation et à « Mes applications ») ===== */
+.agent .agent-corps { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr); }
+.agent .agent-gauche { align-self: start; gap: 6px; }
+.agent .agent-gauche .agent-entete { gap: 8px; }
+.agent .agent-gauche .avatar { width: 36px; height: 36px; font-size: 13px; }
+.agent .agent-gauche .agent-salut { display: none; }
+.agent .agent-gauche .agent-id h2 { font-size: 14.5px; line-height: 1.15; }
+.agent .agent-gauche .agent-poste { font-size: 10.5px; margin: 0; }
+.agent .agent-gauche .agent-badges { margin-top: 2px; gap: 4px; }
+.agent .agent-gauche .agent-badges > * { font-size: 9.5px; padding: 1px 7px; }
+.agent .agent-gauche .agent-infos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; padding: 6px 0 0; }
+.agent .agent-gauche .agent-infos span { font-size: 8.5px; letter-spacing: .4px; }
+.agent .agent-gauche .agent-infos b { font-size: 11px; margin-top: 0; }
+.agent .agent-gauche .agent-infos .a-completer { font-size: 10.5px; }
+.agent .agent-actions { padding: 2px 14px 6px; }
+@media (max-width: 1180px) { .agent .agent-corps { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (max-width: 900px) { .agent .agent-corps { grid-template-columns: 1fr; } .agent .agent-gauche .agent-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1181px) {
+  .agent .jauge-bloc { flex-direction: row; text-align: left; align-items: center; gap: 12px; padding: 10px 14px 24px; }
+  .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding-top: 44px; }
+  .agent .jauge-bloc .jauge-texte { align-items: flex-start; }
+  .agent .jauge { flex: none; }
+}
