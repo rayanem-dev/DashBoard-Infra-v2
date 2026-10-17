@@ -9,7 +9,7 @@
     st.textContent = 'html[data-theme="dark"] body { background: #11151c !important; }' +
       'html[data-theme="dark"] body > :not(.bdp-prefs):not(.bdp-foot):not(script):not(style) { filter: invert(.92) hue-rotate(180deg); }' +
       'html[data-theme="dark"] body > :not(.bdp-prefs) header, html[data-theme="dark"] body > :not(.bdp-prefs) img { filter: invert(.92) hue-rotate(180deg); }' +
-      'html[data-theme="dark"] body > header { filter: none; }';
+      'html[data-theme="dark"] body > header { filter: none !important; }';
     document.head.appendChild(st);
   }
   /** Télécharge toutes les pièces en parallèle ; elles s'exécutent dans l'ordre de la liste (async=false). */

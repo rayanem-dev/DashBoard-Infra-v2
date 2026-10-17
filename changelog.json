@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-21-16",
+    "date": "2026-10-21",
+    "title": "Version 5.5.2 — Liens de retour des applications, thème sombre",
+    "changes": [
+      "Commande de pièces et Requête transport : le bouton de retour pointait vers une page inexistante ; il ramène maintenant au portail.",
+      "Thème sombre des applications : l'en-tête garde ses couleurs d'origine."
+    ]
+  },
+  {
     "id": "2026-10-21-15",
     "date": "2026-10-21",
     "title": "Version 5.5.1 — Site plus rapide",
