@@ -22,7 +22,9 @@
  *  - DURÉE EN MOIS OU EN JOURS : colonne "Unité durée" (liste : mois / jours). Si elle est vide : une durée de plus de
  *    60 est comprise comme des JOURS (ex. 580), sinon comme des MOIS (ex. 18). La date de fin est INCLUSE :
  *    ODS 01/05/2025 + 18 mois → 31/10/2026 ; ODS + N jours → le N-ième jour est le dernier jour.
- *  - PROLONGATIONS : si un avenant prolonge le délai d'un contrat, saisir la NOUVELLE date de fin dans
+ *  - PROLONGATIONS EN DURÉE : "Prolongation 1 (jours)" et "Prolongation 2 (jours)" : saisir 60, ou "2 mois" (1 mois = 30 jours,
+ *    donc 2 mois = 60 jours), ou "15 j". Elles s'AJOUTENT à la fin du contrat.
+ *  - PROLONGATIONS EN DATE : si l'avenant donne directement la NOUVELLE date de fin, la saisir dans
  *    "Fin après prolongation 1" (puis "…2" pour une seconde) : l'Échéance prend la date la plus tardive,
  *    donc le contrat reste « en exécution » tant que le délai prolongé court (et un contrat déjà "échu"
  *    y revient si la nouvelle fin est dans le futur).
@@ -50,6 +52,8 @@ const H = {
   ATTRIB_FINALE: 'date attribution finale',
   DUREE_PASSATION: 'duree passation (jours)',
   UNITE: 'unite duree',
+  PJ1: 'prolongation 1 (jours)',
+  PJ2: 'prolongation 2 (jours)',
   PROLONG1: 'fin apres prolongation 1',
   PROLONG2: 'fin apres prolongation 2'
 };
@@ -292,6 +296,28 @@ function uniteDeLaLigne(sheet, row, map) {
   return c ? sheet.getRange(row, c).getValue() : '';
 }
 
+// ---------- Durée d'une prolongation → jours : 60 ; "60 j" ; "2 mois" (= 60, un mois comptant 30 jours) ----------
+function joursDeProlongation(v) {
+  if (typeof v === 'number') return v > 0 ? Math.round(v) : 0;
+  var t = normalize(v).replace(',', '.');
+  var m = /(\d+(?:\.\d+)?)\s*([a-z]*)/.exec(t);
+  if (!m) return 0;
+  var n = Number(m[1]);
+  return Math.round(m[2].indexOf('m') === 0 ? n * 30 : n);
+}
+// Total des prolongations en durée de la ligne (colonnes « Prolongation 1/2 (jours) »)
+function joursProlonges(sheet, row, map) {
+  var total = 0;
+  [H.PJ1, H.PJ2].forEach(function (k) { if (map[k]) total += joursDeProlongation(sheet.getRange(row, map[k]).getValue()); });
+  return total;
+}
+// Fin du contrat avec ses prolongations : base + jours ajoutés, puis la plus tardive des « fins après prolongation » saisies en date
+function echeanceProlongee(base, jours, dateFin) {
+  var e = new Date(base);
+  if (jours > 0) e.setDate(e.getDate() + jours);
+  return dateFin && dateFin > e ? new Date(dateFin) : e;
+}
+
 // ---------- Dernière date de fin après prolongation(s) (avenants) : la plus tardive des deux colonnes, ou null ----------
 function finProlongee(sheet, row, map) {
   var fin = null;
@@ -315,17 +341,15 @@ function verifierEcheanceDepassee(sheet, row, map) {
 
   var echeanceCol = col(map, H.ECHEANCE, true);
   var echeanceVal = sheet.getRange(row, echeanceCol).getValue();
+  var valO = sheet.getRange(row, col(map, H.DATE_ODS, true)).getValue();
+  var valP = sheet.getRange(row, col(map, H.DUREE_CONTRAT, true)).getValue();
+  var jours = joursProlonges(sheet, row, map), dateFin = finProlongee(sheet, row, map);
+  var prolonge = jours > 0 || !!dateFin;
   var echeanceDate = null;
-
-  if (echeanceVal instanceof Date) {
-    echeanceDate = echeanceVal;
-  } else {
-    var valO = sheet.getRange(row, col(map, H.DATE_ODS, true)).getValue();
-    var valP = sheet.getRange(row, col(map, H.DUREE_CONTRAT, true)).getValue();
-    if (valO instanceof Date && valP) echeanceDate = calculerEcheance(valO, valP, uniteDeLaLigne(sheet, row, map));
-  }
-  var prolonge = finProlongee(sheet, row, map);
-  if (prolonge && (!echeanceDate || prolonge > echeanceDate)) echeanceDate = prolonge;
+  // base = ODS + durée (jamais la colonne Échéance, qui contient déjà les prolongations) ; à défaut, l'échéance saisie
+  if (valO instanceof Date && valP) echeanceDate = echeanceProlongee(calculerEcheance(valO, valP, uniteDeLaLigne(sheet, row, map)), jours, dateFin);
+  else if (echeanceVal instanceof Date) echeanceDate = echeanceProlongee(echeanceVal, 0, dateFin);
+  else if (dateFin) echeanceDate = dateFin;
   if (!echeanceDate) return;
 
   var today = new Date(); today.setHours(0, 0, 0, 0);
@@ -418,8 +442,7 @@ function updateObligatoires(sheet, row, map) {
   if (!valO || !valP) { cellQ.clearContent(); cellQ.setBackground('#ff0000'); return; }
 
   var echeance = calculerEcheance(valO, valP, uniteDeLaLigne(sheet, row, map));
-  var prolongee = finProlongee(sheet, row, map); // avenant(s) : la date de fin prolongée l'emporte si elle est plus tardive
-  if (prolongee && prolongee > echeance) echeance = new Date(prolongee);
+  echeance = echeanceProlongee(echeance, joursProlonges(sheet, row, map), finProlongee(sheet, row, map)); // avenants : jours ajoutés, ou nouvelle date de fin si plus tardive
   cellQ.setValue(echeance);
 
   // 🎨 Coloration selon le temps RESTANT avant échéance (à partir d'aujourd'hui) :
@@ -555,7 +578,7 @@ function creerColonnesManquantes(sheet) {
 // ---------- Colonnes de PROLONGATION tout à droite de la feuille (jamais au milieu : les autres colonnes ne bougent pas) ----------
 function creerColonnesProlongation(sheet) {
   var map = buildColumnMap(sheet);
-  [['Unité durée', H.UNITE], ['Fin après prolongation 1', H.PROLONG1], ['Fin après prolongation 2', H.PROLONG2]].forEach(function (x) {
+  [['Unité durée', H.UNITE], ['Prolongation 1 (jours)', H.PJ1], ['Prolongation 2 (jours)', H.PJ2], ['Fin après prolongation 1', H.PROLONG1], ['Fin après prolongation 2', H.PROLONG2]].forEach(function (x) {
     if (map[x[1]]) return;
     var c = sheet.getLastColumn() + 1;
     sheet.getRange(HEADER_ROW, c).setValue(x[0]);
@@ -615,7 +638,7 @@ function rafraichirEnBloc(sheet, map) {
   var V = plage.getValues(), B = plage.getBackgrounds(), F = plage.getFontColors();
   var cDebut = col(map, H.DEBUT_CDC, true) - 1, cStatut = col(map, H.STATUT, true) - 1, cPct = col(map, H.POURCENT, true) - 1,
       cLim = col(map, H.DATE_LIMITE, true) - 1, cDead = cLim + 1, cAttr = col(map, H.ATTRIBUTION, true) - 1, cEch = col(map, H.ECHEANCE, true) - 1,
-      cU = (map[H.UNITE] || 0) - 1, cP1 = (map[H.PROLONG1] || 0) - 1, cP2 = (map[H.PROLONG2] || 0) - 1,
+      cU = (map[H.UNITE] || 0) - 1, cP1 = (map[H.PROLONG1] || 0) - 1, cP2 = (map[H.PROLONG2] || 0) - 1, cJ1 = (map[H.PJ1] || 0) - 1, cJ2 = (map[H.PJ2] || 0) - 1,
       cAF = col(map, H.ATTRIB_FINALE, true) - 1, cODS = col(map, H.DATE_ODS, true) - 1, cDur = col(map, H.DUREE_CONTRAT, true) - 1, cPass = col(map, H.DUREE_PASSATION, true) - 1;
   var auj = new Date(); auj.setHours(0, 0, 0, 0);
   var JOUR = 1000 * 60 * 60 * 24;
@@ -633,12 +656,14 @@ function rafraichirEnBloc(sheet, map) {
     if (cent && (st.includes('attribue') || st.includes('en cours'))) { v[cStatut] = 'Contrat en exécution'; st = normalize(v[cStatut]); }
 
     // 2) échéance (prolongations comprises) dépassée → Contrat échu ; contrat échu prolongé au-delà d'aujourd'hui → de nouveau en exécution
-    var prolonge = null;
-    [cP1, cP2].forEach(function (cp) { if (cp >= 0 && v[cp] instanceof Date && (!prolonge || v[cp] > prolonge)) prolonge = v[cp]; });
+    var dateFin = null, jours = 0;
+    [cP1, cP2].forEach(function (cp) { if (cp >= 0 && v[cp] instanceof Date && (!dateFin || v[cp] > dateFin)) dateFin = v[cp]; });
+    [cJ1, cJ2].forEach(function (cj) { if (cj >= 0) jours += joursDeProlongation(v[cj]); });
+    var prolonge = jours > 0 || !!dateFin;
+    var base = (v[cODS] instanceof Date && v[cDur]) ? finContrat(v[cODS], v[cDur], v) : null;
     var enExec = st.includes('execution'), echu = st.includes('echu');
     if (enExec || echu) {
-      var ech0 = v[cEch] instanceof Date ? v[cEch] : ((v[cODS] instanceof Date && v[cDur]) ? finContrat(v[cODS], v[cDur], v) : null);
-      if (prolonge && (!ech0 || prolonge > ech0)) ech0 = prolonge;
+      var ech0 = base ? echeanceProlongee(base, jours, dateFin) : (v[cEch] instanceof Date ? echeanceProlongee(v[cEch], 0, dateFin) : dateFin);
       if (ech0) {
         if (enExec && minuit(ech0) < auj) { v[cStatut] = STATUT_ECHU_LABEL; st = normalize(v[cStatut]); }
         else if (echu && prolonge && minuit(ech0) >= auj) { v[cStatut] = 'Contrat en exécution'; st = normalize(v[cStatut]); }
@@ -669,8 +694,7 @@ function rafraichirEnBloc(sheet, map) {
       B[i][cAF] = v[cAF] ? coul : '#ff0000';
       if (!v[cODS] || !v[cDur]) { v[cEch] = ''; B[i][cEch] = '#ff0000'; }
       else {
-        var ech = finContrat(v[cODS], v[cDur], v);
-        if (prolonge && prolonge > ech) ech = new Date(prolonge);
+        var ech = echeanceProlongee(finContrat(v[cODS], v[cDur], v), jours, dateFin);
         v[cEch] = ech;
         var restant = Math.round((minuit(ech) - auj) / JOUR);
         B[i][cEch] = restant > 365 ? '#7cd5b0' : (restant >= 182 ? '#fbbc04' : '#ea4335');
