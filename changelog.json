@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-13",
+    "date": "2026-10-21",
+    "title": "Version 5.4.8 — Enquêtes : numéro d'agent",
+    "changes": [
+      "Enquêtes : la colonne du numéro est reconnue par son en-tête exact (« رقم »), jamais une colonne comme « رقم الهاتف » ; le numéro s'écrit sur deux chiffres (01, 02…)."
+    ]
+  },
+  {
     "id": "2026-10-21-12",
     "date": "2026-10-21",
     "title": "Version 5.4.7 — Enquêtes : avertissement avant injection, date d'enregistrement, numéro d'agent",

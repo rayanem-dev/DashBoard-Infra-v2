@@ -97,7 +97,7 @@ function enqColNumero_(lignes, col) {
   for (c = 0; c < largeur; c += 1) { // 1) colonne dont l'en-tête dit « numéro » (« الرقم », « رقم », « N° »), de n'importe quel côté
     if (pris.indexOf(c) >= 0) continue;
     var t = String(entete[c] == null ? '' : entete[c]).replace(/\s+/g, '');
-    if (/رقم|^n[°o]?$|^num/i.test(t)) return c;
+    if (/^(ال)?رقم$|^n[°o]?$|^num(éro|ero)?$/i.test(t)) return c; // exact : pas « رقم الهاتف »
   }
   var meilleur = -1, score = 0; // 2) sinon colonne de petits entiers qui se suivent (1, 2, 3…)
   for (c = 0; c < largeur; c += 1) {
@@ -321,7 +321,7 @@ function injecterEnquetes_(formData) {
           if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
           sh.getRange(ligne, col.fr + 1).setValue(nomComplet);
           if (colNum >= 0 && !Badges.vide((lignes[i] || [])[colNum])) { /* ligne déjà numérotée : on garde son numéro */ }
-          else if (colNum >= 0) sh.getRange(ligne, colNum + 1).setValue(enqProchainNumero_(lignes, col, colNum)); // numéro d'agent suivant
+          else if (colNum >= 0) sh.getRange(ligne, colNum + 1).setNumberFormat('00').setValue(enqProchainNumero_(lignes, col, colNum)); // numéro d'agent suivant
           if (col.fonction >= 0 && Badges.vide(p.fonction)) sh.getRange(ligne, col.fonction + 1).setValue(Badges.vide(p.fonction));
           var ar = { nomAr: enqArabe_(nom), prenomAr: enqArabe_(prenom) }; // approché : à relire
           if (col.nomAr >= 0 && ar.nomAr) sh.getRange(ligne, col.nomAr + 1).setValue(ar.nomAr);

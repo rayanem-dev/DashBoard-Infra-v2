@@ -132,3 +132,8 @@ test('numéro d\'agent : colonne à droite des noms, repérée par son en-tête 
   assert.equal(E('enqColDate_', [['a', 'تاريخ التسجيل']], { h: 0 }), 1);
   assert.equal(E('enqColDate_', [['a', 'تاريخ']], { h: 0 }), -1);
 });
+
+test('numéro d\'agent : « رقم الهاتف » n\'est pas la colonne du numéro', () => {
+  const lignes = [['رقم الهاتف', 'رقم', 'بالفرنسية', 'اللقب'], ['0555', '', 'A B', 'x']];
+  assert.equal(E('enqColNumero_', lignes, { h: 0, fr: 2, fonction: -1, prenomAr: -1, nomAr: 3 }), 1);
+});
