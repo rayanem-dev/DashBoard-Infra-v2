@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-06",
+    "date": "2026-10-21",
+    "title": "Version 5.4.1 — Mes applications : anciennes icônes, sans ascenseur",
+    "changes": [
+      "Accueil : « Mes applications » retrouve ses icônes d'origine (emojis, nom au survol) ; toutes les applications sont visibles sans ascenseur, sur plusieurs lignes."
+    ]
+  },
+  {
     "id": "2026-10-21-05",
     "date": "2026-10-21",
     "title": "Version 5.4.0 — Mes applications en écran « tablette »",
