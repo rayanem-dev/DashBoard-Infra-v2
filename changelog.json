@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-21-03",
+    "date": "2026-10-21",
+    "title": "Version 5.3.2 — Raccourcis du planning dans le volet rotation",
+    "changes": [
+      "Accueil : les icônes du planning (mon planning, équipes, simulation) sont maintenant dans le volet de la rotation, plus dans la fiche personnelle."
+    ]
+  },
+  {
     "id": "2026-10-21-02",
     "date": "2026-10-21",
     "title": "Version 5.3.1 — Prises en charge : un seul champ Fonction",

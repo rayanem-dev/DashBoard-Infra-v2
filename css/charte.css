@@ -492,3 +492,7 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent .jauge .j-centre b { font-size: 22px; }
 .agent .jauge-texte p { font-size: 12px; line-height: 1.35; }
 @media (max-width: 1180px) { .agent .jauge { width: 84px; height: 84px; } }
+
+/* Raccourcis du planning : dans le volet « rotation / planning », en haut à droite (plus dans la fiche personnelle) */
+.jauge-bloc .raccourcis { position: absolute; top: 10px; inset-inline-end: 12px; margin: 0; z-index: 2; }
+.jauge-bloc:has(.raccourcis:not([hidden])) { padding-top: 50px; }
