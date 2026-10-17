@@ -3,7 +3,7 @@ const test = require('node:test'), assert = require('node:assert'), vm = require
 const code = fs.readFileSync(path.join(__dirname, '..', 'SuiviCPM-complet.gs'), 'utf8');
 
 function fabrique(lignes) {
-  const entetes = ['Date debut Cahier des Charges', 'Type', 'Etape', 'Date Limite', '', '% Réalisé', 'Statut', 'Attribution', 'Date signature de contrat', 'Date ODS', 'Durée du contrat (mois)', 'Échéance', 'Date Attribution Finale', 'Durée Passation (jours)', 'Fin après prolongation 1', 'Fin après prolongation 2', 'Unité durée', 'Prolongation 1 (jours)', 'Prolongation 2 (jours)'];
+  const entetes = ['Date debut Cahier des Charges', 'Type', 'Etape', 'Date Limite', '', '% Réalisé', 'Statut', 'Attribution', 'Date signature de contrat', 'Date ODS', 'Durée du contrat (mois)', 'Échéance', 'Date Attribution Finale', 'Durée Passation (jours)', 'Fin après prolongation 1', 'Fin après prolongation 2', 'Unité durée', 'Prolongation 1 (jours)', 'Prolongation 2 (jours)', 'Date arrêt 1', 'Date reprise 1', 'Date arrêt 2', 'Date reprise 2', 'Commentaire'];
   const nc = entetes.length, grille = [[], entetes.map(h => ({ v: h, bg: '#ffffff', fc: '#000000' }))];
   grille[0] = entetes.map(() => ({ v: '', bg: '#ffffff', fc: '#000000' }));
   lignes.forEach(l => grille.push(entetes.map((_, i) => ({ v: l[i] === undefined ? '' : l[i], bg: '#ffffff', fc: '#000000' }))));
@@ -48,7 +48,11 @@ const LIGNES = [
   [jours(-100), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'T1', jours(-100), jours(-100), 6, '', '', '', '', '', '', 30, ''],            // 17 : +30 jours
   [jours(-100), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'T2', jours(-100), jours(-100), 6, '', '', '', '', '', '', '2 mois', 15],      // 18 : 2 mois (60 j) + 15 j
   [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'T3', jours(-330), jours(-330), 6, '', '', '', '', '', '', '2 mois', ''],      // 19 : fin dépassée même avec 60 j → échu
-  [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T4', jours(-330), jours(-330), 6, '', '', '', '', '', '', 200, '']                      // 20 : échu puis +200 j → de nouveau en exécution
+  [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T4', jours(-330), jours(-330), 6, '', '', '', '', '', '', 200, ''],                     // 20 : échu puis +200 j → de nouveau en exécution
+  [jours(-100), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'T5', jours(-100), jours(-100), 6, '', '', '', '', '', '', '', '', jours(-60), jours(-30), '', '', 'ancien commentaire'],   // 21 : arrêt puis reprise = 30 j de plus
+  [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat en exécution', 'T6', jours(-330), jours(-330), 6, '', '', '', '', '', '', '', '', jours(-20), '', '', ''],                            // 22 : à l'arrêt, jamais échu
+  [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T7', jours(-330), jours(-330), 6, '', '', '', '', '', '', '', '', jours(-100), jours(-10), '', ''],                            // 23 : 90 j d'arrêt, fin encore dépassée → reste échu
+  [jours(-330), 'CF', 'x', '', '', 0.5, 'Contrat échu', 'T8', jours(-330), jours(-330), 6, '', '', '', '', '', '', '', '', jours(-200), jours(-10), '', '']                             // 24 : 190 j d'arrêt → de nouveau en exécution
 ];
 test('rafraîchissement en bloc = traitement ligne par ligne', () => {
   const A = fabrique(LIGNES), B = fabrique(LIGNES);
@@ -71,4 +75,11 @@ test('rafraîchissement en bloc = traitement ligne par ligne', () => {
   const ecart = i => Math.round((fin(i) - fin(16)) / 864e5);
   assert.deepStrictEqual([ecart(17), ecart(18)], [30, 75]);                         // 30 j ; « 2 mois » (60) + 15 j
   assert.deepStrictEqual([st(19), st(20)], ['Contrat échu', 'Contrat en exécution']);
+  assert.deepStrictEqual([st(21), st(22), st(23), st(24)], ['Contrat en exécution', 'Contrat en exécution', 'Contrat échu', 'Contrat en exécution']);
+  assert.strictEqual(ecart(21), 30);                                                // arrêt de 30 j : la fin recule de 30 j
+  const com = i => B.grille[2 + i][23].v;
+  assert.match(com(16), /^En cours d'exécution — ODS le \d\d\/\d\d\/\d{4}, durée 6 mois, fin prévue le /);
+  assert.match(com(21), /30 j d'arrêt.*Nouvelle fin prévue le /);                  // remplace l'ancien commentaire
+  assert.match(com(22), /ARRÊT DE CHANTIER depuis le .*reprise à venir.*à calculer à la reprise/);
+  assert.match(com(17), /prolongation de 30 j/);
 });

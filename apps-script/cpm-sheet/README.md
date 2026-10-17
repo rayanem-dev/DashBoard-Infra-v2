@@ -34,3 +34,8 @@ Ordre (haut → bas) : Bloqué · Non démarré · Dossier en cours · Attribué
 ```
 La première fois, une colonne « Ordre statut » est créée tout à droite (masquée) : elle contient le rang de chaque ligne et sert de clé de tri. Après le tri, les listes déroulantes « Etape » sont remises d'aplomb selon le Type de chaque ligne.
 Le tri se déclenche aussi quand le % Réalisé passe à 100 % (le statut change tout seul), donc la ligne descend dans « Contrat en exécution » sans rien faire.
+
+## Script complet et versions
+Le fichier à coller en entier dans Apps Script est `SuiviCPM-complet.gs`. Chaque modification augmente `VERSION_SCRIPT` (5.4, 5.5…) et ajoute une ligne à l'historique en tête du fichier ; la version s'affiche dans le menu « Suivi CPM · v5.4 » de la feuille. Les anciens extraits ci-dessus (statut à 100 %, tri) y sont déjà intégrés : ne rien coller d'autre.
+
+Nouveautés 5.4 : colonnes « Date arrêt 1 / Date reprise 1 / Date arrêt 2 / Date reprise 2 » (le comptage est suspendu, la fin recule du nombre de jours d'arrêt ; sans reprise le contrat n'est jamais « échu »), et **commentaire automatique** tant que le statut est « Contrat en exécution » (ODS, durée, fin prévue, puis arrêt / reprise / prolongation dès qu'ils surviennent).

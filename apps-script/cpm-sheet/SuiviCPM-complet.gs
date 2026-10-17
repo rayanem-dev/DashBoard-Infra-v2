@@ -1,6 +1,14 @@
 /**
  * ============================================================
- *  SCRIPT SUIVI CPM — v5
+ *  SCRIPT SUIVI CPM — VERSION 5.4          (à chaque modification : augmenter VERSION_SCRIPT ci-dessous et ajouter une ligne ici)
+ *  Historique :
+ *   5.0  Colonnes retrouvées par leur en-tête, Dead Line, couleurs, échéance, durée de passation, tri des colonnes de saisie
+ *   5.1  À 100 % d'avancement : le statut passe en « Contrat en exécution »
+ *   5.2  Classement automatique par statut (colonne d'aide « Ordre statut »)
+ *   5.3  Rafraîchissement complet en bloc (quelques secondes) ; durée en mois ou en jours (« Unité durée », fin incluse) ;
+ *        prolongations (durée ou date de fin) ; un contrat échu prolongé repasse en exécution
+ *   5.4  Arrêts / reprises de chantier (jusqu'à 2) ; commentaire automatique tant que le contrat est en exécution ; menu « Suivi CPM »
+ * ============================================================
  *  Les colonnes sont retrouvées par leur NOM D'EN-TÊTE (ligne 2)
  *  et non par numéro fixe : plus aucun risque de décalage si une
  *  colonne est ajoutée/déplacée dans la feuille.
@@ -22,6 +30,11 @@
  *  - DURÉE EN MOIS OU EN JOURS : colonne "Unité durée" (liste : mois / jours). Si elle est vide : une durée de plus de
  *    60 est comprise comme des JOURS (ex. 580), sinon comme des MOIS (ex. 18). La date de fin est INCLUSE :
  *    ODS 01/05/2025 + 18 mois → 31/10/2026 ; ODS + N jours → le N-ième jour est le dernier jour.
+ *  - ARRÊTS DE CHANTIER : "Date arrêt 1" / "Date reprise 1" (et "…2") : le comptage est suspendu entre l'arrêt et la
+ *    reprise, la fin du contrat est repoussée du nombre de jours d'arrêt. Tant qu'il n'y a pas de reprise, le contrat
+ *    n'est jamais déclaré échu.
+ *  - COMMENTAIRE AUTOMATIQUE : tant que le Statut est "Contrat en exécution", la case Commentaire est écrite par
+ *    le script (ODS, durée, fin prévue, puis arrêt / reprise / prolongation dès qu'ils surviennent).
  *  - PROLONGATIONS EN DURÉE : "Prolongation 1 (jours)" et "Prolongation 2 (jours)" : saisir 60, ou "2 mois" (1 mois = 30 jours,
  *    donc 2 mois = 60 jours), ou "15 j". Elles s'AJOUTENT à la fin du contrat.
  *  - PROLONGATIONS EN DATE : si l'avenant donne directement la NOUVELLE date de fin, la saisir dans
@@ -34,6 +47,7 @@
  * ============================================================
  */
 
+const VERSION_SCRIPT = '5.4';
 const HEADER_ROW = 2;
 const DATA_START_ROW = 3;
 
@@ -52,6 +66,11 @@ const H = {
   ATTRIB_FINALE: 'date attribution finale',
   DUREE_PASSATION: 'duree passation (jours)',
   UNITE: 'unite duree',
+  ARRET1: 'date arret 1',
+  REPRISE1: 'date reprise 1',
+  ARRET2: 'date arret 2',
+  REPRISE2: 'date reprise 2',
+  COMMENTAIRE: 'commentaire',
   PJ1: 'prolongation 1 (jours)',
   PJ2: 'prolongation 2 (jours)',
   PROLONG1: 'fin apres prolongation 1',
@@ -157,7 +176,7 @@ function onEdit(e) {
   }
 
   // 📚 Classement automatique : quand le Statut (ou ce qui le fait changer) est modifié
-  var touche = [col(map, H.STATUT, true), col(map, H.ETAPE, true), col(map, H.POURCENT, true), col(map, H.TYPE, true)].some(function (c) { return c >= startCol && c < startCol + numCols; });
+  var touche = [col(map, H.STATUT, true), col(map, H.ETAPE, true), col(map, H.POURCENT, true), col(map, H.TYPE, true), map[H.PJ1], map[H.PJ2], map[H.PROLONG1], map[H.PROLONG2], map[H.ARRET1], map[H.REPRISE1], map[H.ARRET2], map[H.REPRISE2]].filter(Boolean).some(function (c) { return c >= startCol && c < startCol + numCols; });
   if (touche && startRow + numRows - 1 >= DATA_START_ROW) trierParStatut(sheet, map);
 }
 
@@ -190,7 +209,7 @@ function processCellEdit(sheet, row, colIdx, map, e) {
 
   // ✅ Colonnes date obligatoires
   var dateCols = [col(map, H.DATE_LIMITE, true), col(map, H.DATE_SIGNATURE), col(map, H.DATE_ODS),
-                   col(map, H.DEBUT_CDC, true), col(map, H.ATTRIB_FINALE), col(map, H.PROLONG1), col(map, H.PROLONG2)];
+                   col(map, H.DEBUT_CDC, true), col(map, H.ATTRIB_FINALE), col(map, H.PROLONG1), col(map, H.PROLONG2), col(map, H.ARRET1), col(map, H.REPRISE1), col(map, H.ARRET2), col(map, H.REPRISE2)];
   if (dateCols.indexOf(colIdx) !== -1) {
     var cellD = sheet.getRange(row, colIdx);
     var valD = cellD.getValue();
@@ -259,6 +278,7 @@ function processRow(sheet, row, map) {
   updateRowColorFromStatut(sheet, row, map);
   updateObligatoires(sheet, row, map);
   updatePassationDuration(sheet, row, map, debutCdc);
+  ecrireCommentaireExecution(sheet, row, map);
 }
 
 // ---------- À 100 % : le statut (Attribué / Dossier en cours) passe en « Contrat en exécution » ----------
@@ -318,6 +338,43 @@ function echeanceProlongee(base, jours, dateFin) {
   return dateFin && dateFin > e ? new Date(dateFin) : e;
 }
 
+// ---------- Analyse d'un contrat en cours : fin prévue (durée + arrêts + prolongations) et texte du commentaire ----------
+function jjmmaaaa(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+function joursEntreDates(a, b) { var x = new Date(a), y = new Date(b); x.setHours(0, 0, 0, 0); y.setHours(0, 0, 0, 0); return Math.round((y - x) / 86400000); }
+// p = { ods, duree, unite, prolongs: [valeur, valeur], dateFin, arrets: [[arrêt, reprise], [arrêt, reprise]], aujourdhui }
+// Retourne null sans ODS/durée, sinon { base, fin, arretEnCours, prolonge, texte }
+function analyserContrat(p) {
+  if (!(p.ods instanceof Date) || !p.duree) return null;
+  var base = calculerEcheance(p.ods, p.duree, p.unite), evts = [], joursArret = 0, arretEnCours = null, prolonge = false;
+  (p.arrets || []).forEach(function (a) {
+    var ar = a[0], re = a[1];
+    if (!(ar instanceof Date)) return;
+    if (re instanceof Date) {
+      var n = Math.max(0, joursEntreDates(ar, re));
+      joursArret += n; prolonge = true;
+      evts.push('arrêt de chantier le ' + jjmmaaaa(ar) + ', reprise le ' + jjmmaaaa(re) + ' (' + n + ' j d\'arrêt)');
+    } else { arretEnCours = ar; evts.push('ARRÊT DE CHANTIER depuis le ' + jjmmaaaa(ar) + ' (reprise à venir)'); }
+  });
+  var jp = 0;
+  (p.prolongs || []).forEach(function (v) { jp += joursDeProlongation(v); });
+  if (jp > 0) { prolonge = true; evts.push('prolongation de ' + jp + ' j'); }
+  var fin = new Date(base);
+  fin.setDate(fin.getDate() + joursArret + jp);
+  if (p.dateFin && p.dateFin > fin) { fin = new Date(p.dateFin); evts.push('nouvelle fin fixée au ' + jjmmaaaa(fin)); }
+  if (p.dateFin) prolonge = true;
+  var texte;
+  if (!evts.length) texte = 'En cours d\'exécution — ODS le ' + jjmmaaaa(p.ods) + ', durée ' + p.duree + ' ' + uniteDuree(p.duree, p.unite) + ', fin prévue le ' + jjmmaaaa(fin) + '.';
+  else texte = 'En exécution — ODS le ' + jjmmaaaa(p.ods) + ', fin initiale le ' + jjmmaaaa(base) + '. ' + evts.join(' ; ') + '. ' + (arretEnCours ? 'Nouvelle fin à calculer à la reprise des travaux.' : 'Nouvelle fin prévue le ' + jjmmaaaa(fin) + '.');
+  return { base: base, fin: fin, arretEnCours: arretEnCours, prolonge: prolonge, texte: texte };
+}
+// Lit les cellules d'une ligne pour analyserContrat
+function lireContrat(sheet, row, map) {
+  function val(k) { return map[k] ? sheet.getRange(row, map[k]).getValue() : ''; }
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  return { ods: val(H.DATE_ODS), duree: val(H.DUREE_CONTRAT), unite: val(H.UNITE), prolongs: [val(H.PJ1), val(H.PJ2)], dateFin: finProlongee(sheet, row, map),
+           arrets: [[val(H.ARRET1), val(H.REPRISE1)], [val(H.ARRET2), val(H.REPRISE2)]], aujourdhui: today };
+}
+
 // ---------- Dernière date de fin après prolongation(s) (avenants) : la plus tardive des deux colonnes, ou null ----------
 function finProlongee(sheet, row, map) {
   var fin = null;
@@ -330,8 +387,9 @@ function finProlongee(sheet, row, map) {
   return fin;
 }
 
-// ---------- Bascule automatiquement le Statut : "Contrat échu" si l'Échéance (prolongations comprises) est dépassée ;
-//            et retour en "Contrat en exécution" si un contrat échu est prolongé au-delà d'aujourd'hui ----------
+// ---------- Bascule automatiquement le Statut : "Contrat échu" si la fin (arrêts et prolongations compris) est dépassée ;
+//            retour en "Contrat en exécution" si un contrat échu est prolongé / repris au-delà d'aujourd'hui.
+//            Un contrat à l'arrêt (arrêt sans reprise) n'est JAMAIS déclaré échu. ----------
 function verifierEcheanceDepassee(sheet, row, map) {
   var statutCol = col(map, H.STATUT, true);
   var statut = normalize(sheet.getRange(row, statutCol).getValue());
@@ -339,24 +397,32 @@ function verifierEcheanceDepassee(sheet, row, map) {
   var echu = statut.includes('echu');
   if (!enExecution && !echu) return;
 
-  var echeanceCol = col(map, H.ECHEANCE, true);
-  var echeanceVal = sheet.getRange(row, echeanceCol).getValue();
-  var valO = sheet.getRange(row, col(map, H.DATE_ODS, true)).getValue();
-  var valP = sheet.getRange(row, col(map, H.DUREE_CONTRAT, true)).getValue();
-  var jours = joursProlonges(sheet, row, map), dateFin = finProlongee(sheet, row, map);
-  var prolonge = jours > 0 || !!dateFin;
-  var echeanceDate = null;
-  // base = ODS + durée (jamais la colonne Échéance, qui contient déjà les prolongations) ; à défaut, l'échéance saisie
-  if (valO instanceof Date && valP) echeanceDate = echeanceProlongee(calculerEcheance(valO, valP, uniteDeLaLigne(sheet, row, map)), jours, dateFin);
-  else if (echeanceVal instanceof Date) echeanceDate = echeanceProlongee(echeanceVal, 0, dateFin);
-  else if (dateFin) echeanceDate = dateFin;
+  var contrat = lireContrat(sheet, row, map);
+  var a = analyserContrat(contrat), echeanceDate, prolonge, arret = false;
+  if (a) { echeanceDate = a.fin; prolonge = a.prolonge; arret = !!a.arretEnCours; }
+  else { // sans ODS ni durée : l'échéance saisie, éventuellement prolongée par une date de fin
+    var echeanceVal = sheet.getRange(row, col(map, H.ECHEANCE, true)).getValue();
+    echeanceDate = echeanceVal instanceof Date ? echeanceProlongee(echeanceVal, 0, contrat.dateFin) : contrat.dateFin;
+    prolonge = !!contrat.dateFin;
+  }
   if (!echeanceDate) return;
 
-  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var today = contrat.aujourdhui;
   var echCompare = new Date(echeanceDate); echCompare.setHours(0, 0, 0, 0);
 
-  if (enExecution && echCompare < today) sheet.getRange(row, statutCol).setValue(STATUT_ECHU_LABEL);
-  else if (echu && prolonge && echCompare >= today) sheet.getRange(row, statutCol).setValue('Contrat en exécution'); // prolongation ajoutée : le contrat court de nouveau
+  if (enExecution && !arret && echCompare < today) sheet.getRange(row, statutCol).setValue(STATUT_ECHU_LABEL);
+  else if (echu && prolonge && echCompare >= today) sheet.getRange(row, statutCol).setValue('Contrat en exécution');
+}
+
+// ---------- Commentaire automatique d'un contrat en exécution (ODS, fin prévue, puis arrêt / reprise / prolongation) ----------
+function ecrireCommentaireExecution(sheet, row, map) {
+  var statut = normalize(sheet.getRange(row, col(map, H.STATUT, true)).getValue());
+  var cc = map[H.COMMENTAIRE];
+  if (!cc || !statut.includes('execution')) return;
+  var a = analyserContrat(lireContrat(sheet, row, map));
+  if (!a) return;
+  var cell = sheet.getRange(row, cc);
+  if (cell.getValue() !== a.texte) cell.setValue(a.texte);
 }
 
 // ---------- Dead Line (colonne juste après "Date Limite") ----------
@@ -441,8 +507,7 @@ function updateObligatoires(sheet, row, map) {
 
   if (!valO || !valP) { cellQ.clearContent(); cellQ.setBackground('#ff0000'); return; }
 
-  var echeance = calculerEcheance(valO, valP, uniteDeLaLigne(sheet, row, map));
-  echeance = echeanceProlongee(echeance, joursProlonges(sheet, row, map), finProlongee(sheet, row, map)); // avenants : jours ajoutés, ou nouvelle date de fin si plus tardive
+  var echeance = analyserContrat(lireContrat(sheet, row, map)).fin; // durée + arrêts + prolongations
   cellQ.setValue(echeance);
 
   // 🎨 Coloration selon le temps RESTANT avant échéance (à partir d'aujourd'hui) :
@@ -531,7 +596,17 @@ function trierParStatut(sheet, map) {
 // ============================================================
 //  onOpen — création des colonnes manquantes + validations + protections + trigger
 // ============================================================
+function afficherVersionScript() {
+  SpreadsheetApp.getUi().alert('Script Suivi CPM — version ' + VERSION_SCRIPT);
+}
+
 function onOpen() {
+  // Menu « Suivi CPM » : la version du script est toujours visible
+  SpreadsheetApp.getUi().createMenu('Suivi CPM · v' + VERSION_SCRIPT)
+    .addItem('Rafraîchir toute la feuille (et classer par statut)', 'rafraichirTouteLaFeuille')
+    .addItem('Version du script', 'afficherVersionScript')
+    .addToUi();
+
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()
     .find(function (s) { return s.getName().toLowerCase().includes('suivi'); });
   if (!sheet) return;
@@ -544,7 +619,7 @@ function onOpen() {
   var numRows = lastRow - DATA_START_ROW + 1;
 
   var dateRule = SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false).build();
-  [H.DATE_LIMITE, H.DATE_SIGNATURE, H.DATE_ODS, H.DEBUT_CDC, H.ATTRIB_FINALE, H.PROLONG1, H.PROLONG2].forEach(function (key) {
+  [H.DATE_LIMITE, H.DATE_SIGNATURE, H.DATE_ODS, H.DEBUT_CDC, H.ATTRIB_FINALE, H.PROLONG1, H.PROLONG2, H.ARRET1, H.REPRISE1, H.ARRET2, H.REPRISE2].forEach(function (key) {
     var c = map[key];
     if (c) sheet.getRange(DATA_START_ROW, c, numRows, 1).setDataValidation(dateRule);
   });
@@ -578,7 +653,7 @@ function creerColonnesManquantes(sheet) {
 // ---------- Colonnes de PROLONGATION tout à droite de la feuille (jamais au milieu : les autres colonnes ne bougent pas) ----------
 function creerColonnesProlongation(sheet) {
   var map = buildColumnMap(sheet);
-  [['Unité durée', H.UNITE], ['Prolongation 1 (jours)', H.PJ1], ['Prolongation 2 (jours)', H.PJ2], ['Fin après prolongation 1', H.PROLONG1], ['Fin après prolongation 2', H.PROLONG2]].forEach(function (x) {
+  [['Unité durée', H.UNITE], ['Date arrêt 1', H.ARRET1], ['Date reprise 1', H.REPRISE1], ['Date arrêt 2', H.ARRET2], ['Date reprise 2', H.REPRISE2], ['Prolongation 1 (jours)', H.PJ1], ['Prolongation 2 (jours)', H.PJ2], ['Fin après prolongation 1', H.PROLONG1], ['Fin après prolongation 2', H.PROLONG2]].forEach(function (x) {
     if (map[x[1]]) return;
     var c = sheet.getLastColumn() + 1;
     sheet.getRange(HEADER_ROW, c).setValue(x[0]);
@@ -639,6 +714,7 @@ function rafraichirEnBloc(sheet, map) {
   var cDebut = col(map, H.DEBUT_CDC, true) - 1, cStatut = col(map, H.STATUT, true) - 1, cPct = col(map, H.POURCENT, true) - 1,
       cLim = col(map, H.DATE_LIMITE, true) - 1, cDead = cLim + 1, cAttr = col(map, H.ATTRIBUTION, true) - 1, cEch = col(map, H.ECHEANCE, true) - 1,
       cU = (map[H.UNITE] || 0) - 1, cP1 = (map[H.PROLONG1] || 0) - 1, cP2 = (map[H.PROLONG2] || 0) - 1, cJ1 = (map[H.PJ1] || 0) - 1, cJ2 = (map[H.PJ2] || 0) - 1,
+      cA1 = (map[H.ARRET1] || 0) - 1, cR1 = (map[H.REPRISE1] || 0) - 1, cA2 = (map[H.ARRET2] || 0) - 1, cR2 = (map[H.REPRISE2] || 0) - 1, cCom = (map[H.COMMENTAIRE] || 0) - 1,
       cAF = col(map, H.ATTRIB_FINALE, true) - 1, cODS = col(map, H.DATE_ODS, true) - 1, cDur = col(map, H.DUREE_CONTRAT, true) - 1, cPass = col(map, H.DUREE_PASSATION, true) - 1;
   var auj = new Date(); auj.setHours(0, 0, 0, 0);
   var JOUR = 1000 * 60 * 60 * 24;
@@ -655,17 +731,19 @@ function rafraichirEnBloc(sheet, map) {
     var st = normalize(v[cStatut]);
     if (cent && (st.includes('attribue') || st.includes('en cours'))) { v[cStatut] = 'Contrat en exécution'; st = normalize(v[cStatut]); }
 
-    // 2) échéance (prolongations comprises) dépassée → Contrat échu ; contrat échu prolongé au-delà d'aujourd'hui → de nouveau en exécution
-    var dateFin = null, jours = 0;
+    // 2) fin du contrat (durée + arrêts + prolongations) : dépassée → Contrat échu ; contrat échu prolongé / repris au-delà d'aujourd'hui → de nouveau en exécution
+    var dateFin = null;
     [cP1, cP2].forEach(function (cp) { if (cp >= 0 && v[cp] instanceof Date && (!dateFin || v[cp] > dateFin)) dateFin = v[cp]; });
-    [cJ1, cJ2].forEach(function (cj) { if (cj >= 0) jours += joursDeProlongation(v[cj]); });
-    var prolonge = jours > 0 || !!dateFin;
-    var base = (v[cODS] instanceof Date && v[cDur]) ? finContrat(v[cODS], v[cDur], v) : null;
+    function cellule(c) { return c >= 0 ? v[c] : ''; }
+    var an = analyserContrat({ ods: v[cODS], duree: v[cDur], unite: cU >= 0 ? v[cU] : '', prolongs: [cellule(cJ1), cellule(cJ2)], dateFin: dateFin,
+                               arrets: [[cellule(cA1), cellule(cR1)], [cellule(cA2), cellule(cR2)]], aujourdhui: auj });
     var enExec = st.includes('execution'), echu = st.includes('echu');
     if (enExec || echu) {
-      var ech0 = base ? echeanceProlongee(base, jours, dateFin) : (v[cEch] instanceof Date ? echeanceProlongee(v[cEch], 0, dateFin) : dateFin);
+      var ech0, prolonge, arret = false;
+      if (an) { ech0 = an.fin; prolonge = an.prolonge; arret = !!an.arretEnCours; }
+      else { ech0 = v[cEch] instanceof Date ? echeanceProlongee(v[cEch], 0, dateFin) : dateFin; prolonge = !!dateFin; }
       if (ech0) {
-        if (enExec && minuit(ech0) < auj) { v[cStatut] = STATUT_ECHU_LABEL; st = normalize(v[cStatut]); }
+        if (enExec && !arret && minuit(ech0) < auj) { v[cStatut] = STATUT_ECHU_LABEL; st = normalize(v[cStatut]); }
         else if (echu && prolonge && minuit(ech0) >= auj) { v[cStatut] = 'Contrat en exécution'; st = normalize(v[cStatut]); }
       }
     }
@@ -694,7 +772,7 @@ function rafraichirEnBloc(sheet, map) {
       B[i][cAF] = v[cAF] ? coul : '#ff0000';
       if (!v[cODS] || !v[cDur]) { v[cEch] = ''; B[i][cEch] = '#ff0000'; }
       else {
-        var ech = echeanceProlongee(finContrat(v[cODS], v[cDur], v), jours, dateFin);
+        var ech = an.fin;
         v[cEch] = ech;
         var restant = Math.round((minuit(ech) - auj) / JOUR);
         B[i][cEch] = restant > 365 ? '#7cd5b0' : (restant >= 182 ? '#fbbc04' : '#ea4335');
@@ -707,10 +785,13 @@ function rafraichirEnBloc(sheet, map) {
       v[cPass] = dj;
       B[i][cPass] = dj <= SEUIL_PASSATION_BON ? '#7cd5b0' : (dj <= SEUIL_PASSATION_MOYEN ? '#fbbc04' : '#f28b82');
     } else { v[cPass] = ''; B[i][cPass] = '#ffffff'; }
+
+    // 7) commentaire automatique d'un contrat en exécution
+    if (cCom >= 0 && an && st.includes('execution')) v[cCom] = an.texte;
   }
 
   // Écriture : uniquement les colonnes calculées (les autres valeurs ne sont pas réécrites), puis couleurs
-  [cStatut, cDead, cEch, cPass].forEach(function (c) {
+  [cStatut, cDead, cEch, cPass].concat(cCom >= 0 ? [cCom] : []).forEach(function (c) {
     sheet.getRange(DATA_START_ROW, c + 1, nb, 1).setValues(V.map(function (r) { return [r[c]]; }));
   });
   plage.setBackgrounds(B);
