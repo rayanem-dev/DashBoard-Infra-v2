@@ -220,3 +220,8 @@ test('casse des noms : NOM en majuscules, Prénom avec sa majuscule', () => {
   assert.strictEqual(B.capPrenom('FaRid'), 'FaRid'); // casse mixte : laissé tel quel
   assert.strictEqual(B.capPrenom('فريد'), 'فريد');
 });
+
+test('fonctions des Enquêtes : distinctes, graphie la plus courante, de la plus fréquente à la moins fréquente', () => {
+  const idx = [{ fonction: 'Chauffeur' }, { fonction: 'chauffeur' }, { fonction: 'Chauffeur' }, { fonction: 'MANEUVRE' }, { fonction: 'Maneuvre' }, { fonction: 'Maneuvre' }, { fonction: '—' }, { fonction: '' }, { fonction: 'Gardien' }];
+  assert.deepStrictEqual(G('badgesFonctions_', idx), ['Chauffeur', 'Maneuvre', 'Gardien']);
+});

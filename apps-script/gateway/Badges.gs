@@ -142,6 +142,19 @@ function badgesSaisieCharge_(req) {
   var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { var o = { nom: Badges.majNom(p.nom).slice(0, 200), prenom: Badges.capPrenom(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; ['structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere', 'adresse', 'embauche', 'nin', 'acte', 'tel'].forEach(function (k) { o[k] = Badges.vide(p[k]).slice(0, 200); }); return o; }).filter(function (p) { return p.nom; });
   return { prestataire: [ctr, ent, tit].join(' - '), personnes: gens, ignorerEnquetes: Array.isArray(req.ignorer) ? req.ignorer.map(String) : [], entreprise: ent, wilaya: Badges.vide(req.wilaya).slice(0, 60) };
 }
+/** Fonctions déjà inscrites dans les Enquêtes (toutes entreprises), de la plus fréquente à la moins fréquente ; la graphie la plus courante est gardée. Pur : testé en Node. */
+function badgesFonctions_(index) {
+  var par = {};
+  (index || []).forEach(function (p) {
+    var f = Badges.vide(p.fonction); if (!f || f === '—' || f === '-') return;
+    var k = Badges.norm(f); if (!k) return;
+    var e = par[k] || (par[k] = { n: 0, graphies: {} }); e.n += 1; e.graphies[f] = (e.graphies[f] || 0) + 1;
+  });
+  return Object.keys(par).map(function (k) {
+    var g = par[k].graphies, best = Object.keys(g).sort(function (a, b) { return g[b] - g[a] || a.localeCompare(b); })[0];
+    return { f: best, n: par[k].n };
+  }).sort(function (a, b) { return b.n - a.n || a.f.localeCompare(b.f, 'fr'); }).slice(0, 500).map(function (x) { return x.f; });
+}
 // ---------- actions ----------
 function badgesDonnees_(req) {
   var u = badgesDroit_(req, 1);
@@ -159,6 +172,10 @@ function badgesEnquetesChercher_(req) {
   var r = rechercherPersonnes(String(req.texte || '').slice(0, 80));
   if (!r.ok) throw new Error(r.message || 'Recherche impossible');
   return { personnes: r.personnes };
+}
+function badgesEnquetesFonctions_(req) {
+  badgesDroit_(req, 2);
+  return { fonctions: badgesFonctions_(enqIndexCache_()) };
 }
 function badgesEnquetesVerifier_(req) {
   badgesDroit_(req, 2);

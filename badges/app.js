@@ -185,7 +185,7 @@ var BadgesApp = (function () {
     function editer(p) {
       var neuf = !p, x = p ? Object.assign({}, p) : { id: id(), structure: '', entreprise: S.fe || '', contrat: '' };
       var corps = el('div', 'bdg-grille'), I = {};
-      [['nom', 'Nom'], ['prenom', 'Prénom'], ['fonction', 'Fonction']].forEach(function (c) { I[c[0]] = saisie(x[c[0]]); corps.appendChild(champ(c[1], I[c[0]])); });
+      [['nom', 'Nom'], ['prenom', 'Prénom'], ['fonction', 'Fonction']].forEach(function (c) { I[c[0]] = saisie(x[c[0]]); if (c[0] === 'fonction' && adapter.fonctionsEnquetes) { listeFonctions(); I[c[0]].setAttribute('list', 'bdg-dl-fonc'); } corps.appendChild(champ(c[1], I[c[0]])); });
       var choix = selectCombos(x, '— choisir l\'entreprise et son contrat —');
       choix.onchange = function () { var c = choix.combo(); if (c) { I.entreprise.value = c.nom; I.contrat.value = c.numero; } };
       var cc = el('div', 'bdg-champ-large'); cc.appendChild(champ('Entreprise — contrat', choix)); corps.appendChild(cc);
@@ -342,7 +342,7 @@ var BadgesApp = (function () {
       var tb = el('tbody');
       X.lignes.forEach(function (l, i) {
         var tr = el('tr'); tr.appendChild(el('td', null, String(i + 1)));
-        cols.forEach(function (c) { var k = c[0], inp = saisie(l[k], 'text', c[2]); if (k === 'nomAr' || k === 'prenomAr') inp.dir = 'rtl'; inp.oninput = function () { l[k] = inp.value; if (k === 'nom' || k === 'prenom') suggerer(inp, l); }; inp.onblur = function () { if (k === 'nom') { inp.value = l[k] = B.majNom(inp.value); } else if (k === 'prenom') { inp.value = l[k] = B.capPrenom(inp.value); } setTimeout(fermerSuggestions, 200); }; var td = el('td'); td.appendChild(inp); tr.appendChild(td); });
+        cols.forEach(function (c) { var k = c[0], inp = saisie(l[k], 'text', c[2]); if (k === 'fonction') { listeFonctions(); inp.setAttribute('list', 'bdg-dl-fonc'); } if (k === 'nomAr' || k === 'prenomAr') inp.dir = 'rtl'; inp.oninput = function () { l[k] = inp.value; if (k === 'nom' || k === 'prenom') suggerer(inp, l); }; inp.onblur = function () { if (k === 'nom') { inp.value = l[k] = B.majNom(inp.value); } else if (k === 'prenom') { inp.value = l[k] = B.capPrenom(inp.value); } setTimeout(fermerSuggestions, 200); }; var td = el('td'); td.appendChild(inp); tr.appendChild(td); });
         var td = el('td'); td.appendChild(bouton('✕', function () { X.lignes.splice(i, 1); if (!X.lignes.length) X.lignes.push({ nom: '', prenom: '', fonction: '' }); dessiner(); }, 'mini', 'Retirer cette ligne')); tr.appendChild(td); tb.appendChild(tr);
       });
       t.appendChild(tb); var defile = el('div'); defile.style.cssText = 'overflow-x:auto'; defile.appendChild(t); v.appendChild(defile);
@@ -368,6 +368,16 @@ var BadgesApp = (function () {
       barre.appendChild(bouton('Injecter dans les Enquêtes', function () { injecter(X); }, 'prim'));
       v.appendChild(barre);
       return v;
+    }
+    // ----- Fonctions déjà utilisées dans les Enquêtes (toutes entreprises) : proposées en tapant dans « Fonction » ; une fonction nouvelle est simplement enregistrée avec la personne -----
+    function listeFonctions() {
+      var dl = document.getElementById('bdg-dl-fonc');
+      if (!dl) { dl = el('datalist'); dl.id = 'bdg-dl-fonc'; document.body.appendChild(dl); }
+      if (!S.fonctions && adapter.fonctionsEnquetes && !S.fonctionsEnCours) {
+        S.fonctionsEnCours = true;
+        adapter.fonctionsEnquetes().then(function (r) { S.fonctions = (r && r.fonctions) || []; dl.textContent = ''; S.fonctions.forEach(function (f) { var o = el('option'); o.value = f; dl.appendChild(o); }); }).catch(function () { S.fonctions = []; });
+      }
+      return dl;
     }
     // ----- Recherche d'une personne déjà dans les Enquêtes pendant la frappe (comme dans Prises en charge) -----
     var minuterie = null;
