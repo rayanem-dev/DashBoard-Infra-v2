@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bon de sortie matériel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root { --orange: #E85D04; --orange2: #F48C06; --texte: #1C1C1C; --fond: #F5F5F0; --carte: #fff; --bord: #E5E7EB; --doux: #6B7280; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', Arial, sans-serif; background: var(--fond); color: var(--texte); font-size: 14px; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+  .bandeau { max-width: 880px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .logo { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 17px; }
+  .bandeau h1 { color: #fff; font-size: 19px; } .bandeau p { color: #94A3B8; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .bandeau a { margin-left: auto; color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 9px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+  main { max-width: 880px; margin: 18px auto 70px; padding: 0 16px; }
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+  .carte h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--orange); margin-bottom: 12px; }
+  .grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .grille.deux { grid-template-columns: repeat(2, 1fr); }
+  label { display: block; font-size: 11.5px; font-weight: 700; color: var(--doux); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  input, textarea, select { width: 100%; font: inherit; padding: 9px 11px; border: 1.5px solid var(--bord); border-radius: 9px; background: #fff; color: var(--texte); }
+  input:focus, textarea:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,93,4,.15); }
+  textarea { min-height: 96px; resize: vertical; }
+  .aide { font-size: 12px; color: var(--doux); margin-top: 6px; }
+  .sig { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .sig .bloc { border: 1px solid var(--bord); border-radius: 10px; padding: 11px; background: #FAFAF7; }
+  .sig h3 { font-size: 13px; margin-bottom: 8px; text-align: center; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 11px 18px; cursor: pointer; }
+  .prim { background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; } .sec { background: #fff; color: var(--texte); border: 1.5px solid var(--bord); } .danger { background: #fff; color: #B91C1C; border: 1.5px solid #FCA5A5; }
+  button:disabled { opacity: .55; cursor: wait; }
+  .msg { padding: 11px 14px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; display: none; } .msg.ok { display: block; background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; } .msg.err { display: block; background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+  #resultat { display: none; } #resultat a { color: var(--orange); font-weight: 700; margin-right: 14px; }
+  @media (max-width: 700px) { .grille, .grille.deux, .sig { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header><div class="bandeau">
+  <div class="logo">BS</div>
+  <div><h1>Bon de sortie matériel</h1><p>Division Infrastructure — RNS</p></div>
+  <a href="https://rayanem-dev.github.io/DashBoard-Infra-v2/portail.html" target="_top" rel="noopener">← Retour au portail</a>
+</div></header>
+<main>
+  <div id="message" class="msg"></div>
+
+  <div class="carte"><h2>Je soussigné(e)</h2>
+    <div class="grille">
+      <div><label for="sNom">Nom et prénom (BDDORGA)</label><input id="sNom" list="dlPersonnes" placeholder="Tapez pour chercher…" autocomplete="off"></div>
+      <div><label for="sFonction">Fonction</label><input id="sFonction"></div>
+      <div><label for="sMatricule">Matricule</label><input id="sMatricule"></div>
+    </div>
+    <p class="aide" id="aidePersonnes">Chargement de la liste BDDORGA…</p>
+  </div>
+
+  <div class="carte"><h2>Autorise (le preneur)</h2>
+    <div class="grille">
+      <div><label for="aNom">Nom et prénom (BDDORGA ou saisie libre)</label><input id="aNom" list="dlPersonnes" placeholder="Tapez pour chercher…" autocomplete="off"></div>
+      <div><label for="aFonction">Fonction</label><input id="aFonction"></div>
+      <div><label for="aMatricule">Matricule</label><input id="aMatricule"></div>
+    </div>
+  </div>
+  <datalist id="dlPersonnes"></datalist>
+
+  <div class="carte"><h2>Matériel à faire sortir</h2>
+    <label for="materiel">En chiffre et en lettre</label>
+    <textarea id="materiel" placeholder="Ex. : 02 (deux) groupes électrogènes 5 kVA ; 10 (dix) rouleaux de câble…"></textarea>
+    <div class="grille deux" style="margin-top:12px">
+      <div><label for="lieuEnl">Lieu d’enlèvement</label><input id="lieuEnl" placeholder="Ex. : Magasin Infrastructure"></div>
+      <div><label for="lieuDest">Lieu de destination</label><input id="lieuDest" placeholder="Ex. : Chantier base de vie"></div>
+    </div>
+  </div>
+
+  <div class="carte"><h2>Visas</h2>
+    <div class="sig">
+      <div class="bloc"><h3>Personne habilitée</h3><label>Date</label><input type="date" id="hDate"><label style="margin-top:8px">Structure</label><input id="hStructure"></div>
+      <div class="bloc"><h3>Preneur</h3><label>Date</label><input type="date" id="pDate"><label style="margin-top:8px">Structure</label><input id="pStructure"></div>
+      <div class="bloc"><h3>Contrôlé par SIE</h3><label>Date</label><input type="date" id="cDate"><label style="margin-top:8px">Structure</label><input id="cStructure" placeholder="SIE"></div>
+    </div>
+    <label for="instruction" style="margin-top:14px">Instruction particulière (facultatif)</label>
+    <textarea id="instruction" style="min-height:62px"></textarea>
+  </div>
+
+  <div class="actions"><button class="prim" id="btnGenerer" type="button">📄 Générer le bon (PDF)</button><button class="sec" id="btnVider" type="button">Vider</button></div>
+
+  <div class="carte" id="resultat" style="margin-top:14px">
+    <h2>Bon généré</h2>
+    <p id="liens"></p>
+    <div class="grille deux" style="margin-top:12px">
+      <div><label for="destEmail">E-mail supplémentaire (facultatif)</label><input id="destEmail" type="text" placeholder="nom@exemple.dz, autre@exemple.dz"><p class="aide">Le secrétariat Infrastructure RNS reçoit toujours le bon.</p></div>
+      <div><label for="msgEmail">Message (facultatif)</label><input id="msgEmail" type="text"></div>
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button class="prim" id="btnMail" type="button">✉️ Envoyer par e-mail</button>
+      <button class="sec" id="btnXerox" type="button">📠 Envoyer à l'imprimante</button>
+      <button class="danger" id="btnSuppr" type="button">🗑️ Supprimer ce PDF</button>
+    </div>
+  </div>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let personnes = [], courant = null;
+  const aujourdhui = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  function dire(t, err) { const m = $('message'); m.textContent = t; m.className = 'msg ' + (err ? 'err' : 'ok'); if (t) window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function trouver(nom) { const k = norm(nom); return personnes.filter(p => norm(p.nom) === k)[0] || null; }
+
+  function initialiser() {
+    ['hDate', 'pDate'].forEach(i => $(i).value = aujourdhui());
+    google.script.run
+      .withSuccessHandler(liste => {
+        personnes = liste || [];
+        const dl = $('dlPersonnes'); dl.textContent = '';
+        personnes.forEach(p => { const o = document.createElement('option'); o.value = p.nom; o.label = [p.fonction, p.service].filter(Boolean).join(' — '); dl.appendChild(o); });
+        $('aidePersonnes').textContent = personnes.length + ' personnes dans BDDORGA. La fonction et le matricule se remplissent seuls ; vous pouvez les corriger.';
+      })
+      .withFailureHandler(e => { $('aidePersonnes').textContent = 'Liste BDDORGA indisponible : ' + e.message + ' — saisie libre possible.'; })
+      .getPersonnes();
+  }
+  // choix d'une personne : fonction, matricule et structure sont repris (modifiables)
+  function lier(prefixe, structureId) {
+    $(prefixe + 'Nom').addEventListener('change', () => {
+      const p = trouver($(prefixe + 'Nom').value); if (!p) return;
+      $(prefixe + 'Nom').value = p.nom; $(prefixe + 'Fonction').value = p.fonction; $(prefixe + 'Matricule').value = p.matricule;
+      $(structureId).value = (p.dependance && norm(p.dependance) !== 'sonatrach') ? p.dependance : p.service;
+    });
+  }
+  lier('s', 'hStructure'); lier('a', 'pStructure');
+
+  function collecter() {
+    return {
+      soussigne: { nom: $('sNom').value, fonction: $('sFonction').value, matricule: $('sMatricule').value },
+      autorise: { nom: $('aNom').value, fonction: $('aFonction').value, matricule: $('aMatricule').value },
+      materiel: $('materiel').value, lieuEnlevement: $('lieuEnl').value, lieuDestination: $('lieuDest').value,
+      habilite: { date: $('hDate').value, structure: $('hStructure').value }, preneur: { date: $('pDate').value, structure: $('pStructure').value }, sie: { date: $('cDate').value, structure: $('cStructure').value },
+      instruction: $('instruction').value
+    };
+  }
+  function occupe(b, v) { ['btnGenerer', 'btnMail', 'btnXerox', 'btnSuppr'].forEach(i => $(i).disabled = v); }
+
+  $('btnGenerer').addEventListener('click', () => {
+    dire(''); occupe(0, true); $('btnGenerer').textContent = '⏳ Génération…';
+    google.script.run
+      .withSuccessHandler(r => {
+        occupe(0, false); $('btnGenerer').textContent = '📄 Générer le bon (PDF)';
+        if (!r.success) { dire('❌ ' + r.error, true); return; }
+        courant = r; $('resultat').style.display = 'block';
+        $('liens').innerHTML = '<a href="' + r.pdfUrl + '" target="_blank" rel="noopener">📄 Ouvrir le PDF</a><a href="' + r.downloadUrl + '" target="_blank" rel="noopener">⬇️ Télécharger</a><span style="color:var(--doux)">' + r.fileName + '</span>';
+        dire('✅ Le bon est généré : imprimez-le en deux exemplaires ou envoyez-le par e-mail.');
+        $('resultat').scrollIntoView({ behavior: 'smooth' });
+      })
+      .withFailureHandler(e => { occupe(0, false); $('btnGenerer').textContent = '📄 Générer le bon (PDF)'; dire('❌ ' + e.message, true); })
+      .genererBon(collecter());
+  });
+  $('btnMail').addEventListener('click', () => {
+    if (!courant) return; occupe(0, true); $('btnMail').textContent = '⏳ Envoi…';
+    google.script.run
+      .withSuccessHandler(r => { occupe(0, false); $('btnMail').textContent = '✉️ Envoyer par e-mail'; r.success ? dire('✅ Envoyé à ' + r.destinataires.join(', ')) : dire('❌ ' + r.error, true); })
+      .withFailureHandler(e => { occupe(0, false); $('btnMail').textContent = '✉️ Envoyer par e-mail'; dire('❌ ' + e.message, true); })
+      .envoyerBon(courant.fileId, $('destEmail').value, $('msgEmail').value);
+  });
+  $('btnXerox').addEventListener('click', () => {
+    if (!courant) return; occupe(0, true);
+    google.script.run.withSuccessHandler(r => { occupe(0, false); r.success ? dire('✅ Envoyé à l\'imprimante : rendez-vous sur l\'écran du Xerox, ouvrez l\'app @PrintByXerox et appuyez sur Imprimer.') : dire('❌ ' + r.error, true); })
+      .withFailureHandler(e => { occupe(0, false); dire('❌ ' + e.message, true); }).envoyerImpression(courant.fileId);
+  });
+  $('btnSuppr').addEventListener('click', () => {
+    if (!courant || !confirm('Supprimer ce PDF de Drive ?')) return; occupe(0, true);
+    google.script.run.withSuccessHandler(r => { occupe(0, false); if (r.success) { courant = null; $('resultat').style.display = 'none'; dire('PDF supprimé.'); } else dire('❌ ' + r.error, true); })
+      .withFailureHandler(e => { occupe(0, false); dire('❌ ' + e.message, true); }).supprimerBon(courant.fileId);
+  });
+  $('btnVider').addEventListener('click', () => { document.querySelectorAll('input:not([type=date]), textarea').forEach(e => e.value = ''); ['hDate', 'pDate'].forEach(i => $(i).value = aujourdhui()); $('cDate').value = ''; $('resultat').style.display = 'none'; courant = null; dire(''); });
+  initialiser();
+</script>
+<script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Bon de sortie matériel"></script>
+</body>
+</html>

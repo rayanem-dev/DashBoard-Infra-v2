@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-04",
+    "date": "2026-10-22",
+    "title": "Version 5.12.0 — Bon de sortie matériel",
+    "changes": [
+      "Nouvelle application « Bon de sortie matériel » : nom, fonction et matricule choisis dans BDDORGA, matériel en chiffre et en lettre, lieux, trois visas, génération du PDF (mise en page du modèle) et envoi par e-mail au secrétariat ou à d'autres adresses, ou à l'imprimante Xerox. À installer dans Apps Script (voir apps-script/bon-sortie/README.md)."
+    ]
+  },
+  {
     "id": "2026-10-22-03",
     "date": "2026-10-22",
     "title": "Version 5.11.1 — Fonctions proposées",
