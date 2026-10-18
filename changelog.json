@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-10",
+    "date": "2026-10-22",
+    "title": "Version 5.14.1 — Fiche d'évaluation au catalogue",
+    "changes": [
+      "La carte « Fiche d'évaluation » (module logistique, niveau 2 : conducteurs, chefs d'atelier et de service) apparaît dans le menu avec son adresse."
+    ]
+  },
+  {
     "id": "2026-10-22-09",
     "date": "2026-10-22",
     "title": "Version 5.14.0 — Fiche d'évaluation",

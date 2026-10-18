@@ -85,6 +85,14 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Fiche d'évaluation",
+  "Fiche d'évaluation mensuelle des travaux et prestations : cartouche remplie depuis le Suivi CPM, cases à cliquer, taux de satisfaction calculé automatiquement, PDF et archive des fiches éditées.",
+  "📝",
+  "https://script.google.com/macros/s/AKfycbzHk520IN5bl93shq4y1tArmIbWt3dvkITqvvx-qWUpkpS-lKA9R7z19BbTUAu-KZJd/exec",
+  2
+ ],
+ [
+  "logistique",
   "Dotation Vivres & Eau Minérale",
   "Génération des fiches de dotation (vivres et eau minérale) pour le personnel présent, avec durées et quantités calculées automatiquement selon le service.",
   "🍞💧",

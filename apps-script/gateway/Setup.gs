@@ -118,17 +118,20 @@ function carteManquante_(valeurs, titre) {
   for (var i = 1; i < valeurs.length; i += 1) if (String(valeurs[i][iT]) === titre) return false;
   return true;
 }
-/** Une seule fois : ajoute la carte « Bon de sortie matériel » au catalogue si elle manque (module logistique, ouverte à tous ceux qui ont ce module). Idempotent. */
-function preparerCarteBonSortie_() {
+/** Cartes ajoutées au catalogue quand elles manquent (par titre ; les lignes viennent de SEED_APPS). */
+var CARTES_NOUVELLES_ = ['Bon de sortie matériel', 'Fiche d\'évaluation'];
+/** Une seule fois : ajoute au catalogue les nouvelles cartes qui manquent. Idempotent ; une carte supprimée ensuite ne revient pas. */
+function preparerCartesNouvelles_() {
   var props = PropertiesService.getScriptProperties();
-  if (props.getProperty('CARTE_BON_SORTIE_PRET') === '1') return;
+  if (props.getProperty('CARTES_NOUVELLES_PRET') === '1') return;
   try {
     var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
-    if (carteManquante_(sh.getDataRange().getValues(), 'Bon de sortie matériel')) {
-      var g = SEED_APPS.filter(function (r) { return r[1] === 'Bon de sortie matériel'; })[0];
-      sh.getRange(sh.getLastRow() + 1, 1, 1, 7).setValues([g.length >= 7 ? g : g.concat([''])]);
-    }
-    props.setProperty('CARTE_BON_SORTIE_PRET', '1');
+    CARTES_NOUVELLES_.forEach(function (titre) {
+      if (!carteManquante_(sh.getDataRange().getValues(), titre)) return;
+      var g = SEED_APPS.filter(function (r) { return r[1] === titre; })[0];
+      if (g) sh.getRange(sh.getLastRow() + 1, 1, 1, 7).setValues([g.length >= 7 ? g : g.concat([''])]);
+    });
+    props.setProperty('CARTES_NOUVELLES_PRET', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }
