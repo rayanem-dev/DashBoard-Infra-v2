@@ -13,7 +13,7 @@ concurrency:
 
 env:
   SCRIPT_ID: 1NiV4XNuQjsSHKMPKeP4lfXn0Bb9jZcBkbaJ5RMal-rQR9jcGJ16LjK4A
-  DEPLOYMENT_ID: AKfycbyFYSS2YZ2bTPrycZSwM5qUCXfFgoa_zHBl9nM9m8a0m7xMA
+  DEPLOYMENT_ID: AKfycbyFYSS2YZN0TqEvtkpT9FeezZybqlZ2bTPrycZSwM5qUCXfFgoa_zHBl9nM9m8a0m7xMA
 
 jobs:
   deploy:
