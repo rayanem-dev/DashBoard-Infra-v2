@@ -95,13 +95,15 @@
   function dessinerLignes() {
     var z = $('lignes'); z.textContent = '';
     lignes.forEach(function (l, i) {
-      var r = el('div', 'ligne-rap'); r.style.cssText = 'display:grid;grid-template-columns:minmax(120px,1fr) 2fr 90px auto;gap:6px;margin-bottom:6px;align-items:start';
+      var r = el('div', 'ligne-rap'); r.style.cssText = 'display:grid;grid-template-columns:minmax(120px,1fr) 2fr 90px auto auto;gap:6px;margin-bottom:6px;align-items:start';
       var zi = el('input'); zi.placeholder = 'Ouvrage / zone (ex. Base de vie)'; zi.value = l.zone || ''; zi.maxLength = 120; zi.oninput = function () { l.zone = zi.value; };
       var ti = el('input'); ti.placeholder = 'Ce qui a été fait'; ti.value = l.texte || ''; ti.maxLength = 600; ti.oninput = function () { l.texte = ti.value; };
       var ai = el('input'); ai.type = 'number'; ai.min = 0; ai.max = 100; ai.step = 0.1; ai.placeholder = '%'; ai.value = l.avancement === '' || l.avancement == null ? '' : l.avancement; ai.oninput = function () { l.avancement = ai.value; };
       if (l.prev !== '' && l.prev != null) ai.title = 'Dernier rapport : ' + l.prev + ' %';
       var sup = el('button', 'btn-s', '✕'); sup.type = 'button'; sup.onclick = function () { lignes.splice(i, 1); dessinerLignes(); };
-      r.appendChild(zi); r.appendChild(ti); r.appendChild(ai); r.appendChild(sup);
+      var rl = el('label'); rl.style.cssText = 'display:flex;gap:4px;align-items:center;font-size:12px;white-space:nowrap;margin:0;padding:6px 2px'; rl.title = 'Travaux de routine de la prestation (réparations, entretien courant…)';
+      var rc = el('input'); rc.type = 'checkbox'; rc.checked = !!l.routine; rc.onchange = function () { l.routine = rc.checked; }; rl.appendChild(rc); rl.appendChild(document.createTextNode('routine'));
+      r.appendChild(zi); r.appendChild(ti); r.appendChild(ai); r.appendChild(rl); r.appendChild(sup);
       if (l.prev !== '' && l.prev != null) { var n = el('div', 'aide', 'Dernier rapport : ' + l.prev + ' %'); n.style.cssText = 'grid-column:1/-1;margin:-2px 0 4px'; r.appendChild(n); }
       z.appendChild(r);
     });
@@ -116,9 +118,9 @@
     ['effectif', 'avancement', 'travaux', 'difficultes', 'commentaire'].forEach(function (k) { $(k).value = r ? (r[k] === '' ? '' : r[k]) : ''; });
     $('deja').textContent = r ? 'Un rapport existe déjà pour ce chantier et ce jour : vous le modifiez.' : '';
     var p = dernierRapport(c, d); $('reprise').textContent = '';
-    if (r) lignes = (r.lignes || []).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, prev: '' }; });
+    if (r) lignes = (r.lignes || []).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, prev: '', routine: !!l.routine }; });
     else if (p && (p.lignes || []).length) {
-      lignes = p.lignes.map(function (l) { return { zone: l.zone, texte: '', avancement: l.avancement, prev: l.avancement }; });
+      lignes = p.lignes.map(function (l) { return { zone: l.zone, texte: '', avancement: l.avancement, prev: l.avancement, routine: !!l.routine }; });
       $('reprise').textContent = 'Ouvrages repris du rapport du ' + Rotation.frDate(p.date) + ' : mettez à jour le texte et l\'avancement.';
     } else lignes = [];
     dessinerLignes();
@@ -126,7 +128,7 @@
   $('b-ligne').addEventListener('click', function () { lignes.push({ zone: '', texte: '', avancement: '', prev: '' }); dessinerLignes(); });
   $('b-reprendre').addEventListener('click', function () {
     var p = dernierRapport($('chantier').value, $('date').value); if (!p) { toast('Aucun rapport précédent pour ce chantier', true); return; }
-    lignes = (p.lignes || []).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, prev: l.avancement }; });
+    lignes = (p.lignes || []).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, prev: l.avancement, routine: !!l.routine }; });
     if (!lignes.length && p.travaux) $('travaux').value = p.travaux;
     $('effectif').value = p.effectif; dessinerLignes(); $('reprise').textContent = 'Rapport du ' + Rotation.frDate(p.date) + ' repris : à mettre à jour.';
   });
@@ -145,7 +147,7 @@
     e.preventDefault(); msg('');
     var p = { chantier: $('chantier').value, date: $('date').value, effectif: $('effectif').value, avancement: $('avancement').value,
               travaux: $('travaux').value, difficultes: $('difficultes').value, commentaire: $('commentaire').value,
-              lignes: lignes.filter(function (l) { return (l.zone || '').trim() || (l.texte || '').trim() || (l.avancement !== '' && l.avancement != null); }).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement }; }) };
+              lignes: lignes.filter(function (l) { return (l.zone || '').trim() || (l.texte || '').trim() || (l.avancement !== '' && l.avancement != null); }).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, routine: !!l.routine }; }) };
     if (!p.travaux.trim() && !p.lignes.some(function (l) { return (l.texte || '').trim().length >= 3; })) return msg('Décrivez les travaux réalisés (au moins une ligne ou le texte libre).');
     if (p.effectif === '') return msg('Indiquez l\'effectif présent.');
     $('b-save').disabled = true;
@@ -157,7 +159,7 @@
   function ligne(titre, texte) { var b = el('div', 'bloc'); b.appendChild(el('b', null, titre)); b.appendChild(document.createTextNode(texte)); return b; }
   function lignesHtml(ls) {
     var b = el('div', 'bloc'); b.appendChild(el('b', null, 'Travaux réalisés'));
-    var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px'; ls.forEach(function (l) { u.appendChild(el('li', null, (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''))); });
+    var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px'; ls.forEach(function (l) { u.appendChild(el('li', null, (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''))); });
     b.appendChild(u); return b;
   }
   function fiche(r) {
@@ -200,7 +202,7 @@
         f.appendChild(h);
         if (c.rapports.length) {
           f.appendChild(el('div', 'meta', 'Effectif cumulé : ' + c.effectif + (c.avancement != null ? ' · Avancement : ' + c.avancement + ' %' : '')));
-          c.rapports.forEach(function (r) { f.appendChild(ligne(r.auteur_nom || r.auteur_email, (r.lignes && r.lignes.length ? r.lignes.map(function (l) { return '• ' + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''); }).join('\n') + (r.travaux && r.travaux.indexOf('• ') !== 0 ? '\n' + r.travaux : '') : r.travaux) + (r.difficultes ? '\n⚠ ' + r.difficultes : '') + (r.commentaire ? '\n💬 ' + r.commentaire : ''))); });
+          c.rapports.forEach(function (r) { f.appendChild(ligne(r.auteur_nom || r.auteur_email, (r.lignes && r.lignes.length ? r.lignes.map(function (l) { return '• ' + (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''); }).join('\n') + (r.travaux && r.travaux.indexOf('• ') !== 0 ? '\n' + r.travaux : '') : r.travaux) + (r.difficultes ? '\n⚠ ' + r.difficultes : '') + (r.commentaire ? '\n💬 ' + r.commentaire : ''))); });
         }
         z.appendChild(f);
       });

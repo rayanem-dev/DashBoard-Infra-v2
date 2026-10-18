@@ -108,3 +108,10 @@ test('chantiers depuis le CPM : seuls les contrats en exécution ; rien de manue
   assert.deepStrictEqual(p.desactiver, ['99-infra-20']); // contrat sorti de l'exécution ; la routine manuelle reste
   assert.deepStrictEqual(p.reactiver, []);
 });
+
+test('ligne de travaux de routine (prestation) : repérée, texte préfixé', () => {
+  const r = Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '3', lignes: [{ zone: 'Climatiseurs', texte: 'Réparation sur sites', routine: true }, { zone: 'GC', texte: 'Dépose', avancement: '5' }] }, AUJ, 2, IDS);
+  assert.strictEqual(r.erreur, undefined);
+  assert.deepStrictEqual(r.rapport.lignes, [{ zone: 'Climatiseurs', texte: 'Réparation sur sites', avancement: '', routine: true }, { zone: 'GC', texte: 'Dépose', avancement: 5 }]);
+  assert.match(r.rapport.travaux, /\[Routine\] Climatiseurs/);
+});

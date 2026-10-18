@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-08",
+    "date": "2026-10-22",
+    "title": "Version 5.13.1 — Rapports : case « routine »",
+    "changes": [
+      "Rapports journaliers : chaque ligne a une case « routine » pour les travaux de routine de la prestation (réparations, entretien courant) ; ils restent rattachés au chantier du contrat. Les chantiers de routine séparés ne sont pas recréés si on les a désactivés."
+    ]
+  },
+  {
     "id": "2026-10-22-07",
     "date": "2026-10-22",
     "title": "Version 5.13.0 — Rapports journaliers : lignes par ouvrage et chantiers du CPM",

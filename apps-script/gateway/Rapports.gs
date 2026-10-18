@@ -32,7 +32,7 @@ var Rapports = (function () {
         var l = r.lignes[k]; if (!l) continue;
         var zone = nettoyer(l.zone, 120), texte = nettoyer(l.texte, 600), a = '';
         if (l.avancement !== '' && l.avancement != null) { a = Number(l.avancement); if (!(a >= 0 && a <= 100)) return { erreur: 'Avancement d\'une ligne : entre 0 et 100 %' }; a = Math.round(a * 10) / 10; }
-        if (zone || texte || a !== '') lignes.push({ zone: zone, texte: texte, avancement: a });
+        if (zone || texte || a !== '') { var lg = { zone: zone, texte: texte, avancement: a }; if (l.routine === true || l.routine === 'true' || l.routine === 1) lg.routine = true; lignes.push(lg); } // routine : travaux de routine de la prestation
       }
     }
     var travaux = nettoyer(r.travaux);
@@ -52,7 +52,7 @@ var Rapports = (function () {
 
   /** Lignes → texte lisible (« • Zone : texte — 99 % »), pour les anciens affichages et les e-mails. */
   function lignesEnTexte(lignes) {
-    return (lignes || []).map(function (l) { return '• ' + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''); }).join('\n').slice(0, 3000);
+    return (lignes || []).map(function (l) { return '• ' + (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''); }).join('\n').slice(0, 3000);
   }
   function sans(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
   /** Clé de service (construction / electromecanique / entretien / autre texte normalisé) : « Service Construction (Génie Civil) » = « Construction ». */
