@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiche d’évaluation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root { --orange: #E85D04; --orange2: #F48C06; --texte: #1C1C1C; --fond: #F5F5F0; --carte: #fff; --bord: #E5E7EB; --doux: #6B7280; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', Arial, sans-serif; background: var(--fond); color: var(--texte); font-size: 14px; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+  .bandeau { max-width: 1000px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .logo { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 17px; }
+  .bandeau h1 { color: #fff; font-size: 19px; } .bandeau p { color: #94A3B8; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .bandeau a { margin-left: auto; color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 9px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+  main { max-width: 1000px; margin: 16px auto 80px; padding: 0 16px; }
+  .onglets { display: flex; gap: 6px; border-bottom: 2px solid var(--bord); margin-bottom: 14px; }
+  .onglet { background: none; border: 0; padding: 10px 16px; font: inherit; font-weight: 700; color: var(--doux); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .onglet.actif { color: var(--orange); border-bottom-color: var(--orange); }
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+  .carte h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--orange); margin-bottom: 12px; }
+  .grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .grille .large { grid-column: 1 / -1; }
+  label { display: block; font-size: 11.5px; font-weight: 700; color: var(--doux); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  input, textarea, select { width: 100%; font: inherit; padding: 9px 11px; border: 1.5px solid var(--bord); border-radius: 9px; background: #fff; color: var(--texte); }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,93,4,.15); }
+  textarea { min-height: 84px; resize: vertical; }
+  .tableau { overflow-x: auto; }
+  table.grillefiche { border-collapse: collapse; width: 100%; min-width: 760px; background: #fff; }
+  table.grillefiche th, table.grillefiche td { border: 1px solid #333; padding: 0; font-size: 12.5px; }
+  table.grillefiche th { background: #F3F4F6; padding: 6px 4px; font-size: 11px; }
+  table.grillefiche td.sec { background: #FAFAF7; padding: 7px 8px; font-weight: 700; } table.grillefiche td.it { padding: 7px 8px 7px 22px; }
+  table.grillefiche td.case { width: 6.2%; text-align: center; cursor: pointer; height: 34px; user-select: none; }
+  table.grillefiche td.case:hover { background: #FFE8D6; } table.grillefiche td.case.on { background: var(--orange); color: #fff; font-weight: 800; }
+  .barre-taux { position: sticky; bottom: 0; background: #1A1A2E; color: #fff; padding: 12px 18px; border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.25); margin-top: 10px; }
+  .barre-taux b { font-size: 22px; color: #FDBA74; } .barre-taux small { color: #CBD5E1; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 11px 18px; cursor: pointer; }
+  .prim { background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; } .sec { background: #fff; color: var(--texte); border: 1.5px solid var(--bord); } .danger { background: #fff; color: #B91C1C; border: 1.5px solid #FCA5A5; }
+  .petit { padding: 6px 10px; font-size: 12.5px; border-radius: 8px; } button:disabled { opacity: .55; cursor: wait; }
+  .msg { padding: 11px 14px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; display: none; } .msg.ok { display: block; background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; } .msg.err { display: block; background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+  .aide { font-size: 12px; color: var(--doux); margin-top: 6px; }
+  #resultat { display: none; } #resultat a, .lien { color: var(--orange); font-weight: 700; margin-right: 14px; text-decoration: none; }
+  table.archive { width: 100%; border-collapse: collapse; } table.archive th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--doux); padding: 8px; border-bottom: 2px solid var(--bord); }
+  table.archive td { padding: 9px 8px; border-bottom: 1px solid var(--bord); vertical-align: top; } .taux { font-weight: 800; color: var(--orange); white-space: nowrap; }
+  .edition { background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-weight: 600; display: none; }
+  @media (max-width: 760px) { .grille { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header><div class="bandeau">
+  <div class="logo">FE</div>
+  <div><h1>Fiche d’évaluation mensuelle</h1><p>Travaux et / ou prestations — Division Infrastructure RNS</p></div>
+  <a href="https://rayanem-dev.github.io/DashBoard-Infra-v2/portail.html" target="_top" rel="noopener">← Retour au portail</a>
+</div></header>
+<main>
+  <div class="onglets"><button class="onglet actif" id="o-fiche" data-p="p-fiche">Nouvelle fiche</button><button class="onglet" id="o-archive" data-p="p-archive">Archive</button></div>
+  <div id="message" class="msg"></div>
+
+  <section id="p-fiche">
+    <div class="edition" id="edition"></div>
+    <div class="carte"><h2>Cartouche</h2>
+      <div class="grille">
+        <div class="large"><label for="contratCpm">Contrat en exécution (Suivi CPM) — remplit la cartouche</label><select id="contratCpm"><option value="">— choisir un contrat, ou tout saisir à la main —</option></select><p class="aide" id="aideCpm">Chargement des contrats du Suivi CPM…</p></div>
+        <div><label for="ref">Réf</label><input id="ref" placeholder="……………………"></div>
+        <div><label for="date">Date de la fiche</label><input type="date" id="date"></div>
+        <div></div>
+        <div><label for="entrepreneur">Entrepreneur</label><input id="entrepreneur"></div>
+        <div><label for="contrat">Contrat</label><input id="contrat" placeholder="I/53/RNS/INFRA/2025"></div>
+        <div><label for="montant">Montant contractuel</label><input id="montant" placeholder="162 300 000,00 DA HT"></div>
+        <div><label for="dateOds">Date ODS</label><input id="dateOds" placeholder="jj/mm/aaaa"></div>
+        <div><label for="dateVigueur">Date d'entrée en vigueur</label><input id="dateVigueur" placeholder="jj/mm/aaaa"></div>
+        <div><label for="delai">Délai de réalisation</label><input id="delai" placeholder="36 Mois"></div>
+        <div><label for="dateService">Date de mise en service</label><input id="dateService" placeholder="jj/mm/aaaa"></div>
+        <div class="large"><label for="projet">Projet</label><input id="projet"></div>
+      </div>
+    </div>
+
+    <div class="carte"><h2>Indice de satisfaction — cliquez une case par critère</h2>
+      <div class="tableau"><table class="grillefiche" id="grille"></table></div>
+      <p class="aide">Un clic coche la case, un second clic la décoche. Un critère non coché ne compte pas dans le taux.</p>
+    </div>
+
+    <div class="carte"><h2>Suggestion / Axes d’amélioration</h2><textarea id="suggestion" maxlength="700"></textarea></div>
+
+    <div class="carte" id="resultat"><h2>Fiche générée</h2><p id="liens"></p></div>
+
+    <div class="barre-taux"><span>Satisfaction globale</span><b id="taux">—</b><small id="detailTaux"></small>
+      <span style="margin-left:auto;display:flex;gap:8px"><button class="sec petit" id="btnVider" type="button">Vider</button><button class="prim" id="btnGenerer" type="button">📄 Générer la fiche (PDF)</button></span></div>
+  </section>
+
+  <section id="p-archive" hidden>
+    <div class="carte"><h2>Fiches éditées</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"><input id="filtre" placeholder="Filtrer : entrepreneur, contrat, projet…" style="max-width:340px"><button class="sec petit" id="btnActualiser" type="button">↻ Actualiser</button></div>
+      <div class="tableau"><table class="archive"><thead><tr><th>Date</th><th>Entrepreneur / contrat</th><th>Projet</th><th>Taux</th><th></th></tr></thead><tbody id="listeArchive"></tbody></table></div>
+      <p class="aide" id="videArchive"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const CHAMPS = ['ref', 'date', 'entrepreneur', 'contrat', 'montant', 'dateOds', 'dateVigueur', 'delai', 'dateService', 'projet'];
+  let sections = [], pourcents = [], criteres = [], notes = {}, contrats = [], editionId = null, archive = [];
+  const aujourdhui = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  function dire(t, err) { const m = $('message'); m.textContent = t; m.className = 'msg ' + (err ? 'err' : 'ok'); if (t) window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  const tauxFr = t => String(t).replace('.', ',') + ' %';
+
+  // taux = moyenne des cases cochées, tronquée à 2 décimales (même règle que le serveur)
+  function calculer() {
+    const v = Object.keys(notes).map(k => Number(notes[k])).filter(n => pourcents.indexOf(n) >= 0);
+    if (!v.length) { $('taux').textContent = '—'; $('detailTaux').textContent = 'Aucune case cochée'; return; }
+    const t = Math.floor(v.reduce((a, b) => a + b, 0) / v.length * 100 + 1e-9) / 100;
+    $('taux').textContent = tauxFr(t); $('detailTaux').textContent = v.length + ' critère(s) coté(s) sur ' + criteres.length;
+  }
+  function dessinerGrille() {
+    const t = $('grille'); t.textContent = '';
+    const h1 = el('tr'); const a = el('th', null, 'N°'); a.rowSpan = 2; a.style.width = '5%'; const b = el('th', null, 'Désignation'); b.rowSpan = 2; b.style.width = '33%'; const c = el('th', null, 'Indice de satisfaction Projet'); c.colSpan = pourcents.length;
+    h1.appendChild(a); h1.appendChild(b); h1.appendChild(c); t.appendChild(h1);
+    const h2 = el('tr'); pourcents.forEach(p => h2.appendChild(el('th', null, p + '%'))); t.appendChild(h2);
+    let id = 0;
+    const ligneTitre = (n, titre) => { const r = el('tr'); const td = el('td', 'sec', n + '.  ' + titre); td.colSpan = 2; r.appendChild(td); const v = el('td'); v.colSpan = pourcents.length; r.appendChild(v); t.appendChild(r); };
+    const ligneItem = (texte, idc) => {
+      const r = el('tr'); const td = el('td', 'it', '▪  ' + texte); td.colSpan = 2; r.appendChild(td);
+      pourcents.forEach(p => {
+        const x = el('td', 'case' + (Number(notes[idc]) === p ? ' on' : ''), Number(notes[idc]) === p ? 'X' : '');
+        x.title = p + ' %';
+        x.addEventListener('click', () => { if (Number(notes[idc]) === p) delete notes[idc]; else notes[idc] = p; dessinerGrille(); calculer(); });
+        r.appendChild(x);
+      }); t.appendChild(r);
+    };
+    sections.forEach(s => {
+      ligneTitre(s.n, s.t);
+      (s.groupes || [{ items: s.items }]).forEach(g => { if (s.groupes) ligneTitre(g.n, g.t); g.items.forEach(x => { ligneItem(x, id); id += 1; }); });
+    });
+    calculer();
+  }
+  function remplir(c) { CHAMPS.forEach(k => { if (c[k] != null) $(k).value = c[k]; }); }
+  function vider() {
+    CHAMPS.forEach(k => $(k).value = ''); $('date').value = aujourdhui(); $('suggestion').value = ''; $('contratCpm').value = ''; notes = {}; editionId = null; $('edition').style.display = 'none';
+    $('resultat').style.display = 'none'; dessinerGrille(); dire('');
+  }
+
+  function initialiser() {
+    $('date').value = aujourdhui();
+    google.script.run.withSuccessHandler(r => { sections = r.sections; pourcents = r.pourcents; criteres = r.criteres; dessinerGrille(); }).withFailureHandler(e => dire('❌ ' + e.message, true)).getCriteres();
+    google.script.run
+      .withSuccessHandler(l => {
+        contrats = l || []; const s = $('contratCpm');
+        contrats.forEach((c, i) => { const o = el('option', null, c.entrepreneur + ' — ' + c.contrat + ' — ' + c.projet.slice(0, 70)); o.value = i; s.appendChild(o); });
+        $('aideCpm').textContent = contrats.length + ' contrat(s) en exécution dans le Suivi CPM (lecture seule). Tout reste modifiable.';
+      })
+      .withFailureHandler(e => { $('aideCpm').textContent = 'Suivi CPM indisponible : ' + e.message + ' — saisie à la main possible.'; })
+      .getContrats();
+  }
+  $('contratCpm').addEventListener('change', () => { const c = contrats[$('contratCpm').value]; if (c) remplir(c); });
+
+  $('btnGenerer').addEventListener('click', () => {
+    const cartouche = {}; CHAMPS.forEach(k => cartouche[k] = $(k).value);
+    const b = $('btnGenerer'); b.disabled = true; b.textContent = '⏳ Génération…'; dire('');
+    google.script.run
+      .withSuccessHandler(r => {
+        b.disabled = false; b.textContent = '📄 Générer la fiche (PDF)';
+        if (!r.success) { dire('❌ ' + r.error, true); return; }
+        editionId = r.fileId; $('resultat').style.display = 'block'; $('edition').textContent = '✏️ Fiche « ' + r.fileName + ' » enregistrée : en la régénérant, elle remplace la version précédente (bouton « Vider » pour une nouvelle fiche).'; $('edition').style.display = 'block';
+        $('liens').innerHTML = '<a href="' + r.pdfUrl + '" target="_blank" rel="noopener">📄 Ouvrir le PDF</a><a href="' + r.downloadUrl + '" target="_blank" rel="noopener">⬇️ Télécharger</a><span style="color:var(--doux)">' + r.fileName + ' — ' + tauxFr(r.taux) + '</span>';
+        dire('✅ Fiche générée et archivée (taux : ' + tauxFr(r.taux) + '). Elle est dans l’onglet Archive.'); $('resultat').scrollIntoView({ behavior: 'smooth' });
+      })
+      .withFailureHandler(e => { b.disabled = false; b.textContent = '📄 Générer la fiche (PDF)'; dire('❌ ' + e.message, true); })
+      .genererFiche({ cartouche: cartouche, notes: notes, suggestion: $('suggestion').value }, editionId);
+  });
+  $('btnVider').addEventListener('click', vider);
+
+  // ----- Archive
+  function dessinerArchive() {
+    const f = $('filtre').value.toLowerCase(), z = $('listeArchive'); z.textContent = '';
+    const liste = archive.filter(x => !f || (x.entrepreneur + ' ' + x.contrat + ' ' + x.projet).toLowerCase().indexOf(f) >= 0);
+    $('videArchive').textContent = liste.length ? liste.length + ' fiche(s)' : 'Aucune fiche archivée.';
+    liste.forEach(x => {
+      const tr = el('tr'); tr.appendChild(el('td', null, (x.date || '').split('-').reverse().join('/') || new Date(x.creeLe).toLocaleDateString('fr-FR')));
+      const t2 = el('td'); t2.appendChild(el('b', null, x.entrepreneur || x.nom)); t2.appendChild(el('div', 'aide', x.contrat)); tr.appendChild(t2);
+      tr.appendChild(el('td', null, x.projet)); tr.appendChild(el('td', 'taux', x.taux == null ? '' : tauxFr(x.taux)));
+      const a = el('td'); a.style.whiteSpace = 'nowrap';
+      const l1 = el('a', 'lien', 'Ouvrir'); l1.href = x.url; l1.target = '_blank'; l1.rel = 'noopener'; const l2 = el('a', 'lien', 'Télécharger'); l2.href = x.telecharger; l2.target = '_blank'; l2.rel = 'noopener';
+      const bm = el('button', 'sec petit', 'Modifier'); bm.addEventListener('click', () => rouvrir(x));
+      const bs = el('button', 'danger petit', 'Supprimer'); bs.style.marginLeft = '6px'; bs.addEventListener('click', () => supprimer(x));
+      a.appendChild(l1); a.appendChild(l2); a.appendChild(bm); a.appendChild(bs); tr.appendChild(a); z.appendChild(tr);
+    });
+  }
+  function charger() { $('videArchive').textContent = 'Chargement…'; google.script.run.withSuccessHandler(r => { if (!r.success) { dire('❌ ' + r.error, true); return; } archive = r.fiches; dessinerArchive(); }).withFailureHandler(e => dire('❌ ' + e.message, true)).listerFiches(); }
+  function rouvrir(x) {
+    google.script.run.withSuccessHandler(r => {
+      if (!r.success) { dire('❌ ' + r.error, true); return; }
+      vider(); remplir(r.cartouche); $('suggestion').value = r.suggestion || ''; notes = r.notes || {}; editionId = x.id;
+      $('edition').textContent = '✏️ Modification de la fiche « ' + x.nom + ' » : en la régénérant, elle remplace l’ancienne.'; $('edition').style.display = 'block';
+      dessinerGrille(); onglet('p-fiche');
+    }).withFailureHandler(e => dire('❌ ' + e.message, true)).ouvrirFiche(x.id);
+  }
+  function supprimer(x) {
+    if (!confirm('Supprimer définitivement la fiche « ' + x.nom + ' » ?')) return;
+    google.script.run.withSuccessHandler(r => { if (r.success) { archive = archive.filter(y => y.id !== x.id); dessinerArchive(); dire('Fiche supprimée.'); } else dire('❌ ' + r.error, true); }).withFailureHandler(e => dire('❌ ' + e.message, true)).supprimerFiche(x.id);
+  }
+  function onglet(id) {
+    ['p-fiche', 'p-archive'].forEach(p => $(p).hidden = p !== id); document.querySelectorAll('.onglet').forEach(o => o.classList.toggle('actif', o.dataset.p === id));
+    if (id === 'p-archive') charger();
+  }
+  document.querySelectorAll('.onglet').forEach(o => o.addEventListener('click', () => onglet(o.dataset.p)));
+  $('filtre').addEventListener('input', dessinerArchive); $('btnActualiser').addEventListener('click', charger);
+  initialiser();
+</script>
+<script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Fiche d’évaluation"></script>
+</body>
+</html>

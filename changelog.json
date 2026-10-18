@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-09",
+    "date": "2026-10-22",
+    "title": "Version 5.14.0 — Fiche d'évaluation",
+    "changes": [
+      "Nouvelle application « Fiche d'évaluation » : cartouche remplie depuis le Suivi CPM (lecture seule), cases à cliquer, taux de satisfaction calculé automatiquement, PDF dans la mise en page de la fiche Word, archive consultable avec modification et suppression. À installer dans Apps Script (voir apps-script/fiche-evaluation/README.md)."
+    ]
+  },
+  {
     "id": "2026-10-22-08",
     "date": "2026-10-22",
     "title": "Version 5.13.1 — Rapports : case « routine »",
