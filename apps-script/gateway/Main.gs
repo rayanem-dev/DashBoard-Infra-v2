@@ -123,6 +123,9 @@ function route_(req) {
         utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
       };
     }
+    case 'rapports_chantiers_admin': return rapportsChantiersAdmin_(req);
+    case 'rapports_chantier_maj': return rapportsChantierMaj_(req);
+    case 'rapports_chantiers_sync': return rapportsChantiersSync_(req);
     case 'admin_inviter': {
       // Invitation par e-mail : lien, première connexion et applications accordées. { emails: [...] } ou { email }
       var ai = admin_(req), cibles = Array.isArray(req.emails) ? req.emails : (req.email ? [req.email] : []);
@@ -341,30 +344,44 @@ function niveauRapports_(u, min) {
   if (n < (min || 1)) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
   return n;
 }
-function chantiersActifs_() {
-  return Store.table('Chantiers').filter(function (c) { return String(c.actif) !== '0' && c.id; })
-    .map(function (c) { return { id: String(c.id).toLowerCase(), nom: c.nom, service: c.service, actif: 1 }; });
+/** Ajoute à l'onglet les colonnes qui manquent (en-têtes seulement ; jamais de donnée touchée). Une seule vérification par colonne et par version. */
+function assurerColonnes_(nom, colonnes) {
+  var props = PropertiesService.getScriptProperties(), cle = 'COL_' + nom + '_' + colonnes.join('_');
+  if (props.getProperty(cle) === '1') return;
+  var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName(nom); if (!sh) return;
+  var h = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0].map(String);
+  colonnes.forEach(function (c) { if (h.indexOf(c) < 0) { sh.getRange(1, h.length + 1).setValue(c); h.push(c); } });
+  try { CacheService.getScriptCache().remove('TBL_' + nom); } catch (e) { /* rien */ }
+  props.setProperty(cle, '1');
 }
+function chantiersTous_() {
+  assurerColonnes_('Chantiers', ['contrat', 'entreprise', 'source']);
+  return Store.table('Chantiers').filter(function (c) { return c.id; })
+    .map(function (c) { return { id: String(c.id).toLowerCase(), nom: c.nom, service: c.service || '', actif: String(c.actif) === '0' ? 0 : 1, contrat: c.contrat || '', entreprise: c.entreprise || '', source: c.source || '' }; });
+}
+function chantiersActifs_() { return chantiersTous_().filter(function (c) { return c.actif; }); }
+function lignesLues_(v) { if (Array.isArray(v)) return v; try { var l = JSON.parse(String(v || '[]')); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
 function rapportsLus_() {
+  assurerColonnes_('Rapports', ['lignes']);
   return Store.table('Rapports').map(function (r) {
     return { id: String(r.id), date: jour_(r.date), chantier: String(r.chantier).toLowerCase(), auteur_email: String(r.auteur_email), auteur_nom: r.auteur_nom, service: r.service,
-      effectif: Number(r.effectif) || 0, travaux: String(r.travaux || ''), difficultes: String(r.difficultes || ''), commentaire: String(r.commentaire || ''),
+      effectif: Number(r.effectif) || 0, travaux: String(r.travaux || ''), lignes: lignesLues_(r.lignes), difficultes: String(r.difficultes || ''), commentaire: String(r.commentaire || ''),
       avancement: r.avancement === '' || r.avancement == null ? '' : Number(r.avancement),
       visa_par: String(r.visa_par || ''), visa_note: String(r.visa_note || ''), visa_le: String(r.visa_le || '') };
   });
 }
 function rapportsChantiers_(req) {
-  var u = Auth.userFromToken(req.token); niveauRapports_(u, 1);
-  return { chantiers: chantiersActifs_() };
+  var u = Auth.userFromToken(req.token), niv = niveauRapports_(u, 1);
+  return { chantiers: Rapports.chantiersVisibles(chantiersActifs_(), u, niv), niveau: niv };
 }
 function rapportEnregistrer_(req) {
   var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 2);
-  var ids = chantiersActifs_().map(function (c) { return c.id; });
+  var ids = Rapports.chantiersVisibles(chantiersActifs_(), u, niv).map(function (c) { return c.id; }); // seulement les chantiers de son service
   var v = Rapports.valider(req, Dates.today(), niv, ids); if (v.erreur) throw new Error(v.erreur);
   var r = v.rapport; var id = Rapports.cle(r.date, r.chantier, u.email);
   var maintenant = new Date().toISOString();
   var existe = Store.table('Rapports').some(function (x) { return String(x.id) === id; });
-  var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service || '', effectif: r.effectif, travaux: r.travaux,
+  var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service || '', effectif: r.effectif, travaux: r.travaux, lignes: JSON.stringify(r.lignes || []),
                   difficultes: r.difficultes, commentaire: r.commentaire, avancement: r.avancement, modifie_le: maintenant };
   if (!existe) valeurs.cree_le = maintenant;
   Store.maj('Rapports', { id: id }, valeurs);
@@ -388,6 +405,40 @@ function rapportViser_(req) {
   Store.maj('Rapports', { id: r.id }, { visa_par: Annuaire.nomAffichable(u.nom, u.email), visa_note: Rapports.nettoyer(req.note, 500), visa_le: new Date().toISOString() });
   Store.journal('rapport_vise', u.email, r.id);
   return {};
+}
+/** Chantiers (tous, actifs ou non) pour la page d'administration du niveau 3. */
+function rapportsChantiersAdmin_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  return { chantiers: chantiersTous_() };
+}
+/** Service et état d'un chantier (niveau 3). */
+function rapportsChantierMaj_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var id = String(req.id || '').toLowerCase(), c = chantiersTous_().filter(function (x) { return x.id === id; })[0];
+  if (!c) throw new Error('Chantier inconnu');
+  var v = {};
+  if (req.service !== undefined) v.service = Rapports.nettoyer(req.service, 60);
+  if (req.actif !== undefined) v.actif = req.actif ? 1 : 0;
+  if (!Object.keys(v).length) return {};
+  Store.maj('Chantiers', { id: id }, v); Store.journal('chantier_maj', u.email, id + ' ' + JSON.stringify(v));
+  return {};
+}
+var CHANTIERS_ROUTINE_ = [['routine-electromecanique', 'Travaux de routine — Électromécanique', 'Électromécanique'], ['routine-entretien', 'Travaux de routine — Entretien', 'Travaux Entretien']];
+/** Synchronise les chantiers avec les contrats « en exécution » du Suivi CPM (LECTURE SEULE du CPM) ; ajoute les chantiers de routine manquants. */
+function rapportsChantiersSync_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var existants = chantiersTous_(), plan = Rapports.chantiersDepuisCpm(cpmEnregistrements_(lignesSource_('cpm')), existants);
+    plan.ajouter.forEach(function (c) { Store.maj('Chantiers', { id: c.id }, c); });
+    plan.maj.forEach(function (c) { Store.maj('Chantiers', { id: c.id }, { nom: c.nom }); });
+    plan.desactiver.forEach(function (id) { Store.maj('Chantiers', { id: id }, { actif: 0 }); });
+    plan.reactiver.forEach(function (id) { Store.maj('Chantiers', { id: id }, { actif: 1 }); });
+    var routines = 0;
+    CHANTIERS_ROUTINE_.forEach(function (r) { if (!existants.some(function (c) { return c.id === r[0]; })) { Store.maj('Chantiers', { id: r[0] }, { id: r[0], nom: r[1], service: r[2], actif: 1, source: 'manuel', contrat: '', entreprise: '' }); routines += 1; } });
+    Store.journal('chantiers_sync', u.email, plan.ajouter.length + ' ajoutés, ' + plan.maj.length + ' renommés, ' + plan.desactiver.length + ' désactivés, ' + plan.reactiver.length + ' réactivés, ' + routines + ' routine(s)');
+    return { ajoutes: plan.ajouter.length, renommes: plan.maj.length, desactives: plan.desactiver.length, reactives: plan.reactiver.length, routines: routines, total: chantiersTous_().filter(function (c) { return c.actif; }).length };
+  } finally { lock.releaseLock(); }
 }
 function rapportsSynthese_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);

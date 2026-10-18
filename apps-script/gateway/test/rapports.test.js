@@ -10,7 +10,7 @@ const ok = { date: '2026-10-13', chantier: 'Forage_RNS', effectif: '12', travaux
 test('rapport valide : champs nettoyés, avancement arrondi, chantier normalisé', () => {
   const r = Rapports.valider(ok, AUJ, 2, IDS);
   assert.strictEqual(r.erreur, undefined);
-  assert.deepStrictEqual(r.rapport, { date: AUJ, chantier: 'forage_rns', effectif: 12, travaux: ok.travaux, difficultes: '', commentaire: '', avancement: 42.3 });
+  assert.deepStrictEqual(r.rapport, { date: AUJ, chantier: 'forage_rns', effectif: 12, travaux: ok.travaux, lignes: [], difficultes: '', commentaire: '', avancement: 42.3 });
 });
 
 test('refus : date future, trop ancienne, chantier inconnu, effectif, travaux, avancement', () => {
@@ -69,4 +69,42 @@ test('synthèse du jour : rapports par chantier, effectif cumulé, manquants', (
 
 test('clé d\'unicité : date | chantier | auteur', () => {
   assert.strictEqual(Rapports.cle('2026-10-13', 'Forage_RNS', 'C1@X.dz'), '2026-10-13|forage_rns|c1@x.dz');
+});
+
+test('rapport en lignes : zone, texte, avancement ; le texte et l\'avancement global se déduisent des lignes', () => {
+  const lignes = [{ zone: 'Base de vie (BVC)', texte: 'Finitions', avancement: '99' }, { zone: 'Région', texte: 'Peinture', avancement: '96.46' }, { zone: '', texte: '', avancement: '' }];
+  const r = Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '5', lignes }, AUJ, 2, IDS);
+  assert.strictEqual(r.erreur, undefined);
+  assert.deepStrictEqual(r.rapport.lignes, [{ zone: 'Base de vie (BVC)', texte: 'Finitions', avancement: 99 }, { zone: 'Région', texte: 'Peinture', avancement: 96.5 }]);
+  assert.strictEqual(r.rapport.avancement, 99);
+  assert.strictEqual(r.rapport.travaux, '• Base de vie (BVC) : Finitions — 99 %\n• Région : Peinture — 96.5 %');
+  assert.match(Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '5', lignes: [{ texte: 'ok ok', avancement: '150' }] }, AUJ, 2, IDS).erreur, /entre 0 et 100/);
+  assert.match(Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '5', lignes: [{ zone: 'x', texte: '', avancement: '' }] }, AUJ, 2, IDS).erreur, /travaux/);
+});
+
+test('services : « Service Construction (Génie Civil) » = « Construction » ; les chantiers sans service restent visibles', () => {
+  assert.ok(Rapports.servicePareil('Service Construction (Génie Civil)', 'Construction'));
+  assert.ok(Rapports.servicePareil('Service Electromécanique', 'Électromécanique'));
+  assert.ok(!Rapports.servicePareil('Travaux Entretien', 'Construction'));
+  const ch = [{ id: 'a', service: 'Construction' }, { id: 'b', service: 'Électromécanique' }, { id: 'c', service: '' }];
+  const u = { service: 'Service Construction (Génie Civil)' };
+  assert.deepStrictEqual(Rapports.chantiersVisibles(ch, u, 2).map(c => c.id), ['a', 'c']);
+  assert.deepStrictEqual(Rapports.chantiersVisibles(ch, u, 3).map(c => c.id), ['a', 'b', 'c']);
+});
+
+test('chantiers depuis le CPM : seuls les contrats en exécution ; rien de manuel n\'est touché', () => {
+  const enr = { ordre: ['a', 'b', 'c', 'd'], dossiers: {
+    a: { statut: 'Contrat en exécution', n_contrat: '72.INFRA.25', intitule: 'Forage trois puits', attribue_a: 'ENAGEO' },
+    b: { statut: 'Contrat échu', n_contrat: '10.INFRA.24', intitule: 'Ancien', attribue_a: 'X' },
+    c: { statut: 'Contrat en exécution', n_contrat: '', intitule: 'Sans numéro', attribue_a: 'Y' },
+    d: { statut: 'Contrat en exécution', n_contrat: '43.INFRA.25', intitule: 'Abris', attribue_a: 'ENCC' } } };
+  const existants = [
+    { id: '43-infra-25', nom: 'ancien nom', service: 'Construction', source: 'cpm', actif: '1' },
+    { id: '99-infra-20', nom: 'Fini', service: '', source: 'cpm', actif: '1' },
+    { id: 'routine-entretien', nom: 'Routine', service: 'Entretien', source: 'manuel', actif: '1' }];
+  const p = Rapports.chantiersDepuisCpm(enr, existants);
+  assert.deepStrictEqual(p.ajouter.map(c => [c.id, c.nom, c.service]), [['72-infra-25', 'Forage trois puits — ENAGEO', '']]);
+  assert.deepStrictEqual(p.maj, [{ id: '43-infra-25', nom: 'Abris — ENCC' }]);
+  assert.deepStrictEqual(p.desactiver, ['99-infra-20']); // contrat sorti de l'exécution ; la routine manuelle reste
+  assert.deepStrictEqual(p.reactiver, []);
 });

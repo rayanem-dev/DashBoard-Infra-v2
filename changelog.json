@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-22-07",
+    "date": "2026-10-22",
+    "title": "Version 5.13.0 — Rapports journaliers : lignes par ouvrage et chantiers du CPM",
+    "changes": [
+      "Rapports journaliers : le conducteur remplit des lignes « ouvrage / zone — ce qui a été fait — avancement % » ; les ouvrages et l'avancement du dernier rapport sont repris automatiquement (avec rappel « dernier rapport : 96 % »), il ne reste qu'à mettre à jour. Plusieurs conducteurs peuvent rapporter sur un même chantier.",
+      "Chantiers : un chantier par contrat « en exécution » du Suivi CPM (lecture seule, rien n'est écrit dans le CPM), plus deux chantiers de routine (électromécanique, entretien). Onglet « Chantiers » (niveau 3) : bouton de synchronisation et service de chaque chantier ; un conducteur ne voit que les chantiers de son service (un chantier sans service est visible de tous)."
+    ]
+  },
+  {
     "id": "2026-10-22-06",
     "date": "2026-10-22",
     "title": "Version 5.12.2 — Bon de sortie : signataires désignés, preneur BDDORGA ou Enquêtes",

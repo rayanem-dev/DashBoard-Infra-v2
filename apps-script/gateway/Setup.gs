@@ -254,8 +254,8 @@ var SCHEMA_ = {
   DroitsRole: ['role', 'module', 'niveau'],
   Exceptions: ['email', 'module', 'niveau'],
   Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le', 'reliquat'],
-  Chantiers: ['id', 'nom', 'service', 'actif'],
-  Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le'],
+  Chantiers: ['id', 'nom', 'service', 'actif', 'contrat', 'entreprise', 'source'],
+  Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le', 'lignes'],
   Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire', 'reliquat', 'reliquat_net'],
   Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
   Journal: ['date', 'action', 'email', 'detail']
