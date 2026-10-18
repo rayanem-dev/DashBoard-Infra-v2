@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-01",
+    "date": "2026-10-22",
+    "title": "Version 5.10.1 — Carte Badges prestataires",
+    "changes": [
+      "La carte « Badges prestataires » est remise automatiquement dans le catalogue si elle manque ou si elle est rangée dans un autre module (le module affichait « Bientôt disponible »)."
+    ]
+  },
+  {
     "id": "2026-10-21-30",
     "date": "2026-10-21",
     "title": "Version 5.10.0 — Badges : import / export Excel, wilaya, lien des Enquêtes",

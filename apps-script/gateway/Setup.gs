@@ -101,6 +101,29 @@ var REMPLACEMENTS_LIENS_ = [
   [/docs\.google\.com\/spreadsheets\/d\/1BBT3DzzLUXAyEQT3SEXTei4wRuN9h1UZ\/?[^\s"]*/, 'docs.google.com/spreadsheets/d/1EQMsT8IeOF9ky9eOx7S3jXoq7jmcikjyVVuwryf0Npo/']
 ];
 function lienActuel_(url) { var u = String(url == null ? '' : url); REMPLACEMENTS_LIENS_.forEach(function (r) { u = u.replace(r[0], r[1]); }); return u; }
+/**
+ * Carte « Badges prestataires » : retrouve ce qu'il faut faire dans l'onglet Applications (lignes brutes + en-têtes). Pur : testé en Node.
+ * { action: 'ok' } la carte existe dans le module « badges » ; { action: 'corriger', ligne } elle existe ailleurs (module) ; { action: 'ajouter' } elle manque (module vide « Bientôt disponible »).
+ */
+function carteBadgesAFaire_(valeurs) {
+  var h = (valeurs[0] || []).map(String), iM = h.indexOf('module'), iU = h.indexOf('url'), iT = h.indexOf('titre');
+  for (var i = 1; i < valeurs.length; i += 1) {
+    if (String(valeurs[i][iU]) === 'badges.html' || String(valeurs[i][iT]) === 'Badges prestataires') return String(valeurs[i][iM]) === 'badges' ? { action: 'ok' } : { action: 'corriger', ligne: i + 1, colonne: iM + 1 };
+  }
+  return { action: 'ajouter' };
+}
+/** Une seule fois : garantit que la carte « Badges prestataires » est dans le catalogue (sinon le module affiche « Bientôt disponible »). Idempotent. */
+function preparerCarteBadges_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('CARTE_BADGES_PRET') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), f = carteBadgesAFaire_(sh.getDataRange().getValues());
+    if (f.action === 'corriger') sh.getRange(f.ligne, f.colonne).setValue('badges');
+    else if (f.action === 'ajouter') { var g = SEED_APPS.filter(function (r) { return r[0] === 'badges'; })[0]; sh.getRange(sh.getLastRow() + 1, 1, 1, 7).setValues([g.length >= 7 ? g : g.concat([''])]); }
+    props.setProperty('CARTE_BADGES_PRET', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
 /** Met à jour, une seule fois, les liens du catalogue vers le rapport hebdomadaire (Google Slides) et le Suivi CPM actuels. Idempotent. */
 function preparerLiensRapport_() {
   var props = PropertiesService.getScriptProperties();
@@ -419,4 +442,4 @@ function diagnostiquerCompte(email) {
   else l.push('mot de passe : choisi par la personne (le provisoire ne s\'applique pas)');
   Logger.log(l.join('\n'));
 }
-if (typeof module !== 'undefined') module.exports = { lienActuel_: lienActuel_ };
+if (typeof module !== 'undefined') module.exports = { lienActuel_: lienActuel_, carteBadgesAFaire_: carteBadgesAFaire_ };
