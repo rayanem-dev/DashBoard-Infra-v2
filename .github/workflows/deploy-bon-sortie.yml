@@ -4,7 +4,7 @@ name: Déployer le bon de sortie
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths: ['apps-script/bon-sortie/**', '.github/workflows/deploy-bon-sortie.yml']
+    paths: ['apps-script/bon-sortie/**', 'badges/badges.js', '.github/workflows/deploy-bon-sortie.yml']
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +26,9 @@ jobs:
 
       - name: Tests
         run: node --test apps-script/bon-sortie/test/*.test.js
+
+      - name: "Copier le moteur de lecture des Enquêtes (partagé avec les badges)"
+        run: cp badges/badges.js apps-script/bon-sortie/BadgesMoteur.gs
 
       - name: Contrôler le secret CLASPRC_JSON
         id: fmt

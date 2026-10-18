@@ -48,21 +48,21 @@
 
   <div class="carte"><h2>Je soussigné(e)</h2>
     <div class="grille">
-      <div><label for="sNom">Nom et prénom (BDDORGA)</label><input id="sNom" list="dlPersonnes" placeholder="Tapez pour chercher…" autocomplete="off"></div>
+      <div><label for="sNom">Nom et prénom</label><input id="sNom" list="dlSignataires" placeholder="Tapez pour chercher…" autocomplete="off"></div>
       <div><label for="sFonction">Fonction</label><input id="sFonction"></div>
       <div><label for="sMatricule">Matricule</label><input id="sMatricule"></div>
     </div>
-    <p class="aide" id="aidePersonnes">Chargement de la liste BDDORGA…</p>
+    <p class="aide" id="aidePersonnes" style="display:none"></p>
   </div>
 
   <div class="carte"><h2>Autorise (le preneur)</h2>
     <div class="grille">
-      <div><label for="aNom">Nom et prénom (BDDORGA ou saisie libre)</label><input id="aNom" list="dlPersonnes" placeholder="Tapez pour chercher…" autocomplete="off"></div>
+      <div><label for="aNom">Nom et prénom</label><input id="aNom" list="dlPreneurs" placeholder="Tapez pour chercher…" autocomplete="off"></div>
       <div><label for="aFonction">Fonction</label><input id="aFonction"></div>
       <div><label for="aMatricule">Matricule</label><input id="aMatricule"></div>
     </div>
   </div>
-  <datalist id="dlPersonnes"></datalist>
+  <datalist id="dlSignataires"></datalist><datalist id="dlPreneurs"></datalist>
 
   <div class="carte"><h2>Matériel à faire sortir</h2>
     <label for="materiel">En chiffre et en lettre</label>
@@ -102,33 +102,39 @@
 
 <script>
   const $ = id => document.getElementById(id);
-  let personnes = [], courant = null;
+  let courant = null;
   const aujourdhui = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   function dire(t, err) { const m = $('message'); m.textContent = t; m.className = 'msg ' + (err ? 'err' : 'ok'); if (t) window.scrollTo({ top: 0, behavior: 'smooth' }); }
-  function trouver(nom) { const k = norm(nom); return personnes.filter(p => norm(p.nom) === k)[0] || null; }
+  function trouver(nom, liste) { const k = norm(nom); return liste.filter(p => norm(p.nom) === k)[0] || null; }
 
+  let signataires = [], preneurs = [], restreint = false;
+  function remplirListe(id, liste, avecSource) {
+    const dl = $(id); dl.textContent = '';
+    liste.forEach(p => { const o = document.createElement('option'); o.value = p.nom; o.label = [p.fonction, p.service].filter(Boolean).join(' — ') + (avecSource && p.source === 'enquetes' ? ' (Enquêtes)' : ''); dl.appendChild(o); });
+  }
+  function avertir(t) { const a = $('aidePersonnes'); a.textContent = t; a.style.display = t ? 'block' : 'none'; }
   function initialiser() {
     ['hDate', 'pDate'].forEach(i => $(i).value = aujourdhui());
     google.script.run
-      .withSuccessHandler(liste => {
-        personnes = liste || [];
-        const dl = $('dlPersonnes'); dl.textContent = '';
-        personnes.forEach(p => { const o = document.createElement('option'); o.value = p.nom; o.label = [p.fonction, p.service].filter(Boolean).join(' — '); dl.appendChild(o); });
-        $('aidePersonnes').textContent = personnes.length + ' personnes dans BDDORGA. La fonction et le matricule se remplissent seuls ; vous pouvez les corriger.';
-      })
-      .withFailureHandler(e => { $('aidePersonnes').textContent = 'Liste BDDORGA indisponible : ' + e.message + ' — saisie libre possible.'; })
-      .getPersonnes();
+      .withSuccessHandler(r => { signataires = r.liste || []; restreint = !!r.restreint; remplirListe('dlSignataires', signataires, false); })
+      .withFailureHandler(e => avertir('Liste des signataires indisponible : ' + e.message + ' — saisie libre possible.'))
+      .getSignataires();
+    google.script.run
+      .withSuccessHandler(r => { preneurs = r.liste || []; remplirListe('dlPreneurs', preneurs, true); if (r.avertissement) avertir(r.avertissement); })
+      .withFailureHandler(e => avertir('Liste des preneurs indisponible : ' + e.message + ' — saisie libre possible.'))
+      .getPreneurs();
   }
   // choix d'une personne : fonction, matricule et structure sont repris (modifiables)
-  function lier(prefixe, structureId) {
+  function lier(prefixe, structureId, liste) {
     $(prefixe + 'Nom').addEventListener('change', () => {
-      const p = trouver($(prefixe + 'Nom').value); if (!p) return;
+      const p = trouver($(prefixe + 'Nom').value, liste()); if (!p) { if (prefixe === 's' && restreint && $('sNom').value) { avertir('« ' + $('sNom').value + ' » n\'est pas dans la liste des signataires désignés.'); } return; }
+      if (prefixe === 's') avertir('');
       $(prefixe + 'Nom').value = p.nom; $(prefixe + 'Fonction').value = p.fonction; $(prefixe + 'Matricule').value = p.matricule;
       $(structureId).value = (p.dependance && norm(p.dependance) !== 'sonatrach') ? p.dependance : p.service;
     });
   }
-  lier('s', 'hStructure'); lier('a', 'pStructure');
+  lier('s', 'hStructure', () => signataires); lier('a', 'pStructure', () => preneurs);
 
   function collecter() {
     return {

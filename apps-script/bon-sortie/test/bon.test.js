@@ -1,5 +1,5 @@
 const test = require('node:test'), assert = require('node:assert');
-const { lirePersonnes_, bonHtml_, adressesValides_, dateFr_ } = require('../Code.js');
+const { lirePersonnes_, bonHtml_, adressesValides_, dateFr_, lireSignataires_, filtrerSignataires_, fusionnerPersonnes_ } = require('../Code.js');
 
 test('BDDORGA : colonnes repérées par leur en-tête, doublons et lignes vides écartés, tri alphabétique', () => {
   const v = [['Nom et Prénom', 'Matricule', 'Fonction', 'Service', 'Dépendance'], ['ZIANI Karim', '12345', 'Ingénieur', 'Service Construction', 'SONATRACH'], ['', '', '', '', ''], ['AMANI Brahim', '777', 'Technicien', 'Entretien', 'ACOSCO'], ['ziani karim', '1', '', '', '']];
@@ -20,4 +20,16 @@ test('le bon reprend les champs, échappe le HTML et laisse les pointillés quan
 test('adresses e-mail : valides seulement, séparateurs libres', () => {
   assert.deepStrictEqual(adressesValides_('a@x.dz; b@y.dz, pas-un-mail  c@z.com'), ['a@x.dz', 'b@y.dz', 'c@z.com']);
   assert.strictEqual(dateFr_('2026-10-17'), '17/10/2026');
+});
+
+test('signataires : désignés par leur nom, quel que soit l\'ordre ou la casse ; seuls ceux-là sont retenus', () => {
+  const noms = lireSignataires_([['Nom et prénom', 'remarque'], ['karim ziani', ''], ['', ''], ['AMANI Brahim', 'x']]);
+  assert.deepStrictEqual(noms, ['karim ziani', 'AMANI Brahim']);
+  const tous = [{ nom: 'ZIANI Karim' }, { nom: 'AMANI Brahim' }, { nom: 'BAHI Ramzi' }];
+  assert.deepStrictEqual(filtrerSignataires_(tous, noms).map(p => p.nom), ['ZIANI Karim', 'AMANI Brahim']);
+  assert.deepStrictEqual(filtrerSignataires_(tous, []).map(p => p.nom), []);
+});
+test('preneurs : BDDORGA puis Enquêtes, sans doublon, triés', () => {
+  const r = fusionnerPersonnes_([{ nom: 'ZIANI Karim', service: 'Construction' }], [{ nom: 'Karim ZIANI', service: 'ENAGEO', source: 'enquetes' }, { nom: 'BAHI Ramzi', service: 'ETS RADJAA', source: 'enquetes' }]);
+  assert.deepStrictEqual(r.map(p => [p.nom, p.source]), [['BAHI Ramzi', 'enquetes'], ['ZIANI Karim', 'bddorga']]);
 });

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-22-06",
+    "date": "2026-10-22",
+    "title": "Version 5.12.2 — Bon de sortie : signataires désignés, preneur BDDORGA ou Enquêtes",
+    "changes": [
+      "Bon de sortie matériel : « Je soussigné(e) » limité aux signataires désignés (onglet « Signataires » du fichier Organigramme ou liste dans le code ; contrôle refait à la génération). Si personne n'est désigné, tout BDDORGA peut signer.",
+      "Le preneur se choisit dans BDDORGA ou dans les Enquêtes administratives, ou se saisit librement ; le commentaire sur BDDORGA est masqué."
+    ]
+  },
+  {
     "id": "2026-10-22-05",
     "date": "2026-10-22",
     "title": "Version 5.12.1 — Bon de sortie matériel au catalogue",
