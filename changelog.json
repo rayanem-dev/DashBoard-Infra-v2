@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-22-02",
+    "date": "2026-10-22",
+    "title": "Version 5.11.0 — Saisie Enquêtes : intitulé automatique, recherche, majuscules",
+    "changes": [
+      "Saisie Enquêtes : le contrat choisi remplit tout seul son intitulé (et une entreprise qui n'a qu'un contrat remplit contrat et intitulé).",
+      "Saisie Enquêtes : en tapant un nom, les personnes déjà présentes dans les Enquêtes sont proposées (avec leur entreprise) ; à l'injection, la même fenêtre que dans Prises en charge demande si on l'ajoute quand même.",
+      "NOM en majuscules et Prénom avec sa majuscule : la saisie est corrigée à la sortie du champ (Badges et Prises en charge) et c'est ce qui est écrit dans les Enquêtes."
+    ]
+  },
+  {
     "id": "2026-10-22-01",
     "date": "2026-10-22",
     "title": "Version 5.10.1 — Carte Badges prestataires",

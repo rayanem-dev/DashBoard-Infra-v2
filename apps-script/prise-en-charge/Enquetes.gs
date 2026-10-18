@@ -213,7 +213,7 @@ function enqLigneLibre_(lignes, col) {
   }
   return lignes.length;
 }
-function enqNomComplet_(nom, prenom) { return (Badges.vide(nom).toLocaleUpperCase('fr') + ' ' + Badges.vide(prenom)).trim(); }
+function enqNomComplet_(nom, prenom) { return (Badges.majNom(nom) + ' ' + Badges.capPrenom(prenom)).trim(); } // NOM en majuscules, Prénom avec sa majuscule : ce qui est écrit dans les Enquêtes
 
 /** Résultat à afficher à l'utilisateur. */
 function enqResume_(r) {

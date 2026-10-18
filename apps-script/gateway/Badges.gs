@@ -139,7 +139,7 @@ function badgesCfg_(c) {
 function badgesSaisieCharge_(req) {
   var ent = Badges.vide(req.entreprise), ctr = Badges.vide(req.contrat), tit = Badges.vide(req.intitule);
   if (!ent) throw new Error('Indiquez l\'entreprise.');
-  var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { var o = { nom: Badges.vide(p.nom).slice(0, 200), prenom: Badges.vide(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; ['structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere', 'adresse', 'embauche', 'nin', 'acte', 'tel'].forEach(function (k) { o[k] = Badges.vide(p[k]).slice(0, 200); }); return o; }).filter(function (p) { return p.nom; });
+  var gens = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 60).map(function (p) { var o = { nom: Badges.majNom(p.nom).slice(0, 200), prenom: Badges.capPrenom(p.prenom).slice(0, 200), fonction: Badges.vide(p.fonction).slice(0, 200) }; ['structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere', 'adresse', 'embauche', 'nin', 'acte', 'tel'].forEach(function (k) { o[k] = Badges.vide(p[k]).slice(0, 200); }); return o; }).filter(function (p) { return p.nom; });
   return { prestataire: [ctr, ent, tit].join(' - '), personnes: gens, ignorerEnquetes: Array.isArray(req.ignorer) ? req.ignorer.map(String) : [], entreprise: ent, wilaya: Badges.vide(req.wilaya).slice(0, 60) };
 }
 // ---------- actions ----------
@@ -153,6 +153,13 @@ function badgesDonnees_(req) {
  * Saisie d'entreprises hors suivi CPM (ex. chef DSP sécurité) : les personnes sont ajoutées aux Enquêtes administratives (onglet « ENTREPRISE · contrat »).
  * Le code d'injection est celui de Prises en charge : apps-script/prise-en-charge/Enquetes.gs, copié ici au déploiement (EnquetesPartage.gs).
  */
+/** Recherche pendant la frappe : personnes des Enquêtes dont le nom commence par le texte (même moteur que Prises en charge). */
+function badgesEnquetesChercher_(req) {
+  badgesDroit_(req, 2);
+  var r = rechercherPersonnes(String(req.texte || '').slice(0, 80));
+  if (!r.ok) throw new Error(r.message || 'Recherche impossible');
+  return { personnes: r.personnes };
+}
 function badgesEnquetesVerifier_(req) {
   badgesDroit_(req, 2);
   var f = badgesSaisieCharge_(req), r = verifierEnquetes(f);

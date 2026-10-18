@@ -71,6 +71,14 @@ var Badges = (function () {
   }
 
   // ---------- Noms ----------
+  /** NOM en majuscules (accents conservés). */
+  function majNom(s) { return vide(s).toLocaleUpperCase('fr'); }
+  /** Prénom : première lettre de chaque mot en majuscule (« abdelwahab » → « Abdelwahab », « JEAN-PIERRE » → « Jean-Pierre ») ; un prénom déjà bien écrit en casse mixte n'est pas touché. */
+  function capPrenom(s) {
+    return vide(s).split(' ').map(function (m) {
+      return m.replace(/[^\s\-'’]+/g, function (t) { return (t === t.toLowerCase() || t === t.toUpperCase()) && /[A-Za-zÀ-ÿ]/.test(t) ? t.charAt(0).toLocaleUpperCase('fr') + t.slice(1).toLocaleLowerCase('fr') : t; });
+    }).join(' ');
+  }
   function decouperNom(fr, nomAr) {
     var t = vide(fr).split(' ').filter(Boolean);
     if (!t.length) return { nom: '', prenom: '', verifier: false };
@@ -334,7 +342,7 @@ var Badges = (function () {
   }
 
   var api = { DEFAUT: DEFAUT, config: config, vide: vide, norm: norm, cle: cle, esc: esc, formaterRef: formaterRef, prochain: prochain, attribuer: attribuer, decouperNom: decouperNom,
-    analyserEnquetes: analyserEnquetes, colonnesEnquetes: colonnesEnquetes, versFeuilleEnquetes: versFeuilleEnquetes, depuisFeuilleEnquetes: depuisFeuilleEnquetes, lireCsv: lireCsv, personnesDepuisTableau: personnesDepuisTableau, planifier: planifier, positions: positions, casesParFeuille: casesParFeuille,
+    majNom: majNom, capPrenom: capPrenom, analyserEnquetes: analyserEnquetes, colonnesEnquetes: colonnesEnquetes, versFeuilleEnquetes: versFeuilleEnquetes, depuisFeuilleEnquetes: depuisFeuilleEnquetes, lireCsv: lireCsv, personnesDepuisTableau: personnesDepuisTableau, planifier: planifier, positions: positions, casesParFeuille: casesParFeuille,
     feuillesHtml: feuillesHtml, calibrageHtml: calibrageHtml, css: css, csvHistorique: csvHistorique, ENTETE_HISTO: ENTETE_HISTO };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   return api;

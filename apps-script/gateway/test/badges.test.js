@@ -210,3 +210,13 @@ test('import Excel : entreprise lue dans le titre, numéros abîmés par Excel i
   assert.ok(r.avertissements.some(a => /notation scientifique/.test(a)));
   assert.ok(B.depuisFeuilleEnquetes([['a', 'b']], 'X').avertissements[0].includes('Format non reconnu'));
 });
+
+test('casse des noms : NOM en majuscules, Prénom avec sa majuscule', () => {
+  assert.strictEqual(B.majNom(' majoul  '), 'MAJOUL');
+  assert.strictEqual(B.capPrenom('abdelwahab'), 'Abdelwahab');
+  assert.strictEqual(B.capPrenom('JEAN-PIERRE'), 'Jean-Pierre');
+  assert.strictEqual(B.capPrenom('mohamed lamine'), 'Mohamed Lamine');
+  assert.strictEqual(B.capPrenom('Ait Amraoui'), 'Ait Amraoui');
+  assert.strictEqual(B.capPrenom('FaRid'), 'FaRid'); // casse mixte : laissé tel quel
+  assert.strictEqual(B.capPrenom('فريد'), 'فريد');
+});

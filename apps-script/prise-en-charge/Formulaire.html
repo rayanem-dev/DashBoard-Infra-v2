@@ -552,11 +552,22 @@
     reader.readAsDataURL(file);
   }
 
+  // NOM en majuscules, Prénom avec sa majuscule : la saisie est corrigée à la sortie du champ (et ce qui est injecté est identique)
+  function majNom(t) { return String(t || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('fr'); }
+  function capPrenom(t) {
+    return String(t || '').trim().replace(/\s+/g, ' ').split(' ').map(m => m.replace(/[^\s\-'’]+/g, w => ((w === w.toLowerCase() || w === w.toUpperCase()) && /[A-Za-zÀ-ÿ]/.test(w)) ? w.charAt(0).toLocaleUpperCase('fr') + w.slice(1).toLocaleLowerCase('fr') : w)).join(' ');
+  }
+  document.addEventListener('focusout', e => {
+    const c = e.target && e.target.dataset ? e.target.dataset.champ : '';
+    if (c === 'nom') e.target.value = majNom(e.target.value); else if (c === 'prenom') e.target.value = capPrenom(e.target.value);
+  });
+
   function envoyer() {
     const personnes = [];
     corps.querySelectorAll('tr').forEach(tr => {
       const p = {};
       tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
+      if (p.nom) p.nom = majNom(p.nom); if (p.prenom) p.prenom = capPrenom(p.prenom);
       if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
     });
 

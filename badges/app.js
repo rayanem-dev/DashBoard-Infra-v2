@@ -320,7 +320,19 @@ var BadgesApp = (function () {
       function contrats() { dc.innerHTML = ''; var e = S.entreprises.filter(function (x) { return B.norm(x.nom) === B.norm(X.entreprise); })[0]; ((e && e.contrats) || []).forEach(function (c) { var o = el('option'); o.value = c.numero; o.label = c.intitule || ''; dc.appendChild(o); }); }
       var ent = saisie(X.entreprise, 'text', 'Entreprise'), ctr = saisie(X.contrat, 'text', 'N° de contrat (facultatif)'), tit = saisie(X.intitule, 'text', 'Intitulé du contrat (facultatif)');
       ent.setAttribute('list', 'bdg-dl-ent'); ctr.setAttribute('list', 'bdg-dl-ctr');
-      ent.oninput = function () { X.entreprise = ent.value; contrats(); }; ctr.oninput = function () { X.contrat = ctr.value; }; tit.oninput = function () { X.intitule = tit.value; }; contrats();
+      // contrat choisi (ou tapé en entier) : l'intitulé s'affiche tout seul ; entreprise n'ayant qu'un contrat : contrat et intitulé aussi
+      function contratsDe(nom) { var e = S.entreprises.filter(function (x) { return B.norm(x.nom) === B.norm(nom); })[0]; return (e && e.contrats) || []; }
+      function sansEsp(t) { return B.norm(t).replace(/ /g, ''); }
+      function intituleAuto() {
+        var c = contratsDe(X.entreprise).filter(function (k) { return sansEsp(k.numero) === sansEsp(ctr.value) && sansEsp(ctr.value); })[0];
+        if (c && c.intitule && (!X.intitule || X.intituleAuto)) { tit.value = X.intitule = c.intitule; X.intituleAuto = true; }
+      }
+      ent.oninput = function () {
+        X.entreprise = ent.value; contrats();
+        var cs = contratsDe(ent.value).filter(function (k) { return k.actif !== false; });
+        if (cs.length === 1 && !B.vide(ctr.value)) { ctr.value = X.contrat = cs[0].numero; X.intituleAuto = true; intituleAuto(); } // contrat déjà saisi : on ne touche à rien
+      };
+      ctr.oninput = function () { X.contrat = ctr.value; intituleAuto(); }; ctr.onchange = ctr.oninput; tit.oninput = function () { X.intitule = tit.value; X.intituleAuto = false; }; contrats();
       var wil = saisie(X.wilaya, 'text', 'Wilaya'); wil.dir = 'rtl'; wil.oninput = function () { X.wilaya = wil.value; try { localStorage.setItem('badges_wilaya', wil.value); } catch (e) { /* rien */ } };
       var tete = el('div', 'bdg-grille'); tete.appendChild(champ('Entreprise', ent)); tete.appendChild(champ('N° de contrat', ctr)); tete.appendChild(champ('Intitulé', tit)); tete.appendChild(champ('Wilaya (en-tête de l\'onglet créé)', wil)); v.appendChild(tete);
       var CH = [['nom', 'Nom', 'NOM'], ['prenom', 'Prénom', 'Prénom'], ['fonction', 'Fonction', 'Fonction'], ['structure', 'Structure', S.cfg.structure || 'Structure']];
@@ -330,7 +342,7 @@ var BadgesApp = (function () {
       var tb = el('tbody');
       X.lignes.forEach(function (l, i) {
         var tr = el('tr'); tr.appendChild(el('td', null, String(i + 1)));
-        cols.forEach(function (c) { var k = c[0], inp = saisie(l[k], 'text', c[2]); if (k === 'nomAr' || k === 'prenomAr') inp.dir = 'rtl'; inp.oninput = function () { l[k] = inp.value; }; var td = el('td'); td.appendChild(inp); tr.appendChild(td); });
+        cols.forEach(function (c) { var k = c[0], inp = saisie(l[k], 'text', c[2]); if (k === 'nomAr' || k === 'prenomAr') inp.dir = 'rtl'; inp.oninput = function () { l[k] = inp.value; if (k === 'nom' || k === 'prenom') suggerer(inp, l); }; inp.onblur = function () { if (k === 'nom') { inp.value = l[k] = B.majNom(inp.value); } else if (k === 'prenom') { inp.value = l[k] = B.capPrenom(inp.value); } setTimeout(fermerSuggestions, 200); }; var td = el('td'); td.appendChild(inp); tr.appendChild(td); });
         var td = el('td'); td.appendChild(bouton('✕', function () { X.lignes.splice(i, 1); if (!X.lignes.length) X.lignes.push({ nom: '', prenom: '', fonction: '' }); dessiner(); }, 'mini', 'Retirer cette ligne')); tr.appendChild(td); tb.appendChild(tr);
       });
       t.appendChild(tb); var defile = el('div'); defile.style.cssText = 'overflow-x:auto'; defile.appendChild(t); v.appendChild(defile);
@@ -356,6 +368,27 @@ var BadgesApp = (function () {
       barre.appendChild(bouton('Injecter dans les Enquêtes', function () { injecter(X); }, 'prim'));
       v.appendChild(barre);
       return v;
+    }
+    // ----- Recherche d'une personne déjà dans les Enquêtes pendant la frappe (comme dans Prises en charge) -----
+    var minuterie = null;
+    function fermerSuggestions() { var o = document.getElementById('bdg-sugg'); if (o) o.remove(); }
+    function suggerer(inp, l) {
+      clearTimeout(minuterie); var q = B.vide((l.nom || '') + ' ' + (l.prenom || ''));
+      if (!adapter.chercherPersonnes || q.replace(/ /g, '').length < 3) { fermerSuggestions(); return; }
+      minuterie = setTimeout(function () {
+        adapter.chercherPersonnes({ texte: q }).then(function (r) {
+          fermerSuggestions(); var liste = (r && r.personnes) || []; if (!liste.length || document.activeElement !== inp) return;
+          var b = el('div'); b.id = 'bdg-sugg'; var pos = inp.getBoundingClientRect();
+          b.style.cssText = 'position:fixed;z-index:9999;left:' + pos.left + 'px;top:' + (pos.bottom + 2) + 'px;min-width:' + Math.max(pos.width, 320) + 'px;max-height:260px;overflow:auto;background:var(--surface,#fff);color:var(--text-dark,inherit);border:1px solid #bbb;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:13px';
+          liste.forEach(function (p) {
+            var o = el('div'); o.style.cssText = 'padding:7px 10px;cursor:pointer;border-bottom:1px solid rgba(128,128,128,.2)';
+            var t = el('b', null, p.nom + ' ' + p.prenom); o.appendChild(t); o.appendChild(el('span', null, (p.fonction ? ' — ' + p.fonction : '') + (p.entreprise ? '  ·  ' + p.entreprise : ''))); o.lastChild.style.opacity = '.7';
+            o.onmousedown = function (ev) { ev.preventDefault(); inp.onblur = null; l.nom = p.nom; l.prenom = p.prenom; if (!B.vide(l.fonction)) l.fonction = p.fonction || ''; /* seulement si la fonction n'est pas déjà saisie */ fermerSuggestions(); dessiner(); dire('« ' + p.nom + ' ' + p.prenom + ' » figure déjà dans les Enquêtes (' + (p.entreprise || '—') + ') : en cliquant sur « Injecter », il vous sera demandé si vous l\'ajoutez quand même.'); };
+            b.appendChild(o);
+          });
+          document.body.appendChild(b);
+        }).catch(function () { /* la recherche est facultative */ });
+      }, 280);
     }
     function personnesSaisies(X) { return X.lignes.map(function (l) { var o = {}; ['nom', 'prenom', 'fonction', 'structure', 'nomAr', 'prenomAr', 'naissance', 'lieu', 'pere', 'mere', 'adresse', 'embauche', 'nin', 'acte', 'tel'].forEach(function (k) { o[k] = B.vide(l[k]); }); return o; }).filter(function (l) { return l.nom; }); }
     function injecter(X) {
