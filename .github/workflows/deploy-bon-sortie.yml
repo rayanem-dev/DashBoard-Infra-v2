@@ -1,0 +1,61 @@
+# Déploiement automatique de l'application Bon de sortie matériel (Apps Script) : tests -> clasp push -> nouvelle version sur la MÊME adresse /exec.
+name: Déployer le bon de sortie
+
+on:
+  push:
+    branches: [claude/exciting-ritchie-u1o1dl, main]
+    paths: ['apps-script/bon-sortie/**', '.github/workflows/deploy-bon-sortie.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-bon-sortie
+  cancel-in-progress: false
+
+env:
+  SCRIPT_ID: 1NiV4XNuQjsSHKMPKeP4lfXn0Bb9jZcBkbaJ5RMal-rQR9jcGJ16LjK4A
+  DEPLOYMENT_ID: AKfycbyFYSS2YZ2bTPrycZSwM5qUCXfFgoa_zHBl9nM9m8a0m7xMA
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Tests
+        run: node --test apps-script/bon-sortie/test/*.test.js
+
+      - name: Contrôler le secret CLASPRC_JSON
+        id: fmt
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          OUT: ${{ runner.temp }}/clasprc.json
+        run: |
+          umask 077
+          node -e '
+            const fs = require("fs");
+            let brut = String(process.env.CLASPRC_JSON).trim(), j;
+            try { j = JSON.parse(brut); } catch (e1) { try { j = JSON.parse("{" + brut.replace(/^,|,$/g, "") + "}"); } catch (e2) { console.log("::error::CLASPRC_JSON illisible"); process.exit(1); } }
+            const v3 = !!j.tokens, v2 = !!j.token;
+            if (!v2 && !v3) { console.log("::error::CLASPRC_JSON invalide"); process.exit(1); }
+            fs.writeFileSync(process.env.OUT, JSON.stringify(j), { mode: 0o600 });
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "clasp=" + (v3 ? "3" : "2") + "\n");
+          '
+
+      - name: Installer clasp
+        run: npm install -g @google/clasp@${{ steps.fmt.outputs.clasp }}
+
+      - name: Envoyer le code et publier une nouvelle version
+        working-directory: apps-script/bon-sortie
+        env:
+          CLASPRC_FILE: ${{ runner.temp }}/clasprc.json
+        run: |
+          umask 077
+          cp "$CLASPRC_FILE" "$HOME/.clasprc.json"
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
+          printf 'test/**\n' > .claspignore
+          clasp push --force
+          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7} — $(git log -1 --pretty=%s | cut -c1-60)"
+          rm -f "$HOME/.clasprc.json" "$CLASPRC_FILE" .clasp.json .claspignore

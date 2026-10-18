@@ -77,6 +77,14 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Bon de sortie matériel",
+  "Établit le bon de sortie de matériel (personnes choisies dans BDDORGA, matériel en chiffre et en lettre, lieux, visas), génère le PDF et l'envoie par e-mail ou à l'imprimante.",
+  "📦",
+  "https://script.google.com/macros/s/AKfycbyFYSS2YZN0TqEvtkpT9FeezZybqlZ2bTPrycZSwM5qUCXfFgoa_zHBl9nM9m8a0m7xMA/exec",
+  1
+ ],
+ [
+  "logistique",
   "Dotation Vivres & Eau Minérale",
   "Génération des fiches de dotation (vivres et eau minérale) pour le personnel présent, avec durées et quantités calculées automatiquement selon le service.",
   "🍞💧",

@@ -8,8 +8,8 @@ Formulaire → PDF (mise en page du « Bon de sortie matériels Vierge ») → e
 3. Ajouter l'adresse `/exec` dans le catalogue du portail (onglet Applications de BDDORGA : module `logistique`, titre « Bon de sortie matériel »).
 4. Les PDF sont rangés dans le dossier Drive « Bons de sortie matériel » (créé au premier bon). Adresses utiles en haut de `Code.js` : `EMAIL_SECRETARIAT`, `PRINTBYXEROX_EMAIL`, `SHEET_ID` (fichier Organigramme).
 
-## Déploiement automatique (comme Prises en charge, Dotation)
-Il faut l'identifiant du projet (Paramètres du projet › ID du script) et de son déploiement : un workflow `deploy-bon-sortie.yml` calqué sur `deploy-dotation.yml` se branche alors sur ce dossier.
+## Déploiement automatique
+Branché : `.github/workflows/deploy-bon-sortie.yml` lance les tests, envoie le code avec clasp et publie une nouvelle version **sur la même adresse `/exec`** à chaque modification de ce dossier. Le compte du secret `CLASPRC_JSON` doit avoir accès en modification au projet Apps Script.
 
 ## Tests
 `node --test apps-script/bon-sortie/test/*.test.js` : lecture de BDDORGA, mise en page du bon (échappement, pointillés du modèle), adresses e-mail.

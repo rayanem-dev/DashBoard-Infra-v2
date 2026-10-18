@@ -53,6 +53,7 @@ function route_(req) {
       if (typeof preparerLiens_ === 'function') preparerLiens_();
       if (typeof preparerLiensRapport_ === 'function') preparerLiensRapport_();
       if (typeof preparerCarteBadges_ === 'function') preparerCarteBadges_();
+      if (typeof preparerCarteBonSortie_ === 'function') preparerCarteBonSortie_();
       return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
     }
     case 'emettreCode': {
