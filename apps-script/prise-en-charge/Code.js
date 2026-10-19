@@ -870,18 +870,25 @@ function genererPEC(ss, silencieux, options) {
     try { nomCell.removeChild(nomCell.getChild(i)); } catch (e) { /* dernière ligne de la cellule, on ne peut pas la retirer */ }
   }
 
-  // Observations : la fonction, sous la base de vie / remplacement / chambre (si demandé)
-  if (options.observation) {
-    try { dataRow.getCell(dataRow.getNumCells() - 1).appendParagraph(options.observation).setAlignment(DocumentApp.HorizontalAlignment.CENTER); } catch (e) { /* facultatif : ne bloque jamais la génération */ }
-  }
-
-  // Case « Observations » (dernière de la ligne) : tout le texte centré horizontalement et verticalement
+  // Case « Observations » (dernière de la ligne) : base / remplacement / chambre, puis UNE ligne vide, puis la fonction (si demandée).
+  // Les paragraphes vides laissés par les balises {{…}} du modèle (remplacement, chambre absents) sont supprimés pour que le bloc soit compact,
+  // puis tout est centré horizontalement et verticalement.
   try {
     const obsCell = dataRow.getCell(dataRow.getNumCells() - 1);
+    for (let i = obsCell.getNumChildren() - 1; i >= 0; i--) {
+      const enfant = obsCell.getChild(i);
+      if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH && !enfant.asParagraph().getText().trim() && obsCell.getNumChildren() > 1) obsCell.removeChild(enfant);
+    }
+    if (options.observation) {
+      obsCell.appendParagraph(" ");
+      obsCell.appendParagraph(options.observation);
+    }
     obsCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
     for (let i = 0; i < obsCell.getNumChildren(); i++) {
       const enfant = obsCell.getChild(i);
-      if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) {
+        enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER).setSpacingBefore(0).setSpacingAfter(0);
+      }
     }
   } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
 

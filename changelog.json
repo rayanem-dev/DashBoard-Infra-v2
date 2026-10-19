@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-22",
+    "date": "2026-10-22",
+    "title": "Version 5.17.4 — Prise en charge : case Observations compacte et centrée",
+    "changes": [
+      "Prise en charge (PDF) : dans la case « Observations », les lignes vides laissées par le modèle (remplacement, chambre absents) sont supprimées ; la base, puis une seule ligne d'espace, puis la fonction, le tout centré au milieu de la case."
+    ]
+  },
+  {
     "id": "2026-10-22-21",
     "date": "2026-10-22",
     "title": "Version 5.17.3 — Prises en charge : nouvelle base acceptée",
