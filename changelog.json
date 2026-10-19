@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-21",
+    "date": "2026-10-22",
+    "title": "Version 5.17.3 — Prises en charge : nouvelle base acceptée",
+    "changes": [
+      "Prises en charge : la base « SHARM EL SHEIKH VIP » est maintenant acceptée à la génération (la liste de validation de la feuille est remise à jour automatiquement avant l'écriture ; fin de l'erreur « cellule C4 »)."
+    ]
+  },
+  {
     "id": "2026-10-22-20",
     "date": "2026-10-22",
     "title": "Version 5.17.2 — Accueil sur téléphone",

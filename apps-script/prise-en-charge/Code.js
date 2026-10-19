@@ -365,6 +365,8 @@ function soumettreFormulairePEC(formData) {
     sheet.getRange("D3").setValue(EMPUTATIONS[formData.emputation] || "");
 
     // C4
+    // La liste de validation de C4 a pu être posée avec d'anciennes bases : on la remet à jour avant d'écrire
+    sheet.getRange("C4").setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(BASES, true).setAllowInvalid(false).build());
     sheet.getRange("C4").setValue(formData.base);
 
     // D5 Remplacement
