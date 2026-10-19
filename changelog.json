@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-22-28",
+    "date": "2026-10-22",
+    "title": "Version 5.20.0 — Simulation de planning simplifiée",
+    "changes": [
+      "Nouvelle simulation : un sélecteur de service (ou toute la division) affiche toutes les équipes sur un graphique ; en cliquant deux agents (A et B), ils se placent l'un sous l'autre en haut avec leur ligne de vis-à-vis.",
+      "Modification à la main : pour chaque agent, des cases semaine par semaine (jusqu'à 12) à passer en travail ou en repos ; le graphique, le résumé en phrases (« écourte son repos à 3 semaines… »), le reliquat et le vis-à-vis se mettent à jour aussitôt.",
+      "Propositions automatiques : décalages de 1 à 8 semaines pour les deux agents, classés du plus petit reliquat (positif ou négatif) au plus grand, selon que le changement commence maintenant, à la prochaine rotation ou à une date ; « Utiliser » les reporte dans les cases.",
+      "L'ancienne page est conservée en secours sous le nom « Modif 1.0 » (lien en haut de la nouvelle page)."
+    ]
+  },
+  {
     "id": "2026-10-22-27",
     "date": "2026-10-22",
     "title": "Version 5.19.1 — Documents administratifs : impression bien ajustée",

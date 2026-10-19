@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Simulation de planning (Modif 1.0) – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<style>
+  .onglets { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); margin-bottom: 16px; }
+  .onglets button { border: 0; background: var(--surface); padding: 9px 18px; font: inherit; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+  .onglets button + button { border-left: 1.5px solid var(--border); }
+  .onglets button.actif { background: var(--orange-main); color: #fff; }
+  .grille-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 18px; align-items: end; }
+  .grille-form label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 4px; }
+  .grille-form input, .grille-form select { width: 100%; padding: 9px 11px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 18px 20px; margin-bottom: 16px; }
+  .bloc h2 { font-size: 15px; margin: 0 0 12px; }
+  .periode { display: grid; grid-template-columns: 150px 90px 1fr auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid #F1F3F5; }
+  .periode select, .periode input { padding: 7px 9px; border: 1.5px solid var(--border); border-radius: 8px; font: inherit; font-size: 14px; }
+  .periode .dates { font-size: 13px; color: var(--ink-2); }
+  .pastille-t, .pastille-r { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+  .pastille-t { background: var(--c-T); } .pastille-r { background: var(--c-R); }
+  .reprise { margin: 10px 0 0; font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 9px; padding: 8px 12px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .btn-p { padding: 10px 18px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(232,93,4,.3); }
+  .btn-p:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+  .erreur { color: #B42318; font-size: 13px; font-weight: 600; margin: 8px 0 0; }
+  .frise-zone { overflow-x: auto; padding-bottom: 6px; }
+  .frise { min-width: min-content; }
+  .frise .ligne { display: flex; align-items: center; height: 24px; }
+  .frise .etiq { position: sticky; left: 0; z-index: 2; background: var(--surface); width: 210px; flex: none; font-size: 12px; font-weight: 700; padding-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frise .jours { display: flex; }
+  .frise i { display: block; width: var(--w, 5px); height: 16px; }
+  .frise i.T { background: var(--c-T); } .frise i.R { background: var(--c-R); } .frise i.x { background: #E5E7EB; }
+  .frise i.pre { opacity: .35; }
+  .frise i.C { background: #E11D48; } .frise i.V { background: #7C3AED; } .frise i.t { background: #FACC15; } .frise i.o { background: #D1FAE5; }
+  .frise i.auj { box-shadow: inset 2px 0 0 #111; }
+  .frise .mois { height: 18px; font-size: 10px; color: var(--text-muted); }
+  .frise .mois span { display: block; overflow: visible; white-space: nowrap; border-left: 1px solid #D1D5DB; padding-left: 3px; }
+  .legende-s { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+  .legende-s i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .bilan { font-size: 13px; margin-top: 10px; }
+  .bilan.ok { color: #166534; } .bilan.ko { color: #B42318; }
+  .bilan ul { margin: 6px 0 0 18px; padding: 0; }
+  .props { display: grid; gap: 8px; margin-top: 10px; }
+  .prop { display: flex; gap: 12px; align-items: center; justify-content: space-between; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 13px; flex-wrap: wrap; }
+  .prop.parfait { border-color: #86EFAC; background: var(--tint-ok); }
+  table.dem { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dem th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1.5px solid var(--border); }
+  table.dem td { padding: 9px 10px; border-bottom: 1px solid #F1F3F5; vertical-align: top; }
+  .st { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+  .st.en_attente { background: #FEF3C7; color: #92400E; } .st.approuvee { background: #DCFCE7; color: #166534; } .st.refusee { background: #FEE2E2; color: #991B1B; }
+  .succes { background: var(--tint-ok); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+  @media (max-width: 720px) { .periode { grid-template-columns: 1fr 80px auto; } .periode .dates { grid-column: 1 / -1; order: 5; } }
+.sous-bloc { border-left: 4px solid var(--c-R); padding-left: 14px; margin-top: 14px; }
+  .sous-bloc.a { border-color: var(--c-T); }
+  .sous-bloc h3 { font-size: 13px; margin: 0 0 6px; }
+  .case-l { text-transform: none; letter-spacing: 0; color: #111; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 10px; }
+  .case-l input { width: auto; }
+  .prop .l { margin: 1px 0; } .prop small { color: #6B7280; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Simulation de planning · Modif 1.0</h1><p>Sonatrach · RNS · Version de secours, test à vide</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="simulation.html" style="text-decoration:none">✨ Nouvelle simulation</a> <a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+
+<main class="portail">
+  <div class="onglets" role="tablist"><button class="actif" id="o-simu" type="button">Simulation</button><button id="o-dem" type="button">Demandes <span id="nb-att"></span></button></div>
+
+  <section id="p-simu">
+    <div class="succes" id="succes" hidden></div>
+    <div class="titre-impression"><h1>Simulation de planning — Division Infrastructure RNS</h1><p id="s-imp-simu"></p></div>
+    <div class="bloc" id="b-qui">
+      <h2>1 · Qui ?</h2>
+      <div class="grille-form">
+        <div><label for="agent">Agent à modifier</label><select id="agent"></select></div>
+        <div><label for="partenaire">Mettre en vis-à-vis avec (facultatif)</label><select id="partenaire"><option value="">— personne —</option></select></div>
+        <div><label for="debut">La modification de l'agent commence le</label><input type="date" id="debut"></div>
+        <div><label for="vue">Durée affichée</label><select id="vue"><option value="92">3 mois</option><option value="184" selected>6 mois</option><option value="366">1 an</option></select></div>
+        <div id="z-tol" hidden><label for="tol-c">Chevauchement toléré (jours de relève)</label><input type="number" id="tol-c" min="0" max="15" value="2"></div>
+        <div id="z-tol2" hidden><label for="tol-v">Trou toléré (jours)</label><input type="number" id="tol-v" min="0" max="15" value="0"></div>
+      </div>
+      <p class="aide" id="ident" style="margin:10px 0 0"></p>
+    </div>
+
+    <div class="bloc" id="b-periodes" hidden>
+      <h2>2 · Les périodes modifiées</h2>
+      <div class="sous-bloc a">
+        <h3 id="t-a">Agent</h3>
+        <div id="periodes"></div>
+        <div class="actions"><button class="btn-s" id="ajout" type="button">+ Ajouter une période</button></div>
+        <p class="reprise" id="reprise"></p>
+        <p class="erreur" id="erreur" role="alert"></p>
+      </div>
+      <div id="z-modb" hidden>
+        <label class="case-l"><input type="checkbox" id="modb"> Modifier aussi le planning de <b id="n-b">l'autre agent</b> (deux demandes seront émises)</label>
+        <div class="sous-bloc" id="b-b" hidden>
+          <h3 id="t-b">Partenaire</h3>
+          <div class="grille-form" style="margin-bottom:6px"><div><label for="debut-b">Sa modification commence le</label><input type="date" id="debut-b"></div></div>
+          <div id="periodes-b"></div>
+          <div class="actions"><button class="btn-s" id="ajout-b" type="button">+ Ajouter une période</button></div>
+          <p class="reprise" id="reprise-b"></p>
+          <p class="erreur" id="erreur-b" role="alert"></p>
+        </div>
+      </div>
+      <div id="z-prop" hidden style="margin-top:14px">
+        <div class="grille-form">
+          <div><label for="pas">Ajustement des propositions</label><select id="pas"><option value="7" selected>Par semaine, à partir de la relève (recommandé)</option><option value="1">Au jour près, à la date choisie</option></select></div>
+          <div><label for="maxt">Transition maximale par agent</label><select id="maxt"><option value="14">2 semaines</option><option value="28" selected>4 semaines</option><option value="42">6 semaines</option><option value="56">8 semaines</option></select></div>
+          <div><label for="pref">Reliquat accepté</label><select id="pref"><option value="indifferent" selected>Indifférent (+ ou −)</option><option value="negatif">Congés prolongés seulement (reliquat − : personne ne travaille plus)</option><option value="positif">Congés écourtés / travail en plus seulement (reliquat +)</option></select></div>
+        </div>
+        <div class="actions"><button class="btn-s" id="proposer" type="button">💡 Proposer une combinaison en vis-à-vis (pour les deux)</button><span class="aide" id="prop-aide" style="margin:0"></span></div>
+        <p class="aide" style="margin:8px 0 0">Classement des propositions : <b>1)</b> le vis-à-vis s'établit le plus tôt possible, <b>2)</b> on ne les additionne pas : le planning qui ménage le plus les deux passe d'abord, celui où un agent atteint le plus fort reliquat est classé en dernier ; le reliquat <b>déjà détenu</b> par chaque agent est pris en compte (solde avant → solde après), <b>3)</b> puis la transition la plus courte.</p>
+        <div class="props" id="props"></div>
+      </div>
+    </div>
+
+    <div class="bloc" id="b-frise" hidden>
+      <h2>3 · Résultat (simulation, rien n'est enregistré) <button class="btn-s no-print" id="imprimer" type="button" style="float:right" title="Imprimer ou enregistrer en PDF">🖨 Imprimer / PDF</button></h2>
+      <div class="frise-zone"><div class="frise" id="frise"></div></div>
+      <div class="legende-s" id="legende"></div>
+      <div class="bilan" id="bilan"></div>
+    </div>
+
+    <div class="bloc" id="b-valider" hidden>
+      <h2>4 · Décision</h2>
+      <div class="grille-form"><div style="grid-column: 1 / -1"><label for="motif">Motif de la demande</label><input type="text" id="motif" maxlength="120" value="Raison de service"></div></div>
+      <div class="actions">
+        <button class="btn-p" id="valider" type="button">✔ Valider et émettre la demande</button>
+        <button class="btn-s" id="annuler" type="button">✖ Annuler la simulation</button>
+      </div>
+      <p class="aide" style="margin:10px 0 0">« Valider » enregistre une demande par agent modifié (statut <b>en attente</b>), prévient par e-mail l'intéressé, le responsable, le chef de division et le secrétariat, et prépare le document à imprimer et signer. Le planning officiel change à l'approbation. « Annuler » efface la simulation sans rien enregistrer.</p>
+    </div>
+  </section>
+
+  <section id="p-dem" hidden>
+    <div class="bloc" style="padding:0;overflow:auto"><table class="dem" id="t-dem"></table></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/rotation.js"></script>
+<script>Rotation.exiger();</script>
+<script src="js/simulation.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function fr(d) { return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : ''; }
+  function toast(t, err) { var z = $('toast'); z.textContent = t; z.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { z.className = 'toast'; }, 4000); }
+  var MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+  // Deux agents possibles : A (celui qu'on modifie) et B (le partenaire, modifiable aussi).
+  var S = { A: { data: null, periodes: [], debut: $('debut') }, B: { data: null, periodes: [], debut: $('debut-b') } };
+  var DOM = { A: { lst: 'periodes', rep: 'reprise', err: 'erreur', ajout: 'ajout' }, B: { lst: 'periodes-b', rep: 'reprise-b', err: 'erreur-b', ajout: 'ajout-b' } };
+  var agents = [], evalDepuis = ''; // date à partir de laquelle le vis-à-vis est évalué (fixée par une proposition)
+  function modB() { return !!S.B.data && $('modb').checked; }
+
+  // ---------- Chargement ----------
+  function charger() {
+    return Api.call('simu_agents').then(function (r) {
+      agents = r.agents;
+      var s = $('agent'), p = $('partenaire'); s.textContent = ''; p.textContent = ''; p.appendChild(new Option('— personne —', ''));
+      s.appendChild(new Option('Choisissez un agent…', ''));
+      agents.forEach(function (a) {
+        var lib = a.nom + (a.service ? ' — ' + a.service : '') + (a.dependance && a.dependance !== 'SONATRACH' ? ' · ' + a.dependance : '') + (a.configuree ? '' : ' (rotation non renseignée : il doit d\'abord la saisir)');
+        var o = new Option(lib, a.uid); o.disabled = !a.configuree; s.appendChild(o);
+        var o2 = new Option(lib, a.uid); o2.disabled = !a.configuree; p.appendChild(o2);
+      });
+    });
+  }
+  function donnees(uid) { return Api.call('simu_donnees', { uid: uid, jours: 400 }); }
+  function etatAu(cle, date) { var d = S[cle].data; return d.grille.charAt(Math.max(0, Simulation.diff(d.debut, date))); }
+  function initPeriodes(cle) {
+    var d = S[cle].data, inp = S[cle].debut, min = Simulation.addDays(d.aujourdhui, -30) > d.rotation.depuis ? Simulation.addDays(d.aujourdhui, -30) : d.rotation.depuis;
+    inp.min = min; inp.value = d.aujourdhui > min ? d.aujourdhui : min;
+    S[cle].periodes = [{ type: etatAu(cle, inp.value) === 'T' ? 'R' : 'T', jours: 14 }];
+  }
+  function agentChoisi() {
+    evalDepuis = '';
+    S.A.data = null; S.A.periodes = []; reinitB(); majTout();
+    var uid = $('agent').value; if (!uid) return;
+    donnees(uid).then(function (d) {
+      S.A.data = d; initPeriodes('A');
+      $('ident').textContent = d.nom + ' · rotation habituelle ' + d.rotation.jours_travail + ' jours de travail / ' + d.rotation.jours_repos + ' jours de repos · reliquat actuel : ' + ((d.solde || 0) > 0 ? '+' : '') + (d.solde || 0) + ' j' + (d.reliquat_initial === null ? ' (non renseigné : compté à 0)' : '') + '.';
+      $('t-a').textContent = d.nom;
+      if ($('partenaire').value === uid) $('partenaire').value = '';
+      partenaireChoisi();
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  function reinitB() { S.B.data = null; S.B.periodes = []; $('modb').checked = false; }
+  function partenaireChoisi() {
+    evalDepuis = '';
+    reinitB(); var uid = $('partenaire').value;
+    $('z-tol').hidden = $('z-tol2').hidden = !uid; $('z-modb').hidden = !uid; $('z-prop').hidden = !uid || !S.A.data; $('b-b').hidden = true;
+    if (!uid || uid === $('agent').value) { if (uid) $('partenaire').value = ''; majTout(); return; }
+    donnees(uid).then(function (d) { S.B.data = d; initPeriodes('B'); $('n-b').textContent = d.nom; $('t-b').textContent = d.nom; majTout(); })
+      .catch(function (e) { toast(e.message, true); $('partenaire').value = ''; majTout(); });
+  }
+
+  // ---------- Calcul ----------
+  function modif(cle) {
+    var p = S[cle].periodes, last = p.length ? p[p.length - 1].type : 'T';
+    return { debut: S[cle].debut.value, periodes: p.map(function (x) { return { type: x.type, jours: Number(x.jours) }; }), reprise: Simulation.autre(last) };
+  }
+  function opts() { return { tolChev: Number($('tol-c').value) || 0, tolTrou: Number($('tol-v').value) || 0 }; }
+  function etat(cle) {
+    var d = S[cle].data; if (!d || (cle === 'B' && !modB())) return null;
+    if (cle === 'A' && !S.A.periodes.length && modB()) return { m: null, err: '', mod: d.grille }; // A inchangé : seul le partenaire est modifié
+    var m = modif(cle), err = Simulation.valider(m, d.rotation, d.aujourdhui);
+    return { m: m, err: err, mod: err ? d.grille : Simulation.appliquer(d.grille, d.debut, m, d.rotation) };
+  }
+
+  // ---------- Périodes (éditeur partagé A / B) ----------
+  function texteReprise(cle) {
+    var d = S[cle].data, m = modif(cle);
+    return d && S[cle].periodes.length && Simulation.estDate(m.debut) ? 'Ensuite, la rotation habituelle (' + d.rotation.jours_travail + '/' + d.rotation.jours_repos + ') reprend le ' + fr(Simulation.dateReprise(m)) + ' par une période de ' + (m.reprise === 'T' ? 'travail' : 'repos') + '.' : '';
+  }
+  function dessinerDates(cle) {
+    var d = S[cle].debut.value, ls = $(DOM[cle].lst).children;
+    S[cle].periodes.forEach(function (p, i) {
+      var du = Simulation.estDate(d) ? d : '', au = du && p.jours >= 1 ? Simulation.addDays(du, p.jours - 1) : '';
+      if (ls[i]) ls[i].querySelector('.dates').textContent = du && au ? 'du ' + fr(du) + ' au ' + fr(au) + ' (' + p.jours + ' j)' : '';
+      if (du) d = Simulation.addDays(du, p.jours >= 1 ? p.jours : 0);
+    });
+    $(DOM[cle].rep).textContent = texteReprise(cle);
+  }
+  function dessinerPeriodes(cle) {
+    var z = $(DOM[cle].lst); z.textContent = '';
+    S[cle].periodes.forEach(function (p, i) {
+      var l = el('div', 'periode');
+      var s = document.createElement('select'); [['T', 'Travail'], ['R', 'Repos / récupération']].forEach(function (o) { var op = new Option(o[1], o[0]); if (o[0] === p.type) op.selected = true; s.appendChild(op); });
+      s.addEventListener('change', function () { p.type = s.value; majTout(); });
+      var n = document.createElement('input'); n.type = 'number'; n.min = 1; n.max = 120; n.value = p.jours; n.setAttribute('aria-label', 'Nombre de jours');
+      n.addEventListener('input', function () { p.jours = Number(n.value); majTout(true); });
+      var x = el('button', 'btn-s', '✕'); x.type = 'button'; x.title = 'Retirer'; x.addEventListener('click', function () { S[cle].periodes.splice(i, 1); majTout(); });
+      l.appendChild(s); l.appendChild(n); l.appendChild(el('div', 'dates')); l.appendChild(x); z.appendChild(l);
+    });
+    dessinerDates(cle);
+  }
+  function majTout(sansPeriodes) {
+    var visible = !!S.A.data;
+    $('b-periodes').hidden = !visible; $('b-frise').hidden = !visible; $('b-valider').hidden = !visible;
+    $('z-prop').hidden = !visible || !S.B.data; $('b-b').hidden = !modB();
+    if (!visible) { $('ident').textContent = ''; return; }
+    ['A', 'B'].forEach(function (c) { if (c === 'A' || modB()) { if (sansPeriodes) dessinerDates(c); else dessinerPeriodes(c); } });
+    var eA = etat('A'), eB = etat('B'); $('erreur').textContent = eA.err; $('erreur-b').textContent = eB ? eB.err : '';
+    $('valider').disabled = !!eA.err || (eB && !!eB.err);
+    dessinerFrise(eA, eB);
+  }
+
+  // Reliquat d'un agent : vert gras si +, noir gras si 0, rouge gras si − (jamais additionné avec celui de l'autre)
+  function spanReliquat(nom, n) {
+    var sp = el('span', null, (nom ? nom + ' ' : '') + (n > 0 ? '+' + n + ' j' : n < 0 ? '−' + (-n) + ' j' : '0 j'));
+    sp.style.fontWeight = '800'; sp.style.color = n > 0 ? '#15803D' : n < 0 ? '#DC2626' : '#111'; sp.title = n > 0 ? n + ' j de travail en plus (congé écourté) : reliquat à récupérer' : n < 0 ? (-n) + ' j de repos en plus (congé prolongé)' : 'aucun reliquat'; return sp;
+  }
+  function sgn(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n) + ' j'; }
+  // items : [[nom, reliquat concédé, solde avant]] ; le solde après = solde avant + reliquat concédé (couleur selon son signe)
+  function ligneReliquat(prefixe, items) {
+    var d = el('div', 'l'); d.appendChild(document.createTextNode(prefixe));
+    items.forEach(function (x, i) {
+      if (i) d.appendChild(document.createTextNode(' · ')); d.appendChild(spanReliquat(x[0], x[1]));
+      if (x[2]) { var ap = x[2] + x[1], sp = el('span', null, ' (solde ' + sgn(x[2]) + ' → ' + sgn(ap) + ')'); sp.style.cssText = 'font-weight:700;color:' + (ap > 0 ? '#15803D' : ap < 0 ? '#DC2626' : '#111'); d.appendChild(sp); }
+    });
+    return d;
+  }
+
+  // ---------- Frise ----------
+  function ligne(libelle, g, i0, n, extra) {
+    var l = el('div', 'ligne'); l.appendChild(el('div', 'etiq', libelle)); l.lastChild.title = libelle; var j = el('div', 'jours');
+    for (var i = i0; i < i0 + n; i += 1) { var c = g.charAt(i), b = document.createElement('i'); b.className = (c === 'T' || c === 'R' ? c : 'x') + (extra && extra(i) ? ' ' + extra(i) : ''); j.appendChild(b); }
+    l.appendChild(j); return l;
+  }
+  function dessinerFrise(eA, eB) {
+    var z = $('frise'), A = S.A.data, P = S.B.data; z.textContent = '';
+    var F = A.debut, n = Number($('vue').value);
+    var i0 = Math.max(0, Simulation.diff(F, Simulation.addDays($('debut').value || A.aujourdhui, -14)));
+    n = Math.min(n, A.grille.length - i0); z.style.setProperty('--w', n > 250 ? '3px' : n > 120 ? '5px' : '9px');
+    var auj = Simulation.diff(F, A.aujourdhui), jAuj = function (i) { return i === auj ? 'auj' : ''; };
+    var lm = el('div', 'ligne mois'); lm.appendChild(el('div', 'etiq', '')); var jm = el('div', 'jours'); var i = i0;
+    while (i < i0 + n) { var d = Simulation.addDays(F, i), jr = Number(d.slice(8, 10)); var w = Math.min(i0 + n - i, new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate() - jr + 1);
+      var sp = el('span', null, w < 5 ? '' : MOIS[Number(d.slice(5, 7)) - 1] + (d.slice(5, 7) === '01' || i === i0 ? ' ' + d.slice(0, 4) : '')); sp.style.width = 'calc(var(--w) * ' + w + ')'; jm.appendChild(sp); i += w; }
+    lm.appendChild(jm); z.appendChild(lm);
+    var apresA = eA.err || !eA.m ? -1 : Simulation.diff(F, $('debut').value);
+    var pre = function (lim) { return function (k) { return (jAuj(k) + (k < lim ? ' pre' : '')).trim(); }; };
+    // Ordre : les plannings ACTUELS l'un sous l'autre, puis les NOUVEAUX l'un sous l'autre (plus lisible pour comparer)
+    z.appendChild(ligne(A.nom + ' · actuel', A.grille, i0, n, jAuj));
+    if (P) z.appendChild(ligne(P.nom + ' · actuel', P.grille, i0, n, jAuj));
+    var gB = P ? (eB && !eB.err ? eB.mod : P.grille) : null, apresB = P && eB && !eB.err ? Simulation.diff(F, $('debut-b').value) : -1;
+    var depuis = P ? Math.max(0, Simulation.diff(F, evalDepuis && evalDepuis > $('debut').value ? evalDepuis : $('debut').value)) : 0; // à partir de la date choisie (ou de celle de la proposition retenue)
+    function ligneVis(libelle, g1, g2, deb) {
+      var c = Simulation.conflits(g1, g2, F, opts(), deb), lc = el('div', 'ligne'); lc.appendChild(el('div', 'etiq', libelle)); var jc = el('div', 'jours');
+      for (var k = i0; k < i0 + n; k += 1) { var mk = c.marques.charAt(k), b = document.createElement('i'); b.className = k < deb ? 'x pre' : (mk === 'C' || mk === 'V' || mk === 't' ? mk : 'o'); jc.appendChild(b); }
+      lc.appendChild(jc); return { ligne: lc, c: c };
+    }
+    if (P) z.appendChild(ligneVis('Vis-à-vis actuel', A.grille, P.grille, depuis).ligne);
+    z.appendChild(ligne(A.nom + ' · simulé', eA.mod, i0, n, pre(apresA)));
+    if (P) z.appendChild(ligne(P.nom + ' · ' + (eB ? 'simulé' : 'inchangé'), gB, i0, n, pre(apresB)));
+    var bilan = $('bilan'); bilan.textContent = ''; bilan.className = 'bilan';
+    var leg = [['var(--c-T)', 'Travail'], ['var(--c-R)', 'Repos']];
+    if (P) {
+      var vis = ligneVis('Vis-à-vis simulé', eA.mod, gB, depuis), c = vis.c; z.appendChild(vis.ligne);
+      leg = leg.concat([['#E11D48', 'Les deux travaillent (en trop)'], ['#7C3AED', 'Les deux en repos (trou)'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis']]);
+      var plages = c.plages.filter(function (p) { return !p.tolere && p.au >= Simulation.addDays(F, depuis); });
+      if (eA.err || (eB && eB.err)) bilan.textContent = '';
+      else if (!plages.length) { bilan.className = 'bilan ok'; bilan.textContent = '✔ Vis-à-vis respecté avec ' + P.nom + ' sur toute la période affichée.'; }
+      else {
+        bilan.className = 'bilan ko'; bilan.appendChild(el('div', null, '✖ ' + c.jours + ' jour(s) en conflit avec ' + P.nom + ' :'));
+        var ul = el('ul'); plages.slice(0, 8).forEach(function (p) { ul.appendChild(el('li', null, (p.type === 'trou' ? 'Trou (les deux en repos)' : 'Chevauchement (les deux travaillent)') + ' du ' + fr(p.du) + ' au ' + fr(p.au) + ' — ' + p.jours + ' j')); });
+        bilan.appendChild(ul);
+      }
+    }
+    var items = [];
+    if (eA.m && !eA.err) items.push([A.nom, Simulation.reliquat(A.grille, eA.mod, A.debut, eA.m), A.solde || 0]);
+    if (P && eB && eB.m && !eB.err) items.push([P.nom, Simulation.reliquat(P.grille, eB.mod, P.debut, eB.m), P.solde || 0]);
+    if (items.length) { var rq = ligneReliquat('Reliquat concédé pendant la transition : ', items); rq.style.marginTop = '6px'; bilan.appendChild(rq); var ex = el('div', null, '+ : congé écourté ou jours travaillés en plus (à récupérer) · − : congé prolongé (jours de repos en plus)'); ex.style.cssText = 'font-weight:400;color:#6B7280;font-size:12px'; bilan.appendChild(ex); }
+    var lg = $('legende'); lg.textContent = ''; leg.forEach(function (x) { var s = el('span'); var i2 = document.createElement('i'); i2.style.background = x[0]; s.appendChild(i2); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
+  }
+
+  // ---------- Propositions (pour les deux agents) ----------
+  function libModif(nom, m) {
+    return m ? nom + ' : ' + m.periodes.map(function (p) { return (p.type === 'T' ? 'travail ' : 'repos ') + p.jours + ' j'; }).join(' puis ') + ' à partir du ' + fr(m.debut) + ' (rotation habituelle dès le ' + fr(Simulation.dateReprise(m)) + ')' : nom + ' : inchangé';
+  }
+  function proposer() {
+    var A = S.A.data, B = S.B.data; if (!A || !B) return;
+    var debut = $('debut').value; if (!Simulation.estDate(debut)) return;
+    var o = opts(), pas = Number($('pas').value) || 7, pref = $('pref').value; $('props').textContent = '';
+    var base = Simulation.conflits(A.grille, B.grille, A.debut, o, Math.max(0, Simulation.diff(A.debut, debut)));
+    if (!base.jours) { $('prop-aide').textContent = '✔ ' + A.nom + ' et ' + B.nom + ' sont déjà en vis-à-vis à partir du ' + fr(debut) + ' (avec ces tolérances) : aucune modification n\'est nécessaire.'; return; }
+    $('prop-aide').textContent = 'Calcul…';
+    setTimeout(function () {
+      var res = Simulation.proposerPaire({ offA: A.grille, offB: B.grille, debutF: A.debut, rotA: A.rotation, rotB: B.rotation, debut: debut, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: pas, alignerReleve: pas > 1, maxTransition: 60, preference: pref, maxTotal: Number($('maxt').value) || 28, soldeA: A.solde || 0, soldeB: B.solde || 0 });
+      var z = $('props'); z.textContent = '';
+      $('prop-aide').textContent = !res.length ? 'Aucune combinaison avec ces limites : essayez une transition maximale plus longue, « Reliquat accepté : indifférent » ou « Au jour près ».' : (!res[0].stable && pas > 1 ? 'Pas de vis-à-vis parfait en ajustant par semaine (les relèves ne sont pas décalées d\'un nombre entier de semaines) : voici les plus proches. Essayez « Au jour près » ou augmentez les tolérances.' : '');
+      res.forEach(function (r) {
+        var d = el('div', 'prop' + (r.stable ? ' parfait' : ''));
+        var t = el('div');
+        t.appendChild(el('div', 'l', libModif(A.nom, r.A))); t.appendChild(el('div', 'l', libModif(B.nom, r.B)));
+        var info = r.stable ? '✔ Vis-à-vis établi ' + (r.jusquEtabli <= 0 ? 'dès le ' + fr(r.etabliLe) + ' (immédiat)' : 'dès le ' + fr(r.etabliLe) + ' (dans ' + r.jusquEtabli + ' j)')
+          : '✖ ' + r.conflits + ' j en conflit (aucun en tolérant ' + r.tolChevMin + ' j de chevauchement et ' + r.tolTrouMin + ' j de trou)';
+        var rq = ligneReliquat('Reliquat concédé : ', [[A.nom, r.reliquatA, A.solde || 0], [B.nom, r.reliquatB, B.solde || 0]]);
+        t.appendChild(rq);
+        t.appendChild(el('small', null, info + ' · ' + r.transition + ' jour(s) de transition · ' + r.agents + ' agent(s) modifié(s)'));
+        d.appendChild(t);
+        var b = el('button', 'btn-s', 'Utiliser'); b.type = 'button'; b.addEventListener('click', function () { utiliser(r); }); d.appendChild(b); z.appendChild(d);
+      });
+    }, 20);
+  }
+  function utiliser(r) {
+    function appliquerA(cle, m) { S[cle].periodes = m ? m.periodes.map(function (p) { return { type: p.type, jours: p.jours }; }) : []; if (m) S[cle].debut.value = m.debut; }
+    evalDepuis = ''; $('modb').checked = !!r.B; appliquerA('A', r.A); if (r.B) appliquerA('B', r.B);
+    majTout(); setTimeout(function () { window.scrollTo({ top: $('b-frise').offsetTop - 70, behavior: 'smooth' }); }, 50);
+  }
+
+  // ---------- Valider / annuler ----------
+  function valider() {
+    var eA = etat('A'), eB = etat('B'); if (!eA || eA.err || (eB && eB.err)) return;
+    var lot = eA.m ? [{ uid: $('agent').value, debut: eA.m.debut, periodes: eA.m.periodes, reprise: eA.m.reprise }] : [];
+    if (eB && eB.m) lot.push({ uid: $('partenaire').value, debut: eB.m.debut, periodes: eB.m.periodes, reprise: eB.m.reprise });
+    var btn = $('valider'); btn.disabled = true;
+    Api.call('simu_valider', { lot: lot, motif: $('motif').value, partenaire: $('partenaire').value })
+      .then(function (r) {
+        var s = $('succes'); s.textContent = ''; s.hidden = false;
+        s.appendChild(el('b', null, (r.numeros.length > 1 ? 'Demandes ' + r.numeros.join(' et ') + ' enregistrées' : 'Demande ' + r.numeros[0] + ' enregistrée') + ' (en attente).'));
+        s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Aucun e-mail n\'a pu être envoyé. ')));
+        r.numeros.forEach(function (num) { var a = el('a', null, 'Document ' + num + ' à imprimer et signer →'); a.href = 'demande.html?n=' + encodeURIComponent(num); a.style.cssText = 'font-weight:700;color:var(--orange-main);margin-right:12px'; s.appendChild(a); });
+        annuler(true); window.scrollTo({ top: 0, behavior: 'smooth' }); listeDemandes();
+      }).catch(function (err) { toast(err.message, true); btn.disabled = false; });
+  }
+  function annuler(silencieux) {
+    $('agent').value = ''; $('partenaire').value = ''; S.A.data = null; S.A.periodes = []; reinitB(); $('props').textContent = ''; $('motif').value = 'Raison de service';
+    $('z-modb').hidden = true; $('z-tol').hidden = $('z-tol2').hidden = true; majTout();
+    if (silencieux !== true) toast('Simulation annulée : rien n\'a été enregistré.');
+  }
+
+  // ---------- Demandes ----------
+  var LIB = { en_attente: 'En attente', approuvee: 'Approuvée', refusee: 'Refusée' };
+  function dialogue(titre, approuver, numero) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
+    f.appendChild(el('h2', null, titre)); var w = el('div', 'champ'); w.appendChild(el('label', null, 'Commentaire (facultatif)'));
+    var i = document.createElement('input'); i.type = 'text'; i.maxLength = 200; i.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit'; w.appendChild(i); f.appendChild(w);
+    var msg = el('div', 'msg'); f.appendChild(msg);
+    var bt = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', approuver ? 'Approuver' : 'Refuser'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); ok.disabled = true;
+      Api.call('simu_decider', { numero: numero, decision: approuver ? 'approuvee' : 'refusee', commentaire: i.value }).then(function () { dlg.close(); toast(approuver ? 'Demande approuvée : le planning officiel est mis à jour.' : 'Demande refusée.'); listeDemandes(); })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
+  function listeDemandes() {
+    return Api.call('simu_liste').then(function (r) {
+      var t = $('t-dem'); t.textContent = '';
+      var h = el('thead'), hr = el('tr'); ['N°', 'Agent', 'À partir du', 'Motif', 'Émise par', 'Statut', ''].forEach(function (x) { hr.appendChild(el('th', null, x)); }); h.appendChild(hr); t.appendChild(h);
+      var b = el('tbody'); var att = 0;
+      if (!r.demandes.length) { var tr0 = el('tr'); var td0 = el('td', null, 'Aucune demande pour le moment.'); td0.colSpan = 7; tr0.appendChild(td0); b.appendChild(tr0); }
+      r.demandes.forEach(function (d) {
+        if (d.statut === 'en_attente') att += 1;
+        var tr = el('tr'); tr.appendChild(el('td', null, d.numero)); var a = el('td'); a.appendChild(el('b', null, d.agent)); a.appendChild(el('div', 'aide', d.service)); tr.appendChild(a);
+        tr.appendChild(el('td', null, fr(d.debut))); tr.appendChild(el('td', null, d.motif)); tr.appendChild(el('td', null, d.emetteur));
+        var s = el('td'); s.appendChild(el('span', 'st ' + d.statut, LIB[d.statut] || d.statut)); if (d.decide_par) s.appendChild(el('div', 'aide', 'par ' + d.decide_par + (d.commentaire ? ' — ' + d.commentaire : ''))); tr.appendChild(s);
+        var ac = el('td'); var lien = el('a', null, 'Document'); lien.href = 'demande.html?n=' + encodeURIComponent(d.numero); lien.style.cssText = 'font-weight:700;color:var(--orange-main);margin-right:10px'; ac.appendChild(lien);
+        if (d.peut_decider) {
+          var ap = el('button', 'btn-s', 'Approuver'); ap.type = 'button'; ap.addEventListener('click', function () { dialogue('Approuver la demande ' + d.numero, true, d.numero); });
+          var re = el('button', 'btn-s', 'Refuser'); re.type = 'button'; re.style.marginLeft = '6px'; re.addEventListener('click', function () { dialogue('Refuser la demande ' + d.numero, false, d.numero); });
+          ac.appendChild(ap); ac.appendChild(re);
+        }
+        tr.appendChild(ac); b.appendChild(tr);
+      });
+      t.appendChild(b); $('nb-att').textContent = att ? '(' + att + ')' : '';
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  function onglet(d) { $('p-simu').hidden = d; $('p-dem').hidden = !d; $('o-simu').classList.toggle('actif', !d); $('o-dem').classList.toggle('actif', d); }
+
+  $('o-simu').addEventListener('click', function () { onglet(false); }); $('o-dem').addEventListener('click', function () { onglet(true); });
+  $('agent').addEventListener('change', agentChoisi); $('partenaire').addEventListener('change', partenaireChoisi);
+  $('debut').addEventListener('change', function () { evalDepuis = ''; majTout(); }); $('debut-b').addEventListener('change', function () { majTout(); });
+  $('vue').addEventListener('change', function () { majTout(true); }); $('tol-c').addEventListener('input', function () { majTout(true); }); $('tol-v').addEventListener('input', function () { majTout(true); });
+  $('modb').addEventListener('change', function () { majTout(); });
+  ['A', 'B'].forEach(function (c) { $(DOM[c].ajout).addEventListener('click', function () { var p = S[c].periodes, l = p[p.length - 1]; p.push({ type: l ? Simulation.autre(l.type) : 'R', jours: 14 }); majTout(); }); });
+  $('imprimer').addEventListener('click', function () {
+    var A = S.A.data; $('s-imp-simu').textContent = (A ? $('ident').textContent + ' ' : '') + (S.B.data ? 'Vis-à-vis avec ' + S.B.data.nom + '. ' : '') + 'Simulation du ' + new Date().toLocaleDateString('fr-FR') + ' — rien n\'est enregistré.' + (Api.demo ? ' (données fictives)' : '');
+    document.body.classList.add('imp-simu'); window.print(); setTimeout(function () { document.body.classList.remove('imp-simu'); }, 500);
+  });
+  $('proposer').addEventListener('click', proposer); $('valider').addEventListener('click', valider); $('annuler').addEventListener('click', function () { annuler(); });
+
+  charger().then(listeDemandes).catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    if (e.code === 'DROITS') { location.replace('portail.html'); return; }
+    $('ident').textContent = '⚠ Impossible de charger la liste des agents : ' + e.message + (/inconnue/i.test(e.message) ? ' (la passerelle n\'est pas encore à jour : attendez la fin du déploiement « Déployer la passerelle »)' : '');
+    toast(e.message, true);
+  });
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
