@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-22-27",
+    "date": "2026-10-22",
+    "title": "Version 5.19.1 — Documents administratifs : impression bien ajustée",
+    "changes": [
+      "Documents administratifs : l'impression est imposée en A4 portrait (plus de paysage mémorisé par le navigateur), avec marges internes de 14 mm ; la feuille ne déborde plus à droite.",
+      "L'en-tête et le pied de page du navigateur (date, titre de la page, adresse) n'apparaissent plus sur les PDF."
+    ]
+  },
+  {
     "id": "2026-10-22-26",
     "date": "2026-10-22",
     "title": "Version 5.19.0 — Documents administratifs : 3 nouveaux modèles et recherche BDDORGA",
