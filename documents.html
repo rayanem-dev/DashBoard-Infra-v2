@@ -55,6 +55,7 @@
 <main class="doc-page">
   <aside class="dp-bloc dp-liste"><input type="search" id="q" placeholder="Rechercher un document…" aria-label="Rechercher un document"><div id="liste"></div></aside>
   <section class="dp-bloc dp-form" id="form"><div class="dp-vide">Choisissez un document dans la liste : le formulaire se remplit avec vos informations et l'aperçu se met à jour à chaque frappe.</div></section>
+  <datalist id="dl-personnes"></datalist>
   <section class="dp-apercu dp-impr"><div id="apercu"></div></section>
 </main>
 <script src="js/documents-modeles.js"></script>
@@ -63,7 +64,26 @@
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
   document.getElementById('css-doc').textContent = Documents.css;
-  var user = {}, courant = null, valeurs = {}, brouillons = {};
+  var user = {}, courant = null, valeurs = {}, brouillons = {}, personnes = [];
+  // Personnes de BDDORGA (annuaire du portail) : proposées dans les champs « nom », elles remplissent aussi matricule, fonction, service…
+  function chargerPersonnes() {
+    if (!window.Api) return;
+    Api.call('annuaire_personnes').then(function (r) {
+      personnes = (r.personnes || []).filter(function (p) { return p.nom; });
+      var dl = $('dl-personnes'); dl.textContent = '';
+      personnes.forEach(function (p) { var o = el('option'); o.value = p.nom; o.label = [p.matricule, p.fonction].filter(Boolean).join(' · '); dl.appendChild(o); });
+    }).catch(function () { /* sans annuaire, la saisie libre reste possible */ });
+  }
+  function trouverPersonne(txt) {
+    var q = norm(txt); if (!q) return null;
+    var exact = personnes.filter(function (p) { return norm(p.nom) === q; }); if (exact.length) return exact[0];
+    var mots = q.split(' ').filter(Boolean), c = personnes.filter(function (p) { var n = norm(p.nom); return mots.every(function (m) { return n.indexOf(m) !== -1; }); });
+    return c.length === 1 ? c[0] : null;
+  }
+  /** Reporte la personne choisie dans les champs liés (c.pers : propriété de la personne → clé(s) du champ du document). */
+  function appliquerPersonne(pers, cible, p) {
+    Object.keys(pers).forEach(function (prop) { [].concat(pers[prop]).forEach(function (k) { cible[k] = p[prop] || ''; }); });
+  }
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
@@ -85,9 +105,15 @@
     if (c.t === 'textarea') { i = el('textarea'); }
     else if (c.t === 'select') { i = el('select'); (c.opts || []).forEach(function (o) { var op = el('option', null, o || '—'); op.value = o; i.appendChild(op); }); }
     else if (c.t === 'repeat') return repeat(c);
-    else { i = el('input'); i.type = c.t === 'date' ? 'date' : c.t === 'number' ? 'number' : 'text'; if (c.max) i.max = c.max; if (c.t === 'number') i.min = 0; }
+    else { i = el('input'); i.type = c.t === 'date' ? 'date' : c.t === 'number' ? 'number' : 'text'; if (c.max) i.max = c.max; if (c.t === 'number') i.min = 0; if (c.pers) { i.setAttribute('list', 'dl-personnes'); i.placeholder = 'Tapez pour chercher dans BDDORGA'; i.autocomplete = 'off'; } }
     i.value = valeurs[c.k] == null ? '' : valeurs[c.k];
     i.oninput = i.onchange = function () { valeurs[c.k] = i.value; apercu(); };
+    if (c.pers) i.addEventListener('change', function () {
+      var p = trouverPersonne(i.value); if (!p) return;
+      i.value = p.nom; valeurs[c.k] = p.nom; appliquerPersonne(c.pers, valeurs, p);
+      Object.keys(c.pers).forEach(function (prop) { [].concat(c.pers[prop]).forEach(function (k) { var f = $('f-' + k); if (f) f.value = valeurs[k]; }); });
+      apercu();
+    });
     return i;
   }
 
@@ -100,8 +126,10 @@
         c.colonnes.forEach(function (col) {
           var i;
           if (col.t === 'select') { i = el('select'); col.opts.forEach(function (o) { var op = el('option', null, o || col.l + ' : —'); op.value = o; i.appendChild(op); }); }
-          else { i = el('input'); i.type = col.t === 'date' ? 'date' : col.t === 'number' ? 'number' : 'text'; i.placeholder = col.l; }
-          i.value = ligne[col.k] || ''; i.setAttribute('aria-label', col.l); i.oninput = i.onchange = function () { ligne[col.k] = i.value; apercu(); }; g.appendChild(i);
+          else { i = el('input'); i.type = col.t === 'date' ? 'date' : col.t === 'number' ? 'number' : 'text'; i.placeholder = col.pers ? col.l + ' (BDDORGA)' : col.l; if (col.pers) { i.setAttribute('list', 'dl-personnes'); i.autocomplete = 'off'; } }
+          i.value = ligne[col.k] || ''; i.setAttribute('aria-label', col.l); i.oninput = i.onchange = function () { ligne[col.k] = i.value; apercu(); };
+          if (col.pers) i.addEventListener('change', function () { var p = trouverPersonne(i.value); if (!p) return; ligne[col.k] = p.nom; appliquerPersonne(col.pers, ligne, p); dessiner(); apercu(); });
+          g.appendChild(i);
         });
         var r = el('button', 'btn-s', '✕ Retirer'); r.type = 'button'; r.onclick = function () { valeurs[c.k].splice(n, 1); dessiner(); apercu(); }; g.appendChild(r);
         corps.appendChild(g);
@@ -132,6 +160,7 @@
   var voulu = (location.hash || '').slice(1);
   window.addEventListener('hashchange', function () { voulu = (location.hash || '').slice(1); ouvrirVoulu(); });
   function ouvrirVoulu() { if (voulu && Documents.trouver(voulu)) ouvrir(voulu); }
+  chargerPersonnes();
   if (window.Api) Api.call('menu').then(function (r) { user = r.user || {}; }).catch(function () { /* garde.js gère la session */ }).then(ouvrirVoulu); else ouvrirVoulu();
 })();
 </script>

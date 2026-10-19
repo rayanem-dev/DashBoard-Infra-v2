@@ -10,7 +10,8 @@
     { id: 'carriere', titre: 'Carrière & mutations', emoji: '🧭' },
     { id: 'primes', titre: 'Indemnités & primes', emoji: '🏷️' },
     { id: 'discipline', titre: 'Discipline', emoji: '⚖️' },
-    { id: 'divers', titre: 'Attestations & divers', emoji: '📄' }
+    { id: 'divers', titre: 'Attestations & divers', emoji: '📄' },
+    { id: 'autres', titre: 'Autres modèles (hors dossier « Imprimés »)', emoji: '📎' }
   ];
 
   function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -22,7 +23,7 @@
   /* ---------- champs communs (clé → définition) ---------- */
   var L = {
     date: { k: 'date', l: 'Date du document', t: 'date', def: 'aujourdhui' },
-    agent: { k: 'agent', l: 'Nom et prénom', def: 'user.nom' },
+    agent: { k: 'agent', l: 'Nom et prénom', def: 'user.nom', pers: { matricule: 'matricule', fonction: 'fonction', service: ['service', 'structure'] } },
     matricule: { k: 'matricule', l: 'Matricule', def: 'user.matricule' },
     fonction: { k: 'fonction', l: 'Fonction', def: 'user.fonction' },
     echelle: { k: 'echelle', l: 'Échelle' },
@@ -68,7 +69,7 @@
   function modele(id, categorie, titreM, desc, champs, entetes, html) { M.push({ id: id, categorie: categorie, titre: titreM, description: desc, champs: champs, entete: entetes, html: html }); }
   var AVIS_FD = function (qui, v) { return '<div class="avis"><b>' + E(qui) + '</b><br>' + CASES(['Favorable', 'Défavorable']) + '<br><span class="pt-s">RNS, le : ' + pts(10) + '</span></div>'; };
 
-  modele('odm', 'missions', 'Ordre de mission', 'Autorise un agent à se déplacer (objet, dates, trajet, moyen de transport).',
+  modele('odm', 'autres', 'Ordre de mission', 'Autorise un agent à se déplacer (objet, dates, trajet, moyen de transport).',
     [{ k: 'ref', l: 'Référence (N° …/SH/E&P/PROD/RNS-INFRA)', def: 'SH/E&P/PROD/RNS-INFRA/{annee}' }, { k: 'numero', l: 'Numéro d\'ordre' }, L.date, L.agent, L.fonction,
       { k: 'objet', l: 'Objet de la mission', t: 'textarea' }, { k: 'depart', l: 'Date de départ', t: 'date' }, { k: 'retour', l: 'Date de retour', t: 'date' },
       { k: 'trajet', l: 'Trajet à effectuer', def: 'RNS - ALGER - RNS' }, { k: 'accompagne', l: 'Accompagné de', def: '/' },
@@ -122,7 +123,7 @@
         P('Réf. CCE : articles 106 à 113. Rappel art. 113 : « le travailleur bénéficie des frais de restauration dès lors qu\'il se trouve éloigné de sa résidence ou de son lieu de travail habituel pendant les périodes comprises entre 11 h et 14 h, 18 h et 21 h. Il bénéficie des frais d\'hébergement lorsqu\'il se trouve éloigné de sa résidence habituelle entre 23 h et 6 h du matin. »', 'note');
     });
 
-  modele('hotel', 'missions', 'Demande de prise en charge hôtel', 'Demande de prise en charge d\'hébergement pendant une mission.',
+  modele('hotel', 'autres', 'Demande de prise en charge hôtel', 'Demande de prise en charge d\'hébergement pendant une mission.',
     [L.date, { k: 'ref', l: 'Référence', def: 'SH/E&P/PROD/RNS-INFRA/{annee}' }, { k: 'ville', l: 'Hôtel à (ville)', def: 'Alger' }, { k: 'odm_ref', l: 'Réf. ODM' }, L.agent, L.fonction, L.matricule,
       { k: 'odm', l: 'N° Ordre de mission' }, { k: 'du', l: 'Du', t: 'date' }, { k: 'au', l: 'Au', t: 'date' }, { k: 'nuitees', l: 'Nombre de nuitées (calculé si vide)', t: 'number' }, { k: 'lieu', l: 'Lieu de mission' },
       { k: 'objet', l: 'Objet précis de la mission', t: 'textarea' }, { k: 'imputation', l: 'Imputation' }], 'dr',
@@ -134,16 +135,16 @@
           ['Nombre de nuitées', n === '' ? pts(4) : '<span class="val">' + E(n) + '</span>'], ['Lieu de mission', V(v, 'lieu')], ['Objet précis de la mission', T(v, 'objet', 3)], ['Imputation', V(v, 'imputation', 10)]]) + signature('Le Directeur Régional', v);
     });
 
-  modele('reservation', 'missions', 'Demande de réservation (vol)', 'Demande de réservation d\'une place sur un vol.',
+  modele('reservation', 'autres', 'Demande de réservation (vol)', 'Demande de réservation d\'une place sur un vol.',
     [L.date, { k: 'ref', l: 'Référence', def: 'SH/E&P/PROD/RNS-INFRA/{annee}' }, { k: 'sens', l: 'Vol', t: 'select', opts: ['Aller', 'Retour'] }, { k: 'trajet', l: 'Trajet', def: 'RNS → ' },
-      { k: 'jour', l: 'Date du vol', t: 'date' }, { k: 'passager', l: 'Au profit de (nom et prénom)' }, { k: 'places', l: 'Nombre de places', t: 'number', def: '1' }, { k: 'signataire', l: 'Signataire', def: 'P/Le Chef de Division Infrastructures' }], 'dr',
+      { k: 'jour', l: 'Date du vol', t: 'date' }, { k: 'passager', l: 'Au profit de (nom et prénom)', pers: {} }, { k: 'places', l: 'Nombre de places', t: 'number', def: '1' }, { k: 'signataire', l: 'Signataire', def: 'P/Le Chef de Division Infrastructures' }], 'dr',
     function (v) {
       return '<div class="deux"><div><b>Division Infrastructure</b></div><div class="droite">Rhourde Nouss : ' + V(v, 'date', 10) + '</div></div>' + P('N° ' + V(v, 'ref', 14)) + P('<b>Objet :</b> Demande de réservation') +
         P('Nous vous demandons de bien vouloir nous signifier votre accord pour réserver (' + V(v, 'places', 2) + ') place(s) sur le vol <b>' + E((v.sens || 'retour').toLowerCase()) + '</b> suivant :') +
         P('<b>' + (v.trajet ? E(v.trajet) : pts(14)) + '</b> le ' + V(v, 'jour', 10) + ', au profit de Monsieur / Madame :', 'centre') + P('<b>' + (v.passager ? E(v.passager) : pts(24)) + '</b>', 'centre') + P('Meilleures salutations.') + signature(v.signataire || '', v);
     });
 
-  modele('bordereau', 'divers', 'Bordereau d\'envoi', 'Transmission de pièces avec accusé de réception.',
+  modele('bordereau', 'autres', 'Bordereau d\'envoi', 'Transmission de pièces avec accusé de réception.',
     [L.date, { k: 'destinataire', l: 'Destinataire' }, { k: 'lignes', l: 'Désignations', t: 'repeat', colonnes: [{ k: 'des', l: 'Désignation' }, { k: 'nbr', l: 'Nbr', t: 'number' }, { k: 'obs', l: 'Observations' }] }], 'dr',
     function (v) {
       var l = (v.lignes || []).map(function (x) { return [E(x.des), E(x.nbr), E(x.obs)]; }); while (l.length < 5) l.push(['', '', '']);
@@ -151,8 +152,8 @@
         visas(['Reçu le', 'Signature'], 60) + P('Prière nous retourner le deuxième exemplaire.', 'note');
     });
 
-  modele('convocation', 'divers', 'Convocation visite médicale', 'Convoque un ou plusieurs agents à la visite médicale périodique.',
-    [L.date, { k: 'jour', l: 'Date de la visite', t: 'date' }, { k: 'lieu', l: 'Lieu', def: 'CMT - Base de vie Centrale' }, { k: 'personnes', l: 'Agents convoqués', t: 'repeat', colonnes: [{ k: 'nom', l: 'Nom et prénom' }, { k: 'mle', l: 'Matricule' }, { k: 'fonction', l: 'Fonction' }] }], 'dr',
+  modele('convocation', 'autres', 'Convocation visite médicale', 'Convoque un ou plusieurs agents à la visite médicale périodique.',
+    [L.date, { k: 'jour', l: 'Date de la visite', t: 'date' }, { k: 'lieu', l: 'Lieu', def: 'CMT - Base de vie Centrale' }, { k: 'personnes', l: 'Agents convoqués', t: 'repeat', colonnes: [{ k: 'nom', l: 'Nom et prénom', pers: { matricule: 'mle', fonction: 'fonction' } }, { k: 'mle', l: 'Matricule' }, { k: 'fonction', l: 'Fonction' }] }], 'dr',
     function (v) {
       var l = (v.personnes || []).map(function (x) { return [E(x.nom), E(x.mle), E(x.fonction)]; }); while (l.length < 3) l.push(['', '', '']);
       return lieuDate(v) + titre('CONVOCATION') + GRILLE(['Nom et prénom', 'Matricule', 'Fonction'], l) + P('Vous êtes prié(e) de vous présenter au <b>' + (v.lieu ? E(v.lieu) : pts(14)) + '</b> pour subir la visite médicale périodique le : <b>' + V(v, 'jour', 10) + '</b>.') +
@@ -233,9 +234,9 @@
       CADRE('Réservé à la Gestion du Personnel', P('Motif de la demande (cf. Convention art. 256) : ' + CASES(['1/ Convenance personnelle', '2/ Motif de droit']) + ' ' + (v.precision ? E(v.precision) : '') + '<br>Droits à congés (CR + CP) : ' + pts(10) + '<br>Prêts contractés (nature et solde) : ' + pts(16))) +
       CADRE('Réservé au Planning Personnel', lignesVides(2)) + visas(['Avis du responsable hiérarchique', 'Avis du Chef de Division'], 70) + visas(['Avis de la Commission du Personnel', 'Avis du Chef Division Personnel', 'Décision du Directeur Régional'], 80); });
 
-  modele('interim', 'carriere', 'Note d\'intérim', 'Désigne la personne qui assure l\'intérim d\'un poste pendant une absence.',
-    [{ k: 'numero', l: 'Numéro (…/année)' }, L.date, { k: 'absent', l: 'Durant l\'absence de Monsieur', def: 'user.nom' }, { k: 'absent_fonction', l: 'Fonction', def: 'user.fonction' }, { k: 'absent_structure', l: 'Structure', def: 'Infrastructure' },
-      { k: 'interim', l: 'Monsieur (intérimaire)' }, { k: 'interim_fonction', l: 'Fonction de l\'intérimaire' }, { k: 'interim_structure', l: 'Structure de l\'intérimaire', def: 'Infrastructure' }, { k: 'poste', l: 'Poste dont l\'intérim est assuré', def: 'CHEF DIVISION INFRASTRUCTURE' },
+  modele('interim', 'autres', 'Note d\'intérim', 'Désigne la personne qui assure l\'intérim d\'un poste pendant une absence.',
+    [{ k: 'numero', l: 'Numéro (…/année)' }, L.date, { k: 'absent', l: 'Durant l\'absence de Monsieur', def: 'user.nom', pers: { fonction: 'absent_fonction' } }, { k: 'absent_fonction', l: 'Fonction', def: 'user.fonction' }, { k: 'absent_structure', l: 'Structure', def: 'Infrastructure' },
+      { k: 'interim', l: 'Monsieur (intérimaire)', pers: { fonction: 'interim_fonction' } }, { k: 'interim_fonction', l: 'Fonction de l\'intérimaire' }, { k: 'interim_structure', l: 'Structure de l\'intérimaire', def: 'Infrastructure' }, { k: 'poste', l: 'Poste dont l\'intérim est assuré', def: 'CHEF DIVISION INFRASTRUCTURE' },
       { k: 'code', l: 'Code fonction' }, { k: 'du', l: 'Du', t: 'date' }, { k: 'au', l: 'Au', t: 'date' }], 'dr',
     function (v) { return titre('NOTE D\'INTÉRIM') + P('N° : ' + V(v, 'numero', 8)) + P('Durant l\'absence de Monsieur : <b>' + (v.absent ? E(v.absent) : pts(14)) + '</b><br>Fonction : ' + V(v, 'absent_fonction') + '<br>Structure : ' + V(v, 'absent_structure')) +
       P('Monsieur : <b>' + (v.interim ? E(v.interim) : pts(14)) + '</b><br>Fonction : ' + V(v, 'interim_fonction') + '<br>Structure : ' + V(v, 'interim_structure')) +
@@ -262,8 +263,8 @@
       CADRE('Cadre réservé au Service Gestion', lignesVides(3) + '<div class="droite">Visa : ' + pts(10) + '</div>') + avisDirecteur(); });
 
   modele('sanction', 'discipline', 'Demande de sanction', 'Demande de sanction du 1er, 2e ou 3e degré (articles 86, 90, 96 et 97 du règlement intérieur).',
-    [L.date, { k: 'degre', l: 'Degré', t: 'select', opts: ['1er degré', '2e degré', '3e degré'] }, { k: 'cible', l: 'À l\'encontre de Monsieur (nom et prénom)' }, { k: 'mle', l: 'Matricule' }, { k: 'fonction_cible', l: 'Fonction' }, { k: 'affectation', l: 'Affectation (division)' },
-      { k: 'demandeur', l: 'Demandeur (nom)', def: 'user.nom' }, { k: 'fonction_dem', l: 'Fonction du demandeur', def: 'user.fonction' }, { k: 'sanction', l: 'Sanction demandée' }, { k: 'motif', l: 'Motif' }, { k: 'faits', l: 'A) Exposé détaillé des faits', t: 'textarea' },
+    [L.date, { k: 'degre', l: 'Degré', t: 'select', opts: ['1er degré', '2e degré', '3e degré'] }, { k: 'cible', l: 'À l\'encontre de Monsieur (nom et prénom)', pers: { matricule: 'mle', fonction: 'fonction_cible', service: 'affectation' } }, { k: 'mle', l: 'Matricule' }, { k: 'fonction_cible', l: 'Fonction' }, { k: 'affectation', l: 'Affectation (division)' },
+      { k: 'demandeur', l: 'Demandeur (nom)', def: 'user.nom', pers: { fonction: 'fonction_dem' } }, { k: 'fonction_dem', l: 'Fonction du demandeur', def: 'user.fonction' }, { k: 'sanction', l: 'Sanction demandée' }, { k: 'motif', l: 'Motif' }, { k: 'faits', l: 'A) Exposé détaillé des faits', t: 'textarea' },
       { k: 'rapports', l: 'B) Éventuels rapports', t: 'textarea' }, { k: 'temoins', l: 'C) Supérieurs hiérarchiques immédiats ou témoins entendus', t: 'textarea' }, { k: 'declarations', l: 'D) Déclarations ou comptes rendus', t: 'textarea' },
       { k: 'reponse', l: 'L\'intéressé(e)', t: 'select', opts: ['a répondu', 'n\'a pas répondu'] }, { k: 'date_notif', l: 'à la notification adressée le', t: 'date' }, { k: 'division_chef', l: 'Chef de Division' }], 'dr',
     function (v) { return titre('DEMANDE DE SANCTION DU ' + (v.degre || '1er / 2e / 3e degré').toUpperCase()) + '<div class="droite">RNS, le : ' + V(v, 'date', 10) + '</div>' + P('Monsieur le Directeur Régional,', 'droite') +
@@ -294,6 +295,54 @@
       P('Je soussigné(e), ' + V(v, 'agent') + ', né(e) le ' + V(v, 'naissance', 10) + ', travaillant comme ' + V(v, 'fonction') + ' à la Sonatrach, Direction Régionale de Rhourde Nouss, déclare sur l\'honneur que je me prends en charge pour arriver à mon domicile lors de mon départ en absence autorisée le ' + V(v, 'absence', 10) +
       ', à partir de mon lieu de travail (par route avec mes propres moyens), sans prétendre à des indemnités de route de ma part, et dégage l\'Entreprise de toute responsabilité en cas d\'incident.') + T(v, 'observations', 3) + P('Date et visa de l\'agent : ' + V(v, 'date', 10)) +
       P('Ce document doit être dûment signé par l\'agent et rendu à la Structure d\'affectation avant le départ de ce dernier.', 'note'); });
+
+  modele('changement-planning', 'carriere', 'Demande de modification de planning (formulaire)', 'Maintien, réaménagement ou résorption de reliquat : planning initial, modification demandée, avis. (La simulation du portail produit la même demande, déjà remplie.)',
+    [L.date, { k: 'type', l: 'Nature de la demande', t: 'select', opts: ['', 'Maintien', 'Réaménagement Planning', 'Résorption reliquat'] }, { k: 'regime', l: 'Régime', def: '4x4' }, L.agent, L.matricule, L.fonction, L.division,
+      { k: 'releve', l: 'Jour de relève' }, { k: 'destination', l: 'Destination' }, { k: 'presente', l: 'Demande présentée par (l\'agent / son responsable)' },
+      { k: 'initial', l: 'Planning initial', t: 'repeat', colonnes: [{ k: 'du', l: 'Du', t: 'date' }, { k: 'au', l: 'Au', t: 'date' }, { k: 'tr', l: 'T / R', t: 'select', opts: ['', 'T', 'R'] }] },
+      { k: 'modif', l: 'Modification demandée', t: 'repeat', colonnes: [{ k: 'du', l: 'Du', t: 'date' }, { k: 'au', l: 'Au', t: 'date' }, { k: 'tr', l: 'T / R', t: 'select', opts: ['', 'T', 'R'] }] },
+      { k: 'motif', l: 'Motif de la demande (avis du Chef de Service)', t: 'textarea' }], 'dr',
+    function (v) {
+      var n = Math.max((v.initial || []).length, (v.modif || []).length, 6), l = [];
+      for (var i = 0; i < n; i += 1) { var a = (v.initial || [])[i] || {}, b = (v.modif || [])[i] || {};
+        var plage = function (x) { return x.du || x.au ? E(frDate(x.du)) + ' → ' + E(frDate(x.au)) : ''; };
+        l.push([plage(a), E(a.tr || ''), E(b.tr || ''), plage(b)]); }
+      return '<div class="droite">RNS, le : ' + V(v, 'date', 10) + '</div>' + titre('DEMANDE DE MODIFICATION DE PLANNING', E(v.regime || '')) +
+        P('<b>' + CASES(['Maintien', 'Réaménagement Planning', 'Résorption reliquat']).replace(new RegExp('☐ ' + (v.type || '§'), 'g'), '☒ ' + (v.type || '')) + '</b>') +
+        KV([['Nom et prénoms', V(v, 'agent')], ['Matricule', V(v, 'matricule')], ['Fonction', V(v, 'fonction')], ['Division', V(v, 'division')], ['Jour de relève', V(v, 'releve')], ['Destination', V(v, 'destination')]]) +
+        P('Demande présentée par l\'agent / son responsable : ' + V(v, 'presente', 20)) +
+        '<table class="tgr serre"><thead><tr><th>Planning initial (semaines)</th><th>T/R</th><th>T/R</th><th>Modification demandée (semaines)</th></tr></thead><tbody>' + l.map(function (r) { return '<tr><td>' + r[0] + '</td><td class="c">' + r[1] + '</td><td class="c">' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('') + '</tbody></table>' +
+        P('<b>Avis du Chef de Service — motif de la demande :</b>') + T(v, 'motif', 2) +
+        CADRE('Cadre réservé au Service Gestion-Paie', P('Situation actuelle (sans modif) — Code 8 : ' + pts(6) + ' Code 7 : ' + pts(6) + '<br>Place disponible : ' + CASES(['OUI', 'NON']) + ' &nbsp; Relève : ' + pts(8) + '<br>Modif précédée par absences ? ' + pts(8) + ' &nbsp; Nbre de modif durant l\'exercice : ' + pts(4) + '<br>Reliquat : ' + pts(6) + ' &nbsp; Avis : ' + pts(10))) +
+        visas(['Avis du Chef Division ' + (v.division || ''), 'Décision du Chef Division Personnel'], 80); });
+
+  modele('prolongation-om', 'missions', 'Prolongation de mission (OM)', 'Demande au Directeur Régional de prolonger une mission en cours.',
+    [L.date, L.division, { k: 'om', l: 'OM n°' }, { k: 'om_date', l: 'du', t: 'date' }, { k: 'du', l: 'Prolongation du', t: 'date' }, { k: 'au', l: 'Au', t: 'date' }, { k: 'jours', l: 'Soit (jours, calculé si vide)', t: 'number' },
+      L.agent, L.fonction, { k: 'motif', l: 'Motif', t: 'textarea' }, { k: 'observations', l: 'Observations', t: 'textarea' }], 'dr',
+    function (v) {
+      var n = v.jours || (v.du && v.au && ecart(v.du, v.au) != null ? ecart(v.du, v.au) + 1 : '');
+      return '<div class="deux"><div>Division : <b>' + (v.division ? E(v.division) : pts(10)) + '</b></div><div class="droite">RNS, le : ' + V(v, 'date', 10) + '</div></div>' + P('À Monsieur<br>Le Directeur Régional', 'droite') +
+        P('<b>Objet : Prolongation de mission (OM n° ' + V(v, 'om', 6) + ' du ' + V(v, 'om_date', 10) + ')</b>') + P('Monsieur,') +
+        P('Nous vous demandons de bien vouloir accorder une prolongation de mission du : ' + V(v, 'du', 10) + ' au : ' + V(v, 'au', 10) + ', soit : ' + (n === '' ? pts(4) : '<b>' + E(n) + '</b>') + ' jour(s) (cachet et date apposés de l\'organisme visité faisant foi).') +
+        P('Pour l\'agent :<br>Nom et prénom : ' + V(v, 'agent') + '<br>Fonction : ' + V(v, 'fonction')) + P('<b>Motif :</b>') + T(v, 'motif', 2) + P('<b>Observations :</b>') + T(v, 'observations', 2) +
+        visas(['Le Chef Division ' + (v.division || ''), 'Accord de M. le Directeur Régional'], 90); });
+
+  var MOTIFS_Q = [['m1', 'Votre absence à votre poste de travail la demi-journée / la journée du', 'm1_date'], ['m2', 'Votre absence à votre poste de travail la journée du', 'm2_date', 'de', 'm2_h1', 'heures à', 'm2_h2', 'heures'],
+    ['m3', 'Vos arrivées tardives et fréquentes à votre poste de travail'], ['m4', 'Négligences / non-respect de procédures de travail / non-exécution d\'un travail'], ['m5', 'Autres motifs (à préciser)', 'm5_precision']];
+  modele('questionnaire', 'discipline', 'Questionnaire (absence ou motif professionnel)', 'Demande de justification adressée à un agent, avec réponse et avis.',
+    [L.date, L.agent, L.matricule, L.fonction, L.service, L.division,
+      { k: 'm1', l: 'Absence demi-journée / journée', t: 'select', opts: ['', 'Oui'] }, { k: 'm1_date', l: '… du', t: 'date' },
+      { k: 'm2', l: 'Absence sur des heures', t: 'select', opts: ['', 'Oui'] }, { k: 'm2_date', l: '… journée du', t: 'date' }, { k: 'm2_h1', l: 'de (heure)' }, { k: 'm2_h2', l: 'à (heure)' },
+      { k: 'm3', l: 'Arrivées tardives et fréquentes', t: 'select', opts: ['', 'Oui'] }, { k: 'm4', l: 'Négligences / non-respect de procédures', t: 'select', opts: ['', 'Oui'] },
+      { k: 'm5', l: 'Autres motifs', t: 'select', opts: ['', 'Oui'] }, { k: 'm5_precision', l: 'Précision des autres motifs' }], 'dr',
+    function (v) {
+      var lignes = MOTIFS_Q.map(function (m) { var coche = v[m[0]] === 'Oui', t = (coche ? '☒ ' : '☐ ') + E(m[1]);
+        if (m[0] === 'm1' || m[0] === 'm2') t += ' : ' + V(v, m[2], 8); if (m[0] === 'm2') t += ' de ' + V(v, 'm2_h1', 4) + ' h à ' + V(v, 'm2_h2', 4) + ' h'; if (m[0] === 'm5') t += ' : ' + V(v, 'm5_precision', 14); return '<li>' + t + '</li>'; }).join('');
+      return titre('QUESTIONNAIRE', 'Suite absence au poste de travail ou autres motifs d\'ordre professionnel') +
+        P('Monsieur : <b>' + (v.agent ? E(v.agent) : pts(14)) + '</b> &nbsp; Mle : ' + V(v, 'matricule', 8) + '<br>Fonction : ' + V(v, 'fonction') + ' &nbsp; Service : ' + V(v, 'service') + ' &nbsp; Division : ' + V(v, 'division')) +
+        P('Je vous demande de justifier :') + '<ul class="liste" style="list-style:none;margin-left:6px">' + lignes + '</ul>' + '<div class="deux"><div>Date : ' + V(v, 'date', 10) + '</div><div class="droite"><b>Le Responsable Hiérarchique</b></div></div>' +
+        P('<b>Réponse :</b>') + lignesVides(3) + signature('L\'intéressé(e)', v) + visas(['Avis du Chef de Service', 'Avis du Chef de Division'], 60) + visas(['Le Chef de Division Personnel', 'Décision du Directeur Régional'], 60) +
+        P('NB : conformément au règlement intérieur de l\'Entreprise, les retards fréquents, absences non justifiées, sorties sans autorisation et absences au poste de travail sont passibles de la sanction suivante : code 8 + avertissement écrit (première fois) ; en cas de récidive, la sanction sera plus lourde. Les fautes professionnelles (négligences, non-exécution des obligations professionnelles, non-respect des procédures…) sont passibles de sanctions du 2e ou 3e degré.', 'note'); });
 
   /* ---------- préparation et rendu ---------- */
   /** Valeurs initiales d'un modèle (profil de l'utilisateur connecté, date du jour). */

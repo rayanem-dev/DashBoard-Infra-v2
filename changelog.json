@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-22-26",
+    "date": "2026-10-22",
+    "title": "Version 5.19.0 — Documents administratifs : 3 nouveaux modèles et recherche BDDORGA",
+    "changes": [
+      "Trois modèles ajoutés depuis le dossier « Imprimés administratifs » : Demande de modification de planning (formulaire), Prolongation de mission (OM) et Questionnaire (absence ou motif professionnel) — 28 modèles au total.",
+      "Les modèles qui ne figurent pas dans le dossier « Imprimés » (ordre de mission, prise en charge hôtel, réservation de vol, bordereau d'envoi, convocation visite médicale, note d'intérim) sont rangés à part, dans « Autres modèles ».",
+      "Dans les champs « nom » (agent, personne visée par une sanction, intérimaire, convoqués…), la liste de BDDORGA est proposée pendant la frappe ; le choix remplit aussi matricule, fonction et service."
+    ]
+  },
+  {
     "id": "2026-10-22-25",
     "date": "2026-10-22",
     "title": "Version 5.18.2 — Prises en charge : correctif de déploiement",
