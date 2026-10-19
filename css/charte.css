@@ -539,3 +539,31 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent .agent-gauche .agent-infos .a-completer { font-size: 10px; margin-top: 0; }
 @media (max-width: 900px) { .agent .agent-gauche .agent-infos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 420px) { .agent .agent-gauche .agent-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ===== Accueil : trois cartes de même hauteur et même style (fiche · rotation · applications), lecture calme ===== */
+.agent .agent-corps { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.05fr) minmax(0, .9fr); gap: 12px; padding: 12px 14px 12px; align-items: stretch; }
+.agent .agent-gauche, .agent .jauge-bloc, .agent .mes-apps { background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; align-self: stretch; box-shadow: none; }
+.agent[data-emp] .agent-gauche, .agent[data-emp] .jauge-bloc, .agent[data-emp] .mes-apps { background: color-mix(in srgb, var(--c, var(--agent-bord)) 5%, var(--surface)); border-color: color-mix(in srgb, var(--c, var(--agent-bord)) 22%, var(--border)); }
+/* fiche */
+.agent .agent-gauche { display: flex; flex-direction: column; gap: 10px; }
+.agent .agent-gauche .agent-entete { padding: 0; gap: 10px; align-items: center; }
+.agent .agent-gauche .avatar { width: 40px; height: 40px; font-size: 14px; }
+.agent .agent-gauche .agent-id { display: block; }
+.agent .agent-gauche .agent-id h2 { font-size: 15.5px; margin: 0; }
+.agent .agent-gauche .agent-poste:empty { display: none; }
+.agent .agent-gauche .agent-badges { margin-top: 4px; flex-basis: auto; }
+.agent .agent-gauche .agent-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; padding: 10px 0 0; border-top: 1px solid var(--border); align-content: start; }
+.agent .agent-gauche .agent-infos span { font-size: 9px; letter-spacing: .5px; }
+.agent .agent-gauche .agent-infos b { font-size: 12px; line-height: 1.3; margin-top: 1px; }
+.agent .agent-gauche .agent-infos .a-completer { font-size: 11.5px; }
+/* rotation : plus de filet vertical, centrée dans sa carte */
+.agent .jauge-bloc { border-left: 1px solid var(--border); align-items: center; justify-content: center; }
+@media (min-width: 1181px) { .agent .jauge-bloc { padding: 12px 14px 26px; } .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding-top: 46px; } }
+.agent .jauge { width: 72px; height: 72px; }
+/* applications : titre net, icônes réparties */
+.agent .mes-apps h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); }
+.agent .mes-apps-grille { grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 6px; align-content: start; }
+@media (max-width: 1180px) { .agent .agent-corps { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .agent .mes-apps { grid-column: 1 / -1; } }
+@media (max-width: 900px) { .agent .agent-corps { grid-template-columns: 1fr; } .agent .mes-apps { grid-column: auto; } }
+.agent .agent-gauche .agent-infos > div { position: relative; }
+.agent .agent-gauche .agent-infos b + .a-completer { position: absolute; right: 0; top: 0; font-size: 10px; font-weight: 600; }

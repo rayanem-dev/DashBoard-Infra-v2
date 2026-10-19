@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-22-18",
+    "date": "2026-10-22",
+    "title": "Version 5.17.0 — Accueil plus homogène",
+    "changes": [
+      "Accueil : fiche personnelle, rotation et « Mes applications » sont maintenant trois cartes de même hauteur et de même style, avec plus d'air.",
+      "Fiche personnelle : informations rangées sur deux colonnes, avec en plus la fonction et le service (BDDORGA), le téléphone et l'identifiant Wi-Fi quand ils existent ; le lien « modifier » de l'e-mail passe discrètement en haut à droite de sa case.",
+      "Sur écran moyen, « Mes applications » passe sous les deux autres cartes ; sur téléphone, tout s'empile."
+    ]
+  },
+  {
     "id": "2026-10-22-17",
     "date": "2026-10-22",
     "title": "Version 5.16.4 — Prise en charge : case Observations centrée",
