@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-25",
+    "date": "2026-10-22",
+    "title": "Version 5.18.2 — Prises en charge : correctif de déploiement",
+    "changes": [
+      "Prises en charge : correction d'un fichier dupliqué par erreur dans la version 5.18.0 / 5.18.1 (le script ne se serait pas exécuté correctement) ; les règles « macaron = fin du contrat, sauf date choisie » sont conservées."
+    ]
+  },
+  {
     "id": "2026-10-22-24",
     "date": "2026-10-22",
     "title": "Version 5.18.1 — Macaron : toujours la fin du contrat",
