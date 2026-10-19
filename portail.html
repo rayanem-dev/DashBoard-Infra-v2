@@ -110,8 +110,7 @@
     $('qui').textContent = u.nom;
     $('salut').textContent = ['Bonjour', u.civilite].filter(Boolean).join(' ');
     $('nom-agent').textContent = u.nom;
-    $('agent-poste').textContent = '';
-    var av = $('avatar'); av.textContent = initiales(u.nom); var st = Employeur.style(u.dependance);
+        var av = $('avatar'); av.textContent = initiales(u.nom); var st = Employeur.style(u.dependance);
     av.style.background = st ? st.fond : ''; av.style.color = st ? st.texte : ''; if (st) av.style.boxShadow = '0 0 0 3px ' + st.texte + '33';
     var bd = $('agent-badges'); bd.textContent = '';
     var pe = Employeur.pastille(u.dependance);
@@ -122,8 +121,10 @@
     var integ = u.date_integration ? Rotation.frDate(u.date_integration) + (anciennete(u.date_integration) ? ' · ' + anciennete(u.date_integration) : '') : '';
     var manque = [];
     function ajouter(k, lib, v, vide) { if (v) return [lib, v]; if (vide) { manque.push(k); return [lib, null]; } return null; }
+    // 4 lignes de 2 colonnes (carte basse) : l'ancienneté va sous le nom, le Wi-Fi remplace le téléphone quand il manque
     var champs = [['Fonction', u.fonction], ['Service', u.service], ajouter('matricule', 'Matricule', u.matricule, true), ajouter('sap', 'Matricule SAP', u.sap, true), ajouter('nin', 'NIN', u.nin_masque, true),
-      ['Identifiant SONA', u.sona], ['E-mail', u.email_contact || u.email], ['Téléphone', u.telephone], ['Wi-Fi', u.wifi_user], ['Intégration', integ]].filter(function (c) { return c && (c[1] || c[1] === null); });
+      ['Identifiant SONA', u.sona], ['E-mail', u.email_contact || u.email], u.telephone ? ['Téléphone', u.telephone] : ['Wi-Fi', u.wifi_user]].filter(function (c) { return c && (c[1] || c[1] === null); });
+    $('agent-poste').textContent = integ ? 'Intégré le ' + integ : '';
     var fiche = $('fiche'); fiche.textContent = '';
     champs.forEach(function (c) {
       var d = el('div'); d.appendChild(el('span', null, c[0]));

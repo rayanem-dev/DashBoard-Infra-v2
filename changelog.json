@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-22-19",
+    "date": "2026-10-22",
+    "title": "Version 5.17.1 — Accueil plus compact",
+    "changes": [
+      "Accueil : les trois cartes sont beaucoup plus basses (hauteur de la carte rotation), sans espace vide ; la fiche personnelle est plus étroite et « Mes applications » plus large.",
+      "Fiche : l'ancienneté passe sous le nom ; le Wi-Fi remplace le téléphone quand celui-ci n'est pas renseigné ; les raccourcis du planning et « Propulsé par Sijil » ne rallongent plus la carte rotation."
+    ]
+  },
+  {
     "id": "2026-10-22-18",
     "date": "2026-10-22",
     "title": "Version 5.17.0 — Accueil plus homogène",
