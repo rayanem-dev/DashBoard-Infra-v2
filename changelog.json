@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-12",
+    "date": "2026-10-22",
+    "title": "Version 5.15.1 — Allègement du site",
+    "changes": [
+      "Retrait de deux anciennes pages plus utilisées (ancien accueil et ancien organigramme) : 300 Ko de moins."
+    ]
+  },
+  {
     "id": "2026-10-22-11",
     "date": "2026-10-22",
     "title": "Version 5.15.0 — Documents administratifs",

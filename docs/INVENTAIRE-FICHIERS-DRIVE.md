@@ -12,7 +12,7 @@ Généré à partir des liens du dépôt (catalogue des applications, pages de l
 
 | Fichier | Type | Propriétaire | Utilisé par | Identifiant |
 |---|---|---|---|---|
-| Organigrame Div Infra (BDDORGA) | Sheet | sec.infra.rns@gmail.com | page Organigramme-ancien.html | `1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA` |
+| Organigrame Div Infra (BDDORGA) | Sheet | sec.infra.rns@gmail.com | ancienne page Organigramme (retirée du site, visible dans l’historique git) | `1Thk_-DUr1q9fetPX7W8qg2_SVNRhF_7LtD3xTZfn-OA` |
 
 ## Suivi
 
