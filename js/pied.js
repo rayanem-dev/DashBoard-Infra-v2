@@ -7,7 +7,7 @@
     var st = document.createElement('style');
     // thème sombre pour des pages qui n'ont pas de variables de thème : on inverse la page (les teintes sont conservées), sauf en-tête et images
     st.textContent = 'html[data-theme="dark"] body { background: #11151c !important; }' +
-      'html[data-theme="dark"] body > :not(.bdp-prefs):not(.bdp-foot):not(script):not(style) { filter: invert(.92) hue-rotate(180deg); }' +
+      'html[data-theme="dark"] body > :not(.bdp-prefs):not(.bdp-foot):not(.aide-btn):not(.aide-dlg):not(script):not(style) { filter: invert(.92) hue-rotate(180deg); }' +
       'html[data-theme="dark"] body > :not(.bdp-prefs) header, html[data-theme="dark"] body > :not(.bdp-prefs) img { filter: invert(.92) hue-rotate(180deg); }' +
       'html[data-theme="dark"] body > header { filter: none !important; }';
     document.head.appendChild(st);
@@ -41,6 +41,19 @@
     });
     var l = BasDePage.langue(); if (l !== 'fr') avecTraduction(function () { I18n.appliquer(l); }); // langue mémorisée (basdepage règle lang/dir, la traduction du texte est faite ici)
   }
+  // Aide : petit « ? » discret en bas à gauche ; le contenu (js/aide.js + js/aide-data.js) n'est chargé qu'au clic
+  (function () {
+    function monterAide() {
+      if (document.querySelector('.aide-btn')) return;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'aide-btn'; b.textContent = '?'; b.title = 'Aide'; b.setAttribute('aria-label', 'Aide'); b.setAttribute('data-i18n-non', '');
+      b.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9000;width:28px;height:28px;border-radius:50%;border:1px solid rgba(120,120,120,.45);background:rgba(255,255,255,.85);color:#6B7280;font:700 14px Inter,Arial,sans-serif;cursor:pointer;opacity:.55;padding:0;line-height:1';
+      b.onmouseenter = b.onfocus = function () { b.style.opacity = '1'; }; b.onmouseleave = b.onblur = function () { b.style.opacity = '.55'; };
+      b.onclick = function () { window.AIDE_NOM = NOM || ''; chargerTout(window.Aide && window.AIDE ? [] : ['js/aide-data.js', 'js/aide.js'], function () { if (window.Aide) Aide.ouvrir(); }); };
+      document.body.appendChild(b);
+      var st = document.createElement('style'); st.textContent = '@media print{.aide-btn,.aide-dlg{display:none!important}}'; document.head.appendChild(st);
+    }
+    if (document.body) monterAide(); else document.addEventListener('DOMContentLoaded', monterAide);
+  })();
   // Mode support (ouvert depuis Privilèges) : bandeau fixe en haut de chaque page, avec retour au compte de l'administrateur
   (function () {
     var o = null; try { o = JSON.parse(sessionStorage.getItem('infra_v2_support') || 'null'); } catch (e) { o = null; }

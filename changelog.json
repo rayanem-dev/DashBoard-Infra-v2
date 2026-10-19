@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-22-13",
+    "date": "2026-10-22",
+    "title": "Version 5.16.0 — Aide intégrée",
+    "changes": [
+      "Un petit « ? » discret en bas à gauche de chaque page et de chaque application ouvre l'aide : à quoi sert la page, pas à pas et conseils, avec une capture d'écran.",
+      "Une liste déroulante en haut de l'aide permet de passer à l'aide de n'importe quelle autre page ou application."
+    ]
+  },
+  {
     "id": "2026-10-22-12",
     "date": "2026-10-22",
     "title": "Version 5.15.1 — Allègement du site",
