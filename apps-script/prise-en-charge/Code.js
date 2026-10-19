@@ -873,6 +873,16 @@ function genererPEC(ss, silencieux, options) {
     try { dataRow.getCell(dataRow.getNumCells() - 1).appendParagraph(options.observation).setAlignment(DocumentApp.HorizontalAlignment.CENTER); } catch (e) { /* facultatif : ne bloque jamais la génération */ }
   }
 
+  // Case « Observations » (dernière de la ligne) : tout le texte centré horizontalement et verticalement
+  try {
+    const obsCell = dataRow.getCell(dataRow.getNumCells() - 1);
+    obsCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+    for (let i = 0; i < obsCell.getNumChildren(); i++) {
+      const enfant = obsCell.getChild(i);
+      if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    }
+  } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
+
   // Noms toujours au milieu de leur case : centrés horizontalement et verticalement
   try {
     nomCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);

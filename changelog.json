@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-17",
+    "date": "2026-10-22",
+    "title": "Version 5.16.4 — Prise en charge : case Observations centrée",
+    "changes": [
+      "Prise en charge (PDF) : le contenu de la case « Observations » (base, remplacement, chambre, fonction) est centré horizontalement et verticalement."
+    ]
+  },
+  {
     "id": "2026-10-22-16",
     "date": "2026-10-22",
     "title": "Version 5.16.3 — Prises en charge : recherche du prestataire",
