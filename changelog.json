@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-24",
+    "date": "2026-10-22",
+    "title": "Version 5.18.1 — Macaron : toujours la fin du contrat",
+    "changes": [
+      "Macaron : sauf date de départ choisie à la main, il s'arrête toujours à la fin du contrat (Suivi CPM), même si cette date est déjà dépassée. Il ne suit l'autorisation que si la fin du contrat est introuvable."
+    ]
+  },
+  {
     "id": "2026-10-22-23",
     "date": "2026-10-22",
     "title": "Version 5.18.0 — Prises en charge : fin d'autorisation et de macaron",

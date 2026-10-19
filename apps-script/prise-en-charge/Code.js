@@ -1058,14 +1058,14 @@ function departManuel_(arrivee, depart) {
  * Fin de l'autorisation et du macaron :
  *  - date de départ choisie par l'agent (ou visite sur site) → les DEUX suivent cette date ;
  *  - sinon : autorisation mensuelle (fin du mois courant, ou du mois suivant si « valable 2 mois »), macaron jusqu'à la fin du contrat (Suivi CPM) ;
- *    sans fin de contrat lisible, le macaron suit l'autorisation.
+ *    le macaron suit TOUJOURS la fin du contrat (même dépassée) ; seule une fin de contrat introuvable le fait suivre l'autorisation.
  */
 function datesFin_(o) {
   const t = dateLue_(o.aujourdhui), depart = dateLue_(o.depart);
   if ((o.visite || o.departManuel) && depart) return { autorisation: depart, macaron: depart, source: "date choisie" };
   const mois = new Date(t.getFullYear(), t.getMonth() + (o.deuxMois ? 2 : 1), 0);
   const fc = dateLue_(o.finContrat);
-  return { autorisation: mois, macaron: fc && fc.getTime() >= t.getTime() ? fc : mois, source: fc ? "fin de contrat" : "mois" };
+  return { autorisation: mois, macaron: fc || mois, source: fc ? "fin de contrat" : "mois" };
 }
 /** Fin de contrat lue dans le Suivi CPM (LECTURE SEULE) pour un numéro de contrat ; null si introuvable. */
 function lireFinContratCpm_(numContrat) {
@@ -1388,14 +1388,14 @@ function departManuel_(arrivee, depart) {
  * Fin de l'autorisation et du macaron :
  *  - date de départ choisie par l'agent (ou visite sur site) → les DEUX suivent cette date ;
  *  - sinon : autorisation mensuelle (fin du mois courant, ou du mois suivant si « valable 2 mois »), macaron jusqu'à la fin du contrat (Suivi CPM) ;
- *    sans fin de contrat lisible, le macaron suit l'autorisation.
+ *    le macaron suit TOUJOURS la fin du contrat (même dépassée) ; seule une fin de contrat introuvable le fait suivre l'autorisation.
  */
 function datesFin_(o) {
   const t = dateLue_(o.aujourdhui), depart = dateLue_(o.depart);
   if ((o.visite || o.departManuel) && depart) return { autorisation: depart, macaron: depart, source: "date choisie" };
   const mois = new Date(t.getFullYear(), t.getMonth() + (o.deuxMois ? 2 : 1), 0);
   const fc = dateLue_(o.finContrat);
-  return { autorisation: mois, macaron: fc && fc.getTime() >= t.getTime() ? fc : mois, source: fc ? "fin de contrat" : "mois" };
+  return { autorisation: mois, macaron: fc || mois, source: fc ? "fin de contrat" : "mois" };
 }
 /** Fin de contrat lue dans le Suivi CPM (LECTURE SEULE) pour un numéro de contrat ; null si introuvable. */
 function lireFinContratCpm_(numContrat) {

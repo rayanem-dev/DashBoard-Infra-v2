@@ -23,8 +23,8 @@ test('date non touchée : autorisation fin de mois, macaron fin de contrat', () 
   assert.strictEqual(jj(r.autorisation), '2026-10-31'); assert.strictEqual(jj(r.macaron), '2027-02-28');
   assert.strictEqual(jj(datesFin_({ aujourdhui: '2026-10-27', deuxMois: true, finContrat: '2027-02-28' }).autorisation), '2026-11-30');
 });
-test('contrat terminé ou inconnu : le macaron suit l\'autorisation ; visite sur site : date de départ', () => {
-  assert.strictEqual(jj(datesFin_({ aujourdhui: '2026-10-27', finContrat: '2026-09-30' }).macaron), '2026-10-31');
+test('le macaron suit toujours la fin du contrat (même dépassée) ; fin introuvable : il suit l\'autorisation ; visite sur site : date de départ', () => {
+  assert.strictEqual(jj(datesFin_({ aujourdhui: '2026-10-27', finContrat: '2026-09-30' }).macaron), '2026-09-30');
   assert.strictEqual(jj(datesFin_({ aujourdhui: '2026-10-27' }).macaron), '2026-10-31');
   assert.strictEqual(jj(datesFin_({ aujourdhui: '2026-10-27', depart: '2026-10-29', visite: true }).autorisation), '2026-10-29');
 });
