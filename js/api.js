@@ -48,7 +48,8 @@
       { id: 'simulation', titre: 'Simulation de planning', icone: '🧪', niveau: 3, apps: [
         { titre: 'Simulation de planning', description: 'Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande à signer.', emoji: '🧪', url: 'simulation.html' } ] },
       { id: 'rh', titre: 'RH & Personnel', icone: '👥', niveau: 3, apps: [
-        { titre: 'Organigramme — Division Infrastructure', description: 'Structure de la division, à jour avec BDDORGA : services, responsables, employeurs, téléphones.', emoji: '🏢', url: 'Organigramme.html' } ] },
+        { titre: 'Organigramme — Division Infrastructure', description: 'Structure de la division, à jour avec BDDORGA : services, responsables, employeurs, téléphones.', emoji: '🏢', url: 'Organigramme.html' },
+        { titre: 'Documents administratifs', description: 'Ordres de mission, prêts, mutations, primes… : formulaires préremplis, prêts à imprimer.', emoji: '📄', url: 'documents.html' } ] },
       { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [

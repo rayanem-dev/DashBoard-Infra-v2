@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-22-11",
+    "date": "2026-10-22",
+    "title": "Version 5.15.0 — Documents administratifs",
+    "changes": [
+      "Nouvelle application « Documents administratifs » (module RH, tous les agents) : 25 formulaires de la Direction Régionale Rhourde Nouss repris de vos modèles Word — ordre de mission, compte rendu de mission, prise en charge hôtel, réservation, prêts (social, véhicule, construction, CAL), avance sur salaire, mutations, mise en disponibilité, note d'intérim, ITP, nuisance, PAP & PAC, sanctions, audience, requête, attestation, etc.",
+      "Les formulaires se préremplissent avec vos informations (nom, matricule, fonction, service, date de recrutement), l'aperçu se met à jour à chaque frappe, les cases vides s'impriment en pointillés ; impression ou PDF en un clic.",
+      "La carte est ajoutée automatiquement au catalogue au prochain affichage du portail."
+    ]
+  },
+  {
     "id": "2026-10-22-10",
     "date": "2026-10-22",
     "title": "Version 5.14.1 — Fiche d'évaluation au catalogue",
