@@ -165,7 +165,8 @@
   <div class="form-card">
 
     <label>Prestataire</label>
-    <select id="prestataire"></select>
+    <input type="text" id="prestataire" list="listePrestataires" placeholder="Tapez pour chercher, ou ouvrez la liste ▾" autocomplete="off">
+    <datalist id="listePrestataires"></datalist>
 
     <div class="form-row">
       <div class="field">
@@ -366,9 +367,9 @@
   });
 
   function remplirDropdowns(opts) {
-    const sPrest = document.getElementById('prestataire');
-    sPrest.innerHTML = '';
-    opts.prestataires.forEach(p => sPrest.innerHTML += `<option>${p}</option>`);
+    const dlPrest = document.getElementById('listePrestataires');
+    dlPrest.innerHTML = '';
+    opts.prestataires.forEach(p => { const o = document.createElement('option'); o.value = p; dlPrest.appendChild(o); });
 
     const sEmp = document.getElementById('emputation');
     sEmp.innerHTML = '';
@@ -433,6 +434,20 @@
       onConfirm();
     };
   }
+
+  // Recherche du prestataire : sans accents ni majuscules, tous les mots tapés doivent figurer. À la sortie du champ,
+  // un seul prestataire correspondant est choisi tout seul ; une saisie qui ne correspond à rien est refusée à l'envoi.
+  function normPrest(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+  function correspondancesPrest(q) {
+    const mots = normPrest(q).split(' ').filter(Boolean);
+    return Array.from(document.getElementById('listePrestataires').options).map(o => o.value).filter(v => { const n = normPrest(v); return mots.every(m => n.indexOf(m) !== -1); });
+  }
+  document.getElementById('prestataire').addEventListener('change', function() {
+    const liste = Array.from(document.getElementById('listePrestataires').options).map(o => o.value);
+    if (!this.value.trim() || liste.indexOf(this.value) !== -1) return;
+    const c = correspondancesPrest(this.value);
+    if (c.length === 1) this.value = c[0];
+  });
 
   function actualiserPrestataires() {
     bloquerBoutons(true);
@@ -588,6 +603,12 @@
         });
         return;
       }
+    }
+
+    const listePrest = Array.from(document.getElementById('listePrestataires').options).map(o => o.value);
+    if (listePrest.indexOf(document.getElementById('prestataire').value) === -1) {
+      afficherResultat({ success: false, message: "Choisis un prestataire de la liste : tape quelques lettres puis sélectionne-le (ou utilise « Actualiser Prestataires » s'il manque)." });
+      return;
     }
 
     const data = {

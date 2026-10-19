@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-16",
+    "date": "2026-10-22",
+    "title": "Version 5.16.3 — Prises en charge : recherche du prestataire",
+    "changes": [
+      "Prises en charge : la case « Prestataire » cherche pendant la frappe (sans tenir compte des accents ni des majuscules) tout en gardant la liste déroulante. Un seul prestataire correspondant est choisi tout seul en quittant la case ; une saisie hors liste est refusée à l'envoi."
+    ]
+  },
+  {
     "id": "2026-10-22-15",
     "date": "2026-10-22",
     "title": "Version 5.16.2 — Prises en charge : base « Sharm El Sheikh VIP »",
