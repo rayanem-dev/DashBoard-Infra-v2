@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-20",
+    "date": "2026-10-22",
+    "title": "Version 5.17.2 — Accueil sur téléphone",
+    "changes": [
+      "Accueil sur téléphone et petite tablette : les trois cartes (fiche, rotation, applications) s'empilent en une seule colonne ; fin du texte écrasé sur deux colonnes étroites. Sur ordinateur, rien ne change."
+    ]
+  },
+  {
     "id": "2026-10-22-19",
     "date": "2026-10-22",
     "title": "Version 5.17.1 — Accueil plus compact",

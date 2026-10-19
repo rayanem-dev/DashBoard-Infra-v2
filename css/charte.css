@@ -593,3 +593,21 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent .mes-apps-grille { grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 5px; }
 .agent .mes-app { height: 36px; }
 @media (max-width: 1180px) { .agent .agent-corps { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
+
+/* Téléphone / petite tablette : une seule colonne (cette règle doit rester la dernière, elle l'emporte sur celle à 1180 px) */
+@media (max-width: 900px) {
+  .agent .agent-corps { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .agent .mes-apps { grid-column: auto; }
+  .agent .agent-gauche .agent-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .agent .mes-apps-grille { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); }
+  .agent .jauge-bloc { padding-top: 46px; }
+  .agent .jauge-bloc:not(:has(.raccourcis:not([hidden]))) { padding-top: 10px; }
+}
+@media (max-width: 480px) {
+  .agent .jauge-bloc { flex-direction: row; text-align: left; align-items: center; padding-bottom: 36px; }
+  .agent .jauge-bloc .jauge-texte { align-items: flex-start; }
+  .agent .jauge-bloc .etat-pill { margin-right: 0; }
+  .agent .jauge-bloc .par-sijil { bottom: 8px; }
+}
+@media (max-width: 900px) { .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding-top: 48px; } .agent .jauge-bloc:has(.raccourcis:not([hidden])) .etat-pill { margin-right: 0; } }
+@media (max-width: 480px) { .agent .jauge-bloc, .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding-bottom: 40px; } }
