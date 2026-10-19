@@ -232,7 +232,9 @@ var Simulation = (function () {
    */
   function proposerPaire(opts) {
     var tolC = opts.tolChev != null ? opts.tolChev : 2, tolV = opts.tolTrou != null ? opts.tolTrou : 0, pref = opts.preference || 'indifferent';
-    var cA = candidats(opts.offA, opts.debutF, opts.rotA, opts.debut, opts), cB = candidats(opts.offB, opts.debutF, opts.rotB, opts.debut, opts);
+    // debutA / debutB (facultatifs) : début propre à chaque agent, pris tel quel (sa relève) ; sinon `debut` commun, aligné sur la relève de chacun si alignerReleve
+    var oExact = {}; Object.keys(opts).forEach(function (k) { oExact[k] = opts[k]; }); oExact.alignerReleve = false;
+    var cA = candidats(opts.offA, opts.debutF, opts.rotA, opts.debutA || opts.debut, opts.debutA ? oExact : opts), cB = candidats(opts.offB, opts.debutF, opts.rotB, opts.debutB || opts.debut, opts.debutB ? oExact : opts);
     // Le vis-à-vis est exigé à partir de la date choisie : un candidat qui attend la prochaine relève laisse des conflits d'ici là, ce que la priorité « établi au plus tôt » compte.
     var depuisIdx = Math.max(0, diff(opts.debutF, opts.debut)), depuisDate = addDays(opts.debutF, depuisIdx);
     var cyMax = Math.max(Number(opts.rotA.jours_travail) + Number(opts.rotA.jours_repos), Number(opts.rotB.jours_travail) + Number(opts.rotB.jours_repos));

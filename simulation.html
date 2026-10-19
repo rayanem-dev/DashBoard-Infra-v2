@@ -48,6 +48,8 @@
   .frise .mois { height: 16px; font-size: 10px; color: var(--text-muted); }
   .frise .mois span { display: block; overflow: visible; white-space: nowrap; border-left: 1px solid #D1D5DB; padding-left: 3px; }
   .frise .ligne.autres i { opacity: .8; }
+  .frise i { box-sizing: border-box; } .frise i.fn { border-top: 4px solid #B91C1C; } .frise i.fr { border-top: 4px solid #047857; }
+  .legende-s .fe { display: inline-block; width: 11px; height: 8px; border-radius: 2px; margin-right: 4px; background: #E5E7EB; vertical-align: -1px; } .legende-s .fe.n { border-top: 4px solid #B91C1C; } .legende-s .fe.r { border-top: 4px solid #047857; }
   .legende-s { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); margin-top: 6px; }
   .legende-s i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 
@@ -98,7 +100,7 @@
     <div class="bloc no-print">
       <div class="barre">
         <div><label for="service">Service</label><select id="service"></select></div>
-        <div><label for="mode">Le changement commence</label><select id="mode"><option value="maintenant">Maintenant (cette rotation)</option><option value="releve">À la prochaine rotation (relève)</option><option value="date">À partir d'une date</option></select></div>
+        <div><label for="mode">Le changement commence</label><select id="mode"><option value="cette">Cette rotation (début du bloc en cours)</option><option value="prochaine">La prochaine rotation (prochaine relève)</option><option value="date">À partir d'une date (relève suivante)</option></select></div>
         <div id="z-date" hidden><label for="dateDebut">Date de début</label><input type="date" id="dateDebut"></div>
         <div><label for="vue">Durée affichée</label><select id="vue"><option value="92">3 mois</option><option value="184" selected>6 mois</option><option value="350">1 an</option></select></div>
         <a class="lien" href="simulation-v1.html">Ancienne version (Modif 1.0)</a>
@@ -126,7 +128,7 @@
 
     <div class="bloc no-print" id="b-prop" hidden>
       <h2>💡 Propositions automatiques</h2>
-      <p class="aide2">Des décalages de 1 à 8 semaines pour les deux agents, classés du <b>plus petit reliquat</b> (positif ou négatif) au plus grand, parmi ceux qui mettent les deux en vis-à-vis. Elles respectent le choix « Le changement commence » ci-dessus.</p>
+      <p class="aide2">Des décalages de 1 à 8 semaines entières, qui commencent <b>à la relève de chacun</b> (le jour de relève de chaque agent est respecté). Classées du moins de jours de conflit, puis du <b>plus petit reliquat</b> (positif ou négatif) au plus grand. Elles respectent le choix « Le changement commence » ci-dessus.</p>
       <div class="actions" style="margin-top:0"><button class="btn-s" id="proposer" type="button">Proposer des combinaisons</button><span class="aide2" id="prop-aide" style="margin:0"></span></div>
       <div class="props" id="props"></div>
     </div>
@@ -150,6 +152,7 @@
 <script src="js/rotation.js"></script>
 <script>Rotation.exiger();</script>
 <script src="js/simulation.js"></script>
+<script src="js/feries.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -164,6 +167,7 @@
 
   var lignes = [], agents = [], F = '', auj = '';           // planning de toute la division (grille depuis F) et liste des agents (uid)
   var S = { A: null, B: null };                              // agents choisis : { ligne, uid, data, cells: [{v}], nb }
+  var FER = {};                                              // jours fériés par date
   var cache = {};                                            // uid → données
   function sgn(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n) + ' j'; }
   function sem(n) { return n % 7 === 0 ? (n / 7) + ' sem.' : n + ' j'; }
@@ -171,8 +175,8 @@
 
   // ---------- Chargement ----------
   function charger() {
-    return Promise.all([Api.call('simu_agents'), Api.call('planning', { jours: 366 })]).then(function (rs) {
-      agents = rs[0].agents; var p = rs[1]; auj = p.aujourdhui; F = p.debut;
+    return Promise.all([Api.call('simu_agents'), Api.call('planning', { debut: Simulation.addDays(Rotation.aujourdhui(), -40), jours: 370 })]).then(function (rs) {
+      agents = rs[0].agents; var p = rs[1]; auj = p.aujourdhui; F = p.debut; FER = Holidays.carte(F, Simulation.addDays(F, 400));
       lignes = p.lignes.filter(function (l) { return l.configuree && l.grille; });
       var sv = {}, s = $('service'); s.textContent = ''; s.appendChild(new Option('Toute la division', ''));
       lignes.forEach(function (l) { if (l.service) sv[l.service] = 1; });
@@ -186,7 +190,7 @@
   }
   function donnees(uid) {
     if (cache[uid]) return Promise.resolve(cache[uid]);
-    return Api.call('simu_donnees', { uid: uid, debut: F, jours: 366 }).then(function (d) { cache[uid] = d; return d; });
+    return Api.call('simu_donnees', { uid: uid, debut: F, jours: 370 }).then(function (d) { cache[uid] = d; return d; });
   }
 
   // ---------- Sélection ----------
@@ -202,12 +206,17 @@
   function initCells(a) { a.cells = []; for (var i = 0; i < MAX_SEM; i += 1) a.cells.push({ v: '' }); }
 
   // ---------- Début et modification d'un agent ----------
+  /** Début de la modification d'un agent, toujours sur SA relève (son jour de relève ne change pas : son vol en dépend). */
   function debutDe(a) {
-    var d = a.data, i0 = Math.max(Simulation.diff(d.debut, d.rotation.depuis), Simulation.diff(d.debut, auj));
-    var mode = $('mode').value;
-    if (mode === 'date' && Simulation.estDate($('dateDebut').value)) return $('dateDebut').value;
-    if (mode === 'releve') return Simulation.addDays(d.debut, Simulation.prochaineReleve(d.grille, i0));
-    return Simulation.addDays(d.debut, i0);
+    var d = a.data, g = d.grille, idx = Simulation.diff(d.debut, auj), mode = $('mode').value, i;
+    if (mode === 'cette') {                                  // début du bloc (travail ou repos) en cours
+      i = idx; while (i > 0 && g.charAt(i - 1) === g.charAt(i)) i -= 1;
+      var dd = Simulation.addDays(d.debut, i);
+      if (i > 0 && dd >= d.rotation.depuis && dd >= Simulation.addDays(auj, -30)) return dd;
+      i = Simulation.prochaineReleve(g, idx + 1);            // bloc commencé trop tôt : on prend la relève suivante
+    } else if (mode === 'date' && Simulation.estDate($('dateDebut').value)) i = Simulation.prochaineReleve(g, Math.max(0, Simulation.diff(d.debut, $('dateDebut').value)));
+    else i = Simulation.prochaineReleve(g, idx + 1);
+    return Simulation.addDays(d.debut, i);
   }
   /** Modification issue des semaines cochées : null si rien n'est changé. Les semaines « prévu » reprennent les lettres du planning officiel. */
   function modifDe(a) {
@@ -244,11 +253,16 @@
   }
 
   // ---------- Frise ----------
-  function jours(g, i0, n, pre, extra) {
+  function classeFer(i) { var h = FER[Simulation.addDays(F, i)]; return h ? (h.type === 'religieuse' ? ' fr' : ' fn') : ''; }
+  var LIBTR = { T: 'Travail', R: 'Repos' };
+  /** Une rangée de jours ; `texte(i)` donne la ligne d'infobulle propre à la rangée (état du jour, vis-à-vis…). */
+  function jours(g, i0, n, pre, extra, texte) {
     var j = el('div', 'jours');
-    for (var i = i0; i < i0 + n; i += 1) { var c = g.charAt(i), b = document.createElement('i'); b.className = (c === 'T' || c === 'R' ? c : 'x') + (pre != null && i < pre ? ' pre' : '') + (extra && extra(i) ? ' ' + extra(i) : ''); j.appendChild(b); }
+    for (var i = i0; i < i0 + n; i += 1) { var c = g.charAt(i), b = document.createElement('i'); b.className = (c === 'T' || c === 'R' ? c : 'x') + (pre != null && i < pre ? ' pre' : '') + (extra && extra(i) ? ' ' + extra(i) : '') + classeFer(i); j.appendChild(b); }
+    Survol.attacher(j, function (x) { var w = j.firstChild ? j.firstChild.getBoundingClientRect().width : 0, i = w ? i0 + Math.floor(x / w) : -1; if (i < i0 || i >= i0 + n) return ''; return infobulle(i, texte ? texte(i) : (LIBTR[g.charAt(i)] || '')); });
     return j;
   }
+  function infobulle(i, etat) { var d = Simulation.addDays(F, i), h = FER[d]; return jourFr(d) + (etat ? ' — ' + etat : '') + (h ? '\n' + (h.type === 'religieuse' ? '🕌 ' : '🇩🇿 ') + h.nom : ''); }
   function rangee(cls, etiqHtml, titre) { var l = el('div', 'ligne ' + cls), e = el('div', 'etiq'); if (etiqHtml) { e.appendChild(etiqHtml); } e.title = titre || ''; l.appendChild(e); return l; }
   function dessinerFrise() {
     var z = $('frise'); z.textContent = ''; if (!F) return;
@@ -272,7 +286,9 @@
     if (A && B) {
       var deb = Math.min.apply(null, [eA, eB].map(function (e, k) { var a = k ? B : A; return e.m ? Simulation.diff(F, e.m.debut) : Simulation.diff(F, auj); }));
       var c = Simulation.conflits(eA.mod, eB.mod, F, opts(), deb), l2 = rangee('', el('span', null, 'Vis-à-vis'), ''), j2 = el('div', 'jours');
-      for (var k = i0; k < i0 + n; k += 1) { var mk = c.marques.charAt(k), b2 = document.createElement('i'); b2.className = k < deb ? 'x pre' : (mk === 'C' || mk === 'V' || mk === 't' ? mk : 'o'); j2.appendChild(b2); }
+      for (var k = i0; k < i0 + n; k += 1) { var mk = c.marques.charAt(k), b2 = document.createElement('i'); b2.className = (k < deb ? 'x pre' : (mk === 'C' || mk === 'V' || mk === 't' ? mk : 'o')) + classeFer(k); j2.appendChild(b2); }
+      Survol.attacher(j2, function (x) { var w = j2.firstChild ? j2.firstChild.getBoundingClientRect().width : 0, q = w ? i0 + Math.floor(x / w) : -1; if (q < i0 || q >= i0 + n) return ''; var m2 = c.marques.charAt(q);
+        return infobulle(q, q < deb ? '' : m2 === 'C' ? 'les deux travaillent' : m2 === 'V' ? 'les deux en repos' : m2 === 't' ? 'toléré (relève)' : 'vis-à-vis OK'); });
       l2.appendChild(j2); z.appendChild(l2);
       leg = leg.concat([['#E11D48', 'Les deux travaillent'], ['#7C3AED', 'Les deux en repos'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis']]);
     }
@@ -285,6 +301,7 @@
     });
     $('t-grp').textContent = svc ? 'Service : ' + svc : 'Toute la division';
     var lg = $('legende'); lg.textContent = ''; leg.forEach(function (x) { var s = el('span'), i2 = document.createElement('i'); i2.style.background = x[0]; s.appendChild(i2); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
+    [['n', 'Jour férié national'], ['r', 'Jour férié religieux']].forEach(function (x) { var s = el('span'); s.appendChild(el('span', 'fe ' + x[0])); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
   }
 
   // ---------- Éditeurs de semaines ----------
@@ -310,6 +327,22 @@
     });
   }
 
+  // ---------- Conflits : comptés sur UNE seule rotation à partir du début de la modification ----------
+  function cycle(a) { return Number(a.data.rotation.jours_travail) + Number(a.data.rotation.jours_repos); }
+  /** { jours, deb, len } : jours de conflit (hors tolérance) pendant une rotation (la plus longue des deux), de max(début de la modification, aujourd'hui) à +len jours. */
+  function conflitsRotation(gA, gB, mA, mB, A, B) {
+    var iAuj = Simulation.diff(F, auj), dA = mA ? Simulation.diff(F, mA.debut) : iAuj, dB = mB ? Simulation.diff(F, mB.debut) : iAuj;
+    var deb = Math.max(Math.min(dA, dB), iAuj), len = Math.max(cycle(A), cycle(B)), fin = deb + len - 1, jours = 0;
+    Simulation.conflits(gA, gB, F, opts(), deb).plages.forEach(function (p) {
+      if (p.tolere) return; var a = Math.max(Simulation.diff(F, p.du), deb), b = Math.min(Simulation.diff(F, p.au), fin); if (b >= a) jours += b - a + 1;
+    });
+    return { jours: jours, deb: deb, len: len };
+  }
+  function phraseConflit(c, nomA, nomB, sujet) {
+    return c.jours ? sujet + ' résulte de ' + c.jours + ' jour' + (c.jours > 1 ? 's' : '') + ' de conflit pour ' + nomA + ' et ' + nomB + ' (sur une rotation de ' + c.len + ' jours à partir du ' + fr(Simulation.addDays(F, c.deb)) + ').'
+      : sujet + ' ne laisse aucun jour de conflit pour ' + nomA + ' et ' + nomB + ' (sur une rotation de ' + c.len + ' jours à partir du ' + fr(Simulation.addDays(F, c.deb)) + ').';
+  }
+
   // ---------- Résumé, bilan ----------
   function majResultat() {
     dessinerFrise();
@@ -328,13 +361,9 @@
       bi.appendChild(d); var ex = el('div', null, '+ : jours travaillés en plus (à récupérer) · − : jours de repos en plus'); ex.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; bi.appendChild(ex);
     }
     if (A && B && !eA.err && !eB.err) {
-      var deb = Math.min(eA.m ? Simulation.diff(F, eA.m.debut) : Simulation.diff(F, auj), eB.m ? Simulation.diff(F, eB.m.debut) : Simulation.diff(F, auj));
-      var c = Simulation.conflits(eA.mod, eB.mod, F, opts(), deb), plages = c.plages.filter(function (p) { return !p.tolere && p.au >= Simulation.addDays(F, deb); }), v = el('div');
-      if (!plages.length) { v.textContent = '✔ Vis-à-vis respecté entre ' + A.ligne.nom + ' et ' + B.ligne.nom + ' sur toute la période affichée.'; v.style.cssText = 'font-weight:700;color:#166534;margin-top:6px'; bi.appendChild(v); }
-      else {
-        v.textContent = '✖ ' + c.jours + ' jour(s) en conflit :'; v.style.cssText = 'font-weight:700;color:#B42318;margin-top:6px'; bi.appendChild(v);
-        var ul = el('ul'); plages.slice(0, 6).forEach(function (p) { ul.appendChild(el('li', null, (p.type === 'trou' ? 'les deux en repos' : 'les deux travaillent') + ' du ' + fr(p.du) + ' au ' + fr(p.au) + ' (' + p.jours + ' j)')); }); bi.appendChild(ul);
-      }
+      var c = conflitsRotation(eA.mod, eB.mod, eA.m, eB.m, A, B), v = el('div');
+      v.textContent = (c.jours ? '✖ ' : '✔ ') + phraseConflit(c, A.ligne.nom, B.ligne.nom, 'Cette simulation');
+      v.style.cssText = 'font-weight:700;margin-top:6px;color:' + (c.jours ? '#B42318' : '#166534'); bi.appendChild(v);
     }
   }
   function majTout() {
@@ -351,26 +380,24 @@
     for (var w = 0; w < n && w < MAX_SEM; w += 1) a.cells[w].v = l.charAt(w * 7);
   }
   function proposer() {
-    var A = S.A, B = S.B; if (!A || !B) return; var o = opts(), mode = $('mode').value;
-    var debut = mode === 'date' && Simulation.estDate($('dateDebut').value) ? $('dateDebut').value : auj;
+    var A = S.A, B = S.B; if (!A || !B) return; var o = opts();
+    var dA = debutDe(A), dB = debutDe(B), debut = dA < dB ? dA : dB;
     $('prop-aide').textContent = 'Calcul…'; $('props').textContent = '';
     setTimeout(function () {
-      var res = Simulation.proposerPaire({ offA: A.data.grille, offB: B.data.grille, debutF: F, rotA: A.data.rotation, rotB: B.data.rotation, debut: debut, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: 7, alignerReleve: mode === 'releve',
-        maxTransition: 56, maxTotal: 84, preference: 'indifferent', soldeA: A.data.solde || 0, soldeB: B.data.solde || 0, max: 60 });
+      var res = Simulation.proposerPaire({ offA: A.data.grille, offB: B.data.grille, debutF: F, rotA: A.data.rotation, rotB: B.data.rotation, debut: debut, debutA: dA, debutB: dB, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: 7, alignerReleve: false,
+        maxTransition: 56, maxTotal: 84, preference: 'indifferent', soldeA: A.data.solde || 0, soldeB: B.data.solde || 0, max: 80 });
       var sA = A.data.solde || 0, sB = B.data.solde || 0;
-      res.forEach(function (r) { r.pire = Math.max(Math.abs(sA + r.reliquatA), Math.abs(sB + r.reliquatB)); });
+      res.forEach(function (r) { r.pire = Math.max(Math.abs(sA + r.reliquatA), Math.abs(sB + r.reliquatB)); r.cr = conflitsRotation(r.grilleA, r.grilleB, r.A, r.B, A, B); });
       var bons = res.filter(function (r) { return r.stable; }); if (!bons.length) bons = res.slice();
-      bons.sort(function (p, q) { return p.pire - q.pire || p.jusquEtabli - q.jusquEtabli || p.transition - q.transition; });
+      bons.sort(function (p, q) { return p.cr.jours - q.cr.jours || p.pire - q.pire || p.transition - q.transition; });
       bons = bons.slice(0, 8); var z = $('props'); z.textContent = '';
-      $('prop-aide').textContent = !bons.length ? 'Aucune combinaison trouvée : essayez « À partir d\'une date » ou des tolérances plus larges.' : (bons[0].stable ? bons.length + ' proposition(s), du plus petit reliquat au plus grand.' : 'Pas de vis-à-vis parfait : voici les plus proches.');
+      $('prop-aide').textContent = !bons.length ? 'Aucune combinaison trouvée : essayez « À partir d\'une date » ou des tolérances plus larges.' : bons.length + ' proposition(s) : le moins de jours de conflit d\'abord, puis le plus petit reliquat.';
       bons.forEach(function (r, i) {
-        var d = el('div', 'prop' + (i === 0 && r.stable ? ' top' : '')), t = el('div');
-        [[A, r.A, r.reliquatA], [B, r.B, r.reliquatB]].forEach(function (x) {
-          var e = x[1] ? { m: x[1] } : { m: null }, ph = x[1] ? phrase(x[0], e) : x[0].ligne.nom + ' : inchangé.'; t.appendChild(el('div', 'l', ph));
-        });
+        var d = el('div', 'prop' + (i === 0 && r.cr.jours === 0 ? ' top' : '')), t = el('div');
+        [[A, r.A], [B, r.B]].forEach(function (x) { t.appendChild(el('div', 'l', x[1] ? phrase(x[0], { m: x[1] }) : x[0].ligne.nom + ' : inchangé.')); });
         var l2 = el('div', 'l'); [[A, r.reliquatA, sA], [B, r.reliquatB, sB]].forEach(function (x, k) { if (k) l2.appendChild(document.createTextNode(' · ')); var sp = el('span', null, x[0].ligne.nom + ' ' + sgn(x[1]) + ' (solde → ' + sgn(x[2] + x[1]) + ')'); sp.style.cssText = 'font-weight:800;color:' + (x[1] > 0 ? '#15803D' : x[1] < 0 ? '#DC2626' : '#111'); l2.appendChild(sp); });
         t.appendChild(l2);
-        t.appendChild(el('small', null, r.stable ? '✔ Vis-à-vis établi ' + (r.jusquEtabli <= 0 ? 'tout de suite' : 'dès le ' + fr(r.etabliLe) + ' (dans ' + r.jusquEtabli + ' j)') : '✖ ' + r.conflits + ' j en conflit'));
+        var cf = el('div', 'l', (r.cr.jours ? '✖ ' : '✔ ') + phraseConflit(r.cr, A.ligne.nom, B.ligne.nom, 'Cette proposition')); cf.style.cssText = 'font-weight:700;color:' + (r.cr.jours ? '#B42318' : '#166534'); t.appendChild(cf);
         d.appendChild(t); var b = el('button', 'btn-s', 'Utiliser'); b.type = 'button';
         b.addEventListener('click', function () { cellsDe(A, r.A); cellsDe(B, r.B); dessinerEditeurs(); majResultat(); window.scrollTo({ top: $('b-edit').offsetTop - 70, behavior: 'smooth' }); });
         d.appendChild(b); z.appendChild(d);

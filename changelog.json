@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-22-29",
+    "date": "2026-10-22",
+    "title": "Version 5.21.0 — Simulation : conflits sur une rotation, relève respectée, jours fériés",
+    "changes": [
+      "Simulation : les jours de conflit sont comptés sur UNE seule rotation (la plus longue des deux agents) et écrits en clair : « Cette simulation résulte de 2 jours de conflit pour X et Y » ; même phrase sur chaque proposition automatique. La liste des plages de conflit est supprimée (déjà visible sur le graphique).",
+      "Propositions automatiques : semaines entières qui commencent à la relève propre de chaque agent (son jour de relève ne change jamais, son vol en dépend). Le début se choisit : cette rotation (début du bloc en cours), la prochaine rotation, ou une date (relève suivante). Les semaines à cocher à la main suivent la même règle.",
+      "Survol : au passage de la souris sur un jour du graphique (simulation et planning), la date, l'état et le jour férié éventuel s'affichent.",
+      "Jours fériés nationaux (rouge) et religieux estimés (vert), repris de Sijil, repérés en haut de chaque jour dans les graphiques de la simulation et du planning (groupe et individuel)."
+    ]
+  },
+  {
     "id": "2026-10-22-28",
     "date": "2026-10-22",
     "title": "Version 5.20.0 — Simulation de planning simplifiée",

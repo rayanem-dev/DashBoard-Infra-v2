@@ -30,7 +30,7 @@
     </div>
     <div class="nav-periode"><button class="btn-s" id="prec" type="button" aria-label="Période précédente">‹</button><b id="periode"></b><button class="btn-s" id="suiv" type="button" aria-label="Période suivante">›</button><button class="btn-s" id="auj" type="button">Aujourd'hui</button></div>
     <button class="btn-s no-print" id="imprimer" type="button" title="Imprimer ou enregistrer en PDF">🖨 Imprimer / PDF</button>
-    <div class="legende"><span><i style="background:var(--c-T)"></i>Travail</span><span><i style="background:var(--c-R)"></i>Repos</span><span><i style="background:var(--c-ABS)"></i>Absence</span><span><i style="background:var(--c-T-prevu);border:1px solid #BFE3B1"></i><i style="background:var(--c-R-prevu);border:1px solid #F4C3A5"></i>Prévu (à venir)</span></div>
+    <div class="legende"><span><i style="background:var(--c-T)"></i>Travail</span><span><i style="background:var(--c-R)"></i>Repos</span><span><i style="background:var(--c-ABS)"></i>Absence</span><span><i style="background:var(--c-T-prevu);border:1px solid #BFE3B1"></i><i style="background:var(--c-R-prevu);border:1px solid #F4C3A5"></i>Prévu (à venir)</span><span><i style="background:#B91C1C;height:4px;vertical-align:3px"></i>Férié national</span><span><i style="background:#047857;height:4px;vertical-align:3px"></i>Férié religieux</span></div>
   </div>
   <div class="barre" id="barre-filtres" hidden>
     <input type="text" id="q" placeholder="Rechercher un nom…" aria-label="Rechercher">
@@ -50,6 +50,7 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/rotation.js"></script>
+<script src="js/feries.js"></script>
 <script>Rotation.exiger();</script>
 <script src="js/employeurs.js"></script>
 <script>
@@ -89,6 +90,10 @@
   function segments(g) { var out = [], i = 0; while (i < g.length) { var c = g.charAt(i), j = i; while (j < g.length && g.charAt(j) === c) j += 1; out.push({ c: c, a: i, n: j - i }); i = j; } return out; }
   // Palette de Sijil : jusqu'à aujourd'hui = couleur vive ; après aujourd'hui = teinte claire « prévu » (sauf absence).
   var COUL = { T: '#4EA72E', R: '#E97132', A: '#E53935' }, PREVU = { T: '#D6F0CC', R: '#FBDCC8', A: '#E53935' }, PREVU_CLAIR = { T: '#D6F0CC', R: '#FBDCC8' }, LIB = { T: 'Travail', R: 'Repos', A: 'Absence' };
+  // Jours fériés (nationaux en rouge, religieux en vert) : repère en haut de chaque jour, nom dans l'infobulle de la souris
+  var _fer = {}; function ferMap(debut, n) { var k = debut + '|' + n; return _fer[k] || (_fer[k] = Holidays.carte(debut, plus(debut, n))); }
+  function ferCoul(h) { return h.type === 'religieuse' ? '#047857' : '#B91C1C'; }
+  function infobulleJour(debut, i, etat) { var d = plus(debut, i), h = ferMap(debut, 400)[d]; return jourFr(d) + (etat ? ' — ' + etat : '') + (h ? '\n' + (h.type === 'religieuse' ? '🕌 ' : '🇩🇿 ') + h.nom : ''); }
   function frise(grille, debut, n, px, aujIdx) {
     // teintes « prévu » et fond selon le thème (clair / sombre)
     var cs = getComputedStyle(document.documentElement); PREVU.T = cs.getPropertyValue('--c-T-prevu').trim() || PREVU_CLAIR.T; PREVU.R = cs.getPropertyValue('--c-R-prevu').trim() || PREVU_CLAIR.R;
@@ -101,8 +106,7 @@
       [[g.a, coupe, COUL], [coupe, g.a + g.n, PREVU]].forEach(function (part) {
         var de = part[0], a2 = part[1], n2 = a2 - de; if (n2 <= 0) return;
         var r = svgEl('rect', { x: de * px, y: 4, width: n2 * px - (px > 6 ? 1 : 0), height: h - 8, rx: px > 6 ? 3 : 1, fill: part[2][g.c] });
-        var t = svgEl('title'); t.textContent = LIB[g.c] + (part[2] === PREVU && g.c !== 'A' ? ' (prévu)' : '') + ' : du ' + court(plus(debut, de)) + ' au ' + court(plus(debut, a2 - 1)) + ' (' + n2 + ' jour' + (n2 > 1 ? 's' : '') + ')';
-        r.appendChild(t); s.appendChild(r);
+        s.appendChild(r);
       });
       if (px >= 20) {
         for (var k = 0; k < g.n; k += 1) {
@@ -112,7 +116,9 @@
         }
       }
     });
+    var fm = ferMap(debut, n); for (var fi = 0; fi < n; fi += 1) { var fh = fm[plus(debut, fi)]; if (fh) s.appendChild(svgEl('rect', { x: fi * px, y: 0, width: Math.max(2, px - (px > 6 ? 1 : 0)), height: 4, fill: ferCoul(fh) })); }
     if (aujIdx >= 0 && aujIdx < n) s.appendChild(svgEl('rect', { x: aujIdx * px - 1, y: 0, width: Math.max(2, px > 6 ? 2 : 1.5), height: h, fill: '#1A1A2E' }));
+    Survol.attacher(s, function (x) { var i = Math.floor(x / px); if (i < 0 || i >= n) return ''; var c = grille.charAt(i); return infobulleJour(debut, i, (LIB[c] || '') + (c !== 'A' && i > aujIdx && LIB[c] ? ' (prévu)' : '')); });
     return s;
   }
   function entete(debut, n, px, aujIdx) {
@@ -128,6 +134,8 @@
       }
       if (i === aujIdx) s.appendChild(svgEl('rect', { x: i * px, y: 30, width: px, height: 3, fill: '#16598D' }));
     }
+    var fm = ferMap(debut, n); for (var fi = 0; fi < n; fi += 1) { var fh = fm[plus(debut, fi)]; if (fh) s.insertBefore(svgEl('rect', { x: fi * px, y: 16, width: Math.max(2, px - (px > 6 ? 1 : 0)), height: 18, fill: ferCoul(fh), opacity: .22 }), s.firstChild); }
+    Survol.attacher(s, function (x) { var i = Math.floor(x / px); return i < 0 || i >= n ? '' : infobulleJour(debut, i, ''); });
     return s;
   }
 

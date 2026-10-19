@@ -155,3 +155,14 @@ test('à vis-à-vis égal, le plus fort reliquat atteint est classé en dernier 
   const i1414 = res.findIndex(p => p.pire === 14 && p.concession === 28), i280 = res.findIndex(p => p.pire === 28 && p.concession === 28);
   assert.ok(i1414 >= 0 && i280 >= 0 && i1414 < i280, '14/14 avant 28/0');
 });
+
+test('propositions avec un début propre à chaque agent (debutA / debutB) : chacun commence exactement à sa relève', () => {
+  const rA = { statut: 'T', depuis: '2026-09-01', jours_travail: 28, jours_repos: 28 };
+  const rB = { statut: 'T', depuis: '2026-09-11', jours_travail: 28, jours_repos: 28 };
+  const dF = '2026-09-01', n = 300, debut = '2026-10-05';
+  const offA = Planning.grille(rA, [], dF, n), offB = Planning.grille(rB, [], dF, n);
+  const dA = Simulation.addDays(dF, Simulation.prochaineReleve(offA, Simulation.diff(dF, debut))), dB = Simulation.addDays(dF, Simulation.prochaineReleve(offB, Simulation.diff(dF, debut)));
+  const res = Simulation.proposerPaire({ offA, offB, debutF: dF, rotA: rA, rotB: rB, debut, debutA: dA, debutB: dB, tolChev: 2, tolTrou: 0, pas: 7, alignerReleve: false, maxTransition: 56, maxTotal: 84, max: 20 });
+  assert.ok(res.length > 0);
+  res.forEach(p => { if (p.A) assert.strictEqual(p.A.debut, dA); if (p.B) assert.strictEqual(p.B.debut, dB); [p.A, p.B].forEach(m => m && assert.ok(m.periodes.every(x => x.jours % 7 === 0))); });
+});
