@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-22-15",
+    "date": "2026-10-22",
+    "title": "Version 5.16.2 — Prises en charge : base « Sharm El Sheikh VIP »",
+    "changes": [
+      "Prises en charge : nouvel emplacement « SHARM EL SHEIKH VIP » dans la liste des bases."
+    ]
+  },
+  {
     "id": "2026-10-22-14",
     "date": "2026-10-22",
     "title": "Version 5.16.1 — Bon de sortie : matériel en évidence",
