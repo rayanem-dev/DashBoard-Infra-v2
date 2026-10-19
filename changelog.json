@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-22-14",
+    "date": "2026-10-22",
+    "title": "Version 5.16.1 — Bon de sortie : matériel en évidence",
+    "changes": [
+      "Bon de sortie matériel : le matériel est affiché en gras, en plus grand, aligné à gauche sous la phrase ; un matériel par ligne, chacun précédé d'un tiret ajouté automatiquement.",
+      "Cases « Lieu d'enlèvement » et « Lieu de destination » plus petites, avec le lieu en gras, plus grand et centré."
+    ]
+  },
+  {
     "id": "2026-10-22-13",
     "date": "2026-10-22",
     "title": "Version 5.16.0 — Aide intégrée",

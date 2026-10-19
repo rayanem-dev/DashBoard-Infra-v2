@@ -128,7 +128,9 @@ function dateFr_(t) { const v = propre_(t); if (/^\d{4}-\d{2}-\d{2}$/.test(v)) r
 function bonHtml_(data, logoBase64) {
   data = data || {};
   const s = data.soussigne || {}, a = data.autorise || {}, h = data.habilite || {}, p = data.preneur || {}, c = data.sie || {};
-  const materiel = propre_(data.materiel) ? esc_(data.materiel).replace(/\n/g, '<br>') : ('<span class="pts">' + POINTS_.repeat(12) + '</span>');
+  // Une ligne par matériel, précédée d'un tiret (le tiret saisi par l'agent n'est pas doublé)
+  const lignesMat = String(data.materiel == null ? '' : data.materiel).split(/\r?\n/).map(l => l.replace(/^\s*[-–•]\s*/, '').trim()).filter(Boolean);
+  const materiel = lignesMat.length ? lignesMat.map(l => '- ' + esc_(l)).join('<br>') : ('<span class="pts">' + POINTS_.repeat(12) + '</span>');
   const bloc = (titre, d, qui, visa) => '<td class="sig"><div class="sh">' + titre + '</div><div class="sl">Date : ' + (propre_(d.date) ? '<b>' + esc_(dateFr_(d.date)) + '</b>' : '...........') + '</div>' +
     '<div class="sl">Structure : ' + (propre_(d.structure) ? '<b>' + esc_(d.structure) + '</b>' : '.......') + '</div><div class="sv"><br>' + visa + (qui ? '<br><br><i>' + esc_(qui) + '</i>' : '') + '</div></td>';
   const logo = logoBase64 ? '<img src="data:image/jpeg;base64,' + logoBase64 + '" width="72" height="108">' : '';
@@ -138,7 +140,7 @@ function bonHtml_(data, logoBase64) {
     'h1{text-align:center;font-size:20pt;margin:16px 0 18px}' +
     'p{margin:0 0 14px;line-height:1.6}.pts{letter-spacing:0}' +
     'table{border-collapse:collapse;width:100%}' +
-    '.lieux td{border:1px solid #000;width:50%;height:70px;padding:6px;vertical-align:top}.lieux .t{height:26px;text-align:center;font-weight:bold;vertical-align:middle}' +
+    '.mat{font-weight:bold;font-size:13pt;text-align:left;margin:0 0 16px;line-height:1.5}.lieux td{border:1px solid #000;width:50%;height:36px;padding:4px 6px;text-align:center;vertical-align:middle;font-weight:bold;font-size:13pt}.lieux .t{height:22px;font-size:11pt}' +
     '.sigs{margin-top:22px}.sigs td.sig{border:1px solid #000;width:33.33%;vertical-align:top;padding:3px 5px;font-size:10pt}.sh{text-align:center;font-weight:bold;border-bottom:1px solid #000;margin:-3px -5px 3px;padding:3px}' +
     '.sl{border-bottom:1px solid #000;margin:0 -5px;padding:1px 5px}.sv{height:85px;padding-top:6px}' +
     '.instr{margin-top:26px;font-weight:bold;font-size:12pt}.nb{margin-top:10px}' +
@@ -149,7 +151,7 @@ function bonHtml_(data, logoBase64) {
     '<h1>Bon De Sortie Matériel</h1>' +
     '<p>Je soussigné(e) M. ' + ou_(s.nom, '........................................') + ' Fonction ' + ou_(s.fonction, '....................') + ' Matricule ' + ou_(s.matricule, '....................') + '</p>' +
     '<p>Autorise M. ' + ou_(a.nom, '........................................') + ' Fonction ' + ou_(a.fonction, '....................') + ' Matricule ' + ou_(a.matricule, '....................') + '</p>' +
-    '<p>À faire sortir le matériel suivant : (en chiffre et en lettre) ' + materiel + '</p>' +
+    '<p style="margin-bottom:6px">À faire sortir le matériel suivant : (en chiffre et en lettre)</p><div class="mat">' + materiel + '</div>' +
     '<table class="lieux"><tr><td class="t">Lieu d’enlèvement</td><td class="t">Lieu de destination</td></tr><tr><td>' + esc_(data.lieuEnlevement) + '</td><td>' + esc_(data.lieuDestination) + '</td></tr></table>' +
     '<table class="sigs"><tr>' + bloc('Personne habilitée', h, s.nom, 'Nom et Visa') + bloc('Preneur', p, a.nom, 'Nom et Visa') + bloc('Contrôlé par SIE', c, '', 'Nom et Visa du Chef de poste SIE') + '</tr></table>' +
     '<div class="instr">Instruction particulière</div>' + (propre_(data.instruction) ? '<p>' + esc_(data.instruction).replace(/\n/g, '<br>') + '</p>' : '<p>&nbsp;</p>') +
