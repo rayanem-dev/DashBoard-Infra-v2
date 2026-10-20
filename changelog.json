@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-23-02",
+    "date": "2026-10-23",
+    "title": "Version 5.22.0 — Prises en charge : fichiers à imprimer et envoi par e-mail",
+    "changes": [
+      "Prises en charge : le bouton « Imprimer » affiche maintenant les fichiers générés (prises en charge, autorisations, macarons) avec la présentation de Dotation : pastille de type, nom, date, lien pour ouvrir le PDF et l'imprimer, et corbeille.",
+      "Chaque fichier a le bouton « ✉️ Envoyer par email » de Requête transport : le PDF part en pièce jointe au secrétariat Infrastructure RNS.",
+      "Important : l'envoi d'e-mails demande une autorisation à donner UNE fois dans l'éditeur Apps Script (exécuter la fonction autoriserEnvoiMail)."
+    ]
+  },
+  {
     "id": "2026-10-23-01",
     "date": "2026-10-23",
     "title": "Version 5.21.1 — Prise en charge : noms en une ligne",

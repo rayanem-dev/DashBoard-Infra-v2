@@ -63,7 +63,7 @@ window.AIDE = {
     astuces: ['Vos nom, matricule, fonction et service sont préremplis.', 'Les cases vides s\'impriment en pointillés pour être complétées à la main.'] },
   'Prises en charge': { titre: 'Prises en charge', img: 'prise',
     resume: 'Établit la prise en charge d\'un prestataire (entreprise, contrat, personnes) et injecte les personnes dans le fichier Enquêtes.',
-    etapes: ['Choisissez l\'entreprise et le contrat.', 'Ajoutez les personnes (recherche par nom, ou saisie).', '« Générer » produit le document ; l\'injection dans Enquêtes signale les doublons.'],
+    etapes: ['Choisissez l\'entreprise et le contrat.', 'Ajoutez les personnes (recherche par nom, ou saisie).', '« Générer » produit le document ; l\'injection dans Enquêtes signale les doublons.', '« Imprimer » affiche les fichiers générés (PEC, autorisations, macarons) : ouvrir le PDF pour l\'imprimer, ✉️ l\'envoyer par e-mail au secrétariat, ou 🗑 le supprimer.'],
     astuces: ['Une personne déjà présente dans le même onglet est ignorée sans bruit.'] },
   'Dotation': { titre: 'Dotation vivres & eau', img: 'dotation',
     resume: 'Génère les fiches de dotation (vivres et eau minérale) pour le personnel présent.',

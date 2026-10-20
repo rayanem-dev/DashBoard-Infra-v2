@@ -1504,4 +1504,55 @@ function imprimerToutWeb() {
   }
 }
 
-if (typeof module !== 'undefined') module.exports = { dateLue_, finContrat_, departManuel_, datesFin_, nomAvecTiret_, largeursColonnes_ };
+/******************************
+ *  FICHIERS À IMPRIMER (même présentation que Dotation) + ENVOI PAR E-MAIL (même bouton que Requête transport)
+ ******************************/
+const EMAIL_SECRETARIAT = "sec.infra.rns@gmail.com";
+
+/** Dossier « output/pdf » à côté du fichier PEC, ou null. */
+function dossierPdfGeneres_() {
+  const parent = DriveApp.getFileById(PEC_SS_ID).getParents().next();
+  const o = parent.getFoldersByName("output"); if (!o.hasNext()) return null;
+  const p = o.next().getFoldersByName("pdf"); return p.hasNext() ? p.next() : null;
+}
+/** Type affiché d'après le nom du fichier. */
+function typeFichier_(nom) {
+  const n = String(nom || "");
+  return /^PEC_/i.test(n) ? "PEC" : /^Autorisation_/i.test(n) ? "AUTORISATION" : /^Macaron_/i.test(n) ? "MACARON" : "PDF";
+}
+/** Fichier du dossier output/pdf uniquement (l'application est publique : jamais un autre fichier du Drive). */
+function fichierGenere_(fileId) {
+  const dossier = dossierPdfGeneres_(); if (!dossier) throw new Error("Aucun document généré pour l'instant.");
+  const f = DriveApp.getFileById(String(fileId || ""));
+  const ps = f.getParents(); let ok = false;
+  while (ps.hasNext()) if (ps.next().getId() === dossier.getId()) ok = true;
+  if (!ok) throw new Error("Ce fichier n'appartient pas aux documents générés.");
+  return f;
+}
+/** Liste des PDF générés, du plus récent au plus ancien : [{ id, nom, type, date }]. */
+function listerFichiersGeneres() {
+  try {
+    const dossier = dossierPdfGeneres_(); if (!dossier) return { success: true, fichiers: [] };
+    const it = dossier.getFiles(), l = [];
+    while (it.hasNext()) { const f = it.next(); if (f.getMimeType() !== MimeType.PDF) continue; l.push({ id: f.getId(), nom: f.getName().replace(/\.pdf$/i, ""), type: typeFichier_(f.getName()), t: f.getDateCreated().getTime(), date: Utilities.formatDate(f.getDateCreated(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm") }); }
+    l.sort((a, b) => b.t - a.t);
+    return { success: true, fichiers: l.slice(0, 60).map(x => ({ id: x.id, nom: x.nom, type: x.type, date: x.date })) };
+  } catch (err) { return { success: false, error: err.message }; }
+}
+/** Envoi du PDF par e-mail au secrétariat Infrastructure RNS (bouton « Envoyer par email »). */
+function envoyerFichierParMail(fileId) {
+  try {
+    const f = fichierGenere_(fileId), type = typeFichier_(f.getName());
+    const lib = type === "PEC" ? "Prise en charge" : type === "AUTORISATION" ? "Autorisation d'accès" : type === "MACARON" ? "Macaron" : "Document";
+    MailApp.sendEmail({ to: EMAIL_SECRETARIAT, subject: lib + " - " + f.getName(), body: "Veuillez trouver ci-joint le document généré automatiquement (" + lib.toLowerCase() + ").", attachments: [f.getBlob()] });
+    return { success: true };
+  } catch (err) { return { success: false, error: err.toString() }; }
+}
+/** Met à la corbeille un PDF généré. */
+function supprimerFichierGenere(fileId) {
+  try { fichierGenere_(fileId).setTrashed(true); return { success: true }; } catch (err) { return { success: false, error: err.message }; }
+}
+/** À lancer UNE FOIS dans l'éditeur Apps Script (▶ Exécuter) pour autoriser l'envoi d'e-mails par l'application. */
+function autoriserEnvoiMail() { Logger.log("Quota d'e-mails restant aujourd'hui : " + MailApp.getRemainingDailyQuota()); }
+
+if (typeof module !== 'undefined') module.exports = { typeFichier_, dateLue_, finContrat_, departManuel_, datesFin_, nomAvecTiret_, largeursColonnes_ };

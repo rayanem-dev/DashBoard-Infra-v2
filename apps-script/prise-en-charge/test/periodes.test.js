@@ -43,3 +43,9 @@ test('largeurs : la colonne des noms s\'élargit sur le nombre de personnes d\'a
   assert.deepStrictEqual(largeursColonnes_(act, 5), act, 'nom court : rien ne bouge');
   const g = largeursColonnes_(act, 80); assert.ok(g.every((x, i) => i === 0 || x > 0));
 });
+
+const { typeFichier_ } = require('../Code.js');
+test('type des fichiers générés d\'après leur nom', () => {
+  assert.strictEqual(typeFichier_('PEC_ENCC_20-10-2026.pdf'), 'PEC'); assert.strictEqual(typeFichier_('Autorisation_X_1.pdf'), 'AUTORISATION');
+  assert.strictEqual(typeFichier_('Macaron_X_1.pdf'), 'MACARON'); assert.strictEqual(typeFichier_('autre.pdf'), 'PDF');
+});

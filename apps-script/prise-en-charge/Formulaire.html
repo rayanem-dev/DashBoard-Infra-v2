@@ -44,6 +44,17 @@
   .btn-dossier { background: linear-gradient(135deg, var(--teal), #14B8A6); }
 
   /* Carte formulaire */
+  /* Fichiers à imprimer : même présentation que Dotation */
+  #historique { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; padding: 2px; }
+  #historique .placeholder { font-size: 13px; color: var(--text-muted); font-style: italic; }
+  .histo-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; flex-wrap: wrap; }
+  .histo-tag { font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; flex-shrink: 0; background: #FFE8D6; color: var(--orange-main); }
+  .histo-tag.autorisation { background: #DBEAFE; color: var(--blue); } .histo-tag.macaron { background: #DCFCE7; color: var(--green); } .histo-tag.pdf { background: #F3F4F6; color: var(--gray-btn); }
+  .histo-info { flex: 1; min-width: 140px; } .histo-nom { font-size: 13px; font-weight: 600; color: var(--text-dark); overflow-wrap: anywhere; } .histo-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .histo-links { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+  .histo-links a, .histo-links button.mail { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
+  .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.mail:disabled { opacity: .5; cursor: wait; }
+  .btn-suppr-item { background: #FEE2E2; color: var(--red); border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
   .form-card { background: var(--white); border-radius: 20px; padding: 24px 26px; box-shadow: var(--shadow-card); border: 1px solid var(--border); }
   label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 13px; color: var(--gray-dark); }
   label:first-of-type { margin-top: 0; }
@@ -253,6 +264,9 @@
   </button>
   <div class="spinner" id="spinner"></div>
   <div id="resultat"></div>
+
+  <div class="section-title" id="titreFichiers" hidden>Fichiers à imprimer</div>
+  <div class="form-card" id="cartefichiers" hidden><div id="historique"></div></div>
 </main>
 
 <!-- Modale upload PDF -->
@@ -499,17 +513,44 @@
       .ouvrirDossierPDFWeb();
   }
 
+  // « Imprimer » : affiche les fichiers générés (même présentation que Dotation) : ouvrir le PDF pour l'imprimer, l'envoyer par e-mail au secrétariat, ou le supprimer
   function imprimerTout() {
-    bloquerBoutons(true);
-    google.script.run
-      .withSuccessHandler(function(res) {
-        bloquerBoutons(false);
-        if (!res.success) { afficherAlerteModale("Erreur", res.message, 'err'); return; }
-        const contenu = res.urls.length + " document(s) trouvé(s) :" + construirePdfListe(res.urls);
-        afficherAlerteModale("Documents disponibles", contenu, 'ok');
-      })
-      .withFailureHandler(function(err) { bloquerBoutons(false); afficherAlerteModale("Erreur", err.message, 'err'); })
-      .imprimerToutWeb();
+    document.getElementById('titreFichiers').hidden = false; document.getElementById('cartefichiers').hidden = false;
+    chargerFichiers(); document.getElementById('titreFichiers').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function echapper(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function chargerFichiers() {
+    const div = document.getElementById('historique'); div.innerHTML = '<div class="placeholder">Chargement…</div>';
+    google.script.run.withSuccessHandler(function(res) {
+      if (!res.success) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(res.error) + '</div>'; return; }
+      if (!res.fichiers.length) { div.innerHTML = '<div class="placeholder">Aucun document généré pour le moment.</div>'; return; }
+      div.innerHTML = '';
+      res.fichiers.forEach(function(f) {
+        const row = document.createElement('div'); row.className = 'histo-item';
+        row.innerHTML = '<span class="histo-tag ' + echapper(f.type.toLowerCase()) + '">' + echapper(f.type) + '</span>' +
+          '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
+          '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">🖨️ Ouvrir / imprimer</a>' +
+          '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button></div>' +
+          '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>';
+        row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
+        row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
+        div.appendChild(row);
+      });
+    }).withFailureHandler(function(err) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(err.message) + '</div>'; }).listerFichiersGeneres();
+  }
+  function envoyerParMail(btn, id) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Envoi…';
+    google.script.run.withSuccessHandler(function(res) {
+      btn.disabled = false; btn.textContent = txt;
+      afficherAlerteModale(res.success ? 'E-mail envoyé' : 'Erreur', res.success ? '✅ Document envoyé à sec.infra.rns@gmail.com !' : String(res.error || 'Envoi impossible'), res.success ? 'ok' : 'err');
+    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).envoyerFichierParMail(id);
+  }
+  function supprimerFichier(btn, id) {
+    afficherConfirmationModale('Supprimer ce document ?', 'Le PDF sera mis à la corbeille.', function() {
+      btn.disabled = true;
+      google.script.run.withSuccessHandler(function(res) { if (!res.success) afficherAlerteModale('Erreur', res.error, 'err'); chargerFichiers(); })
+        .withFailureHandler(function(err) { afficherAlerteModale('Erreur', err.message, 'err'); chargerFichiers(); }).supprimerFichierGenere(id);
+    });
   }
 
   function ouvrirModalePDF() {
@@ -678,6 +719,7 @@
     }
     div.innerHTML = contenu;
     afficherAlerteModale(res.success ? "Génération terminée" : "Erreur", contenu, res.success ? 'ok' : 'err');
+    if (res.success && !document.getElementById('cartefichiers').hidden) chargerFichiers();
   }
 </script>
 <script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Prises en charge"></script>
