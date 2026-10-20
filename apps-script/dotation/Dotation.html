@@ -493,7 +493,7 @@
       <option value="REPAS_EMPORTER">Repas à emporter</option>
       <option value="CASSE_CROUTE">Casse-croûte</option>
     </select>
-    <label class="field-label">Désignations <span style="text-transform:none;font-weight:500;">(une par ligne)</span></label>
+    <label class="field-label" id="repasLblDesignations">Désignations <span style="text-transform:none;font-weight:500;">(une par ligne)</span></label>
     <textarea id="repasDesignations" rows="4" placeholder="Ex. : Grande tarte / 60 P&#10;Assortiment de petits fours&#10;Café&#10;Jus"></textarea>
     <div class="deux">
       <div><label class="field-label" id="repasLblDebut">Date</label><input type="date" id="repasDebut"></div>
@@ -508,7 +508,7 @@
       <div><label class="field-label">Imputation analytique</label><input type="text" id="repasImputation" list="dlImputations" placeholder="4300045000"></div>
     </div>
     <datalist id="dlImputations"><option value="4300045000">Division</option><option value="4300045100">Électromécanique</option><option value="4300045200">Travaux Entretien</option><option value="4300045300">Construction</option></datalist>
-    <label class="field-label">Observations <span style="text-transform:none;font-weight:500;">(une par ligne)</span></label>
+    <label class="field-label" id="repasLblObservations">Observations <span style="text-transform:none;font-weight:500;">(une par ligne)</span></label>
     <textarea id="repasObservations" rows="2" placeholder="Ex. : Départ en retraite&#10;MOKRANI Miloud"></textarea>
     <button class="generer repas" id="btnGenererRepas" onclick="generer('REPAS')">Générer la prise en charge</button>
   </div>
@@ -704,6 +704,8 @@ document.getElementById('date').addEventListener('change', function(){
 function majRepasType(){
   const casse = document.getElementById('repasType').value === 'CASSE_CROUTE';
   document.getElementById('repasLblDebut').textContent = casse ? 'Période : du' : 'Date';
+  document.getElementById('repasLblDesignations').firstChild.textContent = casse ? 'Noms des agents ' : 'Désignations ';
+  document.getElementById('repasLblObservations').firstChild.textContent = casse ? 'Structure ' : 'Observations ';
 }
 
 function generer(type){

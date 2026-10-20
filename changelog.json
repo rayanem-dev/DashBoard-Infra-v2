@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-09",
+    "date": "2026-10-23",
+    "title": "Version 5.24.2 — Dotation : casse-croûte au modèle STEP",
+    "changes": [
+      "Dotation, « Repas & collations », type Casse-croûte : mise en page du modèle « STEP » (A Monsieur / Chef de Division MG, date, « PRISE EN CHARGE » puis « ☒ CASSE CROUTE » sans soulignement, tableau Nom des agents · Nbre d'agent · Compte analytique · Période de la dotation · Structure, signatures Chef Division Infrastructures / Preneur / Chef Division DMG, pied de page).",
+      "Le titre est descendu pour que le bloc soit centré dans la page ; la période s'écrit « 11/10/2026 Au 17/10/2026 » sur une ligne."
+    ]
+  },
+  {
     "id": "2026-10-23-08",
     "date": "2026-10-23",
     "title": "Version 5.24.1 — Dotation : correctif des prises en charge repas",

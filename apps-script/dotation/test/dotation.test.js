@@ -43,7 +43,7 @@ test('prise en charge repas : cellules du tableau (tirets pour la collation, pé
   assert.strictEqual(r.nb, '60'); assert.strictEqual(r.imputation, '4300045000'); assert.deepStrictEqual(r.observations, ['Départ en retraite', 'MOKRANI Miloud']);
   assert.strictEqual(r.titre, 'PRISE EN CHARGE : COLLATION');
   const c = run(`repasChamps_({ sousType: 'CASSE_CROUTE', designations: 'Zaatout abdenacer\\nI/54/RNS/INFRA/2025', dateDebut: '2026-07-06', dateFin: '2026-07-12', nb: '1' })`);
-  assert.deepStrictEqual(c.designations, ['Zaatout abdenacer', 'I/54/RNS/INFRA/2025']); assert.deepStrictEqual(c.quand, ['06/07/2026 au', '12/07/2026']); assert.strictEqual(c.nb, '01'); assert.strictEqual(c.colonne, 'Période De Dotation');
+  assert.deepStrictEqual(c.designations, ['Zaatout abdenacer', 'I/54/RNS/INFRA/2025']); assert.deepStrictEqual(c.quand, ['06/07/2026 Au 12/07/2026']); assert.strictEqual(c.nb, '01'); assert.strictEqual(c.colonne, 'Période De Dotation');
 });
 test('prise en charge repas : champs obligatoires', () => {
   assert.throws(() => run(`repasChamps_({ sousType: 'PAUSE_CAFE', designations: '', dateDebut: '2026-06-19', nb: '3' })`), /désignations/);
