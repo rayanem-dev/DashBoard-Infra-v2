@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-12",
+    "date": "2026-10-23",
+    "title": "Version 5.24.5 — Dotation : casse-croûte sans heure ni lieu",
+    "changes": [
+      "Dotation, « Repas & collations » : en choisissant Casse-croûte, les champs « Heure » et « Lieu » sont masqués (et ignorés) ; ils restent pour les autres types."
+    ]
+  },
+  {
     "id": "2026-10-23-11",
     "date": "2026-10-23",
     "title": "Version 5.24.4 — Dotation : casse-croûte plus fidèle au modèle",
