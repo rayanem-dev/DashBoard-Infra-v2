@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Repas à emporter – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .re { max-width: 1280px; margin: 0 auto; padding: 16px 16px 40px; display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .re label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 3px; }
+  .re label small { text-transform: none; font-weight: 500; letter-spacing: 0; }
+  .re input, .re textarea { width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .re textarea { resize: vertical; } .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; } .btn-p { padding: 10px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .histo { display: flex; gap: 8px; align-items: center; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-top: 6px; font-size: 12.5px; } .histo .i { flex: 1; min-width: 0; } .histo b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .histo small { color: var(--text-muted); }
+  .apercu { overflow: auto; background: #E5E7EB; padding: 14px; border-radius: 14px; }
+  #feuille { background: #fff; color: #000; width: 297mm; height: 210mm; margin: 0 auto; padding: 12mm 14mm; box-shadow: 0 2px 14px rgba(0,0,0,.2); font-family: Arial, Helvetica, sans-serif; position: relative; transform-origin: top left; }
+  #feuille .ent { font-size: 9.5pt; font-weight: 700; line-height: 1.45; } #feuille .ent img { height: 20mm; display: block; margin-bottom: 1mm; }
+  #feuille .date { text-align: right; font-size: 10pt; font-weight: 700; margin-top: -8mm; }
+  #feuille h1 { text-align: center; font-size: 13pt; margin: 14mm 0 8mm; letter-spacing: .3px; }
+  #feuille table { width: 100%; border-collapse: collapse; } #feuille th, #feuille td { border: 1px solid #000; padding: 3mm 2.5mm; text-align: center; font-size: 10.5pt; vertical-align: middle; } #feuille th { font-weight: 700; }
+  #feuille td.g { font-weight: 700; } #feuille .sig { display: flex; justify-content: space-between; margin-top: 8mm; font-size: 9.5pt; font-weight: 700; } .pt { color: #555; }
+  #feuille .pied { position: absolute; left: 14mm; right: 14mm; bottom: 8mm; border-top: 3px solid #E58A00; padding-top: 2mm; text-align: center; font-size: 7pt; line-height: 1.6; width: 55%; }
+  @media (max-width: 980px) { .re { grid-template-columns: 1fr; } }
+  @media print { @page { size: A4 landscape; margin: 0; } html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } body > *:not(main), .re > *:not(.apercu) { display: none !important; }
+    .re { display: block !important; padding: 0 !important; max-width: none !important; } .apercu { background: none !important; padding: 0 !important; overflow: visible !important; } #feuille { box-shadow: none !important; margin: 0 !important; transform: none !important; } }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">RE</div>
+    <div class="logo-text"><h1>Prise en charge : repas à emporter</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="re">
+  <div>
+    <div class="bloc">
+      <h2>🥡 Nouvelle prise en charge</h2>
+      <label for="f-des">Désignations <small>(une par ligne : entreprise, équipe ou noms)</small></label>
+      <textarea id="f-des" rows="3" placeholder="ETP ZAATOUT TAYEB"></textarea>
+      <div class="deux"><div><label for="f-date">Date des repas</label><input type="date" id="f-date"></div><div><label for="f-doc">Date du document</label><input type="date" id="f-doc"></div></div>
+      <div class="deux"><div><label for="f-nb">Nombre de personnes</label><input type="number" min="1" id="f-nb"></div><div><label for="f-imp">Imputation analytique</label><input type="text" id="f-imp" list="dl-imp" placeholder="225 575" autocomplete="off"></div></div>
+      <datalist id="dl-imp"><option value="225 575">Travaux sur puits</option><option value="4300045000">Division</option><option value="4300045100">Électromécanique</option><option value="4300045200">Travaux Entretien</option><option value="4300045300">Construction</option></datalist>
+      <label for="f-obs">Observations <small>(une par ligne)</small></label>
+      <textarea id="f-obs" rows="2" placeholder="TRAVAUX SUR PUITS TAOP01"></textarea>
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨️ Imprimer / PDF</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">🧹 Vider</button></div>
+    </div>
+    <div class="bloc"><h2>🗂 Historique <button class="btn-s" id="h-tout" type="button" style="float:right">🗑 Tout supprimer</button></h2><div id="histo"></div></div>
+  </div>
+  <div class="apercu"><div id="feuille"></div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fr(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function lignes(t) { return String(t || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.className = 'toast show'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3000); }
+  var nbManuel = false, CLE = 'repas_emporter_histo';
+  function lire() { return { des: $('f-des').value, date: $('f-date').value, doc: $('f-doc').value, nb: $('f-nb').value, imp: $('f-imp').value, obs: $('f-obs').value }; }
+  function ecrire(v) { $('f-des').value = v.des || ''; $('f-date').value = v.date || ''; $('f-doc').value = v.doc || ''; $('f-nb').value = v.nb || ''; $('f-imp').value = v.imp || ''; $('f-obs').value = v.obs || ''; nbManuel = !!v.nb; apercu(); }
+  function pts(n) { return '<span class="pt">' + new Array(n + 1).join('…') + '</span>'; }
+  function apercu() {
+    var v = lire(), des = lignes(v.des), obs = lignes(v.obs), nb = v.nb ? (Number(v.nb) < 10 ? '0' + Number(v.nb) : v.nb) : '';
+    $('feuille').innerHTML =
+      '<div class="ent"><img src="badges/logo-sonatrach.png" alt="Sonatrach">Activité Exploration Production<br>Division Production<br>Direction Régionale Rhourde-Nouss<br>Division Infrastructure</div>' +
+      '<div class="date">Rhourde Nouss, le : ' + (fr(v.doc) || pts(8)) + '</div>' +
+      '<h1>PRISE EN CHARGE : REPAS A EMPORTER</h1>' +
+      '<table><thead><tr><th style="width:30%">Désignations</th><th style="width:14%">Date</th><th style="width:12%">Nbr de Personnes</th><th style="width:16%">Imputation Analytique</th><th>Observations</th></tr></thead><tbody><tr style="height:34mm">' +
+      '<td class="g">' + (des.length ? des.map(E).join('<br>') : pts(10)) + '</td><td>' + (fr(v.date) || pts(6)) + '</td><td class="g">' + (nb || pts(3)) + '</td><td>' + (E(v.imp) || pts(6)) + '</td><td class="g">' + (obs.length ? obs.map(E).join('<br>') : '') + '</td></tr></tbody></table>' +
+      '<div class="sig"><span>LE PRENEUR</span><span>P/ LE CHEF DE DIVISION INFRASTRUCTURES</span><span>LE CHEF DIVISION MOYENS GENERAUX</span></div>' +
+      '<div class="pied">Direction Régionale Rhourde-Nouss - BP 27 Hassi Messaoud – Ouargla Algérie<br>Tél. : 029 74 01 48 &nbsp; Fax : 029 74 01 40 &nbsp; www.sonatrach.dz &nbsp; Secrétariat.RNS@sonatrach.dz</div>';
+    ajuster();
+  }
+  function ajuster() { var z = $('feuille').parentNode, l = z.clientWidth - 28, w = $('feuille').offsetWidth || 1122; var k = Math.min(1, l / w); $('feuille').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuille').offsetHeight * k + 28) + 'px' : ''; }
+  window.addEventListener('resize', ajuster);
+  // nombre de personnes : une ligne = une personne tant qu'on ne l'a pas saisi soi-même
+  $('f-nb').addEventListener('input', function () { nbManuel = !!$('f-nb').value; });
+  ['f-des', 'f-date', 'f-doc', 'f-nb', 'f-imp', 'f-obs'].forEach(function (id) { $(id).addEventListener('input', function () { if (id === 'f-des' && !nbManuel) { var n = lignes($('f-des').value).length; $('f-nb').value = n > 1 ? n : ''; } apercu(); }); });
+
+  // historique (ce navigateur)
+  function histo() { try { return JSON.parse(localStorage.getItem(CLE) || '[]'); } catch (e) { return []; } }
+  function sauver(l) { try { localStorage.setItem(CLE, JSON.stringify(l.slice(0, 40))); } catch (e) { /* stockage indisponible */ } dessinerHisto(); }
+  function dessinerHisto() {
+    var z = $('histo'), l = histo(); z.textContent = ''; $('h-tout').hidden = !l.length;
+    if (!l.length) { var p = document.createElement('p'); p.className = 'aide'; p.style.cssText = 'font-size:12.5px;color:var(--text-muted)'; p.textContent = 'Aucune prise en charge enregistrée sur cet ordinateur.'; z.appendChild(p); return; }
+    l.forEach(function (v, i) {
+      var d = document.createElement('div'); d.className = 'histo'; var c = document.createElement('div'); c.className = 'i';
+      var b = document.createElement('b'); b.textContent = lignes(v.des)[0] || '(sans désignation)'; var s = document.createElement('small'); s.textContent = fr(v.date) + ' · ' + (v.nb || '?') + ' pers. · ' + (v.imp || '');
+      c.appendChild(b); c.appendChild(s); d.appendChild(c);
+      var o = document.createElement('button'); o.className = 'btn-s'; o.type = 'button'; o.textContent = 'Rouvrir'; o.onclick = function () { ecrire(v); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      var x = document.createElement('button'); x.className = 'btn-s'; x.type = 'button'; x.textContent = '🗑'; x.title = 'Supprimer'; x.onclick = function () { var h = histo(); h.splice(i, 1); sauver(h); };
+      d.appendChild(o); d.appendChild(x); z.appendChild(d);
+    });
+  }
+  function garder() { var v = lire(); if (!lignes(v.des).length) { toast('Indiquez au moins une désignation.'); return false; } var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); return true; }
+  $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
+  $('b-imp').onclick = function () { garder(); window.print(); };
+  $('b-vider').onclick = function () { ecrire({ doc: iso(), date: iso() }); };
+  $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
+  ecrire({ doc: iso(), date: iso() }); dessinerHisto();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

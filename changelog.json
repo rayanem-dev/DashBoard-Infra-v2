@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-14",
+    "date": "2026-10-23",
+    "title": "Version 5.25.0 — Application « Repas à emporter »",
+    "changes": [
+      "Nouvelle application à part entière « Repas à emporter » (module Logistique, carte ajoutée au catalogue) : désignations, date, nombre de personnes (calculé d'après les lignes), imputation analytique (codes habituels proposés) et observations ; aperçu A4 paysage de la mise en page de la Direction Régionale ; impression / PDF en un clic ; historique des prises en charge établies, à rouvrir ou supprimer."
+    ]
+  },
+  {
     "id": "2026-10-23-13",
     "date": "2026-10-23",
     "title": "Version 5.24.6 — Dotation : heure et lieu seulement pour collation et pause café",

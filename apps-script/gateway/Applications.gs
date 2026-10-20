@@ -109,6 +109,14 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Repas à emporter",
+  "Prise en charge « repas à emporter » prête à imprimer : désignations, date, nombre de personnes, imputation analytique et observations, avec historique des prises en charge établies.",
+  "🥡",
+  "repas-emporter.html",
+  1
+ ],
+ [
+  "logistique",
   "Dotation Vivres & Eau Minérale",
   "Génération des fiches de dotation (vivres et eau minérale) pour le personnel présent, avec durées et quantités calculées automatiquement selon le service.",
   "🍞💧",
