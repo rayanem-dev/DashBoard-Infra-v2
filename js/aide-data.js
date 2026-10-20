@@ -63,7 +63,7 @@ window.AIDE = {
     astuces: ['Vos nom, matricule, fonction et service sont préremplis.', 'Les cases vides s\'impriment en pointillés pour être complétées à la main.'] },
   'Prises en charge': { titre: 'Prises en charge', img: 'prise',
     resume: 'Établit la prise en charge d\'un prestataire (entreprise, contrat, personnes) et injecte les personnes dans le fichier Enquêtes.',
-    etapes: ['Choisissez l\'entreprise et le contrat.', 'Ajoutez les personnes (recherche par nom, ou saisie).', '« Générer » produit le document ; l\'injection dans Enquêtes signale les doublons.', '« Imprimer » affiche les fichiers générés (PEC, autorisations, macarons) : ouvrir le PDF pour l\'imprimer, ✉️ l\'envoyer par e-mail au secrétariat, ou 🗑 le supprimer.'],
+    etapes: ['Choisissez l\'entreprise et le contrat.', 'Ajoutez les personnes (recherche par nom, ou saisie).', '« Générer » produit le document ; l\'injection dans Enquêtes signale les doublons.', 'En bas, les fichiers déjà générés (PEC, autorisations, macarons) sont toujours affichés : ouvrir le PDF pour l\'imprimer, ✉️ l\'envoyer par e-mail au secrétariat, ou 🗑 le supprimer.', 'Les deux icônes en haut à droite : 📤 charge une demande PDF, 🧹 vide les champs pour une autre prise en charge (aucun fichier n\'est supprimé). La liste des prestataires se met à jour à chaque ouverture.'],
     astuces: ['Une personne déjà présente dans le même onglet est ignorée sans bruit.'] },
   'Dotation': { titre: 'Dotation vivres & eau', img: 'dotation',
     resume: 'Génère les fiches de dotation (vivres et eau minérale) pour le personnel présent.',

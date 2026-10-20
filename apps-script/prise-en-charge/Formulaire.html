@@ -55,6 +55,9 @@
   .histo-links a, .histo-links button.mail { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
   .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.mail:disabled { opacity: .5; cursor: wait; }
   .btn-suppr-item { background: #FEE2E2; color: var(--red); border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+  .titre-ligne { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 14px; } .titre-ligne .section-title { margin: 0; }
+  .icones { display: flex; gap: 8px; } .icone { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--white); font-size: 18px; cursor: pointer; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .icone:hover { border-color: var(--orange-main); box-shadow: var(--shadow-card); } .icone:disabled { opacity: .5; cursor: wait; }
   .form-card { background: var(--white); border-radius: 20px; padding: 24px 26px; box-shadow: var(--shadow-card); border: 1px solid var(--border); }
   label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 13px; color: var(--gray-dark); }
   label:first-of-type { margin-top: 0; }
@@ -149,30 +152,15 @@
 </header>
 
 <main>
-  <div class="section-title">Actions rapides</div>
-  <div class="actions-grid">
-    <button class="action-btn btn-actualiser" id="btnActualiser" onclick="actualiserPrestataires()">
-      <span class="icon">🔄</span> Actualiser<br>Prestataires
-    </button>
-    <button class="action-btn btn-effacer" id="btnEffacer" onclick="effacerTout()">
-      <span class="icon">🗑️</span> Effacer
-    </button>
-    <button class="action-btn btn-charger" id="btnCharger" onclick="ouvrirModalePDF()">
-      <span class="icon">📤</span> Charger<br>demande PDF
-    </button>
-    <button class="action-btn btn-generer" id="btnGenerer" onclick="envoyer()">
-      <span class="icon">⚙️</span> Générer
-    </button>
-    <button class="action-btn btn-imprimer" id="btnImprimer" onclick="imprimerTout()">
-      <span class="icon">🖨️</span> Imprimer
-    </button>
-    <button class="action-btn btn-dossier" id="btnDossier" onclick="ouvrirDossierPDF()">
-      <span class="icon">📁</span> Ouvrir<br>dossier PDF
-    </button>
-  </div>
   <div id="toast"></div>
 
-  <div class="section-title">Nouvelle demande</div>
+  <div class="titre-ligne">
+    <div class="section-title">Nouvelle demande</div>
+    <div class="icones">
+      <button type="button" class="icone" id="btnCharger" onclick="ouvrirModalePDF()" title="Charger une demande PDF" aria-label="Charger une demande PDF">📤</button>
+      <button type="button" class="icone" id="btnEffacer" onclick="viderFormulaire()" title="Vider les champs pour une autre prise en charge" aria-label="Vider les champs">🧹</button>
+    </div>
+  </div>
   <div class="form-card">
 
     <label>Prestataire</label>
@@ -265,8 +253,8 @@
   <div class="spinner" id="spinner"></div>
   <div id="resultat"></div>
 
-  <div class="section-title" id="titreFichiers" hidden>Fichiers à imprimer</div>
-  <div class="form-card" id="cartefichiers" hidden><div id="historique"></div></div>
+  <div class="section-title" id="titreFichiers">Fichiers à imprimer</div>
+  <div class="form-card" id="cartefichiers"><div id="historique"></div></div>
 </main>
 
 <!-- Modale upload PDF -->
@@ -395,6 +383,8 @@
   }
 
   google.script.run.withSuccessHandler(remplirDropdowns).obtenirOptionsFormulaire();
+  // À chaque ouverture, la liste des prestataires est resynchronisée avec le Suivi CPM (sans bruit : la saisie en cours n'est pas touchée)
+  google.script.run.withSuccessHandler(function(res) { if (res && res.success && res.options) remplirDropdowns(res.options); }).withFailureHandler(function() {}).actualiserPrestatairesWeb();
 
   function afficherToast(res) {
     const div = document.getElementById('toast');
@@ -412,8 +402,8 @@
   }
 
   function bloquerBoutons(bloque) {
-    ['btnActualiser','btnEffacer','btnCharger','btnImprimer','btnDossier','btnGenerer'].forEach(id => {
-      document.getElementById(id).disabled = bloque;
+    ['btnEffacer','btnCharger'].forEach(id => {
+      const b = document.getElementById(id); if (b) b.disabled = bloque;
     });
   }
 
@@ -475,49 +465,20 @@
       .actualiserPrestatairesWeb();
   }
 
-  function effacerTout() {
-    afficherConfirmationModale(
-      "Supprimer tous les fichiers ?",
-      "Cette action supprime définitivement tous les PDF et documents générés (Prises en charge, Autorisations, Macarons). C'est irréversible.",
-      function() {
-        bloquerBoutons(true);
-        google.script.run
-          .withSuccessHandler(function(res) {
-            bloquerBoutons(false);
-            if (res.success) {
-              // Les liens/résultats affichés précédemment ne sont plus valides
-              const divResultat = document.getElementById('resultat');
-              divResultat.style.display = 'none';
-              divResultat.innerHTML = '';
-              const divToast = document.getElementById('toast');
-              divToast.style.display = 'none';
-              divToast.innerHTML = '';
-            }
-            afficherAlerteModale(res.success ? "Suppression terminée" : "Erreur", res.message, res.success ? 'ok' : 'err');
-          })
-          .withFailureHandler(function(err) { bloquerBoutons(false); afficherAlerteModale("Erreur", err.message, 'err'); })
-          .effacerToutWeb();
-      }
-    );
+  /** « Effacer » : vide les champs saisis pour préparer une autre prise en charge (aucun fichier n'est supprimé). */
+  function viderFormulaire() {
+    const carte = document.querySelector('.form-card');
+    carte.querySelectorAll('input, select, textarea').forEach(function(e) {
+      if (e.type === 'checkbox' || e.type === 'radio') e.checked = e.defaultChecked;
+      else if (e.tagName === 'SELECT') e.selectedIndex = 0;
+      else e.value = '';
+    });
+    const res = document.getElementById('resultat'); res.innerHTML = ''; res.className = '';
+    const toast = document.getElementById('toast'); toast.style.display = 'none'; toast.innerHTML = '';
+    afficherToast({ success: true, message: 'Champs vidés : vous pouvez saisir une autre prise en charge.' });
   }
 
-  function ouvrirDossierPDF() {
-    bloquerBoutons(true);
-    google.script.run
-      .withSuccessHandler(function(res) {
-        bloquerBoutons(false);
-        if (res.success) window.open(res.url, '_blank');
-        else afficherToast(res);
-      })
-      .withFailureHandler(function(err) { bloquerBoutons(false); afficherToast({success:false, message: err.message}); })
-      .ouvrirDossierPDFWeb();
-  }
-
-  // « Imprimer » : affiche les fichiers générés (même présentation que Dotation) : ouvrir le PDF pour l'imprimer, l'envoyer par e-mail au secrétariat, ou le supprimer
-  function imprimerTout() {
-    document.getElementById('titreFichiers').hidden = false; document.getElementById('cartefichiers').hidden = false;
-    chargerFichiers(); document.getElementById('titreFichiers').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  // Fichiers générés, toujours affichés en bas (même présentation que Dotation) : ouvrir le PDF pour l'imprimer, l'envoyer par e-mail au secrétariat, ou le supprimer
   function echapper(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function chargerFichiers() {
     const div = document.getElementById('historique'); div.innerHTML = '<div class="placeholder">Chargement…</div>';
@@ -671,7 +632,6 @@
     };
 
     document.getElementById('btnEnvoyer').disabled = true;
-    document.getElementById('btnGenerer').disabled = true;
     document.getElementById('spinner').style.display = 'block';
     document.getElementById('resultat').style.display = 'none';
 
@@ -707,9 +667,10 @@
     boite.querySelector('#dbIgnorer').onclick = function() { fond.remove(); suite(true); };
   }
 
+  setTimeout(function() { chargerFichiers(); }, 0);
+
   function afficherResultat(res) {
     document.getElementById('btnEnvoyer').disabled = false;
-    document.getElementById('btnGenerer').disabled = false;
     document.getElementById('spinner').style.display = 'none';
     const div = document.getElementById('resultat');
     div.className = res.success ? 'ok' : 'err';
@@ -719,7 +680,7 @@
     }
     div.innerHTML = contenu;
     afficherAlerteModale(res.success ? "Génération terminée" : "Erreur", contenu, res.success ? 'ok' : 'err');
-    if (res.success && !document.getElementById('cartefichiers').hidden) chargerFichiers();
+    if (res.success) chargerFichiers();
   }
 </script>
 <script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Prises en charge"></script>

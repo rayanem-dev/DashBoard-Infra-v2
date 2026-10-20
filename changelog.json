@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-23-03",
+    "date": "2026-10-23",
+    "title": "Version 5.22.1 — Prises en charge : écran simplifié",
+    "changes": [
+      "Prises en charge : les « actions rapides » sont remplacées par deux petites icônes à côté de « Nouvelle demande » : 📤 charger une demande PDF et 🧹 vider les champs pour saisir une autre prise en charge (l'ancien « Effacer » supprimait tous les fichiers : ce n'est plus le cas).",
+      "Retirés : Actualiser prestataires (la liste se resynchronise automatiquement à chaque ouverture), Générer (déjà présent plus bas), Imprimer et Ouvrir dossier PDF.",
+      "Les fichiers déjà générés s'affichent toujours en bas de page, prêts à imprimer, envoyer par e-mail ou supprimer."
+    ]
+  },
+  {
     "id": "2026-10-23-02",
     "date": "2026-10-23",
     "title": "Version 5.22.0 — Prises en charge : fichiers à imprimer et envoi par e-mail",
