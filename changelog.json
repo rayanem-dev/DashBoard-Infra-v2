@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-11",
+    "date": "2026-10-23",
+    "title": "Version 5.24.4 — Dotation : casse-croûte plus fidèle au modèle",
+    "changes": [
+      "Casse-croûte : tout le texte est noir (seuls les filets du haut et du bas sont orange ; la date et l'adresse ne héritent plus de la couleur orange) ; tailles de police alignées sur le modèle STEP (10 à 13 points au lieu de 8 à 9) ; noms, imputation, période et structure en texte normal, titres de colonnes et signatures en gras ; filet de l'en-tête sur une seule ligne ; logo un peu plus grand."
+    ]
+  },
+  {
     "id": "2026-10-23-10",
     "date": "2026-10-23",
     "title": "Version 5.24.3 — Dotation : correctif « texte vide »",
