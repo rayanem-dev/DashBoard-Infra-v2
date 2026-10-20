@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-06",
+    "date": "2026-10-23",
+    "title": "Version 5.23.2 — Prise en charge : bouton Tout supprimer",
+    "changes": [
+      "Prise en charge et autorisation d'accès : bouton « 🗑 Tout supprimer » au-dessus de la liste des fichiers à imprimer (confirmation avant de mettre à la corbeille tous les PDF et documents générés).",
+      "Le bloc « fichiers générés » (ouvrir, imprimer en un clic, e-mail, supprimer, tout supprimer) est enregistré dans la bibliothèque personnelle sous le nom « _output », pour le réutiliser dans d'autres applications."
+    ]
+  },
+  {
     "id": "2026-10-23-05",
     "date": "2026-10-23",
     "title": "Version 5.23.1 — Prise en charge : impression en un clic",

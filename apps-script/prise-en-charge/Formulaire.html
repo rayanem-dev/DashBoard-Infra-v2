@@ -56,6 +56,8 @@
   .histo-links { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
   .histo-links a, .histo-links button.mail, .histo-links button.impr { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
   .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.impr { background: linear-gradient(135deg, #16A34A, #22C55E); color: #fff; } .histo-links button:disabled { opacity: .5; cursor: wait; }
+  .titre-fichiers { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 14px; } .titre-fichiers .section-title { margin: 0; }
+  .btn-tout-suppr { background: #FEE2E2; color: var(--red); border: 1.5px solid #FECACA; border-radius: 9px; padding: 7px 12px; font: 700 12px 'Inter', sans-serif; cursor: pointer; } .btn-tout-suppr:hover { background: #FCA5A5; } .btn-tout-suppr:disabled { opacity: .5; cursor: wait; }
   .btn-suppr-item { background: #FEE2E2; color: var(--red); border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
   .icones { display: flex; gap: 8px; margin-left: auto; } .icone { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12); font-size: 18px; cursor: pointer; line-height: 1; }
   .icone:hover { background: rgba(255,255,255,.24); border-color: var(--orange-light); } .icone:disabled { opacity: .5; cursor: wait; }
@@ -254,7 +256,7 @@
   <div class="spinner" id="spinner"></div>
   <div id="resultat"></div>
 
-  <div class="section-title" id="titreFichiers">Fichiers à imprimer</div>
+  <div class="titre-fichiers"><div class="section-title" id="titreFichiers">Fichiers à imprimer</div><button type="button" class="btn-tout-suppr" id="btnToutSupprimer" onclick="supprimerTout()" hidden>🗑 Tout supprimer</button></div>
   <div class="form-card" id="cartefichiers"><div id="historique"></div></div>
 </main>
 
@@ -485,6 +487,7 @@
     const div = document.getElementById('historique'); div.innerHTML = '<div class="placeholder">Chargement…</div>';
     google.script.run.withSuccessHandler(function(res) {
       if (!res.success) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(res.error) + '</div>'; return; }
+      document.getElementById('btnToutSupprimer').hidden = !res.fichiers.length;
       if (!res.fichiers.length) { div.innerHTML = '<div class="placeholder">Aucun document généré pour le moment.</div>'; return; }
       div.innerHTML = '';
       res.fichiers.forEach(function(f) {
@@ -522,6 +525,13 @@
         setTimeout(function() { cadre.remove(); URL.revokeObjectURL(url); }, 180000);
       } catch (e) { afficherAlerteModale('Erreur', 'Impression impossible : ' + e.message, 'err'); }
     }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).lireFichierPourImpression(id);
+  }
+  function supprimerTout() {
+    afficherConfirmationModale('Tout supprimer ?', 'Tous les fichiers générés (prises en charge, autorisations, macarons : PDF et documents) seront mis à la corbeille.', function() {
+      const b = document.getElementById('btnToutSupprimer'); b.disabled = true;
+      google.script.run.withSuccessHandler(function(res) { b.disabled = false; afficherAlerteModale(res.success ? 'Suppression terminée' : 'Erreur', res.message, res.success ? 'ok' : 'err'); chargerFichiers(); })
+        .withFailureHandler(function(err) { b.disabled = false; afficherAlerteModale('Erreur', err.message, 'err'); }).effacerToutWeb();
+    });
   }
   function ouvrirAide() { const b = document.querySelector('.aide-btn'); if (b) b.click(); }
   function envoyerParMail(btn, id) {
