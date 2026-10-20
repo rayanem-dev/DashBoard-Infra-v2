@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-01",
+    "date": "2026-10-23",
+    "title": "Version 5.21.1 — Prise en charge : noms en une ligne",
+    "changes": [
+      "Prise en charge (PDF) : chaque nom est précédé d'un tiret (« - NOM PRÉNOM ») et tient sur une seule ligne : la colonne des noms est élargie en réduisant d'abord la colonne « nombre de personnes », puis les dates, l'imputation, les observations et le code (largeur totale inchangée, minimums respectés).",
+      "L'imputation analytique est centrée horizontalement et verticalement dans sa case."
+    ]
+  },
+  {
     "id": "2026-10-22-29",
     "date": "2026-10-22",
     "title": "Version 5.21.0 — Simulation : conflits sur une rotation, relève respectée, jours fériés",

@@ -28,3 +28,18 @@ test('le macaron suit toujours la fin du contrat (même dépassée) ; fin introu
   assert.strictEqual(jj(datesFin_({ aujourdhui: '2026-10-27' }).macaron), '2026-10-31');
   assert.strictEqual(jj(datesFin_({ aujourdhui: '2026-10-27', depart: '2026-10-29', visite: true }).autorisation), '2026-10-29');
 });
+
+const { nomAvecTiret_, largeursColonnes_ } = require('../Code.js');
+test('noms : tiret devant, jamais doublé, ligne vide reste vide', () => {
+  assert.strictEqual(nomAvecTiret_('BENSLIMANE CHEMSEDDINE'), '- BENSLIMANE CHEMSEDDINE');
+  assert.strictEqual(nomAvecTiret_(' - CHAIB TOUFIK '), '- CHAIB TOUFIK');
+  assert.strictEqual(nomAvecTiret_(''), ' ');
+});
+test('largeurs : la colonne des noms s\'élargit sur le nombre de personnes d\'abord, total inchangé, minimums respectés', () => {
+  const act = [110, 66, 66, 70, 80, 100, 90], tot = act.reduce((a, b) => a + b, 0);
+  const r = largeursColonnes_(act, 24);
+  assert.ok(r[0] > act[0] && r[3] < act[3] && r[3] >= 40);
+  assert.ok(Math.abs(r.reduce((a, b) => a + b, 0) - tot) < 1e-9);
+  assert.deepStrictEqual(largeursColonnes_(act, 5), act, 'nom court : rien ne bouge');
+  const g = largeursColonnes_(act, 80); assert.ok(g.every((x, i) => i === 0 || x > 0));
+});

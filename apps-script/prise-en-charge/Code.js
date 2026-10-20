@@ -861,7 +861,7 @@ function genererPEC(ss, silencieux, options) {
     nomCell.getChild(i).asParagraph().setText(" ");
   }
   for (let i = 0; i < filled; i++) {
-    nomCell.getChild(topPad + i).asParagraph().setText(filledTexts[i] || " ");
+    nomCell.getChild(topPad + i).asParagraph().setText(nomAvecTiret_(filledTexts[i]));
   }
 
   // Supprime les lignes vides en trop (au-delà d'1 en haut + 1 en bas) pour que
@@ -888,6 +888,27 @@ function genererPEC(ss, silencieux, options) {
       const enfant = obsCell.getChild(i);
       if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) {
         enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER).setSpacingBefore(0).setSpacingAfter(0);
+      }
+    }
+  } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
+
+  // Colonne des noms assez large pour que « - NOM PRÉNOM » tienne sur UNE ligne : la place est prise sur les autres colonnes (nombre de personnes d'abord)
+  try {
+    const nbCol = dataRow.getNumCells(), actuelles = [];
+    for (let c = 0; c < nbCol; c++) actuelles.push(table.getColumnWidth(c));
+    const plusLong = filledTexts.reduce((m, t) => Math.max(m, nomAvecTiret_(t).length), 0);
+    const nouvelles = largeursColonnes_(actuelles, plusLong);
+    for (let c = 0; c < nbCol; c++) if (Math.abs(nouvelles[c] - actuelles[c]) > 0.5) table.setColumnWidth(c, nouvelles[c]);
+  } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
+
+  // Imputation analytique (colonne 5) : centrée horizontalement et verticalement
+  try {
+    if (dataRow.getNumCells() > 4) {
+      const impCell = dataRow.getCell(4);
+      impCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+      for (let i = 0; i < impCell.getNumChildren(); i++) {
+        const enfant = impCell.getChild(i);
+        if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
       }
     }
   } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
@@ -1029,6 +1050,30 @@ function prochainIncrement(dossier, prefixe) {
  *  pour limiter les allers-retours Drive/Docs à 2 exports PDF au lieu de
  *  2×(nombre de véhicules).
  ******************************/
+/** « NOM PRÉNOM » → « - NOM PRÉNOM » (une ligne vide reste vide ; le tiret n'est pas doublé). */
+function nomAvecTiret_(t) {
+  const v = String(t == null ? "" : t).replace(/^\s*[-–]\s*/, "").trim();
+  return v ? "- " + v : " ";
+}
+/**
+ * Largeurs (en points) des colonnes de la ligne de données : la 1re (noms) est élargie pour contenir `nbCaracteres` sur une ligne,
+ * en prenant la place sur les autres colonnes, dans cet ordre : nombre de personnes (4e), dates (2e, 3e), imputation (5e), observations (7e), code (6e),
+ * sans jamais descendre sous un minimum ; la largeur totale du tableau ne change pas. Si la place manque, le nom reste sur plusieurs lignes.
+ */
+function largeursColonnes_(actuelles, nbCaracteres) {
+  const w = actuelles.slice(), n = w.length;
+  if (n < 4) return w;
+  const total = w.reduce((a, b) => a + b, 0), besoin = Math.min(nbCaracteres * 6.4 + 14, total * 0.46);
+  let manque = besoin - w[0];
+  if (manque <= 0) return w;
+  const minimums = { 3: 40, 1: 58, 2: 58, 4: 66, 6: 84, 5: 96 };
+  [3, 1, 2, 4, 6, 5].forEach(function (c) {
+    if (c >= n || manque <= 0) return;
+    const prise = Math.min(manque, Math.max(0, w[c] - minimums[c]));
+    w[c] -= prise; w[0] += prise; manque -= prise;
+  });
+  return w;
+}
 /** Date (objet Date, « jj/mm/aaaa » ou « aaaa-mm-jj ») → Date locale à minuit, ou null. */
 function dateLue_(v) {
   if (v instanceof Date) return isNaN(v) ? null : new Date(v.getFullYear(), v.getMonth(), v.getDate());
@@ -1459,4 +1504,4 @@ function imprimerToutWeb() {
   }
 }
 
-if (typeof module !== 'undefined') module.exports = { dateLue_, finContrat_, departManuel_, datesFin_ };
+if (typeof module !== 'undefined') module.exports = { dateLue_, finContrat_, departManuel_, datesFin_, nomAvecTiret_, largeursColonnes_ };
