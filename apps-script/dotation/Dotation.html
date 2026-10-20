@@ -704,7 +704,8 @@ document.getElementById('date').addEventListener('change', function(){
 function majRepasType(){
   const casse = document.getElementById('repasType').value === 'CASSE_CROUTE';
   document.getElementById('repasLblDebut').textContent = casse ? 'Période : du' : 'Date';
-  document.getElementById('repasHeureLieu').style.display = casse ? 'none' : '';
+  const avecHeureLieu = ['COLLATION', 'PAUSE_CAFE'].indexOf(document.getElementById('repasType').value) >= 0;   // heure et lieu : collation et pause café seulement
+  document.getElementById('repasHeureLieu').style.display = avecHeureLieu ? '' : 'none';
   document.getElementById('repasLblDesignations').firstChild.textContent = casse ? 'Noms des agents ' : 'Désignations ';
   document.getElementById('repasLblObservations').firstChild.textContent = casse ? 'Structure ' : 'Observations ';
 }
@@ -741,9 +742,9 @@ function generer(type){
     form.designations = document.getElementById('repasDesignations').value;
     form.dateDebut = document.getElementById('repasDebut').value;
     form.dateFin = document.getElementById('repasFin').value;
-    const casseCroute = form.sousType === 'CASSE_CROUTE';   // pas d'heure ni de lieu pour un casse-croûte
-    form.heure = casseCroute ? '' : document.getElementById('repasHeure').value;
-    form.lieu = casseCroute ? '' : document.getElementById('repasLieu').value;
+    const avecHeureLieu = form.sousType === 'COLLATION' || form.sousType === 'PAUSE_CAFE';   // heure et lieu : collation et pause café seulement
+    form.heure = avecHeureLieu ? document.getElementById('repasHeure').value : '';
+    form.lieu = avecHeureLieu ? document.getElementById('repasLieu').value : '';
     form.nb = document.getElementById('repasNb').value;
     form.imputation = document.getElementById('repasImputation').value;
     form.observations = document.getElementById('repasObservations').value;

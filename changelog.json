@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-13",
+    "date": "2026-10-23",
+    "title": "Version 5.24.6 — Dotation : heure et lieu seulement pour collation et pause café",
+    "changes": [
+      "Dotation, « Repas & collations » : « Heure » et « Lieu » ne s'affichent (et ne sont pris en compte) que pour Collation et Pause café ; masqués pour Casse-croûte et Repas à emporter."
+    ]
+  },
+  {
     "id": "2026-10-23-12",
     "date": "2026-10-23",
     "title": "Version 5.24.5 — Dotation : casse-croûte sans heure ni lieu",
