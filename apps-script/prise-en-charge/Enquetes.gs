@@ -319,7 +319,7 @@ function injecterEnquetes_(formData) {
       var ss = enqClasseur_(), onglets = enqLireTout_(ss), idx = enqIndex_(onglets), cible = enqOngletPour_(onglets, r.entreprise, contrat);
       gens.forEach(function (p) {
         var nom = Badges.vide(p.nom), prenom = Badges.vide(p.prenom), nomComplet = enqNomComplet_(nom, prenom);
-        if (enqDejaChezCeContrat_(idx, cible, nom, prenom)) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : déjà dans « ' + cible + ' »'); return; }
+        if (enqDejaChezCeContrat_(idx, cible, nom, prenom, r.entreprise, contrat)) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : déjà dans « ' + cible + ' »'); return; }
         if (ignorer.indexOf(nomComplet) >= 0) { r.existants.push(nomComplet); r.details.push(nomComplet + ' : ignoré (déjà enregistré, à ta demande)'); return; }
         if (!cible) { // pas d'onglet pour ce prestataire (et ce contrat) : on le crée
           try { cible = enqCreerOnglet_(ss, onglets, r.entreprise, contrat, Badges.vide(formData.wilaya)); r.crees.push(cible); onglets.push({ onglet: cible, entreprise: r.entreprise.toUpperCase(), personnes: [] }); }
@@ -399,11 +399,21 @@ function journaliserPEC_(ss, formData, enq) {
   } catch (e) { /* le journal ne doit jamais bloquer une génération */ }
 }
 
-/** Personne déjà inscrite dans l'onglet de CE prestataire et de CE contrat (index = enqIndex_) : rien à faire, ni avertissement ni ajout. */
-function enqDejaChezCeContrat_(idx, cible, nom, prenom) {
+/**
+ * Personne déjà inscrite chez CE prestataire et CE contrat (index = enqIndex_) : rien à faire, ni avertissement ni ajout.
+ * Compte l'onglet cible, mais aussi tout onglet du même prestataire dont l'intitulé porte le même contrat ou aucun contrat (ancien onglet).
+ * Seul un autre contrat (ou un autre prestataire) mérite la question.
+ */
+function enqDejaChezCeContrat_(idx, cible, nom, prenom, entreprise, contrat) {
   if (!cible) return false;
   var voulu = nom + ' ' + prenom;
-  return idx.some(function (p) { return p.onglet === cible && enqMemePersonne_(voulu, p.nom + ' ' + p.prenom); });
+  return idx.some(function (p) {
+    if (!enqMemePersonne_(voulu, p.nom + ' ' + p.prenom)) return false;
+    if (p.onglet === cible) return true;
+    if (!entreprise || !(enqScoreEntreprise_(entreprise, p.entreprise) || enqScoreEntreprise_(entreprise, p.onglet))) return false;
+    var c = enqContratOnglet_(p.onglet);
+    return !c || (!!contrat && enqMemeContrat_(c, contrat));
+  });
 }
 /** Avant la génération : agents déjà présents dans les Enquêtes (chez ce prestataire ou un autre), avec l'onglet et la date d'enregistrement si elle existe. */
 function verifierEnquetes(formData) {
@@ -413,7 +423,7 @@ function verifierEnquetes(formData) {
     var onglets = enqLireTout_(enqClasseur_()), idx = enqIndex_(onglets), deja = [];
     var cible = enqOngletPour_(onglets, enqEntrepriseDe_(formData.prestataire), String(formData.prestataire || '').split(' - ')[0].trim());
     gens.forEach(function (p) {
-      if (enqDejaChezCeContrat_(idx, cible, Badges.vide(p.nom), Badges.vide(p.prenom))) return; // déjà chez ce prestataire / ce contrat : ignoré sans avertir
+      if (enqDejaChezCeContrat_(idx, cible, Badges.vide(p.nom), Badges.vide(p.prenom), enqEntrepriseDe_(formData.prestataire), String(formData.prestataire || '').split(' - ')[0].trim())) return; // déjà chez ce prestataire / ce contrat : ignoré sans avertir
       var t = enqTrouver_(idx, Badges.vide(p.nom), Badges.vide(p.prenom));
       if (t) deja.push({ nomComplet: enqNomComplet_(p.nom, p.prenom), onglet: t.onglet, date: t.date || '' });
     });

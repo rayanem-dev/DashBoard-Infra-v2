@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-17",
+    "date": "2026-10-23",
+    "title": "Version 5.26.2 — Prise en charge : doublons Enquêtes",
+    "changes": [
+      "Prise en charge : un agent déjà enregistré dans les Enquêtes chez le même prestataire et le même contrat (y compris dans un ancien onglet sans numéro de contrat) est ignoré directement, sans question. La question n'est posée que s'il figure dans un autre contrat ou chez un autre prestataire."
+    ]
+  },
+  {
     "id": "2026-10-23-16",
     "date": "2026-10-23",
     "title": "Version 5.26.1 — Journal du CPM automatique",

@@ -145,6 +145,13 @@ test('déjà chez ce contrat : ignoré sans avertir', () => {
   assert.equal(E('enqDejaChezCeContrat_', idx, '', 'CHAREF', 'Kamel'), false);
 });
 
+test('déjà chez ce prestataire dans un ancien onglet sans contrat ou le même contrat : ignoré ; autre contrat : question', () => {
+  const idx = [{ nom: 'CHAREF', prenom: 'Kamel', entreprise: 'SARL ACOSCO', onglet: 'SARL ACOSCO' }, { nom: 'DUPONT', prenom: 'Paul', entreprise: 'SARL ACOSCO', onglet: 'SARL ACOSCO · 25.INFRA.01' }];
+  const cible = 'SARL ACOSCO · 24.INFRA.25';
+  assert.equal(E('enqDejaChezCeContrat_', idx, cible, 'CHAREF', 'Kamel', 'SARL ACOSCO', '24.INFRA.25'), true);
+  assert.equal(E('enqDejaChezCeContrat_', idx, cible, 'DUPONT', 'Paul', 'SARL ACOSCO', '24.INFRA.25'), false);
+})
+
 test('en-tête d\'un nouvel onglet : la wilaya choisie remplace celle du modèle', () => {
   const l = [['القائمة الإسمية لأعوان شركة OLD'], [], ['ولاية   إليزي'], ['رقم', 'الاسم و اللقب بالفرنسية']];
   const r = E('enqCorrectionsEntete_', l, 3, 'ENAGEO', 'ورقلة');
