@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-10",
+    "date": "2026-10-23",
+    "title": "Version 5.24.3 — Dotation : correctif « texte vide »",
+    "changes": [
+      "Dotation, « Repas & collations » : correction de l'erreur « Impossible d'insérer un élément de texte vide » (Google Docs refuse un texte vide : une espace insécable le remplace, par exemple pour une imputation ou une structure laissée vide). Un test reproduit désormais cette règle de Google Docs pour les quatre types."
+    ]
+  },
+  {
     "id": "2026-10-23-09",
     "date": "2026-10-23",
     "title": "Version 5.24.2 — Dotation : casse-croûte au modèle STEP",

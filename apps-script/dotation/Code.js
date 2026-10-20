@@ -428,6 +428,8 @@ const REPAS_TYPES = {
   REPAS_EMPORTER: { titre: 'REPAS A EMPORTER', code: 'REPAS_EMPORTER', colonne: 'Date', tiret: false },
   CASSE_CROUTE: { titre: 'CASSE - CROUTE', code: 'CASSE_CROUTE', colonne: 'Période De Dotation', tiret: false }
 };
+/** Google Docs refuse un texte vide (« Impossible d'insérer un élément de texte vide ») : une espace insécable le remplace. */
+function vide_(t) { return t == null || t === '' ? '\u00a0' : t; }
 function lignes_(t) { return String(t == null ? '' : t).split(/\r?\n/).map(l => l.trim()).filter(Boolean); }
 function jjmmaaaa_(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
 /** Contenu des cellules du tableau, d'après le formulaire. Pur : testé en Node. */
@@ -461,10 +463,10 @@ function genererPriseEnChargeRepas_(form) {
     const fixer = (p, o) => { if (!p) return p; p.setSpacingBefore(0); p.setSpacingAfter(o && o.apres != null ? o.apres : 0); if (o && o.align) p.setAlignment(o.align); return p; };
     const C = DocumentApp.HorizontalAlignment.CENTER, R = DocumentApp.HorizontalAlignment.RIGHT;
     // Le premier paragraphe d'un document neuf existe déjà : on l'utilise pour le logo (pas de paragraphe vide en trop)
-    const logo = body.getNumChildren() ? body.getChild(0).asParagraph() : body.appendParagraph('');
+    const logo = body.getNumChildren() ? body.getChild(0).asParagraph() : body.appendParagraph('\u00a0');
     fixer(logo, { apres: 2 });
     const img = logo.appendInlineImage(Utilities.newBlob(Utilities.base64Decode(LOGO_SONATRACH_B64), 'image/png', 'sonatrach.png')); img.setWidth(60).setHeight(89);
-    const texte = (t, o, taille, gras) => { const p = body.appendParagraph(t); fixer(p, o); p.setBold(!!gras).setFontSize(taille).setFontFamily('Arial'); if (o && o.souligne) p.setUnderline(true); return p; };
+    const texte = (t, o, taille, gras) => { const p = body.appendParagraph(vide_(t)); fixer(p, o); p.setBold(!!gras).setFontSize(taille).setFontFamily('Arial'); if (o && o.souligne) p.setUnderline(true); return p; };
     ['Activité Exploration Production', 'Division Production', 'Direction Régionale Rhourde-Nouss', 'Division Infrastructure'].forEach(t => texte(t, null, 9, true));
     texte('Rhourde Nouss, le : ' + dateLongueFr_(form.date || form.dateDebut), { align: R, apres: 14 }, 10, true);
     texte(c.titre, { align: C, apres: 14, souligne: true }, 12, true);
@@ -472,12 +474,12 @@ function genererPriseEnChargeRepas_(form) {
     const cellule = (cell, lignes, o) => {
       cell.setPaddingTop(6).setPaddingBottom(6).setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
       const l = lignes.length ? lignes : [''];
-      const premier = cell.getNumChildren() ? cell.getChild(0).asParagraph() : cell.appendParagraph('');
-      premier.setText(l[0]);
-      const paras = [premier].concat(l.slice(1).map(x => cell.appendParagraph(x)));
+      const premier = cell.getNumChildren() ? cell.getChild(0).asParagraph() : cell.appendParagraph('\u00a0');
+      premier.setText(vide_(l[0]));
+      const paras = [premier].concat(l.slice(1).map(x => cell.appendParagraph(vide_(x))));
       paras.forEach(p => { fixer(p, { align: (o && o.align) || C }); p.setBold(!!(o && o.gras)).setFontSize((o && o.taille) || 10).setFontFamily('Arial'); });
     };
-    const tab = body.appendTable([[c.designations.length > 1 ? 'Désignations' : 'Désignation', c.colonne, 'Nbr de Personnes', 'Imputation Analytique', 'Observations'], [c.designations[0] || '', c.quand[0] || '', c.nb, c.imputation, c.observations[0] || '']]);
+    const tab = body.appendTable([[c.designations.length > 1 ? 'Désignations' : 'Désignation', c.colonne, 'Nbr de Personnes', 'Imputation Analytique', 'Observations'], [vide_(c.designations[0]), vide_(c.quand[0]), c.nb, vide_(c.imputation), vide_(c.observations[0])]]);
     [235, 130, 70, 100, 195].forEach((w, i) => tab.setColumnWidth(i, w));
     for (let i = 0; i < 5; i++) cellule(tab.getRow(0).getCell(i), [tab.getRow(0).getCell(i).getText()], { gras: true });
     cellule(tab.getRow(1).getCell(0), c.designations, { gras: true });
@@ -512,18 +514,18 @@ function genererCasseCroute_(form, c, dossier) {
   const mise = (p, o) => { if (!p) return p; o = o || {}; p.setSpacingBefore(o.avant || 0).setSpacingAfter(o.apres || 0).setAlignment(o.align || L); p.setBold(!!o.gras).setFontSize(o.taille || 10).setFontFamily('Arial'); if (o.souligne === false) p.setUnderline(false); return p; };
   const cellule = (cell, lignes, o) => {
     o = o || {}; cell.setPaddingTop(o.pad == null ? 5 : o.pad).setPaddingBottom(o.pad == null ? 5 : o.pad).setPaddingLeft(5).setPaddingRight(5).setVerticalAlignment(o.haut ? DocumentApp.VerticalAlignment.TOP : DocumentApp.VerticalAlignment.CENTER);
-    const l = lignes.length ? lignes : [''], premier = cell.getNumChildren() ? cell.getChild(0).asParagraph() : cell.appendParagraph('');
-    premier.setText(l[0]);
-    [premier].concat(l.slice(1).map(x => cell.appendParagraph(x))).forEach(p => mise(p, { align: o.align || C, gras: o.gras, taille: o.taille }));
+    const l = lignes.length ? lignes : [''], premier = cell.getNumChildren() ? cell.getChild(0).asParagraph() : cell.appendParagraph('\u00a0');
+    premier.setText(vide_(l[0]));
+    [premier].concat(l.slice(1).map(x => cell.appendParagraph(vide_(x)))).forEach(p => mise(p, { align: o.align || C, gras: o.gras, taille: o.taille }));
   };
   // En-tête : à gauche logo + service, à droite « A Monsieur / Le Chef de Division MG » et filet orange
-  const entete = body.appendTable([['', '']]); entete.setBorderWidth(0); entete.setColumnWidth(0, 330).setColumnWidth(1, 410);
+  const entete = body.appendTable([['\u00a0', '\u00a0']]); entete.setBorderWidth(0); entete.setColumnWidth(0, 330).setColumnWidth(1, 410);
   const g = entete.getRow(0).getCell(0), d = entete.getRow(0).getCell(1);
   g.setPaddingTop(0).setPaddingBottom(0).setPaddingLeft(0); d.setPaddingTop(0).setPaddingBottom(0).setVerticalAlignment(DocumentApp.VerticalAlignment.TOP);
   const pl = g.getChild(0).asParagraph(); mise(pl, { apres: 2 });
   pl.appendInlineImage(Utilities.newBlob(Utilities.base64Decode(LOGO_SONATRACH_B64), 'image/png', 'sonatrach.png')).setWidth(60).setHeight(89);
   ['Activité Exploration - Production', 'Division Production', 'Direction Régionale Rhourde Nouss', 'Division Infrastructure'].forEach(t => mise(g.appendParagraph(t), { gras: true, taille: 9 }));
-  const pd = d.getChild(0).asParagraph(); pd.setText(''); mise(pd, { apres: 0 });
+  const pd = d.getChild(0).asParagraph(); mise(pd, { apres: 0 });
   mise(d.appendParagraph('A Monsieur'), { gras: true, taille: 9, avant: 6, apres: 6 });
   mise(d.appendParagraph('Le Chef de Division MG'), { gras: true, taille: 9, apres: 4 });
   const filet = d.appendParagraph('\u2501'.repeat(46)); mise(filet, { taille: 10, apres: 10 }); filet.setForegroundColor(ORANGE);
@@ -532,7 +534,7 @@ function genererCasseCroute_(form, c, dossier) {
   // Titre descendu : l'ensemble titre + tableau + signatures est centré verticalement dans la page
   mise(body.appendParagraph('PRISE EN CHARGE'), { align: C, gras: true, taille: 12, avant: 34, apres: 4, souligne: false });
   mise(body.appendParagraph('\u2612 CASSE CROUTE'), { align: C, gras: true, taille: 11, apres: 18, souligne: false });
-  const tab = body.appendTable([['Nom des agents', "Nbre d'agent", 'Compte analytique', 'Période de la dotation', 'Structure'], ['', '', '', '', '']]);
+  const tab = body.appendTable([['Nom des agents', "Nbre d'agent", 'Compte analytique', 'Période de la dotation', 'Structure'], ['\u00a0', '\u00a0', '\u00a0', '\u00a0', '\u00a0']]);
   [215, 70, 90, 170, 196].forEach((w, i) => tab.setColumnWidth(i, w));
   ['Nom des agents', "Nbre d'agent", 'Compte analytique', 'Période de la dotation', 'Structure'].forEach((h, i) => cellule(tab.getRow(0).getCell(i), [h], { gras: true }));
   cellule(tab.getRow(1).getCell(0), c.designations, { align: L, pad: 8 });
@@ -540,13 +542,13 @@ function genererCasseCroute_(form, c, dossier) {
   cellule(tab.getRow(1).getCell(2), [c.imputation], { pad: 8 });
   cellule(tab.getRow(1).getCell(3), c.quand, { pad: 8 });
   cellule(tab.getRow(1).getCell(4), c.observations, { pad: 8 });
-  mise(body.appendParagraph(''), { taille: 6, apres: 10 });
+  mise(body.appendParagraph('\u00a0'), { taille: 6, apres: 10 });
   const noms = ['LE CHEF DIVISION INFRASTRUCTURES', 'LE PRENEUR', 'LE CHEF DIVISION DMG'];
   const sig = body.appendTable([noms]); sig.setBorderWidth(0);
   noms.forEach((nom, i) => cellule(sig.getRow(0).getCell(i), [nom], { gras: true, taille: 9, align: C, pad: 2 }));
   // Pied de page : filet orange + adresse
   const pied = doc.addFooter();
-  const f0 = pied.getNumChildren() ? pied.getChild(0).asParagraph() : pied.appendParagraph(''); f0.setText('\u2501'.repeat(36)); mise(f0, { taille: 10, apres: 2 }); f0.setForegroundColor(ORANGE);
+  const f0 = pied.getNumChildren() ? pied.getChild(0).asParagraph() : pied.appendParagraph('\u00a0'); f0.setText('\u2501'.repeat(36)); mise(f0, { taille: 10, apres: 2 }); f0.setForegroundColor(ORANGE);
   ['Direction Régionale Rhourde-Nouss - BP 27 Hassi Messaoud \u2013 Ouargla Algérie', 'Tél. : 029 74 01 48     Fax : 029 74 01 40     www.sonatrach.dz     Secrétariat.RNS@sonatrach.dz'].forEach(t => mise(pied.appendParagraph(t), { align: C, taille: 7, apres: 2 }));
   doc.saveAndClose();
   const docFile = DriveApp.getFileById(doc.getId()); docFile.moveTo(dossier);

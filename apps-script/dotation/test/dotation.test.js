@@ -52,11 +52,17 @@ test('prise en charge repas : champs obligatoires', () => {
   assert.strictEqual(run(`dateLongueFr_('2026-10-20')`), '20 octobre 2026');
 });
 
-test('prise en charge repas : le programme de génération va au bout avec un faux DocumentApp (aucune erreur de code)', () => {
-  const objet = () => new Proxy(function () {}, { get: (t, k) => k === 'getNumChildren' ? () => 1 : k === 'getText' ? () => 'x' : k === 'getUrl' ? () => 'u' : k === 'getId' ? () => 'id' : k === 'getParents' ? () => ({ next: objet() }) : (k === Symbol.toPrimitive ? () => '' : objet()), apply: () => objet() });
-  ctx.DocumentApp = { create: () => objet(), HorizontalAlignment: { CENTER: 'c', RIGHT: 'r', LEFT: 'l' }, VerticalAlignment: { CENTER: 'c' } };
+test('prise en charge repas : génération complète avec un faux DocumentApp qui refuse tout texte vide (comme Google Docs)', () => {
+  const videDans = (x) => x === '' || (Array.isArray(x) && x.some(videDans));
+  const objet = () => new Proxy(function () {}, {
+    get: (t, k) => k === 'getNumChildren' ? () => 1 : k === 'getText' ? () => 'x' : k === 'getUrl' ? () => 'u' : k === 'getId' ? () => 'id'
+      : k === 'getParents' ? () => ({ next: objet() }) : k === Symbol.toPrimitive ? () => '' : new Proxy(function () {}, { apply: (f, th, args) => { if (args.some(videDans)) throw new Error("Impossible d'insérer un élément de texte vide."); return objet(); }, get: (f, k2) => objet()[k2] }),
+    apply: () => objet() });
+  ctx.DocumentApp = { create: () => objet(), HorizontalAlignment: { CENTER: 'c', RIGHT: 'r', LEFT: 'l' }, VerticalAlignment: { CENTER: 'c', TOP: 't' } };
   ctx.Utilities = { newBlob: () => ({}), base64Decode: () => [], formatDate: () => '20-10-2026' };
   ctx.DriveApp = { getFileById: () => objet() };
-  const r = run(`genererPriseEnChargeRepas_({ sousType: 'CASSE_CROUTE', designations: 'A B\\nC D', dateDebut: '2026-10-18', dateFin: '2026-10-24', nb: '2', imputation: '4300045100', observations: 'Equipe Permanence step', date: '2026-10-20' })`);
-  assert.strictEqual(r.success, true, r.error);
+  ['CASSE_CROUTE', 'COLLATION', 'PAUSE_CAFE', 'REPAS_EMPORTER'].forEach(t => {
+    const r = run(`genererPriseEnChargeRepas_({ sousType: '${t}', designations: 'A B\\nC D', dateDebut: '2026-10-18', dateFin: '2026-10-24', nb: '2', imputation: '', observations: '', date: '2026-10-20' })`);
+    assert.strictEqual(r.success, true, t + ' : ' + r.error);
+  });
 });
