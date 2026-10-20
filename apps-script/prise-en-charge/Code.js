@@ -1508,7 +1508,6 @@ function imprimerToutWeb() {
  *  FICHIERS À IMPRIMER (même présentation que Dotation) + ENVOI PAR E-MAIL (même bouton que Requête transport)
  ******************************/
 const EMAIL_SECRETARIAT = "sec.infra.rns@gmail.com";
-const PRINTBYXEROX_EMAIL = "print@PrintByXerox.com";
 
 /** Dossier « output/pdf » à côté du fichier PEC, ou null. */
 function dossierPdfGeneres_() {
@@ -1549,13 +1548,12 @@ function envoyerFichierParMail(fileId) {
     return { success: true };
   } catch (err) { return { success: false, error: err.toString() }; }
 }
-/** Envoi direct du PDF vers l'imprimante Xerox (service @PrintByXerox) : bouton « Envoyer à l'imprimante », comme dans Requête transport. */
-function envoyerFichierImprimante(fileId) {
+/** Contenu du PDF (base64) pour l'impression directe depuis le navigateur : la page l'ouvre dans la fenêtre d'impression, sur l'imprimante par défaut. */
+function lireFichierPourImpression(fileId) {
   try {
     const f = fichierGenere_(fileId);
-    MailApp.sendEmail({ to: PRINTBYXEROX_EMAIL, subject: f.getName(), body: "Document envoyé automatiquement depuis Prise en charge et autorisation d'accès.", attachments: [f.getBlob()] });
-    return { success: true };
-  } catch (err) { return { success: false, error: err.toString() }; }
+    return { success: true, nom: f.getName(), base64: Utilities.base64Encode(f.getBlob().getBytes()) };
+  } catch (err) { return { success: false, error: err.message }; }
 }
 /** Met à la corbeille un PDF généré. */
 function supprimerFichierGenere(fileId) {

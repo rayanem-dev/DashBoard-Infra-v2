@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-05",
+    "date": "2026-10-23",
+    "title": "Version 5.23.1 — Prise en charge : impression en un clic",
+    "changes": [
+      "Prise en charge et autorisation d'accès : le bouton « 🖨️ Imprimer » de chaque fichier ouvre directement la fenêtre d'impression du navigateur sur l'imprimante par défaut : il ne reste qu'à valider (au lieu d'ouvrir le PDF puis de cliquer plusieurs fois).",
+      "L'envoi vers l'imprimante Xerox (@PrintByXerox) est retiré de l'application : il est rangé dans la bibliothèque personnelle sous le nom « _xerox », à activer quand le réseau Sonatrach l'autorisera. L'envoi par e-mail au secrétariat reste."
+    ]
+  },
+  {
     "id": "2026-10-23-04",
     "date": "2026-10-23",
     "title": "Version 5.23.0 — Prise en charge et autorisation d'accès : en-tête compact, impression directe",

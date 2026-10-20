@@ -492,22 +492,36 @@
         row.innerHTML = '<span class="histo-tag ' + echapper(f.type.toLowerCase()) + '">' + echapper(f.type) + '</span>' +
           '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
           '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">📄 Ouvrir</a>' +
-          '<button type="button" class="impr" data-id="' + echapper(f.id) + '">📠 Envoyer à l\'imprimante</button>' +
+          '<button type="button" class="impr" data-id="' + echapper(f.id) + '">🖨️ Imprimer</button>' +
           '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button></div>' +
           '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>';
-        row.querySelector('button.impr').onclick = function() { envoyerImprimante(this, f.id); };
+        row.querySelector('button.impr').onclick = function() { imprimerDirect(this, f.id); };
         row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
         row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
         div.appendChild(row);
       });
     }).withFailureHandler(function(err) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(err.message) + '</div>'; }).listerFichiersGeneres();
   }
-  function envoyerImprimante(btn, id) {
-    const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Envoi…';
+  /** Impression en un clic : le PDF est chargé puis la fenêtre d'impression du navigateur s'ouvre directement (imprimante par défaut déjà choisie : il ne reste qu'à valider). */
+  function imprimerDirect(btn, id) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Préparation…';
     google.script.run.withSuccessHandler(function(res) {
       btn.disabled = false; btn.textContent = txt;
-      afficherAlerteModale(res.success ? 'Envoyé à l\'imprimante' : 'Erreur', res.success ? "✅ Document envoyé vers l'imprimante ! Rendez-vous sur l'écran de l'imprimante Xerox, ouvrez l'app @PrintByXerox, connectez-vous, et appuyez sur Imprimer." : String(res.error || 'Envoi impossible'), res.success ? 'ok' : 'err');
-    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).envoyerFichierImprimante(id);
+      if (!res.success) { afficherAlerteModale('Erreur', String(res.error || 'Impression impossible'), 'err'); return; }
+      try {
+        const bin = atob(res.base64), octets = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+        const cadre = document.createElement('iframe');
+        cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+        cadre.onload = function() {
+          try { cadre.contentWindow.focus(); cadre.contentWindow.print(); }
+          catch (e) { window.open(url, '_blank'); }   // repli : le PDF s'ouvre dans un onglet (Ctrl+P)
+        };
+        cadre.src = url; document.body.appendChild(cadre);
+        setTimeout(function() { cadre.remove(); URL.revokeObjectURL(url); }, 180000);
+      } catch (e) { afficherAlerteModale('Erreur', 'Impression impossible : ' + e.message, 'err'); }
+    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).lireFichierPourImpression(id);
   }
   function ouvrirAide() { const b = document.querySelector('.aide-btn'); if (b) b.click(); }
   function envoyerParMail(btn, id) {
