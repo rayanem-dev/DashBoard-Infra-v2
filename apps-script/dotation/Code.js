@@ -456,28 +456,39 @@ function genererPriseEnChargeRepas_(form) {
     const nomBase = 'DOTATION_REPAS_' + c.code + '_' + jjmmaaaa_(form.date || form.dateDebut).replace(/\//g, '-');
     const doc = DocumentApp.create(nomBase), body = doc.getBody();
     body.setPageWidth(842).setPageHeight(595).setMarginTop(34).setMarginBottom(34).setMarginLeft(48).setMarginRight(48);
-    const fixer = (p, o) => { p.setSpacingBefore(0).setSpacingAfter(o && o.apres != null ? o.apres : 0); if (o && o.align) p.setAlignment(o.align); return p; };
+    // Met en forme un paragraphe (jamais null : on teste avant d'appliquer) ; renvoie le paragraphe
+    const fixer = (p, o) => { if (!p) return p; p.setSpacingBefore(0); p.setSpacingAfter(o && o.apres != null ? o.apres : 0); if (o && o.align) p.setAlignment(o.align); return p; };
     const C = DocumentApp.HorizontalAlignment.CENTER, R = DocumentApp.HorizontalAlignment.RIGHT;
-    const logo = body.appendParagraph(''); fixer(logo, { apres: 2 });
+    // Le premier paragraphe d'un document neuf existe déjà : on l'utilise pour le logo (pas de paragraphe vide en trop)
+    const logo = body.getNumChildren() ? body.getChild(0).asParagraph() : body.appendParagraph('');
+    fixer(logo, { apres: 2 });
     const img = logo.appendInlineImage(Utilities.newBlob(Utilities.base64Decode(LOGO_SONATRACH_B64), 'image/png', 'sonatrach.png')); img.setWidth(60).setHeight(89);
-    ['Activité Exploration Production', 'Division Production', 'Direction Régionale Rhourde-Nouss', 'Division Infrastructure'].forEach(t => fixer(body.appendParagraph(t)).setBold(true).setFontSize(9).setFontFamily('Arial'));
-    fixer(body.appendParagraph('Rhourde Nouss, le : ' + dateLongueFr_(form.date || form.dateDebut)), { align: R, apres: 14 }).setBold(true).setFontSize(10).setFontFamily('Arial');
-    fixer(body.appendParagraph(c.titre), { align: C, apres: 14 }).setBold(true).setUnderline(true).setFontSize(12).setFontFamily('Arial');
+    const texte = (t, o, taille, gras) => { const p = body.appendParagraph(t); fixer(p, o); p.setBold(!!gras).setFontSize(taille).setFontFamily('Arial'); if (o && o.souligne) p.setUnderline(true); return p; };
+    ['Activité Exploration Production', 'Division Production', 'Direction Régionale Rhourde-Nouss', 'Division Infrastructure'].forEach(t => texte(t, null, 9, true));
+    texte('Rhourde Nouss, le : ' + dateLongueFr_(form.date || form.dateDebut), { align: R, apres: 14 }, 10, true);
+    texte(c.titre, { align: C, apres: 14, souligne: true }, 12, true);
+    // Cellule de tableau : on part de son paragraphe existant, on y met la 1re ligne, les suivantes sont ajoutées
     const cellule = (cell, lignes, o) => {
-      cell.clear(); cell.setPaddingTop(6).setPaddingBottom(6).setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
-      (lignes.length ? lignes : ['']).forEach((l, i) => { const p = i === 0 ? cell.getChild(0).asParagraph().setText(l) : cell.appendParagraph(l); fixer(p, { align: C }); p.setBold(!!(o && o.gras)).setFontSize(o && o.taille || 10).setFontFamily('Arial'); });
+      cell.setPaddingTop(6).setPaddingBottom(6).setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+      const l = lignes.length ? lignes : [''];
+      const premier = cell.getNumChildren() ? cell.getChild(0).asParagraph() : cell.appendParagraph('');
+      premier.setText(l[0]);
+      const paras = [premier].concat(l.slice(1).map(x => cell.appendParagraph(x)));
+      paras.forEach(p => { fixer(p, { align: (o && o.align) || C }); p.setBold(!!(o && o.gras)).setFontSize((o && o.taille) || 10).setFontFamily('Arial'); });
     };
-    const tab = body.appendTable([['Désignation', c.colonne, 'Nbr de Personnes', 'Imputation Analytique', 'Observations'], ['', '', '', '', '']]);
+    const tab = body.appendTable([[c.designations.length > 1 ? 'Désignations' : 'Désignation', c.colonne, 'Nbr de Personnes', 'Imputation Analytique', 'Observations'], [c.designations[0] || '', c.quand[0] || '', c.nb, c.imputation, c.observations[0] || '']]);
     [235, 130, 70, 100, 195].forEach((w, i) => tab.setColumnWidth(i, w));
-    [c.designations.length > 1 ? 'Désignations' : 'Désignation', c.colonne, 'Nbr de Personnes', 'Imputation Analytique', 'Observations'].forEach((h, i) => cellule(tab.getRow(0).getCell(i), [h], { gras: true }));
+    for (let i = 0; i < 5; i++) cellule(tab.getRow(0).getCell(i), [tab.getRow(0).getCell(i).getText()], { gras: true });
     cellule(tab.getRow(1).getCell(0), c.designations, { gras: true });
     cellule(tab.getRow(1).getCell(1), c.quand, { gras: true });
     cellule(tab.getRow(1).getCell(2), [c.nb], { gras: true });
     cellule(tab.getRow(1).getCell(3), [c.imputation], { gras: true });
     cellule(tab.getRow(1).getCell(4), c.observations, { gras: true });
-    fixer(body.appendParagraph(''), { apres: 6 });
-    const sig = body.appendTable([['LE PRENEUR', 'LE CHEF DE DIVISION INFRASTRUCTURE', 'LE CHEF DIVISION MOYENS GENERAUX']]);
-    sig.setBorderWidth(0); [0, 1, 2].forEach(i => { const cell = sig.getRow(0).getCell(i); cellule(cell, [['LE PRENEUR', 'LE CHEF DE DIVISION INFRASTRUCTURE', 'LE CHEF DIVISION MOYENS GENERAUX'][i]], { gras: true, taille: 9 }); cell.getChild(0).asParagraph().setAlignment(i === 0 ? DocumentApp.HorizontalAlignment.LEFT : C); });
+    texte('', { apres: 6 }, 6, false);
+    const noms = ['LE PRENEUR', 'LE CHEF DE DIVISION INFRASTRUCTURE', 'LE CHEF DIVISION MOYENS GENERAUX'];
+    const sig = body.appendTable([noms]);
+    sig.setBorderWidth(0);
+    noms.forEach((nom, i) => cellule(sig.getRow(0).getCell(i), [nom], { gras: true, taille: 9, align: i === 0 ? DocumentApp.HorizontalAlignment.LEFT : C }));
     doc.saveAndClose();
     const docFile = DriveApp.getFileById(doc.getId()); docFile.moveTo(dossier);
     const pdfFile = dossier.createFile(doc.getAs('application/pdf')); pdfFile.setName(nomBase + '.pdf');
