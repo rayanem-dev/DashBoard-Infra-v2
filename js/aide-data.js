@@ -7,7 +7,7 @@ window.AIDE = {
     astuces: ['Au premier accès, le portail vous demande de remplacer le mot de passe par défaut.', 'La langue (français, arabe, anglais) et le thème clair / sombre se changent en bas à droite.'] },
   'portail.html': { titre: 'Portail', img: 'portail',
     resume: 'Votre page d\'accueil : toutes les applications auxquelles votre rôle donne droit, rangées par thème.',
-    etapes: ['Cliquez sur une carte pour ouvrir l\'application.', 'Renseignez « Où en êtes-vous ? » (travail / repos) : le portail calcule le nombre de jours restants de votre rotation.', 'Le menu en haut permet de changer votre mot de passe ou de vous déconnecter.'],
+    etapes: ['Cliquez sur une carte pour ouvrir l\'application.', 'Renseignez « Où en êtes-vous ? » (travail / repos) : le portail calcule le nombre de jours restants de votre rotation.', 'Les applications sont rangées par métier : Pilotage & chantiers, Marchés & entreprises, Accès site & sûreté, Personnel, Logistique, Administration, Informatique. Les boutons sous votre fiche filtrent par rubrique.', 'La recherche trouve une application par son nom, sa description ou des mots usuels (par exemple « collation », « renommer », « imprimé »).', 'Le menu en haut permet de changer votre mot de passe ou de vous déconnecter.'],
     astuces: ['Une carte absente = votre rôle n\'y a pas droit ; demandez à l\'administrateur (Privilèges).', 'Le numéro de version en bas ouvre la liste des nouveautés (✓ à jour, ⚠ rafraîchissez avec Ctrl+F5).'] },
   'planning.html': { titre: 'Planning & rotations', img: 'planning',
     resume: 'Qui est au travail (vert) ou en repos (orange) chaque jour, pour toute la division.',

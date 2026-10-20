@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-15",
+    "date": "2026-10-23",
+    "title": "Version 5.26.0 — Accueil rangé par métiers",
+    "changes": [
+      "Accueil : les applications sont rangées en 7 rubriques par métier (Pilotage & chantiers, Marchés & entreprises, Accès site & sûreté, Personnel, Logistique & moyens généraux, Administration & secrétariat, Informatique & accès) au lieu des modules ; seules les rubriques où vous avez des applications s'affichent. Les droits ne changent pas : chaque agent voit exactement les mêmes applications qu'avant.",
+      "La recherche trouve aussi une application par des mots usuels (« collation », « renommer », « imprimé », « conge »…), en plus de son nom et de sa description."
+    ]
+  },
+  {
     "id": "2026-10-23-14",
     "date": "2026-10-23",
     "title": "Version 5.25.0 — Application « Repas à emporter »",

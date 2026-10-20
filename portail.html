@@ -84,6 +84,7 @@
 <script src="js/employeurs.js"></script>
 <script src="js/synthese.js"></script>
 <script src="js/boutoninstaller.js"></script>
+<script src="js/rubriques.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -201,15 +202,17 @@
   function dessiner(r) {
     dessinerFiche(r.user); raccourcis(r.menu); mesApps(r.menu);
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
-    var zone = $('modules'); zone.textContent = ''; outilsAccueil(r.menu);
+    // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
+    var groupes = window.Rubriques ? Rubriques.regrouper(r.menu) : r.menu;
+    var zone = $('modules'); zone.textContent = ''; outilsAccueil(groupes);
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
-    r.menu.forEach(function (m) {
+    groupes.forEach(function (m) {
       var sec = el('section', 'module'); sec.dataset.m = m.id; sec.dataset.n = String(Math.min((m.apps || []).length, 3));
       var h = el('h3', null, (m.icone || '') + ' ' + m.titre); h.appendChild(el('span', 'niveau', NIVEAUX[m.niveau] || '')); sec.appendChild(h);
       var g = el('div', 'grille');
       if (!m.apps.length) g.appendChild(el('p', 'vide', 'Bientôt disponible.'));
       m.apps.forEach(function (a) {
-        var c = el('a', 'app'); c.href = lienSur(a.url); c.dataset.t = norme((a.titre || '') + ' ' + (a.description || '') + ' ' + (m.titre || ''));
+        var c = el('a', 'app'); c.href = lienSur(a.url); c.dataset.t = norme((a.titre || '') + ' ' + (a.description || '') + ' ' + (m.titre || '') + ' ' + (a.mots || ''));
         // Pages du site : même onglet (la session est propre à l'onglet) ; sites externes : nouvel onglet.
         if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
         c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));
