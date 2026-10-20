@@ -16,12 +16,14 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #F5F5F0; color: var(--text-dark); min-height: 100vh; }
   header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
-  .header-inner { max-width: 1000px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; gap: 16px; }
+  .header-inner { max-width: 1000px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
   .logo-circle { width: 52px; height: 52px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: white; box-shadow: 0 4px 14px rgba(232,93,4,0.5); flex-shrink: 0; }
   .logo-text h1 { font-size: 18px; font-weight: 700; color: white; }
   .logo-text p { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
 
-  main { max-width: 1000px; margin: 0 auto; padding: 28px 20px 60px; }
+  main { max-width: 1000px; margin: 0 auto; padding: 14px 20px 60px; }
+  main > .section-title:first-child { margin-top: 0; }
+  .aide-btn { display: none !important; }
   .section-title { font-size: 15px; font-weight: 700; color: var(--gray-dark); text-transform: uppercase; letter-spacing: 0.6px; margin: 32px 0 14px; }
   .section-title:first-child { margin-top: 0; }
 
@@ -52,12 +54,12 @@
   .histo-tag.autorisation { background: #DBEAFE; color: var(--blue); } .histo-tag.macaron { background: #DCFCE7; color: var(--green); } .histo-tag.pdf { background: #F3F4F6; color: var(--gray-btn); }
   .histo-info { flex: 1; min-width: 140px; } .histo-nom { font-size: 13px; font-weight: 600; color: var(--text-dark); overflow-wrap: anywhere; } .histo-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   .histo-links { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
-  .histo-links a, .histo-links button.mail { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
-  .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.mail:disabled { opacity: .5; cursor: wait; }
+  .histo-links a, .histo-links button.mail, .histo-links button.impr { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
+  .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.impr { background: linear-gradient(135deg, #16A34A, #22C55E); color: #fff; } .histo-links button:disabled { opacity: .5; cursor: wait; }
   .btn-suppr-item { background: #FEE2E2; color: var(--red); border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
-  .titre-ligne { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 14px; } .titre-ligne .section-title { margin: 0; }
-  .icones { display: flex; gap: 8px; } .icone { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--white); font-size: 18px; cursor: pointer; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-  .icone:hover { border-color: var(--orange-main); box-shadow: var(--shadow-card); } .icone:disabled { opacity: .5; cursor: wait; }
+  .icones { display: flex; gap: 8px; margin-left: auto; } .icone { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12); font-size: 18px; cursor: pointer; line-height: 1; }
+  .icone:hover { background: rgba(255,255,255,.24); border-color: var(--orange-light); } .icone:disabled { opacity: .5; cursor: wait; }
+  .logo-text h1 { font-size: 18px; } @media (max-width: 560px) { .logo-text h1 { font-size: 14px; } .header-inner { padding: 10px 14px; gap: 10px; } }
   .form-card { background: var(--white); border-radius: 20px; padding: 24px 26px; box-shadow: var(--shadow-card); border: 1px solid var(--border); }
   label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 13px; color: var(--gray-dark); }
   label:first-of-type { margin-top: 0; }
@@ -145,8 +147,13 @@
   <div class="header-inner">
     <div class="logo-circle">PEC</div>
     <div class="logo-text">
-      <h1>Prise en Charge</h1>
-      <p>Gestion Prestataires</p>
+      <h1>Prise en charge et autorisation d'accès</h1>
+      <p>Gestion prestataires</p>
+    </div>
+      <div class="icones" aria-label="Actions">
+      <button type="button" class="icone" id="btnCharger" onclick="ouvrirModalePDF()" title="Charger une demande PDF" aria-label="Charger une demande PDF">📤</button>
+      <button type="button" class="icone" id="btnEffacer" onclick="viderFormulaire()" title="Vider les champs pour une autre prise en charge" aria-label="Vider les champs">🧹</button>
+      <button type="button" class="icone" id="btnAide" onclick="ouvrirAide()" title="Aide" aria-label="Aide">❓</button>
     </div>
   </div>
 </header>
@@ -154,13 +161,7 @@
 <main>
   <div id="toast"></div>
 
-  <div class="titre-ligne">
-    <div class="section-title">Nouvelle demande</div>
-    <div class="icones">
-      <button type="button" class="icone" id="btnCharger" onclick="ouvrirModalePDF()" title="Charger une demande PDF" aria-label="Charger une demande PDF">📤</button>
-      <button type="button" class="icone" id="btnEffacer" onclick="viderFormulaire()" title="Vider les champs pour une autre prise en charge" aria-label="Vider les champs">🧹</button>
-    </div>
-  </div>
+  <div class="section-title">Nouvelle demande</div>
   <div class="form-card">
 
     <label>Prestataire</label>
@@ -490,15 +491,25 @@
         const row = document.createElement('div'); row.className = 'histo-item';
         row.innerHTML = '<span class="histo-tag ' + echapper(f.type.toLowerCase()) + '">' + echapper(f.type) + '</span>' +
           '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
-          '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">🖨️ Ouvrir / imprimer</a>' +
+          '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">📄 Ouvrir</a>' +
+          '<button type="button" class="impr" data-id="' + echapper(f.id) + '">📠 Envoyer à l\'imprimante</button>' +
           '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button></div>' +
           '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>';
+        row.querySelector('button.impr').onclick = function() { envoyerImprimante(this, f.id); };
         row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
         row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
         div.appendChild(row);
       });
     }).withFailureHandler(function(err) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(err.message) + '</div>'; }).listerFichiersGeneres();
   }
+  function envoyerImprimante(btn, id) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Envoi…';
+    google.script.run.withSuccessHandler(function(res) {
+      btn.disabled = false; btn.textContent = txt;
+      afficherAlerteModale(res.success ? 'Envoyé à l\'imprimante' : 'Erreur', res.success ? "✅ Document envoyé vers l'imprimante ! Rendez-vous sur l'écran de l'imprimante Xerox, ouvrez l'app @PrintByXerox, connectez-vous, et appuyez sur Imprimer." : String(res.error || 'Envoi impossible'), res.success ? 'ok' : 'err');
+    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).envoyerFichierImprimante(id);
+  }
+  function ouvrirAide() { const b = document.querySelector('.aide-btn'); if (b) b.click(); }
   function envoyerParMail(btn, id) {
     const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Envoi…';
     google.script.run.withSuccessHandler(function(res) {
@@ -683,6 +694,6 @@
     if (res.success) chargerFichiers();
   }
 </script>
-<script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Prises en charge"></script>
+<script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Prise en charge et autorisation d’accès"></script>
 </body>
 </html>

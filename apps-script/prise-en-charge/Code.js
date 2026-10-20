@@ -1508,6 +1508,7 @@ function imprimerToutWeb() {
  *  FICHIERS À IMPRIMER (même présentation que Dotation) + ENVOI PAR E-MAIL (même bouton que Requête transport)
  ******************************/
 const EMAIL_SECRETARIAT = "sec.infra.rns@gmail.com";
+const PRINTBYXEROX_EMAIL = "print@PrintByXerox.com";
 
 /** Dossier « output/pdf » à côté du fichier PEC, ou null. */
 function dossierPdfGeneres_() {
@@ -1545,6 +1546,14 @@ function envoyerFichierParMail(fileId) {
     const f = fichierGenere_(fileId), type = typeFichier_(f.getName());
     const lib = type === "PEC" ? "Prise en charge" : type === "AUTORISATION" ? "Autorisation d'accès" : type === "MACARON" ? "Macaron" : "Document";
     MailApp.sendEmail({ to: EMAIL_SECRETARIAT, subject: lib + " - " + f.getName(), body: "Veuillez trouver ci-joint le document généré automatiquement (" + lib.toLowerCase() + ").", attachments: [f.getBlob()] });
+    return { success: true };
+  } catch (err) { return { success: false, error: err.toString() }; }
+}
+/** Envoi direct du PDF vers l'imprimante Xerox (service @PrintByXerox) : bouton « Envoyer à l'imprimante », comme dans Requête transport. */
+function envoyerFichierImprimante(fileId) {
+  try {
+    const f = fichierGenere_(fileId);
+    MailApp.sendEmail({ to: PRINTBYXEROX_EMAIL, subject: f.getName(), body: "Document envoyé automatiquement depuis Prise en charge et autorisation d'accès.", attachments: [f.getBlob()] });
     return { success: true };
   } catch (err) { return { success: false, error: err.toString() }; }
 }

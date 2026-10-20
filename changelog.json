@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-23-04",
+    "date": "2026-10-23",
+    "title": "Version 5.23.0 — Prise en charge et autorisation d'accès : en-tête compact, impression directe",
+    "changes": [
+      "L'application s'appelle maintenant « Prise en charge et autorisation d'accès ».",
+      "Les icônes (📤 charger une demande PDF, 🧹 vider les champs, ❓ aide) passent dans l'en-tête, qui est plus bas : plus d'espace vide en haut de page.",
+      "Chaque fichier généré a un bouton « 📠 Envoyer à l'imprimante » (envoi direct vers l'imprimante Xerox, comme dans Requête transport), séparé du bouton « 📄 Ouvrir », en plus de l'envoi par e-mail et de la corbeille."
+    ]
+  },
+  {
     "id": "2026-10-23-03",
     "date": "2026-10-23",
     "title": "Version 5.22.1 — Prises en charge : écran simplifié",
