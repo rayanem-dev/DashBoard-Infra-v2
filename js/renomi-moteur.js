@@ -18,13 +18,37 @@
   /** Nom de fichier sûr : sans caractères interdits, espaces réduits, 120 caractères au plus. */
   function nettoyer(s) { return String(s || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^[. ]+|[. ]+$/g, '').slice(0, 120).trim(); }
 
-  /** Champs repérés dans le texte : date (AAAA-MM-JJ), numero (N° …), montant, annee. */
+  var MOIS = { janvier: 1, janv: 1, fevrier: 2, fevr: 2, mars: 3, avril: 4, avr: 4, mai: 5, juin: 6, juillet: 7, juil: 7, aout: 8, septembre: 9, sept: 9, octobre: 10, oct: 10, novembre: 11, nov: 11, decembre: 12, dec: 12 };
+  function iso(j, m, a) { j = +j; m = +m; a = +a; if (a < 100) a += 2000; var d = new Date(Date.UTC(a, m - 1, j)); if (!(j >= 1 && m >= 1 && m <= 12) || d.getUTCMonth() !== m - 1) return ''; return a + '-' + ('0' + m).slice(-2) + '-' + ('0' + j).slice(-2); }
+  /** Première date du texte, en AAAA-MM-JJ : 14/02/2026, 14-02-26, 2026-02-14, « 14 février 2026 », « 1er mars 26 ». */
+  function premiereDate(texte) {
+    var t = norm(texte), re = /\b(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4}|\d{2})\b|\b(\d{4})-(\d{2})-(\d{2})\b|\b(\d{1,2})(?:er)?\s+(janvier|janv|fevrier|fevr|mars|avril|avr|mai|juin|juillet|juil|aout|septembre|sept|octobre|oct|novembre|nov|decembre|dec)\.?\s+(\d{4}|\d{2})\b/g, m, d;
+    while ((m = re.exec(t))) { d = m[1] ? iso(m[1], m[2], m[3]) : m[4] ? iso(m[6], m[5], m[4]) : iso(m[7], MOIS[m[8]], m[9]); if (d) return d; }
+    return '';
+  }
+  var TITRES = 'attestation demande bon note rapport facture contrat decision convention autorisation proces-verbal compte rendu fiche bulletin certificat titre ordre de mission lettre mise en demeure devis bordereau releve etat planning programme avis arrete reglement cahier des charges pv acte engagement declaration procuration reservation commande'.split(' ');
+  var BRUIT = /republique|ministere|sonatrach|direction|division|departement|region|\btel\b|\bfax\b|www\.|@|\bpage\b|^ref\b|algerienne|democratique|populaire|\bsiege\b|adresse|b\.?p\.?\s*\d/;
+  function ligneValide(l) {
+    var n = norm(l), lettres = (n.match(/[a-z]/g) || []).length;
+    return l.length >= 5 && l.length <= 120 && lettres >= 4 && lettres >= l.replace(/\s/g, '').length * 0.6 && !BRUIT.test(n);
+  }
+  /** Titre du document : ligne « Objet : … », sinon ligne qui contient un mot de titre connu, sinon première ligne en majuscules, sinon première ligne lisible (haut de page). */
+  function titre(texte) {
+    var lignes = String(texte || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean).slice(0, 30), i, m, n;
+    for (i = 0; i < lignes.length; i += 1) { if ((m = /^(?:objet|object)\s*[:\-]\s*(.{5,})$/i.exec(lignes[i]))) return nettoyer(m[1]).slice(0, 70); }
+    var utiles = lignes.filter(ligneValide).slice(0, 15), choix;
+    choix = utiles.filter(function (l) { n = norm(l); return TITRES.some(function (w) { return new RegExp('\\b' + w + '\\b').test(n); }) && l.length <= 80; })[0];
+    if (!choix) choix = utiles.filter(function (l) { var L = l.replace(/[^A-Za-zÀ-ÿ]/g, ''); return L.length >= 6 && L === L.toUpperCase(); })[0];
+    if (!choix) choix = utiles[0];
+    return choix ? nettoyer(choix).slice(0, 70) : '';
+  }
+  /** Champs repérés dans le texte : titre, date (AAAA-MM-JJ), numero (N° …), montant, annee. */
   function champs(texte, nom) {
     var t = String(texte || '') + ' ' + sansExtension(nom || ''), c = {}, m;
-    if ((m = /\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})\b/.exec(t))) c.date = m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
-    else if ((m = /\b(\d{4})-(\d{2})-(\d{2})\b/.exec(t))) c.date = m[0];
+    var d = premiereDate(t); if (d) c.date = d;
+    var ti = titre(texte); if (ti) c.titre = ti;
     if ((m = /\bN\s*[°ºo.]\s*:?\s*([A-Za-z0-9][A-Za-z0-9\/.\-_]{1,24})/.exec(t))) c.numero = m[1].replace(/[\/.]+$/, '').replace(/\//g, '-');
-    if ((m = /\b(\d{1,3}(?:[  .]\d{3})*(?:,\d{1,2})?)\s*(?:DA|DZD|€|EUR)\b/i.exec(t))) c.montant = m[1].replace(/[  ]/g, '');
+    if ((m = /\b(\d{1,3}(?:[  .]\d{3})*(?:,\d{1,2})?)\s*(?:DA|DZD|€|EUR)\b/i.exec(t))) c.montant = m[1].replace(/[  ]/g, '');
     if (c.date) c.annee = c.date.slice(0, 4);
     return c;
   }
@@ -46,14 +70,14 @@
     var ext = extension(doc.nom), tn = norm(doc.texte + ' ' + doc.nom), c = champs(doc.texte, doc.nom), meilleure = null, s = 0;
     (regles || []).forEach(function (r) { var x = score(r, tn); if (x > s) { s = x; meilleure = r; } });
     if (meilleure && s >= 0.6) return { nom: remplir(meilleure.modele, c) + ext, regle: meilleure.id, confiance: Math.min(1, s), champs: c };
-    var base = [c.date || '', motsCles(doc.texte, 2).join('-')].filter(Boolean).join('_') || sansExtension(doc.nom);
+    var base = [c.titre || '', c.date || ''].filter(Boolean).join('_') || [c.date || '', motsCles(doc.texte, 2).join('-')].filter(Boolean).join('_') || sansExtension(doc.nom);
     return { nom: nettoyer(base) + ext, regle: null, confiance: 0, champs: c };
   }
 
   /** Transforme le nom choisi en modèle : les valeurs repérées dans le document redeviennent des {champs}. */
   function modeleDe(nomChoisi, c) {
     var m = sansExtension(nomChoisi);
-    ['montant', 'numero', 'date', 'annee'].forEach(function (k) { if (c[k] && m.indexOf(c[k]) >= 0) m = m.split(c[k]).join('{' + k + '}'); });
+    ['titre', 'montant', 'numero', 'date', 'annee'].forEach(function (k) { if (c[k] && m.indexOf(c[k]) >= 0) m = m.split(c[k]).join('{' + k + '}'); });
     return m;
   }
   function apprendre(doc, nomChoisi, regles) {
@@ -70,6 +94,6 @@
     return liste;
   }
 
-  var API = { proposer: proposer, apprendre: apprendre, champs: champs, motsCles: motsCles, nettoyer: nettoyer, extension: extension };
+  var API = { proposer: proposer, apprendre: apprendre, champs: champs, titre: titre, premiereDate: premiereDate, motsCles: motsCles, nettoyer: nettoyer, extension: extension };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.Renomi = API;
 })(typeof window !== 'undefined' ? window : this);

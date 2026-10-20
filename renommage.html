@@ -44,7 +44,7 @@
     <input type="file" id="fichiers" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden>
     <div class="options">
       <label><input type="checkbox" id="o-texte" checked> Lire le texte des PDF quand le nom ne suffit pas</label>
-      <label><input type="checkbox" id="o-ocr"> Lire aussi les scans et photos (OCR, plus lent)</label>
+      <label><input type="checkbox" id="o-ocr" checked> Lire aussi les scans et photos (OCR, plus lent)</label>
       <label><input type="checkbox" id="o-pdf"> Convertir les photos JPG/PNG en PDF</label>
     </div>
   </div>
@@ -94,7 +94,7 @@
       return f.arrayBuffer();
     }).then(function (buf) { return pdfjsLib.getDocument({ data: buf }).promise; }).then(function (doc) {
       var n = Math.min(doc.numPages, 2), ps = [];
-      for (var i = 1; i <= n; i += 1) ps.push(doc.getPage(i).then(function (p) { return p.getTextContent(); }).then(function (c) { return c.items.map(function (x) { return x.str; }).join(' '); }));
+      for (var i = 1; i <= n; i += 1) ps.push(doc.getPage(i).then(function (p) { return p.getTextContent(); }).then(function (c) { var out = '', y = null; c.items.forEach(function (x) { var yy = Math.round(x.transform[5]); if (y !== null && Math.abs(yy - y) > 3) out += '\n'; else if (y !== null) out += ' '; out += x.str; y = yy; }); return out; }));
       return Promise.all(ps).then(function (t) { return t.join('\n'); }).then(function (txt) {
         if (txt.replace(/\s/g, '').length >= 30 || !ocr) return txt;
         return doc.getPage(1).then(function (p) { var v = p.getViewport({ scale: 2 }), c = document.createElement('canvas'); c.width = v.width; c.height = v.height; return p.render({ canvasContext: c.getContext('2d'), viewport: v }).promise.then(function () { return ocrImage(c); }); });
@@ -128,6 +128,7 @@
     items.forEach(function (it, i) {
       var tr = el('tr'), t0 = el('td'); t0.appendChild(el('div', 'orig', it.f.name));
       if (it.det && it.det.avertissement) t0.appendChild(el('div', 'av', it.det.avertissement));
+      if (it.texte) { var ch = Renomi.champs(it.texte, ''); if (ch.titre || ch.date) t0.appendChild(el('div', 'ok', '🔎 ' + (ch.titre ? 'Titre : ' + ch.titre : '') + (ch.titre && ch.date ? ' · ' : '') + (ch.date ? 'Date : ' + ch.date.split('-').reverse().join('/') : ''))); else t0.appendChild(el('div', 'av', 'Aucun texte lisible trouvé dans ce document.')); }
       if (it.origine === 'appris') t0.appendChild(el('div', 'ok', '🧠 Règle apprise appliquée'));
       var t1 = el('td'), s = el('select'); TYPES.forEach(function (x) { var o = new Option(x[1], x[0]); if (x[0] === (it.type || '')) o.selected = true; s.appendChild(o); });
       s.onchange = function () { it.type = s.value; analyser(it); dessiner(); }; t1.appendChild(s);
