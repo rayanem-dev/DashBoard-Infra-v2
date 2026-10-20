@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-16",
+    "date": "2026-10-23",
+    "title": "Version 5.26.1 — Journal du CPM automatique",
+    "changes": [
+      "Journal des changements du CPM : le nouvel état est écrit en gras (ex. « Contrat en exécution → Contrat échu »).",
+      "Le journal se met à jour tout seul : à l'ouverture, si le dernier relevé a plus de 6 h, le suivi est relu automatiquement ; le relevé de nuit s'installe seul à la première connexion (plus besoin de cliquer sur Actualiser)."
+    ]
+  },
+  {
     "id": "2026-10-23-15",
     "date": "2026-10-23",
     "title": "Version 5.26.0 — Accueil rangé par métiers",

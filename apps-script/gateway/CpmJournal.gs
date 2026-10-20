@@ -195,6 +195,17 @@ function installerJournalCpm() {
   Logger.log('Déclencheurs installés. État de départ : ' + r.dossiers + ' dossiers' + (r.base ? ' (premier instantané, aucun changement à signaler)' : ''));
 }
 
+/** Installe seul le déclencheur de nuit (une fois ; sans lancer d'instantané). Le rapport du samedi (e-mail) reste réservé à installerJournalCpm. Appelée à l'ouverture du portail. */
+function preparerJournalCpm_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('CPM_DECLENCHEURS_PRET') === '1') return;
+  try {
+    var noms = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
+    if (noms.indexOf('cpmInstantaneNuit') === -1) ScriptApp.newTrigger('cpmInstantaneNuit').timeBased().everyDays(1).atHour(2).create();
+    props.setProperty('CPM_DECLENCHEURS_PRET', '1');
+  } catch (e) { /* autorisation manquante : on réessaiera, et le portail relit le suivi lui-même */ }
+}
+
 // ---------- actions du portail ----------
 function cpmJournalListe_(req) {
   var u = Auth.userFromToken(req.token);

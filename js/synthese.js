@@ -174,12 +174,21 @@ var Synthese = (function () {
     if (e.champ === 'statut') return v(e.avant) + ' → ' + v(e.apres);
     return e.libelle + ' : ' + v(e.avant) + ' → ' + v(e.apres);
   }
+  /** Écrit une ligne « avant → après » dans `node` en mettant le nouvel état (après la flèche) en gras. */
+  function avecGras(node, texte) {
+    var m = /^([\s\S]*? → )([\s\S]*)$/.exec(texte) || /^([\s\S]*à « )([\s\S]*)( »)$/.exec(texte);
+    if (!m) { node.textContent = texte; return node; }
+    node.appendChild(document.createTextNode(m[1]));
+    var b = document.createElement('b'); b.textContent = m[2]; node.appendChild(b);
+    if (m[3]) node.appendChild(document.createTextNode(m[3]));
+    return node;
+  }
   function listeCompacte(ul, evenements) {
     var ordre = [], par = {};
     evenements.filter(function (e) { return e.champ !== 'etape'; }).forEach(function (e) { var k = e.cle || e.dossier; if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(e); });
     ordre.forEach(function (k) {
       var li = el('li', 'syn-dos'); li.appendChild(el('strong', null, par[k][0].dossier));
-      par[k].forEach(function (e) { li.appendChild(el('div', 'syn-chg', changement(e))); });
+      par[k].forEach(function (e) { li.appendChild(avecGras(el('div', 'syn-chg'), changement(e))); });
       ul.appendChild(li);
     });
   }
@@ -187,7 +196,7 @@ var Synthese = (function () {
     semaines(evenements).slice(0, limite || 99).forEach(function (w) {
       zone.appendChild(el('h4', 'syn-semaine', 'Semaine du ' + frIso(w.debut) + ' au ' + frIso(w.fin)));
       if (compact) { var ul0 = el('ul', 'syn-puces'); listeCompacte(ul0, w.evenements); zone.appendChild(ul0); return; }
-      var ul = el('ul', 'syn-puces'); w.evenements.forEach(function (e) { ul.appendChild(el('li', null, phrase(e))); }); zone.appendChild(ul);
+      var ul = el('ul', 'syn-puces'); w.evenements.forEach(function (e) { ul.appendChild(avecGras(el('li'), phrase(e))); }); zone.appendChild(ul);
     });
   }
   function monterJournal(zone) {
@@ -208,6 +217,13 @@ var Synthese = (function () {
       var corps = el('div', 'syn-journal');
       if (!r.evenements.length) corps.appendChild(el('p', 'syn-sous', 'Aucun changement enregistré pour le moment.')); else listeSemaines(corps, r.evenements, 4, true);
       zone.appendChild(corps);
+      // Mise à jour automatique : si le dernier instantané a plus de 6 h (ou n'existe pas), on relit le suivi une fois par chargement de page
+      var age = Date.now() - Date.parse(r.dernier_instantane || '');
+      if (!(age < 6 * 3600000) && !monterJournal.essaye) {
+        monterJournal.essaye = true;
+        sub.textContent = 'Mise à jour du journal…';
+        return Api.call('cpm_instantane').then(function () { return monterJournal(zone); }).catch(function () { sub.textContent = 'Semaines du samedi au vendredi'; });
+      }
     }).catch(function (e) { sub.textContent = 'Données indisponibles pour l\'instant' + (e && e.message ? ' — ' + e.message : ''); });
   }
 
