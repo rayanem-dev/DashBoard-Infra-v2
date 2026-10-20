@@ -35,3 +35,19 @@ test('colonne absente : message clair avec les en-têtes lus', () => {
   feuille([['a', 'b'], ['1', '2']]);
   assert.throws(() => run("getPersonnel('Service Travaux Entretien')"), /introuvable.*a \| b/);
 });
+
+test('prise en charge repas : cellules du tableau (tirets pour la collation, période, heure, lieu, nombre sur 2 chiffres)', () => {
+  const r = run(`repasChamps_({ sousType: 'COLLATION', designations: 'Grande tarte / 60 P\\n- Café\\n\\nJus', dateDebut: '2026-06-19', heure: '16:30', lieu: 'Division Infra', nb: '60', imputation: ' 4300045000 ', observations: 'Départ en retraite\\nMOKRANI Miloud' })`);
+  assert.deepStrictEqual(r.designations, ['- Grande tarte / 60 P', '- Café', '- Jus']);
+  assert.deepStrictEqual(r.quand, ['19/06/2026', 'A 16:30', 'Division Infra']);
+  assert.strictEqual(r.nb, '60'); assert.strictEqual(r.imputation, '4300045000'); assert.deepStrictEqual(r.observations, ['Départ en retraite', 'MOKRANI Miloud']);
+  assert.strictEqual(r.titre, 'PRISE EN CHARGE : COLLATION');
+  const c = run(`repasChamps_({ sousType: 'CASSE_CROUTE', designations: 'Zaatout abdenacer\\nI/54/RNS/INFRA/2025', dateDebut: '2026-07-06', dateFin: '2026-07-12', nb: '1' })`);
+  assert.deepStrictEqual(c.designations, ['Zaatout abdenacer', 'I/54/RNS/INFRA/2025']); assert.deepStrictEqual(c.quand, ['06/07/2026 au', '12/07/2026']); assert.strictEqual(c.nb, '01'); assert.strictEqual(c.colonne, 'Période De Dotation');
+});
+test('prise en charge repas : champs obligatoires', () => {
+  assert.throws(() => run(`repasChamps_({ sousType: 'PAUSE_CAFE', designations: '', dateDebut: '2026-06-19', nb: '3' })`), /désignations/);
+  assert.throws(() => run(`repasChamps_({ sousType: 'PAUSE_CAFE', designations: 'x', dateDebut: '', nb: '3' })`), /date/);
+  assert.throws(() => run(`repasChamps_({ sousType: 'PAUSE_CAFE', designations: 'x', dateDebut: '2026-06-19', nb: '' })`), /nombre/);
+  assert.strictEqual(run(`dateLongueFr_('2026-10-20')`), '20 octobre 2026');
+});

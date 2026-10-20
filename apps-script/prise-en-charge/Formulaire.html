@@ -163,14 +163,13 @@
 <main>
   <div id="toast"></div>
 
-  <div class="section-title">Nouvelle demande</div>
   <div class="form-card">
 
     <label>Prestataire</label>
     <input type="text" id="prestataire" list="listePrestataires" placeholder="Tapez pour chercher, ou ouvrez la liste ▾" autocomplete="off">
     <datalist id="listePrestataires"></datalist>
 
-    <div class="form-row">
+    <div class="form-row" id="rowEmpBase">
       <div class="field">
         <label>Émputation</label>
         <select id="emputation"></select>
@@ -351,12 +350,19 @@
   });
   corps.addEventListener('focusout', function() { setTimeout(fermerSugg, 150); });
 
+  // Autorisation d'accès seule : émputation, base et options de la prise en charge ne servent à rien, on les masque
+  function majChampsSelonDocuments() {
+    const pec = document.getElementById('genererPEC').checked, seuleAuto = !pec && document.getElementById('genererAuto').checked;
+    document.getElementById('rowEmpBase').style.display = seuleAuto ? 'none' : '';
+    document.getElementById('sousOptionsPEC').style.display = pec ? 'flex' : 'none';
+  }
+  document.getElementById('genererAuto').addEventListener('change', majChampsSelonDocuments);
+  document.getElementById('genererPEC').addEventListener('change', majChampsSelonDocuments);
   document.getElementById('genererAuto').addEventListener('change', function() {
     document.getElementById('ligneValable2Mois').style.display = this.checked ? 'flex' : 'none';
   });
 
   document.getElementById('genererPEC').addEventListener('change', function() {
-    document.getElementById('sousOptionsPEC').style.display = this.checked ? 'flex' : 'none';
   });
 
   // Date de départ = date d'arrivée + 28 jours par défaut, recalculée à chaque changement —
@@ -476,6 +482,7 @@
       else if (e.tagName === 'SELECT') e.selectedIndex = 0;
       else e.value = '';
     });
+    majChampsSelonDocuments();
     const res = document.getElementById('resultat'); res.innerHTML = ''; res.className = '';
     const toast = document.getElementById('toast'); toast.style.display = 'none'; toast.innerHTML = '';
     afficherToast({ success: true, message: 'Champs vidés : vous pouvez saisir une autre prise en charge.' });
@@ -650,8 +657,8 @@
 
     const data = {
       prestataire: document.getElementById('prestataire').value,
-      emputation: document.getElementById('emputation').value,
-      base: document.getElementById('base').value,
+      emputation: document.getElementById('genererPEC').checked ? document.getElementById('emputation').value : '',
+      base: document.getElementById('genererPEC').checked ? document.getElementById('base').value : '',
       remplacement: document.getElementById('remplacement').checked,
       numeroChambre: document.getElementById('numeroChambre').value,
       dateArrivee: document.getElementById('dateArrivee').value,

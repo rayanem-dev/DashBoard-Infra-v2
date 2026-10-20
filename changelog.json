@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-23-07",
+    "date": "2026-10-23",
+    "title": "Version 5.24.0 — Renommage de documents, repas & collations, autorisation seule",
+    "changes": [
+      "Nouvelle application « Renommage de documents » (module RH, carte ajoutée au catalogue) : dépose de PDF / JPG / PNG ; reconnaissance du type (titre de congé, fiche de paie, contrat, attestations CNAS…), de l'agent (liste BDDORGA) et des dates grâce au moteur de Sijil ; nom proposé et corrigeable ; l'outil apprend de vos corrections (règles exportables) ; renommage dans le dossier (Chrome / Edge) ou ZIP ; conversion des photos en PDF. Les fichiers restent sur l'ordinateur.",
+      "Dotation : nouvel onglet « 🍴 Repas & collations » : prises en charge Collation, Pause café, Repas à emporter et Casse-croûte (mise en page paysage des modèles Word, PDF et Google Doc, classés dans l'historique).",
+      "Prise en charge et autorisation d'accès : en ne cochant que « Autorisation d'accès », émputation, base et options de la prise en charge sont masquées (plus besoin de les remplir) ; titre « Nouvelle demande » retiré."
+    ]
+  },
+  {
     "id": "2026-10-23-06",
     "date": "2026-10-23",
     "title": "Version 5.23.2 — Prise en charge : bouton Tout supprimer",

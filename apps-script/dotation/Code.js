@@ -121,6 +121,7 @@ function genererDotation(form) {
   if (form.type === 'EAU') return genererDotationEau_(form);
   if (form.type === 'ENTRETIEN') return genererDotationEntretien_(form);
   if (form.type === 'DIVISION') return genererDotationDivision_(form);
+  if (form.type === 'REPAS') return genererPriseEnChargeRepas_(form);
   return genererDotationVivres_(form);
 }
 
@@ -418,7 +419,76 @@ function genererDotationDivision_(form) {
 }
 
 // ------------------------------------------------------------------------
-// Historique (Vivres + Eau + Entretien + Division confondus)
+// Prises en charge « repas » : collation, pause café, repas à emporter, casse-croûte (document paysage, sans modèle Google Doc)
+// ------------------------------------------------------------------------
+const LOGO_SONATRACH_B64 = "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";
+const REPAS_TYPES = {
+  COLLATION: { titre: 'COLLATION', code: 'COLLATION', colonne: 'Date', tiret: true },
+  PAUSE_CAFE: { titre: 'PAUSE CAFE', code: 'PAUSE_CAFE', colonne: 'Date', tiret: false },
+  REPAS_EMPORTER: { titre: 'REPAS A EMPORTER', code: 'REPAS_EMPORTER', colonne: 'Date', tiret: false },
+  CASSE_CROUTE: { titre: 'CASSE - CROUTE', code: 'CASSE_CROUTE', colonne: 'Période De Dotation', tiret: false }
+};
+function lignes_(t) { return String(t == null ? '' : t).split(/\r?\n/).map(l => l.trim()).filter(Boolean); }
+function jjmmaaaa_(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+/** Contenu des cellules du tableau, d'après le formulaire. Pur : testé en Node. */
+function repasChamps_(form) {
+  const t = REPAS_TYPES[form.sousType]; if (!t) throw new Error('Choisissez le type de prise en charge.');
+  let des = lignes_(form.designations);
+  if (!des.length) throw new Error('Indiquez les désignations.');
+  if (t.tiret) des = des.map(l => '- ' + l.replace(/^[-–]\s*/, ''));
+  const d1 = jjmmaaaa_(form.dateDebut), d2 = jjmmaaaa_(form.dateFin);
+  if (!d1) throw new Error('Indiquez la date.');
+  const quand = d2 && d2 !== d1 ? [d1 + ' au', d2] : [d1];
+  if (form.heure && String(form.heure).trim()) quand.push('A ' + String(form.heure).trim());
+  if (form.lieu && String(form.lieu).trim()) quand.push(String(form.lieu).trim());
+  const n = String(form.nb == null ? '' : form.nb).trim(), nb = /^\d$/.test(n) ? '0' + n : n;
+  if (!nb) throw new Error('Indiquez le nombre de personnes.');
+  return { titre: 'PRISE EN CHARGE : ' + t.titre, code: t.code, colonne: t.colonne, designations: des, quand: quand, nb: nb, imputation: String(form.imputation || '').trim(), observations: lignes_(form.observations) };
+}
+function dateLongueFr_(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); if (!m) return '';
+  const mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  return Number(m[3]) + ' ' + mois[Number(m[2]) - 1] + ' ' + m[1];
+}
+function genererPriseEnChargeRepas_(form) {
+  try {
+    const c = repasChamps_(form), dossier = getDossierParent_(DOC_TEMPLATE_ID);
+    const nomBase = 'DOTATION_REPAS_' + c.code + '_' + jjmmaaaa_(form.date || form.dateDebut).replace(/\//g, '-');
+    const doc = DocumentApp.create(nomBase), body = doc.getBody();
+    body.setPageWidth(842).setPageHeight(595).setMarginTop(34).setMarginBottom(34).setMarginLeft(48).setMarginRight(48);
+    const fixer = (p, o) => { p.setSpacingBefore(0).setSpacingAfter(o && o.apres != null ? o.apres : 0); if (o && o.align) p.setAlignment(o.align); return p; };
+    const C = DocumentApp.HorizontalAlignment.CENTER, R = DocumentApp.HorizontalAlignment.RIGHT;
+    const logo = body.appendParagraph(''); fixer(logo, { apres: 2 });
+    const img = logo.appendInlineImage(Utilities.newBlob(Utilities.base64Decode(LOGO_SONATRACH_B64), 'image/png', 'sonatrach.png')); img.setWidth(60).setHeight(89);
+    ['Activité Exploration Production', 'Division Production', 'Direction Régionale Rhourde-Nouss', 'Division Infrastructure'].forEach(t => fixer(body.appendParagraph(t)).setBold(true).setFontSize(9).setFontFamily('Arial'));
+    fixer(body.appendParagraph('Rhourde Nouss, le : ' + dateLongueFr_(form.date || form.dateDebut)), { align: R, apres: 14 }).setBold(true).setFontSize(10).setFontFamily('Arial');
+    fixer(body.appendParagraph(c.titre), { align: C, apres: 14 }).setBold(true).setUnderline(true).setFontSize(12).setFontFamily('Arial');
+    const cellule = (cell, lignes, o) => {
+      cell.clear(); cell.setPaddingTop(6).setPaddingBottom(6).setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+      (lignes.length ? lignes : ['']).forEach((l, i) => { const p = i === 0 ? cell.getChild(0).asParagraph().setText(l) : cell.appendParagraph(l); fixer(p, { align: C }); p.setBold(!!(o && o.gras)).setFontSize(o && o.taille || 10).setFontFamily('Arial'); });
+    };
+    const tab = body.appendTable([['Désignation', c.colonne, 'Nbr de Personnes', 'Imputation Analytique', 'Observations'], ['', '', '', '', '']]);
+    [235, 130, 70, 100, 195].forEach((w, i) => tab.setColumnWidth(i, w));
+    [c.designations.length > 1 ? 'Désignations' : 'Désignation', c.colonne, 'Nbr de Personnes', 'Imputation Analytique', 'Observations'].forEach((h, i) => cellule(tab.getRow(0).getCell(i), [h], { gras: true }));
+    cellule(tab.getRow(1).getCell(0), c.designations, { gras: true });
+    cellule(tab.getRow(1).getCell(1), c.quand, { gras: true });
+    cellule(tab.getRow(1).getCell(2), [c.nb], { gras: true });
+    cellule(tab.getRow(1).getCell(3), [c.imputation], { gras: true });
+    cellule(tab.getRow(1).getCell(4), c.observations, { gras: true });
+    fixer(body.appendParagraph(''), { apres: 6 });
+    const sig = body.appendTable([['LE PRENEUR', 'LE CHEF DE DIVISION INFRASTRUCTURE', 'LE CHEF DIVISION MOYENS GENERAUX']]);
+    sig.setBorderWidth(0); [0, 1, 2].forEach(i => { const cell = sig.getRow(0).getCell(i); cellule(cell, [['LE PRENEUR', 'LE CHEF DE DIVISION INFRASTRUCTURE', 'LE CHEF DIVISION MOYENS GENERAUX'][i]], { gras: true, taille: 9 }); cell.getChild(0).asParagraph().setAlignment(i === 0 ? DocumentApp.HorizontalAlignment.LEFT : C); });
+    doc.saveAndClose();
+    const docFile = DriveApp.getFileById(doc.getId()); docFile.moveTo(dossier);
+    const pdfFile = dossier.createFile(doc.getAs('application/pdf')); pdfFile.setName(nomBase + '.pdf');
+    return { success: true, docUrl: docFile.getUrl(), pdfUrl: pdfFile.getUrl(), docId: doc.getId(), pdfId: pdfFile.getId(), nom: nomBase };
+  } catch (error) {
+    return { success: false, error: error.message || String(error) };
+  }
+}
+
+// ------------------------------------------------------------------------
+// Historique (Vivres + Eau + Entretien + Division + Repas confondus)
 // ------------------------------------------------------------------------
 function listerDotationsGenerees() {
   try {
@@ -426,7 +496,8 @@ function listerDotationsGenerees() {
       { type: 'VIVRES', dossier: getDossierParent_(DOC_TEMPLATE_ID), prefixe: 'DOTATION_VIVRES_' },
       { type: 'EAU', dossier: getDossierParent_(EAU_TEMPLATE_ID), prefixe: 'DOTATION_EAU_' },
       { type: 'ENTRETIEN', dossier: getDossierParent_(ENTRETIEN_TEMPLATE_ID), prefixe: 'DOTATION_ENTRETIEN_' },
-      { type: 'DIVISION', dossier: getDossierParent_(DIVISION_TEMPLATE_ID), prefixe: 'DOTATION_DIVISION_' }
+      { type: 'DIVISION', dossier: getDossierParent_(DIVISION_TEMPLATE_ID), prefixe: 'DOTATION_DIVISION_' },
+      { type: 'REPAS', dossier: getDossierParent_(DOC_TEMPLATE_ID), prefixe: 'DOTATION_REPAS_' }
     ];
     const map = {};
 
@@ -471,7 +542,8 @@ function supprimerToutesLesDotations() {
     [ {id: DOC_TEMPLATE_ID, prefixe: 'DOTATION_VIVRES_'},
       {id: EAU_TEMPLATE_ID, prefixe: 'DOTATION_EAU_'},
       {id: ENTRETIEN_TEMPLATE_ID, prefixe: 'DOTATION_ENTRETIEN_'},
-      {id: DIVISION_TEMPLATE_ID, prefixe: 'DOTATION_DIVISION_'} ].forEach(cfg => {
+      {id: DIVISION_TEMPLATE_ID, prefixe: 'DOTATION_DIVISION_'},
+      {id: DOC_TEMPLATE_ID, prefixe: 'DOTATION_REPAS_'} ].forEach(cfg => {
       const dossier = getDossierParent_(cfg.id);
       const fichiers = dossier.getFiles();
       while (fichiers.hasNext()) {

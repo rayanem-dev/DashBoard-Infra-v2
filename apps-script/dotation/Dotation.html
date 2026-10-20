@@ -336,6 +336,11 @@
   .histo-tag.eau { background: var(--blue-pale); color: var(--blue-main); }
   .histo-tag.entretien { background: var(--green-pale); color: var(--green-main); }
   .histo-tag.division { background: var(--purple-pale); color: var(--purple-main); }
+  .histo-tag.repas { background: #FCE7F3; color: #BE185D; }
+  #cardRepas textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font: inherit; font-size: 14px; resize: vertical; }
+  #cardRepas select, #cardRepas input[type=text], #cardRepas input[type=number], #cardRepas input[type=date] { width: 100%; }
+  #cardRepas .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button.generer.repas { background: linear-gradient(135deg, #DB2777, #F472B6); }
   .histo-info { flex: 1; min-width: 0; }
   .histo-nom {
     font-size: 13px;
@@ -393,6 +398,7 @@
       <button type="button" class="type-btn eau" id="btnTypeEau" onclick="setType('EAU')">💧 Eau</button>
       <button type="button" class="type-btn entretien" id="btnTypeEntretien" onclick="setType('ENTRETIEN')">🧽 Entretien</button>
       <button type="button" class="type-btn division" id="btnTypeDivision" onclick="setType('DIVISION')">🏢 Division</button>
+      <button type="button" class="type-btn repas" id="btnTypeRepas" onclick="setType('REPAS')">🍴 Repas &amp; collations</button>
     </div>
   </div>
 
@@ -477,6 +483,36 @@
     <button class="generer division" id="btnGenererDivision" onclick="generer('DIVISION')">Générer la dotation Division</button>
   </div>
 
+  <!-- Bloc Prises en charge repas : collation, pause café, repas à emporter, casse-croûte -->
+  <div class="card" id="cardRepas" style="display:none;">
+    <div class="card-title">🍴 Prise en charge : repas &amp; collations</div>
+    <label class="field-label">Type</label>
+    <select id="repasType" onchange="majRepasType()">
+      <option value="COLLATION">Collation</option>
+      <option value="PAUSE_CAFE">Pause café</option>
+      <option value="REPAS_EMPORTER">Repas à emporter</option>
+      <option value="CASSE_CROUTE">Casse-croûte</option>
+    </select>
+    <label class="field-label">Désignations <span style="text-transform:none;font-weight:500;">(une par ligne)</span></label>
+    <textarea id="repasDesignations" rows="4" placeholder="Ex. : Grande tarte / 60 P&#10;Assortiment de petits fours&#10;Café&#10;Jus"></textarea>
+    <div class="deux">
+      <div><label class="field-label" id="repasLblDebut">Date</label><input type="date" id="repasDebut"></div>
+      <div><label class="field-label">Jusqu'au <span style="text-transform:none;font-weight:500;">(facultatif : période)</span></label><input type="date" id="repasFin"></div>
+    </div>
+    <div class="deux">
+      <div><label class="field-label">Heure <span style="text-transform:none;font-weight:500;">(facultatif)</span></label><input type="text" id="repasHeure" placeholder="16:30"></div>
+      <div><label class="field-label">Lieu <span style="text-transform:none;font-weight:500;">(facultatif)</span></label><input type="text" id="repasLieu" placeholder="Division Infra"></div>
+    </div>
+    <div class="deux">
+      <div><label class="field-label">Nombre de personnes</label><input type="number" min="1" id="repasNb"></div>
+      <div><label class="field-label">Imputation analytique</label><input type="text" id="repasImputation" list="dlImputations" placeholder="4300045000"></div>
+    </div>
+    <datalist id="dlImputations"><option value="4300045000">Division</option><option value="4300045100">Électromécanique</option><option value="4300045200">Travaux Entretien</option><option value="4300045300">Construction</option></datalist>
+    <label class="field-label">Observations <span style="text-transform:none;font-weight:500;">(une par ligne)</span></label>
+    <textarea id="repasObservations" rows="2" placeholder="Ex. : Départ en retraite&#10;MOKRANI Miloud"></textarea>
+    <button class="generer repas" id="btnGenererRepas" onclick="generer('REPAS')">Générer la prise en charge</button>
+  </div>
+
   <div id="resultat"></div>
 
   <div class="card">
@@ -499,11 +535,13 @@ function setType(type){
   document.getElementById('btnTypeEau').classList.toggle('active', type === 'EAU');
   document.getElementById('btnTypeEntretien').classList.toggle('active', type === 'ENTRETIEN');
   document.getElementById('btnTypeDivision').classList.toggle('active', type === 'DIVISION');
+  document.getElementById('btnTypeRepas').classList.toggle('active', type === 'REPAS');
 
   document.getElementById('cardVivres').style.display = (type === 'VIVRES') ? 'block' : 'none';
   document.getElementById('cardEau').style.display = (type === 'EAU') ? 'block' : 'none';
   document.getElementById('cardEntretien').style.display = (type === 'ENTRETIEN') ? 'block' : 'none';
   document.getElementById('cardDivision').style.display = (type === 'DIVISION') ? 'block' : 'none';
+  document.getElementById('cardRepas').style.display = (type === 'REPAS') ? 'block' : 'none';
 
   document.getElementById('cardPersonnelWrapper').style.display =
     (type === 'VIVRES' || type === 'EAU') ? 'block' : 'none';
@@ -511,6 +549,7 @@ function setType(type){
     (type === 'VIVRES' || type === 'EAU') ? 'block' : 'none';
   document.getElementById('rowService').style.display =
     (type === 'VIVRES' || type === 'EAU') ? 'block' : 'none';
+  if (type === 'REPAS') majRepasType();
   document.getElementById('rowPeriodeDivision').style.display =
     (type === 'DIVISION') ? 'block' : 'none';
 
@@ -662,6 +701,11 @@ document.getElementById('date').addEventListener('change', function(){
   if (typeActuel === 'DIVISION') majPeriodeDivision();
 });
 
+function majRepasType(){
+  const casse = document.getElementById('repasType').value === 'CASSE_CROUTE';
+  document.getElementById('repasLblDebut').textContent = casse ? 'Période : du' : 'Date';
+}
+
 function generer(type){
   const presents = Array.from(document.querySelectorAll('.presence:checked')).map(c => c.value);
   const form = {
@@ -689,6 +733,17 @@ function generer(type){
       form.quantites[inp.dataset.nom] = inp.value;
     });
     if(!form.atelier){ alert('Merci de choisir un atelier.'); return; }
+  } else if(type === 'REPAS'){
+    form.sousType = document.getElementById('repasType').value;
+    form.designations = document.getElementById('repasDesignations').value;
+    form.dateDebut = document.getElementById('repasDebut').value;
+    form.dateFin = document.getElementById('repasFin').value;
+    form.heure = document.getElementById('repasHeure').value;
+    form.lieu = document.getElementById('repasLieu').value;
+    form.nb = document.getElementById('repasNb').value;
+    form.imputation = document.getElementById('repasImputation').value;
+    form.observations = document.getElementById('repasObservations').value;
+    if(!form.designations.trim() || !form.dateDebut || !form.nb){ alert('Merci de renseigner les désignations, la date et le nombre de personnes.'); return; }
   } else if(type === 'DIVISION'){
     form.quantites = {};
     document.querySelectorAll('.qte-division').forEach(inp => {
@@ -714,6 +769,7 @@ function generer(type){
   const btnId = (type === 'VIVRES') ? 'btnGenererVivres'
     : (type === 'EAU') ? 'btnGenererEau'
     : (type === 'ENTRETIEN') ? 'btnGenererEntretien'
+    : (type === 'REPAS') ? 'btnGenererRepas'
     : 'btnGenererDivision';
   const btn = document.getElementById(btnId);
   const texteOriginal = btn.textContent;
@@ -754,7 +810,7 @@ function chargerHistorique(){
       let links = '';
       if(f.docId) links += '<a href="https://docs.google.com/document/d/'+f.docId+'/edit" target="_blank" rel="noopener">📄 Doc</a>';
       if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank" rel="noopener">⬇️ PDF</a>';
-      const tagClass = (f.type === 'EAU') ? 'eau' : (f.type === 'ENTRETIEN') ? 'entretien' : (f.type === 'DIVISION') ? 'division' : 'vivres';
+      const tagClass = (f.type === 'EAU') ? 'eau' : (f.type === 'ENTRETIEN') ? 'entretien' : (f.type === 'DIVISION') ? 'division' : (f.type === 'REPAS') ? 'repas' : 'vivres';
       row.innerHTML =
         '<span class="histo-tag ' + tagClass + '">' + f.type + '</span>' +
         '<div class="histo-info">' +

@@ -351,8 +351,9 @@ function soumettreFormulairePEC(formData) {
     if (!sheet) throw new Error("La feuille 'PEC' est introuvable.");
 
     if (!formData.prestataire) throw new Error("Sélectionne un prestataire.");
-    if (!formData.emputation) throw new Error("Sélectionne une émputation.");
-    if (!formData.base) throw new Error("Sélectionne une base.");
+    // Émputation et base ne servent qu'à la Prise en charge (une autorisation d'accès seule n'en a pas besoin)
+    if (formData.genererPEC && !formData.emputation) throw new Error("Sélectionne une émputation.");
+    if (formData.genererPEC && !formData.base) throw new Error("Sélectionne une base.");
 
     // C2 / D2 / E2 (format "NumContrat - Entreprise - Intitulé")
     sheet.getRange("C2").setValue(formData.prestataire);
@@ -361,13 +362,13 @@ function soumettreFormulairePEC(formData) {
     sheet.getRange("E2").setValue(partsPrestataire.length > 2 ? partsPrestataire.slice(2).join(" - ").trim() : "");
 
     // C3 / D3
-    sheet.getRange("C3").setValue(formData.emputation);
-    sheet.getRange("D3").setValue(EMPUTATIONS[formData.emputation] || "");
+    if (formData.emputation) { sheet.getRange("C3").setValue(formData.emputation); sheet.getRange("D3").setValue(EMPUTATIONS[formData.emputation] || ""); }
+    else { sheet.getRange("C3:D3").clearContent(); }
 
     // C4
     // La liste de validation de C4 a pu être posée avec d'anciennes bases : on la remet à jour avant d'écrire
     sheet.getRange("C4").setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(BASES, true).setAllowInvalid(false).build());
-    sheet.getRange("C4").setValue(formData.base);
+    if (formData.base) sheet.getRange("C4").setValue(formData.base); else sheet.getRange("C4").clearContent();
 
     // D5 Remplacement
     sheet.getRange("D5").setValue(!!formData.remplacement);

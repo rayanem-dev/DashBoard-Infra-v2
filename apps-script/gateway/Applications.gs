@@ -92,6 +92,14 @@ var SEED_APPS = [
   1
  ],
  [
+  "rh",
+  "Renommage de documents",
+  "Renomme les PDF, JPG et scans (type de document, agent, dates) selon les règles de la division, et apprend de vos corrections au fil de l'eau. Les fichiers restent sur votre ordinateur.",
+  "🏷️",
+  "renommage.html",
+  1
+ ],
+ [
   "logistique",
   "Fiche d'évaluation",
   "Fiche d'évaluation mensuelle des travaux et prestations : cartouche remplie depuis le Suivi CPM, cases à cliquer, taux de satisfaction calculé automatiquement, PDF et archive des fiches éditées.",
