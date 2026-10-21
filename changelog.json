@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-47",
+    "date": "2026-10-23",
+    "title": "Version 5.32.0 — Feuille de pointage",
+    "changes": [
+      "Nouvelle application « Feuille de pointage » (module RH) : fiche hebdomadaire de la division (semaine du … au …, matin et soir sur 7 jours, A4 paysage, une page par groupe) avec les noms et fonctions de BDDORGA (pages Sonatrach et Autre). Seul l'effectif de la fiche d'origine est concerné (les autres sont à l'atelier) ; on peut décocher, retirer ou ajouter une personne. Croix cliquables à l'écran, « Imprimer » en un clic."
+    ]
+  },
+  {
     "id": "2026-10-23-46",
     "date": "2026-10-23",
     "title": "Version 5.31.4 — ID de script corrigés",

@@ -18,7 +18,7 @@
     [/prise.? en charge|autorisation d.acces|badge|enquete|bon de sortie/, 'acces'],
     [/statistiques sous|fiche d.evaluation|suivi cpm|dossiers cpm|passation des contrats|vivier/, 'marches'],
     [/rapport hebdomadaire|avancement chantiers|suivi chantier|taches journalieres|rapports journaliers|imputation/, 'pilotage'],
-    [/organigramme|affectation du personnel|planning global|planning & rotations|simulation de planning|permanence|formation|visite medicale/, 'personnel'],
+    [/organigramme|feuille de pointage|affectation du personnel|planning global|planning & rotations|simulation de planning|permanence|formation|visite medicale/, 'personnel'],
     [/veste en cuir|dotation|repas a emporter|ordre de travail|gaz.?oil|vehicule|requete transport|stock|inventaire|radio|commande de pieces/, 'logistique'],
     [/instances courriers|consignes|ordres de mission|documents administratifs|renommage/, 'admin'],
     [/annuaire|privileges|helpdesk|quarantaine/, 'it']

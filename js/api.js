@@ -49,6 +49,7 @@
         { titre: 'Simulation de planning', description: 'Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande à signer.', emoji: '🧪', url: 'simulation.html' } ] },
       { id: 'rh', titre: 'RH & Personnel', icone: '👥', niveau: 3, apps: [
         { titre: 'Organigramme — Division Infrastructure', description: 'Structure de la division, à jour avec BDDORGA : services, responsables, employeurs, téléphones.', emoji: '🏢', url: 'Organigramme.html' },
+        { titre: 'Feuille de pointage', description: 'Feuille de pointage hebdomadaire de la division, imprimable en un clic.', emoji: '🗓️', url: 'pointage.html' },
         { titre: 'Documents administratifs', description: 'Ordres de mission, prêts, mutations, primes… : formulaires préremplis, prêts à imprimer.', emoji: '📄', url: 'documents.html' },
         { titre: 'Renommage de documents', description: 'Renomme les PDF, JPG et scans (type, agent, date) et apprend de vos corrections.', emoji: '🏷️', url: 'renommage.html' },
         { titre: 'Autorisation GAZ-OIL', description: 'Autorisation d\'approvisionnement en GAZ-OIL (fûts de 200 L), imprimable en un clic.', emoji: '⛽', url: 'autorisation-gazoil.html' },

@@ -85,6 +85,14 @@ var SEED_APPS = [
  ],
  [
   "rh",
+  "Feuille de pointage",
+  "Feuille de pointage hebdomadaire de la division (semaine du … au …, matin et soir) : noms et fonctions de BDDORGA pour l'effectif de la division uniquement (les autres sont à l'atelier), imprimable en un clic.",
+  "🗓️",
+  "pointage.html",
+  1
+ ],
+ [
+  "rh",
   "Documents administratifs",
   "Ordres de mission, demandes de prêt, de mutation, de primes, attestations… : 25 formulaires de la Direction Régionale préremplis avec vos informations, prêts à imprimer ou à enregistrer en PDF.",
   "📄",

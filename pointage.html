@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Feuille de pointage – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .pt { max-width: 1400px; margin: 0 auto; padding: 16px 16px 40px; display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .pt label.l { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 3px; }
+  .pt input[type=date], .pt input[type=text] { width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .btn-p { padding: 10px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .eff h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 12px 0 4px; }
+  .eff .p { display: flex; gap: 8px; align-items: center; padding: 3px 0; font-size: 13px; border-bottom: 1px solid var(--border); } .eff .p label { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: baseline; cursor: pointer; }
+  .eff .p small { color: var(--text-muted); } .eff .p button { border: 0; background: none; cursor: pointer; color: var(--err); font-size: 14px; }
+  .eff .add { display: flex; gap: 6px; margin-top: 6px; } .eff .add input { flex: 1; }
+  .note { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; }
+  .apercu { overflow: auto; background: #E5E7EB; padding: 14px; border-radius: 14px; }
+  #feuilles { width: 297mm; margin: 0 auto; transform-origin: top left; }
+  .page { background: #fff; color: #000; width: 297mm; height: 210mm; box-sizing: border-box; padding: 8mm 10mm; margin-bottom: 8mm; box-shadow: 0 2px 14px rgba(0,0,0,.2); font-family: Arial, Helvetica, sans-serif; position: relative; overflow: hidden; }
+  .page .mois { text-align: right; font-weight: 700; font-size: 11pt; } .page .titre { text-align: center; font-weight: 700; font-size: 12pt; margin: 2mm 0 3mm; }
+  .page table { border-collapse: collapse; width: 100%; table-layout: fixed; } .page th, .page td { border: 1px solid #000; padding: 0 1.5mm; font-size: 8.5pt; height: 9.4mm; overflow: hidden; }
+  .page th { text-align: center; font-weight: 700; height: 6mm; } .page td.n { width: 46mm; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; } .page td.f { width: 54mm; white-space: nowrap; text-overflow: ellipsis; font-size: 8pt; }
+  .page td.c { text-align: center; font-size: 11pt; font-weight: 700; cursor: pointer; } .page td.c:hover { background: #FFF1E6; }
+  @media (max-width: 1000px) { .pt { grid-template-columns: 1fr; } }
+  @media print { @page { size: A4 landscape; margin: 0; } html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; filter: none !important; overflow: hidden !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } body > *:not(main), .pt > *:not(.apercu) { display: none !important; }
+    .pt { display: block !important; padding: 0 !important; max-width: none !important; position: absolute; left: 0; top: 0; width: 297mm; } .apercu { background: none !important; padding: 0 !important; overflow: visible !important; height: auto !important; } #feuilles { transform: none !important; }
+    .page { box-shadow: none !important; margin: 0 !important; height: 209mm !important; break-after: page; } .page:last-child { break-after: auto; } .page td.c:hover { background: none; } }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">FP</div>
+    <div class="logo-text"><h1>Feuille de pointage</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="pt">
+  <div>
+    <div class="bloc">
+      <h2>🗓 Semaine</h2>
+      <label class="l" for="f-du">Semaine du</label><input type="date" id="f-du">
+      <p class="note" id="au"></p>
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-raz" type="button">Effacer les croix</button></div>
+      <p class="note">Sur l'écran, un clic sur une case marque une croix (✓) ; elle s'imprime. Les cases vides se remplissent à la main.</p>
+    </div>
+    <div class="bloc eff">
+      <h2>👥 Effectif de la division</h2>
+      <p class="note" style="margin-top:0">Seules les personnes de cette liste sont concernées (les autres sont à l'atelier). Les noms et fonctions viennent de BDDORGA (pages Sonatrach et Autre) ; décochez une personne absente cette semaine.</p>
+      <div id="effectif"></div>
+      <button class="btn-s" id="b-eff" type="button" style="margin-top:10px">Rétablir l'effectif de départ</button>
+    </div>
+  </div>
+  <div class="apercu"><div id="feuilles"></div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var CLE = 'pointage_effectif', CLE_X = 'pointage_croix';
+  // Effectif de la division (fiche de pointage d'origine) : seules ces personnes sont concernées ; la fonction est celle de BDDORGA quand elle y figure
+  var DEPART = [
+    { t: 'Direction et services', l: [['LAMINE Hadjadj', 'CHEF Division Infrastructure'], ['REBAHI Redouane', 'CHEF SCE ELECTROMECAN N3'], ['BEN MESSAOUD ELFarouk', 'CHEF SERVICE CONSTRUCTION'], ['HAMBLI Mohamed', 'CHEF SERVICE ENTRETIEN'], ['OUADAN MUSTAPHA', 'INGENIEUR HYDRAULIQUE N2'], ['DAMECHE Med Rida', 'ING TRAVAUX PPL'], ['LAKKAICHI NOUREDDINE', 'INGENIEUR HYDRAULIQUE N2'], ['LEMSADFA MOHAMED', 'CONTROLEUR PPL (ED)'], ['MOKRANI MILOUD', 'CONTROLEUR PPL (ED)'], ['HAMMAD MED YACINE', 'SUPERVISEUR PRESTATIONS TRAVAUX N2'], ['BOUCHIKHI DJELLOUL', 'CONTROLEUR N3 (ED)'], ['ZARROUK Sid Ahmed', 'ORDONNATEUR N4'], ['ZAOUAI BRAHIM', 'ORDONNATEUR'], ['SAHEB ABDERAOUF', 'Preparateur'], ['FEKHAR ABDELMADJID', 'Preparateur']] },
+    { t: 'Génie civil et travaux', l: [['AICHOUCHE MOHAMED', 'INGÉNIEUR GÉNIE CIVIL'], ['CHAOUI OUSSAMA', 'INGÉNIEUR GÉNIE CIVIL'], ['BOUAZIZ HOCINE', 'INGÉNIEUR GÉNIE CIVIL'], ['MALEK AHMED AMINE', 'INGÉNIEUR GÉNIE CIVIL'], ['RAYANE REDHA MADANI', 'PRÉPARATEUR (SECRÉTAIRE)'], ['HAMIDI AHCENE', 'CONDUCTEUR /T G.CIVIL'], ['AZEGGAGH LOUCIF', 'INGÉNIEUR GÉNIE CIVIL'], ['BELHEINE TADJ EDDINE', 'INGÉNIEUR GÉNIE CIVIL'], ['MEZROUA ABDELDJALIL', 'MÉTREUR VÉRIFICATEUR'], ['LACHI CHOAYB', 'PRÉPARATEUR (SECRÉTAIRE)'], ['CHAREF KAMAL', 'CONDUCTEUR /T G.CIVIL'], ['KRIBIA MOHAMMED LAMINE', 'INGÉNIEUR GÉNIE CIVIL'], ['TOUAHRI ABDELLATIF', 'CONDUCTEUR /T G.CIVIL'], ['ZERROUKI AREZKI', 'CONDUCTEUR /T G.CIVIL'], ['ADNANE ABDELMOUMEN', 'INGÉNIEUR GÉNIE CIVIL'], ['BENRITAB ABDESSALEM', 'INGÉNIEUR GÉNIE CIVIL']] }
+  ];
+  var JOURS = 7, MOIS = ['JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function plus(s, n) { var p = s.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2] + n); return iso(d); }
+  function fr(s) { return s.slice(8) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4); }
+  function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function jetons(s) { return norm(s).split(' ').filter(Boolean); }
+
+  // ----- effectif (modifiable, gardé sur cet ordinateur) -----
+  function depart() { return DEPART.map(function (g) { return { t: g.t, l: g.l.map(function (x) { return { nom: x[0], fonction: x[1], actif: true }; }) }; }); }
+  var eff; try { eff = JSON.parse(localStorage.getItem(CLE) || 'null'); } catch (e) { eff = null; } if (!Array.isArray(eff) || eff.length !== DEPART.length) eff = depart();
+  function sauverEff() { try { localStorage.setItem(CLE, JSON.stringify(eff)); } catch (e) { /* stockage indisponible */ } }
+  // nom et fonction de BDDORGA : une personne de l'effectif est rapprochée de BDDORGA quand tous les mots de son nom s'y retrouvent (ordre libre)
+  var annuaire = [];
+  function rapprocher(p) {
+    var j = jetons(p.nom); if (!j.length) return null;
+    var tous = annuaire.filter(function (a) { var t = jetons(a.nom); return j.every(function (x) { return t.indexOf(x) >= 0; }); });
+    if (!tous.length) return null;
+    tous.sort(function (a, b) { return jetons(a.nom).length - jetons(b.nom).length; });   // le plus proche (le moins de mots en plus)
+    return tous[0];
+  }
+  function affiche(p) { var a = rapprocher(p); return { nom: a && a.nom ? a.nom : p.nom, fonction: a && a.fonction ? a.fonction : p.fonction }; }
+  if (window.Api) Api.call('annuaire_personnes').then(function (r) { annuaire = (r.personnes || []).filter(function (p) { return p.nom; }); dessinerEff(); feuilles(); }).catch(function () { /* sans annuaire : noms et fonctions de la fiche d'origine */ });
+
+  function dessinerEff() {
+    var z = $('effectif'); z.textContent = '';
+    eff.forEach(function (g, gi) {
+      var h = document.createElement('h3'); h.textContent = g.t + ' (' + g.l.filter(function (p) { return p.actif; }).length + ')'; z.appendChild(h);
+      g.l.forEach(function (p, pi) {
+        var d = document.createElement('div'); d.className = 'p'; var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = p.actif;
+        c.onchange = function () { p.actif = c.checked; sauverEff(); dessinerEff(); feuilles(); };
+        var a = affiche(p), n = document.createElement('span'), f = document.createElement('small'); n.textContent = a.nom; f.textContent = a.fonction;
+        l.appendChild(c); l.appendChild(n); l.appendChild(f); d.appendChild(l);
+        var x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.title = 'Retirer de la division';
+        x.onclick = function () { if (!confirm('Retirer ' + a.nom + ' de l\'effectif de la division ?')) return; g.l.splice(pi, 1); sauverEff(); dessinerEff(); feuilles(); };
+        d.appendChild(x); z.appendChild(d);
+      });
+      var ad = document.createElement('div'); ad.className = 'add'; var i = document.createElement('input'); i.type = 'text'; i.placeholder = 'Ajouter une personne (nom de BDDORGA)'; i.setAttribute('list', 'dl-pers'); i.setAttribute('aria-label', 'Ajouter une personne à ' + g.t);
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'btn-s'; b.textContent = '+';
+      b.onclick = function () { var v = i.value.trim(); if (!v) return; var a = rapprocher({ nom: v }); g.l.push({ nom: a ? a.nom : v, fonction: a ? a.fonction : '', actif: true }); sauverEff(); dessinerEff(); feuilles(); };
+      ad.appendChild(i); ad.appendChild(b); z.appendChild(ad);
+    });
+    var dl = $('dl-pers') || document.body.appendChild(Object.assign(document.createElement('datalist'), { id: 'dl-pers' })); dl.textContent = '';
+    annuaire.forEach(function (a) { var o = document.createElement('option'); o.value = a.nom; dl.appendChild(o); });
+  }
+  $('b-eff').onclick = function () { if (!confirm('Rétablir l\'effectif de la fiche d\'origine ?')) return; eff = depart(); sauverEff(); dessinerEff(); feuilles(); };
+
+  // ----- croix (cases cliquées, gardées avec la semaine) -----
+  var croix = {}; try { croix = JSON.parse(localStorage.getItem(CLE_X) || '{}'); } catch (e) { croix = {}; }
+  function sauverX() { try { localStorage.setItem(CLE_X, JSON.stringify(croix)); } catch (e) { /* rien */ } }
+  $('b-raz').onclick = function () { var du = $('f-du').value; Object.keys(croix).forEach(function (k) { if (k.indexOf(du + '|') === 0) delete croix[k]; }); sauverX(); feuilles(); };
+
+  // ----- feuilles : une page par groupe, comme la fiche d'origine -----
+  function feuilles() {
+    var du = $('f-du').value || iso(new Date()), au = plus(du, JOURS - 1), p = du.split('-');
+    $('au').textContent = 'Au ' + fr(au) + ' (7 jours, matin et soir).';
+    var jours = []; for (var i = 0; i < JOURS; i += 1) jours.push(plus(du, i));
+    var html = '';
+    eff.forEach(function (g) {
+      var lignes = g.l.filter(function (x) { return x.actif; });
+      if (!lignes.length) return;
+      html += '<div class="page"><div class="mois">Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</div><div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
+        '<table><colgroup><col style="width:44mm"><col style="width:68mm">' + jours.map(function () { return '<col><col>'; }).join('') + '</colgroup><thead><tr><th rowspan="2">Nom et Prénom</th><th rowspan="2">Fonction</th>' + jours.map(function (j) { return '<th colspan="2">' + fr(j) + '</th>'; }).join('') + '</tr>' +
+        '<tr>' + jours.map(function () { return '<th>Matin</th><th>Soir</th>'; }).join('') + '</tr></thead><tbody>' +
+        lignes.map(function (x) {
+          var a = affiche(x);
+          return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { return ['M', 'S'].map(function (m) { var k = du + '|' + x.nom + '|' + j + m; return '<td class="c" data-k="' + E(k) + '">' + (croix[k] ? '✓' : '') + '</td>'; }).join(''); }).join('') + '</tr>';
+        }).join('') + '</tbody></table></div>';
+    });
+    $('feuilles').innerHTML = html || '<p style="padding:20px">Aucune personne dans l\'effectif.</p>';
+    $('feuilles').querySelectorAll('td.c').forEach(function (td) { td.onclick = function () { var k = td.dataset.k; if (croix[k]) delete croix[k]; else croix[k] = 1; td.textContent = croix[k] ? '✓' : ''; sauverX(); }; });
+    ajuster();
+  }
+  function ajuster() { var z = $('feuilles').parentNode, l = z.clientWidth - 28, w = $('feuilles').offsetWidth || 1122; var k = Math.min(1, l / w); $('feuilles').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuilles').offsetHeight * k + 28) + 'px' : ''; }
+  window.addEventListener('resize', ajuster);
+  $('f-du').addEventListener('input', feuilles);
+  $('b-imp').onclick = function () { window.print(); };          // impression en un clic
+  $('f-du').value = iso(new Date()); dessinerEff(); feuilles();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
