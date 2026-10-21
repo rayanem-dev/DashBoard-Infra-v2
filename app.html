@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Application – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script>
+<style>
+  html, body { height: 100%; } body { display: flex; flex-direction: column; overflow: hidden; }
+  #cadre { flex: 1; width: 100%; border: 0; background: var(--page); min-height: 0; }
+  #msg { padding: 40px 20px; text-align: center; font-size: 15px; }
+  @media print { .bandeau { display: none !important; } }
+</style>
+</head>
+<body>
+<!-- Les applications Apps Script s'ouvrent ici : même en-tête que le reste du site, retour au portail en un clic. -->
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle" id="ico">SH</div>
+    <div class="logo-text"><h1 id="titre">Application</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<div id="msg" hidden></div>
+<iframe id="cadre" title="Application" allow="clipboard-write; clipboard-read; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
+<script>
+(function () {
+  if (window.Api && Api.demo) document.getElementById('demo').hidden = false;
+  if (window.Api && !Api.token() && !Api.demo) { location.replace('connexion.html'); return; }
+  var q = new URLSearchParams(location.search), u = q.get('u') || '', t = (q.get('t') || '').slice(0, 80), e = (q.get('e') || '').slice(0, 8);
+  // seules les applications Apps Script de la division (adresse /exec) peuvent s'ouvrir ici
+  var ok = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_\-]+\/exec$/.test(u);
+  if (t) { document.getElementById('titre').textContent = t; document.title = t + ' – Division Infrastructure RNS'; }
+  if (e) document.getElementById('ico').textContent = e;
+  if (!ok) { var m = document.getElementById('msg'); m.hidden = false; m.textContent = 'Adresse d\'application invalide. Revenez au portail et rouvrez l\'application depuis sa carte.'; document.getElementById('cadre').hidden = true; return; }
+  document.getElementById('cadre').src = u;
+})();
+</script>
+</body>
+</html>

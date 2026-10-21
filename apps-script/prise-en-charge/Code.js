@@ -308,7 +308,8 @@ function genererTout() {
 function doGet(e) {
   return HtmlService.createHtmlOutputFromFile("Formulaire")
     .setTitle("Demande de Prise en Charge")
-    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+    .addMetaTag("viewport", "width=device-width, initial-scale=1")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 /**

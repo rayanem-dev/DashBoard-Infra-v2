@@ -44,7 +44,8 @@ const IMPUTATION_MAP = {
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Dotation')
-    .setTitle('Dotations - Division Infrastructure');
+    .setTitle('Dotations - Division Infrastructure')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 // Lignes de BDDORGA sous la forme { nom, service, dependance }, d'après les en-têtes de la première ligne.

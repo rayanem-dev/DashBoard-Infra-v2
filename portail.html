@@ -98,6 +98,8 @@
   function el(tag, cls, texte) { var e = document.createElement(tag); if (cls) e.className = cls; if (texte != null) e.textContent = texte; return e; }
   // N'autorise que http(s) et les pages relatives du site : jamais javascript: ni data:
   function lienSur(u) { u = String(u || ''); return /^(https?:\/\/|[A-Za-z0-9_\-\/]+\.html)/.test(u) ? u : '#'; }
+  // Les applications Apps Script s'ouvrent dans le site (même en-tête, « Retour au portail ») au lieu d'une page nue
+  function lienApp(a) { var u = lienSur(a.url); return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_\-]+\/exec$/.test(u) ? 'app.html?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(a.titre || '') + '&e=' + encodeURIComponent(String(a.emoji || a.icone || '').slice(0, 8)) : u; }
 
   // ---------- Fiche de l'agent ----------
   function initiales(nom) { var m = String(nom || '').trim().split(/\s+/).filter(function (x) { return /[A-Za-zÀ-ÿ]/.test(x); }); return ((m[0] || '?').charAt(0) + (m[1] ? m[1].charAt(0) : '')).toUpperCase(); }
@@ -145,7 +147,7 @@
     var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0; g.textContent = '';
     (menu || []).forEach(function (m) {
       (m.apps || []).forEach(function (a) {
-        var u = lienSur(a.url); if (u === '#' || vues[u]) return; vues[u] = 1; n += 1;
+        var u = lienApp(a); if (u === '#' || vues[u]) return; vues[u] = 1; n += 1;
         var c = el('a', 'mes-app', a.emoji || '📄'); c.href = u; c.dataset.nom = a.titre || ''; c.title = a.titre || ''; c.setAttribute('aria-label', a.titre || '');
         if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
         g.appendChild(c);
@@ -215,7 +217,7 @@
       var g = el('div', 'grille');
       if (!m.apps.length) g.appendChild(el('p', 'vide', 'Bientôt disponible.'));
       m.apps.forEach(function (a) {
-        var c = el('a', 'app'); c.href = lienSur(a.url); c.dataset.t = norme((a.titre || '') + ' ' + (a.description || '') + ' ' + (m.titre || '') + ' ' + (a.mots || ''));
+        var c = el('a', 'app'); c.href = lienApp(a); c.dataset.t = norme((a.titre || '') + ' ' + (a.description || '') + ' ' + (m.titre || '') + ' ' + (a.mots || ''));
         // Pages du site : même onglet (la session est propre à l'onglet) ; sites externes : nouvel onglet.
         if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
         c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));

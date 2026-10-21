@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-42",
+    "date": "2026-10-23",
+    "title": "Version 5.31.0 — Les applications s'ouvrent dans le site",
+    "changes": [
+      "Les applications Apps Script (Prise en charge, Dotation, Bon de sortie, Fiche d'évaluation, Requête transport, Commande de pièces…) s'ouvrent maintenant dans le site avec le même en-tête que les autres pages (titre, « ← Retour au portail ») au lieu d'une page nue. Seules les adresses /exec de la division sont acceptées."
+    ]
+  },
+  {
     "id": "2026-10-23-41",
     "date": "2026-10-23",
     "title": "Version 5.30.4 — Dotations : téléphone et impression en un clic",
