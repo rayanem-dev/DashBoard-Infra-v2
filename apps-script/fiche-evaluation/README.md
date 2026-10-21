@@ -11,7 +11,7 @@ L'agent choisit un contrat en exécution (la **cartouche** se remplit depuis le 
 1. Créer un projet Apps Script, y mettre `Code.js`, `Fiche.html` (nom du fichier : `Fiche`) et `appsscript.json`.
 2. **Déployer › Application Web** (exécuter en tant que : moi ; accès : tout le monde) et autoriser Sheets (Suivi CPM) et Drive.
 3. Ajouter l'adresse `/exec` dans le catalogue du portail (onglet Applications de BDDORGA, module `cpm`, titre « Fiche d'évaluation »).
-4. Déploiement automatique : donner l'ID du script et l'ID du déploiement ; un workflow calqué sur `deploy-bon-sortie.yml` se branche sur ce dossier.
+4. Déploiement automatique : `.github/workflows/deploy-fiche-evaluation.yml` envoie le dossier au projet Apps Script et met à jour la MÊME adresse /exec à chaque modification. Il manque une seule chose : remplacer `SCRIPT_ID` dans ce fichier par l'**ID de script** (éditeur Apps Script ▸ Paramètres du projet). Tant qu'il n'est pas renseigné, les nouveautés (bouton Imprimer, envoi au secrétariat, filets) restent dans le dépôt sans arriver dans l'application.
 
 ## Tests
 `node --test apps-script/fiche-evaluation/test/*.test.js`

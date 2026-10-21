@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-32",
+    "date": "2026-10-23",
+    "title": "Version 5.29.1 — Déploiement de la fiche d'évaluation",
+    "changes": [
+      "Fiche d'évaluation : déploiement automatique préparé (comme les autres applications) afin que les nouveautés — bouton Imprimer en un clic, envoi au secrétariat, filets du tableau — arrivent dans l'application ; il ne manque que l'ID de script."
+    ]
+  },
+  {
     "id": "2026-10-23-31",
     "date": "2026-10-23",
     "title": "Version 5.29.0 — Ordre de travail",
