@@ -400,6 +400,29 @@ function journaliserPEC_(ss, formData, enq) {
 }
 
 /**
+ * Historique des demandes déjà créées (affiché en haut du formulaire) : les lignes du journal regroupées par demande (même date et même prestataire),
+ * la plus récente d'abord. valeurs = contenu de l'onglet « Journal_PEC » (en-tête comprise).
+ */
+function pecGrouper_(valeurs, limite) {
+  var par = {}, ordre = [];
+  (valeurs || []).slice(1).forEach(function (r) {
+    if (!r[0]) return;
+    var date = r[0] instanceof Date ? Utilities.formatDate(r[0], 'Africa/Algiers', 'yyyy-MM-dd HH:mm') : String(r[0]), cle = date + '|' + r[1];
+    if (!par[cle]) { par[cle] = { date: date, prestataire: String(r[1] || ''), base: String(r[2] || ''), documents: String(r[3] || ''), personnes: [] }; ordre.push(cle); }
+    par[cle].personnes.push({ nom: String(r[4] || ''), prenom: String(r[5] || ''), fonction: String(r[6] || ''), enquetes: String(r[9] || '') });
+  });
+  return ordre.map(function (k) { return par[k]; }).reverse().slice(0, limite || 20);
+}
+/** Appelée par le formulaire : les dernières demandes enregistrées dans « Journal_PEC ». */
+function historiquePEC(limite) {
+  try {
+    var sh = SpreadsheetApp.openById(PEC_SS_ID).getSheetByName('Journal_PEC');
+    if (!sh || sh.getLastRow() < 2) return { ok: true, demandes: [] };
+    return { ok: true, demandes: pecGrouper_(sh.getDataRange().getDisplayValues(), limite) };
+  } catch (e) { return { ok: false, demandes: [], message: e.message }; }
+}
+
+/**
  * Personne déjà inscrite chez CE prestataire et CE contrat (index = enqIndex_) : rien à faire, ni avertissement ni ajout.
  * Compte l'onglet cible, mais aussi tout onglet du même prestataire dont l'intitulé porte le même contrat ou aucun contrat (ancien onglet).
  * Seul un autre contrat (ou un autre prestataire) mérite la question.

@@ -163,6 +163,11 @@
 <main>
   <div id="toast"></div>
 
+  <details class="form-card" id="histo" style="margin-bottom:14px" open>
+    <summary style="cursor:pointer;font-weight:700">🕘 Historique des demandes déjà créées <span id="histoNb" style="font-weight:400;color:#6B7280"></span></summary>
+    <div id="histoListe" style="margin-top:10px;max-height:260px;overflow:auto;font-size:13px">Chargement…</div>
+  </details>
+
   <div class="form-card">
 
     <label>Prestataire</label>
@@ -709,7 +714,23 @@
     boite.querySelector('#dbIgnorer').onclick = function() { fond.remove(); suite(true); };
   }
 
-  setTimeout(function() { chargerFichiers(); }, 0);
+  // Historique des demandes déjà créées (journal enregistré à chaque génération), affiché en haut
+  function chargerHistorique() {
+    const z = document.getElementById('histoListe'), nb = document.getElementById('histoNb');
+    const echap = function(t) { return String(t == null ? '' : t).replace(/[&<>]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
+    google.script.run.withSuccessHandler(function(r) {
+      if (!r || !r.ok) { z.textContent = 'Historique indisponible' + (r && r.message ? ' — ' + r.message : '') + '.'; nb.textContent = ''; return; }
+      if (!r.demandes.length) { z.textContent = 'Aucune demande enregistrée pour le moment.'; nb.textContent = ''; return; }
+      nb.textContent = '(' + r.demandes.length + ' dernière' + (r.demandes.length > 1 ? 's' : '') + ')';
+      z.innerHTML = r.demandes.map(function(d) {
+        const gens = d.personnes.map(function(p) { return echap((p.nom + ' ' + p.prenom).trim()) + (p.fonction ? ' <span style="color:#6B7280">(' + echap(p.fonction) + ')</span>' : ''); }).join(', ');
+        return '<div style="padding:7px 0;border-bottom:1px solid #E5E7EB"><b>' + echap(d.date) + '</b> — ' + echap(d.prestataire) + (d.base ? ' · ' + echap(d.base) : '') + (d.documents ? ' · <i>' + echap(d.documents) + '</i>' : '') +
+          '<div>' + d.personnes.length + ' personne' + (d.personnes.length > 1 ? 's' : '') + ' : ' + gens + '</div></div>';
+      }).join('');
+    }).withFailureHandler(function(e) { z.textContent = 'Historique indisponible : ' + e.message; }).historiquePEC(20);
+  }
+
+  setTimeout(function() { chargerFichiers(); chargerHistorique(); }, 0);
 
   function afficherResultat(res) {
     document.getElementById('btnEnvoyer').disabled = false;
@@ -722,7 +743,7 @@
     }
     div.innerHTML = contenu;
     afficherAlerteModale(res.success ? "Génération terminée" : "Erreur", contenu, res.success ? 'ok' : 'err');
-    if (res.success) chargerFichiers();
+    if (res.success) { chargerFichiers(); chargerHistorique(); }
   }
 </script>
 <script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Prise en charge et autorisation d’accès"></script>

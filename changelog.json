@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-27",
+    "date": "2026-10-23",
+    "title": "Version 5.28.2 — Prise en charge : historique en haut",
+    "changes": [
+      "Prise en charge et autorisation d'accès : l'historique des demandes déjà créées (date, prestataire, base, documents, personnes, état dans les Enquêtes) s'affiche en haut du formulaire et se met à jour après chaque génération."
+    ]
+  },
+  {
     "id": "2026-10-23-26",
     "date": "2026-10-23",
     "title": "Version 5.28.1 — Début n-1 accepté et effacer mon planning",

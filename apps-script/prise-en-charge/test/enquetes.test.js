@@ -158,3 +158,13 @@ test('en-tête d\'un nouvel onglet : la wilaya choisie remplace celle du modèle
   assert.ok(r.some(x => x.ligne === 3 && x.valeur === 'ولاية   ورقلة'));
   assert.ok(r.some(x => x.ligne === 1 && x.valeur.includes('ENAGEO')));
 });
+
+test('historique des demandes : lignes du journal regroupées par demande, la plus récente d\'abord', () => {
+  const j = [['date', 'prestataire', 'base', 'documents', 'nom', 'prenom', 'fonction', 'vehicule', 'immat', 'enquetes'],
+    ['2026-10-01 09:00', 'A - ENAGEO', 'Base 1', 'PEC', 'KACI', 'Farid', 'Chauffeur', '', '', 'ajoutée'],
+    ['2026-10-01 09:00', 'A - ENAGEO', 'Base 1', 'PEC', 'DEBILI', 'Fathi', '', '', '', 'déjà présente'],
+    ['2026-10-02 10:30', 'B - ACOSCO', 'Base 2', 'PEC+Autorisation', 'LACHI', 'Choayb', 'Préparateur', '', '', 'non demandé']];
+  const r = E('pecGrouper_', j, 20);
+  assert.strictEqual(r.length, 2); assert.strictEqual(r[0].prestataire, 'B - ACOSCO'); assert.strictEqual(r[1].personnes.length, 2);
+  assert.strictEqual(r[1].personnes[1].enquetes, 'déjà présente'); assert.strictEqual(E('pecGrouper_', j, 1).length, 1); assert.deepStrictEqual(E('pecGrouper_', [], 5), []);
+});
