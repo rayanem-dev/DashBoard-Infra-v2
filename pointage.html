@@ -146,7 +146,7 @@
         if (!lignes.length) return;
         html += '<div class="page ' + per.cls + '"><div class="periode"><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
           '<div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
-          '<table><colgroup><col style="width:44mm"><col style="width:68mm">' + jours.map(function () { return '<col>'; }).join('') + '</colgroup><thead><tr><th>Nom et Prénom</th><th>Fonction</th>' +
+          '<table><colgroup><col style="width:58mm"><col style="width:58mm">' + jours.map(function () { return '<col>'; }).join('') + '</colgroup><thead><tr><th>Nom et Prénom</th><th>Fonction</th>' +
           jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
           lignes.map(function (x) {
             var a = affiche(x);
@@ -155,6 +155,13 @@
       });
     });
     $('feuilles').innerHTML = html || '<p style="padding:20px">Aucune personne dans l\'effectif.</p>';
+    // lignes agrandies pour remplir la page : recalculé à chaque ajout, retrait ou (dé)cochage d'une personne
+    $('feuilles').querySelectorAll('.page').forEach(function (pg) {
+      var tab = pg.querySelector('table'), th = pg.querySelector('thead'), rows = pg.querySelectorAll('tbody tr'); if (!rows.length) return;
+      var bas = pg.clientHeight - 8 * 3.78, dispo = bas - tab.offsetTop - th.offsetHeight - 4;
+      var h = Math.max(24, Math.min(dispo / rows.length, 72)), grand = h > 36;
+      rows.forEach(function (tr) { tr.querySelectorAll('td').forEach(function (td) { td.style.height = h + 'px'; if (td.classList.contains('n') || td.classList.contains('f')) td.style.fontSize = grand ? '10pt' : ''; else td.style.fontSize = grand ? '14pt' : ''; }); });
+    });
     $('feuilles').querySelectorAll('td.c').forEach(function (td) { td.onclick = function () { var k = td.dataset.k; if (croix[k]) delete croix[k]; else croix[k] = 1; td.textContent = croix[k] ? '✓' : ''; sauverX(); }; });
     ajuster();
   }
