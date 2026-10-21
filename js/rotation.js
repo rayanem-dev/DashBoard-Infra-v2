@@ -23,6 +23,8 @@
    * Ouvre le formulaire. options : { titre, email? (pour modifier quelqu'un d'autre), valeurs? { statut, depuis, jours_travail, jours_repos }, onOk() }
    */
   function ouvrir(options) {
+    // page unique « Où en êtes-vous ? » (début de la rotation en cours, reliquat, durées des rotations) quand elle est chargée
+    if (window.ModifPlanning && window.ModifPlanning.ouvrirInitial && window.Simulation) return window.ModifPlanning.ouvrirInitial(options);
     var v = options.valeurs || {};
     if (!v.jours_travail) { try { var m = JSON.parse(localStorage.getItem('infra_v2_derniere_rotation') || 'null'); if (m) v = Object.assign({}, m, v); } catch (e) {} }
     var dlg = el('dialog', 'dlg');

@@ -81,6 +81,7 @@ function route_(req) {
     case 'simu_envoyer': return simuEnvoyer_(req);
     case 'modif_moi_donnees': return modifMoiDonnees_(req);
     case 'modif_moi': return modifMoi_(req);
+    case 'planning_initial': return planningInitial_(req);
     case 'modif_agent_donnees': return modifAgentDonnees_(req);
     case 'modif_moi_annuler': return modifMoiAnnuler_(req);
     case 'modif_alertes': return modifAlertes_(req);

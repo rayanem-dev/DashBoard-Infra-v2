@@ -263,3 +263,29 @@ test('reliquat saisi depuis l\'écran de modification : par l\'agent pour lui-m�
   appel(m, 'reliquatEnregistrer_', 'chef.div@x.dz', { reliquat: 5, email: 'agent.b@x.dz' });
   assert.strictEqual(m.tables.Rotations.find(r => r.email === 'agent.b@x.dz').reliquat, 5);
 });
+
+// ---------- Planning de départ : une seule page pour tous (statut, début de la rotation en cours, reliquat, durées déjà ajustées) ----------
+test('planning de départ : première saisie, rotation déjà ajustée, correction ; demande en cours annulée ; droits', () => {
+  const m = monde();
+  // agent sans rotation (S2 : agent.b a déjà une rotation ; on prend un nouvel agent)
+  m.tables.Utilisateurs.push({ uid: 'u9', email: 'nouveau@x.dz', nom: 'NEUF PAUL', role: 'agent', service: 'S1', actif: 1 });
+  const base = { statut: 'R', depuis: '2026-10-01', jours_travail: 28, jours_repos: 28, reliquat: 4 };
+  // en repos depuis le 01/10 mais cette période d'ajustement ne dure que 20 jours : elle doit contenir aujourd'hui (13/10) → ok jusqu'au 20/10
+  appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { periodes: [{ type: 'R', jours: 20 }] }));
+  const rot = m.run("rotationDe_('nouveau@x.dz')"); assert.strictEqual(rot.reliquat, 4); assert.strictEqual(rot.depuis, '2026-10-01');
+  const g = m.run("Planning.grille(rotationDe_('nouveau@x.dz'), correctionsDe_('nouveau@x.dz'), '2026-10-01', 60)");
+  assert.strictEqual(g.slice(0, 20), 'R'.repeat(20)); assert.strictEqual(g.slice(20, 48), 'T'.repeat(28), 'la rotation habituelle reprend ensuite');
+  assert.strictEqual(appel(m, 'simuListe_', 'chef.div@x.dz', {}).demandes.length, 0, 'un planning de départ n\'est pas une demande');
+  // la rotation en cours doit contenir aujourd'hui
+  assert.throws(() => appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { periodes: [{ type: 'R', jours: 5 }] })), /rotation en cours/);
+  assert.throws(() => appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { periodes: [{ type: 'T', jours: 28 }] })), /première période/);
+  // correction : remplace le précédent et annule la demande en cours
+  appel(m, 'planningInitial_', 'agent.a@x.dz', { statut: 'T', depuis: '2026-10-01', jours_travail: 28, jours_repos: 28, reliquat: 0, periodes: [] });
+  appel(m, 'modifMoi_', 'agent.a@x.dz', { debut: '2026-10-29', periodes: [{ type: 'R', jours: 20 }], reprise: 'T', motif: 'Raison perso' });
+  assert.strictEqual(m.tables.Modifications.filter(x => x.statut === 'appliquee').length, 1);
+  appel(m, 'planningInitial_', 'agent.a@x.dz', { statut: 'T', depuis: '2026-10-01', jours_travail: 28, jours_repos: 28, reliquat: 2 });
+  assert.strictEqual(m.tables.Modifications.filter(x => x.statut === 'appliquee').length, 0);
+  assert.throws(() => appel(m, 'planningInitial_', 'agent.a@x.dz', { statut: 'T', depuis: '2026-10-01', jours_travail: 28, jours_repos: 28, reliquat: 0, email: 'agent.b@x.dz' }), /Droits/);
+  appel(m, 'planningInitial_', 'chef.div@x.dz', { statut: 'T', depuis: '2026-09-20', jours_travail: 28, jours_repos: 28, reliquat: 1, email: 'agent.b@x.dz' });
+  assert.strictEqual(m.run("rotationDe_('agent.b@x.dz')").depuis, '2026-09-20');
+});

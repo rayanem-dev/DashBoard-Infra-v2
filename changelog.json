@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-25",
+    "date": "2026-10-23",
+    "title": "Version 5.28.0 — Une seule page « Où en êtes-vous ? »",
+    "changes": [
+      "Une seule page pour tous (première saisie comme correction) : statut, début de la rotation EN COURS, reliquat au début de cette rotation, rotation habituelle, puis les cases de durée de chaque rotation à partir de ce début. Tout est à 28 / 28 ; l'agent qui est déjà dans une rotation ajustée la saisit directement (ex. 20 jours). Les dates se recalculent au fur et à mesure.",
+      "Cette page remplace l'ancienne petite fenêtre au portail (« Bienvenue »), « Modifier ma rotation », le crayon des équipes et « Corriger le planning actuel » ; elle part du début de la rotation en cours et des durées réelles déjà enregistrées. Le planning de départ n'attend aucune décision (c'est la situation réelle) ; une demande de modification en cours est annulée à la correction."
+    ]
+  },
+  {
     "id": "2026-10-23-24",
     "date": "2026-10-23",
     "title": "Version 5.27.5 — Corriger le planning actuel saisi par erreur",

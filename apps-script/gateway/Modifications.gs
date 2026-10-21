@@ -32,10 +32,13 @@ function simuJson_(v, defaut) { try { return JSON.parse(String(v)); } catch (e) 
  * Une demande plus récente remplace les corrections plus anciennes à partir de son premier jour. Refusée, annulée ou remplacée : sans effet (retour au planning initial).
  */
 function correctionsParEmail_(approuveesSeulement) {
-  var out = {}, l = [], ok = approuveesSeulement ? ['approuvee'] : ['approuvee', 'appliquee'];
+  var out = {}, l = [], ok = approuveesSeulement ? ['approuvee', 'initial'] : ['approuvee', 'appliquee', 'initial'];
   try { l = Store.table('Modifications'); } catch (e) { l = []; }
   l.filter(function (r) { return ok.indexOf(String(r.statut)) >= 0; })
-    .sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? -1 : String(a.cree_le) > String(b.cree_le) ? 1 : 0; })
+    .sort(function (a, b) { // le planning de départ (« initial ») d'abord, puis l'ordre de création
+      var ia = String(a.statut) === 'initial' ? 0 : 1, ib = String(b.statut) === 'initial' ? 0 : 1;
+      return ia - ib || (String(a.cree_le) < String(b.cree_le) ? -1 : String(a.cree_le) > String(b.cree_le) ? 1 : 0);
+    })
     .forEach(function (r) {
       var m = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) };
       if (!Simulation.estDate(m.debut) || !m.periodes.length) return;
@@ -176,6 +179,7 @@ function simuListe_(req) {
   var u = Auth.userFromToken(req.token);
   var niv = simuNiveau_(u), moi = String(u.email).toLowerCase();
   var l = Store.table('Modifications').filter(function (r) {
+    if (String(r.statut) === 'initial') return false;
     var cible = Store.utilisateur(r.email) || {};
     return String(r.email).toLowerCase() === moi || (niv >= 2 && (String(r.emetteur).toLowerCase() === moi || simuDansPortee_(u, cible)));
   }).sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? 1 : -1; }).slice(0, 200);
@@ -303,6 +307,47 @@ function modifMoi_(req) {
   var row = simuLigne_(numero);
   return { numero: numero, statut: 'appliquee', demande: simuDemandeDe_(row), retour: t.retour, hors_rotation: !t.retour.ok, reliquat: t.reliquat, reliquat_net: t.reliquat_net };
 }
+/**
+ * Planning de départ (« Où en êtes-vous ? », première fois comme correction) : statut, début de la rotation en cours, rotation habituelle, reliquat au début de la rotation,
+ * et durées des rotations qui diffèrent de l'habituelle (agent déjà dans une rotation ajustée). Pas de décision à attendre : c'est la situation réelle de l'agent.
+ * Une demande de modification en cours est annulée (elle reposait sur l'ancien planning).
+ */
+function planningInitial_(req) {
+  var u = Auth.userFromToken(req.token), niv = acces_(u).planning || 0;
+  var email = String(req.email || u.email).toLowerCase(), soi = email === String(u.email).toLowerCase();
+  if (!soi) { if (niv < 3) throw simuDroits_(); cible_(email); } else if (niv < 1) throw simuDroits_();
+  var auj = Dates.today();
+  var rot = { statut: String(req.statut), depuis: String(req.depuis), jours_travail: Number(req.jours_travail), jours_repos: Number(req.jours_repos) };
+  var err = Planning.valider(rot, auj); if (err) throw new Error(err);
+  var ps = (Array.isArray(req.periodes) ? req.periodes : []).map(function (p) { return { type: String(p && p.type), jours: Number(p && p.jours) }; });
+  var longueur1 = ps.length ? ps[0].jours : (rot.statut === 'T' ? rot.jours_travail : rot.jours_repos);
+  if (ps.length) {
+    if (ps[0].type !== rot.statut) throw new Error('La première période doit être celle de la rotation en cours');
+    var m = { debut: rot.depuis, periodes: ps, reprise: Simulation.autre(ps[ps.length - 1].type) };
+    err = Simulation.valider(m, rot, null); if (err) throw new Error(err);
+  }
+  if (Dates.addDays(rot.depuis, longueur1 - 1) < auj) throw new Error('La date de début doit être celle de la rotation en cours (celle qui contient aujourd\'hui)');
+  var rel = reliquatValide_(req.reliquat === undefined || req.reliquat === null || req.reliquat === '' ? 0 : req.reliquat);
+  var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
+  if (lock) lock.waitLock(15000);
+  try {
+    var now = new Date().toISOString();
+    Store.table('Modifications').forEach(function (r) {
+      if (String(r.email).toLowerCase() !== email) return;
+      if (String(r.statut) === 'initial') Store.maj('Modifications', { numero: String(r.numero) }, { statut: 'remplacee', decide_le: now, commentaire: 'Remplacé par un nouveau planning de départ' });
+      else if (String(r.statut) === 'appliquee') Store.maj('Modifications', { numero: String(r.numero) }, { statut: 'annulee', decide_le: now, commentaire: 'Annulée : planning de départ corrigé' });
+    });
+    Store.maj('Rotations', { email: email }, { statut: rot.statut, depuis: rot.depuis, jours_travail: rot.jours_travail, jours_repos: rot.jours_repos, reliquat: rel, maj_par: u.email, maj_le: now });
+    if (ps.length) {
+      var numero = simuNumero_();
+      Store.maj('Modifications', { numero: numero }, { cree_le: now, email: email, emetteur: u.email, motif: 'Planning de départ', debut: rot.depuis, periodes: JSON.stringify(ps), reprise: Simulation.autre(ps[ps.length - 1].type),
+        partenaire: '', actuel: '[]', modifie: '[]', statut: 'initial', decide_par: u.email, decide_le: now, commentaire: '', reliquat: 0, reliquat_net: 0 });
+    }
+  } finally { if (lock) lock.releaseLock(); }
+  Store.journal('planning_initial', u.email, email + ' ' + rot.statut + ' depuis ' + rot.depuis + ' (' + rot.jours_travail + '/' + rot.jours_repos + ')' + (ps.length ? ' + ' + ps.length + ' période(s) ajustée(s)' : '') + ', reliquat ' + rel);
+  return soi ? situationDe_(u) : { ok: true };
+}
+
 /** Annule la demande en cours de l'agent (retour au planning validé). */
 function modifMoiAnnuler_(req) {
   var u = Auth.userFromToken(req.token);

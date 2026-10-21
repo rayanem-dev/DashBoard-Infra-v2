@@ -180,7 +180,7 @@
         // planning déjà enregistré : le tableau « actuel / modifié » ; sinon la petite fenêtre « Où en êtes-vous ? »
         bt.addEventListener('click', function () {
           if (!l.configuree) { base(); return; }
-          Api.call('modif_agent_donnees', { email: l.email }).then(function (d) { ModifPlanning.ouvrir({ donnees: d, mode: 'direct', titre: 'Planning de ' + l.nom, rotationBase: base, onChange: charger }); }).catch(function (e) { toast(e.message, true); });
+          Api.call('modif_agent_donnees', { email: l.email }).then(function (d) { ModifPlanning.ouvrir({ donnees: d, mode: 'direct', titre: 'Planning de ' + l.nom, rotationBase: function () { ModifPlanning.ouvrirInitial({ titre: 'Planning actuel de ' + l.nom, email: l.email, valeurs: d.rotation, donnees: d, onOk: charger }); }, onChange: charger }); }).catch(function (e) { toast(e.message, true); });
         });
         n.appendChild(bt);
       }

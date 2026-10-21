@@ -164,15 +164,103 @@
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   }
 
+
+  /**
+   * Une seule page « Où en êtes-vous ? » pour tous (première saisie comme correction) : statut, début de la rotation EN COURS, reliquat au début de la rotation,
+   * rotation habituelle, puis les cases de durée de chaque rotation à partir de ce début (28 / 28 partout, sauf si l'agent saisit directement une rotation déjà ajustée).
+   * options : { titre, email? (autre agent), valeurs? { statut, depuis, jours_travail, jours_repos, reliquat }, donnees? (grille_actuelle…), obligatoire, onOk() }
+   */
+  function ouvrirInitial(options) {
+    style();
+    var v = options.valeurs || {}, d = options.donnees || null, auj = Rotation.aujourdhui();
+    var PRE = [[28, 28], [14, 14], [15, 15], [7, 7], [4, 4]];
+    var jt0 = v.jours_travail || 28, jr0 = v.jours_repos || 28, statut0 = v.statut || 'T', debut0 = v.depuis || auj, rows = [], i;
+    function blocsDe(g, F, i0) { return blocs(g, i0, NB_LIGNES); }
+    if (d && d.grille_actuelle) {                       // planning déjà enregistré : on part du début de la rotation en cours et des durées réelles
+      var F = d.debut, g = d.grille_actuelle, ia = Simulation.diff(F, auj); i = ia; while (i > 0 && g.charAt(i - 1) === g.charAt(i)) i -= 1;
+      if (g.charAt(ia) === 'T' || g.charAt(ia) === 'R') { statut0 = g.charAt(ia); debut0 = Simulation.addDays(F, i); rows = blocsDe(g, F, i).map(function (b) { return b.jours; }); }
+    } else if (v.depuis && v.depuis <= auj && v.jours_travail) {   // rotation enregistrée sans grille : on retrouve le début de la rotation en cours par le calcul
+      var cy0 = jt0 + jr0, pos = Simulation.diff(v.depuis, auj) % cy0, prem = v.statut === 'T' ? jt0 : jr0;
+      if (pos < prem) { statut0 = v.statut; debut0 = Simulation.addDays(auj, -pos); } else { statut0 = Simulation.autre(v.statut); debut0 = Simulation.addDays(auj, -(pos - prem)); }
+    }
+    var dlg = el('dialog', 'dlg mp'), f = el('form'); f.method = 'dialog';
+    f.appendChild(el('h2', null, options.titre || 'Où en êtes-vous ?'));
+    f.appendChild(el('p', 'sous', 'Indiquez le début de votre rotation en cours et votre reliquat à ce moment-là. Les durées des rotations sont à 28 / 28 ; changez-les seulement si vous êtes déjà dans une rotation ajustée.'));
+    function champ(lib, ctl) { var w = el('div', 'champ'); w.appendChild(el('label', null, lib)); w.appendChild(ctl); return w; }
+    var sSt = document.createElement('select'); [['T', 'Je suis au travail'], ['R', 'Je suis en repos / congé']].forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; if (o[0] === statut0) op.selected = true; sSt.appendChild(op); });
+    var iDate = document.createElement('input'); iDate.type = 'date'; iDate.max = auj; iDate.value = debut0;
+    var iRel = document.createElement('input'); iRel.type = 'number'; iRel.min = -365; iRel.max = 365; iRel.step = 1; iRel.value = v.reliquat == null ? 0 : v.reliquat;
+    var sRot = document.createElement('select'); PRE.forEach(function (p) { var op = el('option', null, p[0] + ' jours travail / ' + p[1] + ' jours repos'); op.value = p[0] + '/' + p[1]; sRot.appendChild(op); });
+    var au = el('option', null, 'Autre rotation…'); au.value = 'autre'; sRot.appendChild(au);
+    var connu = PRE.some(function (p) { return p[0] === jt0 && p[1] === jr0; }); sRot.value = connu ? jt0 + '/' + jr0 : 'autre';
+    var ligne = el('div', 'deux'), jt = document.createElement('input'), jr = document.createElement('input'); [jt, jr].forEach(function (x) { x.type = 'number'; x.min = 1; x.max = 90; }); jt.value = jt0; jr.value = jr0;
+    ligne.appendChild(champ('Jours de travail', jt)); ligne.appendChild(champ('Jours de repos', jr)); ligne.hidden = connu;
+    var haut = el('div', 'deux'); haut.appendChild(champ('1. Actuellement…', sSt)); haut.appendChild(champ('2. Début de la rotation en cours', iDate));
+    f.appendChild(haut);
+    var rel = champ('3. Au début de cette rotation, combien avez-vous de reliquat ? (jours)', iRel); f.appendChild(rel);
+    f.appendChild(el('p', 'aide', 'Jours de congé qui vous sont dus (+), ou jours pris en avance (−) à ce moment-là. 0 si vous n\'en avez pas.'));
+    f.appendChild(champ('4. Votre rotation habituelle', sRot)); f.appendChild(ligne);
+    f.appendChild(el('h3', null, 'Vos rotations à partir de ce début'));
+    var tbl = el('table'), cel = [], etat = el('div'), edite = [];
+    var hab = function () { return { T: Math.floor(Number(jt.value)) || 0, R: Math.floor(Number(jr.value)) || 0 }; };
+    for (i = 0; i < NB_LIGNES; i += 1) (function (k) {
+      var tr = el('tr'), c = { tr: tr, type: el('td'), du: el('td', 'd'), au: el('td', 'd'), n: el('td', 'n') }, inp = document.createElement('input');
+      inp.type = 'number'; inp.min = 1; inp.max = 120; inp.step = 1; inp.setAttribute('aria-label', 'Nombre de jours, rotation ' + (k + 1)); c.inp = inp;
+      inp.addEventListener('input', function () { edite[k] = true; maj(); });
+      c.n.appendChild(inp); [c.type, c.du, el('td', null, 'au'), c.au, c.n].forEach(function (x) { tr.appendChild(x); }); tbl.appendChild(tr); cel.push(c);
+      edite[k] = rows[k] != null && rows[k] !== (((k % 2 === 0) === (statut0 === 'T')) ? jt0 : jr0);
+      inp.value = rows[k] != null ? rows[k] : (((k % 2 === 0) === (statut0 === 'T')) ? jt0 : jr0);
+    })(i);
+    f.appendChild(tbl); f.appendChild(etat);
+    var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
+    var boutons = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit'; if (!options.obligatoire) boutons.appendChild(ann); boutons.appendChild(ok); f.appendChild(boutons);
+    var etatCourant = null;
+    function typeDe(k) { return (k % 2 === 0) === (sSt.value === 'T') ? 'T' : 'R'; }
+    function maj() {
+      var h = hab(), cur = iDate.value;
+      cel.forEach(function (c, k) {
+        var t = typeDe(k); if (!edite[k]) c.inp.value = h[t] || '';
+        var n = Math.floor(Number(c.inp.value)) || 0;
+        c.type.textContent = nomType(t); c.tr.className = t === 'T' ? 'lt' : 'lr'; c.tr.classList.toggle('chg', edite[k] && n !== h[t]);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(cur)) { var fin = Simulation.addDays(cur, Math.max(n, 1) - 1); c.du.textContent = fr(cur); c.au.textContent = fr(fin); cur = Simulation.addDays(fin, 1); } else { c.du.textContent = c.au.textContent = '—'; }
+      });
+      etat.textContent = ''; etatCourant = null; var err = '';
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iDate.value)) err = 'Indiquez le début de la rotation en cours.';
+      else if (iDate.value > auj) err = 'Le début de la rotation en cours ne peut pas être dans le futur.';
+      else if (!(h.T >= 1 && h.R >= 1 && h.T <= 90 && h.R <= 90)) err = 'Rotation habituelle : de 1 à 90 jours.';
+      else cel.forEach(function (c, k) { var n = Number(c.inp.value); if (!err && !(n >= 1 && n <= 120 && Math.floor(n) === n)) err = 'Rotation ' + (k + 1) + ' : de 1 à 120 jours.'; });
+      if (!err && Simulation.addDays(iDate.value, Number(cel[0].inp.value) - 1) < auj) err = 'La première rotation doit être celle qui contient aujourd\'hui : le début saisi est trop ancien ou sa durée trop courte.';
+      if (err) { etat.appendChild(el('div', 'info alerte', err)); ok.disabled = true; return; }
+      var k2 = -1; cel.forEach(function (c, k) { if (Number(c.inp.value) !== h[typeDe(k)]) k2 = k; });
+      var ps = []; for (var q = 0; q <= k2; q += 1) ps.push({ type: typeDe(q), jours: Number(cel[q].inp.value) });
+      etatCourant = { statut: sSt.value, depuis: iDate.value, jours_travail: h.T, jours_repos: h.R, reliquat: iRel.value === '' ? 0 : Number(iRel.value), periodes: ps };
+      ok.disabled = false;
+    }
+    [sSt, iDate, jt, jr, iRel].forEach(function (x) { x.addEventListener('input', maj); x.addEventListener('change', maj); });
+    sRot.addEventListener('change', function () { if (sRot.value === 'autre') { ligne.hidden = false; } else { ligne.hidden = true; var p = sRot.value.split('/'); jt.value = p[0]; jr.value = p[1]; } maj(); });
+    maj();
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); if (!etatCourant) return; ok.disabled = true; msg.className = 'msg';
+      var q = etatCourant; if (options.email) q.email = options.email;
+      Api.call('planning_initial', q).then(function () { try { localStorage.setItem('infra_v2_derniere_rotation', JSON.stringify({ statut: q.statut, jours_travail: q.jours_travail, jours_repos: q.jours_repos })); } catch (x) { /* stockage indisponible */ } dlg.close(); if (options.onOk) options.onOk(); })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    if (options.obligatoire) dlg.addEventListener('cancel', function (e) { e.preventDefault(); });
+    dlg.appendChild(f); document.body.appendChild(dlg);
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+
   /**
    * Point d'entrée de « Modifier mon planning » : sans rotation enregistrée, la petite fenêtre « Où en êtes-vous ? » ; sinon le planning modifiable.
    * rotation : rotation actuelle de la ligne (ou null) ; onChange() : rafraîchir la page.
    */
   function modifierMonPlanning(rotation, onChange) {
-    if (!rotation) { Rotation.ouvrir({ titre: 'Où en êtes-vous ?', onOk: onChange }); return Promise.resolve(); }
+    if (!rotation) { ouvrirInitial({ titre: 'Où en êtes-vous ?', onOk: onChange }); return Promise.resolve(); }
     return Api.call('modif_moi_donnees').then(function (d) {
-      ouvrir({ donnees: d, mode: 'agent', onChange: onChange, rotationBase: function () { Rotation.ouvrir({ titre: 'Corriger mon planning actuel', valeurs: d.rotation, onOk: onChange }); } });
+      ouvrir({ donnees: d, mode: 'agent', onChange: onChange, rotationBase: function () { ouvrirInitial({ titre: 'Corriger mon planning actuel', valeurs: d.rotation, donnees: d, onOk: onChange }); } });
     });
   }
-  window.ModifPlanning = { ouvrir: ouvrir, modifierMonPlanning: modifierMonPlanning };
+  window.ModifPlanning = { ouvrirInitial: ouvrirInitial, ouvrir: ouvrir, modifierMonPlanning: modifierMonPlanning };
 })();
