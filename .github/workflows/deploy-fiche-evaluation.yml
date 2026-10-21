@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SCRIPT_ID: A_REMPLACER_PAR_LID_DU_SCRIPT   # éditeur Apps Script ▸ Paramètres du projet ▸ « ID de script »
+  SCRIPT_ID: 1IUXG2jjC7jDbd5nX9bxdLpsdmelq-E3QSbZyictJ6tlIYbJOS4alGqXX
   DEPLOYMENT_ID: AKfycbzHk520IN5bl93shq4y1tArmIbWt3dvkITqvvx-qWUpkpS-lKA9R7z19BbTUAu-KZJd
 
 jobs:

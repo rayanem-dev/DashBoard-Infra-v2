@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-34",
+    "date": "2026-10-23",
+    "title": "Version 5.29.3 — Fiche d'évaluation déployée",
+    "changes": [
+      "Fiche d'évaluation : déploiement automatique activé (ID de script renseigné). Les boutons Imprimer en un clic et Envoyer au secrétariat, ainsi que les filets du tableau, arrivent dans l'application."
+    ]
+  },
+  {
     "id": "2026-10-23-33",
     "date": "2026-10-23",
     "title": "Version 5.29.2 — Historique des prises en charge plus lisible",
