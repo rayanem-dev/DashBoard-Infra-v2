@@ -627,3 +627,10 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .syn-modifs { list-style: none; padding: 0; margin: 0; } .syn-modifs li { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
 .syn-modifs li.syn-hors { background: var(--tint-err); border-radius: 10px; padding: 9px 10px; margin: 4px 0; } .syn-alerte { color: var(--err); font-weight: 700; font-size: 12.5px; margin-top: 3px; }
 .syn-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; } .syn-actions .syn-actu { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }
+
+/* Couverture des équipes (js/couverture.js) : planning équilibré / à ajuster / insuffisant */
+.couv { margin: 0 0 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface); overflow: hidden; }
+.couv-chip { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; width: 100%; text-align: left; border: 0; background: none; padding: 10px 14px; font: inherit; font-size: 14px; cursor: pointer; color: var(--text-dark); }
+.couv-chip small { color: var(--text-muted); font-size: 12.5px; } .couv-det { padding: 0 14px 10px; font-size: 13px; line-height: 1.5; color: var(--ink-2); } .couv-det p { margin: 4px 0; }
+.couv.ok { background: var(--tint-ok); border-color: #86EFAC; } .couv.ajuster { background: var(--tint-orange); border-color: #F9C88C; } .couv.insuffisant { background: var(--tint-err); border-color: #FCA5A5; }
+@media print { .couv-det { display: none; } }

@@ -112,6 +112,7 @@
 
     <div class="bloc">
       <h2 id="t-grp">Équipes</h2>
+      <div id="couv"></div>
       <p class="aide2 no-print" id="aide-grp">Cliquez sur un agent (A), puis sur son vis-à-vis (B) : les deux se placent l'un sous l'autre en haut du graphique. Cliquez de nouveau pour retirer.</p>
       <div class="frise-zone"><div class="frise" id="frise"></div></div>
       <div class="legende-s" id="legende"></div>
@@ -152,6 +153,7 @@
 <script src="js/rotation.js"></script>
 <script>Rotation.exiger();</script>
 <script src="js/simulation.js"></script>
+<script src="js/couverture.js"></script>
 <script src="js/feries.js"></script>
 <script>
 (function () {
@@ -300,6 +302,13 @@
       var r = rangee('ag autres', el('span', null, l.nom), l.nom + (l.service ? ' — ' + l.service : '')); r.appendChild(jours(l.grille, i0, n, null, jAuj)); r.addEventListener('click', function () { cliquer(l); }); z.appendChild(r);
     });
     $('t-grp').textContent = svc ? 'Service : ' + svc : 'Toute la division';
+    // couverture de l'équipe (simulation incluse) : jours sans personne et pics de présence, d'aujourd'hui à la fin de la période affichée
+    var gc = [];
+    lignes.forEach(function (l) {
+      if (svc && l.service !== svc) return; if (!l.grille) return;
+      var g = l.grille; if (A && A.ligne === l && eA && eA.mod) g = eA.mod; if (B && B.ligne === l && eB && eB.mod) g = eB.mod; gc.push(g);
+    });
+    Couverture.monter($('couv'), Couverture.analyser(gc, { debut: F, de: iAuj, a: i0 + n }), (svc || 'division') + (A || B ? ' · simulation incluse' : ''));
     var lg = $('legende'); lg.textContent = ''; leg.forEach(function (x) { var s = el('span'), i2 = document.createElement('i'); i2.style.background = x[0]; s.appendChild(i2); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
     [['n', 'Jour férié national'], ['r', 'Jour férié religieux']].forEach(function (x) { var s = el('span'); s.appendChild(el('span', 'fe ' + x[0])); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
   }

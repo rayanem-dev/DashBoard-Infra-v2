@@ -41,6 +41,7 @@
     <div class="legende" id="leg-emp" style="margin-left:0"></div>
     <select id="etat" aria-label="Situation"><option value="">Toutes les situations</option><option value="T">Au travail</option><option value="R">En repos</option><option value="N">Non configurés</option></select>
   </div>
+  <div id="couv" class="no-print" hidden></div>
   <section class="panneau" style="padding:0">
     <div class="defile" style="overflow:auto;max-height:70vh"><table class="plan2" id="tab"></table></div>
   </section>
@@ -54,6 +55,7 @@
 <script src="js/rotation.js"></script>
 <script src="js/feries.js"></script>
 <script src="js/simulation.js"></script>
+<script src="js/couverture.js"></script>
 <script src="js/modif-planning.js"></script>
 <script>Rotation.exiger();</script>
 <script src="js/employeurs.js"></script>
@@ -197,6 +199,13 @@
       body.appendChild(tr);
     });
     t.appendChild(body);
+    // couverture des équipes : jours sans personne et pics de présence sur la période affichée, à partir d'aujourd'hui
+    if (data.peutVoirTous) {
+      var gs = lignes.filter(function (l) { return l.configuree && l.grille; }).map(function (l) { return l.grille; });
+      var de = Math.max(0, Math.min(aujIdx, b.jours)); if (aujIdx >= b.jours) de = 0;
+      var svs = {}; lignes.forEach(function (l) { svs[svc(l)] = 1; }); var ns = Object.keys(svs).length;
+      Couverture.monter($('couv'), Couverture.analyser(gs, { debut: b.debut, de: de, a: b.jours }), ns === 1 ? Object.keys(svs)[0] : (ns + ' services'));
+    } else $('couv').hidden = true;
     $('periode').textContent = libellePeriode();
     $('aide').textContent = 'Calculé automatiquement par le moteur de rotation de Sijil à partir de la situation déclarée de chacun. Trait noir = aujourd\'hui. Survolez une barre pour le détail.';
   }
