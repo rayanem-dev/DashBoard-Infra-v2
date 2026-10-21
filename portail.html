@@ -320,7 +320,7 @@
       if (r.acces && r.configuree && r.reliquat_renseigne === false && !verrouRel) { verrouRel = true; verrouContenu = true; afficherContenu(); Rotation.reliquat({ onOk: function () { verrouRel = false; verrouContenu = false; afficherContenu(); dessinerStatut(nomAffiche); } }); }
       box.hidden = false;
       var j = $('jauge'), s = r.configuree ? r.situation : null;
-      var pill = $('j-etat'), dates = $('j-dates'), barre = $('j-barre'), bi = $('j-barre-i');
+      var pill = $('j-etat'), dates = $('j-dates'), barre = $('j-barre'), bi = $('j-barre-i'); dates.style.color = ''; dates.style.fontWeight = '';
       barre.hidden = true; dates.textContent = '';
       if (!r.configuree) {
         j.className = 'jauge vide'; j.style.setProperty('--p', 0); $('j-reste').textContent = '?'; $('j-lib').textContent = '';
@@ -340,7 +340,13 @@
         pill.className = 'etat-pill ' + s.statut; pill.textContent = (s.statut === 'T' ? 'Au travail' : 'En repos') + ' · jour ' + s.jour + '/' + s.total;
         $('phrase').textContent = Rotation.phrase(s);
         bi.style.width = pct + '%'; bi.style.background = COUL[s.statut]; barre.hidden = false;
-        dates.textContent = 'Du ' + Rotation.frDate(s.depuis) + (s.prochain ? ' → prochain changement le ' + Rotation.frDate(s.prochain.date) : '');
+        // reliquat actuel (initial + demandes approuvées) : positif en vert, négatif en rouge
+        var sol = r.solde != null ? r.solde : r.reliquat, nj = Math.abs(sol || 0);
+        dates.textContent = '';
+        if (sol > 0) { dates.style.color = 'var(--ok)'; dates.textContent = 'Vous avez un reliquat positif de ' + nj + ' jour' + (nj > 1 ? 's' : '') + '.'; }
+        else if (sol < 0) { dates.style.color = 'var(--err)'; dates.textContent = 'Vous avez un reliquat négatif de ' + nj + ' jour' + (nj > 1 ? 's' : '') + '.'; }
+        else { dates.style.color = ''; dates.textContent = 'Vous n\'avez aucun reliquat.'; }
+        dates.style.fontWeight = sol ? '700' : '';
         j.setAttribute('aria-label', 'Rotation : jour ' + s.jour + ' sur ' + s.total + ', ' + s.restants + ' jours restants');
         $('b-rot').textContent = 'Modifier ma rotation';
       }

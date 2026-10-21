@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-36",
+    "date": "2026-10-23",
+    "title": "Version 5.29.5 — Reliquat sur l'accueil",
+    "changes": [
+      "Accueil : la ligne « Du … → prochain changement le … » (déjà dite dans la phrase au-dessus) est remplacée par le reliquat actuel : « Vous avez un reliquat positif de X jours » en vert, « négatif de X jours » en rouge, ou « aucun reliquat »."
+    ]
+  },
+  {
     "id": "2026-10-23-35",
     "date": "2026-10-23",
     "title": "Version 5.29.4 — Fiche d'évaluation : saut de page propre",

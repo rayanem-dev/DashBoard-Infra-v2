@@ -304,3 +304,13 @@ test('effacer son planning : confirmation côté écran ; rotation et demandes r
   appel(m, 'planningEffacer_', 'chef.div@x.dz', { email: 'agent.b@x.dz' });
   assert.strictEqual(m.run("rotationDe_('agent.b@x.dz')"), null);
 });
+
+test('la situation de l\'accueil donne le reliquat actuel (initial + demandes approuvées)', () => {
+  const m = monde();
+  appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 5 });
+  assert.strictEqual(m.run("situationDe_(Store.utilisateur('agent.a@x.dz'))").solde, 5);
+  const { numero } = appel(m, 'modifMoi_', 'agent.a@x.dz', DECALE);
+  appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'approuvee' });
+  const net = Number(m.tables.Modifications.find(x => x.numero === numero).reliquat_net);
+  assert.strictEqual(m.run("situationDe_(Store.utilisateur('agent.a@x.dz'))").solde, 5 + net);
+});

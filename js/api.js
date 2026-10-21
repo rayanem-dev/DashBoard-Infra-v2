@@ -313,7 +313,7 @@
         if (p.niveau !== null && p.niveau !== '' && p.niveau !== undefined) demoExceptions.push({ email: p.email, module: p.module, niveau: Number(p.niveau) }); return {};
       case 'situation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var rr = demoRots()[demoState.user.email];
-        return rr ? { acces: true, configuree: true, nom: demoState.user.nom, rotation: rr, reliquat: rr.reliquat === undefined ? null : rr.reliquat, reliquat_renseigne: rr.reliquat !== undefined, situation: demoSituation(rr) } : { acces: true, configuree: false, nom: demoState.user.nom }; }
+        return rr ? { acces: true, configuree: true, nom: demoState.user.nom, rotation: rr, reliquat: rr.reliquat === undefined ? null : rr.reliquat, solde: (rr.reliquat || 0) + demoMods().reduce(function (n, m) { return n + (m.statut === 'approuvee' && m.email === demoState.user.email ? m.rq_net || 0 : 0); }, 0), reliquat_renseigne: rr.reliquat !== undefined, situation: demoSituation(rr) } : { acces: true, configuree: false, nom: demoState.user.nom }; }
       case 'reliquat_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var tr = demoRots(), cibleR = p.email || demoState.user.email; if (p.email && p.email !== demoState.user.email) exigerAdmin(); var me = tr[cibleR];
         if (!me) throw erreur('Renseignez d\'abord votre rotation'); var rl = Number(p.reliquat);
         if (p.reliquat === '' || p.reliquat == null || !isFinite(rl) || Math.floor(rl) !== rl || Math.abs(rl) > 365) throw erreur('Reliquat : un nombre entier de jours entre −365 et 365 (0 si vous n\'en avez pas)');

@@ -232,7 +232,7 @@ function situationDe_(u) {
   if ((acces_(u).planning || 0) < 1) return { acces: false };
   var rot = rotationDe_(u.email);
   if (!rot) return { acces: true, configuree: false, nom: u.nom };
-  return { acces: true, configuree: true, nom: u.nom, rotation: rot, reliquat: rot.reliquat, reliquat_renseigne: rot.reliquat !== null, situation: Planning.situation(rot, correctionsDe_(u.email), Dates.today()) };
+  return { acces: true, configuree: true, nom: u.nom, rotation: rot, reliquat: rot.reliquat, solde: soldeDe_(u.email).solde, reliquat_renseigne: rot.reliquat !== null, situation: Planning.situation(rot, correctionsDe_(u.email), Dates.today()) };
 }
 function rotationEnregistrer_(req) {
   var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;
