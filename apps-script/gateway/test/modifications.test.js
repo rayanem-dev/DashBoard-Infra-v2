@@ -34,6 +34,7 @@ function monde() {
       utilisateur: e => tables.Utilisateurs.find(u => u.email === String(e).toLowerCase()) || null,
       parUid: uid => tables.Utilisateurs.find(u => u.uid === uid) || null,
       journal: (a, e, d) => journal.push([a, e, d]),
+      supprimer: (n, cles) => { const k = Object.keys(cles)[0]; tables[n] = tables[n].filter(x => String(x[k]) !== String(cles[k])); },
       maj: (n, cles, vals) => { const k = Object.keys(cles)[0]; const l = tables[n]; const r = l.find(x => String(x[k]) === String(cles[k])); if (r) Object.assign(r, vals); else l.push(Object.assign({}, cles, vals)); },
     },
     Auth: { userFromToken: t => { const u = tables.Utilisateurs.find(x => x.email === t); if (!u) throw new Error('Session expirée'); return u; } },
@@ -277,7 +278,9 @@ test('planning de départ : première saisie, rotation déjà ajustée, correcti
   assert.strictEqual(g.slice(0, 20), 'R'.repeat(20)); assert.strictEqual(g.slice(20, 48), 'T'.repeat(28), 'la rotation habituelle reprend ensuite');
   assert.strictEqual(appel(m, 'simuListe_', 'chef.div@x.dz', {}).demandes.length, 0, 'un planning de départ n\'est pas une demande');
   // la rotation en cours doit contenir aujourd'hui
-  assert.throws(() => appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { periodes: [{ type: 'R', jours: 5 }] })), /rotation en cours/);
+  assert.throws(() => appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { depuis: '2026-07-01' })), /trop ancienne/);
+  appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { depuis: '2026-09-20', statut: 'T' })); // n-1 accepté : rotation précédente (T 28 j du 20/09 au 17/10, la suivante contient aujourd'hui)
+  appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { periodes: [{ type: 'R', jours: 20 }] }));
   assert.throws(() => appel(m, 'planningInitial_', 'nouveau@x.dz', Object.assign({}, base, { periodes: [{ type: 'T', jours: 28 }] })), /première période/);
   // correction : remplace le précédent et annule la demande en cours
   appel(m, 'planningInitial_', 'agent.a@x.dz', { statut: 'T', depuis: '2026-10-01', jours_travail: 28, jours_repos: 28, reliquat: 0, periodes: [] });
@@ -288,4 +291,16 @@ test('planning de départ : première saisie, rotation déjà ajustée, correcti
   assert.throws(() => appel(m, 'planningInitial_', 'agent.a@x.dz', { statut: 'T', depuis: '2026-10-01', jours_travail: 28, jours_repos: 28, reliquat: 0, email: 'agent.b@x.dz' }), /Droits/);
   appel(m, 'planningInitial_', 'chef.div@x.dz', { statut: 'T', depuis: '2026-09-20', jours_travail: 28, jours_repos: 28, reliquat: 1, email: 'agent.b@x.dz' });
   assert.strictEqual(m.run("rotationDe_('agent.b@x.dz')").depuis, '2026-09-20');
+});
+
+test('effacer son planning : confirmation côté écran ; rotation et demandes retirées ; droits', () => {
+  const m = monde();
+  appel(m, 'modifMoi_', 'agent.a@x.dz', ALIGNE);
+  assert.throws(() => appel(m, 'planningEffacer_', 'agent.a@x.dz', { email: 'agent.b@x.dz' }), /Droits/);
+  appel(m, 'planningEffacer_', 'agent.a@x.dz', {});
+  assert.strictEqual(m.run("rotationDe_('agent.a@x.dz')"), null);
+  assert.strictEqual(m.tables.Modifications.filter(x => x.statut === 'appliquee').length, 0);
+  assert.throws(() => appel(m, 'planningEffacer_', 'agent.a@x.dz', {}), /Aucun planning/);
+  appel(m, 'planningEffacer_', 'chef.div@x.dz', { email: 'agent.b@x.dz' });
+  assert.strictEqual(m.run("rotationDe_('agent.b@x.dz')"), null);
 });

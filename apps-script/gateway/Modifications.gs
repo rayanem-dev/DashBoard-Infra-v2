@@ -326,7 +326,8 @@ function planningInitial_(req) {
     var m = { debut: rot.depuis, periodes: ps, reprise: Simulation.autre(ps[ps.length - 1].type) };
     err = Simulation.valider(m, rot, null); if (err) throw new Error(err);
   }
-  if (Dates.addDays(rot.depuis, longueur1 - 1) < auj) throw new Error('La date de début doit être celle de la rotation en cours (celle qui contient aujourd\'hui)');
+  var longueur2 = ps.length > 1 ? ps[1].jours : (rot.statut === 'T' ? rot.jours_repos : rot.jours_travail);
+  if (Dates.addDays(rot.depuis, longueur1 + longueur2 - 1) < auj) throw new Error('Date de début trop ancienne : indiquez le début de la rotation en cours (ou de la précédente)');
   var rel = reliquatValide_(req.reliquat === undefined || req.reliquat === null || req.reliquat === '' ? 0 : req.reliquat);
   var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
   if (lock) lock.waitLock(15000);
@@ -346,6 +347,25 @@ function planningInitial_(req) {
   } finally { if (lock) lock.releaseLock(); }
   Store.journal('planning_initial', u.email, email + ' ' + rot.statut + ' depuis ' + rot.depuis + ' (' + rot.jours_travail + '/' + rot.jours_repos + ')' + (ps.length ? ' + ' + ps.length + ' période(s) ajustée(s)' : '') + ', reliquat ' + rel);
   return soi ? situationDe_(u) : { ok: true };
+}
+
+/**
+ * Efface le planning d'un agent (rotation, planning de départ, demandes) : l'agent repasse « non configuré ». Réservé à l'agent lui-même ou au niveau 3 ;
+ * la confirmation est demandée par l'écran. Les demandes sont conservées avec le statut « annulee » (historique), mais n'ont plus aucun effet.
+ */
+function planningEffacer_(req) {
+  var u = Auth.userFromToken(req.token), niv = acces_(u).planning || 0;
+  var email = String(req.email || u.email).toLowerCase(), soi = email === String(u.email).toLowerCase();
+  if (!soi) { if (niv < 3) throw simuDroits_(); cible_(email); } else if (niv < 1) throw simuDroits_();
+  if (!rotationDe_(email)) throw new Error('Aucun planning à effacer');
+  var now = new Date().toISOString();
+  Store.table('Modifications').forEach(function (r) {
+    if (String(r.email).toLowerCase() === email && ['initial', 'appliquee', 'en_attente', 'approuvee'].indexOf(String(r.statut)) >= 0)
+      Store.maj('Modifications', { numero: String(r.numero) }, { statut: 'annulee', decide_le: now, commentaire: 'Annulée : planning effacé par ' + u.email });
+  });
+  Store.supprimer('Rotations', { email: email });
+  Store.journal('planning_efface', u.email, email);
+  return { ok: true };
 }
 
 /** Annule la demande en cours de l'agent (retour au planning validé). */

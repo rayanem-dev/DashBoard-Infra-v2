@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-26",
+    "date": "2026-10-23",
+    "title": "Version 5.28.1 — Début n-1 accepté et effacer mon planning",
+    "changes": [
+      "Page « Où en êtes-vous ? » : le début de la rotation précédente (n-1) est maintenant accepté, pas seulement celui de la rotation en cours.",
+      "Bouton « Effacer mon planning » (rouge) avec double confirmation, pour l'agent et pour le secrétariat / chef de division sur un agent : la rotation et les demandes sont retirées, l'agent redevient « non configuré »."
+    ]
+  },
+  {
     "id": "2026-10-23-25",
     "date": "2026-10-23",
     "title": "Version 5.28.0 — Une seule page « Où en êtes-vous ? »",

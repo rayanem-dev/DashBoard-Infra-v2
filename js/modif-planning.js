@@ -185,7 +185,7 @@
     }
     var dlg = el('dialog', 'dlg mp'), f = el('form'); f.method = 'dialog';
     f.appendChild(el('h2', null, options.titre || 'Où en êtes-vous ?'));
-    f.appendChild(el('p', 'sous', 'Indiquez le début de votre rotation en cours et votre reliquat à ce moment-là. Les durées des rotations sont à 28 / 28 ; changez-les seulement si vous êtes déjà dans une rotation ajustée.'));
+    f.appendChild(el('p', 'sous', 'Indiquez le début de votre rotation en cours et votre reliquat à ce moment-là. Les durées des rotations sont à 28 / 28 ; changez-les seulement si vous êtes déjà dans une rotation ajustée. Vous pouvez partir de la rotation en cours ou de la précédente.'));
     function champ(lib, ctl) { var w = el('div', 'champ'); w.appendChild(el('label', null, lib)); w.appendChild(ctl); return w; }
     var sSt = document.createElement('select'); [['T', 'Je suis au travail'], ['R', 'Je suis en repos / congé']].forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; if (o[0] === statut0) op.selected = true; sSt.appendChild(op); });
     var iDate = document.createElement('input'); iDate.type = 'date'; iDate.max = auj; iDate.value = debut0;
@@ -214,7 +214,18 @@
     f.appendChild(tbl); f.appendChild(etat);
     var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
     var boutons = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
-    var ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit'; if (!options.obligatoire) boutons.appendChild(ann); boutons.appendChild(ok); f.appendChild(boutons);
+    var ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit';
+    if (v.depuis && !options.obligatoire) {    // planning déjà enregistré : possibilité de l'effacer (avec confirmation, pour éviter les erreurs)
+      var ef = el('button', 'btn-s', 'Effacer mon planning'); ef.type = 'button'; ef.style.cssText = 'color:var(--err);border-color:var(--err)';
+      ef.addEventListener('click', function () {
+        if (!confirm('Effacer ' + (options.email ? 'ce planning' : 'mon planning') + ' ?\n\nLa rotation, le reliquat et les demandes de modification seront supprimés. Cette action est définitive.')) return;
+        if (!confirm('Dernière confirmation : effacer définitivement le planning ?')) return;
+        ef.disabled = true; Api.call('planning_effacer', options.email ? { email: options.email } : {}).then(function () { dlg.close(); if (options.onOk) options.onOk(); })
+          .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ef.disabled = false; });
+      });
+      boutons.appendChild(ef);
+    }
+    if (!options.obligatoire) boutons.appendChild(ann); boutons.appendChild(ok); f.appendChild(boutons);
     var etatCourant = null;
     function typeDe(k) { return (k % 2 === 0) === (sSt.value === 'T') ? 'T' : 'R'; }
     function maj() {
@@ -230,7 +241,7 @@
       else if (iDate.value > auj) err = 'Le début de la rotation en cours ne peut pas être dans le futur.';
       else if (!(h.T >= 1 && h.R >= 1 && h.T <= 90 && h.R <= 90)) err = 'Rotation habituelle : de 1 à 90 jours.';
       else cel.forEach(function (c, k) { var n = Number(c.inp.value); if (!err && !(n >= 1 && n <= 120 && Math.floor(n) === n)) err = 'Rotation ' + (k + 1) + ' : de 1 à 120 jours.'; });
-      if (!err && Simulation.addDays(iDate.value, Number(cel[0].inp.value) - 1) < auj) err = 'La première rotation doit être celle qui contient aujourd\'hui : le début saisi est trop ancien ou sa durée trop courte.';
+      if (!err && Simulation.addDays(iDate.value, Number(cel[0].inp.value) + Number(cel[1].inp.value) - 1) < auj) err = 'Date de début trop ancienne : indiquez le début de la rotation en cours (ou de la précédente).';
       if (err) { etat.appendChild(el('div', 'info alerte', err)); ok.disabled = true; return; }
       var k2 = -1; cel.forEach(function (c, k) { if (Number(c.inp.value) !== h[typeDe(k)]) k2 = k; });
       var ps = []; for (var q = 0; q <= k2; q += 1) ps.push({ type: typeDe(q), jours: Number(cel[q].inp.value) });

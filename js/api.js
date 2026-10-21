@@ -399,10 +399,14 @@
         var rotI = { statut: p.statut, depuis: p.depuis, jours_travail: Number(p.jours_travail), jours_repos: Number(p.jours_repos), reliquat: Number(p.reliquat) || 0 };
         if (rotI.statut !== 'T' && rotI.statut !== 'R') throw erreur('Indiquez si vous êtes en travail ou en repos'); if (!/^\d{4}-\d{2}-\d{2}$/.test(rotI.depuis || '') || rotI.depuis > auj()) throw erreur('Date invalide');
         var psI = Array.isArray(p.periodes) ? p.periodes : [], l1I = psI.length ? psI[0].jours : (rotI.statut === 'T' ? rotI.jours_travail : rotI.jours_repos);
-        if (plus(rotI.depuis, l1I - 1) < auj()) throw erreur('La date de début doit être celle de la rotation en cours (celle qui contient aujourd\'hui)');
+        var l2I = psI.length > 1 ? psI[1].jours : (rotI.statut === 'T' ? rotI.jours_repos : rotI.jours_travail);
+        if (plus(rotI.depuis, l1I + l2I - 1) < auj()) throw erreur('Date de début trop ancienne : indiquez le début de la rotation en cours (ou de la précédente)');
         var lmI = demoMods(); lmI.forEach(function (x) { if (x.email === emI) { if (x.statut === 'initial') x.statut = 'remplacee'; else if (x.statut === 'appliquee') x.statut = 'annulee'; } });
         if (psI.length) lmI.push({ numero: 'INI-' + (lmI.length + 1), cree_le: new Date().toISOString(), email: emI, emetteur: demoState.user.email, motif: 'Planning de départ', modif: { debut: rotI.depuis, periodes: psI, reprise: Simulation.autre(psI[psI.length - 1].type) }, statut: 'initial', rq_net: 0 });
         saveMods(lmI); var rtI = demoRots(); rtI[emI] = rotI; saveRots(rtI); return { acces: true, configuree: true, reliquat: rotI.reliquat, reliquat_renseigne: true }; }
+      case 'planning_effacer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var emE = p.email || demoState.user.email; if (p.email && p.email !== demoState.user.email) exigerAdmin();
+        var rtE = demoRots(); if (!rtE[emE]) throw erreur('Aucun planning à effacer'); delete rtE[emE]; saveRots(rtE);
+        var lmE = demoMods(); lmE.forEach(function (x) { if (x.email === emE) x.statut = 'annulee'; }); saveMods(lmE); return { ok: true }; }
       case 'modif_moi_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return demoModifDonnees(demoState.user.email); }
       case 'modif_agent_donnees': { exigerAdmin(); var ma = p.numero ? demoMods().filter(function (m) { return m.numero === p.numero; })[0] : null; if (p.numero && !ma) throw erreur('Demande introuvable');
         var emA = ma ? ma.email : p.email, uA = DEMO_USERS.filter(function (x) { return x.email === emA; })[0]; if (!uA) throw erreur('Agent inconnu');
