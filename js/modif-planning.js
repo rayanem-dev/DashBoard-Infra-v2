@@ -58,7 +58,11 @@
       return { h: h, t: t, cellules: cellules, rows: rows };
     }
     var tA = tableau('Planning actuel', actuel, false), tM = tableau('Planning modifié', lignes, true);
-    zone.appendChild(tA.h); zone.appendChild(tA.t); zone.appendChild(tM.h); zone.appendChild(tM.t);
+    if (options.rotationBase) {
+      var rb = el('button', 'btn-s', '✎ Corriger le planning actuel (saisi par erreur)'); rb.type = 'button'; rb.style.cssText = 'margin:0 0 6px;font-size:12px';
+      rb.title = 'Changer le statut, la date de début ou la rotation (28/28, 14/14…) enregistrés au départ'; rb.addEventListener('click', function () { dlg.close(); options.rotationBase(); });
+      zone.appendChild(tA.h); zone.appendChild(rb); zone.appendChild(tA.t);
+    } else { zone.appendChild(tA.h); zone.appendChild(tA.t); } zone.appendChild(tM.h); zone.appendChild(tM.t);
     function dates(tb) {
       var cur = debutS;
       tb.rows.forEach(function (r, i) { var c = tb.cellules[i], fin = Simulation.addDays(cur, Math.max(1, r.jours) - 1); c.du.textContent = fr(cur); c.au.textContent = fr(fin); cur = Simulation.addDays(fin, 1); });
@@ -83,7 +87,7 @@
     var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
     var boutons = el('div', 'boutons'), ann = el('button', 'btn-s', 'Fermer'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
     var ok = el('button', 'btn', direct ? 'Enregistrer la modification' : chef ? 'Valider avec ces changements' : 'Enregistrer ma demande');
-    if (options.rotationBase) { var rb = el('button', 'btn-s', 'Rotation de base…'); rb.type = 'button'; rb.title = 'Changer la rotation habituelle (28/28, 14/14…)'; rb.addEventListener('click', function () { dlg.close(); options.rotationBase(); }); boutons.appendChild(rb); } ok.type = 'submit';
+ ok.type = 'submit';
     var annulerDemande = null;
     if (!chef && d.en_cours) { annulerDemande = el('button', 'btn-s', 'Annuler ma demande en cours'); annulerDemande.type = 'button'; boutons.appendChild(annulerDemande); }
     boutons.appendChild(ann); boutons.appendChild(ok); f.appendChild(boutons);
@@ -166,7 +170,9 @@
    */
   function modifierMonPlanning(rotation, onChange) {
     if (!rotation) { Rotation.ouvrir({ titre: 'Où en êtes-vous ?', onOk: onChange }); return Promise.resolve(); }
-    return Api.call('modif_moi_donnees').then(function (d) { ouvrir({ donnees: d, mode: 'agent', onChange: onChange }); });
+    return Api.call('modif_moi_donnees').then(function (d) {
+      ouvrir({ donnees: d, mode: 'agent', onChange: onChange, rotationBase: function () { Rotation.ouvrir({ titre: 'Corriger mon planning actuel', valeurs: d.rotation, onOk: onChange }); } });
+    });
   }
   window.ModifPlanning = { ouvrir: ouvrir, modifierMonPlanning: modifierMonPlanning };
 })();

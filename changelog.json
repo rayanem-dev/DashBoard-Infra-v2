@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-24",
+    "date": "2026-10-23",
+    "title": "Version 5.27.5 — Corriger le planning actuel saisi par erreur",
+    "changes": [
+      "Écran de modification du planning : bouton « Corriger le planning actuel (saisi par erreur) » sous « Planning actuel », pour l'agent (son propre planning) comme pour le secrétariat et le chef de division (celui d'un agent) : statut, date de début et rotation de base peuvent être ressaisis."
+    ]
+  },
+  {
     "id": "2026-10-23-23",
     "date": "2026-10-23",
     "title": "Version 5.27.4 — Saisir son reliquat dans le planning",
