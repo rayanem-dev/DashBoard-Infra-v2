@@ -160,11 +160,12 @@ details.svc .liste .case { margin: 6px 0; font-size: 13px; }
 details.svc .liste .outils { display: flex; gap: 12px; margin-bottom: 6px; }
 table.plan2 { border-collapse: separate; border-spacing: 0; font-size: 12px; }
 table.plan2 th, table.plan2 td { padding: 0; border-bottom: 1px solid var(--border); background: var(--surface); }
-table.plan2 .nom { position: sticky; left: 0; z-index: 2; padding: 7px 12px; min-width: 220px; max-width: 260px; text-align: left; }
-table.plan2 td.nom b { display: block; font-size: 13px; }
+table.plan2 .nom { position: sticky; left: 0; z-index: 2; padding: 3px 10px; min-width: 190px; max-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+table.plan2 td.nom b { display: inline; font-size: 13px; }
 table.plan2 td.nom small { color: var(--text-muted); }
 table.plan2 td.etat { padding: 6px 10px; white-space: nowrap; }
-table.plan2 td.frise { padding: 6px 4px; }
+table.plan2 td.frise { padding: 3px 4px; line-height: 0; }
+table.plan2 .mini { padding: 0 6px; min-height: 0; height: 20px; margin-left: 6px; font-size: 12px; line-height: 1; }
 table.plan2 th.frise { vertical-align: bottom; }
 table.plan2 tr.moi td { background: var(--tint-orange); }
 table.plan2 tr.moi td.nom { background: var(--tint-orange); box-shadow: inset 3px 0 0 var(--orange-main); }
@@ -298,16 +299,25 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 /* ===== Impression / PDF (planning, simulation) ===== */
 .titre-impression { display: none; }
 @media print {
-  @page { size: A4 landscape; margin: 9mm; }
+  @page { size: A4 landscape; margin: 5mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: var(--surface) !important; }
   .bandeau, .demo-banner, .toast, .no-print, .barre, #barre-filtres, #barre-vue, footer.pied, .onglets, .raccourcis, dialog { display: none !important; }
   main.portail { padding: 0 !important; max-width: none !important; }
-  .titre-impression { display: block !important; margin: 0 0 8px; }
+  .titre-impression { display: block !important; margin: 0 0 4px; }
   .titre-impression h1 { font-size: 16px; margin: 0; } .titre-impression p { margin: 2px 0 0; font-size: 11px; color: var(--ink-2); }
   .defile { overflow: visible !important; max-height: none !important; }
   .panneau, .bloc { box-shadow: none !important; border: 0 !important; }
-  .plan2 { font-size: 8px !important; }
+  .plan2 { font-size: 8px !important; width: 100% !important; }
+  .plan2 .nom { min-width: 0 !important; max-width: 150px !important; width: 150px !important; padding: 1px 4px !important; position: static !important; box-shadow: none !important; }
+  .plan2 td.nom b { font-size: 8.5px !important; }
+  .plan2 td.frise, .plan2 th.frise { padding: 1px 2px !important; width: 100% !important; }
+  .plan2 td.frise svg, .plan2 th.frise svg { width: 100% !important; height: 14px !important; display: block; }
+  .plan2 th.frise svg { height: 24px !important; }
+  .plan2 tr { break-inside: avoid; } .plan2 thead { display: table-header-group; }
+  .plan2 .mini { display: none !important; }
+  main.portail section.panneau { padding: 0 !important; margin: 0 !important; }
+  #bandeau-modif, .stats, .aide { display: none !important; }
   /* simulation : on n'imprime que les périodes et le résultat */
   body.imp-simu #b-qui, body.imp-simu #b-valider, body.imp-simu #z-prop, body.imp-simu #ajout, body.imp-simu #ajout-b, body.imp-simu .periode button, body.imp-simu #z-modb > label, body.imp-simu #p-dem, body.imp-simu .succes { display: none !important; }
   body.imp-simu .frise-zone { overflow: visible !important; } body.imp-simu .frise { zoom: .8; }
@@ -611,3 +621,8 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 }
 @media (max-width: 900px) { .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding-top: 48px; } .agent .jauge-bloc:has(.raccourcis:not([hidden])) .etat-pill { margin-right: 0; } }
 @media (max-width: 480px) { .agent .jauge-bloc, .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding-bottom: 40px; } }
+
+/* Alertes de l'accueil : demandes de modification de planning à décider */
+.syn-modifs { list-style: none; padding: 0; margin: 0; } .syn-modifs li { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.syn-modifs li.syn-hors { background: var(--tint-err); border-radius: 10px; padding: 9px 10px; margin: 4px 0; } .syn-alerte { color: var(--err); font-weight: 700; font-size: 12.5px; margin-top: 3px; }
+.syn-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; } .syn-actions .syn-actu { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }

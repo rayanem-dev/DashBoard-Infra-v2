@@ -24,7 +24,7 @@ var Mail = (function () {
   /** Demande de modification de planning : à l'intéressé, au responsable, au chef de division et au secrétariat (un seul message). */
   function envoyerDemande(dest, d, titre, lien, parNom) {
     if (!dest.length) return;
-    var nom = esc((d.agent.nom + ' ' + d.agent.prenom).trim()), st = d.statut === 'approuvee' ? 'Approuvée' : d.statut === 'refusee' ? 'Refusée' : 'En attente de décision';
+    var nom = esc((d.agent.nom + ' ' + d.agent.prenom).trim()), st = d.statut === 'approuvee' ? 'Approuvée' : d.statut === 'refusee' ? 'Refusée' : d.statut === 'appliquee' ? 'Appliquée au planning, en attente de décision' : 'En attente de décision';
     var tab = function (t) { return '<table cellpadding="4" style="border-collapse:collapse;font-size:13px"><tr style="background:#f3f4f6"><th align="left">Statut</th><th align="left">Du</th><th align="left">Au</th><th align="right">Jours</th></tr>' + lignes(t) + '</table>'; };
     MailApp.sendEmail({
       to: dest.join(','), name: 'Division Infrastructure RNS', subject: '[Planning] ' + titre + ' ' + d.numero + ' — ' + (d.agent.nom + ' ' + d.agent.prenom).trim(),

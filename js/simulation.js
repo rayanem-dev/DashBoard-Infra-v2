@@ -272,7 +272,18 @@ var Simulation = (function () {
     return out;
   }
 
-  return { reliquatDetail: reliquatDetail, reliquat: reliquat, proposerPaire: proposerPaire, prochaineReleve: prochaineReleve, addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
+  /**
+   * Retour à la rotation habituelle : `norm` = grille de la rotation sans aucune modification, `mod` = grille modifiée (même fenêtre, qui commence à `debutF`).
+   * L'agent est « rentré dans sa rotation » quand les deux grilles sont identiques sur au moins un cycle complet (`cy` jours) à la fin de la fenêtre.
+   * Retourne { ok, dernierEcart: dernier jour qui diffère de la rotation ('' si aucun), reprendLe: premier jour de retour à la normale }.
+   */
+  function retour(norm, mod, debutF, cy) {
+    var n = Math.min(norm.length, mod.length), dernier = -1;
+    for (var i = 0; i < n; i += 1) if (norm.charAt(i) !== mod.charAt(i)) dernier = i;
+    return { ok: n - 1 - dernier >= cy, dernierEcart: dernier < 0 ? '' : addDays(debutF, dernier), reprendLe: dernier < 0 ? '' : addDays(debutF, dernier + 1) };
+  }
+
+  return { retour: retour, reliquatDetail: reliquatDetail, reliquat: reliquat, proposerPaire: proposerPaire, prochaineReleve: prochaineReleve, addDays: addDays, diff: diff, estDate: estDate, autre: autre, totalJours: totalJours, dateReprise: dateReprise, valider: valider, appliquer: appliquer,
            corrections: corrections, tableau: tableau, conflits: conflits, proposer: proposer };
 })();
 

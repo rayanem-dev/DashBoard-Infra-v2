@@ -23,12 +23,14 @@
 
 <main class="portail">
   <div class="titre-impression"><h1 id="t-imp">Planning & rotations</h1><p id="s-imp"></p></div>
+  <div id="bandeau-modif" class="no-print" role="status"></div>
   <div class="stats" id="stats"></div>
   <div class="barre" id="barre-vue">
     <div class="vues" role="group" aria-label="Vue" id="vues">
       <button data-v="1">Mois</button><button data-v="3">3 mois</button><button data-v="6">6 mois</button><button data-v="12">1 an</button>
     </div>
     <div class="nav-periode"><button class="btn-s" id="prec" type="button" aria-label="Période précédente">‹</button><b id="periode"></b><button class="btn-s" id="suiv" type="button" aria-label="Période suivante">›</button><button class="btn-s" id="auj" type="button">Aujourd'hui</button></div>
+    <button class="btn no-print" id="modif-moi" type="button" hidden style="margin-top:0;padding:8px 16px;width:auto">✏️ Modifier mon planning</button>
     <button class="btn-s no-print" id="imprimer" type="button" title="Imprimer ou enregistrer en PDF">🖨 Imprimer / PDF</button>
     <div class="legende"><span><i style="background:var(--c-T)"></i>Travail</span><span><i style="background:var(--c-R)"></i>Repos</span><span><i style="background:var(--c-ABS)"></i>Absence</span><span><i style="background:var(--c-T-prevu);border:1px solid #BFE3B1"></i><i style="background:var(--c-R-prevu);border:1px solid #F4C3A5"></i>Prévu (à venir)</span><span><i style="background:#B91C1C;height:4px;vertical-align:3px"></i>Férié national</span><span><i style="background:#047857;height:4px;vertical-align:3px"></i>Férié religieux</span></div>
   </div>
@@ -51,6 +53,8 @@
 <script src="js/api.js"></script>
 <script src="js/rotation.js"></script>
 <script src="js/feries.js"></script>
+<script src="js/simulation.js"></script>
+<script src="js/modif-planning.js"></script>
 <script>Rotation.exiger();</script>
 <script src="js/employeurs.js"></script>
 <script>
@@ -94,10 +98,10 @@
   var _fer = {}; function ferMap(debut, n) { var k = debut + '|' + n; return _fer[k] || (_fer[k] = Holidays.carte(debut, plus(debut, n))); }
   function ferCoul(h) { return h.type === 'religieuse' ? '#047857' : '#B91C1C'; }
   function infobulleJour(debut, i, etat) { var d = plus(debut, i), h = ferMap(debut, 400)[d]; return jourFr(d) + (etat ? ' — ' + etat : '') + (h ? '\n' + (h.type === 'religieuse' ? '🕌 ' : '🇩🇿 ') + h.nom : ''); }
-  function frise(grille, debut, n, px, aujIdx) {
+  function frise(grille, debut, n, px, aujIdx, etiquettes) {
     // teintes « prévu » et fond selon le thème (clair / sombre)
     var cs = getComputedStyle(document.documentElement); PREVU.T = cs.getPropertyValue('--c-T-prevu').trim() || PREVU_CLAIR.T; PREVU.R = cs.getPropertyValue('--c-R-prevu').trim() || PREVU_CLAIR.R;
-    var h = 22, s = svgEl('svg', { width: n * px, height: h, viewBox: '0 0 ' + (n * px) + ' ' + h, role: 'img' });
+    var h = 20, s = svgEl('svg', { width: n * px, height: h, viewBox: '0 0 ' + (n * px) + ' ' + h, role: 'img', preserveAspectRatio: 'none' });
     s.appendChild(svgEl('rect', { x: 0, y: 4, width: n * px, height: h - 8, rx: 3, fill: '#F3F4F6', style: 'fill:' + (cs.getPropertyValue('--surface-2').trim() || '#F3F4F6') }));
     segments(grille).forEach(function (g) {
       if (!COUL[g.c]) return;
@@ -108,6 +112,11 @@
         var r = svgEl('rect', { x: de * px, y: 4, width: n2 * px - (px > 6 ? 1 : 0), height: h - 8, rx: px > 6 ? 3 : 1, fill: part[2][g.c] });
         s.appendChild(r);
       });
+      // « 6 restants · → 25/10 » écrit dans la bande de la période en cours (variante la plus longue qui tient)
+      if (etiquettes && aujIdx >= g.a && aujIdx < g.a + g.n) {
+        var larg = g.n * px - 8, txt = etiquettes.filter(function (e) { return e.length * 5.6 <= larg; })[0];
+        if (txt) { var et = svgEl('text', { x: g.a * px + 5, y: 14, 'font-size': 10.5, 'font-weight': 700, fill: '#fff', stroke: 'rgba(0,0,0,.55)', 'stroke-width': 2.4, 'paint-order': 'stroke', 'pointer-events': 'none' }); et.textContent = txt; s.appendChild(et); }
+      }
       if (px >= 20) {
         for (var k = 0; k < g.n; k += 1) {
           var futur = g.a + k > aujIdx && g.c !== 'A';
@@ -116,6 +125,7 @@
         }
       }
     });
+    if (etiquettes && etiquettes.libre) { var lb = svgEl('text', { x: 6, y: 14, 'font-size': 10.5, 'font-weight': 600, fill: '#6B7280' }); lb.textContent = etiquettes[0]; s.appendChild(lb); }
     var fm = ferMap(debut, n); for (var fi = 0; fi < n; fi += 1) { var fh = fm[plus(debut, fi)]; if (fh) s.appendChild(svgEl('rect', { x: fi * px, y: 0, width: Math.max(2, px - (px > 6 ? 1 : 0)), height: 4, fill: ferCoul(fh) })); }
     if (aujIdx >= 0 && aujIdx < n) s.appendChild(svgEl('rect', { x: aujIdx * px - 1, y: 0, width: Math.max(2, px > 6 ? 2 : 1.5), height: h, fill: '#1A1A2E' }));
     Survol.attacher(s, function (x) { var i = Math.floor(x / px); if (i < 0 || i >= n) return ''; var c = grille.charAt(i); return infobulleJour(debut, i, (LIB[c] || '') + (c !== 'A' && i > aujIdx && LIB[c] ? ' (prévu)' : '')); });
@@ -156,30 +166,28 @@
     var b = bornes(), px = PX[vue], aujIdx = ecart(b.debut, data.aujourdhui);
     var t = $('tab'); t.textContent = '';
     var hr = el('tr'); hr.appendChild(el('th', 'nom', data.peutVoirTous ? lignes.length + ' personne' + (lignes.length > 1 ? 's' : '') : 'Mon planning'));
-    hr.appendChild(el('th', null, 'Situation'));
     var th = el('th', 'frise'); th.appendChild(entete(b.debut, b.jours, px, aujIdx)); hr.appendChild(th);
     var head = el('thead'); head.appendChild(hr); t.appendChild(head);
     var body = el('tbody');
     lignes.forEach(function (l) {
-      var tr = el('tr', l.moi ? 'moi' : ''); var n = el('td', 'nom'); n.appendChild(el('b', null, l.nom || ''));
-      var pe = Employeur.pastille(l.dependance); if (pe) n.firstChild.appendChild(pe);
+      var tr = el('tr', l.moi ? 'moi' : ''); var n = el('td', 'nom'); n.title = [l.fonction, l.service].filter(Boolean).join(' · ');
+      var nm = el('b', null, l.nom || ''); n.appendChild(nm);
+      var pe = Employeur.pastille(l.dependance); if (pe) nm.appendChild(pe);
       Employeur.teinter(n, l.dependance);
-      n.appendChild(el('small', null, [l.fonction, l.service].filter(Boolean).join(' · ')));
       if (data.peutModifier && l.email) {
-        var bt = el('button', 'btn-s', l.configuree ? 'Modifier' : 'Configurer'); bt.style.marginLeft = '8px'; bt.type = 'button';
+        var bt = el('button', 'btn-s mini no-print', '✎'); bt.title = (l.configuree ? 'Modifier' : 'Configurer') + ' la rotation de ' + l.nom; bt.type = 'button';
         bt.addEventListener('click', function () { Rotation.ouvrir({ titre: 'Rotation de ' + l.nom, email: l.email, valeurs: l.rotation, onOk: charger }); });
         n.appendChild(bt);
       }
       tr.appendChild(n);
-      var e = el('td', 'etat'); var s = l.situation;
-      if (!l.configuree || !s) e.appendChild(el('span', 'pastille N', 'Non configuré'));
-      else if (s.avant) e.appendChild(el('span', 'pastille N', 'Débute le ' + Rotation.frDate(s.debut)));
+      var s = l.situation, et = null;
+      if (!l.configuree || !s) { et = ['Non configuré']; et.libre = true; }
+      else if (s.avant) { et = ['Débute le ' + Rotation.frDate(s.debut)]; et.libre = true; }
       else {
-        e.appendChild(el('span', 'pastille ' + s.statut, s.statut === 'T' ? 'Travail' : 'Repos'));
-        e.appendChild(document.createTextNode(' j' + s.jour + '/' + s.total + ' · ' + s.restants + ' restant' + (s.restants > 1 ? 's' : '') + (s.prochain ? ' · → ' + court(s.prochain.date) : '')));
+        var r = s.restants + ' restant' + (s.restants > 1 ? 's' : '');
+        et = [r, String(s.restants)]; // seulement « 6 restants » dans la bande
       }
-      tr.appendChild(e);
-      var fr = el('td', 'frise'); fr.appendChild(frise(l.grille || '', b.debut, b.jours, px, aujIdx)); tr.appendChild(fr);
+      var fr = el('td', 'frise'); fr.appendChild(frise(l.grille || '', b.debut, b.jours, px, aujIdx, et)); tr.appendChild(fr);
       body.appendChild(tr);
     });
     t.appendChild(body);
@@ -222,13 +230,35 @@
     $('s-imp').textContent = ($('periode').textContent || '') + ' · imprimé le ' + new Date().toLocaleDateString('fr-FR') + (Api.demo ? ' · données fictives' : '');
     window.print();
   });
+  // ---------- Modifier mon planning ----------
+  function bandeauModif(d) {
+    var z = $('bandeau-modif'); z.textContent = '';
+    var x = d && d.derniere; if (!x) return;
+    var jours = Math.round((Date.now() - Date.parse(x.decide_le || x.cree_le)) / 86400000);
+    function boite(txt, cls) { var e = el('div', null, txt); e.style.cssText = 'border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:14px;line-height:1.45;' + cls; z.appendChild(e); }
+    if (x.statut === 'appliquee') {
+      boite('Votre demande de modification n° ' + x.numero + ' (à partir du ' + Rotation.frDate(x.debut) + ') est appliquée à votre planning ; elle attend la décision de votre chef de service, du secrétariat ou du chef de division.', 'background:var(--tint-orange);color:var(--ink-2)');
+      if (x.hors_rotation) boite('⚠ Vous n\'êtes pas rentré dans votre rotation à la fin de ces changements. Ce message reste affiché jusqu\'à la décision d\'un responsable.', 'background:var(--tint-err);color:var(--err);font-weight:600');
+    } else if (x.statut === 'refusee' && jours <= 30) boite('Votre demande n° ' + x.numero + ' a été refusée' + (x.decide_par ? ' par ' + x.decide_par : '') + (x.commentaire ? ' — ' + x.commentaire : '') + ' : votre planning initial est rétabli.', 'background:var(--tint-err);color:var(--err)');
+    else if (x.statut === 'approuvee' && jours <= 14) boite('Votre demande n° ' + x.numero + ' est validée' + (x.decide_par ? ' par ' + x.decide_par : '') + ' et transmise au secrétariat pour application.', 'background:var(--tint-ok);color:var(--ok)');
+  }
+  function moi() { return data && data.lignes.filter(function (l) { return l.moi; })[0]; }
+  function chargerBandeau() {
+    var l = moi(); $('modif-moi').hidden = !l;
+    if (!l || !l.configuree) { bandeauModif(null); return; }
+    Api.call('modif_moi_donnees').then(bandeauModif).catch(function () { bandeauModif(null); });
+  }
+  $('modif-moi').addEventListener('click', function () {
+    var l = moi(); if (!l) return;
+    ModifPlanning.modifierMonPlanning(l.configuree ? l.rotation : null, charger).catch(function (e) { toast(e.message, true); });
+  });
   function charger() {
     var b = bornes();
     return Api.call('planning', { debut: b.debut, jours: b.jours }).then(function (r) {
       if (MOI) { r.lignes = r.lignes.filter(function (l) { return l.moi; }); r.peutVoirTous = false; }
       data = r;
       var chef = r.peutVoirTous; $('barre-filtres').hidden = !chef; $('titre').textContent = chef ? 'Planning & rotations' : 'Mon planning';
-      if (chef) { services(); employeurs(); } dessiner();
+      if (chef) { services(); employeurs(); } dessiner(); chargerBandeau();
     });
   }
   function majVues() { document.querySelectorAll('#vues button').forEach(function (b) { b.classList.toggle('actif', Number(b.dataset.v) === vue); }); }

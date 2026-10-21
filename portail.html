@@ -66,7 +66,7 @@
     <div class="onglets-modules" id="onglets-modules"></div>
   </div>
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
-  <section class="syntheses" id="syntheses"><div class="syn" id="syn-chantiers" hidden></div><div class="syn" id="syn-cpm" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
+  <section class="syntheses" id="syntheses"><div class="syn syn-alerte-modifs" id="syn-modifs" hidden></div><div class="syn" id="syn-chantiers" hidden></div><div class="syn" id="syn-cpm" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
   <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
   <div id="modules"></div>
   <section id="annuaire-zone" class="annuaire-zone" hidden>
@@ -82,6 +82,8 @@
 <script src="js/annuaire.js"></script>
 <script src="js/rotation.js"></script>
 <script src="js/employeurs.js"></script>
+<script src="js/simulation.js"></script>
+<script src="js/modif-planning.js"></script>
 <script src="js/synthese.js"></script>
 <script src="js/boutoninstaller.js"></script>
 <script src="js/rubriques.js"></script>
@@ -201,6 +203,7 @@
 
   function dessiner(r) {
     dessinerFiche(r.user); raccourcis(r.menu); mesApps(r.menu);
+    if (r.menu.some(function (m) { return m.id === 'simulation' && m.niveau >= 2; })) Synthese.monterModifs($('syn-modifs')); // demandes de modification de planning à décider
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
     var groupes = window.Rubriques ? Rubriques.regrouper(r.menu) : r.menu;

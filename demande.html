@@ -85,6 +85,8 @@
     var st = el('div', 'statut ' + d.statut);
     st.textContent = d.statut === 'approuvee' ? 'Demande ' + d.numero + ' APPROUVÉE dans le portail' + (d.decide_par ? ' par ' + d.decide_par : '') + (d.decide_le ? ' le ' + fr(d.decide_le) : '') + (d.commentaire ? ' — ' + d.commentaire : '') + '. Le planning officiel est mis à jour.'
       : d.statut === 'refusee' ? 'Demande ' + d.numero + ' REFUSÉE dans le portail' + (d.decide_par ? ' par ' + d.decide_par : '') + (d.decide_le ? ' le ' + fr(d.decide_le) : '') + (d.commentaire ? ' — ' + d.commentaire : '') + '. Le planning officiel n\'est pas modifié.'
+      : d.statut === 'appliquee' ? 'Demande ' + d.numero + ' APPLIQUÉE au planning, en attente de la décision d\'un responsable. Un refus ramène au planning initial.'
+      : d.statut === 'remplacee' || d.statut === 'annulee' ? 'Demande ' + d.numero + (d.statut === 'annulee' ? ' ANNULÉE' : ' REMPLACÉE par une demande plus récente') + '. Elle n\'a plus d\'effet.'
       : 'Demande ' + d.numero + ' EN ATTENTE de décision dans le portail. Le planning officiel sera mis à jour à l\'approbation.';
     p.appendChild(st);
     p.appendChild(el('div', 'pied-doc', 'Demande n° ' + d.numero + ' — émise par ' + d.emetteur + ' depuis le portail de la Division Infrastructure.'));

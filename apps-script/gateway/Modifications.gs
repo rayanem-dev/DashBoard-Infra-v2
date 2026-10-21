@@ -27,17 +27,21 @@ function simuCible_(u, uid) {
 }
 function simuJson_(v, defaut) { try { return JSON.parse(String(v)); } catch (e) { return defaut; } }
 
-/** Corrections (pointages T/R) des demandes APPROUVÉES de chaque agent : { email: [{ date, statut }] }, appliquées dans l'ordre de décision. */
-function correctionsParEmail_() {
-  var out = {}, l = [];
+/**
+ * Corrections (pointages T/R) de chaque agent : { email: [{ date, statut }] }, dans l'ordre de création des demandes.
+ * Comptent les demandes APPROUVÉES et les demandes « appliquées » (demande de l'agent déjà en vigueur, en attente de décision) ; `approuveesSeulement` : planning officiel validé.
+ * Une demande plus récente remplace les corrections plus anciennes à partir de son premier jour. Refusée, annulée ou remplacée : sans effet (retour au planning initial).
+ */
+function correctionsParEmail_(approuveesSeulement) {
+  var out = {}, l = [], ok = approuveesSeulement ? ['approuvee'] : ['approuvee', 'appliquee'];
   try { l = Store.table('Modifications'); } catch (e) { l = []; }
-  l.filter(function (r) { return String(r.statut) === 'approuvee'; })
-    .sort(function (a, b) { return String(a.decide_le) < String(b.decide_le) ? -1 : 1; })
+  l.filter(function (r) { return ok.indexOf(String(r.statut)) >= 0; })
+    .sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? -1 : String(a.cree_le) > String(b.cree_le) ? 1 : 0; })
     .forEach(function (r) {
       var m = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) };
       if (!Simulation.estDate(m.debut) || !m.periodes.length) return;
       var k = String(r.email).toLowerCase();
-      out[k] = (out[k] || []).concat(Simulation.corrections(m));
+      out[k] = (out[k] || []).filter(function (c) { return c.date < m.debut; }).concat(Simulation.corrections(m));
     });
   return out;
 }
@@ -51,6 +55,7 @@ function soldeDe_(email) {
   return { initial: rot && rot.reliquat !== null ? rot.reliquat : null, solde: solde };
 }
 function correctionsDe_(email) { return correctionsParEmail_()[String(email).toLowerCase()] || []; }
+function correctionsValideesDe_(email) { return correctionsParEmail_(true)[String(email).toLowerCase()] || []; }
 
 function simuAgents_(req) {
   if (typeof preparerSimulation_ === 'function') preparerSimulation_();
@@ -90,8 +95,8 @@ function simuTableaux_(rot, corr, m) {
   var off = Planning.grille(rot, corr, F, n), mod = Simulation.appliquer(off, F, m, rot);
   var du = m.debut; // début de la période en cours la veille de la modification : repère pour le lecteur
   if (du > F) { var c = off.charAt(Simulation.diff(F, du) - 1); var i = Simulation.diff(F, du) - 1; while (i > 0 && off.charAt(i - 1) === c) i -= 1; du = Dates.addDays(F, i); }
-  var rq = Simulation.reliquatDetail(off, mod, F, m);
-  return { actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14), reprise: rep, reliquat: rq.pic, reliquat_net: rq.net };
+  var rq = Simulation.reliquatDetail(off, mod, F, m), retour = Simulation.retour(Planning.grille(rot, [], F, n), mod, F, cy);
+  return { retour: retour, actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14), reprise: rep, reliquat: rq.pic, reliquat_net: rq.net };
 }
 
 function simuNumero_() {
@@ -154,7 +159,18 @@ function simuResume_(r, u) {
   return { numero: String(r.numero), cree_le: String(r.cree_le), agent: Annuaire.nomAffichable(cible.nom, r.email), service: cible.service || '', debut: m.debut,
            reprise_le: m.periodes.length ? Simulation.dateReprise(m) : '', motif: String(r.motif || ''), statut: String(r.statut), emetteur: Annuaire.nomAffichable(emet.nom, r.emetteur),
            decide_par: r.decide_par ? Annuaire.nomAffichable((Store.utilisateur(r.decide_par) || {}).nom, r.decide_par) : '', decide_le: String(r.decide_le || ''), commentaire: String(r.commentaire || ''),
-           peut_decider: String(r.statut) === 'en_attente' && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible) };
+           peut_decider: simuAttend_(r) && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible) && String(r.email).toLowerCase() !== String(u.email).toLowerCase(),
+           hors_rotation: simuAttend_(r) ? simuHorsRotation_(r) : false, par_agent: String(r.email).toLowerCase() === String(r.emetteur).toLowerCase() };
+}
+/** Demande qui attend la décision d'un supérieur : en attente (émise par un responsable) ou appliquée (émise par l'agent lui-même, déjà en vigueur). */
+function simuAttend_(r) { return String(r.statut) === 'en_attente' || String(r.statut) === 'appliquee'; }
+/** La demande ne ramène pas l'agent dans sa rotation habituelle (calculé sur le planning officiel validé). */
+function simuHorsRotation_(r) {
+  try {
+    var rot = rotationDe_(r.email), m = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) };
+    if (!rot || !m.periodes.length) return false;
+    return !simuTableaux_(rot, correctionsValideesDe_(r.email), m).retour.ok;
+  } catch (e) { return false; }
 }
 
 function simuListe_(req) {
@@ -191,15 +207,137 @@ function simuDecider_(req) {
   var r = simuLigne_(req.numero); if (!r) throw new Error('Demande introuvable');
   var cible = Store.utilisateur(r.email) || {};
   if (!simuDansPortee_(u, cible)) throw simuDroits_();
-  if (String(r.statut) !== 'en_attente') throw new Error('Cette demande a déjà été traitée');
+  if (!simuAttend_(r)) throw new Error('Cette demande a déjà été traitée');
+  if (String(r.email).toLowerCase() === String(u.email).toLowerCase()) throw new Error('Vous ne pouvez pas décider de votre propre demande');
   var decision = String(req.decision);
   if (decision !== 'approuvee' && decision !== 'refusee') throw new Error('Décision invalide');
   var com = String(req.commentaire || '').replace(/\s+/g, ' ').trim().slice(0, 200);
-  if (decision === 'approuvee' && !rotationDe_(r.email)) throw new Error('L\'agent n\'a plus de rotation renseignée');
-  Store.maj('Modifications', { numero: String(r.numero) }, { statut: decision, decide_par: u.email, decide_le: new Date().toISOString(), commentaire: com });
+  var rot = rotationDe_(r.email);
+  if (decision === 'approuvee' && !rot) throw new Error('L\'agent n\'a plus de rotation renseignée');
+  var vals = { statut: decision, decide_par: u.email, decide_le: new Date().toISOString(), commentaire: com };
+  if (decision === 'approuvee' && req.modif && Array.isArray(req.modif.periodes) && req.modif.periodes.length) { // le responsable corrige les périodes avant de valider
+    var m = simuModif_(req.modif), err = Simulation.valider(m, rot, Dates.today()); if (err) throw new Error(err);
+    var t = simuTableaux_(rot, correctionsValideesDe_(r.email), m);
+    vals.debut = m.debut; vals.periodes = JSON.stringify(m.periodes); vals.reprise = m.reprise; vals.actuel = JSON.stringify(t.actuel); vals.modifie = JSON.stringify(t.modifie); vals.reliquat = t.reliquat; vals.reliquat_net = t.reliquat_net;
+    vals.commentaire = (com ? com + ' — ' : '') + 'Modifiée par ' + Annuaire.nomAffichable(u.nom, u.email);
+  }
+  Store.maj('Modifications', { numero: String(r.numero) }, vals);
   Store.journal(decision === 'approuvee' ? 'modification_approuvee' : 'modification_refusee', u.email, String(r.numero) + ' ' + r.email);
   var row = simuLigne_(r.numero);
   return { demande: simuResume_(row, u), emails: simuNotifier_(row, decision, u) };
+}
+
+// ---------- Demande de l'agent lui-même (« Modifier mon planning ») ----------
+/** Dernière demande « appliquée » (en vigueur, en attente de décision) de l'agent. */
+function modifEnCours_(email) {
+  var l = Store.table('Modifications').filter(function (r) { return String(r.email).toLowerCase() === String(email).toLowerCase() && String(r.statut) === 'appliquee'; });
+  l.sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? 1 : -1; });
+  return l[0] || null;
+}
+/** Planning d'un agent pour l'écran de modification : officiel validé, avec sa demande en cours, et rotation habituelle (référence du retour à la normale). */
+function modifDonnees_(email, u) {
+  var rot = rotationDe_(email); if (!rot) throw new Error('Renseignez d\'abord votre rotation');
+  var auj = Dates.today(), F = Dates.addDays(auj, -60); if (F < rot.depuis) F = rot.depuis;
+  var n = 420, en = modifEnCours_(email), der = Store.table('Modifications').filter(function (r) { return String(r.email).toLowerCase() === String(email).toLowerCase(); })
+    .sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? 1 : -1; })[0] || null;
+  return { rotation: rot, aujourdhui: auj, debut: F, jours: n,
+           grille_actuelle: Planning.grille(rot, correctionsValideesDe_(email), F, n), grille_demande: Planning.grille(rot, correctionsDe_(email), F, n), grille_normale: Planning.grille(rot, [], F, n),
+           solde: soldeDe_(email).solde, en_cours: en ? simuResume_(en, u) : null, en_cours_modif: en ? { debut: jour_(en.debut), periodes: simuJson_(en.periodes, []), reprise: String(en.reprise) } : null,
+           derniere: der ? simuResume_(der, u) : null };
+}
+function modifMoiDonnees_(req) {
+  var u = Auth.userFromToken(req.token);
+  if ((acces_(u).planning || 0) < 1) throw simuDroits_();
+  return modifDonnees_(u.email, u);
+}
+/** Pour un responsable : les mêmes données, pour l'agent d'une demande qui attend sa décision (il peut la corriger avant de la valider). */
+function modifAgentDonnees_(req) {
+  var u = Auth.userFromToken(req.token);
+  if (simuNiveau_(u) < 2) throw simuDroits_();
+  var r = simuLigne_(req.numero); if (!r) throw new Error('Demande introuvable');
+  if (!simuDansPortee_(u, Store.utilisateur(r.email) || {})) throw simuDroits_();
+  if (!simuAttend_(r)) throw new Error('Cette demande a déjà été traitée');
+  var d = modifDonnees_(r.email, u), c = Store.utilisateur(r.email) || {};
+  d.agent = Annuaire.nomAffichable(c.nom, r.email); d.numero = String(r.numero);
+  d.en_cours_modif = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) };
+  return d;
+}
+/**
+ * « Enregistrer ma demande » : la modification est appliquée tout de suite (visible dans « Mon planning » et le planning global) et attend la décision d'un responsable.
+ * Une nouvelle demande remplace la précédente non encore décidée. Les jours déjà passés ne changent jamais.
+ */
+function modifMoi_(req) {
+  var u = Auth.userFromToken(req.token);
+  if ((acces_(u).planning || 0) < 1) throw simuDroits_();
+  var rot = rotationDe_(u.email); if (!rot) throw new Error('Renseignez d\'abord votre rotation');
+  var auj = Dates.today(), m = simuModif_(req), err = Simulation.valider(m, rot, auj); if (err) throw new Error(err);
+  var motif = String(req.motif || 'Demande de l\'agent').replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (motif.length < 3) throw new Error('Indiquez le motif de la demande');
+  var cy = Number(rot.jours_travail) + Number(rot.jours_repos);
+  var F = Dates.addDays(m.debut, -(cy + 30)); if (F < rot.depuis) F = rot.depuis;
+  var n = Simulation.diff(F, Dates.addDays(Simulation.dateReprise(m), 2 * cy)) + 1;
+  var off = Planning.grille(rot, correctionsValideesDe_(u.email), F, n), mod = Simulation.appliquer(off, F, m, rot), vigueur = Planning.grille(rot, correctionsDe_(u.email), F, n);
+  for (var i = 0; i < n; i += 1) { if (Dates.addDays(F, i) <= auj && mod.charAt(i) !== vigueur.charAt(i)) throw new Error('Les jours déjà passés ne peuvent pas être modifiés : commencez à la prochaine rotation'); }
+  if (mod === off) throw new Error('Aucune modification par rapport à votre planning');
+  var t = simuTableaux_(rot, correctionsValideesDe_(u.email), m);
+  var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
+  if (lock) lock.waitLock(15000);
+  var numero;
+  try {
+    numero = simuNumero_();
+    var en = modifEnCours_(u.email);
+    if (en) Store.maj('Modifications', { numero: String(en.numero) }, { statut: 'remplacee', decide_le: new Date().toISOString(), commentaire: 'Remplacée par ' + numero });
+    Store.maj('Modifications', { numero: numero }, {
+      cree_le: new Date().toISOString(), email: u.email, emetteur: u.email, motif: motif, debut: m.debut, periodes: JSON.stringify(m.periodes), reprise: m.reprise, partenaire: '',
+      actuel: JSON.stringify(t.actuel), modifie: JSON.stringify(t.modifie), statut: 'appliquee', decide_par: '', decide_le: '', commentaire: '', reliquat: t.reliquat, reliquat_net: t.reliquat_net
+    });
+  } finally { if (lock) lock.releaseLock(); }
+  Store.journal('modification_appliquee', u.email, numero + ' du ' + m.debut + (t.retour.ok ? '' : ' (hors rotation)'));
+  var row = simuLigne_(numero);
+  return { numero: numero, statut: 'appliquee', demande: simuDemandeDe_(row), retour: t.retour, hors_rotation: !t.retour.ok, reliquat: t.reliquat, reliquat_net: t.reliquat_net };
+}
+/** Annule la demande en cours de l'agent (retour au planning validé). */
+function modifMoiAnnuler_(req) {
+  var u = Auth.userFromToken(req.token);
+  var en = modifEnCours_(u.email); if (!en) throw new Error('Aucune demande en cours');
+  Store.maj('Modifications', { numero: String(en.numero) }, { statut: 'annulee', decide_le: new Date().toISOString(), commentaire: 'Annulée par l\'agent' });
+  Store.journal('modification_annulee', u.email, String(en.numero));
+  return { numero: String(en.numero) };
+}
+
+/** Alertes de la page d'accueil : demandes qui attendent la décision du chef de service (son service), du secrétariat ou du chef de division (tous). */
+function modifAlertes_(req) {
+  var u = Auth.userFromToken(req.token), niv = simuNiveau_(u);
+  if (niv < 2) return { niveau: niv, alertes: [] };
+  var l = [];
+  try { l = Store.table('Modifications'); } catch (e) { l = []; }
+  var alertes = l.filter(function (r) { return simuAttend_(r) && String(r.email).toLowerCase() !== String(u.email).toLowerCase() && simuDansPortee_(u, Store.utilisateur(r.email) || {}); })
+    .sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? 1 : -1; }).slice(0, 50)
+    .map(function (r) { return simuResume_(r, u); });
+  alertes.sort(function (a, b) { return (b.hors_rotation ? 1 : 0) - (a.hors_rotation ? 1 : 0); });
+  return { niveau: niv, alertes: alertes };
+}
+
+/** Envoi par e-mail d'une demande (clic de l'agent ou du responsable) : cases secrétariat / chef de service / chef de division. */
+function simuEnvoyer_(req) {
+  var u = Auth.userFromToken(req.token);
+  var r = simuLigne_(req.numero); if (!r) throw new Error('Demande introuvable');
+  var cible = Store.utilisateur(r.email) || {}, moi = String(u.email).toLowerCase();
+  var ok = String(r.email).toLowerCase() === moi || String(r.emetteur).toLowerCase() === moi || (simuNiveau_(u) >= 2 && simuDansPortee_(u, cible));
+  if (!ok) throw simuDroits_();
+  var cases = req.destinataires || {}, dest = {};
+  Store.table('Utilisateurs').forEach(function (x) {
+    if (String(x.actif) === '0' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x.email || ''))) return;
+    var role = Droits.roleCanon(x.role);
+    if ((cases.secretariat && role === 'secretariat') || (cases.chef_division && role === 'chef_division') ||
+        (cases.chef_service && role === 'chef_service' && !!simuNorm_(x.service) && simuNorm_(x.service) === simuNorm_(cible.service))) dest[String(x.email).toLowerCase()] = true;
+  });
+  var liste = Object.keys(dest);
+  if (!liste.length) throw new Error('Cochez au moins un destinataire (ou aucune adresse trouvée)');
+  var d = simuDemandeDe_(r), site = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/';
+  Mail.envoyerDemande(liste, d, req.pour_information ? 'Demande de modification de planning (pour information)' : 'Demande de modification de planning (pour décision)', site + 'demande.html?n=' + encodeURIComponent(d.numero), Annuaire.nomAffichable(u.nom, u.email));
+  Store.journal('modification_envoyee', u.email, String(r.numero) + ' → ' + liste.length + ' destinataire(s)');
+  return { emails: liste.length };
 }
 
 // ---------- E-mails ----------

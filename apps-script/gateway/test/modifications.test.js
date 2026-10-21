@@ -152,3 +152,81 @@ test('reliquat initial : saisie validée, présent dans la situation ; solde = i
   appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'approuvee' });
   assert.strictEqual(appel(m, 'simuDonnees_', 'chef.div@x.dz', { uid: 'u3', debut: '2026-09-01', jours: 200 }).solde, 12 + Number(row.reliquat_net));
 });
+
+// ---------- « Modifier mon planning » : demande de l'agent, appliquée tout de suite, décision d'un responsable ----------
+const ALIGNE = { debut: '2026-10-27', periodes: [{ type: 'T', jours: 14 }, { type: 'R', jours: 42 }], reprise: 'T', motif: 'Raison perso' };
+const DECALE = { debut: '2026-10-27', periodes: [{ type: 'T', jours: 14 }, { type: 'R', jours: 35 }], reprise: 'T', motif: 'Raison perso' };
+const gA = m => appel(m, 'planning_', 'chef.div@x.dz', { debut: '2026-09-01', jours: 200 }).lignes.find(l => l.nom === 'MARTIN ALAIN').grille;
+
+test('demande de l\'agent : appliquée tout de suite, sans e-mail, retour à la rotation contrôlé', () => {
+  const m = monde(), avant = gA(m);
+  const d0 = appel(m, 'modifMoiDonnees_', 'agent.a@x.dz', {});
+  assert.strictEqual(d0.en_cours, null); assert.strictEqual(d0.grille_actuelle, d0.grille_demande);
+  const r = appel(m, 'modifMoi_', 'agent.a@x.dz', ALIGNE);
+  assert.strictEqual(r.statut, 'appliquee'); assert.strictEqual(r.hors_rotation, false); assert.strictEqual(r.retour.ok, true);
+  assert.strictEqual(m.mails.length, 0, 'aucun e-mail à l\'enregistrement');
+  assert.notStrictEqual(gA(m), avant, 'visible tout de suite dans le planning global');
+  assert.strictEqual(appel(m, 'planning_', 'agent.a@x.dz', { debut: '2026-09-01', jours: 200 }).lignes[0].grille, gA(m), 'et dans son propre planning');
+  const d1 = appel(m, 'modifMoiDonnees_', 'agent.a@x.dz', {});
+  assert.strictEqual(d1.en_cours.numero, r.numero); assert.strictEqual(d1.grille_actuelle.slice(0, 200), avant, 'le planning validé ne change pas'); assert.notStrictEqual(d1.grille_demande.slice(0, 200), avant);
+  const h = appel(m, 'modifMoi_', 'agent.a@x.dz', DECALE);
+  assert.strictEqual(h.hors_rotation, true); assert.strictEqual(m.tables.Modifications.find(x => x.numero === r.numero).statut, 'remplacee', 'une nouvelle demande remplace la précédente');
+});
+
+test('demande de l\'agent : jours passés intouchables, sans changement refusé, droits', () => {
+  const m = monde();
+  assert.throws(() => appel(m, 'modifMoi_', 'agent.a@x.dz', Object.assign({}, ALIGNE, { debut: '2026-10-05', periodes: [{ type: 'T', jours: 20 }], reprise: 'R' })), /déjà passés/);
+  assert.throws(() => appel(m, 'modifMoi_', 'agent.a@x.dz', Object.assign({}, ALIGNE, { periodes: [{ type: 'T', jours: 28 }], reprise: 'R' })), /Aucune modification/);
+  assert.throws(() => appel(m, 'modifMoi_', 'agent.a@x.dz', Object.assign({}, ALIGNE, { motif: 'x' })), /motif/);
+  assert.strictEqual(m.tables.Modifications.length, 0);
+});
+
+test('décision : refus = retour au planning initial ; acceptation = validé, reliquat mis à jour, e-mail automatique au secrétariat', () => {
+  const m = monde(), avant = gA(m);
+  const { numero } = appel(m, 'modifMoi_', 'agent.a@x.dz', DECALE);
+  assert.throws(() => appel(m, 'simuDecider_', 'agent.a@x.dz', { numero, decision: 'approuvee' }), /Droits/);
+  assert.throws(() => appel(m, 'simuDecider_', 'chef.s2@x.dz', { numero, decision: 'approuvee' }), /Droits/);
+  appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'refusee', commentaire: 'Non' });
+  assert.strictEqual(gA(m), avant, 'refus : retour au planning initial');
+  const n2 = appel(m, 'modifMoi_', 'agent.a@x.dz', DECALE).numero;
+  const soldeAvant = appel(m, 'modifMoiDonnees_', 'agent.a@x.dz', {}).solde, mails = m.mails.length;
+  const grille = gA(m);
+  appel(m, 'simuDecider_', 'secretaire@x.dz', { numero: n2, decision: 'approuvee' });
+  assert.strictEqual(gA(m), grille, 'validée : le planning reste appliqué');
+  assert.ok(m.mails.length > mails && m.mails[m.mails.length - 1].to.split(',').includes('secretaire@x.dz'), 'envoyé automatiquement au secrétariat');
+  const d = appel(m, 'modifMoiDonnees_', 'agent.a@x.dz', {});
+  assert.strictEqual(d.en_cours, null); assert.notStrictEqual(d.solde, soldeAvant, 'le reliquat est modifié à la validation');
+});
+
+test('alertes de l\'accueil : chef de service (son service), secrétariat et chef de division ; message en plus hors rotation ; on ne décide pas de sa propre demande', () => {
+  const m = monde(); m.tables.Rotations.push({ email: 'chef.s1@x.dz', statut: 'T', depuis: '2026-09-01', jours_travail: 28, jours_repos: 28 });
+  const ok = appel(m, 'modifMoi_', 'agent.a@x.dz', ALIGNE), hors = appel(m, 'modifMoi_', 'chef.s1@x.dz', DECALE);
+  const al = t => appel(m, 'modifAlertes_', t, {}).alertes;
+  assert.deepStrictEqual(al('chef.s1@x.dz').map(a => a.numero), [ok.numero], 'pas sa propre demande');
+  assert.strictEqual(al('chef.s2@x.dz').length, 0); assert.strictEqual(al('agent.a@x.dz').length, 0);
+  assert.strictEqual(al('chef.div@x.dz').length, 2); assert.strictEqual(al('secretaire@x.dz').length, 2);
+  assert.strictEqual(al('chef.div@x.dz')[0].numero, hors.numero); assert.strictEqual(al('chef.div@x.dz')[0].hors_rotation, true); assert.strictEqual(al('chef.div@x.dz')[1].hors_rotation, false);
+  assert.throws(() => appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero: hors.numero, decision: 'approuvee' }), /propre demande/);
+  appel(m, 'simuDecider_', 'chef.div@x.dz', { numero: hors.numero, decision: 'approuvee' });
+  assert.strictEqual(al('chef.div@x.dz').length, 1, 'une fois décidée, l\'alerte disparaît');
+});
+
+test('envoi par e-mail : cases à cocher, seulement au clic, réservé à l\'agent et à sa portée', () => {
+  const m = monde(), { numero } = appel(m, 'modifMoi_', 'agent.a@x.dz', ALIGNE);
+  assert.throws(() => appel(m, 'simuEnvoyer_', 'agent.a@x.dz', { numero, destinataires: {} }), /Cochez/);
+  assert.throws(() => appel(m, 'simuEnvoyer_', 'agent.b@x.dz', { numero, destinataires: { secretariat: true } }), /Droits/);
+  appel(m, 'simuEnvoyer_', 'agent.a@x.dz', { numero, destinataires: { secretariat: true, chef_service: true } });
+  assert.deepStrictEqual(m.mails[0].to.split(',').sort(), ['chef.s1@x.dz', 'secretaire@x.dz']);
+});
+
+test('le responsable corrige la demande de l\'agent avant de la valider', () => {
+  const m = monde(), { numero } = appel(m, 'modifMoi_', 'agent.a@x.dz', DECALE);
+  assert.throws(() => appel(m, 'modifAgentDonnees_', 'agent.a@x.dz', { numero }), /Droits/);
+  assert.throws(() => appel(m, 'modifAgentDonnees_', 'chef.s2@x.dz', { numero }), /Droits/);
+  const d = appel(m, 'modifAgentDonnees_', 'chef.s1@x.dz', { numero });
+  assert.strictEqual(d.agent, 'MARTIN ALAIN'); assert.strictEqual(d.en_cours_modif.periodes[1].jours, 35);
+  const r = appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'approuvee', modif: ALIGNE });
+  assert.strictEqual(r.demande.statut, 'approuvee'); assert.strictEqual(r.demande.hors_rotation, false);
+  const ligne = m.tables.Modifications.find(x => x.numero === numero);
+  assert.strictEqual(JSON.parse(ligne.periodes)[1].jours, 42); assert.match(ligne.commentaire, /Modifiée par/);
+});

@@ -199,6 +199,46 @@ var Synthese = (function () {
       var ul = el('ul', 'syn-puces'); w.evenements.forEach(function (e) { ul.appendChild(avecGras(el('li'), phrase(e))); }); zone.appendChild(ul);
     });
   }
+
+  // ---------- alertes de l'accueil : demandes de modification de planning qui attendent une décision ----------
+  function fr2(iso) { return iso ? String(iso).slice(8, 10) + '/' + String(iso).slice(5, 7) + '/' + String(iso).slice(0, 4) : ''; }
+  function monterModifs(zone) {
+    return Api.call('modif_alertes').then(function (r) {
+      var l = (r && r.alertes) || []; if (!l.length) { zone.hidden = true; return; }
+      var sub = panneau(zone, '🔔', 'Demandes de modification de planning', null, [['Toutes les demandes', 'simulation.html']]);
+      sub.textContent = l.length + ' demande' + (l.length > 1 ? 's' : '') + ' en attente de décision — déjà appliquée' + (l.length > 1 ? 's' : '') + ' au planning de l\'agent ; un refus rétablit son planning initial';
+      var ul = el('ul', 'syn-puces syn-modifs');
+      l.forEach(function (a) {
+        var li = el('li', a.hors_rotation ? 'syn-hors' : '');
+        var t = el('div'); t.appendChild(el('strong', null, a.agent)); t.appendChild(document.createTextNode(' — ' + (a.service || '') + ' · à partir du ' + fr2(a.debut) + ' · ' + (a.motif || '')));
+        li.appendChild(t);
+        if (a.hors_rotation) li.appendChild(el('div', 'syn-alerte', '⚠ Cet agent n\'est pas rentré dans sa rotation à la fin de ses changements.'));
+        var b = el('div', 'syn-actions');
+        function bt(txt, fn, cls) { var x = el('button', cls || 'syn-actu', txt); x.type = 'button'; x.onclick = fn; b.appendChild(x); return x; }
+        var voir = el('a', 'syn-actu', 'Voir'); voir.href = 'demande.html?n=' + encodeURIComponent(a.numero); voir.target = '_blank'; voir.rel = 'noopener'; b.appendChild(voir);
+        if (a.peut_decider) {
+          bt('Modifier', function () { Api.call('modif_agent_donnees', { numero: a.numero }).then(function (d) { ModifPlanning.ouvrir({ donnees: d, mode: 'chef', numero: a.numero, titre: 'Demande ' + a.numero + ' — ' + a.agent, onChange: function () { monterModifs(zone); } }); }).catch(function (e) { alert(e.message); }); });
+          bt('Valider', function () { decider(a, 'approuvee'); });
+          bt('Refuser', function () { decider(a, 'refusee'); });
+        }
+        bt('Envoyer…', function () { envoyer(a); });
+        li.appendChild(b); ul.appendChild(li);
+      });
+      zone.appendChild(ul);
+    }).catch(function () { zone.hidden = true; });
+    function decider(a, decision) {
+      var com = decision === 'refusee' ? prompt('Motif du refus (facultatif) :', '') : '';
+      if (com === null) return;
+      if (decision === 'approuvee' && !confirm('Valider la demande de ' + a.agent + ' ? Elle sera enregistrée pour de bon et envoyée au secrétariat pour application.')) return;
+      Api.call('simu_decider', { numero: a.numero, decision: decision, commentaire: com || '' }).then(function () { monterModifs(zone); }).catch(function (e) { alert(e.message); });
+    }
+    function envoyer(a) {
+      var secr = confirm('Envoyer cette demande par e-mail au secrétariat (pour information) ?\nOK = secrétariat · Annuler = choisir un autre destinataire');
+      var dest = secr ? { secretariat: true } : (confirm('Envoyer au chef de division ?\nOK = chef de division · Annuler = ne rien envoyer') ? { chef_division: true } : null);
+      if (!dest) return;
+      Api.call('simu_envoyer', { numero: a.numero, destinataires: dest, pour_information: !!dest.secretariat }).then(function (x) { alert('E-mail envoyé à ' + x.emails + ' personne(s).'); }).catch(function (e) { alert(e.message); });
+    }
+  }
   function monterJournal(zone) {
     var sub = panneau(zone, '🕘', 'Le journal des changements du CPM', null, [['Tout voir', 'Dossiers_CPM.html#journal']]);
     // Bouton « Actualiser » : relit le suivi CPM maintenant (au lieu d'attendre l'instantané de la nuit), puis réaffiche le journal
@@ -227,6 +267,6 @@ var Synthese = (function () {
     }).catch(function (e) { sub.textContent = 'Données indisponibles pour l\'instant' + (e && e.message ? ' — ' + e.message : ''); });
   }
 
-  return { groupeRapport: groupeRapport, ligneRapport: ligneRapport, rapportSemaine: rapportSemaine, htmlObs: htmlObs, texteObs: texteObs, debutSemaine: debutSemaine, semaines: semaines, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
+  return { groupeRapport: groupeRapport, ligneRapport: ligneRapport, rapportSemaine: rapportSemaine, htmlObs: htmlObs, texteObs: texteObs, debutSemaine: debutSemaine, semaines: semaines, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, monterModifs: monterModifs, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
 })();
 if (typeof module !== 'undefined') module.exports = Synthese;

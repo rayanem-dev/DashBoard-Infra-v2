@@ -56,7 +56,7 @@
   table.dem th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1.5px solid var(--border); }
   table.dem td { padding: 9px 10px; border-bottom: 1px solid #F1F3F5; vertical-align: top; }
   .st { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; }
-  .st.en_attente { background: #FEF3C7; color: #92400E; } .st.approuvee { background: #DCFCE7; color: #166534; } .st.refusee { background: #FEE2E2; color: #991B1B; }
+  .st.appliquee, .st.en_attente { background: #FEF3C7; color: #92400E; } .st.approuvee { background: #DCFCE7; color: #166534; } .st.refusee { background: #FEE2E2; color: #991B1B; }
   .succes { background: var(--tint-ok); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
   @media (max-width: 720px) { .periode { grid-template-columns: 1fr 80px auto; } .periode .dates { grid-column: 1 / -1; order: 5; } }
 .sous-bloc { border-left: 4px solid var(--c-R); padding-left: 14px; margin-top: 14px; }
@@ -388,7 +388,7 @@
   }
 
   // ---------- Demandes ----------
-  var LIB = { en_attente: 'En attente', approuvee: 'Approuvée', refusee: 'Refusée' };
+  var LIB = { en_attente: 'En attente', appliquee: 'Appliquée, à décider', approuvee: 'Approuvée', refusee: 'Refusée', remplacee: 'Remplacée', annulee: 'Annulée' };
   function dialogue(titre, approuver, numero) {
     var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
     f.appendChild(el('h2', null, titre)); var w = el('div', 'champ'); w.appendChild(el('label', null, 'Commentaire (facultatif)'));
@@ -410,7 +410,7 @@
       var b = el('tbody'); var att = 0;
       if (!r.demandes.length) { var tr0 = el('tr'); var td0 = el('td', null, 'Aucune demande pour le moment.'); td0.colSpan = 7; tr0.appendChild(td0); b.appendChild(tr0); }
       r.demandes.forEach(function (d) {
-        if (d.statut === 'en_attente') att += 1;
+        if (d.statut === 'en_attente' || d.statut === 'appliquee') att += 1;
         var tr = el('tr'); tr.appendChild(el('td', null, d.numero)); var a = el('td'); a.appendChild(el('b', null, d.agent)); a.appendChild(el('div', 'aide', d.service)); tr.appendChild(a);
         tr.appendChild(el('td', null, fr(d.debut))); tr.appendChild(el('td', null, d.motif)); tr.appendChild(el('td', null, d.emetteur));
         var s = el('td'); s.appendChild(el('span', 'st ' + d.statut, LIB[d.statut] || d.statut)); if (d.decide_par) s.appendChild(el('div', 'aide', 'par ' + d.decide_par + (d.commentaire ? ' — ' + d.commentaire : ''))); tr.appendChild(s);

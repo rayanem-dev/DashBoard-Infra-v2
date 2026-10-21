@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-23-19",
+    "date": "2026-10-23",
+    "title": "Version 5.27.0 — Modifier mon planning",
+    "changes": [
+      "Planning : bouton « Modifier mon planning ». Sans planning enregistré : la petite fenêtre « Où en êtes-vous ? » ; sinon le tableau « Planning actuel / Planning modifié » où l'agent règle la durée de ses prochaines rotations (14, 35, 28…) et les dates se recalculent. La demande est appliquée tout de suite (mon planning et planning global), sans e-mail ; envoi facultatif au chef de service, au secrétariat ou au chef de division (cases à cocher).",
+      "Contrôle du retour à la rotation : si l'agent n'est pas rentré dans sa rotation à la fin de ses changements, un message reste affiché jusqu'à la décision d'un responsable. L'écart de jours est affiché ; le reliquat est modifié à la validation.",
+      "Décision : le chef de service de l'agent, le secrétariat ou le chef de division peut valider, corriger puis valider, ou refuser (retour au planning initial). Une validation est envoyée automatiquement au secrétariat. Ils sont alertés sur leur page d'accueil (message en plus pour qui sort de sa rotation).",
+      "Planning : lignes compactes (fonction et service au survol du nom), « 6 restants » écrit dans la bande du jour, impression PDF paysage en marges réduites et pleine largeur."
+    ]
+  },
+  {
     "id": "2026-10-23-18",
     "date": "2026-10-23",
     "title": "Version 5.26.3 — Renommage : titres et dates",
