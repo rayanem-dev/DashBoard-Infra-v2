@@ -33,8 +33,8 @@
   .page table { border-collapse: collapse; width: 100%; table-layout: fixed; } .page th, .page td { border: 1px solid #000; padding: 0 1.5mm; font-size: 8.5pt; height: 9.4mm; overflow: hidden; }
   .page th { text-align: center; font-weight: 700; height: 6mm; } .page td.n { width: 46mm; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; } .page td.f { width: 54mm; white-space: nowrap; text-overflow: ellipsis; font-size: 8pt; }
   /* Matin : orange Sonatrach adouci ; après-midi : bleu Sonatrach adouci — on reconnaît la page au premier regard */
-  .page .periode { display: flex; align-items: center; justify-content: space-between; margin: -8mm -10mm 4mm; padding: 4mm 10mm; border-bottom: 2.2mm solid var(--acc); background: var(--ban); }
-  .page .periode b { font-size: 24pt; letter-spacing: 3px; color: var(--acc); } .page .periode span { font-weight: 700; font-size: 11pt; color: var(--acc); }
+  .page .periode { display: flex; align-items: center; justify-content: space-between; margin: -8mm -10mm 3mm; padding: 3mm 10mm; border-bottom: 2.2mm solid var(--acc); background: var(--ban); }
+  .page .periode img { height: 16mm; margin-right: 4mm; } .page .periode .ent { font-size: 8pt; font-weight: 700; line-height: 1.35; color: #222; flex: 1; } .page .periode b { text-align: center; flex: 1; font-size: 26pt; letter-spacing: 3px; color: var(--acc); } .page .periode span { flex: 1; text-align: right; font-weight: 700; font-size: 11pt; color: var(--acc); }
   .page.matin { --acc: #C2641A; --ban: #FBE6D3; --ent: #F5CFAE; --lig: #FFF7F0; } .page.soir { --acc: #1D4E89; --ban: #DCE8F5; --ent: #B9CDE5; --lig: #F4F8FD; }
   .page th { background: var(--ent); } .page td.n, .page td.f { background: var(--lig); } .page td.c { background: #fff; } .page tbody tr:nth-child(even) td.c { background: var(--lig); } .page table, .page th, .page td { border-color: var(--acc); }
   .page td.c { text-align: center; font-size: 11pt; font-weight: 700; cursor: pointer; } .page td.c:hover { background: #FFF1E6; }
@@ -144,9 +144,9 @@
       eff.forEach(function (g) {
         var lignes = g.l.filter(function (x) { return x.actif; });
         if (!lignes.length) return;
-        html += '<div class="page ' + per.cls + '"><div class="periode"><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
+        html += '<div class="page ' + per.cls + '"><div class="periode"><img src="badges/logo-sonatrach.png" alt="Sonatrach"><div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure</div><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
           '<div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
-          '<table><colgroup><col style="width:58mm"><col style="width:58mm">' + jours.map(function () { return '<col>'; }).join('') + '</colgroup><thead><tr><th>Nom et Prénom</th><th>Fonction</th>' +
+          '<table><colgroup><col style="width:52mm"><col style="width:68mm">' + jours.map(function () { return '<col>'; }).join('') + '</colgroup><thead><tr><th>Nom et Prénom</th><th>Fonction</th>' +
           jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
           lignes.map(function (x) {
             var a = affiche(x);

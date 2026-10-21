@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-51",
+    "date": "2026-10-23",
+    "title": "Version 5.32.4 — Pointage : en-tête de la division",
+    "changes": [
+      "Feuille de pointage : l'en-tête de chaque page reprend le logo Sonatrach et « Activité Exploration - Production / Division Production / Direction Régionale Rhourde Nouss / Division Infrastructure », avec MATIN ou APRÈS-MIDI au centre et le mois à droite."
+    ]
+  },
+  {
     "id": "2026-10-23-50",
     "date": "2026-10-23",
     "title": "Version 5.32.3 — Pointage : pages remplies",
