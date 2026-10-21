@@ -238,6 +238,10 @@
     function boite(txt, cls) { var e = el('div', null, txt); e.style.cssText = 'border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:14px;line-height:1.45;' + cls; z.appendChild(e); }
     if (x.statut === 'appliquee') {
       boite('Votre demande de modification n° ' + x.numero + ' (à partir du ' + Rotation.frDate(x.debut) + ') est appliquée à votre planning ; elle attend la décision de votre chef de service, du secrétariat ou du chef de division.', 'background:var(--tint-orange);color:var(--ink-2)');
+      var ann = el('button', 'btn-s', 'Annuler ma demande (retour à mon planning initial)'); ann.type = 'button'; ann.style.marginBottom = '10px';
+      ann.addEventListener('click', function () { if (!confirm('Annuler votre demande n° ' + x.numero + ' ? Votre planning initial sera rétabli.')) return; ann.disabled = true;
+        Api.call('modif_moi_annuler').then(function () { toast('Demande annulée : planning initial rétabli.'); charger(); }).catch(function (e) { ann.disabled = false; toast(e.message, true); }); });
+      z.appendChild(ann);
       if (x.hors_rotation) boite('⚠ Vous n\'êtes pas rentré dans votre rotation à la fin de ces changements. Ce message reste affiché jusqu\'à la décision d\'un responsable.', 'background:var(--tint-err);color:var(--err);font-weight:600');
     } else if (x.statut === 'refusee' && jours <= 30) boite('Votre demande n° ' + x.numero + ' a été refusée' + (x.decide_par ? ' par ' + x.decide_par : '') + (x.commentaire ? ' — ' + x.commentaire : '') + ' : votre planning initial est rétabli.', 'background:var(--tint-err);color:var(--err)');
     else if (x.statut === 'approuvee' && jours <= 14) boite('Votre demande n° ' + x.numero + ' est validée' + (x.decide_par ? ' par ' + x.decide_par : '') + ' et transmise au secrétariat pour application.', 'background:var(--tint-ok);color:var(--ok)');

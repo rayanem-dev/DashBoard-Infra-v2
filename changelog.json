@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-20",
+    "date": "2026-10-23",
+    "title": "Version 5.27.1 — Annuler sa demande de modification",
+    "changes": [
+      "L'agent peut annuler sa demande de modification (en cas d'erreur) et retrouver son planning initial, tant qu'elle n'est pas approuvée : bouton dans le message de la page Planning, dans l'écran de modification et après l'enregistrement."
+    ]
+  },
+  {
     "id": "2026-10-23-19",
     "date": "2026-10-23",
     "title": "Version 5.27.0 — Modifier mon planning",

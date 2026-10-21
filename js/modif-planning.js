@@ -117,7 +117,7 @@
     function suite(r) {
       f.textContent = '';
       f.appendChild(el('h2', null, 'Demande enregistrée'));
-      f.appendChild(el('div', 'info ok', '✓ Votre demande n° ' + r.numero + ' est appliquée : elle est visible dans votre planning et dans le planning global. Elle attend la décision de votre chef de service, du secrétariat ou du chef de division ; un refus ramène votre planning initial.'));
+      f.appendChild(el('div', 'info ok', '✓ Votre demande n° ' + r.numero + ' est appliquée : elle est visible dans votre planning et dans le planning global. Elle attend la décision de votre chef de service, du secrétariat ou du chef de division ; un refus ramène votre planning initial. Vous pouvez l\'annuler vous-même tant qu\'elle n\'est pas approuvée.'));
       if (r.hors_rotation) f.appendChild(el('div', 'info alerte', '⚠ Vous n\'êtes pas rentré dans votre rotation à la fin de ces changements : un message reste affiché jusqu\'à la décision d\'un responsable.'));
       f.appendChild(el('h3', null, 'Envoyer par e-mail (facultatif)'));
       var mails = el('div', 'mails'), cases = {};
@@ -128,6 +128,8 @@
       var m2 = el('div', 'msg'); m2.setAttribute('role', 'alert'); f.appendChild(m2);
       var b = el('div', 'boutons'), envoi = el('button', 'btn', 'Envoyer par e-mail'); envoi.type = 'button';
       var voir = el('a', 'btn-s', 'Voir le document'); voir.href = 'demande.html?n=' + encodeURIComponent(r.numero); voir.target = '_blank'; voir.rel = 'noopener'; voir.style.cssText = 'display:inline-flex;align-items:center;text-decoration:none';
+      var ann2 = el('button', 'btn-s', 'Annuler ma demande'); ann2.type = 'button'; ann2.title = 'En cas d\'erreur : retour à votre planning initial';
+      ann2.addEventListener('click', function () { ann2.disabled = true; Api.call('modif_moi_annuler').then(function (x) { if (options.onChange) options.onChange(x); dlg.close(); }).catch(function (err) { m2.textContent = err.message; m2.className = 'msg err'; ann2.disabled = false; }); });
       var fin = el('button', 'btn-s', 'Terminer'); fin.type = 'button'; fin.addEventListener('click', function () { dlg.close(); });
       envoi.addEventListener('click', function () {
         envoi.disabled = true; m2.className = 'msg';
@@ -135,7 +137,7 @@
           .then(function (x) { m2.textContent = 'E-mail envoyé à ' + x.emails + ' personne' + (x.emails > 1 ? 's' : '') + '.'; m2.className = 'msg ok'; envoi.disabled = false; })
           .catch(function (err) { m2.textContent = err.message; m2.className = 'msg err'; envoi.disabled = false; });
       });
-      b.appendChild(envoi); b.appendChild(voir); b.appendChild(fin); f.appendChild(b);
+      b.appendChild(envoi); b.appendChild(voir); b.appendChild(ann2); b.appendChild(fin); f.appendChild(b);
     }
     dlg.addEventListener('close', function () { dlg.remove(); });
     dlg.appendChild(f); document.body.appendChild(dlg);

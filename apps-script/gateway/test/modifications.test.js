@@ -230,3 +230,15 @@ test('le responsable corrige la demande de l\'agent avant de la valider', () => 
   const ligne = m.tables.Modifications.find(x => x.numero === numero);
   assert.strictEqual(JSON.parse(ligne.periodes)[1].jours, 42); assert.match(ligne.commentaire, /Modifiée par/);
 });
+
+test('annulation par l\'agent : retour au planning initial tant que la demande n\'est pas approuvée', () => {
+  const m = monde(), avant = gA(m);
+  appel(m, 'modifMoi_', 'agent.a@x.dz', ALIGNE);
+  assert.notStrictEqual(gA(m), avant);
+  appel(m, 'modifMoiAnnuler_', 'agent.a@x.dz', {});
+  assert.strictEqual(gA(m), avant); assert.strictEqual(appel(m, 'modifAlertes_', 'chef.s1@x.dz', {}).alertes.length, 0);
+  assert.throws(() => appel(m, 'modifMoiAnnuler_', 'agent.a@x.dz', {}), /Aucune demande en cours/);
+  const { numero } = appel(m, 'modifMoi_', 'agent.a@x.dz', ALIGNE);
+  appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'approuvee' });
+  assert.throws(() => appel(m, 'modifMoiAnnuler_', 'agent.a@x.dz', {}), /Aucune demande en cours/, 'approuvée : plus annulable par l\'agent');
+});
