@@ -51,6 +51,7 @@
         { titre: 'Organigramme — Division Infrastructure', description: 'Structure de la division, à jour avec BDDORGA : services, responsables, employeurs, téléphones.', emoji: '🏢', url: 'Organigramme.html' },
         { titre: 'Documents administratifs', description: 'Ordres de mission, prêts, mutations, primes… : formulaires préremplis, prêts à imprimer.', emoji: '📄', url: 'documents.html' },
         { titre: 'Renommage de documents', description: 'Renomme les PDF, JPG et scans (type, agent, date) et apprend de vos corrections.', emoji: '🏷️', url: 'renommage.html' },
+        { titre: 'Autorisation GAZ-OIL', description: 'Autorisation d\'approvisionnement en GAZ-OIL (fûts de 200 L), imprimable en un clic.', emoji: '⛽', url: 'autorisation-gazoil.html' },
         { titre: 'Ordre de travail', description: 'Ordre de travail de la division, imprimable en un clic, avec historique.', emoji: '🛠', url: 'ordre-travail.html' },
         { titre: 'Repas à emporter', description: 'Prise en charge repas à emporter prête à imprimer, avec historique.', emoji: '🥡', url: 'repas-emporter.html' } ] },
       { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [

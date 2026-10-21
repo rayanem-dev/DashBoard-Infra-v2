@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-37",
+    "date": "2026-10-23",
+    "title": "Version 5.30.0 — Autorisation GAZ-OIL",
+    "changes": [
+      "Nouvelle application « Autorisation GAZ-OIL » (module Logistique) : lettre d'autorisation d'approvisionnement en GAZ-OIL en fûts. La quantité en litres est divisée automatiquement en fûts de 200 L (400 L = 2 fûts de 200 L ; 500 L = 2 fûts de 200 L et 1 fût de 100 L). Impression en un clic, historique sur l'ordinateur."
+    ]
+  },
+  {
     "id": "2026-10-23-36",
     "date": "2026-10-23",
     "title": "Version 5.29.5 — Reliquat sur l'accueil",

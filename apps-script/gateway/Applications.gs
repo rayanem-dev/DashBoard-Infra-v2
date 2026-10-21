@@ -109,6 +109,14 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Autorisation GAZ-OIL",
+  "Autorisation d'approvisionnement en GAZ-OIL (fûts) pour une entreprise : la quantité en litres est divisée en fûts de 200 L automatiquement ; impression en un clic et historique.",
+  "⛽",
+  "autorisation-gazoil.html",
+  1
+ ],
+ [
+  "logistique",
   "Ordre de travail",
   "Ordre de travail de la division (Division, Lieu et Imputation de l'Infrastructure par défaut, modifiables) : équipement, description, pièces de rechange, agents intervenants, approbations ; impression en un clic et historique.",
   "🛠",
