@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-33",
+    "date": "2026-10-23",
+    "title": "Version 5.29.2 — Historique des prises en charge plus lisible",
+    "changes": [
+      "Historique des prises en charge : pour chaque demande, le contrat et l'entreprise (ex. « 43.INFRA.25 - ENCC SPA UNITE HAMIZ ») en titre, puis directement les agents saisis avec nom, prénom, matricule du véhicule et véhicule."
+    ]
+  },
+  {
     "id": "2026-10-23-32",
     "date": "2026-10-23",
     "title": "Version 5.29.1 — Déploiement de la fiche d'évaluation",

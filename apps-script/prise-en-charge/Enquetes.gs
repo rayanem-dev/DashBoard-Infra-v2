@@ -409,7 +409,7 @@ function pecGrouper_(valeurs, limite) {
     if (!r[0]) return;
     var date = r[0] instanceof Date ? Utilities.formatDate(r[0], 'Africa/Algiers', 'yyyy-MM-dd HH:mm') : String(r[0]), cle = date + '|' + r[1];
     if (!par[cle]) { par[cle] = { date: date, prestataire: String(r[1] || ''), base: String(r[2] || ''), documents: String(r[3] || ''), personnes: [] }; ordre.push(cle); }
-    par[cle].personnes.push({ nom: String(r[4] || ''), prenom: String(r[5] || ''), fonction: String(r[6] || ''), enquetes: String(r[9] || '') });
+    par[cle].personnes.push({ nom: String(r[4] || ''), prenom: String(r[5] || ''), fonction: String(r[6] || ''), vehicule: String(r[7] || ''), immatriculation: String(r[8] || ''), enquetes: String(r[9] || '') });
   });
   return ordre.map(function (k) { return par[k]; }).reverse().slice(0, limite || 20);
 }

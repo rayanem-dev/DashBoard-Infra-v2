@@ -166,5 +166,5 @@ test('historique des demandes : lignes du journal regroupées par demande, la pl
     ['2026-10-02 10:30', 'B - ACOSCO', 'Base 2', 'PEC+Autorisation', 'LACHI', 'Choayb', 'Préparateur', '', '', 'non demandé']];
   const r = E('pecGrouper_', j, 20);
   assert.strictEqual(r.length, 2); assert.strictEqual(r[0].prestataire, 'B - ACOSCO'); assert.strictEqual(r[1].personnes.length, 2);
-  assert.strictEqual(r[1].personnes[1].enquetes, 'déjà présente'); assert.strictEqual(E('pecGrouper_', j, 1).length, 1); assert.deepStrictEqual(E('pecGrouper_', [], 5), []);
+  assert.strictEqual(r[1].personnes[1].enquetes, 'déjà présente'); assert.deepStrictEqual([r[0].personnes[0].vehicule, r[0].personnes[0].immatriculation], ['', '']); assert.strictEqual(E('pecGrouper_', j, 1).length, 1); assert.deepStrictEqual(E('pecGrouper_', [], 5), []);
 });

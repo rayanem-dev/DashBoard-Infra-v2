@@ -723,10 +723,14 @@
       if (!r || !r.ok) { z.textContent = 'Historique indisponible' + (r && r.message ? ' — ' + r.message : '') + '.'; nb.textContent = ''; return; }
       if (!r.demandes.length) { z.textContent = 'Aucune demande enregistrée pour le moment.'; nb.textContent = ''; return; }
       nb.textContent = '(' + r.demandes.length + ' dernière' + (r.demandes.length > 1 ? 's' : '') + ')';
+      // pour chaque demande : « contrat - entreprise » en titre, puis directement les agents saisis (nom, prénom, matricule du véhicule, véhicule)
       z.innerHTML = r.demandes.map(function(d) {
-        const gens = d.personnes.map(function(p) { return echap((p.nom + ' ' + p.prenom).trim()) + (p.fonction ? ' <span style="color:#6B7280">(' + echap(p.fonction) + ')</span>' : ''); }).join(', ');
-        return '<div style="padding:7px 0;border-bottom:1px solid #E5E7EB"><b>' + echap(d.date) + '</b> — ' + echap(d.prestataire) + (d.base ? ' · ' + echap(d.base) : '') + (d.documents ? ' · <i>' + echap(d.documents) + '</i>' : '') +
-          '<div>' + d.personnes.length + ' personne' + (d.personnes.length > 1 ? 's' : '') + ' : ' + gens + '</div></div>';
+        const titre = String(d.prestataire).split(' - ').slice(0, 2).join(' - ');
+        const lignes = d.personnes.map(function(p) {
+          return '<tr><td style="padding:2px 8px 2px 0;font-weight:700">' + echap(p.nom) + '</td><td style="padding:2px 8px">' + echap(p.prenom) + '</td><td style="padding:2px 8px;font-variant-numeric:tabular-nums">' + echap(p.immatriculation) + '</td><td style="padding:2px 0 2px 8px;color:#6B7280">' + echap(p.vehicule) + '</td></tr>';
+        }).join('');
+        return '<div style="padding:8px 0;border-bottom:1px solid #E5E7EB"><b>' + echap(titre) + '</b> <span style="color:#6B7280">— ' + echap(d.date) + (d.base ? ' · ' + echap(d.base) : '') + (d.documents ? ' · ' + echap(d.documents) : '') + '</span>' +
+          '<table style="margin-top:3px;font-size:12.5px;border-collapse:collapse"><tbody>' + lignes + '</tbody></table></div>';
       }).join('');
     }).withFailureHandler(function(e) { z.textContent = 'Historique indisponible : ' + e.message; }).historiquePEC(20);
   }
