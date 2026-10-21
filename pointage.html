@@ -32,6 +32,11 @@
   .page .mois { text-align: right; font-weight: 700; font-size: 11pt; } .page .titre { text-align: center; font-weight: 700; font-size: 12pt; margin: 2mm 0 3mm; }
   .page table { border-collapse: collapse; width: 100%; table-layout: fixed; } .page th, .page td { border: 1px solid #000; padding: 0 1.5mm; font-size: 8.5pt; height: 9.4mm; overflow: hidden; }
   .page th { text-align: center; font-weight: 700; height: 6mm; } .page td.n { width: 46mm; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; } .page td.f { width: 54mm; white-space: nowrap; text-overflow: ellipsis; font-size: 8pt; }
+  /* Matin : orange Sonatrach adouci ; après-midi : bleu Sonatrach adouci — on reconnaît la page au premier regard */
+  .page .periode { display: flex; align-items: center; justify-content: space-between; margin: -8mm -10mm 4mm; padding: 4mm 10mm; border-bottom: 2.2mm solid var(--acc); background: var(--ban); }
+  .page .periode b { font-size: 24pt; letter-spacing: 3px; color: var(--acc); } .page .periode span { font-weight: 700; font-size: 11pt; color: var(--acc); }
+  .page.matin { --acc: #C2641A; --ban: #FBE6D3; --ent: #F5CFAE; --lig: #FFF7F0; } .page.soir { --acc: #1D4E89; --ban: #DCE8F5; --ent: #B9CDE5; --lig: #F4F8FD; }
+  .page th { background: var(--ent); } .page td.n, .page td.f { background: var(--lig); } .page td.c { background: #fff; } .page tbody tr:nth-child(even) td.c { background: var(--lig); } .page table, .page th, .page td { border-color: var(--acc); }
   .page td.c { text-align: center; font-size: 11pt; font-weight: 700; cursor: pointer; } .page td.c:hover { background: #FFF1E6; }
   @media (max-width: 1000px) { .pt { grid-template-columns: 1fr; } }
   @media print { @page { size: A4 landscape; margin: 0; } html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; filter: none !important; overflow: hidden !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } body > *:not(main), .pt > *:not(.apercu) { display: none !important; }
@@ -130,19 +135,22 @@
   // ----- feuilles : une page par groupe, comme la fiche d'origine -----
   function feuilles() {
     var du = $('f-du').value || iso(new Date()), au = plus(du, JOURS - 1), p = du.split('-');
-    $('au').textContent = 'Au ' + fr(au) + ' (7 jours, matin et soir).';
+    $('au').textContent = 'Au ' + fr(au) + ' (7 jours) : 2 pages pour le matin, puis 2 pages pour l\'après-midi.';
     var jours = []; for (var i = 0; i < JOURS; i += 1) jours.push(plus(du, i));
-    var html = '';
-    eff.forEach(function (g) {
-      var lignes = g.l.filter(function (x) { return x.actif; });
-      if (!lignes.length) return;
-      html += '<div class="page"><div class="mois">Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</div><div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
-        '<table><colgroup><col style="width:44mm"><col style="width:68mm">' + jours.map(function () { return '<col><col>'; }).join('') + '</colgroup><thead><tr><th rowspan="2">Nom et Prénom</th><th rowspan="2">Fonction</th>' + jours.map(function (j) { return '<th colspan="2">' + fr(j) + '</th>'; }).join('') + '</tr>' +
-        '<tr>' + jours.map(function () { return '<th>Matin</th><th>Soir</th>'; }).join('') + '</tr></thead><tbody>' +
-        lignes.map(function (x) {
-          var a = affiche(x);
-          return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { return ['M', 'S'].map(function (m) { var k = du + '|' + x.nom + '|' + j + m; return '<td class="c" data-k="' + E(k) + '">' + (croix[k] ? '✓' : '') + '</td>'; }).join(''); }).join('') + '</tr>';
-        }).join('') + '</tbody></table></div>';
+    var html = '', JS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+    [{ m: 'M', cls: 'matin', lib: 'MATIN' }, { m: 'S', cls: 'soir', lib: 'APRÈS-MIDI' }].forEach(function (per) {
+      eff.forEach(function (g) {
+        var lignes = g.l.filter(function (x) { return x.actif; });
+        if (!lignes.length) return;
+        html += '<div class="page ' + per.cls + '"><div class="periode"><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
+          '<div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
+          '<table><colgroup><col style="width:44mm"><col style="width:68mm">' + jours.map(function () { return '<col>'; }).join('') + '</colgroup><thead><tr><th>Nom et Prénom</th><th>Fonction</th>' +
+          jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          lignes.map(function (x) {
+            var a = affiche(x);
+            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '">' + (croix[k] ? '✓' : '') + '</td>'; }).join('') + '</tr>';
+          }).join('') + '</tbody></table></div>';
+      });
     });
     $('feuilles').innerHTML = html || '<p style="padding:20px">Aucune personne dans l\'effectif.</p>';
     $('feuilles').querySelectorAll('td.c').forEach(function (td) { td.onclick = function () { var k = td.dataset.k; if (croix[k]) delete croix[k]; else croix[k] = 1; td.textContent = croix[k] ? '✓' : ''; sauverX(); }; });

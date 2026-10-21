@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-48",
+    "date": "2026-10-23",
+    "title": "Version 5.32.1 — Pointage : matin et après-midi",
+    "changes": [
+      "Feuille de pointage : 4 pages — 2 pour le matin (orange Sonatrach adouci) puis 2 pour l'après-midi (bleu Sonatrach adouci), avec un grand bandeau « MATIN » ou « APRÈS-MIDI » : on reconnaît la page au premier regard. Une colonne par jour (avec le jour de la semaine)."
+    ]
+  },
+  {
     "id": "2026-10-23-47",
     "date": "2026-10-23",
     "title": "Version 5.32.0 — Feuille de pointage",
