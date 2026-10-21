@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-46",
+    "date": "2026-10-23",
+    "title": "Version 5.31.4 — ID de script corrigés",
+    "changes": [
+      "Déploiement de la Requête transport et de la Commande de pièces : les deux ID de script étaient inversés ; le garde-fou l'a détecté sans rien écraser, corrigé."
+    ]
+  },
+  {
     "id": "2026-10-23-45",
     "date": "2026-10-23",
     "title": "Version 5.31.3 — Déploiement Requête transport et Commande de pièces",

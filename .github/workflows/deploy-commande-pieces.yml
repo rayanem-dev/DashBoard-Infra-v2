@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SCRIPT_ID: 13zZogvWwuN7_qdfR54uaSFEOHcR8--PItxrkXZOJ9keVld50yr74Uh7W
+  SCRIPT_ID: 11aPstlAO7jNCJTtlsneCHQGiNsTyA5y2BagkQoylD-1iL8j_UCkcKvH9
   DEPLOYMENT_ID: AKfycbwNIhTZ7NwMJfoAVeDjpUEC6mriA85kcd0lz9l2hFFyU4DXJi2KoctyXXWFRAhDpvRA
 
 jobs:
