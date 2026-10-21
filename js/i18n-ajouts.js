@@ -180,6 +180,9 @@
     ["Nombre de rotations", "Number of rotations", "عدد التناوبات"],
     ["Sur combien de rotations le changement peut s'étaler (par pas d'une semaine). Les propositions vont de la plus rapide à celles qui durent plusieurs séjours.", "Over how many rotations the change may be spread (in steps of one week). Proposals run from the quickest to those lasting several stays.", "على كم تناوب يمكن توزيع التغيير (بخطوة أسبوع). تتراوح الاقتراحات من الأسرع إلى تلك التي تمتد على عدة إقامات."],
     ["Le changement se fait par semaines entières, à la relève de chacun. Choisissez le nombre de rotations sur lesquelles il peut s'étaler : les propositions donnent le vis-à-vis le plus parfait, de la plus rapide à celles qui durent plusieurs séjours. « Utiliser » les place dans l'éditeur ci-dessus.", "The change is made in whole weeks, at each person's handover. Choose how many rotations it may be spread over: proposals give the most perfect face-to-face, from the quickest to those lasting several stays. « Use » places them in the editor above.", "يتم التغيير بأسابيع كاملة عند مناوبة كل شخص. اختر عدد التناوبات التي يمكن توزيعه عليها: تعطي الاقتراحات أكمل تقابل، من الأسرع إلى تلك التي تمتد على عدة إقامات. « استخدام » يضعها في المحرر أعلاه."],
+    ["Reliquat de cette rotation : ", "Balance of this rotation: ", "رصيد هذا التناوب: "],
+    ["Tolérance du vis-à-vis (automatique selon les jours de relève)", "Face-to-face tolerance (automatic, based on handover days)", "تسامح التقابل (تلقائي حسب أيام المناوبة)"],
+    ["Choisissez A et B : la tolérance se règle d'après l'écart entre leurs jours de relève (ex. dimanche et lundi : 1 jour).", "Choose A and B: the tolerance is set from the gap between their handover days (e.g. Sunday and Monday: 1 day).", "اختر A وB: يُضبط التسامح حسب الفارق بين يومي مناوبتهما (مثال: الأحد والاثنين: يوم واحد)."],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -187,6 +190,9 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^Reliquat résultant : (.+)$/, function (x) { return 'Resulting balance: ' + x.replace(/\(avant :/g, '(before:'); }],
+    [/^Jours de relève : (.+) le (\S+), (.+) le (\S+) : (.+)$/, function (a, da, b, db, r) { var D = { dimanche: 'Sunday', lundi: 'Monday', mardi: 'Tuesday', mercredi: 'Wednesday', jeudi: 'Thursday', vendredi: 'Friday', samedi: 'Saturday' }; var m = /^écart de (\d+) jours?/.exec(r); return 'Handover days: ' + a + ' on ' + D[da] + ', ' + b + ' on ' + D[db] + ': ' + (m ? m[1] + '-day gap, tolerance set automatically.' : 'same day, no tolerance.'); }],
+    [/^rotation (\d+)\/(\d+) · relève le (\S+) · reliquat actuel (.+) · début le (.+)$/, function (t, r, d, s, b) { var D = { dimanche: 'Sunday', lundi: 'Monday', mardi: 'Tuesday', mercredi: 'Wednesday', jeudi: 'Thursday', vendredi: 'Friday', samedi: 'Saturday' }; return 'rotation ' + t + '/' + r + ' · handover on ' + D[d] + ' · current balance ' + s + ' · starts on ' + b; }],
     [/^(\d+) proposition\(s\) : le vis-à-vis le plus parfait d'abord, puis la plus rapide\.$/, function (n) { return n + ' proposal(s): the most perfect face-to-face first, then the quickest.'; }],
     [/^ · (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return ' · ' + grp(g, en) + ' · ' + a + ' agent' + (a > 1 ? 's' : '') + ' · ' + j + ' day' + (j > 1 ? 's' : '') + ' without anyone'; }],
     [/^· (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return '· ' + grp(g, en) + ' · ' + a + ' agent' + (a > 1 ? 's' : '') + ' · ' + j + ' day' + (j > 1 ? 's' : '') + ' without anyone'; }],
@@ -214,6 +220,9 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^Reliquat résultant : (.+)$/, function (x) { return 'الرصيد الناتج: ' + x.replace(/\(avant :/g, '(قبل:'); }],
+    [/^Jours de relève : (.+) le (\S+), (.+) le (\S+) : (.+)$/, function (a, da, b, db, r) { var D = { dimanche: 'الأحد', lundi: 'الاثنين', mardi: 'الثلاثاء', mercredi: 'الأربعاء', jeudi: 'الخميس', vendredi: 'الجمعة', samedi: 'السبت' }; var m = /^écart de (\d+) jours?/.exec(r); return 'أيام المناوبة: ' + a + ' يوم ' + D[da] + '، ' + b + ' يوم ' + D[db] + ': ' + (m ? 'فارق ' + m[1] + ' يوم، ضُبط التسامح تلقائيًا.' : 'نفس اليوم، لا تسامح.'); }],
+    [/^rotation (\d+)\/(\d+) · relève le (\S+) · reliquat actuel (.+) · début le (.+)$/, function (t, r, d, s, b) { var D = { dimanche: 'الأحد', lundi: 'الاثنين', mardi: 'الثلاثاء', mercredi: 'الأربعاء', jeudi: 'الخميس', vendredi: 'الجمعة', samedi: 'السبت' }; return 'تناوب ' + t + '/' + r + ' · المناوبة يوم ' + D[d] + ' · الرصيد الحالي ' + s + ' · يبدأ في ' + b; }],
     [/^(\d+) proposition\(s\) : le vis-à-vis le plus parfait d'abord, puis la plus rapide\.$/, function (n) { return n + ' اقتراح: أكمل تقابل أولًا، ثم الأسرع.'; }],
     [/^ · (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return ' · ' + grp(g, ar) + ' · ' + a + ' عون · ' + j + ' يوم بلا حضور'; }],
     [/^· (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return '· ' + grp(g, ar) + ' · ' + a + ' عون · ' + j + ' يوم بلا حضور'; }],

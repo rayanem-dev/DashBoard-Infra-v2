@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-57",
+    "date": "2026-10-24",
+    "title": "Version 5.35.0 — Simulation : reliquat de la rotation et jours de relève",
+    "changes": [
+      "Simulation : le reliquat de la rotation proposée ou simulée (jours + ou −) est mis en avant en gras pour chaque agent ; le reliquat résultant est indiqué ensuite, séparément.",
+      "Le jour de relève de chaque agent est affiché (ex. dimanche, lundi) et la tolérance du vis-à-vis se règle automatiquement d'après l'écart entre les deux jours de relève."
+    ]
+  },
+  {
     "id": "2026-10-24-56",
     "date": "2026-10-24",
     "title": "Version 5.34.1 — Reliquat concédé corrigé",

@@ -107,7 +107,8 @@
         <div><label for="vue">Durée affichée</label><select id="vue"><option value="92">3 mois</option><option value="184" selected>6 mois</option><option value="350">1 an</option></select></div>
         <a class="lien" href="simulation-v1.html">Ancienne version (Modif 1.0)</a>
       </div>
-      <details class="opt"><summary>Tolérances du vis-à-vis</summary>
+      <details class="opt"><summary>Tolérance du vis-à-vis (automatique selon les jours de relève)</summary>
+        <div class="aide2" id="tol-info" style="margin:0 0 6px">Choisissez A et B : la tolérance se règle d'après l'écart entre leurs jours de relève (ex. dimanche et lundi : 1 jour).</div>
         Chevauchement toléré (jours de relève)<input type="number" id="tol-c" min="0" max="15" value="2"> Trou toléré (jours)<input type="number" id="tol-v" min="0" max="15" value="0">
       </details>
     </div>
@@ -173,6 +174,11 @@
   var S = { A: null, B: null };                              // agents choisis : { ligne, uid, data, cells: [{v}], nb }
   var FER = {};                                              // jours fériés par date
   var cache = {};                                            // uid → données
+  var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  function jourDe(iso) { return new Date(iso + 'T12:00:00').getDay(); }
+  /** Écart (0 à 3 jours) entre les jours de relève de A et de B : le chevauchement et le trou qu'il impose ne sont pas des conflits. */
+  function ecartReleve() { if (!S.A || !S.B) return null; var k = Math.abs(jourDe(debutDe(S.A)) - jourDe(debutDe(S.B))) % 7; return Math.min(k, 7 - k); }
+  function majTolerance() { var e = ecartReleve(); if (e === null) return; $('tol-c').value = e; $('tol-v').value = e; $('tol-info').textContent = 'Jours de relève : ' + S.A.ligne.nom + ' le ' + JOURS[jourDe(debutDe(S.A))] + ', ' + S.B.ligne.nom + ' le ' + JOURS[jourDe(debutDe(S.B))] + ' : ' + (e ? 'écart de ' + e + ' jour' + (e > 1 ? 's' : '') + ', tolérance réglée automatiquement.' : 'même jour, aucune tolérance.'); }
   function sgn(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n) + ' j'; }
   function sem(n) { return n % 7 === 0 ? (n / 7) + ' sem.' : n + ' j'; }
   function opts() { return { tolChev: Number($('tol-c').value) || 0, tolTrou: Number($('tol-v').value) || 0 }; }
@@ -321,7 +327,7 @@
     [['A', S.A], ['B', S.B]].forEach(function (x) {
       var a = x[1]; if (!a) return; var d = a.data, deb = debutDe(a);
       var ed = el('div', 'ed' + (x[0] === 'B' ? ' b' : '')), h = el('h3'); h.appendChild(el('span', null, x[0] + ' · ' + a.ligne.nom));
-      h.appendChild(el('small', null, 'rotation ' + d.rotation.jours_travail + '/' + d.rotation.jours_repos + ' · reliquat actuel ' + sgn(d.solde || 0) + ' · début le ' + fr(deb))); ed.appendChild(h);
+      h.appendChild(el('small', null, 'rotation ' + d.rotation.jours_travail + '/' + d.rotation.jours_repos + ' · relève le ' + JOURS[jourDe(deb)] + ' · reliquat actuel ' + sgn(d.solde || 0) + ' · début le ' + fr(deb))); ed.appendChild(h);
       var ss = el('div', 'sems'), i0 = Simulation.diff(d.debut, deb);
       for (var i = 0; i < a.nb; i += 1) (function (i) {
         var c = a.cells[i], off = d.grille.charAt(i0 + i * 7), b = el('button', 'sem'); b.type = 'button';
@@ -366,10 +372,11 @@
     var items = [];
     [[A, eA], [B, eB]].forEach(function (x) { if (x[0] && x[1].m && !x[1].err) { var q = Simulation.reliquat(x[0].data.grille, x[1].mod, x[0].data.debut, x[1].m), so = x[0].data.solde || 0; items.push([x[0].ligne.nom, q, so]); } });
     if (items.length) {
-      var d = el('div'); d.style.marginTop = '4px'; d.appendChild(document.createTextNode('Reliquat concédé : '));
-      items.forEach(function (t, i) { if (i) d.appendChild(document.createTextNode(' · ')); var sp = el('span', null, t[0] + ' ' + sgn(t[1])); sp.style.cssText = 'font-weight:800;color:' + (t[1] > 0 ? '#15803D' : t[1] < 0 ? '#DC2626' : '#111'); d.appendChild(sp);
-        var ap = t[2] + t[1]; d.appendChild(el('span', null, ' (solde ' + sgn(t[2]) + ' → ' + sgn(ap) + ')')); });
-      bi.appendChild(d); var ex = el('div', null, '+ : jours travaillés en plus (à récupérer) · − : jours de repos en plus'); ex.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; bi.appendChild(ex);
+      var d = el('div'); d.style.marginTop = '4px'; d.appendChild(document.createTextNode('Reliquat de cette rotation : '));
+      items.forEach(function (t, i) { if (i) d.appendChild(document.createTextNode(' · ')); var sp = el('span', null, t[0] + ' ' + sgn(t[1])); sp.style.cssText = 'font-weight:800;font-size:1.05em;color:' + (t[1] > 0 ? '#15803D' : t[1] < 0 ? '#DC2626' : '#111'); d.appendChild(sp); });
+      bi.appendChild(d);
+      var d2 = el('div', null, 'Reliquat résultant : ' + items.map(function (t) { return t[0] + ' ' + sgn(t[2] + t[1]) + ' (avant : ' + sgn(t[2]) + ')'; }).join(' · ')); d2.style.cssText = 'font-size:12.5px;color:var(--text-muted)'; bi.appendChild(d2);
+      var ex = el('div', null, '+ : jours travaillés en plus (à récupérer) · − : jours de repos en plus'); ex.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; bi.appendChild(ex);
     }
     if (A && B && !eA.err && !eB.err) {
       var c = conflitsRotation(eA.mod, eB.mod, eA.m, eB.m, A, B), v = el('div');
@@ -381,7 +388,7 @@
     var a = S.A; $('b-edit').hidden = !a; $('b-valider').hidden = !a; $('b-prop').hidden = !(S.A && S.B);
     $('aide-grp').textContent = !a ? 'Cliquez sur un agent (A), puis sur son vis-à-vis (B) : les deux se placent l\'un sous l\'autre en haut du graphique. Cliquez de nouveau pour retirer.' : !S.B ? 'A choisi. Cliquez sur un second agent (B) pour le mettre en vis-à-vis.' : 'A et B sont l\'un sous l\'autre en haut. Modifiez leurs semaines ci-dessous ou demandez des propositions.';
     $('props').textContent = ''; $('prop-aide').textContent = '';
-    dessinerEditeurs(); majResultat();
+    majTolerance(); dessinerEditeurs(); majResultat();
   }
 
   // ---------- Propositions ----------
@@ -407,8 +414,9 @@
       bons.forEach(function (r, i) {
         var d = el('div', 'prop' + (i === 0 && r.cr.jours === 0 ? ' top' : '')), t = el('div');
         [[A, r.A], [B, r.B]].forEach(function (x) { t.appendChild(el('div', 'l', x[1] ? phrase(x[0], { m: x[1] }) : x[0].ligne.nom + ' : inchangé.')); });
-        var l2 = el('div', 'l'); [[A, r.reliquatA, sA], [B, r.reliquatB, sB]].forEach(function (x, k) { if (k) l2.appendChild(document.createTextNode(' · ')); var sp = el('span', null, x[0].ligne.nom + ' ' + sgn(x[1]) + ' (solde → ' + sgn(x[2] + x[1]) + ')'); sp.style.cssText = 'font-weight:800;color:' + (x[1] > 0 ? '#15803D' : x[1] < 0 ? '#DC2626' : '#111'); l2.appendChild(sp); });
-        t.appendChild(l2);
+        var l2 = el('div', 'l'); l2.appendChild(document.createTextNode('Reliquat de cette rotation : ')); [[A, r.reliquatA, sA], [B, r.reliquatB, sB]].forEach(function (x, k) { if (k) l2.appendChild(document.createTextNode(' · ')); var sp = el('span', null, x[0].ligne.nom + ' ' + sgn(x[1])); sp.style.cssText = 'font-weight:800;font-size:1.05em;color:' + (x[1] > 0 ? '#15803D' : x[1] < 0 ? '#DC2626' : '#111'); l2.appendChild(sp); });
+        var l3 = el('div', 'l', 'Reliquat résultant : ' + A.ligne.nom + ' ' + sgn(sA + r.reliquatA) + ' · ' + B.ligne.nom + ' ' + sgn(sB + r.reliquatB)); l3.style.cssText = 'font-size:12.5px;color:var(--text-muted)';
+        t.appendChild(l2); t.appendChild(l3);
         var cf = el('div', 'l', (r.cr.jours ? '✖ ' : '✔ ') + phraseConflit(r.cr, A.ligne.nom, B.ligne.nom, 'Cette proposition')); cf.style.cssText = 'font-weight:700;color:' + (r.cr.jours ? '#B42318' : '#166534'); t.appendChild(cf);
         d.appendChild(t); var b = el('button', 'btn-s', 'Utiliser'); b.type = 'button';
         b.addEventListener('click', function () { cellsDe(A, r.A); cellsDe(B, r.B); dessinerEditeurs(); majResultat(); window.scrollTo({ top: $('b-edit').offsetTop - 70, behavior: 'smooth' }); });
