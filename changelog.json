@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-54",
+    "date": "2026-10-24",
+    "title": "Version 5.33.1 — Traductions complétées",
+    "changes": [
+      "Anglais et arabe : toutes les cartes d'applications (titres et descriptions), le menu et les rubriques, les pages Planning, Simulation, Privilèges, Documents administratifs, Renommage, Repas à emporter, Ordre de travail, GAZ-OIL, Feuille de pointage, Badges, Rapports et Divergences sont traduits ; les phrases avec noms, dates ou nombres aussi.",
+      "Le verdict de couverture (Planning, Simulation) est maintenant traduit, y compris l'infobulle.",
+      "Les feuilles officielles imprimables (documents, ordre de travail, GAZ-OIL, pointage, repas) restent en français, comme les documents réels."
+    ]
+  },
+  {
     "id": "2026-10-23-53",
     "date": "2026-10-23",
     "title": "Version 5.33.0 — Couverture des équipes",

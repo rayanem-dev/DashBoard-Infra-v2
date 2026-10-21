@@ -93,7 +93,7 @@ var I18n = (function () {
       if (n.nodeType === 3) { if (ignore(n)) continue; noter(n.__fr !== undefined ? n.__fr : n.nodeValue); }
       else { if (IGNORER[n.tagName]) continue; ATTRS.forEach(function (a) { if (n.hasAttribute(a)) noter(n.__frAttr && n.__frAttr[a] !== undefined ? n.__frAttr[a] : n.getAttribute(a)); }); }
     }
-    langue = 'en'; var res = out.filter(function (k) { return t(k) === k; }); langue = save; return res;
+    var res = out.filter(function (k) { langue = 'en'; var a = t(k) === k; langue = 'ar'; var b = t(k) === k; return a || b; }); langue = save; return res;   // sans traduction en anglais OU en arabe
   }
   return { t: t, appliquer: appliquer, dico: dico, manquants: manquants, langue: function () { return langue; } };
 })();

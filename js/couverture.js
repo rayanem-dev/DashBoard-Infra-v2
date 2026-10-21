@@ -54,13 +54,14 @@
   /** Affiche le verdict dans `zone` (navigateur) : pastille colorée ; survol ou clic = l'explication et ce qu'il faut faire. */
   function monter(zone, res, intitule) {
     zone.textContent = ''; zone.hidden = false;
+    var tr = function (x) { return typeof I18n !== 'undefined' && I18n.t ? I18n.t(x) : x; };
     var ic = { ok: '✅', ajuster: '⚠️', insuffisant: '❌' }[res.verdict] || '', d = document;
     var boite = d.createElement('div'); boite.className = 'couv ' + res.verdict;
-    var b = d.createElement('button'); b.type = 'button'; b.className = 'couv-chip'; b.title = res.details.join('\n'); b.setAttribute('aria-expanded', 'false');
-    var t = d.createElement('b'); t.textContent = ic + ' ' + res.titre; b.appendChild(t);
-    var sm = d.createElement('small'); sm.textContent = (intitule ? ' · ' + intitule : '') + (res.agents ? ' · ' + res.agents + ' agent' + (res.agents > 1 ? 's' : '') + ' · ' + res.joursVides + ' jour' + (res.joursVides > 1 ? 's' : '') + ' sans personne' : ''); b.appendChild(sm);
+    var b = d.createElement('button'); b.type = 'button'; b.className = 'couv-chip'; b.title = res.details.map(tr).join('\n'); b.setAttribute('aria-expanded', 'false');
+    var t = d.createElement('b'); t.textContent = ic + ' ' + tr(res.titre); b.appendChild(t);
+    var sm = d.createElement('small'); sm.textContent = (intitule ? ' · ' + intitule : '') + (res.agents ? ' · ' + res.agents + ' agent' + (res.agents > 1 ? 's' : '') + ' · ' + res.joursVides + ' jour' + (res.joursVides > 1 ? 's' : '') + ' sans personne' : ''); sm.textContent = tr(sm.textContent); b.appendChild(sm);
     var det = d.createElement('div'); det.className = 'couv-det'; det.hidden = true;
-    res.details.forEach(function (x) { var p = d.createElement('p'); p.textContent = x; det.appendChild(p); });
+    res.details.forEach(function (x) { var p = d.createElement('p'); p.textContent = tr(x); det.appendChild(p); });
     b.addEventListener('click', function () { det.hidden = !det.hidden; b.setAttribute('aria-expanded', String(!det.hidden)); });
     boite.appendChild(b); boite.appendChild(det); zone.appendChild(boite);
   }
