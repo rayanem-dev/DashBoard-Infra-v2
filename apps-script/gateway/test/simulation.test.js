@@ -119,7 +119,9 @@ test('reliquat concédé = jours de travail en plus (+) ou de repos en plus (−
   assert.strictEqual(r({ debut: '2026-12-06', periodes: [{ type: 'R', jours: 28 }, { type: 'T', jours: 28 }], reprise: 'R' }), -28, 'repos en plus puis travail en plus : −28');
   const r4 = { statut: 'T', depuis: '2026-10-01', jours_travail: 4, jours_repos: 4 }, off4 = Planning.grille(r4, [], '2026-09-14', 200);
   const m4 = { debut: '2026-10-09', periodes: [{ type: 'R', jours: 7 }], reprise: 'T' };
-  assert.strictEqual(Simulation.reliquat(off4, Simulation.appliquer(off4, '2026-09-14', m4, r4), '2026-09-14', m4), -7, 'congé prolongé de 7 j : −7');
+  assert.strictEqual(Simulation.reliquat(off4, Simulation.appliquer(off4, '2026-09-14', m4, r4), '2026-09-14', m4), -4, 'repos de 7 j posé sur 4 j de travail prévus puis 3 j de repos déjà prévu : seuls les 4 j de travail non faits comptent');
+  const rM = { statut: 'T', depuis: '2026-10-11', jours_travail: 28, jours_repos: 28 }, offM = Planning.grille(rM, [], '2026-09-14', 200), mM = { debut: '2026-10-11', periodes: [{ type: 'R', jours: 42 }], reprise: 'T' };
+  assert.strictEqual(Simulation.reliquat(offM, Simulation.appliquer(offM, '2026-09-14', mM, rM), '2026-09-14', mM), -28, '6 sem. de repos au début de 4 sem. de travail prévues : −28 (et non −42)');
   const rB = { statut: 'T', depuis: '2026-10-25', jours_travail: 28, jours_repos: 28 };
   const offB = Planning.grille(rB, [], '2026-09-14', 200);
   const res = Simulation.proposerPaire({ offA: off, offB, debutF: '2026-09-14', rotA: rA, rotB: rB, debut: '2026-11-01', tolChev: 2, tolTrou: 0, pas: 7, alignerReleve: true });

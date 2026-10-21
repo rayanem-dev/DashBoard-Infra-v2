@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-56",
+    "date": "2026-10-24",
+    "title": "Version 5.34.1 — Reliquat concédé corrigé",
+    "changes": [
+      "Simulation : le reliquat concédé ne compte plus en entier une période de repos (ou de travail) qui recouvre un repos (ou un travail) déjà prévu. Exemple : 6 semaines de repos posées sur 4 semaines de travail prévues = −28 j (et non −42 j)."
+    ]
+  },
+  {
     "id": "2026-10-24-55",
     "date": "2026-10-24",
     "title": "Version 5.34.0 — Simulation : édition près des agents, propositions simplifiées",
