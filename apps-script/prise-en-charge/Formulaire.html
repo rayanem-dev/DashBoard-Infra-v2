@@ -163,10 +163,13 @@
 <main>
   <div id="toast"></div>
 
-  <details class="form-card" id="histo" style="margin-bottom:14px" open>
-    <summary style="cursor:pointer;font-weight:700">🕘 Historique des demandes déjà créées <span id="histoNb" style="font-weight:400;color:#6B7280"></span></summary>
-    <div id="histoListe" style="margin-top:10px;max-height:260px;overflow:auto;font-size:13px">Chargement…</div>
-  </details>
+  <div style="margin-bottom:14px">
+    <button type="button" id="btnHisto" class="btn-secondaire" style="padding:8px 14px;border-radius:8px;border:1.5px solid #D1D5DB;background:#fff;font-weight:700;cursor:pointer">🕘 Afficher l'historique</button>
+    <div id="histo" class="form-card" style="display:none;margin-top:10px">
+      <b>Historique des demandes déjà créées</b> <span id="histoNb" style="font-weight:400;color:#6B7280"></span>
+      <div id="histoListe" style="margin-top:10px;max-height:260px;overflow:auto;font-size:13px"></div>
+    </div>
+  </div>
 
   <div class="form-card">
 
@@ -730,7 +733,13 @@
     }).withFailureHandler(function(e) { z.textContent = 'Historique indisponible : ' + e.message; }).historiquePEC(20);
   }
 
-  setTimeout(function() { chargerFichiers(); chargerHistorique(); }, 0);
+  document.getElementById('btnHisto').addEventListener('click', function() {
+    const bloc = document.getElementById('histo'), ouvert = bloc.style.display !== 'none';
+    bloc.style.display = ouvert ? 'none' : 'block'; this.textContent = ouvert ? '🕘 Afficher l\'historique' : '🕘 Masquer l\'historique';
+    if (!ouvert) { document.getElementById('histoListe').textContent = 'Chargement…'; chargerHistorique(); }
+  });
+
+  setTimeout(function() { chargerFichiers(); }, 0);
 
   function afficherResultat(res) {
     document.getElementById('btnEnvoyer').disabled = false;
@@ -743,7 +752,7 @@
     }
     div.innerHTML = contenu;
     afficherAlerteModale(res.success ? "Génération terminée" : "Erreur", contenu, res.success ? 'ok' : 'err');
-    if (res.success) { chargerFichiers(); chargerHistorique(); }
+    if (res.success) { chargerFichiers(); if (document.getElementById('histo').style.display !== 'none') chargerHistorique(); }
   }
 </script>
 <script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Prise en charge et autorisation d’accès"></script>
