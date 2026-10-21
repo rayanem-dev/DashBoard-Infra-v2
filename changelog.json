@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-29",
+    "date": "2026-10-23",
+    "title": "Version 5.28.4 — Fiche d'évaluation : envoi au secrétariat et filets",
+    "changes": [
+      "Fiche d'évaluation : bouton « ✉️ Envoyer au secrétariat » (après génération et dans chaque ligne de l'archive), avec confirmation ; l'e-mail ne part qu'au clic.",
+      "PDF de la fiche : les lignes du tableau des renseignements (Entrepreneur, Contrat, Montant, Date ODS, Date d'entrée en vigueur, Délai, Date de mise en service) ont maintenant leurs filets horizontaux."
+    ]
+  },
+  {
     "id": "2026-10-23-28",
     "date": "2026-10-23",
     "title": "Version 5.28.3 — Historique à la demande",

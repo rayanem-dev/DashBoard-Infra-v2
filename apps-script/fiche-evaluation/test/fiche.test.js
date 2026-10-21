@@ -34,3 +34,21 @@ test('PDF : cartouche, case cochée « X » à la bonne colonne, taux, échappem
   assert.strictEqual((h.match(/>X</g) || []).length, 2);
   assert.ok(h.includes('data:image/png;base64,AAAA') && h.includes('Ligne 1<br>Ligne 2') && h.includes('Toute insuffisance doit être consignée'));
 });
+
+test('cartouche : un filet autour de chaque ligne (entrepreneur… date de mise en service)', () => {
+  const { ficheHtml_ } = require('../Code.js');
+  const h = ficheHtml_({ cartouche: { entrepreneur: 'ETS X', contrat: 'I/12/RNS/INFRA/2026' }, notes: {} }, '');
+  assert.match(h, /td\.l\{border:1px solid #000/);
+  assert.strictEqual((h.match(/<td class="l">/g) || []).length, 7);
+});
+
+test('envoi au secrétariat : seulement une fiche du dossier d\'archive, par e-mail avec le PDF', () => {
+  const C = require('../Code.js'), envoyes = [];
+  const dossier = { getId: () => 'D1' };
+  global.DOSSIER_FICHES = undefined;
+  global.DriveApp = { getFolderById: () => dossier, getFoldersByName: () => ({ hasNext: () => true, next: () => dossier }), getFileById: id => ({ getName: () => 'Fiche.pdf', getBlob: () => 'PDF', getParents: () => { let d = id === 'ok'; return { hasNext: () => d, next: () => { d = false; return id === 'ok' ? dossier : { getId: () => 'AUTRE' }; } }; } }) };
+  global.MailApp = { sendEmail: m => envoyes.push(m) };
+  assert.strictEqual(C.envoyerFicheAuSecretariat('ok').success, true);
+  assert.strictEqual(envoyes.length, 1); assert.strictEqual(envoyes[0].to, C.EMAIL_SECRETARIAT); assert.deepStrictEqual(envoyes[0].attachments, ['PDF']);
+  assert.strictEqual(C.envoyerFicheAuSecretariat('ailleurs').success, false); assert.strictEqual(envoyes.length, 1);
+});

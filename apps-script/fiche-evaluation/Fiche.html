@@ -168,6 +168,7 @@
         if (!r.success) { dire('❌ ' + r.error, true); return; }
         editionId = r.fileId; $('resultat').style.display = 'block'; $('edition').textContent = '✏️ Fiche « ' + r.fileName + ' » enregistrée : en la régénérant, elle remplace la version précédente (bouton « Vider » pour une nouvelle fiche).'; $('edition').style.display = 'block';
         $('liens').innerHTML = '<a href="' + r.pdfUrl + '" target="_blank" rel="noopener">📄 Ouvrir le PDF</a><a href="' + r.downloadUrl + '" target="_blank" rel="noopener">⬇️ Télécharger</a><span style="color:var(--doux)">' + r.fileName + ' — ' + tauxFr(r.taux) + '</span>';
+        const bsec = el('button', 'sec petit', '✉️ Envoyer au secrétariat'); bsec.type = 'button'; bsec.style.marginLeft = '10px'; bsec.addEventListener('click', () => envoyerSec(r.fileId, r.fileName, bsec)); $('liens').appendChild(bsec);
         dire('✅ Fiche générée et archivée (taux : ' + tauxFr(r.taux) + '). Elle est dans l’onglet Archive.'); $('resultat').scrollIntoView({ behavior: 'smooth' });
       })
       .withFailureHandler(e => { b.disabled = false; b.textContent = '📄 Générer la fiche (PDF)'; dire('❌ ' + e.message, true); })
@@ -187,9 +188,17 @@
       const a = el('td'); a.style.whiteSpace = 'nowrap';
       const l1 = el('a', 'lien', 'Ouvrir'); l1.href = x.url; l1.target = '_blank'; l1.rel = 'noopener'; const l2 = el('a', 'lien', 'Télécharger'); l2.href = x.telecharger; l2.target = '_blank'; l2.rel = 'noopener';
       const bm = el('button', 'sec petit', 'Modifier'); bm.addEventListener('click', () => rouvrir(x));
+      const bse = el('button', 'sec petit', '✉️ Secrétariat'); bse.title = 'Envoyer cette fiche par e-mail au secrétariat'; bse.addEventListener('click', () => envoyerSec(x.id, x.nom, bse));
       const bs = el('button', 'danger petit', 'Supprimer'); bs.style.marginLeft = '6px'; bs.addEventListener('click', () => supprimer(x));
-      a.appendChild(l1); a.appendChild(l2); a.appendChild(bm); a.appendChild(bs); tr.appendChild(a); z.appendChild(tr);
+      a.appendChild(l1); a.appendChild(l2); a.appendChild(bm); bse.style.marginLeft = '6px'; a.appendChild(bse); a.appendChild(bs); tr.appendChild(a); z.appendChild(tr);
     });
+  }
+  // Envoi par e-mail au secrétariat : seulement au clic, après confirmation
+  function envoyerSec(id, nom, bouton) {
+    if (!confirm('Envoyer la fiche « ' + nom + ' » par e-mail au secrétariat ?')) return;
+    const t = bouton.textContent; bouton.disabled = true; bouton.textContent = '⏳ Envoi…';
+    google.script.run.withSuccessHandler(r => { bouton.disabled = false; bouton.textContent = t; if (r.success) dire('✅ Fiche envoyée au secrétariat.'); else dire('❌ ' + r.error + ' (si l’autorisation d’e-mail est demandée : exécuter « autoriserEnvoiMail » une fois dans Apps Script)', true); })
+      .withFailureHandler(e => { bouton.disabled = false; bouton.textContent = t; dire('❌ ' + e.message, true); }).envoyerFicheAuSecretariat(id);
   }
   function charger() { $('videArchive').textContent = 'Chargement…'; google.script.run.withSuccessHandler(r => { if (!r.success) { dire('❌ ' + r.error, true); return; } archive = r.fiches; dessinerArchive(); }).withFailureHandler(e => dire('❌ ' + e.message, true)).listerFiches(); }
   function rouvrir(x) {
