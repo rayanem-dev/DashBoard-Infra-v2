@@ -381,7 +381,7 @@
           var nm = { numero: numero, cree_le: new Date().toISOString(), email: q.cv.email, emetteur: demoState.user.email, motif: motifV, modif: q.mv, statut: 'en_attente', rq_net: q.rq.net, actuel: q.actuel, modifie: q.modifie };
           lm.push(nm); numerosV.push(numero); docsV.push(demoDoc(nm));
         });
-        saveMods(lm); return { numero: numerosV[0], numeros: numerosV, emails: 4, demande: docsV[0], demandes: docsV }; }
+        saveMods(lm); return { numero: numerosV[0], numeros: numerosV, emails: 0, demande: docsV[0], demandes: docsV }; }
       case 'simu_liste': { var lq = demoMods().slice().reverse().map(function (m) { var u2 = DEMO_USERS.filter(function (x) { return x.email === m.email; })[0] || {};
           return { numero: m.numero, cree_le: m.cree_le, agent: u2.nom, service: u2.service, debut: m.modif.debut, reprise_le: Simulation.dateReprise(m.modif), motif: m.motif, statut: m.statut,
                    emetteur: (DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}).nom, decide_par: m.decide_par || '', decide_le: m.decide_le || '', commentaire: m.commentaire || '',
@@ -393,7 +393,7 @@
         if (!dd) throw erreur('Demande introuvable'); if (dd.statut !== 'en_attente' && dd.statut !== 'appliquee') throw erreur('Cette demande a déjà été traitée');
         if (p.decision !== 'approuvee' && p.decision !== 'refusee') throw erreur('Décision invalide');
         dd.statut = p.decision; dd.decide_par = demoState.user.email; dd.decide_le = new Date().toISOString(); dd.commentaire = String(p.commentaire || ''); saveMods(ld);
-        return { demande: { numero: dd.numero, statut: dd.statut }, emails: 4 }; }
+        return { demande: { numero: dd.numero, statut: dd.statut }, emails: 0 }; }
       case 'modif_moi_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return demoModifDonnees(demoState.user.email); }
       case 'modif_agent_donnees': { exigerAdmin(); var ma = p.numero ? demoMods().filter(function (m) { return m.numero === p.numero; })[0] : null; if (p.numero && !ma) throw erreur('Demande introuvable');
         var emA = ma ? ma.email : p.email, uA = DEMO_USERS.filter(function (x) { return x.email === emA; })[0]; if (!uA) throw erreur('Agent inconnu');

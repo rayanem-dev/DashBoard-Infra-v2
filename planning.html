@@ -249,7 +249,7 @@
       z.appendChild(ann);
       if (x.hors_rotation) boite('⚠ Vous n\'êtes pas rentré dans votre rotation à la fin de ces changements. Ce message reste affiché jusqu\'à la décision d\'un responsable.', 'background:var(--tint-err);color:var(--err);font-weight:600');
     } else if (x.statut === 'refusee' && jours <= 30) boite('Votre demande n° ' + x.numero + ' a été refusée' + (x.decide_par ? ' par ' + x.decide_par : '') + (x.commentaire ? ' — ' + x.commentaire : '') + ' : votre planning initial est rétabli.', 'background:var(--tint-err);color:var(--err)');
-    else if (x.statut === 'approuvee' && jours <= 14) boite('Votre demande n° ' + x.numero + ' est validée' + (x.decide_par ? ' par ' + x.decide_par : '') + ' et transmise au secrétariat pour application.', 'background:var(--tint-ok);color:var(--ok)');
+    else if (x.statut === 'approuvee' && jours <= 14) boite('Votre demande n° ' + x.numero + ' est validée' + (x.decide_par ? ' par ' + x.decide_par : '') + '.', 'background:var(--tint-ok);color:var(--ok)');
   }
   function moi() { return data && data.lignes.filter(function (l) { return l.moi; })[0]; }
   function chargerBandeau() {

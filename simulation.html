@@ -137,7 +137,7 @@
       <h2>Décision</h2>
       <div class="barre"><div style="flex:1;min-width:240px"><label for="motif">Motif de la demande</label><input type="text" id="motif" maxlength="120" value="Raison de service" style="width:100%"></div></div>
       <div class="actions"><button class="btn-p" id="valider" type="button">✔ Valider et émettre la demande</button><button class="btn-s" id="annuler" type="button">✖ Annuler la simulation</button></div>
-      <p class="aide2" style="margin:8px 0 0">« Valider » enregistre une demande par agent modifié (statut <b>en attente</b>), prévient les intéressés par e-mail et prépare le document à signer. Tant que ce n'est pas approuvé, le planning officiel ne change pas.</p>
+      <p class="aide2" style="margin:8px 0 0">« Valider » enregistre une demande par agent modifié (statut <b>en attente</b>), n'envoie aucun e-mail tout seul et prépare le document à signer. Tant que ce n'est pas approuvé, le planning officiel ne change pas.</p>
     </div>
   </section>
 
@@ -415,7 +415,7 @@
     Api.call('simu_valider', { lot: lot, motif: $('motif').value, partenaire: partenaire }).then(function (r) {
       var s = $('succes'); s.textContent = ''; s.hidden = false;
       s.appendChild(el('b', null, (r.numeros.length > 1 ? 'Demandes ' + r.numeros.join(' et ') + ' enregistrées' : 'Demande ' + r.numeros[0] + ' enregistrée') + ' (en attente).'));
-      s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Aucun e-mail n\'a pu être envoyé. ')));
+      s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Aucun e-mail n\'est envoyé automatiquement. ')));
       r.numeros.forEach(function (num) { var a = el('a', null, 'Document ' + num + ' à imprimer et signer →'); a.href = 'demande.html?n=' + encodeURIComponent(num); a.style.cssText = 'font-weight:700;color:var(--orange-main);margin-right:12px'; s.appendChild(a); });
       annuler(true); window.scrollTo({ top: 0, behavior: 'smooth' }); listeDemandes();
     }).catch(function (err) { toast(err.message, true); btn.disabled = false; });

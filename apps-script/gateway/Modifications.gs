@@ -2,8 +2,7 @@
  * Simulation et demandes de modification de planning (module « simulation »).
  *
  * Niveaux du module : 2 = simuler, émettre et approuver pour les agents de SON service (chef de service, intérim) ; 3 = pour tous (chef de division, secrétariat).
- * Une simulation n'enregistre rien. « Valider » enregistre une DEMANDE numérotée (statut en_attente) et prévient par e-mail l'intéressé,
- * l'émetteur, le chef de division et le secrétariat. Une demande APPROUVÉE s'applique au planning officiel (corrections du moteur de Sijil) ;
+ * Une simulation n'enregistre rien. « Valider » enregistre une DEMANDE numérotée (statut en_attente) ; aucun e-mail ne part tout seul (envoi au clic). Une demande APPROUVÉE s'applique au planning officiel (corrections du moteur de Sijil) ;
  * une demande refusée est seulement archivée. Le calcul est celui de Simulation.gs (copie de js/simulation.js, voir le workflow de déploiement).
  */
 var VILLE_ = 'Rhourde Nouss';
@@ -142,7 +141,7 @@ function simuValider_(req) {
   var emails = 0, demandes = [];
   numeros.forEach(function (numero, i) {
     Store.journal('modification_demandee', u.email, numero + ' ' + prets[i].c.email + ' du ' + prets[i].m.debut);
-    var row = simuLigne_(numero); demandes.push(simuDemandeDe_(row)); emails = Math.max(emails, simuNotifier_(row, 'demandee', u));
+    var row = simuLigne_(numero); demandes.push(simuDemandeDe_(row)); // aucun e-mail automatique : l'envoi se fait au clic (simuEnvoyer_)
   });
   return { numero: numeros[0], numeros: numeros, emails: emails, demande: demandes[0], demandes: demandes };
 }
@@ -224,7 +223,7 @@ function simuDecider_(req) {
   Store.maj('Modifications', { numero: String(r.numero) }, vals);
   Store.journal(decision === 'approuvee' ? 'modification_approuvee' : 'modification_refusee', u.email, String(r.numero) + ' ' + r.email);
   var row = simuLigne_(r.numero);
-  return { demande: simuResume_(row, u), emails: simuNotifier_(row, decision, u) };
+  return { demande: simuResume_(row, u), emails: 0 }; // aucun e-mail automatique : l'envoi se fait au clic (simuEnvoyer_)
 }
 
 // ---------- Demande de l'agent lui-même (« Modifier mon planning ») ----------
@@ -348,23 +347,4 @@ function simuEnvoyer_(req) {
   return { emails: liste.length };
 }
 
-// ---------- E-mails ----------
-function simuDestinataires_(r) {
-  var s = {};
-  function ajouter(e) { e = String(e || '').trim().toLowerCase(); if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) s[e] = true; }
-  ajouter(r.email); ajouter(r.emetteur);
-  Store.table('Utilisateurs').forEach(function (x) {
-    var role = Droits.roleCanon(x.role);
-    if (String(x.actif) !== '0' && (role === 'chef_division' || role === 'secretariat')) ajouter(x.email);
-  });
-  return Object.keys(s);
-}
-
-function simuNotifier_(r, evenement, u) {
-  try {
-    var d = simuDemandeDe_(r), dest = simuDestinataires_(r), site = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/';
-    var titre = evenement === 'demandee' ? 'Nouvelle demande de modification de planning' : evenement === 'approuvee' ? 'Demande de modification de planning APPROUVÉE' : 'Demande de modification de planning REFUSÉE';
-    Mail.envoyerDemande(dest, d, titre, site + 'demande.html?n=' + encodeURIComponent(d.numero), Annuaire.nomAffichable(u.nom, u.email));
-    return dest.length;
-  } catch (e) { Store.journal('modification_mail_echec', u.email, String(e.message || e)); return 0; }
-}
+// Aucun e-mail n'est envoyé automatiquement : l'envoi (simuEnvoyer_) se fait au clic de l'agent ou du responsable, avec des cases à cocher.

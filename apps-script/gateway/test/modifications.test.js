@@ -69,8 +69,9 @@ test('valider : demande numérotée en attente, e-mail unique aux 4 destinataire
   assert.strictEqual(r.numero, 'MOD-' + new Date().getFullYear() + '-0001'); assert.strictEqual(r.demande.statut, 'en_attente');
   assert.strictEqual(r.demande.agent.nom, 'MARTIN'); assert.strictEqual(r.demande.agent.prenom, 'ALAIN'); assert.strictEqual(r.demande.agent.matricule, 'M-1');
   assert.ok(r.demande.actuel.length >= 3 && r.demande.modifie.length >= 3);
-  assert.strictEqual(m.mails.length, 1);
-  assert.deepStrictEqual(m.mails[0].to.split(',').sort(), ['agent.a@x.dz', 'chef.div@x.dz', 'chef.s1@x.dz', 'secretaire@x.dz']);
+  assert.strictEqual(m.mails.length, 0, 'aucun e-mail automatique');
+  appel(m, 'simuEnvoyer_', 'chef.s1@x.dz', { numero: r.numero, destinataires: { secretariat: true, chef_division: true, chef_service: true } });
+  assert.deepStrictEqual(m.mails[0].to.split(',').sort(), ['chef.div@x.dz', 'chef.s1@x.dz', 'secretaire@x.dz']);
   assert.match(m.mails[0].subject, /MOD-.*MARTIN/);
   assert.match(appel(m, 'simuValider_', 'chef.div@x.dz', MODIF).numero, /-0002$/);
 });
@@ -85,7 +86,7 @@ test('approbation : seule la portée décide ; le planning officiel change ; une
   assert.throws(() => appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'peut-etre' }), /invalide/);
   const mailsAvant = m.mails.length;
   const d = appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'approuvee', commentaire: 'OK' });
-  assert.strictEqual(d.demande.statut, 'approuvee'); assert.strictEqual(m.mails.length, mailsAvant + 1);
+  assert.strictEqual(d.demande.statut, 'approuvee'); assert.strictEqual(m.mails.length, mailsAvant, 'aucun e-mail automatique');
   const apres = appel(m, 'simuDonnees_', 'chef.div@x.dz', { uid: 'u3', debut: '2026-09-01', jours: 200 }).grille;
   assert.notStrictEqual(apres, avant);
   const attendu = m.ctx.Simulation.appliquer(avant, '2026-09-01', { debut: MODIF.debut, periodes: MODIF.periodes, reprise: MODIF.reprise }, { jours_travail: 28, jours_repos: 28 });
@@ -125,7 +126,7 @@ test('lot de deux agents : tout est contrôlé avant d\'enregistrer ; deux deman
   const r = appel(m, 'simuValider_', 'chef.div@x.dz', { lot: [A, B], motif: 'Raison service' });
   assert.strictEqual(r.numeros.length, 2); assert.strictEqual(m.tables.Modifications.length, 2);
   assert.deepStrictEqual(m.tables.Modifications.map(x => x.partenaire), ['u4', 'u3']);
-  assert.strictEqual(m.mails.length, 2);
+  assert.strictEqual(m.mails.length, 0);
 });
 
 test('reliquat initial : saisie validée, présent dans la situation ; solde = initial + reliquat net des demandes approuvées', () => {
@@ -181,7 +182,7 @@ test('demande de l\'agent : jours passés intouchables, sans changement refusé,
   assert.strictEqual(m.tables.Modifications.length, 0);
 });
 
-test('décision : refus = retour au planning initial ; acceptation = validé, reliquat mis à jour, e-mail automatique au secrétariat', () => {
+test('décision : refus = retour au planning initial ; acceptation = validé, reliquat mis à jour, aucun e-mail automatique', () => {
   const m = monde(), avant = gA(m);
   const { numero } = appel(m, 'modifMoi_', 'agent.a@x.dz', DECALE);
   assert.throws(() => appel(m, 'simuDecider_', 'agent.a@x.dz', { numero, decision: 'approuvee' }), /Droits/);
@@ -193,7 +194,7 @@ test('décision : refus = retour au planning initial ; acceptation = validé, re
   const grille = gA(m);
   appel(m, 'simuDecider_', 'secretaire@x.dz', { numero: n2, decision: 'approuvee' });
   assert.strictEqual(gA(m), grille, 'validée : le planning reste appliqué');
-  assert.ok(m.mails.length > mails && m.mails[m.mails.length - 1].to.split(',').includes('secretaire@x.dz'), 'envoyé automatiquement au secrétariat');
+  assert.strictEqual(m.mails.length, mails, 'aucun e-mail automatique, même à la validation');
   const d = appel(m, 'modifMoiDonnees_', 'agent.a@x.dz', {});
   assert.strictEqual(d.en_cours, null); assert.notStrictEqual(d.solde, soldeAvant, 'le reliquat est modifié à la validation');
 });

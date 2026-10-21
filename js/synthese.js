@@ -229,7 +229,7 @@ var Synthese = (function () {
     function decider(a, decision) {
       var com = decision === 'refusee' ? prompt('Motif du refus (facultatif) :', '') : '';
       if (com === null) return;
-      if (decision === 'approuvee' && !confirm('Valider la demande de ' + a.agent + ' ? Elle sera enregistrée pour de bon et envoyée au secrétariat pour application.')) return;
+      if (decision === 'approuvee' && !confirm('Valider la demande de ' + a.agent + ' ? Elle sera enregistrée pour de bon (aucun e-mail ne part tout seul : utilisez « Envoyer… » pour la transmettre au secrétariat).')) return;
       Api.call('simu_decider', { numero: a.numero, decision: decision, commentaire: com || '' }).then(function () { monterModifs(zone); }).catch(function (e) { alert(e.message); });
     }
     function envoyer(a) {

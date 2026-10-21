@@ -376,7 +376,7 @@
       .then(function (r) {
         var s = $('succes'); s.textContent = ''; s.hidden = false;
         s.appendChild(el('b', null, (r.numeros.length > 1 ? 'Demandes ' + r.numeros.join(' et ') + ' enregistrées' : 'Demande ' + r.numeros[0] + ' enregistrée') + ' (en attente).'));
-        s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Aucun e-mail n\'a pu être envoyé. ')));
+        s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Aucun e-mail n\'est envoyé automatiquement. ')));
         r.numeros.forEach(function (num) { var a = el('a', null, 'Document ' + num + ' à imprimer et signer →'); a.href = 'demande.html?n=' + encodeURIComponent(num); a.style.cssText = 'font-weight:700;color:var(--orange-main);margin-right:12px'; s.appendChild(a); });
         annuler(true); window.scrollTo({ top: 0, behavior: 'smooth' }); listeDemandes();
       }).catch(function (err) { toast(err.message, true); btn.disabled = false; });
