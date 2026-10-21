@@ -109,6 +109,14 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Ordre de travail",
+  "Ordre de travail de la division (Division, Lieu et Imputation de l'Infrastructure par défaut, modifiables) : équipement, description, pièces de rechange, agents intervenants, approbations ; impression en un clic et historique.",
+  "🛠",
+  "ordre-travail.html",
+  1
+ ],
+ [
+  "logistique",
   "Repas à emporter",
   "Prise en charge « repas à emporter » prête à imprimer : désignations, date, nombre de personnes, imputation analytique et observations, avec historique des prises en charge établies.",
   "🥡",

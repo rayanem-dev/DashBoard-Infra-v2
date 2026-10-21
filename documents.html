@@ -151,7 +151,7 @@
     f.appendChild(el('h2', null, courant.titre)); f.appendChild(el('p', 'desc', courant.description));
     courant.champs.forEach(function (c) { var l = el('label', null, c.l); l.htmlFor = 'f-' + c.k; f.appendChild(l); var i = saisie(c); i.id = 'f-' + c.k; f.appendChild(i); });
     var a = el('div', 'dp-actions');
-    var p = el('button', 'btn-s principal', '🖨 Imprimer / Enregistrer en PDF'); p.type = 'button'; p.onclick = function () { window.print(); };
+    var p = el('button', 'btn-s principal', '🖨 Imprimer'); p.type = 'button'; p.onclick = function () { window.print(); };
     var r = el('button', 'btn-s', '↺ Réinitialiser'); r.type = 'button'; r.onclick = function () { delete brouillons[id]; ouvrir(id); };
     a.appendChild(p); a.appendChild(r); f.appendChild(a);
     f.appendChild(el('p', 'desc', 'Les cases laissées vides s\'impriment en pointillés pour être complétées à la main. Dans la fenêtre d\'impression, choisissez « Enregistrer au format PDF » pour obtenir un fichier.'));

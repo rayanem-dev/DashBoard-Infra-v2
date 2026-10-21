@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-23-31",
+    "date": "2026-10-23",
+    "title": "Version 5.29.0 — Ordre de travail",
+    "changes": [
+      "Nouvelle application « Ordre de travail » (module Logistique) : la feuille de la division en A4 paysage, avec Division, Lieu et Imputation de l'Infrastructure par défaut (modifiables), équipement, description, AVEC / SANS pièces, heures, résumé des travaux, pièces de rechange, agents intervenants, approbations ; « Imprimer » en un clic et historique sur l'ordinateur.",
+      "Tous les boutons « Imprimer / PDF » deviennent « Imprimer » (impression en un clic).",
+      "Prise en charge et autorisation d'accès : l'historique s'ouvre par une petite icône 🕘 en haut."
+    ]
+  },
+  {
     "id": "2026-10-23-30",
     "date": "2026-10-23",
     "title": "Version 5.28.5 — Renommage direct et impression en un clic",

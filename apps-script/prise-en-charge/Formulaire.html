@@ -155,6 +155,7 @@
       <div class="icones" aria-label="Actions">
       <button type="button" class="icone" id="btnCharger" onclick="ouvrirModalePDF()" title="Charger une demande PDF" aria-label="Charger une demande PDF">📤</button>
       <button type="button" class="icone" id="btnEffacer" onclick="viderFormulaire()" title="Vider les champs pour une autre prise en charge" aria-label="Vider les champs">🧹</button>
+      <button type="button" class="icone" id="btnHisto" title="Historique des demandes déjà créées" aria-label="Historique des demandes">🕘</button>
       <button type="button" class="icone" id="btnAide" onclick="ouvrirAide()" title="Aide" aria-label="Aide">❓</button>
     </div>
   </div>
@@ -163,12 +164,9 @@
 <main>
   <div id="toast"></div>
 
-  <div style="margin-bottom:14px">
-    <button type="button" id="btnHisto" class="btn-secondaire" style="padding:8px 14px;border-radius:8px;border:1.5px solid #D1D5DB;background:#fff;font-weight:700;cursor:pointer">🕘 Afficher l'historique</button>
-    <div id="histo" class="form-card" style="display:none;margin-top:10px">
-      <b>Historique des demandes déjà créées</b> <span id="histoNb" style="font-weight:400;color:#6B7280"></span>
-      <div id="histoListe" style="margin-top:10px;max-height:260px;overflow:auto;font-size:13px"></div>
-    </div>
+  <div id="histo" class="form-card" style="display:none;margin-bottom:14px">
+    <b>🕘 Historique des demandes déjà créées</b> <span id="histoNb" style="font-weight:400;color:#6B7280"></span>
+    <div id="histoListe" style="margin-top:10px;max-height:260px;overflow:auto;font-size:13px"></div>
   </div>
 
   <div class="form-card">
@@ -735,7 +733,7 @@
 
   document.getElementById('btnHisto').addEventListener('click', function() {
     const bloc = document.getElementById('histo'), ouvert = bloc.style.display !== 'none';
-    bloc.style.display = ouvert ? 'none' : 'block'; this.textContent = ouvert ? '🕘 Afficher l\'historique' : '🕘 Masquer l\'historique';
+    bloc.style.display = ouvert ? 'none' : 'block'; this.title = ouvert ? 'Historique des demandes déjà créées' : 'Masquer l\'historique';
     if (!ouvert) { document.getElementById('histoListe').textContent = 'Chargement…'; chargerHistorique(); }
   });
 

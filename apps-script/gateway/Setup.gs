@@ -119,11 +119,11 @@ function carteManquante_(valeurs, titre) {
   return true;
 }
 /** Cartes ajoutées au catalogue quand elles manquent (par titre ; les lignes viennent de SEED_APPS). */
-var CARTES_NOUVELLES_ = ['Bon de sortie matériel', 'Fiche d\'évaluation', 'Documents administratifs', 'Renommage de documents', 'Repas à emporter'];
+var CARTES_NOUVELLES_ = ['Bon de sortie matériel', 'Fiche d\'évaluation', 'Documents administratifs', 'Renommage de documents', 'Repas à emporter', 'Ordre de travail'];
 /** Une seule fois : ajoute au catalogue les nouvelles cartes qui manquent. Idempotent ; une carte supprimée ensuite ne revient pas. */
 function preparerCartesNouvelles_() {
   var props = PropertiesService.getScriptProperties();
-  if (props.getProperty('CARTES_NOUVELLES_PRET') === '4') return;
+  if (props.getProperty('CARTES_NOUVELLES_PRET') === '5') return;
   try {
     var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications');
     CARTES_NOUVELLES_.forEach(function (titre) {
@@ -131,7 +131,7 @@ function preparerCartesNouvelles_() {
       var g = SEED_APPS.filter(function (r) { return r[1] === titre; })[0];
       if (g) sh.getRange(sh.getLastRow() + 1, 1, 1, 7).setValues([g.length >= 7 ? g : g.concat([''])]);
     });
-    props.setProperty('CARTES_NOUVELLES_PRET', '4');
+    props.setProperty('CARTES_NOUVELLES_PRET', '5');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }
