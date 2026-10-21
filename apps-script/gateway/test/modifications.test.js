@@ -242,3 +242,13 @@ test('annulation par l\'agent : retour au planning initial tant que la demande n
   appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero, decision: 'approuvee' });
   assert.throws(() => appel(m, 'modifMoiAnnuler_', 'agent.a@x.dz', {}), /Aucune demande en cours/, 'approuvée : plus annulable par l\'agent');
 });
+
+test('le responsable modifie directement le planning d\'un agent de sa portée', () => {
+  const m = monde();
+  assert.throws(() => appel(m, 'modifAgentDonnees_', 'chef.s2@x.dz', { email: 'agent.a@x.dz' }), /Droits/);
+  const d = appel(m, 'modifAgentDonnees_', 'chef.s1@x.dz', { email: 'agent.a@x.dz' });
+  assert.strictEqual(d.uid, 'u3'); assert.strictEqual(d.agent, 'MARTIN ALAIN'); assert.strictEqual(d.en_cours_modif, null);
+  const v = appel(m, 'simuValider_', 'chef.s1@x.dz', { uid: 'u3', debut: ALIGNE.debut, periodes: ALIGNE.periodes, reprise: ALIGNE.reprise, motif: 'Modification directe' });
+  appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero: v.numero, decision: 'approuvee' });
+  assert.notStrictEqual(gA(m), appel(m, 'modifAgentDonnees_', 'chef.s1@x.dz', { email: 'agent.a@x.dz' }).grille_normale.slice(0, 200));
+});

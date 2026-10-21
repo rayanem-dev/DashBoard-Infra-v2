@@ -250,16 +250,24 @@ function modifMoiDonnees_(req) {
   if ((acces_(u).planning || 0) < 1) throw simuDroits_();
   return modifDonnees_(u.email, u);
 }
-/** Pour un responsable : les mêmes données, pour l'agent d'une demande qui attend sa décision (il peut la corriger avant de la valider). */
+/**
+ * Pour un responsable : les mêmes données pour un autre agent, soit celui d'une demande qui attend sa décision (`numero`, il peut la corriger puis la valider),
+ * soit un agent de sa portée (`email`, pour modifier directement son planning).
+ */
 function modifAgentDonnees_(req) {
   var u = Auth.userFromToken(req.token);
   if (simuNiveau_(u) < 2) throw simuDroits_();
-  var r = simuLigne_(req.numero); if (!r) throw new Error('Demande introuvable');
-  if (!simuDansPortee_(u, Store.utilisateur(r.email) || {})) throw simuDroits_();
-  if (!simuAttend_(r)) throw new Error('Cette demande a déjà été traitée');
-  var d = modifDonnees_(r.email, u), c = Store.utilisateur(r.email) || {};
-  d.agent = Annuaire.nomAffichable(c.nom, r.email); d.numero = String(r.numero);
-  d.en_cours_modif = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) };
+  var r = null, email = String(req.email || '').toLowerCase();
+  if (req.numero) {
+    r = simuLigne_(req.numero); if (!r) throw new Error('Demande introuvable');
+    if (!simuAttend_(r)) throw new Error('Cette demande a déjà été traitée');
+    email = String(r.email).toLowerCase();
+  }
+  var c = Store.utilisateur(email); if (!c) throw new Error('Agent inconnu');
+  if (!simuDansPortee_(u, c)) throw simuDroits_();
+  var d = modifDonnees_(email, u);
+  d.agent = Annuaire.nomAffichable(c.nom, email); d.uid = String(c.uid || '');
+  if (r) { d.numero = String(r.numero); d.en_cours_modif = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) }; }
   return d;
 }
 /**

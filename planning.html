@@ -175,8 +175,13 @@
       var pe = Employeur.pastille(l.dependance); if (pe) nm.appendChild(pe);
       Employeur.teinter(n, l.dependance);
       if (data.peutModifier && l.email) {
-        var bt = el('button', 'btn-s mini no-print', '✎'); bt.title = (l.configuree ? 'Modifier' : 'Configurer') + ' la rotation de ' + l.nom; bt.type = 'button';
-        bt.addEventListener('click', function () { Rotation.ouvrir({ titre: 'Rotation de ' + l.nom, email: l.email, valeurs: l.rotation, onOk: charger }); });
+        var bt = el('button', 'btn-s mini no-print', '✎'); bt.title = (l.configuree ? 'Modifier le planning de ' : 'Configurer la rotation de ') + l.nom; bt.type = 'button';
+        var base = function () { Rotation.ouvrir({ titre: 'Rotation de ' + l.nom, email: l.email, valeurs: l.rotation, onOk: charger }); };
+        // planning déjà enregistré : le tableau « actuel / modifié » ; sinon la petite fenêtre « Où en êtes-vous ? »
+        bt.addEventListener('click', function () {
+          if (!l.configuree) { base(); return; }
+          Api.call('modif_agent_donnees', { email: l.email }).then(function (d) { ModifPlanning.ouvrir({ donnees: d, mode: 'direct', titre: 'Planning de ' + l.nom, rotationBase: base, onChange: charger }); }).catch(function (e) { toast(e.message, true); });
+        });
         n.appendChild(bt);
       }
       tr.appendChild(n);

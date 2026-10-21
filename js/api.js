@@ -395,8 +395,9 @@
         dd.statut = p.decision; dd.decide_par = demoState.user.email; dd.decide_le = new Date().toISOString(); dd.commentaire = String(p.commentaire || ''); saveMods(ld);
         return { demande: { numero: dd.numero, statut: dd.statut }, emails: 4 }; }
       case 'modif_moi_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return demoModifDonnees(demoState.user.email); }
-      case 'modif_agent_donnees': { exigerAdmin(); var ma = demoMods().filter(function (m) { return m.numero === p.numero; })[0]; if (!ma) throw erreur('Demande introuvable');
-        var da = demoModifDonnees(ma.email); da.agent = (DEMO_USERS.filter(function (x) { return x.email === ma.email; })[0] || {}).nom; da.numero = ma.numero; da.en_cours_modif = ma.modif; return da; }
+      case 'modif_agent_donnees': { exigerAdmin(); var ma = p.numero ? demoMods().filter(function (m) { return m.numero === p.numero; })[0] : null; if (p.numero && !ma) throw erreur('Demande introuvable');
+        var emA = ma ? ma.email : p.email, uA = DEMO_USERS.filter(function (x) { return x.email === emA; })[0]; if (!uA) throw erreur('Agent inconnu');
+        var da = demoModifDonnees(emA); da.agent = uA.nom; da.uid = uA.uid; if (ma) { da.numero = ma.numero; da.en_cours_modif = ma.modif; } return da; }
       case 'modif_moi': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var em = demoState.user.email, rm = demoRots()[em]; if (!rm) throw erreur('Renseignez d\'abord votre rotation');
         var mm = { debut: p.debut, periodes: p.periodes, reprise: p.reprise }, evm = Simulation.valider(mm, rm, auj()); if (evm) throw erreur(evm);

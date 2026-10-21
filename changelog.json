@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-21",
+    "date": "2026-10-23",
+    "title": "Version 5.27.2 — Planning : le crayon ouvre le planning de l'agent",
+    "changes": [
+      "Planning des équipes : le crayon d'un agent qui a déjà un planning ouvre maintenant le tableau « Planning actuel / Planning modifié » (au lieu de la fenêtre « Où en êtes-vous ? ») ; la modification est enregistrée et validée tout de suite par le responsable. La fenêtre « Où en êtes-vous ? » reste pour un agent sans planning, et un bouton « Rotation de base… » permet de changer sa rotation habituelle."
+    ]
+  },
+  {
     "id": "2026-10-23-20",
     "date": "2026-10-23",
     "title": "Version 5.27.1 — Annuler sa demande de modification",

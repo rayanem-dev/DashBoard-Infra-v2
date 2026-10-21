@@ -31,7 +31,7 @@
   function ouvrir(options) {
     style();
     var d = options.donnees, rot = d.rotation, F = d.debut, auj = d.aujourdhui, g = d.grille_demande, ia = Simulation.diff(F, auj), cy = rot.jours_travail + rot.jours_repos;
-    var chef = options.mode === 'chef', HAB = { T: rot.jours_travail, R: rot.jours_repos };
+    var direct = options.mode === 'direct', chef = options.mode === 'chef' || direct, HAB = { T: rot.jours_travail, R: rot.jours_repos };
     // première rotation à régler : la prochaine qui commence après aujourd'hui ; si une demande est en cours, on part de son début (les jours déjà passés restent figés)
     var iS = Simulation.prochaineReleve(g, ia + 1);
     if (d.en_cours_modif && Simulation.estDate(d.en_cours_modif.debut)) { var ip = Math.max(0, Simulation.diff(F, d.en_cours_modif.debut)); while (ip > 0 && g.charAt(ip - 1) === g.charAt(ip)) ip -= 1; iS = Math.min(iS, ip); }
@@ -64,11 +64,12 @@
       tb.rows.forEach(function (r, i) { var c = tb.cellules[i], fin = Simulation.addDays(cur, Math.max(1, r.jours) - 1); c.du.textContent = fr(cur); c.au.textContent = fr(fin); cur = Simulation.addDays(fin, 1); });
     }
     var etat = el('div'); zone.appendChild(etat);
-    var motif = document.createElement('input'); motif.type = 'text'; motif.maxLength = 120; motif.value = chef ? '' : 'Demande de l\'agent'; motif.placeholder = chef ? 'Commentaire (facultatif)' : 'Motif de la demande';
+    var motif = document.createElement('input'); motif.type = 'text'; motif.maxLength = 120; motif.value = chef ? '' : 'Demande de l\'agent'; motif.placeholder = direct ? 'Motif (facultatif)' : chef ? 'Commentaire (facultatif)' : 'Motif de la demande';
     f.appendChild(el('h3', null, chef ? 'Commentaire' : 'Motif')); f.appendChild(motif);
     var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
     var boutons = el('div', 'boutons'), ann = el('button', 'btn-s', 'Fermer'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
-    var ok = el('button', 'btn', chef ? 'Valider avec ces changements' : 'Enregistrer ma demande'); ok.type = 'submit';
+    var ok = el('button', 'btn', direct ? 'Enregistrer la modification' : chef ? 'Valider avec ces changements' : 'Enregistrer ma demande');
+    if (options.rotationBase) { var rb = el('button', 'btn-s', 'Rotation de base…'); rb.type = 'button'; rb.title = 'Changer la rotation habituelle (28/28, 14/14…)'; rb.addEventListener('click', function () { dlg.close(); options.rotationBase(); }); boutons.appendChild(rb); } ok.type = 'submit';
     var annulerDemande = null;
     if (!chef && d.en_cours) { annulerDemande = el('button', 'btn-s', 'Annuler ma demande en cours'); annulerDemande.type = 'button'; boutons.appendChild(annulerDemande); }
     boutons.appendChild(ann); boutons.appendChild(ok); f.appendChild(boutons);
@@ -104,7 +105,8 @@
 
     f.addEventListener('submit', function (e) {
       e.preventDefault(); if (!courant) return; ok.disabled = true; msg.className = 'msg';
-      var m = courant.m, p = chef ? Api.call('simu_decider', { numero: options.numero, decision: 'approuvee', commentaire: motif.value, modif: m }) : Api.call('modif_moi', { debut: m.debut, periodes: m.periodes, reprise: m.reprise, motif: motif.value });
+      var m = courant.m, p = direct ? Api.call('simu_valider', { uid: d.uid, debut: m.debut, periodes: m.periodes, reprise: m.reprise, motif: motif.value || 'Modification directe' }).then(function (v) { return Api.call('simu_decider', { numero: v.numero, decision: 'approuvee', commentaire: 'Modification directe' }); })
+        : chef ? Api.call('simu_decider', { numero: options.numero, decision: 'approuvee', commentaire: motif.value, modif: m }) : Api.call('modif_moi', { debut: m.debut, periodes: m.periodes, reprise: m.reprise, motif: motif.value });
       p.then(function (r) { if (options.onChange) options.onChange(r); if (chef) { dlg.close(); return; } suite(r); })
         .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
     });
