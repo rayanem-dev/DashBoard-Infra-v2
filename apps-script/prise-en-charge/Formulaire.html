@@ -758,5 +758,13 @@
   }
 </script>
 <script src="https://rayanem-dev.github.io/DashBoard-Infra-v2/js/pied.js" data-nom="Prise en charge et autorisation d’accès"></script>
+<style>
+  /* Ouverte dans le site (app.html) : le titre est celui du site ; on garde seulement les icônes d'action (📤 🧹 🕘 ❓) dans une fine barre */
+  body.embarque header .logo-circle, body.embarque header .logo-text { display: none !important; }
+  body.embarque header .header-inner { padding: 6px 16px; justify-content: flex-end; }
+</style>
+<script>
+google.script.url.getLocation(function (l) { if (l && l.parameter && l.parameter.embed === '1') document.body.classList.add('embarque'); });
+</script>
 </body>
 </html>

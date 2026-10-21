@@ -40,7 +40,7 @@
   if (t) { document.getElementById('titre').textContent = t; document.title = t + ' – Division Infrastructure RNS'; }
   if (e) document.getElementById('ico').textContent = e;
   if (!ok) { var m = document.getElementById('msg'); m.hidden = false; m.textContent = 'Adresse d\'application invalide. Revenez au portail et rouvrez l\'application depuis sa carte.'; document.getElementById('cadre').hidden = true; return; }
-  document.getElementById('cadre').src = u;
+  document.getElementById('cadre').src = u + '?embed=1';   // l'application masque alors son propre en-tête (celui du site fait foi)
 })();
 </script>
 </body>
