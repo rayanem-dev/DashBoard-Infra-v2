@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-41",
+    "date": "2026-10-23",
+    "title": "Version 5.30.4 — Dotations : téléphone et impression en un clic",
+    "changes": [
+      "Dotations : affichage adapté au téléphone (types en grille, champs et quantités pleine largeur, police 16 px pour éviter le zoom, historique réorganisé, gros boutons).",
+      "Dotations : bouton « 🖨 Imprimer » en un clic après la génération et sur chaque ligne de l'historique (le PDF s'ouvre directement dans la fenêtre d'impression)."
+    ]
+  },
+  {
     "id": "2026-10-23-40",
     "date": "2026-10-23",
     "title": "Version 5.30.3 — Autorisation GAZ-OIL : champ du numéro retiré",

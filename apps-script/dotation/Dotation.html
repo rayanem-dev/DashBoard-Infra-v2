@@ -376,6 +376,29 @@
     transition: background 0.15s;
   }
   .btn-suppr-item:hover { background: #F6C6C6; }
+
+  /* ---- Téléphone ---- */
+  .btn-imprimer { background: var(--green-pale); color: var(--green-main); border: none; border-radius: 7px; font: inherit; font-size: 11px; font-weight: 700; padding: 6px 9px; white-space: nowrap; cursor: pointer; }
+  #resultat .btn-imprimer { font-size: 13px; padding: 11px 14px; border-radius: 10px; }
+  .histo-links a, .histo-links .btn-imprimer { display: inline-block; }
+  @media (max-width: 600px) {
+    .header-inner { padding: 14px 16px; } .logo-text h1 { font-size: 16px; }
+    main { margin-top: 16px; padding: 0 12px; }
+    .card { padding: 16px 14px; border-radius: 14px; }
+    .type-selector { display: grid; grid-template-columns: 1fr 1fr; }
+    .type-btn { min-width: 0; padding: 12px 6px; font-size: 13px; }
+    input[type=date], input[type=text], input[type=number], select, #cardRepas textarea { font-size: 16px; }   /* évite le zoom automatique sur iPhone */
+    .qte-row { flex-direction: column; align-items: stretch; gap: 6px; }
+    .qte-row input, .qte-row select, .qte-row.division input { width: 100%; text-align: left; }
+    #cardRepas .deux { grid-template-columns: 1fr; }
+    #personnel { max-height: 220px; } .chip { padding: 12px; font-size: 14px; }
+    button.generer { padding: 16px; font-size: 15px; }
+    .histo-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; } .histo-links { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; } .btn-suppr-item { grid-column: 3; grid-row: 1; }
+    .histo-links a, .histo-links .btn-imprimer { padding: 9px 12px; font-size: 12px; }
+    .btn-suppr-item { width: 38px; height: 38px; }
+    #historique { max-height: none; }
+    .card-title { flex-wrap: wrap; }
+  }
 </style>
 </head>
 <body>
@@ -789,7 +812,10 @@ function generer(type){
     }
     document.getElementById('resultat').innerHTML =
       '<a href="'+res.docUrl+'" target="_blank" rel="noopener">📄 Ouvrir le Google Doc</a>' +
-      '<a href="'+res.pdfUrl+'" target="_blank" rel="noopener">⬇️ Ouvrir le PDF</a>';
+      '<a href="'+res.pdfUrl+'" target="_blank" rel="noopener">⬇️ Ouvrir le PDF</a>' +
+      '<button type="button" class="btn-imprimer" id="btnImprimerResultat">🖨 Imprimer</button>';
+    const idRes = res.pdfId || idDrive_(res.pdfUrl);
+    document.getElementById('btnImprimerResultat').onclick = function(){ imprimerDirect(idRes, this); };
     chargerHistorique();
   }).withFailureHandler(function(err){
     btn.disabled = false; btn.textContent = texteOriginal;
@@ -814,7 +840,7 @@ function chargerHistorique(){
       row.className = 'histo-item';
       let links = '';
       if(f.docId) links += '<a href="https://docs.google.com/document/d/'+f.docId+'/edit" target="_blank" rel="noopener">📄 Doc</a>';
-      if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank" rel="noopener">⬇️ PDF</a>';
+      if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank" rel="noopener">⬇️ PDF</a><button type="button" class="btn-imprimer" data-pdf="'+f.pdfId+'">🖨 Imprimer</button>';
       const tagClass = (f.type === 'EAU') ? 'eau' : (f.type === 'ENTRETIEN') ? 'entretien' : (f.type === 'DIVISION') ? 'division' : (f.type === 'REPAS') ? 'repas' : 'vivres';
       row.innerHTML =
         '<span class="histo-tag ' + tagClass + '">' + f.type + '</span>' +
@@ -824,11 +850,33 @@ function chargerHistorique(){
         '</div>' +
         '<div class="histo-links">' + links + '</div>' +
         '<button class="btn-suppr-item" title="Supprimer" onclick="supprimerUn(this, \''+ (f.docId||'') +'\', \''+ (f.pdfId||'') +'\')">🗑</button>';
+      row.querySelectorAll('.btn-imprimer').forEach(function(b){ b.onclick = function(){ imprimerDirect(b.dataset.pdf, b); }; });
       div.appendChild(row);
     });
   }).withFailureHandler(function(err){
     div.innerHTML = '<div class="placeholder">Erreur : ' + err.message + '</div>';
   }).listerDotationsGenerees();
+}
+
+function idDrive_(url){ const m = /\/d\/([^\/?#]+)/.exec(String(url || '')); return m ? m[1] : ''; }
+
+/** Impression en un clic : la fenêtre d'impression du navigateur s'ouvre directement (imprimante par défaut). Repli : le PDF s'ouvre dans un onglet. */
+function imprimerDirect(pdfId, btn){
+  if(!pdfId){ alert('Impression impossible : PDF introuvable.'); return; }
+  const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Préparation…';
+  google.script.run.withSuccessHandler(function(res){
+    btn.disabled = false; btn.textContent = txt;
+    if(!res.success){ alert('Erreur : ' + res.error); return; }
+    try {
+      const bin = atob(res.base64), o = new Uint8Array(bin.length);
+      for(let i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([o], { type: 'application/pdf' })), cadre = document.createElement('iframe');
+      cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+      cadre.onload = function(){ try { cadre.contentWindow.focus(); cadre.contentWindow.print(); } catch(e){ window.open(url, '_blank'); } };
+      cadre.src = url; document.body.appendChild(cadre);
+      setTimeout(function(){ cadre.remove(); URL.revokeObjectURL(url); }, 180000);
+    } catch(e){ alert('Impression impossible : ' + e.message); }
+  }).withFailureHandler(function(err){ btn.disabled = false; btn.textContent = txt; alert('Erreur : ' + err.message); }).lireDotationPourImpression(pdfId);
 }
 
 function supprimerUn(btn, docId, pdfId){

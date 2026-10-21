@@ -597,6 +597,15 @@ function listerDotationsGenerees() {
   }
 }
 
+/** Contenu (base64) du PDF d'une dotation pour l'impression en un clic depuis le navigateur. Seuls les PDF « DOTATION_… » sont lisibles. */
+function lireDotationPourImpression(pdfId) {
+  try {
+    const f = DriveApp.getFileById(String(pdfId || ''));
+    if (f.getMimeType() !== MimeType.PDF || f.getName().indexOf('DOTATION_') !== 0) throw new Error('Ce fichier n\'est pas une dotation générée.');
+    return { success: true, nom: f.getName(), base64: Utilities.base64Encode(f.getBlob().getBytes()) };
+  } catch (error) { return { success: false, error: error.message }; }
+}
+
 function supprimerDotation(docId, pdfId) {
   try {
     if (docId) DriveApp.getFileById(docId).setTrashed(true);
