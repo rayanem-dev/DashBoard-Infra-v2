@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-30",
+    "date": "2026-10-23",
+    "title": "Version 5.28.5 — Renommage direct et impression en un clic",
+    "changes": [
+      "Renommage de documents : plus de colonnes Type ni Agent ; le nom proposé est ce que l'outil a lu dans le document (titre et date). « Remplacer le nom » renomme le fichier directement dans son dossier (le dossier choisi est gardé), « Renommer tous les fichiers » fait de même pour toute la liste ; le ZIP reste disponible.",
+      "Fiche d'évaluation : bouton « 🖨 Imprimer » en un clic (après génération et dans l'archive). L'impression en un clic devient la norme pour les documents générés (enregistrée dans la brique _output de la bibliothèque)."
+    ]
+  },
+  {
     "id": "2026-10-23-29",
     "date": "2026-10-23",
     "title": "Version 5.28.4 — Fiche d'évaluation : envoi au secrétariat et filets",

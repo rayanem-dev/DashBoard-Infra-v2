@@ -50,10 +50,10 @@
   </div>
   <div class="bloc" id="b-liste" hidden>
     <h2>Noms proposés <span id="etat"></span></h2>
-    <p class="note">Corrigez un nom si besoin : en cliquant « Appliquer », l'outil <b>apprend</b> vos corrections pour les documents du même genre.</p>
-    <table class="fic"><thead><tr><th>Fichier d'origine</th><th>Type</th><th>Agent</th><th>Nouveau nom</th></tr></thead><tbody id="corps"></tbody></table>
+    <p class="note">Le nom proposé est ce que l'outil a lu dans le document (titre et date). S'il est bon, « Remplacer le nom » renomme le fichier directement ; « Renommer tous » fait de même pour toute la liste. Si vous le corrigez, l'outil <b>apprend</b> pour les documents du même genre.</p>
+    <table class="fic"><thead><tr><th>Fichier d'origine</th><th>Nom proposé (lu dans le document)</th><th></th></tr></thead><tbody id="corps"></tbody></table>
     <div class="barre">
-      <button class="btn-p" id="b-dossier" type="button" hidden>📁 Renommer dans le dossier…</button>
+      <button class="btn-p" id="b-tous" type="button" hidden>✔ Renommer tous les fichiers</button>
       <button class="btn-p" id="b-zip" type="button">⬇ Télécharger les fichiers renommés (ZIP)</button>
       <button class="btn-s" id="b-vider" type="button">Vider la liste</button>
     </div>
@@ -74,13 +74,10 @@
   if (window.Api && Api.demo) $('demo').hidden = false;
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 4000); }
-  var TYPES = [['', 'Reconnu automatiquement'], ['titre_conge', 'Titre de congé'], ['fiche_emolument', 'Fiche de paie'], ['contrat', 'Contrat'], ['attestation_cnas', 'Attestation CNAS'], ['maj_cnas', 'MAJ CNAS'], ['attestation_travail', 'Attestation de travail'], ['attestation_emoluments', 'Attestation d\'émoluments'], ['ats', 'ATS'], ['autre', 'Autre / appris']];
-  var agents = [], items = [], regles = [], CLE = 'renomi_regles';
+  var items = [], regles = [], dossierChoisi = null, CLE = 'renomi_regles';
   try { regles = JSON.parse(localStorage.getItem(CLE) || '[]'); } catch (e) { regles = []; }
   function sauver() { try { localStorage.setItem(CLE, JSON.stringify(regles)); } catch (e) { /* stockage indisponible */ } dessinerRegles(); }
 
-  // ---------- agents (BDDORGA) ----------
-  if (window.Api) Api.call('annuaire_personnes').then(function (r) { agents = (r.personnes || []).filter(function (p) { return p.nom; }).map(function (p, i) { return { id: String(i), nom: p.nom }; }); }).catch(function () { /* sans annuaire : le type et les dates restent reconnus */ });
 
   // ---------- lecture du contenu (bibliothèques chargées à la demande) ----------
   var chargees = {};
@@ -105,38 +102,23 @@
   // ---------- analyse d'un fichier ----------
   function ext(nom) { return (/\.([A-Za-z0-9]{2,5})$/.exec(nom) || [, ''])[1].toLowerCase(); }
   function analyser(it) {
-    var texte = it.texte || '', opts = { agents: agents, ocr: function () { return texte; } };
-    if (it.type) opts.type = it.type;
-    var det = AutoDetectDoc.detecter({ nom: it.f.name }, opts), e = ext(it.f.name);
-    if ($('o-pdf').checked && /^(jpe?g|png)$/.test(e)) e = 'pdf';
-    var agent = it.agentId ? agents.filter(function (a) { return a.id === it.agentId; })[0] : det.candidats[0];
-    it.det = det; it.agent = agent || null;
-    if (det.type !== 'autre' && agent) { it.nom = AutoDetectDoc.nomFinal(det.type, agent, det.champs, e, it.f.name); it.origine = 'reconnu'; }
-    else if (det.type !== 'autre') {             // type reconnu mais agent introuvable : nom provisoire à compléter (choisir l'agent dans la liste)
-      it.nom = AutoDetectDoc.nomFinal(det.type, { id: '0', nom: 'NOM Prenom' }, det.champs, e, it.f.name); it.origine = 'reconnu';
-      det.avertissement = ((det.avertissement || '') + ' Agent non reconnu : choisissez-le dans la liste.').trim();
-    }
-    else {
-      var p = Renomi.proposer({ nom: it.f.name, texte: texte }, regles);
-      it.nom = p.regle ? p.nom.replace(/\.[A-Za-z0-9]{2,5}$/, '') + '.' + e : (agent ? AutoDetectDoc.nomFinal('autre', agent, {}, e, it.f.name) : Renomi.nettoyer(p.nom.replace(/\.[A-Za-z0-9]{2,5}$/, '')) + '.' + e);
-      it.origine = p.regle ? 'appris' : 'defaut';
-    }
-    it.propose = it.nom;
+    var e = ext(it.f.name); if ($('o-pdf').checked && /^(jpe?g|png)$/.test(e)) e = 'pdf';
+    var p = Renomi.proposer({ nom: it.f.name, texte: it.texte || '' }, regles);
+    it.nom = Renomi.nettoyer(p.nom.replace(/\.[A-Za-z0-9]{2,5}$/, '')) + '.' + e;      // Titre_date lus dans le document (ou règle apprise)
+    it.origine = p.regle ? 'appris' : 'defaut'; it.propose = it.nom;
   }
   function dessiner() {
     var c = $('corps'); c.textContent = ''; $('b-liste').hidden = !items.length;
+    var restants = items.filter(function (it) { return !it.fait; }).length; $('b-tous').textContent = '✔ Renommer tous les fichiers (' + restants + ')'; $('b-tous').disabled = !restants;
     items.forEach(function (it, i) {
       var tr = el('tr'), t0 = el('td'); t0.appendChild(el('div', 'orig', it.f.name));
-      if (it.det && it.det.avertissement) t0.appendChild(el('div', 'av', it.det.avertissement));
       if (it.texte) { var ch = Renomi.champs(it.texte, ''); if (ch.titre || ch.date) t0.appendChild(el('div', 'ok', '🔎 ' + (ch.titre ? 'Titre : ' + ch.titre : '') + (ch.titre && ch.date ? ' · ' : '') + (ch.date ? 'Date : ' + ch.date.split('-').reverse().join('/') : ''))); else t0.appendChild(el('div', 'av', 'Aucun texte lisible trouvé dans ce document.')); }
       if (it.origine === 'appris') t0.appendChild(el('div', 'ok', '🧠 Règle apprise appliquée'));
-      var t1 = el('td'), s = el('select'); TYPES.forEach(function (x) { var o = new Option(x[1], x[0]); if (x[0] === (it.type || '')) o.selected = true; s.appendChild(o); });
-      s.onchange = function () { it.type = s.value; analyser(it); dessiner(); }; t1.appendChild(s);
-      var t2 = el('td'), a = el('select'); a.appendChild(new Option('—', ''));
-      agents.forEach(function (g) { var o = new Option(g.nom, g.id); if (it.agent && it.agent.id === g.id) o.selected = true; a.appendChild(o); });
-      a.onchange = function () { it.agentId = a.value; analyser(it); dessiner(); }; t2.appendChild(a);
-      var t3 = el('td'), n = el('input'); n.value = it.nom; n.oninput = function () { it.nom = n.value; }; t3.appendChild(n);
-      [t0, t1, t2, t3].forEach(function (x) { tr.appendChild(x); }); c.appendChild(tr);
+      var t3 = el('td'), n = el('input'); n.value = it.nom; n.disabled = !!it.fait; n.oninput = function () { it.nom = n.value; }; t3.appendChild(n);
+      var t4 = el('td'); t4.style.whiteSpace = 'nowrap';
+      if (it.fait) t4.appendChild(el('span', 'ok', '✔ Renommé'));
+      else if (window.showDirectoryPicker) { var b = el('button', 'btn-s', 'Remplacer le nom'); b.type = 'button'; b.title = 'Renomme ce fichier directement dans son dossier'; b.onclick = function () { renommer([it]); }; t4.appendChild(b); }
+      [t0, t3, t4].forEach(function (x) { tr.appendChild(x); }); c.appendChild(tr);
     });
   }
   function ajouter(liste) {
@@ -147,9 +129,8 @@
       if (i >= nouveaux.length) { $('etat').textContent = ''; dessiner(); return; }
       var it = nouveaux[i]; i += 1; $('etat').textContent = '— analyse ' + i + ' / ' + nouveaux.length + '…';
       analyser(it);
-      var besoin = it.det.type === 'autre' || (it.det.avertissement && !it.agent) || !it.agent;
       var pdf = /\.pdf$/i.test(it.f.name), voulu = pdf ? $('o-texte').checked || $('o-ocr').checked : $('o-ocr').checked;
-      if (besoin && voulu) lireTexte(it.f, $('o-ocr').checked).then(function (t) { it.texte = t; analyser(it); }).catch(function (e) { it.det.avertissement = (it.det.avertissement + ' Lecture impossible : ' + e.message).trim(); }).then(suite);
+      if (voulu) lireTexte(it.f, $('o-ocr').checked).then(function (t) { it.texte = t; analyser(it); }).catch(function (e) { toast('Lecture impossible : ' + e.message, true); }).then(suite);
       else suite();
     })();
   }
@@ -195,15 +176,17 @@
       a.href = URL.createObjectURL(blob); a.download = 'documents_renommes.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000); toast('ZIP prêt : ' + noms.length + ' fichier(s).');
     }).catch(function (e) { toast(e.message, true); }).then(function () { $('b-zip').disabled = false; });
   }
-  function dansDossier() {            // Chrome / Edge : renomme les fichiers directement dans le dossier choisi (copie sous le nouveau nom, puis retrait de l'ancien)
-    window.showDirectoryPicker({ mode: 'readwrite' }).then(function (dir) {
+  /** Remplace directement le nom des fichiers dans leur dossier (Chrome / Edge) : écrit sous le nouveau nom, puis retire l'ancien. Le dossier choisi est gardé pour les fichiers suivants. */
+  function renommer(liste) {
+    var dir0 = dossierChoisi ? Promise.resolve(dossierChoisi) : window.showDirectoryPicker({ mode: 'readwrite' }).then(function (d) { dossierChoisi = d; return d; });
+    dir0.then(function (dir) {
       apprendre(); var noms = nomsUniques(), fait = 0;
-      return items.reduce(function (p, it, i) {
-        return p.then(function () { return dir.getFileHandle(it.f.name).then(function (h) { return h.getFile(); }).catch(function () { return it.f; }); }).then(function (f) { it.f = f; return octets(it); })
-          .then(function (u) { return dir.getFileHandle(noms[i], { create: true }).then(function (h) { return h.createWritable(); }).then(function (w) { return w.write(u).then(function () { return w.close(); }); }); })
-          .then(function () { if (noms[i] !== it.f.name) return dir.removeEntry(it.f.name).catch(function () { /* l'original n'était pas dans ce dossier */ }); })
-          .then(function () { fait += 1; });
-      }, Promise.resolve()).then(function () { toast('✔ ' + fait + ' fichier(s) renommé(s) dans le dossier.'); });
+      return liste.reduce(function (p, it) {
+        var i = items.indexOf(it);
+        return p.then(function () { return dir.getFileHandle(it.f.name).then(function (h) { return h.getFile(); }).catch(function () { throw new Error('« ' + it.f.name + ' » n\'est pas dans le dossier choisi : choisissez le dossier qui le contient.'); }); })
+          .then(function (f) { it.f = f; if (noms[i] === f.name) return null; return octets(it).then(function (u) { return dir.getFileHandle(noms[i], { create: true }).then(function (h) { return h.createWritable(); }).then(function (w) { return w.write(u).then(function () { return w.close(); }); }); }).then(function () { return dir.removeEntry(f.name); }); })
+          .then(function () { it.fait = true; it.nom = noms[i]; fait += 1; });
+      }, Promise.resolve()).then(function () { toast('✔ ' + fait + ' fichier(s) renommé(s) dans le dossier.'); dessiner(); }, function (e) { dossierChoisi = null; dessiner(); throw e; });
     }).catch(function (e) { if (e && e.name !== 'AbortError') toast(e.message, true); });
   }
 
@@ -215,11 +198,11 @@
   ['dragleave', 'drop'].forEach(function (n) { dep.addEventListener(n, function (e) { e.preventDefault(); dep.classList.remove('sur'); }); });
   dep.addEventListener('drop', function (e) { ajouter(e.dataTransfer.files); });
   $('b-zip').onclick = telecharger; $('b-vider').onclick = function () { items = []; dessiner(); };
-  if (window.showDirectoryPicker) { $('b-dossier').hidden = false; $('b-dossier').onclick = dansDossier; }
+  if (window.showDirectoryPicker) { $('b-tous').hidden = false; $('b-tous').onclick = function () { renommer(items.filter(function (it) { return !it.fait; })); }; }
   $('r-exp').onclick = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(regles, null, 2)], { type: 'application/json' })); a.download = 'renomi-regles.json'; a.click(); };
   $('r-imp').onclick = function () { $('r-fic').click(); };
   $('r-fic').onchange = function () { var f = $('r-fic').files[0]; if (!f) return; f.text().then(function (t) { var l = JSON.parse(t); if (!Array.isArray(l)) throw new Error('Fichier de règles invalide'); l.forEach(function (r) { if (r && r.modele && !regles.some(function (x) { return x.modele === r.modele && String(x.mots) === String(r.mots); })) regles.push(r); }); sauver(); toast('Règles importées.'); }).catch(function (e) { toast(e.message, true); }); $('r-fic').value = ''; };
-  ['o-pdf'].forEach(function (id) { $(id).onchange = function () { items.forEach(analyser); dessiner(); }; });
+  ['o-pdf'].forEach(function (id) { $(id).onchange = function () { items.forEach(function (it) { if (!it.fait) analyser(it); }); dessiner(); }; });
   dessinerRegles();
 })();
 </script>
