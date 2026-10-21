@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-52",
+    "date": "2026-10-23",
+    "title": "Version 5.32.5 — Planning : bouton Configurer toujours visible",
+    "changes": [
+      "Planning des équipes : le bouton de la rotation (✎, ou « ⚙ Configurer » pour un agent non configuré) était coupé quand le nom était long ; il reste maintenant toujours visible, c'est le nom qui se tronque (…). Colonne des noms un peu plus large."
+    ]
+  },
+  {
     "id": "2026-10-23-51",
     "date": "2026-10-23",
     "title": "Version 5.32.4 — Pointage : en-tête de la division",

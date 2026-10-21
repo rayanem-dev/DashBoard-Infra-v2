@@ -160,8 +160,9 @@ details.svc .liste .case { margin: 6px 0; font-size: 13px; }
 details.svc .liste .outils { display: flex; gap: 12px; margin-bottom: 6px; }
 table.plan2 { border-collapse: separate; border-spacing: 0; font-size: 12px; }
 table.plan2 th, table.plan2 td { padding: 0; border-bottom: 1px solid var(--border); background: var(--surface); }
-table.plan2 .nom { position: sticky; left: 0; z-index: 2; padding: 3px 10px; min-width: 190px; max-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-table.plan2 td.nom b { display: inline; font-size: 13px; }
+table.plan2 .nom { position: sticky; left: 0; z-index: 2; padding: 3px 10px; min-width: 220px; max-width: 300px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+table.plan2 td.nom b { display: block; font-size: 13px; }
+table.plan2 .nl { display: flex; align-items: center; gap: 6px; min-width: 0; } table.plan2 .nl b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } table.plan2 .nl .mini, table.plan2 .nl .pastille-emp { flex: none; margin-left: 0; }
 table.plan2 td.nom small { color: var(--text-muted); }
 table.plan2 td.etat { padding: 6px 10px; white-space: nowrap; }
 table.plan2 td.frise { padding: 3px 4px; line-height: 0; }

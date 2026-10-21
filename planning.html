@@ -171,18 +171,19 @@
     var body = el('tbody');
     lignes.forEach(function (l) {
       var tr = el('tr', l.moi ? 'moi' : ''); var n = el('td', 'nom'); n.title = [l.fonction, l.service].filter(Boolean).join(' · ');
-      var nm = el('b', null, l.nom || ''); n.appendChild(nm);
-      var pe = Employeur.pastille(l.dependance); if (pe) nm.appendChild(pe);
+      // le nom se tronque (…) mais l'employeur et le bouton restent toujours visibles
+      var w = el('div', 'nl'), nm = el('b', null, l.nom || ''); w.appendChild(nm); n.appendChild(w);
+      var pe = Employeur.pastille(l.dependance); if (pe) { pe.style.flex = 'none'; w.appendChild(pe); }
       Employeur.teinter(n, l.dependance);
       if (data.peutModifier && l.email) {
-        var bt = el('button', 'btn-s mini no-print', '✎'); bt.title = (l.configuree ? 'Modifier le planning de ' : 'Configurer la rotation de ') + l.nom; bt.type = 'button';
+        var bt = el('button', 'btn-s mini no-print', l.configuree ? '✎' : '⚙ Configurer'); bt.title = (l.configuree ? 'Modifier le planning de ' : 'Configurer la rotation de ') + l.nom; bt.type = 'button';
         var base = function () { Rotation.ouvrir({ titre: 'Rotation de ' + l.nom, email: l.email, valeurs: l.rotation, onOk: charger }); };
         // planning déjà enregistré : le tableau « actuel / modifié » ; sinon la petite fenêtre « Où en êtes-vous ? »
         bt.addEventListener('click', function () {
           if (!l.configuree) { base(); return; }
           Api.call('modif_agent_donnees', { email: l.email }).then(function (d) { ModifPlanning.ouvrir({ donnees: d, mode: 'direct', titre: 'Planning de ' + l.nom, rotationBase: function () { ModifPlanning.ouvrirInitial({ titre: 'Planning actuel de ' + l.nom, email: l.email, valeurs: d.rotation, donnees: d, onOk: charger }); }, onChange: charger }); }).catch(function (e) { toast(e.message, true); });
         });
-        n.appendChild(bt);
+        w.appendChild(bt);
       }
       tr.appendChild(n);
       var s = l.situation, et = null;
