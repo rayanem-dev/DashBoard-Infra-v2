@@ -177,6 +177,9 @@
     ['Sonatrach · RNS · PDF, JPG, PNG · l\'outil apprend de vos corrections', 'Sonatrach · RNS · PDF, JPG, PNG · the tool learns from your corrections', 'سوناطراك · RNS · PDF وJPG وPNG · الأداة تتعلم من تصحيحاتك'],
     ['Sonatrach · RNS · Fiches contact ↔ BDDORGA', 'Sonatrach · RNS · Contact cards ↔ BDDORGA', 'سوناطراك · RNS · بطاقات الاتصال ↔ BDDORGA'],
     ["Saisissez les personnes d'une entreprise : elles sont ajoutées à l'onglet « ENTREPRISE · contrat » des Enquêtes administratives (créé s'il n'existe pas), à la suite des personnes déjà inscrites, avec la date d'enregistrement.", "Enter a company's people: they are added to the « COMPANY · contract » tab of the Administrative surveys (created if missing), after the people already listed, with the registration date.", "أدخل أشخاص مؤسسة ما: تُضاف إلى تبويب « المؤسسة · العقد » في التحقيقات الإدارية (يُنشأ إن لم يكن موجودًا)، بعد الأشخاص المسجلين سابقًا، مع تاريخ التسجيل."],
+    ["Nombre de rotations", "Number of rotations", "عدد التناوبات"],
+    ["Sur combien de rotations le changement peut s'étaler (par pas d'une semaine). Les propositions vont de la plus rapide à celles qui durent plusieurs séjours.", "Over how many rotations the change may be spread (in steps of one week). Proposals run from the quickest to those lasting several stays.", "على كم تناوب يمكن توزيع التغيير (بخطوة أسبوع). تتراوح الاقتراحات من الأسرع إلى تلك التي تمتد على عدة إقامات."],
+    ["Le changement se fait par semaines entières, à la relève de chacun. Choisissez le nombre de rotations sur lesquelles il peut s'étaler : les propositions donnent le vis-à-vis le plus parfait, de la plus rapide à celles qui durent plusieurs séjours. « Utiliser » les place dans l'éditeur ci-dessus.", "The change is made in whole weeks, at each person's handover. Choose how many rotations it may be spread over: proposals give the most perfect face-to-face, from the quickest to those lasting several stays. « Use » places them in the editor above.", "يتم التغيير بأسابيع كاملة عند مناوبة كل شخص. اختر عدد التناوبات التي يمكن توزيعه عليها: تعطي الاقتراحات أكمل تقابل، من الأسرع إلى تلك التي تمتد على عدة إقامات. « استخدام » يضعها في المحرر أعلاه."],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -184,6 +187,7 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^(\d+) proposition\(s\) : le vis-à-vis le plus parfait d'abord, puis la plus rapide\.$/, function (n) { return n + ' proposal(s): the most perfect face-to-face first, then the quickest.'; }],
     [/^ · (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return ' · ' + grp(g, en) + ' · ' + a + ' agent' + (a > 1 ? 's' : '') + ' · ' + j + ' day' + (j > 1 ? 's' : '') + ' without anyone'; }],
     [/^· (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return '· ' + grp(g, en) + ' · ' + a + ' agent' + (a > 1 ? 's' : '') + ' · ' + j + ' day' + (j > 1 ? 's' : '') + ' without anyone'; }],
     [/^(\d+)\s*pers\.$/, function (n) { return n + (n > 1 ? ' people' : ' person'); }],
@@ -210,6 +214,7 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^(\d+) proposition\(s\) : le vis-à-vis le plus parfait d'abord, puis la plus rapide\.$/, function (n) { return n + ' اقتراح: أكمل تقابل أولًا، ثم الأسرع.'; }],
     [/^ · (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return ' · ' + grp(g, ar) + ' · ' + a + ' عون · ' + j + ' يوم بلا حضور'; }],
     [/^· (.+) · (\d+) agents? · (\d+) jours? sans personne$/, function (g, a, j) { return '· ' + grp(g, ar) + ' · ' + a + ' عون · ' + j + ' يوم بلا حضور'; }],
     [/^(\d+)\s*pers\.$/, function (n) { return n + ' شخص'; }],

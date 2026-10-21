@@ -81,6 +81,8 @@
   .st.appliquee, .st.en_attente { background: #FEF3C7; color: #92400E; } .st.approuvee { background: #DCFCE7; color: #166534; } .st.refusee { background: #FEE2E2; color: #991B1B; }
   @media (max-width: 720px) { .frise .etiq { width: 120px; } .sem { width: 52px; } .barre .lien { margin-left: 0; } }
   @media print { .no-print { display: none !important; } .bloc { box-shadow: none; break-inside: avoid; } }
+  .edit-pres { margin: 4px 0 14px; padding: 12px 14px; border: 1px solid var(--line, #E5E7EB); border-radius: 12px; background: rgba(0,0,0,.02); }
+  .edit-pres h2 { margin-top: 0; font-size: 1.05rem; }
 </style>
 </head>
 <body>
@@ -114,11 +116,7 @@
       <h2 id="t-grp">Équipes</h2>
       <div id="couv"></div>
       <p class="aide2 no-print" id="aide-grp">Cliquez sur un agent (A), puis sur son vis-à-vis (B) : les deux se placent l'un sous l'autre en haut du graphique. Cliquez de nouveau pour retirer.</p>
-      <div class="frise-zone"><div class="frise" id="frise"></div></div>
-      <div class="legende-s" id="legende"></div>
-    </div>
-
-    <div class="bloc" id="b-edit" hidden>
+    <div id="b-edit" class="edit-pres" hidden>
       <h2>Changer les semaines à la main</h2>
       <p class="aide2 no-print">Pour chaque agent, cliquez sur une semaine : <b>travail</b> → <b>repos</b> → retour au planning prévu. Le graphique et le résumé suivent aussitôt ; ensuite la rotation habituelle reprend.</p>
       <div id="editeurs"></div>
@@ -126,10 +124,14 @@
       <div class="bilan" id="bilan"></div>
       <div class="actions no-print"><button class="btn-s" id="imprimer" type="button">🖨 Imprimer</button><button class="btn-s" id="raz" type="button">↺ Tout remettre comme prévu</button></div>
     </div>
+      <div class="frise-zone"><div class="frise" id="frise"></div></div>
+      <div class="legende-s" id="legende"></div>
+    </div>
 
     <div class="bloc no-print" id="b-prop" hidden>
       <h2>💡 Propositions automatiques</h2>
-      <p class="aide2">Des décalages de 1 à 8 semaines entières, qui commencent <b>à la relève de chacun</b> (le jour de relève de chaque agent est respecté). Classées du moins de jours de conflit, puis du <b>plus petit reliquat</b> (positif ou négatif) au plus grand. Elles respectent le choix « Le changement commence » ci-dessus.</p>
+      <p class="aide2">Le changement se fait par semaines entières, à la relève de chacun. Choisissez le nombre de rotations sur lesquelles il peut s\'étaler : les propositions donnent le vis-à-vis le plus parfait, de la plus rapide à celles qui durent plusieurs séjours. « Utiliser » les place dans l\'éditeur ci-dessus.</p>
+      <div class="barre" style="margin:0 0 8px"><div><label for="nb-rot">Nombre de rotations</label><input type="number" id="nb-rot" min="1" max="4" value="2" style="width:70px"></div><span class="aide2" style="margin:0">Sur combien de rotations le changement peut s'étaler (par pas d'une semaine). Les propositions vont de la plus rapide à celles qui durent plusieurs séjours.</span></div>
       <div class="actions" style="margin-top:0"><button class="btn-s" id="proposer" type="button">Proposer des combinaisons</button><span class="aide2" id="prop-aide" style="margin:0"></span></div>
       <div class="props" id="props"></div>
     </div>
@@ -391,16 +393,17 @@
   function proposer() {
     var A = S.A, B = S.B; if (!A || !B) return; var o = opts();
     var dA = debutDe(A), dB = debutDe(B), debut = dA < dB ? dA : dB;
+    var nbRot = Math.max(1, Math.min(4, Math.round(Number($('nb-rot').value)) || 2)), cy = Math.max(Number(A.data.rotation.jours_travail) + Number(A.data.rotation.jours_repos), Number(B.data.rotation.jours_travail) + Number(B.data.rotation.jours_repos)), tMax = Math.max(7, Math.round(nbRot * cy / 7) * 7);
     $('prop-aide').textContent = 'Calcul…'; $('props').textContent = '';
     setTimeout(function () {
       var res = Simulation.proposerPaire({ offA: A.data.grille, offB: B.data.grille, debutF: F, rotA: A.data.rotation, rotB: B.data.rotation, debut: debut, debutA: dA, debutB: dB, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: 7, alignerReleve: false,
-        maxTransition: 56, maxTotal: 84, preference: 'indifferent', soldeA: A.data.solde || 0, soldeB: B.data.solde || 0, max: 80 });
+        maxTransition: tMax, maxTotal: tMax, preference: 'indifferent', soldeA: A.data.solde || 0, soldeB: B.data.solde || 0, max: 80 });
       var sA = A.data.solde || 0, sB = B.data.solde || 0;
       res.forEach(function (r) { r.pire = Math.max(Math.abs(sA + r.reliquatA), Math.abs(sB + r.reliquatB)); r.cr = conflitsRotation(r.grilleA, r.grilleB, r.A, r.B, A, B); });
       var bons = res.filter(function (r) { return r.stable; }); if (!bons.length) bons = res.slice();
-      bons.sort(function (p, q) { return p.cr.jours - q.cr.jours || p.pire - q.pire || p.transition - q.transition; });
+      bons.sort(function (p, q) { return p.cr.jours - q.cr.jours || p.transition - q.transition || p.pire - q.pire; });
       bons = bons.slice(0, 8); var z = $('props'); z.textContent = '';
-      $('prop-aide').textContent = !bons.length ? 'Aucune combinaison trouvée : essayez « À partir d\'une date » ou des tolérances plus larges.' : bons.length + ' proposition(s) : le moins de jours de conflit d\'abord, puis le plus petit reliquat.';
+      $('prop-aide').textContent = !bons.length ? 'Aucune combinaison trouvée : essayez « À partir d\'une date » ou des tolérances plus larges.' : bons.length + ' proposition(s) : le vis-à-vis le plus parfait d\'abord, puis la plus rapide.';
       bons.forEach(function (r, i) {
         var d = el('div', 'prop' + (i === 0 && r.cr.jours === 0 ? ' top' : '')), t = el('div');
         [[A, r.A], [B, r.B]].forEach(function (x) { t.appendChild(el('div', 'l', x[1] ? phrase(x[0], { m: x[1] }) : x[0].ligne.nom + ' : inchangé.')); });
@@ -477,7 +480,7 @@
   $('dateDebut').addEventListener('change', function () { if (S.A) { dessinerEditeurs(); majResultat(); } });
   $('tol-c').addEventListener('input', majResultat); $('tol-v').addEventListener('input', majResultat);
   $('raz').addEventListener('click', function () { [S.A, S.B].forEach(function (a) { if (a) { initCells(a); a.nb = 6; } }); dessinerEditeurs(); majResultat(); });
-  $('proposer').addEventListener('click', proposer); $('valider').addEventListener('click', valider); $('annuler').addEventListener('click', function () { annuler(); });
+  $('proposer').addEventListener('click', proposer); $('nb-rot').addEventListener('change', function () { if (S.A && S.B) proposer(); }); $('valider').addEventListener('click', valider); $('annuler').addEventListener('click', function () { annuler(); });
   $('imprimer').addEventListener('click', function () { window.print(); });
 
   charger().then(listeDemandes).catch(function (e) {

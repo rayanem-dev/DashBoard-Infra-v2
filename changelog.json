@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-55",
+    "date": "2026-10-24",
+    "title": "Version 5.34.0 — Simulation : édition près des agents, propositions simplifiées",
+    "changes": [
+      "Simulation : « Changer les semaines à la main » se place juste au-dessus du graphique, près des agents A et B, pour voir les modifications directement.",
+      "Propositions automatiques simplifiées : un seul réglage, le nombre de rotations (2 par défaut, modifiable ; les propositions se recalculent aussitôt). Changement par semaines entières ; classées du vis-à-vis le plus parfait, de la plus rapide à celles qui durent plusieurs séjours."
+    ]
+  },
+  {
     "id": "2026-10-24-54",
     "date": "2026-10-24",
     "title": "Version 5.33.1 — Traductions complétées",
