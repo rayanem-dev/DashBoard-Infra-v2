@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-38",
+    "date": "2026-10-23",
+    "title": "Version 5.30.1 — Autorisation GAZ-OIL : entreprise en liste et date en lettres",
+    "changes": [
+      "Autorisation GAZ-OIL : l'entreprise se choisit dans une liste avec recherche (contrats en exécution du Suivi CPM, lecture seule) et le numéro de contrat se remplit tout seul.",
+      "La lettre est toujours datée d'aujourd'hui, écrite en lettres (ex. « Rhourde Nouss : 21 Octobre 2026 ») ; la case de date est supprimée."
+    ]
+  },
+  {
     "id": "2026-10-23-37",
     "date": "2026-10-23",
     "title": "Version 5.30.0 — Autorisation GAZ-OIL",

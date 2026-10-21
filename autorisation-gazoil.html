@@ -48,11 +48,12 @@
   <div>
     <div class="bloc">
       <h2>⛽ Nouvelle autorisation</h2>
-      <label for="f-ent">Entreprise</label><input type="text" id="f-ent" placeholder="ENCC">
-      <label for="f-ctr">Contrat N°</label><input type="text" id="f-ctr" placeholder="I/43/RNS/2025">
+      <label for="f-ent">Entreprise <small>(tapez pour chercher : le numéro de contrat se remplit tout seul)</small></label><input type="text" id="f-ent" list="dl-ent" placeholder="Tapez pour chercher, ou ouvrez la liste ▾" autocomplete="off">
+      <datalist id="dl-ent"></datalist>
+      <label for="f-ctr">Contrat N°</label><input type="text" id="f-ctr" placeholder="I/43/RNS/INFRA/2025">
       <div class="deux"><div><label for="f-l">Quantité (litres)</label><input type="number" min="1" step="1" id="f-l" placeholder="400"></div><div><label for="f-c">Contenance d'un fût (L)</label><input type="number" min="1" step="1" id="f-c"></div></div>
       <div class="calc" id="calc">Saisissez la quantité : elle est divisée en fûts.</div>
-      <div class="deux"><div><label for="f-per">Période (date)</label><input type="date" id="f-per"></div><div><label for="f-date">Rhourde Nouss, le</label><input type="date" id="f-date"></div></div>
+      <label for="f-per">Période (date)</label><input type="date" id="f-per">
       <label for="f-n">N° du courrier <small>(le numéro avant « SH/E&amp;P/… » ; vide = ligne à compléter)</small></label><input type="text" id="f-n">
       <label for="f-a">Destinataire <small>(une ligne par ligne)</small></label><textarea id="f-a" rows="2"></textarea>
       <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">Nouvelle autorisation</button></div>
@@ -63,11 +64,13 @@
 </main>
 <div class="toast" id="toast" role="status"></div>
 <script src="js/gazoil.js"></script>
+<script src="js/donnees.js"></script>
+<script src="js/synthese.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var CLE = 'gazoil_histo', CH = ['ent', 'ctr', 'l', 'c', 'per', 'date', 'n', 'a'];
+  var CLE = 'gazoil_histo', CH = ['ent', 'ctr', 'l', 'c', 'per', 'n', 'a'];
   var DEF = { c: '200', a: 'A Monsieur\nLe Chef de Division AT' };      // un fût = 200 L ; destinataire habituel (modifiables)
   var CONSIGNES = ['Utilise les futs adaptés aux produits combustibles.', 'Amarrer les futs lors du transport.', 'Respecter les limitations de vitesse.', 'Avoir un extincteur à la porte.', 'Interdit de fumer.'];
   function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -77,16 +80,19 @@
   function pts(n) { return '<span class="pt">' + new Array(n + 1).join('_') + '</span>'; }
   function lire() { var v = {}; CH.forEach(function (k) { v[k] = $('f-' + k).value; }); return v; }
   function ecrire(v) { CH.forEach(function (k) { $('f-' + k).value = v[k] || ''; }); apercu(); }
-  function neuf() { return { c: DEF.c, a: DEF.a, per: iso(), date: iso() }; }
+  function neuf() { return { c: DEF.c, a: DEF.a, per: iso() }; }
+  // la lettre est toujours datée d'aujourd'hui, écrite en lettres : « 21 Octobre 2026 »
+  var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  function aujourdhuiLettres() { var d = new Date(); return d.getDate() + ' ' + MOIS[d.getMonth()] + ' ' + d.getFullYear(); }
   function apercu() {
-    var v = lire(), rep = Gazoil.repartir(v.l, v.c), an = (v.date || iso()).slice(0, 4);
+    var v = lire(), rep = Gazoil.repartir(v.l, v.c), an = String(new Date().getFullYear());
     $('calc').textContent = rep.texte ? '= ' + rep.texte + (rep.futs > 1 || rep.reste ? ' (' + rep.futs + ' fût' + (rep.futs > 1 ? 's' : '') + ' au total)' : '') : 'Saisissez la quantité : elle est divisée en fûts.';
     var dest = String(v.a || '').split(/\r?\n/).filter(function (x) { return x.trim(); });
     $('feuille').innerHTML =
       '<img class="logo" src="badges/logo-sonatrach.png" alt="Sonatrach">' +
       '<div class="dest">' + dest.map(E).join('<br>') + '</div><div class="trait"></div>' +
       '<div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure<br>N° ' + (E(v.n) || pts(5)) + 'SH/E&amp;P/PROD/RNS-INFRA/' + E(an) + '</div>' +
-      '<div class="date">Rhourde Nouss : &nbsp;' + (fr(v.date) || pts(8)) + '</div>' +
+      '<div class="date">Rhourde Nouss : &nbsp;' + aujourdhuiLettres() + '</div>' +
       '<div class="obj">Objet : &nbsp;Autorisation d’approvisionnement de GAZ-OIL En Bag<br><span style="font-weight:400;font-size:10pt"><b>Réf :</b> Contrat N°' + (E(v.ctr) || pts(10)) + '</span></div>' +
       '<p style="margin-top:8mm">Nous vous demandons de bien vouloir autoriser l’entreprise <b>' + (E(v.ent) || pts(8)) + '</b></p>' +
       '<p>De s’approvisionner en GAZ-OIL ' + (rep.texte ? E(rep.texte) : pts(12)) + '</p>' +
@@ -101,6 +107,25 @@
   function ajuster() { var z = $('feuille').parentNode, l = z.clientWidth - 28, w = $('feuille').offsetWidth || 794; var k = Math.min(1, l / w); $('feuille').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuille').offsetHeight * k + 28) + 'px' : ''; }
   window.addEventListener('resize', ajuster);
   CH.forEach(function (k) { $('f-' + k).addEventListener('input', apercu); });
+
+  // Entreprises : contrats « en exécution » du Suivi CPM (lecture seule). Choisir une entreprise remplit le numéro de contrat (I/43/RNS/INFRA/2025).
+  var contrats = [];
+  function numeroLong(n) { var m = /^(\d{1,3})\s*\.\s*([A-Za-z]+)\s*\.\s*(\d{2})$/.exec(String(n || '').trim()); return m ? 'I/' + m[1] + '/RNS/' + m[2].toUpperCase() + '/20' + m[3] : String(n || '').trim(); }
+  function libelle(c) { return c.entreprise + ' — ' + c.contrat + (c.projet ? ' — ' + c.projet : ''); }
+  if (window.Donnees && window.Synthese) Donnees.csv('cpm').then(function (txt) {
+    var rows = Synthese.parseCSV(txt), h = rows.findIndex(function (r) { return r.some(function (c) { return /^statut$/i.test(String(c).trim()); }); }); if (h < 0) h = 1;
+    var vus = {};
+    rows.slice(h + 1).forEach(function (r) {
+      if (Synthese.cleStatut(r[8]) !== 'execution' || !String(r[13] || '').trim() || !String(r[12] || '').trim() || vus[r[13]]) return; vus[r[13]] = 1;
+      contrats.push({ entreprise: String(r[12]).replace(/\s+/g, ' ').trim(), contrat: numeroLong(r[13]), projet: String(r[3] || '').replace(/\s+/g, ' ').trim() });
+    });
+    contrats.sort(function (a, b) { return a.entreprise.localeCompare(b.entreprise, 'fr') || a.contrat.localeCompare(b.contrat); });
+    var dl = $('dl-ent'); contrats.forEach(function (c) { var o = document.createElement('option'); o.value = libelle(c); dl.appendChild(o); });
+  }).catch(function () { /* sans le Suivi CPM : entreprise et contrat à saisir à la main */ });
+  $('f-ent').addEventListener('input', function () {
+    var c = contrats.filter(function (x) { return libelle(x) === $('f-ent').value; })[0];
+    if (c) { $('f-ent').value = c.entreprise; $('f-ctr').value = c.contrat; apercu(); }
+  });
 
   // historique (ce navigateur)
   function histo() { try { return JSON.parse(localStorage.getItem(CLE) || '[]'); } catch (e) { return []; } }

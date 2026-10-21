@@ -19,9 +19,9 @@
     function L(titre, statut, extra) { var r = vide(); r[2] = 'CPM-' + (100 + titre.length); r[3] = titre; r[8] = statut; Object.keys(extra || {}).forEach(function (k) { r[k] = extra[k]; }); return r; }
     var tete = vide(); ['Début CDC', 'Type', 'N° dossier', 'Intitulé', 'Étape', 'Date limite', 'Échéance', '%', 'Statut'].forEach(function (c, i) { tete[i] = c; });
     var lignes = [vide(), tete,
-      L('Réhabilitation du réseau d\'eau — base de vie', 'Contrat en exécution', { 16: fr(-200), 17: '8', 18: fr(40), 14: '18 500 000' }),
-      L('Maintenance des installations électriques', 'Contrat en exécution', { 16: fr(-60), 17: '12', 18: fr(300), 14: '9 200 000' }),
-      L('Travaux de terrassement — plateforme B', 'Contrat en exécution', { 16: fr(-150), 17: '6', 18: fr(30), 14: '41 000 000' }),
+      L('Réhabilitation du réseau d\'eau — base de vie', 'Contrat en exécution', { 12: 'ENCC SPA UNITE HAMIZ', 13: '43.INFRA.25', 16: fr(-200), 17: '8', 18: fr(40), 14: '18 500 000' }),
+      L('Maintenance des installations électriques', 'Contrat en exécution', { 12: 'ACOSCO', 13: '27.INFRA.25', 16: fr(-60), 17: '12', 18: fr(300), 14: '9 200 000' }),
+      L('Travaux de terrassement — plateforme B', 'Contrat en exécution', { 12: 'ETB ZATOUT ABDENACER', 13: '54.INFRA.25', 16: fr(-150), 17: '6', 18: fr(30), 14: '41 000 000' }),
       L('Fourniture de pièces détachées', 'Attribué', { 12: 'Entreprise Atlas', 14: '3 400 000' }),
       L('Entretien des espaces verts', 'Dossier en cours', {}),
       L('Étude de faisabilité — pont d\'accès', 'Dossier en cours', {}),
