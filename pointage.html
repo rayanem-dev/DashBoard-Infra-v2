@@ -119,11 +119,13 @@
       });
       var ad = document.createElement('div'); ad.className = 'add'; var i = document.createElement('input'); i.type = 'text'; i.placeholder = 'Ajouter une personne (nom de BDDORGA)'; i.setAttribute('list', 'dl-pers'); i.setAttribute('aria-label', 'Ajouter une personne à ' + g.t);
       var b = document.createElement('button'); b.type = 'button'; b.className = 'btn-s'; b.textContent = '+';
-      b.onclick = function () { var v = i.value.trim(); if (!v) return; var a = rapprocher({ nom: v }); g.l.push({ nom: a ? a.nom : v, fonction: a ? a.fonction : '', actif: true }); sauverEff(); dessinerEff(); feuilles(); };
+      b.onclick = function () { var v = i.value.trim(); if (!v) return; var a = rapprocher({ nom: v }); var cle = norm(a ? a.nom : v); if (eff.some(function (h) { return h.l.some(function (x) { var r = rapprocher(x); return norm(r ? r.nom : x.nom) === cle; }); })) { i.value = ''; alert((a ? a.nom : v) + ' est déjà dans l\'effectif.'); return; } g.l.push({ nom: a ? a.nom : v, fonction: a ? a.fonction : '', actif: true }); sauverEff(); dessinerEff(); feuilles(); };
       ad.appendChild(i); ad.appendChild(b); z.appendChild(ad);
     });
     var dl = $('dl-pers') || document.body.appendChild(Object.assign(document.createElement('datalist'), { id: 'dl-pers' })); dl.textContent = '';
-    annuaire.forEach(function (a) { var o = document.createElement('option'); o.value = a.nom; dl.appendChild(o); });
+    // la liste proposée ne redonne pas les personnes déjà dans l'effectif (cochées ou non)
+    var deja = {}; eff.forEach(function (g) { g.l.forEach(function (x) { var r = rapprocher(x); deja[norm(r ? r.nom : x.nom)] = 1; }); });
+    annuaire.forEach(function (a) { if (deja[norm(a.nom)]) return; var o = document.createElement('option'); o.value = a.nom; dl.appendChild(o); });
   }
   $('b-eff').onclick = function () { if (!confirm('Rétablir l\'effectif de la fiche d\'origine ?')) return; eff = depart(); sauverEff(); dessinerEff(); feuilles(); };
 

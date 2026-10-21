@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-49",
+    "date": "2026-10-23",
+    "title": "Version 5.32.2 — Pointage : pas de doublon à l'ajout",
+    "changes": [
+      "Feuille de pointage : en ajoutant une personne à l'effectif, la liste ne propose plus celles qui y sont déjà (cochées ou non) ; une personne déjà présente est refusée avec un message."
+    ]
+  },
+  {
     "id": "2026-10-23-48",
     "date": "2026-10-23",
     "title": "Version 5.32.1 — Pointage : matin et après-midi",
