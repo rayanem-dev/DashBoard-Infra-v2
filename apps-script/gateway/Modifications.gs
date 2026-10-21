@@ -265,7 +265,7 @@ function modifAgentDonnees_(req) {
   var c = Store.utilisateur(email); if (!c) throw new Error('Agent inconnu');
   if (!simuDansPortee_(u, c)) throw simuDroits_();
   var d = modifDonnees_(email, u);
-  d.agent = Annuaire.nomAffichable(c.nom, email); d.uid = String(c.uid || '');
+  d.agent = Annuaire.nomAffichable(c.nom, email); d.uid = String(c.uid || ''); d.email = email;
   if (r) { d.numero = String(r.numero); d.en_cours_modif = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) }; }
   return d;
 }

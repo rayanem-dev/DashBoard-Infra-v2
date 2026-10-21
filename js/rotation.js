@@ -56,7 +56,7 @@
     });
 
     var iRel = document.createElement('input'); iRel.type = 'number'; iRel.min = -365; iRel.max = 365; iRel.step = 1; iRel.value = v.reliquat == null ? 0 : v.reliquat;
-    f.appendChild(champ('4. Reliquat initial (jours)', iRel));
+    f.appendChild(champ('4. Au début de la rotation, combien avez-vous de reliquat ? (jours)', iRel));
     f.appendChild(el('p', 'aide', 'Jours de congé qui vous sont dus (+), ou jours pris en avance (−) à ce jour. Laissez 0 si vous n\'avez ni l\'un ni l\'autre : il sert à proposer des plannings qui tiennent compte de votre reliquat.'));
 
     var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
@@ -92,7 +92,7 @@
     f.appendChild(el('h2', null, 'Votre reliquat de congé'));
     f.appendChild(el('p', 'sous', 'Une seule fois : combien de jours de congé vous sont dus (+) ou avez-vous pris en avance (−) ? Laissez 0 si vous n\'en avez pas.'));
     var i = document.createElement('input'); i.type = 'number'; i.min = -365; i.max = 365; i.step = 1; i.value = 0;
-    f.appendChild(champ('Reliquat initial (jours)', i));
+    f.appendChild(champ('Au début de la rotation, combien avez-vous de reliquat ? (jours)', i));
     f.appendChild(el('p', 'aide', 'Ex. : +14 si vous avez 14 jours de congé non pris ; −7 si vous avez pris 7 jours de congé en avance. Il sert à proposer des plannings qui tiennent compte de votre reliquat. Vous pourrez le modifier en changeant votre rotation.'));
     var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);
     var b = el('div', 'boutons'), ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit'; b.appendChild(ok); f.appendChild(b);

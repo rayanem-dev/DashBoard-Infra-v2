@@ -252,13 +252,15 @@ function reliquatValide_(x) {
   return n;
 }
 function reliquatEnregistrer_(req) {
-  var u = Auth.userFromToken(req.token);
-  if ((acces_(u).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
-  if (!rotationDe_(u.email)) throw new Error('Renseignez d\'abord votre rotation');
+  var u = Auth.userFromToken(req.token), niv = acces_(u).planning || 0;
+  var email = String(req.email || u.email).toLowerCase();
+  if (email !== String(u.email).toLowerCase()) { if (niv < 3) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' }); cible_(email); } // un autre agent : droit de modification (niveau 3)
+  else if (niv < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  if (!rotationDe_(email)) throw new Error(email === String(u.email).toLowerCase() ? 'Renseignez d\'abord votre rotation' : 'Cet agent n\'a pas encore de rotation');
   var v = reliquatValide_(req.reliquat);
-  Store.maj('Rotations', { email: u.email }, { reliquat: v, maj_par: u.email, maj_le: new Date().toISOString() });
-  Store.journal('reliquat', u.email, 'reliquat initial : ' + v);
-  return situationDe_(u);
+  Store.maj('Rotations', { email: email }, { reliquat: v, maj_par: u.email, maj_le: new Date().toISOString() });
+  Store.journal('reliquat', u.email, email + ' reliquat initial : ' + v);
+  return email === String(u.email).toLowerCase() ? situationDe_(u) : { reliquat: v };
 }
 function planning_(req) {
   var u = Auth.userFromToken(req.token); var niv = acces_(u).planning || 0;

@@ -253,3 +253,13 @@ test('le responsable modifie directement le planning d\'un agent de sa portée',
   appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero: v.numero, decision: 'approuvee' });
   assert.notStrictEqual(gA(m), appel(m, 'modifAgentDonnees_', 'chef.s1@x.dz', { email: 'agent.a@x.dz' }).grille_normale.slice(0, 200));
 });
+
+test('reliquat saisi depuis l\'écran de modification : par l\'agent pour lui-même, par un responsable habilité (niveau 3) pour un autre', () => {
+  const m = monde();
+  appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 9 });
+  assert.strictEqual(appel(m, 'modifMoiDonnees_', 'agent.a@x.dz', {}).solde, 9);
+  assert.throws(() => appel(m, 'reliquatEnregistrer_', 'agent.a@x.dz', { reliquat: 3, email: 'agent.b@x.dz' }), /Droits/);
+  assert.throws(() => appel(m, 'reliquatEnregistrer_', 'chef.s1@x.dz', { reliquat: 3, email: 'agent.a@x.dz' }), /Droits/);
+  appel(m, 'reliquatEnregistrer_', 'chef.div@x.dz', { reliquat: 5, email: 'agent.b@x.dz' });
+  assert.strictEqual(m.tables.Rotations.find(r => r.email === 'agent.b@x.dz').reliquat, 5);
+});

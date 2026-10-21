@@ -64,6 +64,20 @@
       tb.rows.forEach(function (r, i) { var c = tb.cellules[i], fin = Simulation.addDays(cur, Math.max(1, r.jours) - 1); c.du.textContent = fr(cur); c.au.textContent = fr(fin); cur = Simulation.addDays(fin, 1); });
     }
     var etat = el('div'); zone.appendChild(etat);
+    // Reliquat initial : saisi ici (agent pour lui-même, ou responsable habilité pour l'agent) sans avoir à modifier le planning
+    if (!chef || direct) {
+      var rl = el('div', 'mp-rel'), ri = document.createElement('input'); ri.type = 'number'; ri.min = -365; ri.max = 365; ri.step = 1; ri.value = rot.reliquat == null ? 0 : rot.reliquat; ri.style.cssText = 'width:90px;padding:6px 8px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-weight:700;text-align:right';
+      var rb2 = el('button', 'btn-s', 'Enregistrer le reliquat'); rb2.type = 'button'; var rm = el('span', 'note'); rm.style.cssText = 'font-size:13px';
+      rl.style.cssText = 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px';
+      var lb = el('label', null, 'Au début de la rotation, combien avez-vous de reliquat ? (jours)'); lb.style.cssText = 'font-weight:700;font-size:13px;margin:0'; rl.appendChild(lb); rl.appendChild(ri); rl.appendChild(rb2); rl.appendChild(rm);
+      rb2.addEventListener('click', function () {
+        rb2.disabled = true; rm.textContent = '';
+        var q = { reliquat: ri.value === '' ? 0 : Number(ri.value) }; if (direct) q.email = d.email;
+        Api.call('reliquat_enregistrer', q).then(function () { d.solde += q.reliquat - (rot.reliquat || 0); rot.reliquat = q.reliquat; rm.textContent = '✓ Reliquat enregistré'; rm.style.color = 'var(--ok)'; rb2.disabled = false; calculer(); if (options.onChange) options.onChange(); })
+          .catch(function (err) { rm.textContent = err.message; rm.style.color = 'var(--err)'; rb2.disabled = false; });
+      });
+      zone.appendChild(rl);
+    }
     var motif = document.createElement('input'); motif.type = 'text'; motif.maxLength = 120; motif.value = chef ? '' : 'Demande de l\'agent'; motif.placeholder = direct ? 'Motif (facultatif)' : chef ? 'Commentaire (facultatif)' : 'Motif de la demande';
     f.appendChild(el('h3', null, chef ? 'Commentaire' : 'Motif')); f.appendChild(motif);
     var msg = el('div', 'msg'); msg.setAttribute('role', 'alert'); f.appendChild(msg);

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-23",
+    "date": "2026-10-23",
+    "title": "Version 5.27.4 — Saisir son reliquat dans le planning",
+    "changes": [
+      "Écran « Modifier mon planning » : case « Au début de la rotation, combien avez-vous de reliquat ? » avec bouton « Enregistrer le reliquat », pour le saisir ou le corriger sans modifier le planning (l'agent pour lui-même, le secrétariat et le chef de division pour un agent). Même formulation dans la fenêtre « Où en êtes-vous ? »."
+    ]
+  },
+  {
     "id": "2026-10-23-22",
     "date": "2026-10-23",
     "title": "Version 5.27.3 — Aucun e-mail automatique",

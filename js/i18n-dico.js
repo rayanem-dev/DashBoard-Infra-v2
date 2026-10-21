@@ -24,6 +24,8 @@
     ['1. Actuellement…', '1. Currently…', '1. حاليًا…'],
     ['2. Depuis quel jour ? (premier jour de la période en cours)', '2. Since which day? (first day of the current period)', '2. منذ أي يوم؟ (أول يوم من الفترة الحالية)'],
     ['3. Votre rotation', '3. Your rotation', '3. نظام تناوبك'],
+    ['4. Au début de la rotation, combien avez-vous de reliquat ? (jours)', '4. At the start of the rotation, what is your balance? (days)', '4. ما رصيدك عند بداية التناوب؟ (أيام)'],
+    ['Au début de la rotation, combien avez-vous de reliquat ? (jours)', 'At the start of the rotation, what is your balance? (days)', 'ما رصيدك عند بداية التناوب؟ (أيام)'],
     ['4. Reliquat initial (jours)', '4. Initial balance (days)', '4. الرصيد الأولي (أيام)'],
     ['4 caractères minimum.', 'At least 4 characters.', '4 أحرف على الأقل.'],
     ['18 chiffres', '18 digits', '18 رقمًا'],

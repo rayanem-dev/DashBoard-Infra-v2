@@ -313,7 +313,7 @@
       case 'situation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var rr = demoRots()[demoState.user.email];
         return rr ? { acces: true, configuree: true, nom: demoState.user.nom, rotation: rr, reliquat: rr.reliquat === undefined ? null : rr.reliquat, reliquat_renseigne: rr.reliquat !== undefined, situation: demoSituation(rr) } : { acces: true, configuree: false, nom: demoState.user.nom }; }
-      case 'reliquat_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var tr = demoRots(), me = tr[demoState.user.email];
+      case 'reliquat_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var tr = demoRots(), cibleR = p.email || demoState.user.email; if (p.email && p.email !== demoState.user.email) exigerAdmin(); var me = tr[cibleR];
         if (!me) throw erreur('Renseignez d\'abord votre rotation'); var rl = Number(p.reliquat);
         if (p.reliquat === '' || p.reliquat == null || !isFinite(rl) || Math.floor(rl) !== rl || Math.abs(rl) > 365) throw erreur('Reliquat : un nombre entier de jours entre −365 et 365 (0 si vous n\'en avez pas)');
         me.reliquat = rl; saveRots(tr); return { acces: true, configuree: true, reliquat: rl, reliquat_renseigne: true }; }
@@ -397,7 +397,7 @@
       case 'modif_moi_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return demoModifDonnees(demoState.user.email); }
       case 'modif_agent_donnees': { exigerAdmin(); var ma = p.numero ? demoMods().filter(function (m) { return m.numero === p.numero; })[0] : null; if (p.numero && !ma) throw erreur('Demande introuvable');
         var emA = ma ? ma.email : p.email, uA = DEMO_USERS.filter(function (x) { return x.email === emA; })[0]; if (!uA) throw erreur('Agent inconnu');
-        var da = demoModifDonnees(emA); da.agent = uA.nom; da.uid = uA.uid; if (ma) { da.numero = ma.numero; da.en_cours_modif = ma.modif; } return da; }
+        var da = demoModifDonnees(emA); da.agent = uA.nom; da.uid = uA.uid; da.email = uA.email; if (ma) { da.numero = ma.numero; da.en_cours_modif = ma.modif; } return da; }
       case 'modif_moi': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var em = demoState.user.email, rm = demoRots()[em]; if (!rm) throw erreur('Renseignez d\'abord votre rotation');
         var mm = { debut: p.debut, periodes: p.periodes, reprise: p.reprise }, evm = Simulation.valider(mm, rm, auj()); if (evm) throw erreur(evm);
