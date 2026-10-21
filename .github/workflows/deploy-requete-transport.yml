@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SCRIPT_ID: A_REMPLACER_PAR_LID_DU_SCRIPT   # éditeur Apps Script ▸ Paramètres du projet ▸ « ID de script »
+  SCRIPT_ID: 11aPstlAO7jNCJTtlsneCHQGiNsTyA5y2BagkQoylD-1iL8j_UCkcKvH9
   DEPLOYMENT_ID: AKfycbzdT9ccbrUmHZfTHCdFC09ZFG-KX3TR95qvpe5fyuIjE_tSMe-1hVEQDKknD629KHoU
 
 jobs:
@@ -57,6 +57,8 @@ jobs:
           cp "$CLASPRC_FILE" "$HOME/.clasprc.json"
           printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
           printf 'test/**\n' > .claspignore
+          # garde-fou : l'adresse /exec doit appartenir à ce script, sinon on n'écrase rien
+          clasp deployments | grep -q "$DEPLOYMENT_ID" || { echo "::error::Le déploiement $DEPLOYMENT_ID n'appartient pas au script $SCRIPT_ID : vérifier l'ID de script"; exit 1; }
           clasp push --force
           clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7} — $(git log -1 --pretty=%s | cut -c1-60)"
           rm -f "$HOME/.clasprc.json" "$CLASPRC_FILE" .clasp.json .claspignore
