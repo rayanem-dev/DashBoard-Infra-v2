@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-23-44",
+    "date": "2026-10-23",
+    "title": "Version 5.31.2 — En-tête uniforme",
+    "changes": [
+      "Avancement des chantiers, Dossiers CPM et Suivi chantier : même en-tête que toutes les autres pages (logo, titre, « Sonatrach · RNS · Division Infrastructure », boutons de navigation et « ← Retour au portail »).",
+      "Requête transport et Commande de pièces : déploiement automatique préparé (il manque l'ID de script de chacune) afin que le masquage du double en-tête arrive dans ces deux applications."
+    ]
+  },
+  {
     "id": "2026-10-23-43",
     "date": "2026-10-23",
     "title": "Version 5.31.1 — Un seul en-tête",

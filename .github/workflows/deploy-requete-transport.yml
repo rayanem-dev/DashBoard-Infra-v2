@@ -1,0 +1,62 @@
+# Déploiement automatique de l'application la requête transport (Apps Script) : tests -> clasp push -> nouvelle version sur la MÊME adresse /exec.
+name: Déployer la requête transport
+
+on:
+  push:
+    branches: [claude/exciting-ritchie-u1o1dl, main]
+    paths: ['apps-script/requete-transport/**', '.github/workflows/deploy-requete-transport.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-requete-transport
+  cancel-in-progress: false
+
+env:
+  SCRIPT_ID: A_REMPLACER_PAR_LID_DU_SCRIPT   # éditeur Apps Script ▸ Paramètres du projet ▸ « ID de script »
+  DEPLOYMENT_ID: AKfycbzdT9ccbrUmHZfTHCdFC09ZFG-KX3TR95qvpe5fyuIjE_tSMe-1hVEQDKknD629KHoU
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Contrôler l'identifiant du script
+        run: |
+          case "$SCRIPT_ID" in A_REMPLACER*) echo "::error::SCRIPT_ID à renseigner dans .github/workflows/deploy-requete-transport.yml (éditeur Apps Script ▸ Paramètres du projet ▸ ID de script)"; exit 1;; esac
+
+      - name: Contrôler le secret CLASPRC_JSON
+        id: fmt
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          OUT: ${{ runner.temp }}/clasprc.json
+        run: |
+          umask 077
+          node -e '
+            const fs = require("fs");
+            let brut = String(process.env.CLASPRC_JSON).trim(), j;
+            try { j = JSON.parse(brut); } catch (e1) { try { j = JSON.parse("{" + brut.replace(/^,|,$/g, "") + "}"); } catch (e2) { console.log("::error::CLASPRC_JSON illisible"); process.exit(1); } }
+            const v3 = !!j.tokens, v2 = !!j.token;
+            if (!v2 && !v3) { console.log("::error::CLASPRC_JSON invalide"); process.exit(1); }
+            fs.writeFileSync(process.env.OUT, JSON.stringify(j), { mode: 0o600 });
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "clasp=" + (v3 ? "3" : "2") + "\n");
+          '
+
+      - name: Installer clasp
+        run: npm install -g @google/clasp@${{ steps.fmt.outputs.clasp }}
+
+      - name: Envoyer le code et publier une nouvelle version
+        working-directory: apps-script/requete-transport
+        env:
+          CLASPRC_FILE: ${{ runner.temp }}/clasprc.json
+        run: |
+          umask 077
+          cp "$CLASPRC_FILE" "$HOME/.clasprc.json"
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
+          printf 'test/**\n' > .claspignore
+          clasp push --force
+          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7} — $(git log -1 --pretty=%s | cut -c1-60)"
+          rm -f "$HOME/.clasprc.json" "$CLASPRC_FILE" .clasp.json .claspignore
