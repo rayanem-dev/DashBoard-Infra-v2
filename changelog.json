@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-23-35",
+    "date": "2026-10-23",
+    "title": "Version 5.29.4 — Fiche d'évaluation : saut de page propre",
+    "changes": [
+      "PDF de la fiche d'évaluation : plus de ligne coupée entre deux pages ; le saut de page se fait avant la section IV (Moyens matériels) et le tableau reprend avec son en-tête (N°, Désignation, 100 % … 10 %) sur la 2e page."
+    ]
+  },
+  {
     "id": "2026-10-23-34",
     "date": "2026-10-23",
     "title": "Version 5.29.3 — Fiche d'évaluation déployée",

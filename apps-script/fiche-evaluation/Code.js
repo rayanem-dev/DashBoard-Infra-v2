@@ -113,8 +113,12 @@ function ficheHtml_(data, logoBase64) {
   const c = (data && data.cartouche) || {}, notes = (data && data.notes) || {}, taux = tauxGlobal_(notes);
   const ligne = (lib, val) => '<tr><td class="l"><span style="display:inline-block;width:38%">' + lib + '</span>' + lib + ' ' + esc_(val) + '</td></tr>';
   const cases = id => POURCENTS.map(p => '<td class="x">' + (Number(notes[id]) === p ? 'X' : '&nbsp;') + '</td>').join('');
+  // Jamais de ligne coupée entre deux pages : saut de page explicite AVANT la section IV (le tableau reprend alors avec son en-tête)
+  const enTete = () => '<tr><td rowspan="2" style="width:5%;text-align:center"><b>N°</b></td><td rowspan="2" style="width:33%;text-align:center"><b>Désignation</b></td><td colspan="10" style="text-align:center"><b>Indice de satisfaction Projet</b></td></tr>' +
+    '<tr>' + POURCENTS.map(p => '<td class="x" style="font-size:7.5pt;height:14px">' + p + '%</td>').join('') + '</tr>';
   let corps = '', k = 0;
   SECTIONS.forEach(s => {
+    if (s.n === 'IV') corps += '</table><table style="page-break-before:always">' + enTete();
     corps += '<tr><td class="sec" colspan="2"><b>' + s.n + '.&nbsp; ' + esc_(s.t) + '</b></td><td class="x" colspan="10"></td></tr>';
     (s.groupes || [{ n: '', t: '', items: s.items }]).forEach(g => {
       if (s.groupes) corps += '<tr><td class="sec" colspan="2"><b>' + g.n + '.&nbsp; ' + esc_(g.t) + '</b></td><td class="x" colspan="10"></td></tr>';
@@ -124,7 +128,7 @@ function ficheHtml_(data, logoBase64) {
   const logo = logoBase64 ? '<img src="data:image/png;base64,' + logoBase64 + '" width="86" height="115">' : '';
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
     'body{font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#000;margin:0}table{border-collapse:collapse;width:100%}' +
-    'td{border:1px solid #000;padding:2px 5px;vertical-align:middle}td.l{border:1px solid #000;font-size:9pt;padding:1px 5px}' +
+    'tr{page-break-inside:avoid}td{border:1px solid #000;padding:2px 5px;vertical-align:middle}td.l{border:1px solid #000;font-size:9pt;padding:1px 5px}' +
     '.x{width:6.2%;text-align:center;height:19px;font-size:10pt}.sec{padding:5px;font-size:9pt}.it{padding:4px 5px;font-size:8.5pt}' +
     '.titre{text-align:center;font-weight:bold;font-size:10.5pt}.proj{text-align:center;font-weight:bold;font-size:11pt;height:60px}' +
     '</style></head><body>' +
@@ -133,8 +137,7 @@ function ficheHtml_(data, logoBase64) {
     '<table>' + ligne('Entrepreneur :', c.entrepreneur) + ligne('Contrat :', c.contrat) + ligne('Montant Contractuel :', c.montant) + ligne('Date ODS :', dateFr_(c.dateOds)) +
     ligne('Date d\'entrée en vigueur :', dateFr_(c.dateVigueur)) + ligne('Délai de réalisation :', c.delai) + ligne('Date de mise en service :', dateFr_(c.dateService)) + '</table>' +
     '<table><tr><td class="proj">Projet : ' + esc_(c.projet) + '</td></tr></table>' +
-    '<table style="margin-top:2px"><tr><td rowspan="2" style="width:5%;text-align:center"><b>N°</b></td><td rowspan="2" style="width:33%;text-align:center"><b>Désignation</b></td><td colspan="10" style="text-align:center"><b>Indice de satisfaction Projet</b></td></tr>' +
-    '<tr>' + POURCENTS.map(p => '<td class="x" style="font-size:7.5pt;height:14px">' + p + '%</td>').join('') + '</tr>' + corps +
+    '<table style="margin-top:2px">' + enTete() + corps +
     '<tr><td class="sec" colspan="2"><b>VI.&nbsp; Satisfaction Globale :</b></td><td colspan="10" style="text-align:right;font-weight:bold;font-size:10.5pt">' + (taux == null ? '' : tauxFr_(taux)) + '</td></tr></table>' +
     '<table><tr><td style="height:60px;vertical-align:top"><b>Suggestion / Axes d’amélioration :</b><br>' + esc_(data.suggestion).replace(/\n/g, '<br>') + '</td></tr>' +
     '<tr><td style="height:55px;vertical-align:top"><b>Signature (Maitre de l’Ouvrage) :</b><span style="display:inline-block;width:45%"></span><b>Signature (Entrepreneur) :</b></td></tr></table>' +
