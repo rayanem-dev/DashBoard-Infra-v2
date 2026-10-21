@@ -54,7 +54,6 @@
       <div class="deux"><div><label for="f-l">Quantité (litres)</label><input type="number" min="1" step="1" id="f-l" placeholder="400"></div><div><label for="f-c">Contenance d'un fût (L)</label><input type="number" min="1" step="1" id="f-c"></div></div>
       <div class="calc" id="calc">Saisissez la quantité : elle est divisée en fûts.</div>
       <label for="f-per">Période (date)</label><input type="date" id="f-per">
-      <label for="f-n">N° du courrier <small>(le numéro avant « SH/E&amp;P/… » ; vide = ligne à compléter)</small></label><input type="text" id="f-n">
       <label for="f-a">Destinataire <small>(une ligne par ligne)</small></label><textarea id="f-a" rows="2"></textarea>
       <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">Nouvelle autorisation</button></div>
     </div>
@@ -70,7 +69,7 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var CLE = 'gazoil_histo', CH = ['ent', 'ctr', 'l', 'c', 'per', 'n', 'a'];
+  var CLE = 'gazoil_histo', CH = ['ent', 'ctr', 'l', 'c', 'per', 'a'];
   var DEF = { c: '200', a: 'A Monsieur\nLe Chef de Division AT' };      // un fût = 200 L ; destinataire habituel (modifiables)
   var CONSIGNES = ['Utilise les futs adaptés aux produits combustibles.', 'Amarrer les futs lors du transport.', 'Respecter les limitations de vitesse.', 'Avoir un extincteur à la porte.', 'Interdit de fumer.'];
   function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -91,7 +90,7 @@
     $('feuille').innerHTML =
       '<img class="logo" src="badges/logo-sonatrach.png" alt="Sonatrach">' +
       '<div class="dest">' + dest.map(E).join('<br>') + '</div><div class="trait"></div>' +
-      '<div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure<br>N° ' + (E(v.n) || pts(5)) + 'SH/E&amp;P/PROD/RNS-INFRA/' + E(an) + '</div>' +
+      '<div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure<br>N° ' + pts(5) + 'SH/E&amp;P/PROD/RNS-INFRA/' + E(an) + '</div>' +
       '<div class="date">Rhourde Nouss : &nbsp;' + aujourdhuiLettres() + '</div>' +
       '<div class="obj">Objet : &nbsp;Autorisation d’approvisionnement de GAZ-OIL En Bag<br><span style="font-weight:400;font-size:10pt"><b>Réf :</b> Contrat N°' + (E(v.ctr) || pts(10)) + '</span></div>' +
       '<p style="margin-top:8mm">Nous vous demandons de bien vouloir autoriser l’entreprise <b>' + (E(v.ent) || pts(8)) + '</b></p>' +
