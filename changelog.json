@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-92",
+    "date": "2026-10-24",
+    "title": "Version 5.51.2 — Demande de modification : PDF épuré",
+    "changes": [
+      "Demande de modification de planning : la mention « Demande … APPROUVÉE dans le portail par … » et la ligne « Demande n° … émise par … depuis le portail » n'apparaissent plus à l'impression ni dans le PDF (elles restent à l'écran)."
+    ]
+  },
+  {
     "id": "2026-10-24-91",
     "date": "2026-10-24",
     "title": "Version 5.51.1 — Impression : les jours de conflit se comptent sur une rotation",

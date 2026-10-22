@@ -34,6 +34,7 @@
   .pied-doc { margin-top: 16px; font: 11px Arial, sans-serif; color: #666; }
   html[data-theme="dark"] .page { background: #fff; color: #111; } /* le document reste blanc (impression) */
   @media print {
+    .statut, .pied-doc { display: none !important; }   /* la mention « approuvée dans le portail… » et la ligne « émise par… » restent à l'écran, pas sur le PDF */
     body { background: #fff; } .barre-outils, #demo, .bandeau { display: none !important; }
     .page { box-shadow: none; margin: 0; padding: 18mm 16mm; width: auto; min-height: 0; }
     @page { size: A4; margin: 0; }
