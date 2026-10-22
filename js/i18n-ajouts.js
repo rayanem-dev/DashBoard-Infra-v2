@@ -197,6 +197,7 @@
     ["Chambre", "Room", "الغرفة"],
     ["Aucun autre agent de cette entité avec un planning renseigné.", "No other agent of this entity with a schedule set.", "لا يوجد عون آخر من هذه الجهة له تخطيط مسجّل."],
     ["Enregistrer comme vis-à-vis de chambre", "Save as room counterpart", "حفظ كمقابل للغرفة"],
+    ["Cliquer pour trier", "Click to sort", "انقر للفرز"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-72",
+    "date": "2026-10-24",
+    "title": "Version 5.41.2 — Listing triable",
+    "changes": [
+      "Organigramme › Listing : un clic sur le titre d'une colonne trie le tableau (nom, fonction, service, employeur, téléphone, vis-à-vis de travail ou de chambre) ; un second clic inverse l'ordre."
+    ]
+  },
+  {
     "id": "2026-10-24-71",
     "date": "2026-10-24",
     "title": "Version 5.41.1 — Chambre : autres vis-à-vis proposés",
