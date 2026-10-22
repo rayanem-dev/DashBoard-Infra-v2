@@ -249,6 +249,8 @@
     ["La modification est enregistrée. Choisissez qui prévenir :", "The change is saved. Choose who to notify:", "تم تسجيل التعديل. اختر من تريد إخطاره:"],
     ["Choisissez qui prévenir de l'approbation :", "Choose who to notify of the approval:", "اختر من تريد إخطاره بالموافقة:"],
     ["L'agent peut recevoir un e-mail lui indiquant que la modification est rejetée :", "The agent can receive an e-mail saying the change is rejected:", "يمكن للعون أن يتلقى بريدًا يفيد برفض التعديل:"],
+    ["Le chef de division (demande d'accord)", "The division head (request for approval)", "رئيس القسم (طلب الموافقة)"],
+    ["Le chef de division (pour information)", "The division head (for information)", "رئيس القسم (للإعلام)"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-95",
+    "date": "2026-10-24",
+    "title": "Version 5.53.1 — Chef de division : demande d'accord ; l'agent n'écrit jamais au chef de division",
+    "changes": [
+      "Création d'une modification : le chef de division reçoit « Demande de modification de planning (demande d'accord) » ; à l'approbation il reste « pour information et signature ».",
+      "Un agent qui envoie sa demande par e-mail ne peut écrire qu'à son chef de service et/ou au secrétariat : la case « Chef de division » n'existe plus dans « Modifier mon planning » et le serveur refuse l'envoi direct au chef de division."
+    ]
+  },
+  {
     "id": "2026-10-24-94",
     "date": "2026-10-24",
     "title": "Version 5.53.0 — E-mails des modifications de planning : qui est prévenu, et quand",
