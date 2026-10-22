@@ -218,6 +218,16 @@
     ["Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)", "Saves a copy under the proposed name in your Downloads (no folder to choose)", "يحفظ نسخة بالاسم المقترح في التنزيلات (دون اختيار مجلد)"],
     ["Choisissez le dossier qui contient le fichier : un sous-dossier (ex. « Scans »), pas Documents, Téléchargements ou Bureau eux-mêmes, que le navigateur refuse. Sinon utilisez « Télécharger ».", "Choose the folder that contains the file: a subfolder (e.g. « Scans »), not Documents, Downloads or Desktop themselves, which the browser refuses. Otherwise use « Download ».", "اختر المجلد الذي يحتوي الملف: مجلدًا فرعيًا (مثل « Scans »)، وليس المستندات أو التنزيلات أو سطح المكتب نفسها، فالمتصفح يرفضها. وإلا فاستعمل « تنزيل »."],
     ["Supprimer cette demande de la liste", "Delete this request from the list", "حذف هذا الطلب من القائمة"],
+    ["🖨 Imprimer par vis-à-vis", "🖨 Print by counterpart", "🖨 طباعة حسب المقابل"],
+    ["Cocher tout un service :", "Tick a whole service:", "حدّد مصلحة كاملة:"],
+    ["Tout décocher", "Untick all", "إلغاء التحديد"],
+    ["— choisir un service —", "— choose a service —", "— اختر مصلحة —"],
+    ["Liste simple", "Simple list", "قائمة بسيطة"],
+    ["Regroupée par service", "Grouped by service", "مجمّعة حسب المصلحة"],
+    ["Mentionner l'employeur", "Show the employer", "ذكر المستخدِم"],
+    ["🖨 Imprimer", "🖨 Print", "🖨 طباعة"],
+    ["Cochez les personnes à présenter (case en tête de colonne = toutes celles affichées), puis ouvrez l'onglet « Imprimer par vis-à-vis ».", "Tick the people to present (header box = all those shown), then open the « Print by counterpart » tab.", "حدّد الأشخاص المراد عرضهم (خانة الرأس = كل المعروضين) ثم افتح تبويب « طباعة حسب المقابل »."],
+    ["Aucune personne sélectionnée : cochez-les dans « Listing · vis-à-vis ».", "No one selected: tick them in « Listing · counterparts ».", "لم يُحدَّد أحد: حدّدهم في « القائمة · المقابلون »."],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -225,6 +235,7 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^(\d+) personne\(s\) sélectionnée\(s\)$/, function (n) { return n + ' person(s) selected'; }],
     [/^🗑 Supprimer les demandes refusées, annulées ou remplacées \((\d+)\)$/, function (n) { return '🗑 Delete refused, cancelled or replaced requests (' + n + ')'; }],
     [/^(.+) · ouverte (\d+) fois$/, function (t, n) { return t + ' · opened ' + n + ' times'; }],
     [/^📄 Prise en charge reconnue(.*)$/, function (x) { return '📄 Care request recognised' + x; }],
@@ -268,6 +279,7 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^(\d+) personne\(s\) sélectionnée\(s\)$/, function (n) { return n + ' شخص محدَّد'; }],
     [/^🗑 Supprimer les demandes refusées, annulées ou remplacées \((\d+)\)$/, function (n) { return '🗑 حذف الطلبات المرفوضة أو الملغاة أو المستبدلة (' + n + ')'; }],
     [/^(.+) · ouverte (\d+) fois$/, function (t, n) { return t + ' · فُتح ' + n + ' مرة'; }],
     [/^📄 Prise en charge reconnue(.*)$/, function (x) { return '📄 تم التعرف على التكفل' + x; }],

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-87",
+    "date": "2026-10-24",
+    "title": "Version 5.49.0 — Imprimer les vis-à-vis pour approbation",
+    "changes": [
+      "Organigramme › Listing · vis-à-vis : une case par personne (et une case « toutes celles affichées »), un sélecteur « Cocher tout un service » et « Tout décocher ».",
+      "Nouvel onglet « Imprimer par vis-à-vis » : feuille A4 paysage prête pour l'approbation (en-tête Sonatrach, date, tableau agent / vis-à-vis de travail / vis-à-vis de chambre, trois cases de signature), en liste simple ou regroupée par service, avec ou sans l'employeur ; impression en un clic."
+    ]
+  },
+  {
     "id": "2026-10-24-86",
     "date": "2026-10-24",
     "title": "Version 5.48.0 — Applications les plus utilisées en premier ; suppression des demandes sans effet",
