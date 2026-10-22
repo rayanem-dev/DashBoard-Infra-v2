@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-81",
+    "date": "2026-10-24",
+    "title": "Version 5.46.2 — Renommage : entreprise retrouvée par le contrat",
+    "changes": [
+      "Renommage d'une prise en charge : si le nom de l'entreprise n'est pas lisible dans le scan, il est retrouvé par le n° de contrat (ex. 73.INFRA.25) dans le Suivi CPM ; l'entreprise est aussi cherchée en milieu de ligne quand l'OCR mélange les colonnes.",
+      "Chaque fichier a un petit « Texte lu » dépliable pour voir ce que l'OCR a lu."
+    ]
+  },
+  {
     "id": "2026-10-24-80",
     "date": "2026-10-24",
     "title": "Version 5.46.1 — Renommage : prise en charge lue malgré l'OCR",

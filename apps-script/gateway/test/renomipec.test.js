@@ -27,3 +27,13 @@ test('texte réel de l\'OCR du scan Doc0079 (colonnes éclatées, en-têtes déf
     '- BOUKHANI MOHAMED 25/10/2026 | 24/11/2026 5 4300045200 T3.INFRA.25 CENTRALE', 'Maint. hydrauliques ANCIENNE BASE', '- LAARBI RACHID', 'infrastructures Remplacement', '- DOUAIM OMAR', 'LE CHEF DE DIVISON INFRASTRUCTURES LE CHEF DE DIVISION MG'].join('\n');
   assert.strictEqual(P.reconnaitre(ocr).nom, 'PEC_ETS MESSAI_2026-10-22');
 });
+
+test('entreprise mêlée à d\'autres colonnes ou absente : repli sur le n° de contrat du Suivi CPM', () => {
+  const t = 'PRISE EN CHARGE\nIMPUTATION ANALYTIQUE\nRhourde Nouss, le : 22/10/2026\n- KOUHEL AKREM ETS MESSAI BASE DE VIE\n4300045200 T3.INFRA.25 CENTRALE';
+  assert.strictEqual(P.reconnaitre(t).entreprise, 'ETS MESSAI');
+  const sans = 'PRISE EN CHARGE\nIMPUTATION ANALYTIQUE\nLe : 22/10/2026\n4300045200 73.INFRA.25 CENTRALE';
+  const r = P.reconnaitre(sans); assert.strictEqual(r.entreprise, ''); assert.strictEqual(r.contrat, '73-25');
+  const cpm = [[], ['', '', '', '', '', '', '', '', '', '', '', '', 'ETS MESSAI ESSMAIL', '73.INFRA.25']];
+  assert.strictEqual(P.entrepriseDuContrat(cpm, r.contrat), 'ETS MESSAI ESSMAIL');
+  assert.strictEqual(P.nomAvec(r, 'ETS MESSAI ESSMAIL'), 'PEC_ETS MESSAI ESSMAIL_2026-10-22');
+});
