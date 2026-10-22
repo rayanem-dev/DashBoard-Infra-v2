@@ -209,6 +209,7 @@
     ["🏛️ Organigramme", "🏛️ Organigram", "🏛️ الهيكل التنظيمي"],
     ["👥 Vis-à-vis", "👥 Counterparts", "👥 المقابلون"],
     ["🔀 Affectations", "🔀 Assignments", "🔀 التعيينات"],
+    ["Changez la durée de la rotation en cours et des suivantes : les dates en dessous se recalculent. La rotation en cours ne peut pas descendre en dessous des jours déjà écoulés.", "Change the length of the current rotation and the following ones: the dates below are recalculated. The current rotation cannot go below the days already elapsed.", "غيّر مدة التناوب الحالي والتناوبات اللاحقة: تُعاد حساب التواريخ أسفله. لا يمكن أن ينزل التناوب الحالي عن الأيام المنقضية."],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -216,6 +217,8 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^Ligne (\d+) : la rotation en cours a déjà (\d+) jours écoulés, elle ne peut pas être plus courte\.$/, function (l, n) { return 'Line ' + l + ': the current rotation already has ' + n + ' days elapsed, it cannot be shorter.'; }],
+    [/^Rotation en cours : au moins (\d+) jours \(déjà écoulés\)$/, function (n) { return 'Current rotation: at least ' + n + ' days (already elapsed)'; }],
     [/^Vis-à-vis de (.+)$/, function (n) { return 'Counterparts of ' + n; }],
     [/^Retenir pour (.+) \(enregistrer dans l'Organigramme\)$/, function (n) { return 'Keep for ' + n + ' (save in the Organigram)'; }],
     [/^Autres vis-à-vis de chambre possibles \(même entité : (.+)\)$/, function (e) { return 'Other possible room counterparts (same entity: ' + e + ')'; }],
@@ -254,6 +257,8 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^Ligne (\d+) : la rotation en cours a déjà (\d+) jours écoulés, elle ne peut pas être plus courte\.$/, function (l, n) { return 'السطر ' + l + ': التناوب الحالي مضى منه ' + n + ' يومًا، لا يمكن أن يكون أقصر.'; }],
+    [/^Rotation en cours : au moins (\d+) jours \(déjà écoulés\)$/, function (n) { return 'التناوب الحالي: ' + n + ' يومًا على الأقل (منقضية)'; }],
     [/^Vis-à-vis de (.+)$/, function (n) { return 'مقابلو ' + n; }],
     [/^Retenir pour (.+) \(enregistrer dans l'Organigramme\)$/, function (n) { return 'اعتماد لـ ' + n + ' (حفظ في الهيكل التنظيمي)'; }],
     [/^Autres vis-à-vis de chambre possibles \(même entité : (.+)\)$/, function (e) { return 'مقابلون آخرون محتملون للغرفة (نفس الجهة: ' + e + ')'; }],

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-76",
+    "date": "2026-10-24",
+    "title": "Version 5.44.0 — Modifier aussi la rotation en cours",
+    "changes": [
+      "Modifier le planning : la rotation en cours est maintenant modifiable (elle commence à son vrai début et s'affiche en première ligne) : on peut la prolonger ou la raccourcir, sans descendre en dessous des jours déjà écoulés ; les suivantes restent modifiables comme avant."
+    ]
+  },
+  {
     "id": "2026-10-24-75",
     "date": "2026-10-24",
     "title": "Version 5.43.0 — Raccourcis entre les pages liées",

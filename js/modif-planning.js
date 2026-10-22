@@ -34,13 +34,15 @@
     var direct = options.mode === 'direct', chef = options.mode === 'chef' || direct, HAB = { T: rot.jours_travail, R: rot.jours_repos };
     // première rotation à régler : la prochaine qui commence après aujourd'hui ; si une demande est en cours, on part de son début (les jours déjà passés restent figés)
     var iS = Simulation.prochaineReleve(g, ia + 1);
+    // la rotation EN COURS peut aussi être modifiée (raccourcie ou prolongée, jamais en dessous des jours déjà écoulés) : on part de son début, si la rotation de l'agent et la limite de 30 jours le permettent
+    if (g.charAt(ia) === 'T' || g.charAt(ia) === 'R') { var ic = ia; while (ic > 0 && g.charAt(ic - 1) === g.charAt(ic)) ic -= 1; var dc = Simulation.addDays(F, ic); if (dc >= rot.depuis && dc >= Simulation.addDays(auj, -30)) iS = Math.min(iS, ic); }
     if (d.en_cours_modif && Simulation.estDate(d.en_cours_modif.debut)) { var ip = Math.max(0, Simulation.diff(F, d.en_cours_modif.debut)); while (ip > 0 && g.charAt(ip - 1) === g.charAt(ip)) ip -= 1; iS = Math.min(iS, ip); }
-    var lignes = blocs(g, iS, NB_LIGNES).map(function (b) { return { type: b.type, jours: b.jours, orig: b.jours, verrou: b.idx <= ia }; });
+    var lignes = blocs(g, iS, NB_LIGNES).map(function (b) { return { type: b.type, jours: b.jours, orig: b.jours, verrou: b.idx + b.jours <= ia, min: b.idx <= ia && b.idx + b.jours > ia ? ia - b.idx + 1 : 1 }; });
     var actuel = blocs(d.grille_actuelle, iS, NB_LIGNES), debutS = Simulation.addDays(F, iS);
 
     var dlg = el('dialog', 'dlg mp'), f = el('form'); f.method = 'dialog';
     f.appendChild(el('h2', null, options.titre || 'Modifier mon planning'));
-    f.appendChild(el('p', 'sous', 'Changez la durée des prochaines rotations : les dates en dessous se recalculent. Les rotations déjà commencées ne se modifient pas.'));
+    f.appendChild(el('p', 'sous', 'Changez la durée de la rotation en cours et des suivantes : les dates en dessous se recalculent. La rotation en cours ne peut pas descendre en dessous des jours déjà écoulés.'));
     var zone = el('div'); f.appendChild(zone);
 
     function tableau(titre, rows, editable) {
@@ -50,7 +52,7 @@
         tr.appendChild(el('td', null, nomType(r.type))); ligne.du = el('td', 'd'); ligne.au = el('td', 'd'); tr.appendChild(ligne.du); tr.appendChild(el('td', null, 'au')); tr.appendChild(ligne.au);
         var n = el('td', 'n');
         if (editable && !r.verrou) {
-          var inp = document.createElement('input'); inp.type = 'number'; inp.min = 1; inp.max = 120; inp.step = 1; inp.value = r.jours; inp.setAttribute('aria-label', 'Nombre de jours, ligne ' + (i + 1));
+          var inp = document.createElement('input'); inp.type = 'number'; inp.min = r.min || 1; inp.max = 120; inp.step = 1; inp.value = r.jours; if (r.min > 1) inp.title = 'Rotation en cours : au moins ' + r.min + ' jours (déjà écoulés)'; inp.setAttribute('aria-label', 'Nombre de jours, ligne ' + (i + 1));
           inp.addEventListener('input', function () { r.jours = Math.floor(Number(inp.value)); calculer(); }); n.appendChild(inp);
         } else { n.textContent = r.jours + ' j'; if (editable) tr.className += ' verrou'; }
         tr.appendChild(n); t.appendChild(tr); cellules.push(ligne);
@@ -96,6 +98,7 @@
     function modif() {
       var k = -1; lignes.forEach(function (r, i) { if (r.jours !== HAB[r.type]) k = i; });
       var n = Math.max(k, 0) + 1, ps = lignes.slice(0, n).map(function (r) { return { type: r.type, jours: r.jours }; });
+      for (var q = 0; q < n; q += 1) if (lignes[q].min > 1 && lignes[q].jours < lignes[q].min) return { erreur: 'Ligne ' + (q + 1) + ' : la rotation en cours a déjà ' + lignes[q].min + ' jours écoulés, elle ne peut pas être plus courte.' };
       for (var i = 0; i < ps.length; i += 1) if (!(ps[i].jours >= 1 && ps[i].jours <= 120 && Math.floor(ps[i].jours) === ps[i].jours)) return { erreur: 'Ligne ' + (i + 1) + ' : de 1 à 120 jours' };
       return { m: { debut: debutS, periodes: ps, reprise: Simulation.autre(ps[ps.length - 1].type) } };
     }
