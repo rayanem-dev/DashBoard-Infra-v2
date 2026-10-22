@@ -58,3 +58,9 @@ test('service du projet (Suivi CPM) → émputation', () => {
   assert.strictEqual(E('pecServiceVersEmputation_', '', EMP), '');
   assert.strictEqual(E('pecServiceVersEmputation_', 'Autre', EMP), '');
 });
+
+test('OCR réel du scan MAZOUZ SAID : une cellule par ligne, en-têtes mêlés à la 1re ligne', () => {
+  const txt = ['ETS MAZOUZ SAID', 'Employeur:ETS MAZOUZ SAID', 'Objet:', 'prise en charge', 'LISTE NOMINATIVE', 'MAT', 'NOM', '1', 'SIDHOUM', 'PRENOM', 'BADERDDINE', 'DATE NATS', 'FONCTION', 'No NTN', '02/08/1985', 'MACON', '2', 'KHALFAOUI', 'ABDELHAK', '08/10/1979', 'MACON', '109850676010160007', '109790703006700001', '3', 'AOUCHERIA', 'DJAMEL EDDINE', '06/10/1991', 'Chauffeur de poids lourd', '109910676016200003', '4', 'MESSALI', 'ANIS', '25/10/2005', 'PLOMBIER', '100050703005440009', '5', 'BOUCHOUFA', 'AYME', '01/04/2005', 'OURIER', '100050070301480009', 'A:SETIF Le:21/10/2026'].join('\n');
+  assert.deepStrictEqual(E('pecLireTexte_', txt), ATTENDU);
+  assert.strictEqual(E('pecLireDate_', txt), '21/10/2026');
+});

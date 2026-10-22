@@ -46,7 +46,7 @@ var PEC_DATE_ = /(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})/;
 function pecNaissance_(m) { var a = Number(m[3]); return a >= 1930 && a <= new Date().getFullYear() - 15; }
 function pecNumeros_(t) { return String(t).replace(/\b\d[\d\s]{7,}\b/g, ' ').replace(/\b\d{5,}\b/g, ' '); }
 /** Mots d'en-tête de colonne (jamais un nom de personne). */
-function pecEnteteMots_(txt) { var t = pecNorm_(txt).split(' ').filter(Boolean); return t.length > 0 && t.every(function (w) { return /^(mat|matricule|nom|prenom|prenoms|date|nais|naiss|naissance|fonction|poste|n|no|ntn|nin|num|numero|liste|nominative|n°)$/.test(w.replace(/[^a-z0-9°]/g, '')) || !/[a-z]{2}/.test(w); }); }
+function pecEnteteMots_(txt) { var t = pecNorm_(txt).split(' ').filter(Boolean); return t.length > 0 && t.every(function (w) { return /^(mat|matricule|nom|prenom|prenoms|date|nais|nats|naits|naiss|naissance|fonction|poste|n|no|ntn|nin|num|numero|liste|nominative|n°)$/.test(w.replace(/[^a-z0-9°]/g, '')) || !/[a-z]{2}/.test(w); }); }
 function pecIdentite_(avant, apres) {
   var mots = String(avant).replace(/^[\s|\-–•*]*(?:\d{1,3}\s*[.\-)]?\s+)?/, '').replace(/[|_]+/g, ' ').trim().split(/\s+/).filter(function (w) { return /[A-Za-zÀ-ÿ]/.test(w); });
   if (mots.length < 2 || pecEnteteMots_(mots.join(' '))) return null;
@@ -65,7 +65,7 @@ function pecLireColonnes_(lignes) {
     var fin = k + 1 < marques.length ? marques[k + 1].i : lignes.length, vals = lignes.slice(m.i + 1, fin).filter(function (x) { return /[A-Za-zÀ-ÿ]{2}/.test(x) && !pecEnteteMots_(x); });
     cols[m.type] = vals;
   }
-  if (!cols.nom || !cols.prenom || cols.nom.length < 1 || cols.nom.length !== cols.prenom.length) return [];
+  if (!cols.nom || !cols.prenom || cols.nom.length < 2 || cols.nom.length !== cols.prenom.length) return [];
   var fct = cols.fonction && cols.fonction.length === cols.nom.length ? cols.fonction : null;
   return cols.nom.map(function (n, j) { return { nom: pecCap_(n), prenom: pecCap_(cols.prenom[j]), fonction: fct ? pecFonction_(fct[j]) : '' }; });
 }
@@ -78,21 +78,26 @@ function pecLireTexte_(texte) {
     var avant = l.slice(0, m.index), apres = l.slice(m.index + m[0].length);
     if (/:/.test(avant)) return;
     var p = avant.trim().length >= 3 ? pecIdentite_(avant, apres) : null;
-    if (!p && k > 0) {                       // l'OCR a séparé l'identité (ligne précédente) de la date et de la fonction
+    if (!p && k > 0 && /[A-Za-zÀ-ÿ]{3}/.test(pecNumeros_(apres))) {   // l'OCR a séparé l'identité (ligne précédente) de la date et de la fonction (qui suit sur la même ligne)
       var prec = lignes[k - 1]; if (!PEC_DATE_.test(prec)) p = pecIdentite_(prec, apres);
     }
-    if (!p && avant.trim().length >= 3 && k > 0 && pecEnteteMots_(avant)) { var pr = lignes[k - 1]; if (!PEC_DATE_.test(pr)) p = pecIdentite_(pr, apres); }
     if (p) out.push(p);
   });
   if (out.length) return out;
   // 1 bis) lecture colonne par colonne
   out = pecLireColonnes_(lignes); if (out.length) return out;
-  // 2) une cellule par ligne : [n°] nom, prénom, date, fonction, numéro
+  // 2) une cellule par ligne, dans l'ordre du tableau : [n°] nom, prénom, date de naissance, fonction, numéro (les en-têtes et les numéros égarés sont ignorés)
   for (i = 0; i < lignes.length; i += 1) {
     m = PEC_DATE_.exec(lignes[i]); if (!m || lignes[i].replace(PEC_DATE_, '').trim().length > 2 || !pecNaissance_(m)) continue;
     var j = i - 1, ident = [];
-    while (j >= 0 && ident.length < 2 && /[A-Za-zÀ-ÿ]{2}/.test(lignes[j]) && !PEC_DATE_.test(lignes[j])) { ident.unshift(lignes[j]); j -= 1; }
-    if (ident.length === 2) out.push({ nom: pecCap_(ident[0]), prenom: pecCap_(ident[1]), fonction: i + 1 < lignes.length && /[A-Za-zÀ-ÿ]{3}/.test(lignes[i + 1]) && !PEC_DATE_.test(lignes[i + 1]) ? pecFonction_(lignes[i + 1]) : '' });
+    while (j >= 0 && ident.length < 2 && !PEC_DATE_.test(lignes[j])) {
+      if (/[A-Za-zÀ-ÿ]{2}/.test(lignes[j]) && !pecEnteteMots_(lignes[j])) ident.unshift(lignes[j]); else if (!pecEnteteMots_(lignes[j]) && !/^\d{1,3}$/.test(lignes[j])) break;
+      else if (/^\d{1,3}$/.test(lignes[j]) && ident.length) break;
+      j -= 1;
+    }
+    if (ident.length !== 2) continue;
+    var f = '', q = i + 1; if (q < lignes.length && /[A-Za-zÀ-ÿ]{3}/.test(lignes[q]) && !PEC_DATE_.test(lignes[q]) && !pecEnteteMots_(lignes[q])) f = pecFonction_(lignes[q]);
+    out.push({ nom: pecCap_(ident[0]), prenom: pecCap_(ident[1]), fonction: f });
   }
   if (out.length) return out;
   // 3) lignes « Nom Prénom » seules

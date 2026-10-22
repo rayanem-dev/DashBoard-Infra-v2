@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-66",
+    "date": "2026-10-24",
+    "title": "Version 5.38.1 — Prise en charge : scan lu ligne à ligne",
+    "changes": [
+      "Lecture d'une demande PDF scannée : le texte réel de l'OCR (une cellule par ligne, en-têtes mêlés à la première ligne, numéros d'ordre et numéros NTN en vrac) est maintenant lu correctement : les 5 personnes et leur fonction sont reprises. La reconstruction par « ligne précédente » qui ne trouvait que « Djamel Eddine » est corrigée."
+    ]
+  },
+  {
     "id": "2026-10-24-65",
     "date": "2026-10-24",
     "title": "Version 5.38.0 — Le projet choisit son service",
