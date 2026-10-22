@@ -398,6 +398,7 @@
           return { numero: m.numero, cree_le: m.cree_le, agent: u2.nom, service: u2.service, debut: m.modif.debut, reprise_le: Simulation.dateReprise(m.modif), motif: m.motif, statut: m.statut,
                    emetteur: (DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}).nom, decide_par: m.decide_par || '', decide_le: m.decide_le || '', commentaire: m.commentaire || '',
                    peut_decider: (m.statut === 'en_attente' || m.statut === 'appliquee') && demoState.user.role === 'chef_division' && m.email !== demoState.user.email,
+                   peut_informer: (m.statut === 'approuvee' || m.statut === 'refusee') && demoState.user.role === 'chef_division',
                    peut_supprimer: ['refusee', 'annulee', 'remplacee'].indexOf(m.statut) !== -1 && demoState.user.role === 'chef_division' }; });
         return { niveau: demoState.user.role === 'chef_division' ? 3 : 0, demandes: lq }; }
       case 'simu_demande': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var dm = demoMods().filter(function (m) { return m.numero === p.numero; })[0];
@@ -446,7 +447,7 @@
         return { niveau: 3, alertes: demoMods().filter(function (x) { return (x.statut === 'appliquee' || x.statut === 'en_attente') && x.email !== demoState.user.email; }).reverse().map(function (x) {
           var u3 = DEMO_USERS.filter(function (y) { return y.email === x.email; })[0] || {};
           return { numero: x.numero, agent: u3.nom, service: u3.service, debut: x.modif.debut, motif: x.motif, statut: x.statut, hors_rotation: !!x.hors, peut_decider: true }; }).sort(function (a, b) { return (b.hors_rotation ? 1 : 0) - (a.hors_rotation ? 1 : 0); }) }; }
-      case 'simu_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var cs = p.destinataires || {}, nb = (cs.secretariat ? 1 : 0) + (cs.chef_service ? 1 : 0) + (cs.chef_division ? 1 : 0);
+      case 'simu_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var cs = p.destinataires || {}, nb = (cs.secretariat ? 1 : 0) + (cs.chef_service ? 1 : 0) + (cs.chef_division ? 1 : 0) + (cs.agent ? 1 : 0);
         if (!nb) throw erreur('Cochez au moins un destinataire (ou aucune adresse trouvée)'); return { emails: nb }; }
       case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };
     }

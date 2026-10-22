@@ -328,3 +328,14 @@ test('suppression : seules les demandes refusées, annulées ou remplacées, dan
   assert.deepStrictEqual(m.tables.Modifications.map(r => r.numero).sort(), ['MOD-2', 'MOD-3', 'MOD-4']);
   assert.ok(m.journal.some(j => j[0] === 'modification_supprimee'));
 });
+
+test('informer l\'intéressé : seulement sur clic, adresse de contact, après décision', () => {
+  const m = monde(); m.tables.Utilisateurs.find(u => u.uid === 'u3').email_contact = 'perso.alain@gmail.com';
+  const v = appel(m, 'simuValider_', 'chef.s1@x.dz', MODIF);
+  assert.strictEqual(m.mails.length, 0, 'aucun e-mail à la validation');
+  appel(m, 'simuDecider_', 'chef.div@x.dz', { numero: v.numero, decision: 'approuvee' });
+  assert.strictEqual(m.mails.length, 0, 'aucun e-mail à la décision');
+  assert.ok(appel(m, 'simuListe_', 'chef.s1@x.dz', {}).demandes[0].peut_informer);
+  appel(m, 'simuEnvoyer_', 'chef.s1@x.dz', { numero: v.numero, destinataires: { agent: true } });
+  assert.strictEqual(m.mails.length, 1); assert.strictEqual(m.mails[0].to, 'perso.alain@gmail.com'); assert.match(m.mails[0].subject, /Votre demande/);
+});

@@ -235,6 +235,7 @@
     ["Paires de travail (compact)", "Work pairs (compact)", "أزواج العمل (مختصر)"],
     ["Détaillée : travail + chambre", "Detailed: work + room", "مفصّل: العمل + الغرفة"],
     ["Tableau sans planning", "Table without schedule", "جدول بدون تخطيط"],
+    ["✉ Informer l'agent", "✉ Notify the agent", "✉ إعلام العون"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });

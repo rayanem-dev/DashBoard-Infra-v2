@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-93",
+    "date": "2026-10-24",
+    "title": "Version 5.52.0 — Informer l'agent de la décision",
+    "changes": [
+      "Simulation › Demandes : un bouton « ✉ Informer l'agent » apparaît sur les demandes approuvées ou refusées : il envoie à l'agent (son adresse de contact, sinon celle de son compte) le résultat de la demande, avec les plannings actuel et modifié. Comme toujours, aucun e-mail ne part tout seul : ni à la validation, ni à la décision."
+    ]
+  },
+  {
     "id": "2026-10-24-92",
     "date": "2026-10-24",
     "title": "Version 5.51.2 — Demande de modification : PDF épuré",

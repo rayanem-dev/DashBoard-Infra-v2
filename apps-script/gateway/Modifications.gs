@@ -165,7 +165,7 @@ function simuResume_(r, u) {
            reprise_le: m.periodes.length ? Simulation.dateReprise(m) : '', motif: String(r.motif || ''), statut: String(r.statut), emetteur: Annuaire.nomAffichable(emet.nom, r.emetteur),
            decide_par: r.decide_par ? Annuaire.nomAffichable((Store.utilisateur(r.decide_par) || {}).nom, r.decide_par) : '', decide_le: String(r.decide_le || ''), commentaire: String(r.commentaire || ''),
            peut_decider: simuAttend_(r) && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible) && String(r.email).toLowerCase() !== String(u.email).toLowerCase(),
-           peut_supprimer: SIMU_SUPPRIMABLES_.indexOf(String(r.statut)) !== -1 && simuNiveau_(u) >= 2 && (simuDansPortee_(u, cible) || String(r.emetteur).toLowerCase() === String(u.email).toLowerCase()), hors_rotation: simuAttend_(r) ? simuHorsRotation_(r) : false, par_agent: String(r.email).toLowerCase() === String(r.emetteur).toLowerCase() };
+           peut_informer: (String(r.statut) === 'approuvee' || String(r.statut) === 'refusee') && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible), peut_supprimer: SIMU_SUPPRIMABLES_.indexOf(String(r.statut)) !== -1 && simuNiveau_(u) >= 2 && (simuDansPortee_(u, cible) || String(r.emetteur).toLowerCase() === String(u.email).toLowerCase()), hors_rotation: simuAttend_(r) ? simuHorsRotation_(r) : false, par_agent: String(r.email).toLowerCase() === String(r.emetteur).toLowerCase() };
 }
 /** Demande qui attend la décision d'un supérieur : en attente (émise par un responsable) ou appliquée (émise par l'agent lui-même, déjà en vigueur). */
 function simuAttend_(r) { return String(r.statut) === 'en_attente' || String(r.statut) === 'appliquee'; }
@@ -427,10 +427,14 @@ function simuEnvoyer_(req) {
     if ((cases.secretariat && role === 'secretariat') || (cases.chef_division && role === 'chef_division') ||
         (cases.chef_service && role === 'chef_service' && !!simuNorm_(x.service) && simuNorm_(x.service) === simuNorm_(cible.service))) dest[String(x.email).toLowerCase()] = true;
   });
+  if (cases.agent) {   // l'intéressé : son adresse de contact si elle est valable, sinon celle du compte
+    var ac = Annuaire.analyserEmail(cible.email_contact), ad = Annuaire.analyserEmail(cible.email);
+    var adr = ac.valide ? ac.propre : ad.valide ? ad.propre : ''; if (adr) dest[adr.toLowerCase()] = true;
+  }
   var liste = Object.keys(dest);
   if (!liste.length) throw new Error('Cochez au moins un destinataire (ou aucune adresse trouvée)');
   var d = simuDemandeDe_(r), site = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/';
-  Mail.envoyerDemande(liste, d, req.pour_information ? 'Demande de modification de planning (pour information)' : 'Demande de modification de planning (pour décision)', site + 'demande.html?n=' + encodeURIComponent(d.numero), Annuaire.nomAffichable(u.nom, u.email));
+  Mail.envoyerDemande(liste, d, cases.agent && !cases.secretariat && !cases.chef_division && !cases.chef_service ? 'Votre demande de modification de planning' : req.pour_information ? 'Demande de modification de planning (pour information)' : 'Demande de modification de planning (pour décision)', site + 'demande.html?n=' + encodeURIComponent(d.numero), Annuaire.nomAffichable(u.nom, u.email));
   Store.journal('modification_envoyee', u.email, String(r.numero) + ' → ' + liste.length + ' destinataire(s)');
   return { emails: liste.length };
 }
