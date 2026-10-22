@@ -111,7 +111,7 @@
       <details class="opt"><summary>Tolérances du vis-à-vis (4 jours par défaut)</summary>
         <div class="aide2" id="tol-info" style="margin:0 0 6px">Chevauchement et trou tolérés : 4 jours par défaut, modifiables. Vert « vis-à-vis presque parfait » jusqu'à 4 jours de conflit, rouge au-delà.</div>
         Chevauchement toléré (jours de relève)<input type="number" id="tol-c" min="0" max="15" value="4"> Trou toléré (jours)<input type="number" id="tol-v" min="0" max="15" value="4">
-        <br>Vis-à-vis de chambre : chevauchement toléré<input type="number" id="tol-cc" min="0" max="30" value="4"> Trou toléré (jours)<input type="number" id="tol-vc" min="0" max="60" value="14">
+        <br>Vis-à-vis de chambre : chevauchement toléré<input type="number" id="tol-cc" min="0" max="30" value="4"> Trou toléré (jours)<input type="number" id="tol-vc" min="0" max="60" value="6">
       </details>
     </div>
 
@@ -393,6 +393,32 @@
     return bonVis(c) ? (chambre ? 'Vis-à-vis de chambre presque parfait' : 'Vis-à-vis presque parfait') + (c.jours ? ' : ' + c.jours + ' jour' + (c.jours > 1 ? 's' : '') + ' de conflit' : '') + pe + '.' : (chambre ? 'Vis-à-vis de chambre en conflit de ' : 'Vis-à-vis en conflit de ') + c.jours + ' jours' + pe + '.';
   }
 
+  /** Chambre en conflit : autres agents de la MÊME ENTITÉ que le vis-à-vis de chambre actuel, du moins au plus en conflit avec A (simulé). */
+  function propositionsChambre(A, eA, zone) {
+    var actuel = agents.filter(function (x) { return x.uid === S.C.uid; })[0] || {}, entite = norm(actuel.dependance || '');
+    var prises = {}; agents.forEach(function (x) { if (x.vis_chambre && x.uid !== A.uid) prises[x.vis_chambre] = x; });
+    var cand = agents.filter(function (x) { return x.configuree && x.uid !== A.uid && x.uid !== S.C.uid && norm(x.dependance || '') === entite; }).map(function (x) {
+      var l = ligneDeUid(x.uid); if (!l || !l.grille) return null;
+      return { ag: x, ligne: l, c: conflitsRotation(eA.mod, l.grille, eA.m, null, A, A, optsCh()), prise: prises[x.uid] };
+    }).filter(Boolean).sort(function (p, q) { return (p.prise ? 1 : 0) - (q.prise ? 1 : 0) || p.c.jours - q.c.jours || (p.ag.nom < q.ag.nom ? -1 : 1); }).slice(0, 5);
+    var bloc = el('div'); bloc.style.cssText = 'margin-top:6px;padding:8px 10px;border:1px dashed #D1D5DB;border-radius:10px;font-size:12.5px';
+    bloc.appendChild(el('div', null, 'Autres vis-à-vis de chambre possibles (même entité : ' + (actuel.dependance || 'SONATRACH') + ')')).style.fontWeight = '800';
+    if (!cand.length) { bloc.appendChild(el('div', null, 'Aucun autre agent de cette entité avec un planning renseigné.')); zone.appendChild(bloc); return; }
+    cand.forEach(function (x) {
+      var r = el('div'); r.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px';
+      var t = el('span', null, (bonVis(x.c) ? '✔ ' : '✖ ') + x.ag.nom + (x.ag.service ? ' · ' + x.ag.service : '') + ' — ' + (bonVis(x.c) ? (x.c.jours ? 'presque parfait : ' + x.c.jours + ' j de conflit' : 'aucun conflit') : 'conflit de ' + x.c.jours + ' j') + (x.prise ? ' (déjà vis-à-vis de chambre de ' + x.prise.nom + ')' : ''));
+      t.style.cssText = 'font-weight:700;color:' + (bonVis(x.c) ? '#166534' : '#B42318'); r.appendChild(t);
+      var u = el('button', 'btn-s', 'Utiliser'); u.type = 'button'; u.addEventListener('click', function () { donnees(x.ag.uid).then(function (d) { S.C = { ligne: x.ligne, uid: x.ag.uid, data: d }; majTout(); }).catch(function (e) { toast(e.message, true); }); });
+      var en = el('button', 'btn-s', 'Enregistrer comme vis-à-vis de chambre'); en.type = 'button';
+      en.addEventListener('click', function () {
+        var moi = agents.filter(function (a) { return a.uid === A.uid; })[0] || {};
+        Api.call('visavis_enregistrer', { uid: A.uid, vis_travail: moi.vis_travail || '', vis_chambre: x.ag.uid }).then(function () { moi.vis_chambre = x.ag.uid; if (!x.ag.vis_chambre) x.ag.vis_chambre = A.uid; toast('Vis-à-vis de chambre de ' + A.ligne.nom + ' : ' + x.ag.nom + ' (enregistré).'); u.click(); }).catch(function (e) { toast(e.message, true); });
+      });
+      r.appendChild(u); r.appendChild(en); bloc.appendChild(r);
+    });
+    zone.appendChild(bloc);
+  }
+
   // ---------- Résumé, bilan ----------
   function majSuite(a) {
     if (!a || !a.rep) return; var e = etat(a), last = -1, i;
@@ -426,6 +452,7 @@
       var gC2 = B && eB && B.uid === S.C.uid ? eB.mod : S.C.data.grille, c2 = conflitsRotation(eA.mod, gC2, eA.m, null, A, S.C, optsCh()), v2 = el('div');
       v2.textContent = (bonVis(c2) ? '✔ ' : '✖ ') + phraseConflit(c2, true); v2.appendChild(el('span', null, ' — ' + A.ligne.nom + ' ↔ ' + S.C.ligne.nom));
       v2.style.cssText = 'font-weight:700;margin-top:4px;color:' + (bonVis(c2) ? '#166534' : '#B42318'); bi.appendChild(v2);
+      if (!bonVis(c2)) propositionsChambre(A, eA, bi);
       }
   }
   function majTout() {

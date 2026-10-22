@@ -195,6 +195,8 @@
     ["Les informations de base de chaque agent et ses deux vis-à-vis : celui du travail (qui tient le poste pendant son repos) et celui de la chambre (qui occupe la même chambre, souvent d'une autre entité). Ils servent à la Simulation du planning. Seuls l'administrateur, le chef de division et le chef de service (pour son service) peuvent les modifier.", "Basic information for each agent and their two counterparts: the work one (who holds the post during their rest) and the room one (who occupies the same room, often from another entity). They are used by the schedule Simulation. Only the administrator, the division head and the service head (for their service) can edit them.", "المعلومات الأساسية لكل عون ومقابليه: مقابل العمل (من يشغل المنصب أثناء راحته) ومقابل الغرفة (من يشغل نفس الغرفة، غالبًا من جهة أخرى). يستعملان في محاكاة التخطيط. لا يعدّلهما إلا المسؤول ورئيس القسم ورئيس المصلحة (لمصلحته)."],
     ["Vis-à-vis de chambre : chevauchement toléré", "Room counterpart: overlap tolerated", "مقابل الغرفة: التداخل المسموح"],
     ["Chambre", "Room", "الغرفة"],
+    ["Aucun autre agent de cette entité avec un planning renseigné.", "No other agent of this entity with a schedule set.", "لا يوجد عون آخر من هذه الجهة له تخطيط مسجّل."],
+    ["Enregistrer comme vis-à-vis de chambre", "Save as room counterpart", "حفظ كمقابل للغرفة"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -202,6 +204,7 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^Autres vis-à-vis de chambre possibles \(même entité : (.+)\)$/, function (e) { return 'Other possible room counterparts (same entity: ' + e + ')'; }],
     [/^Vis-à-vis de chambre presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Almost perfect room counterpart' + (c ? ': ' + c + ' day' + (c > 1 ? 's' : '') + ' of conflict' : '') + ' (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Vis-à-vis de chambre en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Room counterpart in conflict for ' + c + ' days (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Suite : la rotation habituelle reprend \((travail|repos)\)$/, function (x) { return 'Continuation: the usual rotation resumes (' + (x === 'travail' ? 'work' : 'rest') + ')'; }],
@@ -237,6 +240,7 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^Autres vis-à-vis de chambre possibles \(même entité : (.+)\)$/, function (e) { return 'مقابلون آخرون محتملون للغرفة (نفس الجهة: ' + e + ')'; }],
     [/^Vis-à-vis de chambre presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'مقابل الغرفة شبه مثالي' + (c ? ': ' + c + ' يوم تعارض' : '') + ' (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Vis-à-vis de chambre en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'مقابل الغرفة متعارض لمدة ' + c + ' يوم (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Suite : la rotation habituelle reprend \((travail|repos)\)$/, function (x) { return 'التتمة: يستأنف التناوب المعتاد (' + (x === 'travail' ? 'عمل' : 'راحة') + ')'; }],

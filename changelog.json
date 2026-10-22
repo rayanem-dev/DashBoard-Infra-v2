@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-71",
+    "date": "2026-10-24",
+    "title": "Version 5.41.1 — Chambre : autres vis-à-vis proposés",
+    "changes": [
+      "Simulation : quand le vis-à-vis de chambre est en conflit (chevauchement ou trou trop long), on propose d'autres agents de la même entité que le vis-à-vis actuel, classés du moins au plus en conflit avec l'agent simulé ; « Utiliser » les essaie dans la simulation, « Enregistrer comme vis-à-vis de chambre » les retient (selon vos droits).",
+      "Trou toléré pour la chambre ramené à 6 jours : 7 jours sans occupant est déjà un trou trop long."
+    ]
+  },
+  {
     "id": "2026-10-24-70",
     "date": "2026-10-24",
     "title": "Version 5.41.0 — Vis-à-vis de travail et de chambre",
