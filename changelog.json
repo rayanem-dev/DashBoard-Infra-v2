@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-83",
+    "date": "2026-10-24",
+    "title": "Version 5.46.4 — Renommage : jamais d'écrasement",
+    "changes": [
+      "Renommage de documents : si un fichier du dossier porte déjà le nom proposé (ex. PEC_SPA UNITE HAMIZ_2026-10-22.pdf), le nouveau prend « (1) », « (2) »… au lieu de l'écraser. Dans une même liste, les doublons étaient déjà numérotés."
+    ]
+  },
+  {
     "id": "2026-10-24-82",
     "date": "2026-10-24",
     "title": "Version 5.46.3 — Renommage : bouton Télécharger et conseil sur le dossier",

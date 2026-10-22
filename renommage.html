@@ -201,6 +201,12 @@
     octets(it).then(function (u) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u])); a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); toast('⬇ ' + nom); })
       .catch(function (e) { toast(e.message, true); });
   }
+  /** Nom encore libre DANS le dossier (jamais d'écrasement d'un fichier déjà présent) : « nom (1).pdf », « nom (2).pdf »… */
+  function nomLibreDans(dir, nom) {
+    var e = ext(nom), base = e ? nom.slice(0, -(e.length + 1)) : nom, k = 0;
+    function essai(n) { return dir.getFileHandle(n).then(function () { k += 1; return essai(base + ' (' + k + ')' + (e ? '.' + e : '')); }, function (err) { if (err && err.name === 'NotFoundError') return n; throw err; }); }
+    return essai(nom);
+  }
   function renommer(liste) {
     if (!dossierChoisi) toast('Choisissez le dossier qui contient le fichier : un sous-dossier (ex. « Scans »), pas Documents, Téléchargements ou Bureau eux-mêmes, que le navigateur refuse. Sinon utilisez « Télécharger ».');
     var dir0 = dossierChoisi ? Promise.resolve(dossierChoisi) : window.showDirectoryPicker({ mode: 'readwrite' }).then(function (d) { dossierChoisi = d; return d; });
@@ -209,7 +215,7 @@
       return liste.reduce(function (p, it) {
         var i = items.indexOf(it);
         return p.then(function () { return dir.getFileHandle(it.f.name).then(function (h) { return h.getFile(); }).catch(function () { throw new Error('« ' + it.f.name + ' » n\'est pas dans le dossier choisi : choisissez le dossier qui le contient.'); }); })
-          .then(function (f) { it.f = f; if (noms[i] === f.name) return null; return octets(it).then(function (u) { return dir.getFileHandle(noms[i], { create: true }).then(function (h) { return h.createWritable(); }).then(function (w) { return w.write(u).then(function () { return w.close(); }); }); }).then(function () { return dir.removeEntry(f.name); }); })
+          .then(function (f) { it.f = f; if (noms[i] === f.name) return null; return nomLibreDans(dir, noms[i]).then(function (nl) { noms[i] = nl; return octets(it); }).then(function (u) { return dir.getFileHandle(noms[i], { create: true }).then(function (h) { return h.createWritable(); }).then(function (w) { return w.write(u).then(function () { return w.close(); }); }); }).then(function () { return dir.removeEntry(f.name); }); })
           .then(function () { it.fait = true; it.nom = noms[i]; fait += 1; });
       }, Promise.resolve()).then(function () { toast('✔ ' + fait + ' fichier(s) renommé(s) dans le dossier.'); dessiner(); }, function (e) { dossierChoisi = null; dessiner(); throw e; });
     }).catch(function (e) { if (e && e.name !== 'AbortError') toast(e.message, true); });
