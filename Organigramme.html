@@ -178,6 +178,10 @@
   var PLAN = null;                                   // { debut, auj, lignes } lu une fois (peut manquer si le compte n'a pas accès au planning)
   var MOISF = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
   function planDe(p) { if (!PLAN) return ''; var c = PLAN.lignes.filter(function (l) { return norm(l.nom) === norm(p.nom) && l.configuree && l.grille; }); return c.length ? (c.filter(function (l) { return norm(l.service) === norm(p.service); })[0] || c[0]).grille : ''; }
+  /** Cycle (travail + repos) d'un agent d'après sa rotation ; 56 jours à défaut. */
+  function cycleDe(p) { if (!PLAN) return 56; var c = PLAN.lignes.filter(function (l) { return norm(l.nom) === norm(p.nom) && l.rotation; })[0]; return c ? Number(c.rotation.jours_travail) + Number(c.rotation.jours_repos) : 56; }
+  /** Jours de conflit (hors tolérance) sur UNE rotation à partir d'aujourd'hui, comme dans la Simulation : rotation = le plus long des deux cycles. */
+  function conflitRotation(marques, i0, len) { var j = 0; for (var m = i0; m < i0 + len; m += 1) { var c = marques.charAt(m); if (c === 'C' || c === 'V') j += 1; } return j; }
   function runs(chaine, i0, n, classe) {
     var b = el('div', 'brs'), i = i0, fin = i0 + n;
     while (i < fin) { var c = chaine.charAt(i) || 'x', j = i; while (j < fin && (chaine.charAt(j) || 'x') === c) j += 1; var len = j - i, sp = el('span', classe(c)); sp.style.width = (len / n * 100) + '%'; if (len / n >= 0.04 && classe(c) !== 'x' && classe(c) !== 'o') sp.textContent = len + ' j'; b.appendChild(sp); i = j; }
@@ -196,9 +200,9 @@
       dej.paires[cle] = true; dej.vus[q.uid] = true; nbPaires += 1; var gB = planDe(q);
       if (!gB) { c.appendChild(ligneBarre(q.nom + ' (planning non renseigné)', t[1].charAt(0), t[2], el('div', 'brs'))); return; }
       c.appendChild(ligneBarre(q.nom, t[1].charAt(0), t[2], runs(gB, i0, n, cTR)));
-      var cf = Simulation.conflits(gA, gB, PLAN.debut, t[3], i0), marq = cf.marques, jr = 0; for (var m = i0; m < i0 + n; m += 1) if (marq.charAt(m) === 'C' || marq.charAt(m) === 'V') jr += 1;
+      var cf = Simulation.conflits(gA, gB, PLAN.debut, t[3], i0), marq = cf.marques, len = Math.max(cycleDe(p), cycleDe(q)), jr = conflitRotation(marq, i0, len);
       c.appendChild(ligneBarre(t[4] + ' (' + t[1].toLowerCase() + ')', '', t[2], runs(marq, i0, n, cVV)));
-      c.appendChild(el('div', 'verdict ' + (jr <= 4 ? 'ok' : 'ko'), (jr <= 4 ? '✔ Presque parfait' + (jr ? ' : ' + jr + ' jour(s) de conflit' : '') : '✖ En conflit de ' + jr + ' jours') + ' — ' + p.nom + ' ↔ ' + q.nom));
+      c.appendChild(el('div', 'verdict ' + (jr <= 4 ? 'ok' : 'ko'), (jr <= 4 ? '✔ Presque parfait' + (jr ? ' : ' + jr + ' jour(s) de conflit' : '') : '✖ En conflit de ' + jr + ' jours') + ' sur une rotation de ' + len + ' jours — ' + p.nom + ' ↔ ' + q.nom));
     });
     if (!nbPaires && (rest || dej.vus[p.uid])) return null;                                   // rien de nouveau à montrer pour cet agent
     dej.vus[p.uid] = true; return c;
@@ -220,8 +224,8 @@
       if (parS && (p.service || 'Sans service') !== derniere) { derniere = p.service || 'Sans service'; var ts = el('tbody'), rs = el('tr', 'svc'), cs = el('td', null, derniere); cs.colSpan = 2; rs.appendChild(cs); ts.appendChild(rs); t.appendChild(ts); }
       var tb = el('tbody', 'paire');
       ligne(tb, 'A', p.nom, txtE(p), runs(gA, i0, n, cTR), 'f'); ligne(tb, 'B', q.nom, txtE(q), runs(gB, i0, n, cTR), 'f');
-      var cf = Simulation.conflits(gA, gB, PLAN.debut, { tolChev: 4, tolTrou: 4 }, i0), jr = 0; for (var m = i0; m < i0 + n; m += 1) { var c = cf.marques.charAt(m); if (c === 'C' || c === 'V') jr += 1; }
-      ligne(tb, '', jr <= 4 ? '✔ Presque parfait' + (jr ? ' (' + jr + ' j)' : '') : '✖ En conflit de ' + jr + ' jours', '', runs(cf.marques, i0, n, cVV), jr <= 4 ? 'ok' : 'ko');
+      var cf = Simulation.conflits(gA, gB, PLAN.debut, { tolChev: 4, tolTrou: 4 }, i0), len = Math.max(cycleDe(p), cycleDe(q)), jr = conflitRotation(cf.marques, i0, len);
+      ligne(tb, '', (jr <= 4 ? '✔ Presque parfait' + (jr ? ' (' + jr + ' j)' : '') : '✖ En conflit de ' + jr + ' jours') + ' / rotation de ' + len + ' j', '', runs(cf.marques, i0, n, cVV), jr <= 4 ? 'ok' : 'ko');
       t.appendChild(tb);
     });
     z.appendChild(t);
