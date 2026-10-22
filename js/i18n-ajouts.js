@@ -183,6 +183,8 @@
     ["Reliquat de cette rotation : ", "Balance of this rotation: ", "رصيد هذا التناوب: "],
     ["Tolérance du vis-à-vis (automatique selon les jours de relève)", "Face-to-face tolerance (automatic, based on handover days)", "تسامح التقابل (تلقائي حسب أيام المناوبة)"],
     ["Choisissez A et B : la tolérance se règle d'après l'écart entre leurs jours de relève (ex. dimanche et lundi : 1 jour).", "Choose A and B: the tolerance is set from the gap between their handover days (e.g. Sunday and Monday: 1 day).", "اختر A وB: يُضبط التسامح حسب الفارق بين يومي مناوبتهما (مثال: الأحد والاثنين: يوم واحد)."],
+    ["Tolérances du vis-à-vis (4 jours par défaut)", "Face-to-face tolerances (4 days by default)", "تسامح التقابل (4 أيام افتراضيًا)"],
+    ["Chevauchement et trou tolérés : 4 jours par défaut, modifiables. Vert « vis-à-vis presque parfait » jusqu'à 4 jours de conflit, rouge au-delà.", "Overlap and gap tolerated: 4 days by default, adjustable. Green « almost perfect face-to-face » up to 4 days of conflict, red beyond.", "التداخل والفجوة المسموح بهما: 4 أيام افتراضيًا، قابلة للتعديل. أخضر « تقابل شبه مثالي » حتى 4 أيام من التعارض، وأحمر بعد ذلك."],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -190,6 +192,8 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^Vis-à-vis presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Almost perfect face-to-face' + (c ? ': ' + c + ' day' + (c > 1 ? 's' : '') + ' of conflict' : '') + ' (over a ' + l + '-day rotation from ' + d + ').'; }],
+    [/^Vis-à-vis en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Face-to-face in conflict for ' + c + ' days (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Reliquat résultant : (.+)$/, function (x) { return 'Resulting balance: ' + x.replace(/\(avant :/g, '(before:'); }],
     [/^Jours de relève : (.+) le (\S+), (.+) le (\S+) : (.+)$/, function (a, da, b, db, r) { var D = { dimanche: 'Sunday', lundi: 'Monday', mardi: 'Tuesday', mercredi: 'Wednesday', jeudi: 'Thursday', vendredi: 'Friday', samedi: 'Saturday' }; var m = /^écart de (\d+) jours?/.exec(r); return 'Handover days: ' + a + ' on ' + D[da] + ', ' + b + ' on ' + D[db] + ': ' + (m ? m[1] + '-day gap, tolerance set automatically.' : 'same day, no tolerance.'); }],
     [/^rotation (\d+)\/(\d+) · relève le (\S+) · reliquat actuel (.+) · début le (.+)$/, function (t, r, d, s, b) { var D = { dimanche: 'Sunday', lundi: 'Monday', mardi: 'Tuesday', mercredi: 'Wednesday', jeudi: 'Thursday', vendredi: 'Friday', samedi: 'Saturday' }; return 'rotation ' + t + '/' + r + ' · handover on ' + D[d] + ' · current balance ' + s + ' · starts on ' + b; }],
@@ -220,6 +224,8 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^Vis-à-vis presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'تقابل شبه مثالي' + (c ? ': ' + c + ' يوم تعارض' : '') + ' (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
+    [/^Vis-à-vis en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'تقابل متعارض لمدة ' + c + ' يوم (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Reliquat résultant : (.+)$/, function (x) { return 'الرصيد الناتج: ' + x.replace(/\(avant :/g, '(قبل:'); }],
     [/^Jours de relève : (.+) le (\S+), (.+) le (\S+) : (.+)$/, function (a, da, b, db, r) { var D = { dimanche: 'الأحد', lundi: 'الاثنين', mardi: 'الثلاثاء', mercredi: 'الأربعاء', jeudi: 'الخميس', vendredi: 'الجمعة', samedi: 'السبت' }; var m = /^écart de (\d+) jours?/.exec(r); return 'أيام المناوبة: ' + a + ' يوم ' + D[da] + '، ' + b + ' يوم ' + D[db] + ': ' + (m ? 'فارق ' + m[1] + ' يوم، ضُبط التسامح تلقائيًا.' : 'نفس اليوم، لا تسامح.'); }],
     [/^rotation (\d+)\/(\d+) · relève le (\S+) · reliquat actuel (.+) · début le (.+)$/, function (t, r, d, s, b) { var D = { dimanche: 'الأحد', lundi: 'الاثنين', mardi: 'الثلاثاء', mercredi: 'الأربعاء', jeudi: 'الخميس', vendredi: 'الجمعة', samedi: 'السبت' }; return 'تناوب ' + t + '/' + r + ' · المناوبة يوم ' + D[d] + ' · الرصيد الحالي ' + s + ' · يبدأ في ' + b; }],
