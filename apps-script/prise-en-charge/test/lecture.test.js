@@ -69,3 +69,13 @@ test('clé d\'entreprise pour la base par défaut', () => {
   assert.strictEqual(E('pecCleEntreprise_', 'I/43/RNS/INFRA/2025 - ENCC SPA UNITE HAMIZ - Travaux'), 'encc spa unite hamiz');
   assert.strictEqual(E('pecCleEntreprise_', 'I/44 - Étb Zatout - X'), E('pecCleEntreprise_', 'I/54 - ETB ZATOUT - Y'));
 });
+
+test('courriel d\'entreprise (PDF avec texte) : « 1- NOM PRENOM en qualité Fonction », contrat et date prévue', () => {
+  const txt = ['Demande de prise en charge – Mission à Rhourde Nouss Contrat N°', 'I/80/RNS/INFRA/2026', 'Bonjour,', 'départ en mission de Hassi Messaoud vers la Direction Régionale de Rhourde Nouss, prévu le 22/10/2026, de :',
+    '1- CHENNA ILYAS en qualité Manoeuvre', '2- CHENNA MOUSSA en qualité Manoeuvre', '4- HAMADA MOHAMED DHIYA en qualité Manoeuvre', '8- ACHOUR MAMMAR en qualité Manoeuvre, en vue de la reprise de fonction', 'Avec leur propre moyen.'].join('\n');
+  const r = E('pecLireTexte_', txt);
+  assert.deepStrictEqual(r.map(p => p.nom + '|' + p.prenom + '|' + p.fonction), ['Chenna|Ilyas|Manoeuvre', 'Chenna|Moussa|Manoeuvre', 'Hamada|Mohamed Dhiya|Manoeuvre', 'Achour|Mammar|Manoeuvre']);
+  assert.strictEqual(E('pecLireDate_', txt), '22/10/2026');
+  assert.strictEqual(E('pecLireContrat_', txt), 'I/80/RNS/INFRA/2026');
+  assert.strictEqual(E('pecCleContrat_', 'I/80/RNS/INFRA/2026'), E('pecCleContrat_', '80.INFRA.26'));
+});

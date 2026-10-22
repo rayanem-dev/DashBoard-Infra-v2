@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-69",
+    "date": "2026-10-24",
+    "title": "Version 5.40.0 — Prise en charge : lecture des courriels d'entreprises",
+    "changes": [
+      "Charger la demande PDF : en plus des tableaux scannés, la lecture comprend maintenant les listes en phrases d'un courriel imprimé en PDF (« 1- CHENNA ILYAS en qualité Manoeuvre ») : nom, prénom et fonction sont repris (la fonction s'arrête avant « , en vue de… »).",
+      "Le n° de contrat cité (« Contrat N° I/80/RNS/INFRA/2026 ») choisit tout seul le prestataire correspondant (puis son service et sa base) ; « prévu le 22/10/2026 » donne la date d'arrivée.",
+      "Nouvelles formulations : il suffit d'ajouter une expression dans la liste PEC_FORMULES_ du script."
+    ]
+  },
+  {
     "id": "2026-10-24-68",
     "date": "2026-10-24",
     "title": "Version 5.39.0 — Prise en charge : base par défaut de chaque entreprise",

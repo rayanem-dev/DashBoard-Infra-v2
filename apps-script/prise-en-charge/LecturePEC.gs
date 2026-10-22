@@ -69,9 +69,33 @@ function pecLireColonnes_(lignes) {
   var fct = cols.fonction && cols.fonction.length === cols.nom.length ? cols.fonction : null;
   return cols.nom.map(function (n, j) { return { nom: pecCap_(n), prenom: pecCap_(cols.prenom[j]), fonction: fct ? pecFonction_(fct[j]) : '' }; });
 }
+/**
+ * Formulations de liste en phrases (courriel d'une entreprise) : « 1- CHENNA ILYAS en qualité Manoeuvre ».
+ * Pour apprendre une nouvelle formulation : ajouter ici une expression régulière à 2 groupes (identité, fonction).
+ */
+var PEC_FORMULES_ = [
+  /^\s*(?:\d{1,2}\s*[-–—.)]\s*|[-–—•*]\s*)(.+?)\s+(?:en\s+qualit[ée](?:\s+d[e'’]\s*)?|en\s+tant\s+qu[e'’]\s*|comme)\s+(.+?)\s*$/i,
+  /^\s*(?:\d{1,2}\s*[-–—.)]\s*|[-–—•*]\s*)([A-ZÀ-Ý][A-ZÀ-Ý'\- ]+?)\s*[:\-–—]\s*(?:fonction\s*:?\s*)?([A-Za-zÀ-ÿ][^,;]*)\s*$/
+];
+function pecLireFormules_(lignes) {
+  var out = [];
+  lignes.forEach(function (l) {
+    for (var k = 0; k < PEC_FORMULES_.length; k += 1) {
+      var m = PEC_FORMULES_[k].exec(l); if (!m) continue;
+      var mots = m[1].replace(/\s+/g, ' ').trim().split(' ').filter(function (w) { return /[A-Za-zÀ-ÿ]/.test(w); });
+      if (mots.length < 2 || mots.length > 5 || pecEnteteMots_(mots.join(' '))) continue;
+      var fonction = m[2].split(/[,;(]/)[0].replace(/\.$/, '').trim();            // « Manoeuvre, en vue de la reprise… » → « Manoeuvre »
+      out.push({ nom: pecCap_(mots[0]), prenom: pecCap_(mots.slice(1).join(' ')), fonction: pecFonction_(fonction) });
+      return;
+    }
+  });
+  return out;
+}
 /** Texte brut (lignes) → personnes. */
 function pecLireTexte_(texte) {
   var lignes = String(texte || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean), out = [], i, m;
+  // 0) liste en phrases : « 1- NOM PRENOM en qualité Fonction »
+  out = pecLireFormules_(lignes); if (out.length) return out;
   // 1) une ligne par personne, la date de naissance sépare identité et fonction
   lignes.forEach(function (l, k) {
     m = PEC_DATE_.exec(l); if (!m || m.index < 0 || !pecNaissance_(m)) return;
@@ -107,7 +131,7 @@ function pecLireTexte_(texte) {
 }
 /** Date de début : formules habituelles ; à défaut la date de la lettre (« Le : 21/10/2026 »). */
 function pecLireDate_(texte) {
-  var pats = [/ceci est du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i, /à compter du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i, /a compter du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i,
+  var pats = [/pr[ée]vu\s+le\s*:?\s*(\d{1,2}\s*[\/\-]\s*\d{1,2}\s*[\/\-]\s*\d{4})/i, /ceci est du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i, /à compter du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i, /a compter du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i,
     /prise en charge[^\.]*?du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i, /\ble\s*:\s*(\d{1,2}\s*[\/\-]\s*\d{1,2}\s*[\/\-]\s*\d{4})/i];
   for (var k = 0; k < pats.length; k += 1) { var m = String(texte || '').match(pats[k]); if (m) return m[1].replace(/\s+/g, '').replace(/-/g, '/'); }
   return null;
@@ -122,3 +146,15 @@ function pecServiceVersEmputation_(service, emputations) {
 
 /** Clé d'une entreprise pour se souvenir de sa base : 2e partie de « N° - Entreprise - Intitulé », sans accents ni casse. */
 function pecCleEntreprise_(prestataire) { var p = String(prestataire || '').split(' - '); return pecNorm_(p.length > 1 ? p[1] : p[0]); }
+
+/** N° de contrat cité dans le texte (« Contrat N° I/80/RNS/INFRA/2026 »), '' si absent. */
+function pecLireContrat_(texte) {
+  var m = /contrat\s*(?:n[°ºo]?\.?)?\s*:?\s*([A-Z0-9][A-Z0-9\/.\-]*\d)/i.exec(String(texte || '').replace(/\s*\n\s*/g, ' '));
+  return m ? m[1] : '';
+}
+/** Forme comparable d'un n° de contrat : « I/80/RNS/INFRA/2026 » et « 80.INFRA.26 » donnent tous deux « 80-26 ». */
+function pecCleContrat_(c) {
+  var g = String(c || '').match(/\d+/g); if (!g || g.length < 2) return '';
+  var an = g[g.length - 1]; if (an.length === 4) an = an.slice(2);
+  return String(Number(g[0])) + '-' + an;
+}

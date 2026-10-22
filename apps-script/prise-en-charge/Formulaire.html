@@ -467,6 +467,7 @@
 
   // Recherche du prestataire : sans accents ni majuscules, tous les mots tapés doivent figurer. À la sortie du champ,
   // un seul prestataire correspondant est choisi tout seul ; une saisie qui ne correspond à rien est refusée à l'envoi.
+  function cleContrat(c) { const g = String(c || '').match(/\d+/g); if (!g || g.length < 2) return ''; let an = g[g.length - 1]; if (an.length === 4) an = an.slice(2); return String(Number(g[0])) + '-' + an; }
   function normPrest(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
   function correspondancesPrest(q) {
     const mots = normPrest(q).split(' ').filter(Boolean);
@@ -612,6 +613,11 @@
             lignes[i].querySelector('[data-champ="prenom"]').value = p.prenom || '';
             if (p.fonction) lignes[i].querySelector('[data-champ="fonction"]').value = p.fonction;
           });
+          // Contrat cité dans le document : le prestataire correspondant est choisi tout seul (puis service et base)
+          if (res.contrat) {
+            const cc = cleContrat(res.contrat), ch = Array.from(document.getElementById('listePrestataires').options).map(o => o.value).filter(v => cleContrat(v.split(' - ')[0]) === cc);
+            if (cc && ch.length === 1) { document.getElementById('prestataire').value = ch[0]; appliquerService(); }
+          }
           // Remplit la date si détectée et champ vide
           const champDate = document.getElementById('dateArrivee');
           if (res.dateDetectee && !champDate.value) {
