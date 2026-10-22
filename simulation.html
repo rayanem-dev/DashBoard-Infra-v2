@@ -43,6 +43,7 @@
   .frise .ligne.selA i, .frise .ligne.selB i, .frise .ligne.selC i { height: 18px; }
   .frise i.T { background: var(--c-T); } .frise i.R { background: var(--c-R); } .frise i.x { background: #E5E7EB; }
   .frise i.pre { opacity: .4; }
+  .frise .jours { position: relative; } .frise .jours .lg { position: absolute; top: 0; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; font: 700 10px/1 Inter, Arial, sans-serif; color: #fff; text-shadow: 0 0 2px rgba(0,0,0,.45); pointer-events: none; white-space: nowrap; } .frise .jours .lg.t { color: #111; text-shadow: none; }
   .frise i.C { background: #E11D48; } .frise i.V { background: #7C3AED; } .frise i.t { background: #FACC15; } .frise i.o { background: #D1FAE5; }
   .frise i.auj { box-shadow: inset 2px 0 0 #111; }
   .frise .mois { height: 16px; font-size: 10px; color: var(--text-muted); }
@@ -283,10 +284,22 @@
   function classeFer(i) { var h = FER[Simulation.addDays(F, i)]; return h ? (h.type === 'religieuse' ? ' fr' : ' fn') : ''; }
   var LIBTR = { T: 'Travail', R: 'Repos' };
   /** Une rangée de jours ; `texte(i)` donne la ligne d'infobulle propre à la rangée (état du jour, vis-à-vis…). */
-  function jours(g, i0, n, pre, extra, texte) {
+  /** Écrit le nombre de jours sur chaque bande de la ligne (travail, repos, conflits, tolérés) quand la bande est assez large ; les bandes coupées par le bord de la fenêtre ne sont pas comptées (durée inconnue). */
+  var PXJ = 8;
+  function etiqueter(j) {
+    var el0 = j.children, n = el0.length, i = 0;
+    function cle(k) { var c = el0[k].className.split(/\s+/)[0]; return c === 'T' || c === 'R' || c === 'C' || c === 'V' || c === 't' ? c + (/\bpre\b/.test(el0[k].className) ? 'p' : '') : ''; }
+    while (i < n) {
+      var c = cle(i), f = i; while (i < n && cle(i) === c) i += 1;
+      var len = i - f; if (!c || len * PXJ < 22 || ((c === 'T' || c === 'R' || c === 'Tp' || c === 'Rp') && (f === 0 || i === n))) continue;
+      var sp = el('span', 'lg' + (c.charAt(0) === 't' ? ' t' : ''), len + ' j'); sp.style.left = 'calc(var(--w) * ' + f + ')'; sp.style.width = 'calc(var(--w) * ' + len + ')'; j.appendChild(sp);
+    }
+  }
+  function jours(g, i0, n, pre, extra, texte, etiq) {
     var j = el('div', 'jours');
     for (var i = i0; i < i0 + n; i += 1) { var c = g.charAt(i), b = document.createElement('i'); b.className = (c === 'T' || c === 'R' ? c : 'x') + (pre != null && i < pre ? ' pre' : '') + (extra && extra(i) ? ' ' + extra(i) : '') + classeFer(i); j.appendChild(b); }
     Survol.attacher(j, function (x) { var w = j.firstChild ? j.firstChild.getBoundingClientRect().width : 0, i = w ? i0 + Math.floor(x / w) : -1; if (i < i0 || i >= i0 + n) return ''; return infobulle(i, texte ? texte(i) : (LIBTR[g.charAt(i)] || '')); });
+    if (etiq) etiqueter(j);
     return j;
   }
   function infobulle(i, etat) { var d = Simulation.addDays(F, i), h = FER[d]; return jourFr(d) + (etat ? ' — ' + etat : '') + (h ? '\n' + (h.type === 'religieuse' ? '🕌 ' : '🇩🇿 ') + h.nom : ''); }
@@ -294,7 +307,7 @@
   function dessinerFrise() {
     var z = $('frise'); z.textContent = ''; if (!F) return;
     var n = Math.min(Number($('vue').value), 360), i0 = Math.max(0, Simulation.diff(F, Simulation.addDays(auj, -14)));
-    z.style.setProperty('--w', n > 250 ? '3px' : n > 120 ? '5px' : '8px');
+    z.style.setProperty('--w', n > 250 ? '3px' : n > 120 ? '5px' : '8px'); PXJ = n > 250 ? 3 : n > 120 ? 5 : 8;
     var iAuj = Simulation.diff(F, auj), jAuj = function (i) { return i === iAuj ? 'auj' : ''; };
     var lm = el('div', 'ligne mois'); lm.appendChild(el('div', 'etiq', '')); var jm = el('div', 'jours'), i = i0;
     while (i < i0 + n) { var d = Simulation.addDays(F, i), jr = Number(d.slice(8, 10)); var w = Math.min(i0 + n - i, new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate() - jr + 1);
@@ -308,7 +321,7 @@
       var act = rangee('actuel', etiq('', 'prévu'), 'Planning actuel'); act.appendChild(jours(a.data.grille, i0, n, null, jAuj)); z.appendChild(act);
       var l = rangee('ag sel' + x[0], etiq(x[0], a.ligne.nom), a.ligne.nom + ' — clic pour retirer');
       var depuis = e.m ? Simulation.diff(F, e.m.debut) : null;
-      l.appendChild(jours(e.mod, i0, n, depuis, jAuj)); l.addEventListener('click', function () { cliquer(a.ligne); }); z.appendChild(l);
+      l.appendChild(jours(e.mod, i0, n, depuis, jAuj, null, true)); l.addEventListener('click', function () { cliquer(a.ligne); }); z.appendChild(l);
     });
     if (A && B) {
       var deb = Math.min.apply(null, [eA, eB].map(function (e, k) { var a = k ? B : A; return e.m ? Simulation.diff(F, e.m.debut) : Simulation.diff(F, auj); }));
@@ -316,18 +329,18 @@
       for (var k = i0; k < i0 + n; k += 1) { var mk = c.marques.charAt(k), b2 = document.createElement('i'); b2.className = (k < deb ? 'x pre' : (mk === 'C' || mk === 'V' || mk === 't' ? mk : 'o')) + classeFer(k); j2.appendChild(b2); }
       Survol.attacher(j2, function (x) { var w = j2.firstChild ? j2.firstChild.getBoundingClientRect().width : 0, q = w ? i0 + Math.floor(x / w) : -1; if (q < i0 || q >= i0 + n) return ''; var m2 = c.marques.charAt(q);
         return infobulle(q, q < deb ? '' : m2 === 'C' ? 'les deux travaillent' : m2 === 'V' ? 'les deux en repos' : m2 === 't' ? 'toléré (relève)' : 'vis-à-vis OK'); });
-      l2.appendChild(j2); z.appendChild(l2);
+      etiqueter(j2); l2.appendChild(j2); z.appendChild(l2);
       leg = leg.concat([['#E11D48', 'Les deux travaillent'], ['#7C3AED', 'Les deux en repos'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis']]);
     }
     // vis-à-vis de CHAMBRE (déclaré dans l'Organigramme) : l'agent C et le contrôle chevauchement / trou de A avec lui
     if (A && S.C) {
       var Cc = S.C, gC = B && B.uid === Cc.uid && eB ? eB.mod : Cc.data.grille;
-      var lC = rangee('ag selC', etiq('C', Cc.ligne.nom), Cc.ligne.nom + ' — vis-à-vis de chambre de ' + A.ligne.nom); lC.appendChild(jours(gC, i0, n, null, jAuj)); z.appendChild(lC);
+      var lC = rangee('ag selC', etiq('C', Cc.ligne.nom), Cc.ligne.nom + ' — vis-à-vis de chambre de ' + A.ligne.nom); lC.appendChild(jours(gC, i0, n, null, jAuj, null, true)); z.appendChild(lC);
       var debC = eA.m ? Simulation.diff(F, eA.m.debut) : iAuj, cch = Simulation.conflits(eA.mod, gC, F, optsCh(), debC), l3 = rangee('', el('span', null, 'Chambre'), ''), j3 = el('div', 'jours');
       for (var q = i0; q < i0 + n; q += 1) { var mq = cch.marques.charAt(q), b3 = document.createElement('i'); b3.className = (q < debC ? 'x pre' : (mq === 'C' || mq === 'V' || mq === 't' ? mq : 'o')) + classeFer(q); j3.appendChild(b3); }
       Survol.attacher(j3, function (x) { var w = j3.firstChild ? j3.firstChild.getBoundingClientRect().width : 0, q2 = w ? i0 + Math.floor(x / w) : -1; if (q2 < i0 || q2 >= i0 + n) return ''; var m3 = cch.marques.charAt(q2);
         return infobulle(q2, q2 < debC ? '' : m3 === 'C' ? 'les deux sur site (chambre partagée)' : m3 === 'V' ? 'chambre vide' : m3 === 't' ? 'toléré' : 'chambre OK'); });
-      l3.appendChild(j3); z.appendChild(l3);
+      etiqueter(j3); l3.appendChild(j3); z.appendChild(l3);
     }
     if (A || B) z.appendChild(el('div', 'ligne sep'));
     // 2) les autres agents du service choisi

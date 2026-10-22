@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-85",
+    "date": "2026-10-24",
+    "title": "Version 5.47.0 — Simulation : durées écrites sur le graphique",
+    "changes": [
+      "Simulation : le nombre de jours est écrit sur chaque bande des lignes A, B, de la chambre et du vis-à-vis (travail, repos, jours en conflit ou toléré), quand la bande est assez large. Les bandes coupées par le bord de la fenêtre ne sont pas étiquetées."
+    ]
+  },
+  {
     "id": "2026-10-24-84",
     "date": "2026-10-24",
     "title": "Version 5.46.5 — Renommage : une prise en charge corrigée n'est pas apprise",
