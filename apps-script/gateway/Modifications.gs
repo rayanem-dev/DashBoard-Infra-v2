@@ -416,7 +416,7 @@ function modifAlertes_(req) {
 /** Envoi par e-mail d'une demande (clic de l'agent ou du responsable) : cases secrétariat / chef de service / chef de division. */
 /** Objets des e-mails selon l'événement et le public : { creation | approbation | refus } × { agent, secretariat, chef_service, chef_division }. */
 var SIMU_OBJETS_ = {
-  creation: { agent: 'Modification de votre planning enregistrée', secretariat: 'Modification de planning (pour traitement)', chef_service: 'Modification de planning (pour information)', chef_division: 'Demande de modification de planning (pour information et signature)' },
+  creation: { agent: 'Modification de votre planning enregistrée', secretariat: 'Modification de planning (pour traitement)', chef_service: 'Modification de planning (pour information)', chef_division: 'Demande de modification de planning (demande d\'accord)' },
   approbation: { agent: 'Votre demande de modification de planning est approuvée', secretariat: 'Demande de modification de planning approuvée (pour traitement)', chef_service: 'Demande de modification de planning approuvée (pour information)', chef_division: 'Demande de modification de planning approuvée (pour information et signature)' },
   refus: { agent: 'Votre demande de modification de planning est rejetée', secretariat: 'Demande de modification de planning rejetée (pour information)', chef_service: 'Demande de modification de planning rejetée (pour information)', chef_division: 'Demande de modification de planning rejetée (pour information)' }
 };
@@ -432,6 +432,11 @@ function simuEnvoyer_(req) {
   var ok = String(r.email).toLowerCase() === moi || String(r.emetteur).toLowerCase() === moi || (simuNiveau_(u) >= 2 && simuDansPortee_(u, cible));
   if (!ok) throw simuDroits_();
   var cases = req.destinataires || {}, publics = { agent: {}, secretariat: {}, chef_service: {}, chef_division: {} };
+  // un agent (sans droit de responsable) n'écrit qu'à son chef de service et/ou au secrétariat : jamais directement au chef de division
+  if (simuNiveau_(u) < 2) {
+    if (cases.chef_division) throw new Error('Un agent ne peut pas envoyer directement au chef de division : écrivez à votre chef de service et/ou au secrétariat.');
+    cases = { chef_service: cases.chef_service, secretariat: cases.secretariat };
+  }
   Store.table('Utilisateurs').forEach(function (x) {
     if (String(x.actif) === '0' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x.email || ''))) return;
     var role = Droits.roleCanon(x.role), mail = String(x.email).toLowerCase();

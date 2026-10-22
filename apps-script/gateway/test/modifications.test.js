@@ -349,7 +349,7 @@ test('e-mails par événement, à la demande : création, approbation, refus (ag
   assert.ok(sujets.some(s => /agent\.a@x\.dz/.test(s) && /enregistrée/.test(s)), 'agent');
   assert.ok(sujets.some(s => /secretaire@x\.dz/.test(s) && /pour traitement/.test(s)), 'secrétariat');
   assert.ok(sujets.some(s => /chef\.s1@x\.dz/.test(s) && /pour information/.test(s)), 'chef de service');
-  assert.ok(sujets.some(s => /chef\.div@x\.dz/.test(s) && /signature/.test(s)), 'chef de division');
+  assert.ok(sujets.some(s => /chef\.div@x\.dz/.test(s) && /demande d'accord/.test(s)), 'chef de division');
   m.mails.length = 0;
   appel(m, 'simuDecider_', 'chef.div@x.dz', { numero: v.numero, decision: 'approuvee' });
   appel(m, 'simuEnvoyer_', 'chef.div@x.dz', { numero: v.numero, evenement: 'approbation', destinataires: { agent: true, secretariat: true, chef_division: true } });
@@ -357,4 +357,13 @@ test('e-mails par événement, à la demande : création, approbation, refus (ag
   m.mails.length = 0;
   appel(m, 'simuEnvoyer_', 'chef.div@x.dz', { numero: v.numero, evenement: 'refus', destinataires: { agent: true } });
   assert.strictEqual(m.mails.length, 1); assert.match(m.mails[0].subject, /rejetée/);
+});
+
+test('un agent écrit à son chef de service et/ou au secrétariat, jamais directement au chef de division', () => {
+  const m = monde();
+  const v = appel(m, 'simuValider_', 'chef.s1@x.dz', MODIF);
+  assert.throws(() => appel(m, 'simuEnvoyer_', 'agent.a@x.dz', { numero: v.numero, destinataires: { chef_service: true, chef_division: true } }), /chef de division/);
+  assert.strictEqual(m.mails.length, 0);
+  appel(m, 'simuEnvoyer_', 'agent.a@x.dz', { numero: v.numero, destinataires: { chef_service: true, secretariat: true, agent: true } });
+  const a = m.mails.map(x => x.to).join(','); assert.ok(/chef\.s1@x\.dz/.test(a) && /secretaire@x\.dz/.test(a) && !/agent\.a@x\.dz/.test(a) && !/chef\.div/.test(a));
 });

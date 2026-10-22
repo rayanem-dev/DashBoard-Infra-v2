@@ -144,7 +144,7 @@
       if (r.hors_rotation) f.appendChild(el('div', 'info alerte', '⚠ Vous n\'êtes pas rentré dans votre rotation à la fin de ces changements : un message reste affiché jusqu\'à la décision d\'un responsable.'));
       f.appendChild(el('h3', null, 'Envoyer par e-mail (facultatif)'));
       var mails = el('div', 'mails'), cases = {};
-      [['chef_service', 'Chef de service', true], ['secretariat', 'Secrétariat', false], ['chef_division', 'Chef de division', false]].forEach(function (c) {
+      [['chef_service', 'Chef de service', true], ['secretariat', 'Secrétariat', false]].forEach(function (c) {
         var l = el('label'), i = document.createElement('input'); i.type = 'checkbox'; i.checked = c[2]; cases[c[0]] = i; l.appendChild(i); l.appendChild(document.createTextNode(c[1])); mails.appendChild(l);
       });
       f.appendChild(mails);
@@ -156,7 +156,7 @@
       var fin = el('button', 'btn-s', 'Terminer'); fin.type = 'button'; fin.addEventListener('click', function () { dlg.close(); });
       envoi.addEventListener('click', function () {
         envoi.disabled = true; m2.className = 'msg';
-        Api.call('simu_envoyer', { numero: r.numero, destinataires: { chef_service: cases.chef_service.checked, secretariat: cases.secretariat.checked, chef_division: cases.chef_division.checked } })
+        Api.call('simu_envoyer', { numero: r.numero, destinataires: { chef_service: cases.chef_service.checked, secretariat: cases.secretariat.checked } })
           .then(function (x) { m2.textContent = 'E-mail envoyé à ' + x.emails + ' personne' + (x.emails > 1 ? 's' : '') + '.'; m2.className = 'msg ok'; envoi.disabled = false; })
           .catch(function (err) { m2.textContent = err.message; m2.className = 'msg err'; envoi.disabled = false; });
       });
