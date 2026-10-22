@@ -20,3 +20,10 @@ test('autres documents : non reconnus', () => {
 test('entreprise introuvable : PEC_date', () => {
   assert.strictEqual(P.reconnaitre('PRISE EN CHARGE\nLISTE NOMINATIVE\nLe : 05/11/2026').nom, 'PEC_2026-11-05');
 });
+
+test('texte réel de l\'OCR du scan Doc0079 (colonnes éclatées, en-têtes déformés, guillemet devant l\'entreprise)', () => {
+  const ocr = ['Slho Low', '_——— A Monsieur', 'me Le Chef de Division MG', 'sonatrach Mes si EE PIRE Lee', 'Activité Exploration - Production', 'Division Production', 'Direction Régionale Rhourde Nouss Rhourde Nouss, le : 22/10/2026', 'Division Infrastructure',
+    'PRISE EN CHARGE', 'HEBERGEMENT:O K', 'RESTAURATION: DH', 'DATE DATE DE NBRE DE IMPUTATION CODE OBSERVATIONS', '| NOMERPRENCR D\'ARRIVÉE DÉPART PERSONNES ANALYTIQUE', '- DAHDOUH REBIAI', '“ ETS MESSAI', '- KOUHEL AKREM BASE DE VIE',
+    '- BOUKHANI MOHAMED 25/10/2026 | 24/11/2026 5 4300045200 T3.INFRA.25 CENTRALE', 'Maint. hydrauliques ANCIENNE BASE', '- LAARBI RACHID', 'infrastructures Remplacement', '- DOUAIM OMAR', 'LE CHEF DE DIVISON INFRASTRUCTURES LE CHEF DE DIVISION MG'].join('\n');
+  assert.strictEqual(P.reconnaitre(ocr).nom, 'PEC_ETS MESSAI_2026-10-22');
+});

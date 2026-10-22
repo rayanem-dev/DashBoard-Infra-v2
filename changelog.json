@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-80",
+    "date": "2026-10-24",
+    "title": "Version 5.46.1 — Renommage : prise en charge lue malgré l'OCR",
+    "changes": [
+      "Renommage de documents : la prise en charge n'était pas reconnue parce que l'OCR éclate le tableau (colonnes en désordre, en-têtes déformés, guillemet devant « ETS … »). La reconnaissance se contente maintenant du titre « PRISE EN CHARGE » avec un repère du tableau, et ignore les signes parasites devant le nom de l'entreprise. Testée sur le texte réel lu par l'OCR : PEC_ETS MESSAI_2026-10-22."
+    ]
+  },
+  {
     "id": "2026-10-24-79",
     "date": "2026-10-24",
     "title": "Version 5.46.0 — Renommage : prises en charge reconnues",
