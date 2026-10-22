@@ -145,6 +145,7 @@
   function demoAff() { try { return JSON.parse(localStorage.getItem(CLE_AFF) || 'null') || { services: {}, hist: [] }; } catch (e) { return { services: {}, hist: [] }; } }
   function saveAff(o) { try { localStorage.setItem(CLE_AFF, JSON.stringify(o)); } catch (e) {} }
   function demoService(u) { return demoAff().services[u.uid] || u.service; }
+  function demoVav() { try { return JSON.parse(sessionStorage.getItem('infra_v2_demo_vav') || '{}'); } catch (e) { return {}; } }
   function demoServices() { var s = {}; DEMO_USERS.forEach(function (u) { s[demoService(u)] = true; }); return Object.keys(s).sort(); }
 
   // Demandes de modification de planning de démonstration (stockées dans le navigateur ; le calcul réel est celui de Simulation / Modifications.gs).
@@ -349,6 +350,14 @@
           gr[sv].membres.push({ nom: x.nom, fonction: x.fonction || (chef ? 'Chef de division' : ''), dependance: x.dependance || '', role: x.role, chef: chef, telephone: '0555 00 00 0' + x.uid.slice(1) }); });
         var sv2 = ordre.map(function (k) { return gr[k]; }).sort(function (a, b) { return (b.racine ? 1 : 0) - (a.racine ? 1 : 0) || (a.nom < b.nom ? -1 : 1); });
         return { services: sv2, total: DEMO_USERS.length }; }
+      case 'visavis_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var vl = demoVav();
+        return { personnes: DEMO_USERS.map(function (x) { var l = vl[x.uid] || {}; return { uid: x.uid, nom: x.nom, fonction: x.fonction || '', service: demoService(x), dependance: x.dependance || '', telephone: '0555 00 00 0' + x.uid.slice(1), vis_travail: l.vis_travail || '', vis_chambre: l.vis_chambre || '', modifiable: true }; }) }; }
+      case 'visavis_enregistrer': { exigerAdmin(); var vm = demoVav(), vu = DEMO_USERS.map(function (x) { return x.uid; });
+        if (vu.indexOf(p.uid) < 0) throw erreur('Personne inconnue');
+        [['vis_travail', p.vis_travail], ['vis_chambre', p.vis_chambre]].forEach(function (c) { var v = c[1] || ''; if (v && vu.indexOf(v) < 0) throw erreur('Vis-à-vis inconnu'); if (v === p.uid) throw erreur('Un agent ne peut pas être son propre vis-à-vis');
+          var cur = (vm[p.uid] || {})[c[0]] || ''; if (cur === v) return; (vm[p.uid] = vm[p.uid] || {})[c[0]] = v;
+          if (v) { if (!(vm[v] || {})[c[0]]) (vm[v] = vm[v] || {})[c[0]] = p.uid; } else if (cur && (vm[cur] || {})[c[0]] === p.uid) vm[cur][c[0]] = ''; });
+        sessionStorage.setItem('infra_v2_demo_vav', JSON.stringify(vm)); return { enregistres: 1 }; }
       case 'aff_personnes': exigerAdmin();
         return { niveau: 3, moi: demoState.user.uid, services: demoServices(), personnes: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: demoService(x), fonction: x.fonction || '', dependance: x.dependance || '' }; }) };
       case 'aff_changer': { exigerAdmin(); var ca = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0]; if (!ca) throw erreur('Personne inconnue');
@@ -361,7 +370,7 @@
         return { id: idA, ancien: asv, nouveau: nsv, emails: 4 }; }
       case 'aff_historique': exigerAdmin(); return { historique: demoAff().hist };
       case 'simu_agents': exigerAdmin();
-        return { niveau: 3, moi: demoState.user.uid, agents: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', configuree: !!demoRots()[x.email] }; }) };
+        return { niveau: 3, moi: demoState.user.uid, agents: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', configuree: !!demoRots()[x.email], vis_travail: (demoVav()[x.uid] || {}).vis_travail || '', vis_chambre: (demoVav()[x.uid] || {}).vis_chambre || '' }; }) };
       case 'simu_donnees': { exigerAdmin(); var cu = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0], rr0 = cu && demoRots()[cu.email];
         if (!rr0) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
         var d0s = /^\d{4}-\d{2}-\d{2}$/.test(p.debut || '') ? p.debut : plus(auj(), -35), ns = Math.max(30, Math.min(400, Number(p.jours) || 240));

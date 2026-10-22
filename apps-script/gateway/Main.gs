@@ -69,6 +69,8 @@ function route_(req) {
     case 'reliquat_enregistrer': return reliquatEnregistrer_(req);
     case 'planning': return planning_(req);
     case 'organigramme': return organigramme_(req);
+    case 'visavis_liste': return visavisListe_(req);
+    case 'visavis_enregistrer': return visavisEnregistrer_(req);
     case 'aff_personnes': return affPersonnes_(req);
     case 'aff_changer': return affChanger_(req);
     case 'aff_historique': return affHistorique_(req);

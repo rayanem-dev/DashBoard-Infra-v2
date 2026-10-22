@@ -33,14 +33,14 @@
   .frise .ligne.ag { cursor: pointer; } .frise .ligne.ag:hover .etiq { color: var(--orange-main); }
   .frise .etiq { position: sticky; left: 0; z-index: 2; background: var(--surface); width: 190px; flex: none; font-size: 12px; font-weight: 600; padding-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .frise .etiq b { display: inline-block; min-width: 18px; text-align: center; border-radius: 5px; color: #fff; font-size: 10.5px; margin-right: 5px; padding: 0 3px; }
-  .frise .ligne.selA .etiq b { background: #2563EB; } .frise .ligne.selB .etiq b { background: #9333EA; }
-  .frise .ligne.selA, .frise .ligne.selB { height: 26px; }
-  .frise .ligne.selA .etiq, .frise .ligne.selB .etiq { font-weight: 800; }
+  .frise .ligne.selA .etiq b { background: #2563EB; } .frise .ligne.selB .etiq b { background: #9333EA; } .frise .ligne.selC .etiq b { background: #0D9488; }
+  .frise .ligne.selA, .frise .ligne.selB, .frise .ligne.selC { height: 26px; }
+  .frise .ligne.selA .etiq, .frise .ligne.selB .etiq, .frise .ligne.selC .etiq { font-weight: 800; }
   .frise .ligne.actuel { height: 9px; } .frise .ligne.actuel .etiq { font-size: 9px; font-weight: 500; color: var(--text-muted); } .frise .ligne.actuel i { height: 6px; opacity: .55; }
   .frise .ligne.sep { height: 8px; }
   .frise .jours { display: flex; }
   .frise i { display: block; width: var(--w, 5px); height: 14px; }
-  .frise .ligne.selA i, .frise .ligne.selB i { height: 18px; }
+  .frise .ligne.selA i, .frise .ligne.selB i, .frise .ligne.selC i { height: 18px; }
   .frise i.T { background: var(--c-T); } .frise i.R { background: var(--c-R); } .frise i.x { background: #E5E7EB; }
   .frise i.pre { opacity: .4; }
   .frise i.C { background: #E11D48; } .frise i.V { background: #7C3AED; } .frise i.t { background: #FACC15; } .frise i.o { background: #D1FAE5; }
@@ -111,6 +111,7 @@
       <details class="opt"><summary>Tolérances du vis-à-vis (4 jours par défaut)</summary>
         <div class="aide2" id="tol-info" style="margin:0 0 6px">Chevauchement et trou tolérés : 4 jours par défaut, modifiables. Vert « vis-à-vis presque parfait » jusqu'à 4 jours de conflit, rouge au-delà.</div>
         Chevauchement toléré (jours de relève)<input type="number" id="tol-c" min="0" max="15" value="4"> Trou toléré (jours)<input type="number" id="tol-v" min="0" max="15" value="4">
+        <br>Vis-à-vis de chambre : chevauchement toléré<input type="number" id="tol-cc" min="0" max="30" value="4"> Trou toléré (jours)<input type="number" id="tol-vc" min="0" max="60" value="14">
       </details>
     </div>
 
@@ -172,7 +173,7 @@
   var MAX_SEM = 12;
 
   var lignes = [], agents = [], F = '', auj = '';           // planning de toute la division (grille depuis F) et liste des agents (uid)
-  var S = { A: null, B: null };                              // agents choisis : { ligne, uid, data, cells: [{v}], nb }
+  var S = { A: null, B: null, C: null };                              // agents choisis : { ligne, uid, data, cells: [{v}], nb }
   var FER = {};                                              // jours fériés par date
   var cache = {};                                            // uid → données
   var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -182,6 +183,7 @@
   function majTolerance() { var e = ecartReleve(); if (e === null) return; $('tol-info').textContent = 'Jours de relève : ' + S.A.ligne.nom + ' le ' + JOURS[jourDe(debutDe(S.A))] + ', ' + S.B.ligne.nom + ' le ' + JOURS[jourDe(debutDe(S.B))] + ' : ' + (e ? 'écart de ' + e + ' jour' + (e > 1 ? 's' : '') + '.' : 'même jour.'); }
   function sgn(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n) + ' j'; }
   function sem(n) { return n % 7 === 0 ? (n / 7) + ' sem.' : n + ' j'; }
+  function optsCh() { return { tolChev: Number($('tol-cc').value) || 0, tolTrou: Number($('tol-vc').value) || 0 }; }
   function opts() { return { tolChev: Number($('tol-c').value) || 0, tolTrou: Number($('tol-v').value) || 0 }; }
 
   // ---------- Chargement ----------
@@ -207,12 +209,25 @@
   // ---------- Sélection ----------
   function cliquer(l) {
     var cle = S.A && S.A.ligne === l ? 'A' : S.B && S.B.ligne === l ? 'B' : '';
-    if (cle) { S[cle] = null; if (cle === 'A') { S.A = S.B; S.B = null; } majTout(); return; }
+    if (cle) { S[cle] = null; if (cle === 'A') { S.A = S.B; S.B = null; } majTout(); if (cle === 'A') chargerLiens(false); return; }
     var uid = uidDe(l); if (!uid) { toast('Cet agent n\'est pas accessible pour la simulation.', true); return; }
     var cible = !S.A ? 'A' : 'B';
     donnees(uid).then(function (d) {
-      S[cible] = { ligne: l, uid: uid, data: d, cells: [], nb: 6 }; initCells(S[cible]); majTout();
+      S[cible] = { ligne: l, uid: uid, data: d, cells: [], nb: 6 }; initCells(S[cible]); majTout(); if (cible === 'A') chargerLiens(true);
     }).catch(function (e) { toast(e.message, true); });
+  }
+  /** Vis-à-vis déclarés (Organigramme › Listing) : le vis-à-vis de travail de A est proposé en B, celui de chambre est affiché en C. */
+  function ligneDeUid(uid) {
+    var ag = agents.filter(function (a) { return a.uid === uid; })[0]; if (!ag) return null;
+    var c = lignes.filter(function (l) { return norm(l.nom) === norm(ag.nom); });
+    return c.length ? (c.filter(function (l) { return norm(l.service) === norm(ag.service); })[0] || c[0]) : null;
+  }
+  function chargerLiens(prop) {
+    var A = S.A; S.C = null; if (!A) { majTout(); return; }
+    var ag = agents.filter(function (x) { return x.uid === A.uid; })[0] || {}, jobs = [];
+    if (prop && !S.B && ag.vis_travail && ag.vis_travail !== A.uid) { var lb = ligneDeUid(ag.vis_travail); if (lb) jobs.push(donnees(ag.vis_travail).then(function (d) { if (S.A === A && !S.B) { S.B = { ligne: lb, uid: ag.vis_travail, data: d, cells: [], nb: 6 }; initCells(S.B); } }).catch(function () {})); }
+    if (ag.vis_chambre && ag.vis_chambre !== A.uid) { var lc = ligneDeUid(ag.vis_chambre); if (lc) jobs.push(donnees(ag.vis_chambre).then(function (d) { if (S.A === A) S.C = { ligne: lc, uid: ag.vis_chambre, data: d }; }).catch(function () {})); }
+    Promise.all(jobs).then(function () { if (S.A === A) majTout(); });
   }
   function initCells(a) { a.cells = []; for (var i = 0; i < MAX_SEM; i += 1) a.cells.push({ v: '' }); }
 
@@ -303,11 +318,21 @@
       l2.appendChild(j2); z.appendChild(l2);
       leg = leg.concat([['#E11D48', 'Les deux travaillent'], ['#7C3AED', 'Les deux en repos'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis']]);
     }
+    // vis-à-vis de CHAMBRE (déclaré dans l'Organigramme) : l'agent C et le contrôle chevauchement / trou de A avec lui
+    if (A && S.C) {
+      var Cc = S.C, gC = B && B.uid === Cc.uid && eB ? eB.mod : Cc.data.grille;
+      var lC = rangee('ag selC', etiq('C', Cc.ligne.nom), Cc.ligne.nom + ' — vis-à-vis de chambre de ' + A.ligne.nom); lC.appendChild(jours(gC, i0, n, null, jAuj)); z.appendChild(lC);
+      var debC = eA.m ? Simulation.diff(F, eA.m.debut) : iAuj, cch = Simulation.conflits(eA.mod, gC, F, optsCh(), debC), l3 = rangee('', el('span', null, 'Chambre'), ''), j3 = el('div', 'jours');
+      for (var q = i0; q < i0 + n; q += 1) { var mq = cch.marques.charAt(q), b3 = document.createElement('i'); b3.className = (q < debC ? 'x pre' : (mq === 'C' || mq === 'V' || mq === 't' ? mq : 'o')) + classeFer(q); j3.appendChild(b3); }
+      Survol.attacher(j3, function (x) { var w = j3.firstChild ? j3.firstChild.getBoundingClientRect().width : 0, q2 = w ? i0 + Math.floor(x / w) : -1; if (q2 < i0 || q2 >= i0 + n) return ''; var m3 = cch.marques.charAt(q2);
+        return infobulle(q2, q2 < debC ? '' : m3 === 'C' ? 'les deux sur site (chambre partagée)' : m3 === 'V' ? 'chambre vide' : m3 === 't' ? 'toléré' : 'chambre OK'); });
+      l3.appendChild(j3); z.appendChild(l3);
+    }
     if (A || B) z.appendChild(el('div', 'ligne sep'));
     // 2) les autres agents du service choisi
     var svc = $('service').value, nb = 0;
     lignes.forEach(function (l) {
-      if (svc && l.service !== svc) return; if ((A && A.ligne === l) || (B && B.ligne === l)) return; nb += 1;
+      if (svc && l.service !== svc) return; if ((A && A.ligne === l) || (B && B.ligne === l) || (S.C && S.C.ligne === l)) return; nb += 1;
       var r = rangee('ag autres', el('span', null, l.nom), l.nom + (l.service ? ' — ' + l.service : '')); r.appendChild(jours(l.grille, i0, n, null, jAuj)); r.addEventListener('click', function () { cliquer(l); }); z.appendChild(r);
     });
     $('t-grp').textContent = svc ? 'Service : ' + svc : 'Toute la division';
@@ -353,19 +378,19 @@
   // ---------- Conflits : comptés sur UNE seule rotation à partir du début de la modification ----------
   function cycle(a) { return Number(a.data.rotation.jours_travail) + Number(a.data.rotation.jours_repos); }
   /** { jours, deb, len } : jours de conflit (hors tolérance) pendant une rotation (la plus longue des deux), de max(début de la modification, aujourd'hui) à +len jours. */
-  function conflitsRotation(gA, gB, mA, mB, A, B) {
+  function conflitsRotation(gA, gB, mA, mB, A, B, o) {
     var iAuj = Simulation.diff(F, auj), dA = mA ? Simulation.diff(F, mA.debut) : iAuj, dB = mB ? Simulation.diff(F, mB.debut) : iAuj;
     var deb = Math.max(Math.min(dA, dB), iAuj), len = Math.max(cycle(A), cycle(B)), fin = deb + len - 1, jours = 0;
-    Simulation.conflits(gA, gB, F, opts(), deb).plages.forEach(function (p) {
+    Simulation.conflits(gA, gB, F, o || opts(), deb).plages.forEach(function (p) {
       if (p.tolere) return; var a = Math.max(Simulation.diff(F, p.du), deb), b = Math.min(Simulation.diff(F, p.au), fin); if (b >= a) jours += b - a + 1;
     });
     return { jours: jours, deb: deb, len: len };
   }
   var SEUIL_PARFAIT = 4; // jusqu'à 4 jours de conflit : vis-à-vis « presque parfait »
   function bonVis(c) { return c.jours <= SEUIL_PARFAIT; }
-  function phraseConflit(c) {
+  function phraseConflit(c, chambre) {
     var pe = ' (sur une rotation de ' + c.len + ' jours à partir du ' + fr(Simulation.addDays(F, c.deb)) + ')';
-    return bonVis(c) ? 'Vis-à-vis presque parfait' + (c.jours ? ' : ' + c.jours + ' jour' + (c.jours > 1 ? 's' : '') + ' de conflit' : '') + pe + '.' : 'Vis-à-vis en conflit de ' + c.jours + ' jours' + pe + '.';
+    return bonVis(c) ? (chambre ? 'Vis-à-vis de chambre presque parfait' : 'Vis-à-vis presque parfait') + (c.jours ? ' : ' + c.jours + ' jour' + (c.jours > 1 ? 's' : '') + ' de conflit' : '') + pe + '.' : (chambre ? 'Vis-à-vis de chambre en conflit de ' : 'Vis-à-vis en conflit de ') + c.jours + ' jours' + pe + '.';
   }
 
   // ---------- Résumé, bilan ----------
@@ -397,6 +422,11 @@
       v.textContent = (bonVis(c) ? '✔ ' : '✖ ') + phraseConflit(c);
       v.style.cssText = 'font-weight:700;margin-top:6px;color:' + (bonVis(c) ? '#166534' : '#B42318'); bi.appendChild(v);
     }
+    if (A && S.C && !eA.err && (!B || !eB.err)) {   // vis-à-vis de chambre : A (simulé) face à C
+      var gC2 = B && eB && B.uid === S.C.uid ? eB.mod : S.C.data.grille, c2 = conflitsRotation(eA.mod, gC2, eA.m, null, A, S.C, optsCh()), v2 = el('div');
+      v2.textContent = (bonVis(c2) ? '✔ ' : '✖ ') + phraseConflit(c2, true); v2.appendChild(el('span', null, ' — ' + A.ligne.nom + ' ↔ ' + S.C.ligne.nom));
+      v2.style.cssText = 'font-weight:700;margin-top:4px;color:' + (bonVis(c2) ? '#166534' : '#B42318'); bi.appendChild(v2);
+      }
   }
   function majTout() {
     var a = S.A; $('b-edit').hidden = !a; $('b-valider').hidden = !a; $('b-prop').hidden = !(S.A && S.B);
@@ -454,7 +484,7 @@
       annuler(true); window.scrollTo({ top: 0, behavior: 'smooth' }); listeDemandes();
     }).catch(function (err) { toast(err.message, true); btn.disabled = false; });
   }
-  function annuler(silencieux) { S.A = S.B = null; $('motif').value = 'Raison de service'; majTout(); if (silencieux !== true) toast('Simulation annulée : rien n\'a été enregistré.'); }
+  function annuler(silencieux) { S.A = S.B = S.C = null; $('motif').value = 'Raison de service'; majTout(); if (silencieux !== true) toast('Simulation annulée : rien n\'a été enregistré.'); }
 
   // ---------- Demandes ----------
   var LIB = { en_attente: 'En attente', appliquee: 'Appliquée, à décider', approuvee: 'Approuvée', refusee: 'Refusée', remplacee: 'Remplacée', annulee: 'Annulée' };
@@ -500,7 +530,7 @@
   $('service').addEventListener('change', dessinerFrise); $('vue').addEventListener('change', dessinerFrise);
   $('mode').addEventListener('change', function () { $('z-date').hidden = $('mode').value !== 'date'; if (S.A) { [S.A, S.B].forEach(function (a) { if (a) initCells(a); }); majTout(); } });
   $('dateDebut').addEventListener('change', function () { if (S.A) { dessinerEditeurs(); majResultat(); } });
-  $('tol-c').addEventListener('input', majResultat); $('tol-v').addEventListener('input', majResultat);
+  $('tol-cc').addEventListener('input', majTout); $('tol-vc').addEventListener('input', majTout); $('tol-c').addEventListener('input', majResultat); $('tol-v').addEventListener('input', majResultat);
   $('raz').addEventListener('click', function () { [S.A, S.B].forEach(function (a) { if (a) { initCells(a); a.nb = 6; } }); dessinerEditeurs(); majResultat(); });
   $('proposer').addEventListener('click', proposer); $('nb-rot').addEventListener('change', function () { if (S.A && S.B) proposer(); }); $('valider').addEventListener('click', valider); $('annuler').addEventListener('click', function () { annuler(); });
   $('imprimer').addEventListener('click', function () { window.print(); });

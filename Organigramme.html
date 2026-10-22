@@ -30,6 +30,15 @@
   .membre a.tel { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 12px; font-weight: 700; color: var(--orange-main); text-decoration: none; white-space: nowrap; }
   .membre.cache { display: none; }
   .vide-o { padding: 16px; color: var(--text-muted); }
+  .onglets-o { display: flex; gap: 6px; margin-bottom: 14px; } .onglets-o button { padding: 8px 16px; border: 1.5px solid var(--border); background: var(--surface); border-radius: 10px; font: inherit; font-weight: 700; font-size: 13.5px; cursor: pointer; color: var(--text-muted); }
+  .onglets-o button.actif { background: var(--orange-main); border-color: var(--orange-main); color: #fff; }
+  .listing { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-card); font-size: 13px; }
+  .listing th { text-align: left; padding: 9px 10px; background: var(--tint-orange); font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+  .listing td { padding: 6px 10px; border-top: 1px solid var(--border); vertical-align: middle; }
+  .listing input.vv { width: 100%; min-width: 150px; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 8px; font: inherit; font-size: 12.5px; }
+  .listing input.vv[readonly] { border-color: transparent; background: transparent; }
+  .listing input.vv.ok { border-color: #16A34A; } .listing input.vv.ko { border-color: #DC2626; }
+  .listing tr.cache { display: none; }
 </style>
 </head>
 <body>
@@ -41,6 +50,7 @@
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 
 <main class="portail">
+  <div class="onglets-o" role="tablist"><button type="button" class="actif" id="o-org">Organigramme</button><button type="button" id="o-list">Listing · vis-à-vis</button></div>
   <div class="barre-o">
     <input type="text" id="q" placeholder="Rechercher un nom, une fonction, un service…" autocomplete="off" aria-label="Rechercher">
     <div class="legende" id="leg"></div>
@@ -48,6 +58,11 @@
   </div>
   <div id="racine"></div>
   <div class="grille-s" id="services"></div>
+  <div id="p-list" hidden>
+    <p class="aide" id="aide-list" style="margin:0 0 10px">Les informations de base de chaque agent et ses deux vis-à-vis : celui du <b>travail</b> (qui tient le poste pendant son repos) et celui de la <b>chambre</b> (qui occupe la même chambre, souvent d'une autre entité). Ils servent à la Simulation du planning. Seuls l'administrateur, le chef de division et le chef de service (pour son service) peuvent les modifier.</p>
+    <div style="overflow:auto"><table class="listing" id="tab-list"><thead><tr><th>Nom</th><th>Fonction</th><th>Service</th><th>Employeur</th><th>Téléphone</th><th>Vis-à-vis travail</th><th>Vis-à-vis chambre</th></tr></thead><tbody id="corps-list"></tbody></table></div>
+    <datalist id="dl-pers"></datalist>
+  </div>
   <p class="aide" id="aide" style="margin-top:14px"></p>
 </main>
 
@@ -85,8 +100,44 @@
     $('aide').textContent = D.total + ' personne(s) · ★ responsable du service · organigramme calculé à partir de BDDORGA (service, fonction, employeur, téléphone) : un changement d\'affectation s\'y reflète aussitôt.';
     filtrer();
   }
+  // ---------- Listing et vis-à-vis ----------
+  var L = null, parUid = {}, parLibelle = {};
+  function libelle(p) { return p.nom + ' — ' + (p.dependance || 'SONATRACH') + (p.service ? ' · ' + p.service : ''); }
+  function dessinerListing() {
+    var tb = $('corps-list'), dl = $('dl-pers'); tb.textContent = ''; dl.textContent = ''; parUid = {}; parLibelle = {};
+    L.forEach(function (p) { parUid[p.uid] = p; parLibelle[norm(libelle(p))] = p.uid; var o = document.createElement('option'); o.value = libelle(p); dl.appendChild(o); });
+    L.forEach(function (p) {
+      var tr = el('tr'); tr.dataset.t = norm(p.nom + ' ' + p.fonction + ' ' + p.service + ' ' + p.dependance);
+      tr.appendChild(el('td', null, p.nom)).style.fontWeight = '700'; tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', null, p.service || '—'));
+      var te = el('td'); var pe = Employeur.pastille(p.dependance); if (pe) { pe.style.marginLeft = '0'; te.appendChild(pe); } else te.textContent = p.dependance || 'SONATRACH'; tr.appendChild(te);
+      tr.appendChild(el('td', null, p.telephone || '—'));
+      ['vis_travail', 'vis_chambre'].forEach(function (c) {
+        var td = el('td'), inp = el('input', 'vv'); inp.setAttribute('list', 'dl-pers'); inp.placeholder = p.modifiable ? 'Choisir un agent…' : '—'; inp.readOnly = !p.modifiable; inp.autocomplete = 'off';
+        inp.value = p[c] && parUid[p[c]] ? libelle(parUid[p[c]]) : '';
+        if (p.modifiable) inp.addEventListener('change', function () {
+          var v = inp.value.trim(), uid = '';
+          if (v) { uid = parLibelle[norm(v)]; if (!uid) { inp.className = 'vv ko'; inp.title = 'Choisissez un agent dans la liste'; return; } }
+          inp.className = 'vv'; var ancien = p[c], corps = { uid: p.uid, vis_travail: c === 'vis_travail' ? uid : p.vis_travail, vis_chambre: c === 'vis_chambre' ? uid : p.vis_chambre };
+          Api.call('visavis_enregistrer', corps).then(function () {
+            p[c] = uid; inp.className = 'vv ok'; setTimeout(function () { inp.className = 'vv'; }, 1500);
+            Api.call('visavis_liste').then(function (r) { L = r.personnes; dessinerListing(); filtrer(); }).catch(function () {});
+          }).catch(function (e) { inp.className = 'vv ko'; inp.title = e.message; inp.value = ancien && parUid[ancien] ? libelle(parUid[ancien]) : ''; alert(e.message); });
+        });
+        td.appendChild(inp); tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+  function onglet(liste) {
+    $('o-org').classList.toggle('actif', !liste); $('o-list').classList.toggle('actif', liste);
+    $('racine').hidden = $('services').hidden = liste; $('p-list').hidden = !liste; $('aide').hidden = liste; $('tout').hidden = liste; $('leg').hidden = liste;
+    if (liste && !L) Api.call('visavis_liste').then(function (r) { L = r.personnes; dessinerListing(); filtrer(); }).catch(function (e) { $('corps-list').appendChild(el('tr')).appendChild(el('td', 'vide-o', '⚠ ' + e.message)); });
+    filtrer();
+  }
+  $('o-org').addEventListener('click', function () { onglet(false); }); $('o-list').addEventListener('click', function () { onglet(true); });
   function filtrer() {
     var f = norm($('q').value);
+    document.querySelectorAll('#corps-list tr').forEach(function (tr) { tr.classList.toggle('cache', !!f && tr.dataset.t.indexOf(f) === -1); });
     document.querySelectorAll('.svc, .racine').forEach(function (b) {
       var serviceOk = !f || b.dataset.t.indexOf(f) !== -1, vus = 0;
       b.querySelectorAll('.membre').forEach(function (m) { var ok = serviceOk || m.dataset.t.indexOf(f) !== -1; m.classList.toggle('cache', !ok); if (ok) vus += 1; });

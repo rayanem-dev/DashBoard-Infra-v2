@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-70",
+    "date": "2026-10-24",
+    "title": "Version 5.41.0 — Vis-à-vis de travail et de chambre",
+    "changes": [
+      "Organigramme : nouvel onglet « Listing · vis-à-vis » (informations de base de chaque agent) avec, pour chacun, son vis-à-vis de travail et son vis-à-vis de chambre. Modifiables par l'administrateur, le chef de division et le chef de service (pour son service), les autres consultent. Un lien posé chez un agent est posé chez son vis-à-vis s'il n'en a pas déjà un ; un champ vide = pas de vis-à-vis.",
+      "Simulation : en choisissant l'agent A, son vis-à-vis de travail est proposé en B et son vis-à-vis de chambre apparaît en C (ligne « Chambre » sous le graphique). Deuxième verdict : « Vis-à-vis de chambre presque parfait / en conflit de X jours » (chevauchement toléré 4 j, trou toléré 14 j, modifiables). Sans vis-à-vis de chambre déclaré, seul le vis-à-vis de travail compte. Les propositions automatiques tiennent encore compte du seul vis-à-vis de travail (étape suivante)."
+    ]
+  },
+  {
     "id": "2026-10-24-69",
     "date": "2026-10-24",
     "title": "Version 5.40.0 — Prise en charge : lecture des courriels d'entreprises",

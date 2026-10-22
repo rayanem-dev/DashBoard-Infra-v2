@@ -64,8 +64,9 @@ function simuAgents_(req) {
   var u = Auth.userFromToken(req.token);
   if (simuNiveau_(u) < 2) throw simuDroits_();
   var rots = {}; Store.table('Rotations').forEach(function (r) { rots[String(r.email).toLowerCase()] = true; });
+  var liens = (typeof visavisCarte_ === 'function') ? visavisCarte_() : {};
   var agents = Store.table('Utilisateurs').filter(function (x) { return String(x.actif) !== '0' && x.uid && x.email && simuDansPortee_(u, x); })
-    .map(function (x) { return { uid: String(x.uid), nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service || '', fonction: x.fonction || '', dependance: x.dependance || '', configuree: !!rots[String(x.email).toLowerCase()] }; })
+    .map(function (x) { return { uid: String(x.uid), nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service || '', fonction: x.fonction || '', dependance: x.dependance || '', configuree: !!rots[String(x.email).toLowerCase()], vis_travail: (liens[String(x.uid)] || {}).vis_travail || '', vis_chambre: (liens[String(x.uid)] || {}).vis_chambre || '' }; })
     .sort(function (a, b) { return a.nom < b.nom ? -1 : 1; });
   return { agents: agents, niveau: simuNiveau_(u), moi: String(u.uid || '') };
 }

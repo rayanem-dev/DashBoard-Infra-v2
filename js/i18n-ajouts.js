@@ -186,6 +186,15 @@
     ["Tolérances du vis-à-vis (4 jours par défaut)", "Face-to-face tolerances (4 days by default)", "تسامح التقابل (4 أيام افتراضيًا)"],
     ["Chevauchement et trou tolérés : 4 jours par défaut, modifiables. Vert « vis-à-vis presque parfait » jusqu'à 4 jours de conflit, rouge au-delà.", "Overlap and gap tolerated: 4 days by default, adjustable. Green « almost perfect face-to-face » up to 4 days of conflict, red beyond.", "التداخل والفجوة المسموح بهما: 4 أيام افتراضيًا، قابلة للتعديل. أخضر « تقابل شبه مثالي » حتى 4 أيام من التعارض، وأحمر بعد ذلك."],
     ["+ : jours travaillés en plus (à récupérer) · − : jours de repos en plus. Calcul jour par jour, comparé au planning prévu : travail alors que le repos était prévu +1, repos alors que le travail était prévu −1, depuis le début de la modification jusqu'à la fin du bloc prévu en cours.", "+ : extra days worked (to be recovered) · − : extra days of rest. Calculated day by day against the planned schedule: working when rest was planned +1, resting when work was planned −1, from the start of the change to the end of the planned block in progress.", "+ : أيام عمل إضافية (للتعويض) · − : أيام راحة إضافية. الحساب يوميًا مقارنة بالتخطيط المقرر: عمل بينما كانت الراحة مقررة +1، راحة بينما كان العمل مقررًا −1، من بداية التعديل إلى نهاية الكتلة المقررة الجارية."],
+    ["Listing · vis-à-vis", "Listing · counterparts", "القائمة · المقابلون"],
+    ["Vis-à-vis travail", "Work counterpart", "مقابل العمل"],
+    ["Vis-à-vis chambre", "Room counterpart", "مقابل الغرفة"],
+    ["Choisir un agent…", "Choose an agent…", "اختر عونًا…"],
+    ["Employeur", "Employer", "المستخدِم"],
+    ["Téléphone", "Phone", "الهاتف"],
+    ["Les informations de base de chaque agent et ses deux vis-à-vis : celui du travail (qui tient le poste pendant son repos) et celui de la chambre (qui occupe la même chambre, souvent d'une autre entité). Ils servent à la Simulation du planning. Seuls l'administrateur, le chef de division et le chef de service (pour son service) peuvent les modifier.", "Basic information for each agent and their two counterparts: the work one (who holds the post during their rest) and the room one (who occupies the same room, often from another entity). They are used by the schedule Simulation. Only the administrator, the division head and the service head (for their service) can edit them.", "المعلومات الأساسية لكل عون ومقابليه: مقابل العمل (من يشغل المنصب أثناء راحته) ومقابل الغرفة (من يشغل نفس الغرفة، غالبًا من جهة أخرى). يستعملان في محاكاة التخطيط. لا يعدّلهما إلا المسؤول ورئيس القسم ورئيس المصلحة (لمصلحته)."],
+    ["Vis-à-vis de chambre : chevauchement toléré", "Room counterpart: overlap tolerated", "مقابل الغرفة: التداخل المسموح"],
+    ["Chambre", "Room", "الغرفة"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -193,6 +202,8 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^Vis-à-vis de chambre presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Almost perfect room counterpart' + (c ? ': ' + c + ' day' + (c > 1 ? 's' : '') + ' of conflict' : '') + ' (over a ' + l + '-day rotation from ' + d + ').'; }],
+    [/^Vis-à-vis de chambre en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Room counterpart in conflict for ' + c + ' days (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Suite : la rotation habituelle reprend \((travail|repos)\)$/, function (x) { return 'Continuation: the usual rotation resumes (' + (x === 'travail' ? 'work' : 'rest') + ')'; }],
     [/^Vis-à-vis presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Almost perfect face-to-face' + (c ? ': ' + c + ' day' + (c > 1 ? 's' : '') + ' of conflict' : '') + ' (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Vis-à-vis en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Face-to-face in conflict for ' + c + ' days (over a ' + l + '-day rotation from ' + d + ').'; }],
@@ -226,6 +237,8 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^Vis-à-vis de chambre presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'مقابل الغرفة شبه مثالي' + (c ? ': ' + c + ' يوم تعارض' : '') + ' (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
+    [/^Vis-à-vis de chambre en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'مقابل الغرفة متعارض لمدة ' + c + ' يوم (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Suite : la rotation habituelle reprend \((travail|repos)\)$/, function (x) { return 'التتمة: يستأنف التناوب المعتاد (' + (x === 'travail' ? 'عمل' : 'راحة') + ')'; }],
     [/^Vis-à-vis presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'تقابل شبه مثالي' + (c ? ': ' + c + ' يوم تعارض' : '') + ' (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Vis-à-vis en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'تقابل متعارض لمدة ' + c + ' يوم (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],

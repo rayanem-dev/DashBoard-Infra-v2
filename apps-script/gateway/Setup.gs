@@ -261,6 +261,7 @@ var SCHEMA_ = {
   Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le', 'lignes'],
   Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire', 'reliquat', 'reliquat_net'],
   Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
+  VisAVis: ['uid', 'vis_travail', 'vis_chambre', 'maj_par', 'maj_le'],
   Journal: ['date', 'action', 'email', 'detail']
 };
 
