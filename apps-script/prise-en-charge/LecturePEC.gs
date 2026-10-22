@@ -36,7 +36,7 @@ function pecLireTableau_(lignes) {
   for (i = h + 1; i < lignes.length; i += 1) {
     var l = lignes[i]; if (l.length <= Math.max(col.nom, col.prenom)) continue;
     var nom = String(l[col.nom] || '').replace(/\s+/g, ' ').trim(), prenom = String(l[col.prenom] || '').replace(/\s+/g, ' ').trim();
-    if (!nom || !prenom || !/[A-Za-zÀ-ÿ]{2}/.test(nom + prenom)) continue;
+    if (!nom || !prenom || !/[A-Za-zÀ-ÿ]{2}/.test(nom + prenom) || pecEnteteMots_(nom + ' ' + prenom)) continue;
     out.push({ nom: pecCap_(nom), prenom: pecCap_(prenom), fonction: col.fonction !== undefined ? pecFonction_(l[col.fonction]) : '' });
   }
   return out;
@@ -45,18 +45,27 @@ var PEC_DATE_ = /(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})/;
 /** Une date de naissance plausible : âge d'au moins 15 ans (écarte la date de la lettre, « Le : 21/10/2026 »). */
 function pecNaissance_(m) { var a = Number(m[3]); return a >= 1930 && a <= new Date().getFullYear() - 15; }
 function pecNumeros_(t) { return String(t).replace(/\b\d[\d\s]{7,}\b/g, ' ').replace(/\b\d{5,}\b/g, ' '); }
+/** Mots d'en-tête de colonne (jamais un nom de personne). */
+function pecEnteteMots_(txt) { var t = pecNorm_(txt).split(' ').filter(Boolean); return t.length > 0 && t.every(function (w) { return /^(mat|matricule|nom|prenom|prenoms|date|nais|naiss|naissance|fonction|poste|n|no|ntn|nin|num|numero|liste|nominative|n°)$/.test(w.replace(/[^a-z0-9°]/g, '')) || !/[a-z]{2}/.test(w); }); }
 function pecIdentite_(avant, apres) {
   var mots = String(avant).replace(/^[\s|\-–•*]*(?:\d{1,3}\s*[.\-)]?\s+)?/, '').replace(/[|_]+/g, ' ').trim().split(/\s+/).filter(function (w) { return /[A-Za-zÀ-ÿ]/.test(w); });
-  if (mots.length < 2) return null;
+  if (mots.length < 2 || pecEnteteMots_(mots.join(' '))) return null;
   return { nom: pecCap_(mots[0]), prenom: pecCap_(mots.slice(1).join(' ')), fonction: pecFonction_(pecNumeros_(apres)) };
 }
 /** Texte brut (lignes) → personnes. */
 function pecLireTexte_(texte) {
   var lignes = String(texte || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean), out = [], i, m;
   // 1) une ligne par personne, la date de naissance sépare identité et fonction
-  lignes.forEach(function (l) {
-    m = PEC_DATE_.exec(l); if (!m || m.index < 3 || !pecNaissance_(m) || /:\s*$/.test(l.slice(0, m.index)) || /:/.test(l.slice(0, m.index))) return;
-    var p = pecIdentite_(l.slice(0, m.index), l.slice(m.index + m[0].length)); if (p) out.push(p);
+  lignes.forEach(function (l, k) {
+    m = PEC_DATE_.exec(l); if (!m || m.index < 0 || !pecNaissance_(m)) return;
+    var avant = l.slice(0, m.index), apres = l.slice(m.index + m[0].length);
+    if (/:/.test(avant)) return;
+    var p = avant.trim().length >= 3 ? pecIdentite_(avant, apres) : null;
+    if (!p && k > 0) {                       // l'OCR a séparé l'identité (ligne précédente) de la date et de la fonction
+      var prec = lignes[k - 1]; if (!PEC_DATE_.test(prec)) p = pecIdentite_(prec, apres);
+    }
+    if (!p && avant.trim().length >= 3 && k > 0 && pecEnteteMots_(avant)) { var pr = lignes[k - 1]; if (!PEC_DATE_.test(pr)) p = pecIdentite_(pr, apres); }
+    if (p) out.push(p);
   });
   if (out.length) return out;
   // 2) une cellule par ligne : [n°] nom, prénom, date, fonction, numéro

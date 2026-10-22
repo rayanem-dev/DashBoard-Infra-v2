@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-63",
+    "date": "2026-10-24",
+    "title": "Version 5.37.1 — Prise en charge : en-têtes de colonnes écartés",
+    "changes": [
+      "Lecture d'une demande PDF scannée : les mots d'en-tête (Fonction, N° NTN, Date de naissance…) ne sont plus pris pour une personne ; quand l'OCR sépare le nom de la date et de la fonction, la ligne précédente est utilisée (la première personne n'est plus perdue)."
+    ]
+  },
+  {
     "id": "2026-10-24-62",
     "date": "2026-10-24",
     "title": "Version 5.37.0 — Prise en charge : lecture des scans et bouton Vider",

@@ -29,6 +29,13 @@ test('texte : une ligne par personne, la date de naissance sépare les noms de l
   assert.deepStrictEqual(E('pecLireTexte_', txt), ATTENDU);
   assert.strictEqual(E('pecLireDate_', txt), '21/10/2026');
 });
+test('texte : l\'identité de la 1re ligne séparée de sa date, l\'en-tête n\'est jamais prise pour une personne', () => {
+  const txt = 'MAT NOM PRENOM\n1 SIDHOUM BADERDDINE\nFONCTION N° NTN 02/08/1985 MACON 109850676010160007\n2 KHALFAOUI ABDELHAK 08/10/1979 MACON 1097';
+  const r = E('pecLireTexte_', txt);
+  assert.deepStrictEqual(r.map(p => p.nom), ['Sidhoum', 'Khalfaoui']);
+  assert.strictEqual(r[0].fonction, 'Macon');
+  assert.deepStrictEqual(E('pecLireTexte_', 'FONCTION N° NTN 02/08/1985 MACON').length, 0);
+});
 test('texte : une cellule par ligne (tableau mal reconstruit)', () => {
   const l = ['MAT', 'NOM', 'PRENOM', 'DATE NAIS', 'FONCTION', '1', 'SIDHOUM', 'BADERDDINE', '02/08/1985', 'MACON', '109850676010160007', '2', 'MESSALI', 'ANIS', '25/10/2005', 'PLOMBIER', '100050073005440009'];
   assert.deepStrictEqual(E('pecLireTexte_', l.join('\n')), [ATTENDU[0], ATTENDU[3]]);
