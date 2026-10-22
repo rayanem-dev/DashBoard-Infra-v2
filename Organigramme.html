@@ -46,6 +46,15 @@
   #feuille-vis table { width: 100%; border-collapse: collapse; font-size: 12px; } #feuille-vis th, #feuille-vis td { border: 1px solid #222; padding: 6px 8px; vertical-align: top; text-align: left; } #feuille-vis th { background: #EEE; font-size: 11px; text-transform: uppercase; }
   #feuille-vis td small { display: block; color: #444; font-size: 10.5px; } #feuille-vis tr.svc td { background: #F3F3F3; font-weight: 700; font-size: 11.5px; text-transform: uppercase; } #feuille-vis td.vide { color: #888; text-align: center; }
   #feuille-vis .sign { display: flex; justify-content: space-between; margin-top: 28px; font-size: 12px; } #feuille-vis .sign div { width: 30%; text-align: center; } #feuille-vis .sign span { display: block; height: 62px; }
+  #feuille-vis .cv { border: 1px solid #222; border-radius: 4px; padding: 6px 8px; margin: 0 0 10px; break-inside: avoid; page-break-inside: avoid; }
+  #feuille-vis .cv .nom { font-size: 12.5px; font-weight: 700; margin-bottom: 4px; } #feuille-vis .cv .nom small { font-weight: 400; color: #444; font-size: 11px; margin-left: 6px; }
+  #feuille-vis .lg-ligne { display: grid; grid-template-columns: 170px 1fr; gap: 8px; align-items: center; margin: 2px 0; font-size: 11px; } #feuille-vis .lg-ligne .e { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #feuille-vis .lg-ligne .e b { font-size: 9px; background: #333; color: #fff; border-radius: 3px; padding: 0 4px; margin-right: 4px; } #feuille-vis .lg-ligne .e.ch b { background: #0D9488; } #feuille-vis .lg-ligne .e.tr b { background: #9333EA; }
+  #feuille-vis .brs { display: flex; height: 13px; border: 1px solid #bbb; position: relative; background: #eee; } #feuille-vis .brs span { height: 100%; display: flex; align-items: center; justify-content: center; font: 700 8.5px/1 Arial, sans-serif; color: #fff; overflow: hidden; }
+  #feuille-vis .brs .T { background: #4CAF2E; } #feuille-vis .brs .R { background: #EB7A33; } #feuille-vis .brs .x { background: #E5E7EB; } #feuille-vis .brs .C { background: #E11D48; } #feuille-vis .brs .V { background: #7C3AED; } #feuille-vis .brs .t { background: #FACC15; color: #111; } #feuille-vis .brs .o { background: #D1FAE5; }
+  #feuille-vis .mois { position: relative; height: 12px; font-size: 9px; color: #444; margin-left: 178px; } #feuille-vis .mois span { position: absolute; top: 0; border-left: 1px solid #999; padding-left: 2px; white-space: nowrap; }
+  #feuille-vis .verdict { font-size: 11px; font-weight: 700; margin: 1px 0 4px 178px; } #feuille-vis .verdict.ok { color: #166534; } #feuille-vis .verdict.ko { color: #B42318; }
+  #feuille-vis .legende { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10.5px; margin: 6px 0 0; } #feuille-vis .legende i { display: inline-block; width: 12px; height: 9px; margin-right: 4px; border: 1px solid #999; vertical-align: middle; }
   @media print { @page { size: A4 landscape; margin: 12mm; } body * { visibility: hidden !important; } #feuille-vis, #feuille-vis * { visibility: visible !important; } #feuille-vis { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; } #feuille-vis tr { break-inside: avoid; } }
 </style>
 </head>
@@ -76,6 +85,8 @@
   <div id="p-imp" hidden>
     <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
       <button class="btn-p" id="b-imprimer" type="button">🖨 Imprimer</button>
+      <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="c-plan" checked> Planning visible</label>
+      <select id="s-duree" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:13px"><option value="92">3 mois</option><option value="184" selected>6 mois</option><option value="350">1 an</option></select>
       <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="radio" name="grp" value="liste" checked> Liste simple</label>
       <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="radio" name="grp" value="service"> Regroupée par service</label>
       <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="c-conf" checked> Mentionner l'employeur</label>
@@ -90,6 +101,7 @@
 <script src="js/api.js"></script>
 <script src="js/raccourcis.js"></script>
 <script src="js/employeurs.js"></script>
+<script src="js/simulation.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -157,6 +169,37 @@
   document.querySelectorAll('#tab-list th[data-col]').forEach(function (th) { th.title = 'Cliquer pour trier'; th.addEventListener('click', function () { var c = th.dataset.col; tri = { col: c, sens: tri.col === c ? -tri.sens : 1 }; if (L) { dessinerListing(); filtrer(); } }); });
   $('s-svc').addEventListener('change', function () { var v = this.value; if (!v) return; L.forEach(function (p) { if (p.service === v) sel[p.uid] = true; }); compterSel(); dessinerListing(); filtrer(); });
   $('b-decocher').addEventListener('click', function () { sel = {}; $('c-tout').checked = false; compterSel(); dessinerListing(); filtrer(); });
+  // ---------- Planning visible (cartes par agent) ----------
+  var PLAN = null;                                   // { debut, auj, lignes } lu une fois (peut manquer si le compte n'a pas accès au planning)
+  var MOISF = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  function planDe(p) { if (!PLAN) return ''; var c = PLAN.lignes.filter(function (l) { return norm(l.nom) === norm(p.nom) && l.configuree && l.grille; }); return c.length ? (c.filter(function (l) { return norm(l.service) === norm(p.service); })[0] || c[0]).grille : ''; }
+  function runs(chaine, i0, n, classe) {
+    var b = el('div', 'brs'), i = i0, fin = i0 + n;
+    while (i < fin) { var c = chaine.charAt(i) || 'x', j = i; while (j < fin && (chaine.charAt(j) || 'x') === c) j += 1; var len = j - i, sp = el('span', classe(c)); sp.style.width = (len / n * 100) + '%'; if (len / n >= 0.04 && classe(c) !== 'x' && classe(c) !== 'o') sp.textContent = len + ' j'; b.appendChild(sp); i = j; }
+    return b;
+  }
+  var cTR = function (c) { return c === 'T' || c === 'R' ? c : 'x'; }, cVV = function (c) { return c === 'C' || c === 'V' || c === 't' ? c : c === '0' ? 'o' : 'x'; };
+  function ligneBarre(etiq, tag, cls, bar) { var d = el('div', 'lg-ligne'), e = el('div', 'e ' + (cls || '')); if (tag) e.appendChild(el('b', null, tag)); e.appendChild(document.createTextNode(etiq)); d.appendChild(e); d.appendChild(bar); return d; }
+  function carte(p, i0, n) {
+    var c = el('div', 'cv'), nom = el('div', 'nom', p.nom), ex = [p.fonction, $('c-conf').checked ? (p.dependance || 'SONATRACH') : '', p.service].filter(Boolean).join(' · '); nom.appendChild(el('small', null, ex)); c.appendChild(nom);
+    var gA = planDe(p); if (!gA) { c.appendChild(el('div', 'verdict', 'Planning non renseigné ou non accessible.')); return c; }
+    var mois = el('div', 'mois'); for (var k = i0; k < i0 + n; k += 1) { var d = Simulation.addDays(PLAN.debut, k); if (d.slice(8) === '01' || k === i0) { var sp = el('span', null, k === i0 && d.slice(8) !== '01' ? '' : MOISF[Number(d.slice(5, 7)) - 1] + (d.slice(5, 7) === '01' ? ' ' + d.slice(0, 4) : '')); sp.style.left = ((k - i0) / n * 100) + '%'; mois.appendChild(sp); } }
+    c.appendChild(mois); c.appendChild(ligneBarre(p.nom, 'A', '', runs(gA, i0, n, cTR)));
+    [['vis_travail', 'Travail', 'tr', { tolChev: 4, tolTrou: 4 }, 'Vis-à-vis'], ['vis_chambre', 'Chambre', 'ch', { tolChev: 4, tolTrou: 6 }, 'Vis-à-vis de chambre']].forEach(function (t) {
+      var q = ligneDe(p[t[0]]); if (!q) return; var gB = planDe(q);
+      if (!gB) { c.appendChild(ligneBarre(q.nom + ' (planning non renseigné)', t[1].charAt(0), t[2], el('div', 'brs'))); return; }
+      c.appendChild(ligneBarre(q.nom, t[1].charAt(0), t[2], runs(gB, i0, n, cTR)));
+      var cf = Simulation.conflits(gA, gB, PLAN.debut, t[3], i0), marq = cf.marques, jr = 0; for (var m = i0; m < i0 + n; m += 1) if (marq.charAt(m) === 'C' || marq.charAt(m) === 'V') jr += 1;
+      c.appendChild(ligneBarre(t[4] + ' (' + t[1].toLowerCase() + ')', '', t[2], runs(marq, i0, n, cVV)));
+      c.appendChild(el('div', 'verdict ' + (jr <= 4 ? 'ok' : 'ko'), (jr <= 4 ? '✔ Presque parfait' + (jr ? ' : ' + jr + ' jour(s) de conflit' : '') : '✖ En conflit de ' + jr + ' jours') + ' — ' + p.nom + ' ↔ ' + q.nom));
+    });
+    return c;
+  }
+  function legende() { var g = el('div', 'legende'); [['#4CAF2E', 'Travail'], ['#EB7A33', 'Repos'], ['#E11D48', 'Les deux travaillent'], ['#7C3AED', 'Les deux en repos'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis correct']].forEach(function (x) { var s2 = el('span'), i2 = document.createElement('i'); i2.style.background = x[0]; s2.appendChild(i2); s2.appendChild(document.createTextNode(x[1])); g.appendChild(s2); }); return g; }
+  function chargerPlan(suite) {
+    if (PLAN || PLAN === false) { suite(); return; }
+    Api.call('planning', { debut: Simulation.addDays(new Date().toISOString().slice(0, 10), -40), jours: 370 }).then(function (r) { PLAN = { debut: r.debut, auj: r.aujourdhui, lignes: r.lignes || [] }; suite(); }).catch(function () { PLAN = false; suite(); });
+  }
   function compterSel() { var n = Object.keys(sel).length; $('n-sel').textContent = n ? '(' + n + ')' : ''; }
   $('c-tout').addEventListener('change', function () {
     var on = this.checked; document.querySelectorAll('#corps-list tr:not(.cache)').forEach(function (tr) { var cb = tr.querySelector('td.sel input'); if (!cb) return; cb.checked = on; });
@@ -175,6 +218,14 @@
     var ent = el('div', 'ent'); var g = el('div'); g.appendChild(el('b', null, 'SONATRACH — Activité Exploration-Production')); g.appendChild(el('div', null, 'Direction Régionale Rhourde Nouss · Division Infrastructure')); ent.appendChild(g);
     ent.appendChild(el('div', null, 'Rhourde Nouss, le : ' + new Date().toLocaleDateString('fr-FR'))); z.appendChild(ent);
     z.appendChild(el('h2', null, 'Vis-à-vis du personnel')); z.appendChild(el('div', 'sous', 'Présentation pour approbation — ' + ids.length + ' agent(s)'));
+    if ($('c-plan').checked && PLAN) {
+      var n = Number($('s-duree').value), i0 = Math.max(0, Simulation.diff(PLAN.debut, PLAN.auj));
+      var parS = document.querySelector('input[name=grp]:checked').value === 'service', dernier = null;
+      ids.forEach(function (u) { var p = parUid[u]; if (parS && (p.service || 'Sans service') !== dernier) { dernier = p.service || 'Sans service'; var tt = el('div', 'nom', dernier); tt.style.cssText = 'font-size:13px;text-transform:uppercase;border-bottom:1px solid #222;margin:8px 0 4px'; z.appendChild(tt); } z.appendChild(carte(p, i0, n)); });
+      z.appendChild(legende());
+      var sg0 = el('div', 'sign'); ['Établi par', 'Le Chef de Service', 'Approuvé par le Chef de Division'].forEach(function (x) { var d = el('div'); d.appendChild(el('b', null, x)); d.appendChild(el('span')); d.appendChild(el('div', null, 'Date et signature')); sg0.appendChild(d); }); z.appendChild(sg0);
+      return;
+    }
     var t = el('table'), h = el('thead'), hr = el('tr'); ['N°', 'Agent', 'Vis-à-vis de travail', 'Vis-à-vis de chambre'].forEach(function (x) { hr.appendChild(el('th', null, x)); }); h.appendChild(hr); t.appendChild(h);
     var b = el('tbody');
     function cellule(p) { var td = el('td'); var x = bloc2(p); if (!x) { td.className = 'vide'; td.textContent = '—'; return td; } td.appendChild(el('b', null, x[0])); td.appendChild(el('small', null, x[1])); return td; }
@@ -182,12 +233,12 @@
     t.appendChild(b); z.appendChild(t);
     var sg = el('div', 'sign'); ['Établi par', 'Le Chef de Service', 'Approuvé par le Chef de Division'].forEach(function (x) { var d = el('div'); d.appendChild(el('b', null, x)); d.appendChild(el('span')); d.appendChild(el('div', null, 'Date et signature')); sg.appendChild(d); }); z.appendChild(sg);
   }
-  $('c-conf').addEventListener('change', feuille); document.querySelectorAll('input[name=grp]').forEach(function (r) { r.addEventListener('change', feuille); });
+  $('c-conf').addEventListener('change', feuille); $('c-plan').addEventListener('change', feuille); $('s-duree').addEventListener('change', feuille); document.querySelectorAll('input[name=grp]').forEach(function (r) { r.addEventListener('change', feuille); });
   $('b-imprimer').addEventListener('click', function () { window.print(); });
   function onglet(liste, imp) {
     $('o-org').classList.toggle('actif', !liste && !imp); $('o-list').classList.toggle('actif', liste); $('o-imp').classList.toggle('actif', !!imp);
     $('racine').hidden = $('services').hidden = liste || !!imp; $('p-list').hidden = !liste; $('p-imp').hidden = !imp; $('aide').hidden = liste || !!imp; $('tout').hidden = liste || !!imp; $('leg').hidden = liste || !!imp; $('q').hidden = !!imp;
-    if (imp) { if (!L) Api.call('visavis_liste').then(function (r) { L = r.personnes; L.forEach(function (p) { parUid[p.uid] = p; }); feuille(); }).catch(function () {}); else feuille(); }
+    if (imp) { var go = function () { chargerPlan(feuille); }; if (!L) Api.call('visavis_liste').then(function (r) { L = r.personnes; L.forEach(function (p) { parUid[p.uid] = p; }); go(); }).catch(function () {}); else go(); }
     if (liste && !L) Api.call('visavis_liste').then(function (r) { L = r.personnes; dessinerListing(); filtrer(); }).catch(function (e) { $('corps-list').appendChild(el('tr')).appendChild(el('td', 'vide-o', '⚠ ' + e.message)); });
     filtrer();
   }

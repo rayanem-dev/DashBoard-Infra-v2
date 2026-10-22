@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-88",
+    "date": "2026-10-24",
+    "title": "Version 5.50.0 — Impression des vis-à-vis avec le planning visible",
+    "changes": [
+      "Imprimer par vis-à-vis : chaque agent choisi a sa fiche avec son planning en barres (travail / repos, nombre de jours sur chaque bande), celui de son vis-à-vis de travail et de son vis-à-vis de chambre, la ligne des conflits (les deux travaillent / les deux en repos / toléré) et le verdict « presque parfait » ou « en conflit de X jours ». Durée au choix (3 mois, 6 mois, 1 an), regroupement par service possible, légende et cases de signature ; la liste simple reste disponible en décochant « Planning visible »."
+    ]
+  },
+  {
     "id": "2026-10-24-87",
     "date": "2026-10-24",
     "title": "Version 5.49.0 — Imprimer les vis-à-vis pour approbation",

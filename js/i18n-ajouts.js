@@ -228,6 +228,10 @@
     ["🖨 Imprimer", "🖨 Print", "🖨 طباعة"],
     ["Cochez les personnes à présenter (case en tête de colonne = toutes celles affichées), puis ouvrez l'onglet « Imprimer par vis-à-vis ».", "Tick the people to present (header box = all those shown), then open the « Print by counterpart » tab.", "حدّد الأشخاص المراد عرضهم (خانة الرأس = كل المعروضين) ثم افتح تبويب « طباعة حسب المقابل »."],
     ["Aucune personne sélectionnée : cochez-les dans « Listing · vis-à-vis ».", "No one selected: tick them in « Listing · counterparts ».", "لم يُحدَّد أحد: حدّدهم في « القائمة · المقابلون »."],
+    ["Planning visible", "Schedule shown", "التخطيط ظاهر"],
+    ["3 mois", "3 months", "3 أشهر"],
+    ["6 mois", "6 months", "6 أشهر"],
+    ["1 an", "1 year", "سنة"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
