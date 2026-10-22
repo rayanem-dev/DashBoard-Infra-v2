@@ -154,6 +154,7 @@
   // ---------- apprentissage ----------
   function apprendre() {
     var avant = JSON.stringify(regles), n = 0; items.forEach(function (it) {
+      if (it.origine === 'pec') return;                 // prise en charge : la règle intégrée PEC_ENTREPRISE_date s'applique déjà ; mémoriser un nom d'entreprise précis la ferait appliquer à toutes les autres
       if (it.nom && it.nom !== it.propose) { regles = Renomi.apprendre({ nom: it.f.name, texte: it.texte }, it.nom, regles); n += 1; }
     });
     if (JSON.stringify(regles) !== avant) { sauver(); toast('🧠 Correction(s) apprise(s).'); }

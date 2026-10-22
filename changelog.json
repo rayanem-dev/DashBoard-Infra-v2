@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-84",
+    "date": "2026-10-24",
+    "title": "Version 5.46.5 — Renommage : une prise en charge corrigée n'est pas apprise",
+    "changes": [
+      "Renommage de documents : la correction du nom d'une prise en charge n'est plus mémorisée comme règle (elle aurait imposé cette entreprise à toutes les autres prises en charge) ; la règle intégrée PEC_ENTREPRISE_date continue de s'appliquer."
+    ]
+  },
+  {
     "id": "2026-10-24-83",
     "date": "2026-10-24",
     "title": "Version 5.46.4 — Renommage : jamais d'écrasement",
