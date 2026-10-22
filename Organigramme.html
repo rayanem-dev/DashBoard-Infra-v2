@@ -69,6 +69,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/raccourcis.js"></script>
 <script src="js/employeurs.js"></script>
 <script>
 (function () {
@@ -138,7 +139,9 @@
     if (liste && !L) Api.call('visavis_liste').then(function (r) { L = r.personnes; dessinerListing(); filtrer(); }).catch(function (e) { $('corps-list').appendChild(el('tr')).appendChild(el('td', 'vide-o', '⚠ ' + e.message)); });
     filtrer();
   }
-  $('o-org').addEventListener('click', function () { onglet(false); }); $('o-list').addEventListener('click', function () { onglet(true); });
+  $('o-org').addEventListener('click', function () { onglet(false); if (location.hash === '#vis') history.replaceState(null, '', location.pathname); }); $('o-list').addEventListener('click', function () { onglet(true); });
+  function selonAncre() { onglet(location.hash === '#vis'); }
+  window.addEventListener('hashchange', selonAncre); if (location.hash === '#vis') selonAncre();
   function filtrer() {
     var f = norm($('q').value);
     document.querySelectorAll('#corps-list tr').forEach(function (tr) { tr.classList.toggle('cache', !!f && tr.dataset.t.indexOf(f) === -1); });

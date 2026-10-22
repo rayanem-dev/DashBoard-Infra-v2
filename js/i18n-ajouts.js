@@ -204,6 +204,11 @@
     ["Choisir un agent… (vide = aucun)", "Choose an agent… (empty = none)", "اختر عونًا… (فارغ = لا أحد)"],
     ["Laisser vide : pas de vis-à-vis de chambre, seul le travail compte.", "Leave empty: no room counterpart, only work counts.", "اتركه فارغًا: لا مقابل للغرفة، العمل وحده يُحتسب."],
     ["Appliquer", "Apply", "تطبيق"],
+    ["🗓️ Planning", "🗓️ Planning", "🗓️ التخطيط"],
+    ["🔮 Simulation", "🔮 Simulation", "🔮 المحاكاة"],
+    ["🏛️ Organigramme", "🏛️ Organigram", "🏛️ الهيكل التنظيمي"],
+    ["👥 Vis-à-vis", "👥 Counterparts", "👥 المقابلون"],
+    ["🔀 Affectations", "🔀 Assignments", "🔀 التعيينات"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
