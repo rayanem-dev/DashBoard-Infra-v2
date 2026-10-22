@@ -133,6 +133,7 @@
       var t4 = el('td'); t4.style.whiteSpace = 'nowrap';
       if (it.fait) t4.appendChild(el('span', 'ok', '✔ Renommé'));
       else if (window.showDirectoryPicker) { var b = el('button', 'btn-s', 'Remplacer le nom'); b.type = 'button'; b.title = 'Renomme ce fichier directement dans son dossier'; b.onclick = function () { renommer([it]); }; t4.appendChild(b); }
+      if (!it.fait) { var bd = el('button', 'btn-s', '⬇ Télécharger'); bd.type = 'button'; bd.style.marginLeft = '6px'; bd.title = 'Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)'; bd.onclick = function () { telechargerUn(it); }; t4.appendChild(bd); }
       [t0, t3, t4].forEach(function (x) { tr.appendChild(x); }); c.appendChild(tr);
     });
   }
@@ -194,7 +195,14 @@
     }).catch(function (e) { toast(e.message, true); }).then(function () { $('b-zip').disabled = false; });
   }
   /** Remplace directement le nom des fichiers dans leur dossier (Chrome / Edge) : écrit sous le nouveau nom, puis retire l'ancien. Le dossier choisi est gardé pour les fichiers suivants. */
+  /** Une copie sous le nom proposé, enregistrée par le navigateur (Téléchargements) : aucun dossier à choisir, donc rien que le navigateur puisse refuser. */
+  function telechargerUn(it) {
+    apprendre(); var noms = nomsUniques(), nom = noms[items.indexOf(it)];
+    octets(it).then(function (u) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u])); a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); toast('⬇ ' + nom); })
+      .catch(function (e) { toast(e.message, true); });
+  }
   function renommer(liste) {
+    if (!dossierChoisi) toast('Choisissez le dossier qui contient le fichier : un sous-dossier (ex. « Scans »), pas Documents, Téléchargements ou Bureau eux-mêmes, que le navigateur refuse. Sinon utilisez « Télécharger ».');
     var dir0 = dossierChoisi ? Promise.resolve(dossierChoisi) : window.showDirectoryPicker({ mode: 'readwrite' }).then(function (d) { dossierChoisi = d; return d; });
     dir0.then(function (dir) {
       apprendre(); var noms = nomsUniques(), fait = 0;

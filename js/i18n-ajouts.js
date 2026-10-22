@@ -214,6 +214,9 @@
     ["Filtrer une application…", "Filter an application…", "تصفية تطبيق…"],
     ["Une ligne par application, une colonne par rôle : cochez pour donner l'accès, décochez pour le retirer. Seule l'application de la ligne change ; les niveaux des modules s'ajustent tout seuls (pastille 1 à 3 = niveau minimal requis). Les exceptions individuelles restent dans l'onglet Exceptions.", "One row per application, one column per role: tick to give access, untick to remove it. Only the row's application changes; module levels adjust themselves (badge 1 to 3 = minimum level required). Individual exceptions stay in the Exceptions tab.", "سطر لكل تطبيق وعمود لكل دور: ضع علامة لمنح الوصول وأزلها لسحبه. يتغير تطبيق السطر فقط؛ تتعدل مستويات الوحدات تلقائيًا (الشارة 1 إلى 3 = المستوى الأدنى المطلوب). تبقى الاستثناءات الفردية في تبويب الاستثناءات."],
     ["Texte lu", "Text read", "النص المقروء"],
+    ["⬇ Télécharger", "⬇ Download", "⬇ تنزيل"],
+    ["Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)", "Saves a copy under the proposed name in your Downloads (no folder to choose)", "يحفظ نسخة بالاسم المقترح في التنزيلات (دون اختيار مجلد)"],
+    ["Choisissez le dossier qui contient le fichier : un sous-dossier (ex. « Scans »), pas Documents, Téléchargements ou Bureau eux-mêmes, que le navigateur refuse. Sinon utilisez « Télécharger ».", "Choose the folder that contains the file: a subfolder (e.g. « Scans »), not Documents, Downloads or Desktop themselves, which the browser refuses. Otherwise use « Download ».", "اختر المجلد الذي يحتوي الملف: مجلدًا فرعيًا (مثل « Scans »)، وليس المستندات أو التنزيلات أو سطح المكتب نفسها، فالمتصفح يرفضها. وإلا فاستعمل « تنزيل »."],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });

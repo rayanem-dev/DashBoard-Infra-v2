@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-82",
+    "date": "2026-10-24",
+    "title": "Version 5.46.3 — Renommage : bouton Télécharger et conseil sur le dossier",
+    "changes": [
+      "Renommage de documents : un bouton « ⬇ Télécharger » par fichier enregistre une copie sous le nom proposé, sans choisir de dossier. Avant « Remplacer le nom », un message rappelle de choisir un sous-dossier (le navigateur refuse Documents, Téléchargements et Bureau eux-mêmes)."
+    ]
+  },
+  {
     "id": "2026-10-24-81",
     "date": "2026-10-24",
     "title": "Version 5.46.2 — Renommage : entreprise retrouvée par le contrat",
