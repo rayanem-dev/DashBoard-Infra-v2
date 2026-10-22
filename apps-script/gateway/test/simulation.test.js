@@ -122,6 +122,8 @@ test('reliquat concédé = jours de travail en plus (+) ou de repos en plus (−
   assert.strictEqual(Simulation.reliquat(off4, Simulation.appliquer(off4, '2026-09-14', m4, r4), '2026-09-14', m4), -4, 'repos de 7 j posé sur 4 j de travail prévus puis 3 j de repos déjà prévu : seuls les 4 j de travail non faits comptent');
   const rM = { statut: 'T', depuis: '2026-10-11', jours_travail: 28, jours_repos: 28 }, offM = Planning.grille(rM, [], '2026-09-14', 200), mM = { debut: '2026-10-11', periodes: [{ type: 'R', jours: 42 }], reprise: 'T' };
   assert.strictEqual(Simulation.reliquat(offM, Simulation.appliquer(offM, '2026-09-14', mM, rM), '2026-09-14', mM), -28, '6 sem. de repos au début de 4 sem. de travail prévues : −28 (et non −42)');
+  const m3 = { debut: '2026-10-11', periodes: [{ type: 'T', jours: 14 }, { type: 'R', jours: 14 }, { type: 'T', jours: 28 }], reprise: 'R' };
+  assert.strictEqual(Simulation.reliquat(offM, Simulation.appliquer(offM, '2026-09-14', m3, rM), '2026-09-14', m3), 14, '2 sem. de travail, 2 sem. de repos au lieu de travail, 4 sem. de travail au lieu de repos : −14 puis +28 = +14 (et non −28)');
   const rB = { statut: 'T', depuis: '2026-10-25', jours_travail: 28, jours_repos: 28 };
   const offB = Planning.grille(rB, [], '2026-09-14', 200);
   const res = Simulation.proposerPaire({ offA: off, offB, debutF: '2026-09-14', rotA: rA, rotB: rB, debut: '2026-11-01', tolChev: 2, tolTrou: 0, pas: 7, alignerReleve: true });

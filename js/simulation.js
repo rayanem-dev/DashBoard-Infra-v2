@@ -168,17 +168,18 @@ var Simulation = (function () {
    */
   function reliquatDetail(off, mod, debutF, m) {
     if (!m) return { pic: 0, net: 0 };
-    var total = 0, pic = 0, d = m.debut;
-    m.periodes.forEach(function (p) {
-      var i = diff(debutF, d), st = i >= 0 && i < off.length ? off.charAt(i) : '', sg = p.type === 'T' ? 1 : -1;
-      if (st === 'T' || st === 'R') {
-        if (p.type === st) { var r = 0; while (i + r < off.length && off.charAt(i + r) === st) r += 1; total += sg * (p.jours - r); }
-        else { var k, diffj = 0; for (k = 0; k < p.jours; k += 1) { var c = i + k < off.length ? off.charAt(i + k) : ''; if (c === 'T' || c === 'R') { if (c !== p.type) diffj += 1; } else diffj += 1; } total += sg * diffj; } // seuls comptent les jours où le planning prévu était autre chose (le repos pris pendant un repos déjà prévu ne coûte rien)
-      }
-      if (Math.abs(total) > Math.abs(pic)) pic = total; // on retient le plus fort reliquat atteint (un travail en plus compensé ensuite par du repos reste concédé le temps de la transition)
-      d = addDays(d, p.jours);
-    });
-    return { pic: pic, net: total }; // pic : reliquat concédé pendant la transition ; net : solde laissé une fois la transition terminée
+    // Comparaison jour par jour avec le planning prévu, depuis le début de la modification jusqu'à la fin du bloc prévu en cours à la fin de la modification :
+    // travail alors que le repos était prévu : +1 ; repos alors que le travail était prévu : −1. On retient le plus fort cumul atteint (à égalité, le dernier).
+    var i0 = diff(debutF, m.debut), e = i0 + totalJours(m), fin = e;
+    if (e > 0 && e < off.length && off.charAt(e) === off.charAt(e - 1)) fin = prochaineReleve(off, e);
+    fin = Math.min(fin, off.length, mod.length);
+    var cum = 0, pic = 0;
+    for (var k = Math.max(0, i0); k < fin; k += 1) {
+      var o = off.charAt(k), g = mod.charAt(k);
+      if (g === 'T' && o === 'R') cum += 1; else if (g === 'R' && o === 'T') cum -= 1;
+      if (Math.abs(cum) >= Math.abs(pic)) pic = cum;
+    }
+    return { pic: pic, net: cum }; // pic : reliquat concédé au plus fort de la transition ; net : écart une fois la transition terminée
   }
   function reliquat(off, mod, debutF, m) { return reliquatDetail(off, mod, debutF, m).pic; }
 

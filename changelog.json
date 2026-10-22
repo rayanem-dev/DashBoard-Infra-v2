@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-59",
+    "date": "2026-10-24",
+    "title": "Version 5.35.2 — Reliquat de la rotation recalculé jour par jour",
+    "changes": [
+      "Simulation : le reliquat se calcule maintenant jour par jour contre le planning prévu (travail au lieu de repos +1, repos au lieu de travail −1), depuis le début de la modification jusqu'à la fin du bloc prévu en cours ; la règle est expliquée sous le résultat. Corrige les cas à plusieurs périodes où des jours étaient comptés deux fois (ex. 2 sem. de travail, 2 sem. de repos, 4 sem. de travail : +14 j et non −28 j)."
+    ]
+  },
+  {
     "id": "2026-10-24-58",
     "date": "2026-10-24",
     "title": "Version 5.35.1 — Simulation : vis-à-vis presque parfait",

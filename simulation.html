@@ -378,7 +378,7 @@
       items.forEach(function (t, i) { if (i) d.appendChild(document.createTextNode(' · ')); var sp = el('span', null, t[0] + ' ' + sgn(t[1])); sp.style.cssText = 'font-weight:800;font-size:1.05em;color:' + (t[1] > 0 ? '#15803D' : t[1] < 0 ? '#DC2626' : '#111'); d.appendChild(sp); });
       bi.appendChild(d);
       var d2 = el('div', null, 'Reliquat résultant : ' + items.map(function (t) { return t[0] + ' ' + sgn(t[2] + t[1]) + ' (avant : ' + sgn(t[2]) + ')'; }).join(' · ')); d2.style.cssText = 'font-size:12.5px;color:var(--text-muted)'; bi.appendChild(d2);
-      var ex = el('div', null, '+ : jours travaillés en plus (à récupérer) · − : jours de repos en plus'); ex.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; bi.appendChild(ex);
+      var ex = el('div', null, '+ : jours travaillés en plus (à récupérer) · − : jours de repos en plus. Calcul jour par jour, comparé au planning prévu : travail alors que le repos était prévu +1, repos alors que le travail était prévu −1, depuis le début de la modification jusqu\'à la fin du bloc prévu en cours.'); ex.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; bi.appendChild(ex);
     }
     if (A && B && !eA.err && !eB.err) {
       var c = conflitsRotation(eA.mod, eB.mod, eA.m, eB.m, A, B), v = el('div');
