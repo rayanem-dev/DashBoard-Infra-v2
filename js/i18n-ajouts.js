@@ -217,6 +217,7 @@
     ["⬇ Télécharger", "⬇ Download", "⬇ تنزيل"],
     ["Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)", "Saves a copy under the proposed name in your Downloads (no folder to choose)", "يحفظ نسخة بالاسم المقترح في التنزيلات (دون اختيار مجلد)"],
     ["Choisissez le dossier qui contient le fichier : un sous-dossier (ex. « Scans »), pas Documents, Téléchargements ou Bureau eux-mêmes, que le navigateur refuse. Sinon utilisez « Télécharger ».", "Choose the folder that contains the file: a subfolder (e.g. « Scans »), not Documents, Downloads or Desktop themselves, which the browser refuses. Otherwise use « Download ».", "اختر المجلد الذي يحتوي الملف: مجلدًا فرعيًا (مثل « Scans »)، وليس المستندات أو التنزيلات أو سطح المكتب نفسها، فالمتصفح يرفضها. وإلا فاستعمل « تنزيل »."],
+    ["Supprimer cette demande de la liste", "Delete this request from the list", "حذف هذا الطلب من القائمة"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -224,6 +225,8 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^🗑 Supprimer les demandes refusées, annulées ou remplacées \((\d+)\)$/, function (n) { return '🗑 Delete refused, cancelled or replaced requests (' + n + ')'; }],
+    [/^(.+) · ouverte (\d+) fois$/, function (t, n) { return t + ' · opened ' + n + ' times'; }],
     [/^📄 Prise en charge reconnue(.*)$/, function (x) { return '📄 Care request recognised' + x; }],
     [/^Ligne (\d+) : la rotation en cours a déjà (\d+) jours écoulés, elle ne peut pas être plus courte\.$/, function (l, n) { return 'Line ' + l + ': the current rotation already has ' + n + ' days elapsed, it cannot be shorter.'; }],
     [/^Rotation en cours : au moins (\d+) jours \(déjà écoulés\)$/, function (n) { return 'Current rotation: at least ' + n + ' days (already elapsed)'; }],
@@ -265,6 +268,8 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^🗑 Supprimer les demandes refusées, annulées ou remplacées \((\d+)\)$/, function (n) { return '🗑 حذف الطلبات المرفوضة أو الملغاة أو المستبدلة (' + n + ')'; }],
+    [/^(.+) · ouverte (\d+) fois$/, function (t, n) { return t + ' · فُتح ' + n + ' مرة'; }],
     [/^📄 Prise en charge reconnue(.*)$/, function (x) { return '📄 تم التعرف على التكفل' + x; }],
     [/^Ligne (\d+) : la rotation en cours a déjà (\d+) jours écoulés, elle ne peut pas être plus courte\.$/, function (l, n) { return 'السطر ' + l + ': التناوب الحالي مضى منه ' + n + ' يومًا، لا يمكن أن يكون أقصر.'; }],
     [/^Rotation en cours : au moins (\d+) jours \(déjà écoulés\)$/, function (n) { return 'التناوب الحالي: ' + n + ' يومًا على الأقل (منقضية)'; }],

@@ -156,6 +156,8 @@ function simuLigne_(numero) {
   return null;
 }
 
+/** Statuts qu'on peut supprimer de la liste : sans effet sur le planning officiel (refusée, annulée, remplacée). Une demande approuvée, appliquée ou en attente se décide, elle ne se supprime pas. */
+var SIMU_SUPPRIMABLES_ = ['refusee', 'annulee', 'remplacee'];
 function simuResume_(r, u) {
   var cible = Store.utilisateur(r.email) || {}, emet = Store.utilisateur(r.emetteur) || {};
   var m = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) };
@@ -163,7 +165,7 @@ function simuResume_(r, u) {
            reprise_le: m.periodes.length ? Simulation.dateReprise(m) : '', motif: String(r.motif || ''), statut: String(r.statut), emetteur: Annuaire.nomAffichable(emet.nom, r.emetteur),
            decide_par: r.decide_par ? Annuaire.nomAffichable((Store.utilisateur(r.decide_par) || {}).nom, r.decide_par) : '', decide_le: String(r.decide_le || ''), commentaire: String(r.commentaire || ''),
            peut_decider: simuAttend_(r) && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible) && String(r.email).toLowerCase() !== String(u.email).toLowerCase(),
-           hors_rotation: simuAttend_(r) ? simuHorsRotation_(r) : false, par_agent: String(r.email).toLowerCase() === String(r.emetteur).toLowerCase() };
+           peut_supprimer: SIMU_SUPPRIMABLES_.indexOf(String(r.statut)) !== -1 && simuNiveau_(u) >= 2 && (simuDansPortee_(u, cible) || String(r.emetteur).toLowerCase() === String(u.email).toLowerCase()), hors_rotation: simuAttend_(r) ? simuHorsRotation_(r) : false, par_agent: String(r.email).toLowerCase() === String(r.emetteur).toLowerCase() };
 }
 /** Demande qui attend la décision d'un supérieur : en attente (émise par un responsable) ou appliquée (émise par l'agent lui-même, déjà en vigueur). */
 function simuAttend_(r) { return String(r.statut) === 'en_attente' || String(r.statut) === 'appliquee'; }
@@ -203,6 +205,26 @@ function simuDemande_(req) {
   var ok = String(r.email).toLowerCase() === String(u.email).toLowerCase() || String(r.emetteur).toLowerCase() === String(u.email).toLowerCase() || (simuNiveau_(u) >= 2 && simuDansPortee_(u, cible));
   if (!ok) throw simuDroits_();
   return { demande: simuDemandeDe_(r) };
+}
+
+
+/** Statuts qu'on peut supprimer de la liste : sans effet sur le planning officiel (refusée, annulée, remplacée). Une demande approuvée, appliquée ou en attente se décide, elle ne se supprime pas. */
+function simuSupprimer_(req) {
+  var u = Auth.userFromToken(req.token);
+  if (simuNiveau_(u) < 2) throw simuDroits_();
+  var numeros = (Array.isArray(req.numeros) ? req.numeros : [req.numero]).map(String).filter(function (n) { return n && n !== 'undefined'; }).slice(0, 200);
+  if (!numeros.length) throw new Error('Aucune demande indiquée');
+  var faites = [], refusees = [];
+  numeros.forEach(function (numero) {
+    var r = simuLigne_(numero); if (!r) return;
+    var cible = Store.utilisateur(r.email) || {};
+    if (SIMU_SUPPRIMABLES_.indexOf(String(r.statut)) === -1) { refusees.push(numero); return; }
+    if (!simuDansPortee_(u, cible) && String(r.emetteur).toLowerCase() !== String(u.email).toLowerCase()) { refusees.push(numero); return; }
+    Store.supprimer('Modifications', { numero: String(r.numero) });
+    Store.journal('modification_supprimee', u.email, String(r.numero) + ' ' + r.email + ' (' + r.statut + ')'); faites.push(numero);
+  });
+  if (!faites.length && refusees.length) throw new Error('Seules les demandes refusées, annulées ou remplacées peuvent être supprimées (' + refusees.join(', ') + ').');
+  return { supprimees: faites, ignorees: refusees };
 }
 
 function simuDecider_(req) {

@@ -149,6 +149,7 @@
   </section>
 
   <section id="p-dem" hidden>
+    <div style="margin:0 0 8px"><button class="btn-s" id="b-nettoyer" type="button" hidden></button></div>
     <div class="bloc" style="padding:0;overflow:auto"><table class="dem" id="t-dem"></table></div>
   </section>
 </main>
@@ -574,6 +575,10 @@
     });
     dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
   }
+  function supprimerDemandes(numeros, quoi) {
+    if (!numeros.length || !confirm('Supprimer ' + quoi + ' de la liste ? Le planning officiel n\'est pas modifié (ces demandes n\'ont pas d\'effet).')) return;
+    Api.call('simu_supprimer', { numeros: numeros }).then(function (r) { toast(r.supprimees.length + ' demande(s) supprimée(s).'); listeDemandes(); }).catch(function (e) { toast(e.message, true); });
+  }
   function listeDemandes() {
     return Api.call('simu_liste').then(function (r) {
       var t = $('t-dem'); t.textContent = '';
@@ -591,8 +596,11 @@
           var re = el('button', 'btn-s', 'Refuser'); re.type = 'button'; re.style.marginLeft = '6px'; re.addEventListener('click', function () { dialogue('Refuser la demande ' + d.numero, false, d.numero); });
           ac.appendChild(ap); ac.appendChild(re);
         }
+        if (d.peut_supprimer) { var su = el('button', 'btn-s', '🗑'); su.type = 'button'; su.title = 'Supprimer cette demande de la liste'; su.style.marginLeft = '6px'; su.addEventListener('click', function () { supprimerDemandes([d.numero], 'la demande ' + d.numero); }); ac.appendChild(su); }
         tr.appendChild(ac); b.appendChild(tr);
       });
+      var supp = r.demandes.filter(function (d) { return d.peut_supprimer; }).map(function (d) { return d.numero; });
+      var bt = $('b-nettoyer'); bt.hidden = !supp.length; bt.textContent = '🗑 Supprimer les demandes refusées, annulées ou remplacées (' + supp.length + ')'; bt.onclick = function () { supprimerDemandes(supp, supp.length + ' demande(s) refusée(s), annulée(s) ou remplacée(s)'); };
       t.appendChild(b); $('nb-att').textContent = att ? '(' + att + ')' : '';
     }).catch(function (e) { toast(e.message, true); });
   }

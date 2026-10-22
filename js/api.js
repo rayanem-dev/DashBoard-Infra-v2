@@ -397,10 +397,14 @@
       case 'simu_liste': { var lq = demoMods().slice().reverse().map(function (m) { var u2 = DEMO_USERS.filter(function (x) { return x.email === m.email; })[0] || {};
           return { numero: m.numero, cree_le: m.cree_le, agent: u2.nom, service: u2.service, debut: m.modif.debut, reprise_le: Simulation.dateReprise(m.modif), motif: m.motif, statut: m.statut,
                    emetteur: (DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}).nom, decide_par: m.decide_par || '', decide_le: m.decide_le || '', commentaire: m.commentaire || '',
-                   peut_decider: (m.statut === 'en_attente' || m.statut === 'appliquee') && demoState.user.role === 'chef_division' && m.email !== demoState.user.email }; });
+                   peut_decider: (m.statut === 'en_attente' || m.statut === 'appliquee') && demoState.user.role === 'chef_division' && m.email !== demoState.user.email,
+                   peut_supprimer: ['refusee', 'annulee', 'remplacee'].indexOf(m.statut) !== -1 && demoState.user.role === 'chef_division' }; });
         return { niveau: demoState.user.role === 'chef_division' ? 3 : 0, demandes: lq }; }
       case 'simu_demande': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var dm = demoMods().filter(function (m) { return m.numero === p.numero; })[0];
         if (!dm) throw erreur('Demande introuvable'); return { demande: demoDoc(dm) }; }
+      case 'simu_supprimer': { exigerAdmin(); var ls = demoMods(), nums = Array.isArray(p.numeros) ? p.numeros : [p.numero], sup = [];
+        ls = ls.filter(function (m) { if (nums.indexOf(m.numero) !== -1 && ['refusee', 'annulee', 'remplacee'].indexOf(m.statut) !== -1) { sup.push(m.numero); return false; } return true; });
+        if (!sup.length) throw erreur('Seules les demandes refusées, annulées ou remplacées peuvent être supprimées.'); saveMods(ls); return { supprimees: sup, ignorees: [] }; }
       case 'simu_decider': { exigerAdmin(); var ld = demoMods(), dd = ld.filter(function (m) { return m.numero === p.numero; })[0];
         if (!dd) throw erreur('Demande introuvable'); if (dd.statut !== 'en_attente' && dd.statut !== 'appliquee') throw erreur('Cette demande a déjà été traitée');
         if (p.decision !== 'approuvee' && p.decision !== 'refusee') throw erreur('Décision invalide');

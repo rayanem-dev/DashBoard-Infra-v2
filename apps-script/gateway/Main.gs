@@ -80,6 +80,7 @@ function route_(req) {
     case 'simu_liste': return simuListe_(req);
     case 'simu_demande': return simuDemande_(req);
     case 'simu_decider': return simuDecider_(req);
+    case 'simu_supprimer': return simuSupprimer_(req);
     case 'simu_envoyer': return simuEnvoyer_(req);
     case 'modif_moi_donnees': return modifMoiDonnees_(req);
     case 'modif_moi': return modifMoi_(req);

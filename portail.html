@@ -101,6 +101,12 @@
   // Les applications Apps Script s'ouvrent dans le site (même en-tête, « Retour au portail ») au lieu d'une page nue
   function lienApp(a) { var u = lienSur(a.url); return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_\-]+\/exec$/.test(u) ? 'app.html?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(a.titre || '') + '&e=' + encodeURIComponent(String(a.emoji || a.icone || '').slice(0, 8)) : u; }
 
+  // Applications les plus utilisées d'abord dans « Mes applications » : un compteur par application et par personne, gardé dans ce navigateur
+  var UID = '';
+  function cleUsage() { return 'infra_usage_' + UID; }
+  function usages() { try { return JSON.parse(localStorage.getItem(cleUsage()) || '{}'); } catch (e) { return {}; } }
+  function compter(titre) { if (!titre) return; try { var o = usages(); o[titre] = (o[titre] || 0) + 1; localStorage.setItem(cleUsage(), JSON.stringify(o)); } catch (e) { /* stockage indisponible */ } }
+
   // ---------- Fiche de l'agent ----------
   function initiales(nom) { var m = String(nom || '').trim().split(/\s+/).filter(function (x) { return /[A-Za-zÀ-ÿ]/.test(x); }); return ((m[0] || '?').charAt(0) + (m[1] ? m[1].charAt(0) : '')).toUpperCase(); }
   function anciennete(iso) {
@@ -144,14 +150,18 @@
   // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
   // Mes applications : une icône par application autorisée pour cet utilisateur (nom au survol), même ouverture que les cartes du bas
   function mesApps(menu) {
-    var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0; g.textContent = '';
+    var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0, liste = [], us = usages(); g.textContent = '';
     (menu || []).forEach(function (m) {
       (m.apps || []).forEach(function (a) {
-        var u = lienApp(a); if (u === '#' || vues[u]) return; vues[u] = 1; n += 1;
-        var c = el('a', 'mes-app', a.emoji || '📄'); c.href = u; c.dataset.nom = a.titre || ''; c.title = a.titre || ''; c.setAttribute('aria-label', a.titre || '');
-        if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
-        g.appendChild(c);
+        var u = lienApp(a); if (u === '#' || vues[u]) return; vues[u] = 1; n += 1; liste.push({ a: a, u: u, rang: n });
       });
+    });
+    liste.sort(function (x, y) { return (us[y.a.titre] || 0) - (us[x.a.titre] || 0) || x.rang - y.rang; });   // les plus utilisées d'abord, puis l'ordre du menu
+    liste.forEach(function (x) {
+      var a = x.a, c = el('a', 'mes-app', a.emoji || '📄'); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
+      if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
+      c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
+      g.appendChild(c);
     });
     $('mes-apps-n').textContent = n ? '(' + n + ')' : ''; box.hidden = !n;
   }
@@ -204,7 +214,7 @@
   Annuaire.charger().then(function () { filtrer(); });
 
   function dessiner(r) {
-    dessinerFiche(r.user); raccourcis(r.menu); mesApps(r.menu);
+    UID = String((r.user && r.user.uid) || ''); dessinerFiche(r.user); raccourcis(r.menu); mesApps(r.menu);
     if (r.menu.some(function (m) { return m.id === 'simulation' && m.niveau >= 2; })) Synthese.monterModifs($('syn-modifs')); // demandes de modification de planning à décider
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
@@ -222,6 +232,7 @@
         if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
         c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));
         c.appendChild(el('p', null, a.description || '')); c.appendChild(el('div', 'ouvrir', 'Ouvrir →'));
+        c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
         g.appendChild(c);
       });
       sec.appendChild(g); zone.appendChild(sec);

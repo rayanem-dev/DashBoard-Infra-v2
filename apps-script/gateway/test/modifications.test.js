@@ -314,3 +314,17 @@ test('la situation de l\'accueil donne le reliquat actuel (initial + demandes ap
   const net = Number(m.tables.Modifications.find(x => x.numero === numero).reliquat_net);
   assert.strictEqual(m.run("situationDe_(Store.utilisateur('agent.a@x.dz'))").solde, 5 + net);
 });
+
+test('suppression : seules les demandes refusées, annulées ou remplacées, dans sa portée', () => {
+  const m = monde();
+  m.tables.Modifications.push(
+    { numero: 'MOD-1', email: 'agent.a@x.dz', emetteur: 'chef.s1@x.dz', statut: 'refusee' }, { numero: 'MOD-2', email: 'agent.a@x.dz', emetteur: 'chef.s1@x.dz', statut: 'approuvee' },
+    { numero: 'MOD-3', email: 'agent.a@x.dz', emetteur: 'chef.s1@x.dz', statut: 'en_attente' }, { numero: 'MOD-4', email: 'agent.b@x.dz', emetteur: 'chef.s2@x.dz', statut: 'remplacee' },
+    { numero: 'MOD-5', email: 'agent.a@x.dz', emetteur: 'chef.s1@x.dz', statut: 'annulee' });
+  assert.throws(() => appel(m, 'simuSupprimer_', 'agent.a@x.dz', { numero: 'MOD-1' }), /Droits/);
+  assert.throws(() => appel(m, 'simuSupprimer_', 'chef.s1@x.dz', { numero: 'MOD-2' }), /refusées, annulées ou remplacées/);       // approuvée : jamais
+  assert.throws(() => appel(m, 'simuSupprimer_', 'chef.s1@x.dz', { numero: 'MOD-4' }), /refusées/);                                    // autre service
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(appel(m, 'simuSupprimer_', 'chef.s1@x.dz', { numeros: ['MOD-1', 'MOD-2', 'MOD-3', 'MOD-5'] }).supprimees)), ['MOD-1', 'MOD-5']);
+  assert.deepStrictEqual(m.tables.Modifications.map(r => r.numero).sort(), ['MOD-2', 'MOD-3', 'MOD-4']);
+  assert.ok(m.journal.some(j => j[0] === 'modification_supprimee'));
+});

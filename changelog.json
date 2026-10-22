@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-86",
+    "date": "2026-10-24",
+    "title": "Version 5.48.0 — Applications les plus utilisées en premier ; suppression des demandes sans effet",
+    "changes": [
+      "Portail : dans « Mes applications », les petites icônes sont classées de la plus utilisée à la moins utilisée (compteur par personne, gardé dans ce navigateur ; le nombre d'ouvertures s'affiche au survol).",
+      "Simulation › Demandes : une poubelle 🗑 supprime une demande refusée, annulée ou remplacée (les erreurs de test), et un bouton supprime d'un coup toutes celles de la liste. Les demandes approuvées, appliquées ou en attente ne se suppriment pas : le planning officiel n'est jamais touché."
+    ]
+  },
+  {
     "id": "2026-10-24-85",
     "date": "2026-10-24",
     "title": "Version 5.47.0 — Simulation : durées écrites sur le graphique",
