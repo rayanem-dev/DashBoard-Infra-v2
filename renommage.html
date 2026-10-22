@@ -58,16 +58,17 @@
       <button class="btn-s" id="b-vider" type="button">Vider la liste</button>
     </div>
   </div>
-  <div class="bloc">
-    <h2>🧠 Ce que l'outil a appris <span id="n-regles"></span></h2>
+  <details class="bloc" id="d-appris">
+    <summary style="cursor:pointer;list-style:none"><h2 style="display:inline">🧠 Ce que l'outil a appris <span id="n-regles"></span></h2></summary>
     <p class="note">Une règle = des mots qui reviennent dans le document → un modèle de nom (ex. <code>Facture_{numero}_{date}</code>). Elles restent dans ce navigateur ; exportez-les pour les garder ou les partager.</p>
     <div id="regles"></div>
     <div class="barre"><button class="btn-s" id="r-exp" type="button">Exporter les règles</button><button class="btn-s" id="r-imp" type="button">Importer…</button><input type="file" id="r-fic" accept="application/json,.json" hidden></div>
-  </div>
+  </details>
 </main>
 <div class="toast" id="toast" role="status"></div>
 <script src="js/autodetect-renommage.js"></script>
 <script src="js/renomi-moteur.js"></script>
+<script src="js/renomi-pec.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -106,6 +107,8 @@
     var p = Renomi.proposer({ nom: it.f.name, texte: it.texte || '' }, regles);
     it.nom = Renomi.nettoyer(p.nom.replace(/\.[A-Za-z0-9]{2,5}$/, '')) + '.' + e;      // Titre_date lus dans le document (ou règle apprise)
     it.origine = p.regle ? 'appris' : 'defaut'; it.propose = it.nom;
+    var pec = !p.regle && window.RenomiPec ? RenomiPec.reconnaitre(it.texte || '') : null;       // prise en charge reconnue : PEC_<ENTREPRISE>_<date> (une règle apprise garde la priorité)
+    if (pec) { it.nom = Renomi.nettoyer(pec.nom) + '.' + e; it.origine = 'pec'; it.pec = pec; it.propose = it.nom; }
   }
   function dessiner() {
     var c = $('corps'); c.textContent = ''; $('b-liste').hidden = !items.length;
@@ -114,6 +117,7 @@
       var tr = el('tr'), t0 = el('td'); t0.appendChild(el('div', 'orig', it.f.name));
       if (it.texte) { var ch = Renomi.champs(it.texte, ''); if (ch.titre || ch.date) t0.appendChild(el('div', 'ok', '🔎 ' + (ch.titre ? 'Titre : ' + ch.titre : '') + (ch.titre && ch.date ? ' · ' : '') + (ch.date ? 'Date : ' + ch.date.split('-').reverse().join('/') : ''))); else t0.appendChild(el('div', 'av', 'Aucun texte lisible trouvé dans ce document.')); }
       if (it.origine === 'appris') t0.appendChild(el('div', 'ok', '🧠 Règle apprise appliquée'));
+      if (it.origine === 'pec') t0.appendChild(el('div', 'ok', '📄 Prise en charge reconnue' + (it.pec && it.pec.entreprise ? ' · ' + it.pec.entreprise : '') + (it.pec && it.pec.date ? ' · ' + it.pec.date.split('-').reverse().join('/') : '')));
       var t3 = el('td'), n = el('input'); n.value = it.nom; n.disabled = !!it.fait; n.oninput = function () { it.nom = n.value; }; t3.appendChild(n);
       var t4 = el('td'); t4.style.whiteSpace = 'nowrap';
       if (it.fait) t4.appendChild(el('span', 'ok', '✔ Renommé'));
@@ -153,7 +157,9 @@
   }
 
   // ---------- sortie ----------
-  function nomsUniques() { var pris = [], out = []; items.forEach(function (it) { var n = AutoDetectDoc.nomUnique(Renomi.nettoyer(it.nom.replace(/\.[A-Za-z0-9]{2,5}$/, '')) + '.' + (ext(it.nom) || ext(it.f.name)), pris); pris.push(n); out.push(n); }); return out; }
+  /** Si le nom existe déjà dans la liste : « nom (1).pdf », « nom (2).pdf »… (le premier garde son nom). */
+  function nomUniqueNum(nom, pris) { var e = ext(nom), base = e ? nom.slice(0, -(e.length + 1)) : nom, cur = nom, k = 0; while (pris.indexOf(cur) !== -1) { k += 1; cur = base + ' (' + k + ')' + (e ? '.' + e : ''); } return cur; }
+  function nomsUniques() { var pris = [], out = []; items.forEach(function (it) { var n = nomUniqueNum(Renomi.nettoyer(it.nom.replace(/\.[A-Za-z0-9]{2,5}$/, '')) + '.' + (ext(it.nom) || ext(it.f.name)), pris); pris.push(n); out.push(n); }); return out; }
   function octets(it) { return it.f.arrayBuffer().then(function (b) { var u = new Uint8Array(b); return $('o-pdf').checked && /\.pdf$/i.test(it.nom) && !/\.pdf$/i.test(it.f.name) && AutoDetectDoc.convertible(u) ? AutoDetectDoc.imageToPdf(u) : u; }); }
   var TABLE = (function () { var t = []; for (var n = 0; n < 256; n += 1) { var c = n; for (var k = 0; k < 8; k += 1) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   function crc32(u) { var c = 0xFFFFFFFF; for (var i = 0; i < u.length; i += 1) c = TABLE[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }

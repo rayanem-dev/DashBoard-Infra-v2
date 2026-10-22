@@ -220,6 +220,7 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^📄 Prise en charge reconnue(.*)$/, function (x) { return '📄 Care request recognised' + x; }],
     [/^Ligne (\d+) : la rotation en cours a déjà (\d+) jours écoulés, elle ne peut pas être plus courte\.$/, function (l, n) { return 'Line ' + l + ': the current rotation already has ' + n + ' days elapsed, it cannot be shorter.'; }],
     [/^Rotation en cours : au moins (\d+) jours \(déjà écoulés\)$/, function (n) { return 'Current rotation: at least ' + n + ' days (already elapsed)'; }],
     [/^Vis-à-vis de (.+)$/, function (n) { return 'Counterparts of ' + n; }],
@@ -260,6 +261,7 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^📄 Prise en charge reconnue(.*)$/, function (x) { return '📄 تم التعرف على التكفل' + x; }],
     [/^Ligne (\d+) : la rotation en cours a déjà (\d+) jours écoulés, elle ne peut pas être plus courte\.$/, function (l, n) { return 'السطر ' + l + ': التناوب الحالي مضى منه ' + n + ' يومًا، لا يمكن أن يكون أقصر.'; }],
     [/^Rotation en cours : au moins (\d+) jours \(déjà écoulés\)$/, function (n) { return 'التناوب الحالي: ' + n + ' يومًا على الأقل (منقضية)'; }],
     [/^Vis-à-vis de (.+)$/, function (n) { return 'مقابلو ' + n; }],

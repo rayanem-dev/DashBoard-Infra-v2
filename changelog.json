@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-79",
+    "date": "2026-10-24",
+    "title": "Version 5.46.0 — Renommage : prises en charge reconnues",
+    "changes": [
+      "Renommage de documents : une prise en charge (document du portail ou lettre de l'entreprise) est reconnue d'office et nommée « PEC_ENTREPRISE_AAAA-MM-JJ » (ex. PEC_ETS MESSAI_2026-10-22). Une règle apprise de vos corrections garde la priorité.",
+      "Plusieurs fichiers au même nom : le premier garde son nom, les suivants prennent « (1) », « (2) »…",
+      "« Ce que l'outil a appris » est replié par défaut."
+    ]
+  },
+  {
     "id": "2026-10-24-78",
     "date": "2026-10-24",
     "title": "Version 5.45.1 — Requête de transport : heure adaptée au téléphone",
