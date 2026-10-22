@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-61",
+    "date": "2026-10-24",
+    "title": "Version 5.36.1 — Noms classés par ordre alphabétique",
+    "changes": [
+      "Planning des équipes et Simulation : les agents sont toujours classés par ordre alphabétique, quelle que soit la sélection (service, division, filtres)."
+    ]
+  },
+  {
     "id": "2026-10-24-60",
     "date": "2026-10-24",
     "title": "Version 5.36.0 — Simulation : la suite de la rotation est visible",

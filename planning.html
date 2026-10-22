@@ -164,7 +164,7 @@
     var f = $('q').value.toLowerCase(), et = $('etat').value, em = $('emp').value;
     var base = data.peutVoirTous ? data.lignes.filter(servicesVisibles) : data.lignes;
     stats(base);
-    var lignes = base.filter(function (l) { return (!f || (l.nom || '').toLowerCase().indexOf(f) !== -1) && (!et || etatDe(l) === et) && (!em || String(l.dependance || '').toUpperCase() === em); });
+    var lignes = base.filter(function (l) { return (!f || (l.nom || '').toLowerCase().indexOf(f) !== -1) && (!et || etatDe(l) === et) && (!em || String(l.dependance || '').toUpperCase() === em); }).sort(function (a, b) { return String(a.nom).localeCompare(String(b.nom), 'fr', { sensitivity: 'base' }); });
     var b = bornes(), px = PX[vue], aujIdx = ecart(b.debut, data.aujourdhui);
     var t = $('tab'); t.textContent = '';
     var hr = el('tr'); hr.appendChild(el('th', 'nom', data.peutVoirTous ? lignes.length + ' personne' + (lignes.length > 1 ? 's' : '') : 'Mon planning'));
