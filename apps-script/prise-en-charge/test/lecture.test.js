@@ -49,3 +49,12 @@ test('simples lignes « Nom Prénom » toujours lues ; date « à compter du » 
   assert.deepStrictEqual(E('pecLireTexte_', '1. KACI Farid\n- BEN Meftah').map(p => p.nom), ['Kaci', 'Ben']);
   assert.strictEqual(E('pecLireDate_', 'à compter du 05/11/2026 ... Le : 21/10/2026'), '05/11/2026');
 });
+
+test('service du projet (Suivi CPM) → émputation', () => {
+  const EMP = ['Service Électromécanique', 'Service Construction', 'Service Travaux Entretien'];
+  assert.strictEqual(E('pecServiceVersEmputation_', 'Service Construction', EMP), 'Service Construction');
+  assert.strictEqual(E('pecServiceVersEmputation_', 'service electromecanique', EMP), 'Service Électromécanique');
+  assert.strictEqual(E('pecServiceVersEmputation_', 'Travaux Entretien', EMP), 'Service Travaux Entretien');
+  assert.strictEqual(E('pecServiceVersEmputation_', '', EMP), '');
+  assert.strictEqual(E('pecServiceVersEmputation_', 'Autre', EMP), '');
+});

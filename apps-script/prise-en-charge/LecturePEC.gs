@@ -107,3 +107,10 @@ function pecLireDate_(texte) {
   for (var k = 0; k < pats.length; k += 1) { var m = String(texte || '').match(pats[k]); if (m) return m[1].replace(/\s+/g, '').replace(/-/g, '/'); }
   return null;
 }
+
+/** Service du projet (colonne « Service » du Suivi CPM) → émputation de la liste (accents, casse et « Service » en tête indifférents), '' si aucune ne correspond. */
+function pecServiceVersEmputation_(service, emputations) {
+  var n = pecNorm_(service).replace(/^service\s+/, ''); if (!n) return '';
+  for (var i = 0; i < emputations.length; i += 1) { var e = pecNorm_(emputations[i]).replace(/^service\s+/, ''); if (e === n || e.indexOf(n) >= 0 || n.indexOf(e) >= 0) return emputations[i]; }
+  return '';
+}

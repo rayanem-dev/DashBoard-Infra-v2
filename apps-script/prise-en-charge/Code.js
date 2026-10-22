@@ -90,14 +90,19 @@ function synchroniserPrestataires(ss) {
   const lastRow = cpmSheet.getLastRow();
   // Une seule lecture de C à N : C=N°Dossier, D=Intitulé ... I=Statut ... M=Entreprise, N=N°Contrat
   const data = cpmSheet.getRange("C3:N" + lastRow).getValues();
+  // Colonne « Service » du Suivi CPM (retrouvée par son en-tête, ligne 2) : le service du projet choisit l'émputation tout seul
+  const entetes = cpmSheet.getRange(2, 1, 1, cpmSheet.getLastColumn()).getValues()[0].map(h => String(h || '').trim().toLowerCase());
+  const colService = entetes.indexOf("service");
+  const services = colService >= 0 ? cpmSheet.getRange(3, colService + 1, Math.max(0, lastRow - 2), 1).getValues().map(r => String(r[0] || '').trim()) : [];
 
   let configSheet = ss.getSheetByName("Config");
   if (!configSheet) configSheet = ss.insertSheet("Config");
   configSheet.clearContents();
-  configSheet.getRange("A1:C1").setValues([["NumContrat", "Entreprise", "Intitule"]]);
+  configSheet.getRange("A1:D1").setValues([["NumContrat", "Entreprise", "Intitule", "Service"]]);
 
   let rows = [];
-  data.forEach(row => {
+  data.forEach((row, ir) => {
+    const service = services[ir] || "";
     const numDossier = row[0];  // colonne C
     const intitule = row[1];    // colonne D
     const statut = row[6];      // colonne I
@@ -109,7 +114,8 @@ function synchroniserPrestataires(ss) {
       rows.push([
         numContrat.toString().trim(),
         entreprise.toString().trim(),
-        intitule ? intitule.toString().trim() : ""
+        intitule ? intitule.toString().trim() : "",
+        service
       ]);
     }
 
@@ -118,7 +124,8 @@ function synchroniserPrestataires(ss) {
       rows.push([
         "Visite sur site",
         "(" + numDossier.toString().trim() + ")",
-        intitule ? intitule.toString().trim() : ""
+        intitule ? intitule.toString().trim() : "",
+        service
       ]);
     }
   });
@@ -127,7 +134,7 @@ function synchroniserPrestataires(ss) {
   rows.sort((a, b) => a[1].localeCompare(b[1], "fr", { sensitivity: "base" }));
 
   if (rows.length > 0) {
-    configSheet.getRange(2, 1, rows.length, 3).setValues(rows);
+    configSheet.getRange(2, 1, rows.length, 4).setValues(rows);
   }
 
   // Rafraîchit la validation de C2 immédiatement (menu ET web), pour ne
@@ -321,19 +328,23 @@ function obtenirOptionsFormulaire() {
   const configSheet = ss.getSheetByName("Config");
 
   let prestataires = [];
+  const servicesParPrestataire = {};   // « N° - Entreprise - Intitulé » → émputation (service du projet dans le Suivi CPM)
   if (configSheet && configSheet.getLastRow() > 1) {
-    const data = configSheet.getRange("A2:C" + configSheet.getLastRow()).getValues();
-    data.forEach(([numContrat, entreprise, intitule]) => {
+    const data = configSheet.getRange("A2:D" + configSheet.getLastRow()).getValues();
+    data.forEach(([numContrat, entreprise, intitule, service]) => {
       if (numContrat && entreprise) {
         let option = numContrat + " - " + entreprise;
         if (intitule) option += " - " + intitule;
         prestataires.push(option);
+        const emp = pecServiceVersEmputation_(service, Object.keys(EMPUTATIONS));
+        if (emp) servicesParPrestataire[option] = emp;
       }
     });
   }
 
   return {
     prestataires: prestataires,
+    servicesParPrestataire: servicesParPrestataire,
     emputations: Object.keys(EMPUTATIONS),
     bases: BASES
   };

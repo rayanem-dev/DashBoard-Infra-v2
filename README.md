@@ -12,3 +12,6 @@ Portail statique (HTML/CSS/JS, sans build) installable en PWA. Les données vien
 - **Ajouter un chantier** : ajouter une entrée dans `CHANTIERS` (`Avancement_des_Chantiers.html`) avec son `csvUrl`.
 - **Annoncer une modification** : ajouter une entrée en tête de `changelog.json` (`id`, `date`, `title`, `changes`).
 - **Hors-ligne** : `sw.js` charge le réseau en priorité et garde la dernière version vue en cache. Incrémenter `CACHE` pour forcer un renouvellement.
+
+## Règle de logique : projet → service
+Le Suivi CPM (feuille « suivi », colonne **Service**) donne le service de chaque projet. Dans tout formulaire où l'on choisit un projet / contrat / prestataire ET un service (ou une émputation), le choix du projet **règle le service tout seul** (l'utilisateur peut le corriger). Appliqué dans Prises en charge ; à reprendre dans chaque nouvel écran qui a les deux champs.

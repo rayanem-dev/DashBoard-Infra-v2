@@ -383,7 +383,15 @@
     document.getElementById('dateDepart').value = d.toISOString().split('T')[0];
   });
 
+  let servicesParPrestataire = {};
+  /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
+  function appliquerService() {
+    const emp = servicesParPrestataire[document.getElementById('prestataire').value];
+    if (!emp) return;
+    const sel = document.getElementById('emputation'); if (Array.from(sel.options).some(o => o.value === emp || o.text === emp)) sel.value = emp;
+  }
   function remplirDropdowns(opts) {
+    servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire;
     const dlPrest = document.getElementById('listePrestataires');
     dlPrest.innerHTML = '';
     opts.prestataires.forEach(p => { const o = document.createElement('option'); o.value = p; dlPrest.appendChild(o); });
@@ -461,11 +469,12 @@
     const mots = normPrest(q).split(' ').filter(Boolean);
     return Array.from(document.getElementById('listePrestataires').options).map(o => o.value).filter(v => { const n = normPrest(v); return mots.every(m => n.indexOf(m) !== -1); });
   }
+  document.getElementById('prestataire').addEventListener('input', appliquerService);
   document.getElementById('prestataire').addEventListener('change', function() {
     const liste = Array.from(document.getElementById('listePrestataires').options).map(o => o.value);
-    if (!this.value.trim() || liste.indexOf(this.value) !== -1) return;
+    if (!this.value.trim() || liste.indexOf(this.value) !== -1) { appliquerService(); return; }
     const c = correspondancesPrest(this.value);
-    if (c.length === 1) this.value = c[0];
+    if (c.length === 1) { this.value = c[0]; appliquerService(); }
   });
 
   function actualiserPrestataires() {
