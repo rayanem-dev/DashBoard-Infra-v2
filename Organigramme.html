@@ -180,20 +180,23 @@
   }
   var cTR = function (c) { return c === 'T' || c === 'R' ? c : 'x'; }, cVV = function (c) { return c === 'C' || c === 'V' || c === 't' ? c : c === '0' ? 'o' : 'x'; };
   function ligneBarre(etiq, tag, cls, bar) { var d = el('div', 'lg-ligne'), e = el('div', 'e ' + (cls || '')); if (tag) e.appendChild(el('b', null, tag)); e.appendChild(document.createTextNode(etiq)); d.appendChild(e); d.appendChild(bar); return d; }
-  function carte(p, i0, n) {
-    var c = el('div', 'cv'), nom = el('div', 'nom', p.nom), ex = [p.fonction, $('c-conf').checked ? (p.dependance || 'SONATRACH') : '', p.service].filter(Boolean).join(' · '); nom.appendChild(el('small', null, ex)); c.appendChild(nom);
+  function carte(p, i0, n, dej) {
+    var c = el('div', 'cv'), nbPaires = 0, rest = 0, nom = el('div', 'nom', p.nom), ex = [p.fonction, $('c-conf').checked ? (p.dependance || 'SONATRACH') : '', p.service].filter(Boolean).join(' · '); nom.appendChild(el('small', null, ex)); c.appendChild(nom);
     var gA = planDe(p); if (!gA) { c.appendChild(el('div', 'verdict', 'Planning non renseigné ou non accessible.')); return c; }
     var mois = el('div', 'mois'); for (var k = i0; k < i0 + n; k += 1) { var d = Simulation.addDays(PLAN.debut, k); if (d.slice(8) === '01' || k === i0) { var sp = el('span', null, k === i0 && d.slice(8) !== '01' ? '' : MOISF[Number(d.slice(5, 7)) - 1] + (d.slice(5, 7) === '01' ? ' ' + d.slice(0, 4) : '')); sp.style.left = ((k - i0) / n * 100) + '%'; mois.appendChild(sp); } }
     c.appendChild(mois); c.appendChild(ligneBarre(p.nom, 'A', '', runs(gA, i0, n, cTR)));
     [['vis_travail', 'Travail', 'tr', { tolChev: 4, tolTrou: 4 }, 'Vis-à-vis'], ['vis_chambre', 'Chambre', 'ch', { tolChev: 4, tolTrou: 6 }, 'Vis-à-vis de chambre']].forEach(function (t) {
-      var q = ligneDe(p[t[0]]); if (!q) return; var gB = planDe(q);
+      var q = ligneDe(p[t[0]]); if (!q) return; rest += 1;
+      var cle = t[0] + ':' + [p.uid, q.uid].sort().join('|'); if (dej.paires[cle]) return;       // ce vis-à-vis est déjà montré dans la fiche de l'autre agent : inutile de le répéter
+      dej.paires[cle] = true; dej.vus[q.uid] = true; nbPaires += 1; var gB = planDe(q);
       if (!gB) { c.appendChild(ligneBarre(q.nom + ' (planning non renseigné)', t[1].charAt(0), t[2], el('div', 'brs'))); return; }
       c.appendChild(ligneBarre(q.nom, t[1].charAt(0), t[2], runs(gB, i0, n, cTR)));
       var cf = Simulation.conflits(gA, gB, PLAN.debut, t[3], i0), marq = cf.marques, jr = 0; for (var m = i0; m < i0 + n; m += 1) if (marq.charAt(m) === 'C' || marq.charAt(m) === 'V') jr += 1;
       c.appendChild(ligneBarre(t[4] + ' (' + t[1].toLowerCase() + ')', '', t[2], runs(marq, i0, n, cVV)));
       c.appendChild(el('div', 'verdict ' + (jr <= 4 ? 'ok' : 'ko'), (jr <= 4 ? '✔ Presque parfait' + (jr ? ' : ' + jr + ' jour(s) de conflit' : '') : '✖ En conflit de ' + jr + ' jours') + ' — ' + p.nom + ' ↔ ' + q.nom));
     });
-    return c;
+    if (!nbPaires && (rest || dej.vus[p.uid])) return null;                                   // rien de nouveau à montrer pour cet agent
+    dej.vus[p.uid] = true; return c;
   }
   function legende() { var g = el('div', 'legende'); [['#4CAF2E', 'Travail'], ['#EB7A33', 'Repos'], ['#E11D48', 'Les deux travaillent'], ['#7C3AED', 'Les deux en repos'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis correct']].forEach(function (x) { var s2 = el('span'), i2 = document.createElement('i'); i2.style.background = x[0]; s2.appendChild(i2); s2.appendChild(document.createTextNode(x[1])); g.appendChild(s2); }); return g; }
   function chargerPlan(suite) {
@@ -221,7 +224,8 @@
     if ($('c-plan').checked && PLAN) {
       var n = Number($('s-duree').value), i0 = Math.max(0, Simulation.diff(PLAN.debut, PLAN.auj));
       var parS = document.querySelector('input[name=grp]:checked').value === 'service', dernier = null;
-      ids.forEach(function (u) { var p = parUid[u]; if (parS && (p.service || 'Sans service') !== dernier) { dernier = p.service || 'Sans service'; var tt = el('div', 'nom', dernier); tt.style.cssText = 'font-size:13px;text-transform:uppercase;border-bottom:1px solid #222;margin:8px 0 4px'; z.appendChild(tt); } z.appendChild(carte(p, i0, n)); });
+      var dej = { paires: {}, vus: {} };
+      ids.forEach(function (u) { var p = parUid[u], cv = carte(p, i0, n, dej); if (!cv) return; if (parS && (p.service || 'Sans service') !== dernier) { dernier = p.service || 'Sans service'; var tt = el('div', 'nom', dernier); tt.style.cssText = 'font-size:13px;text-transform:uppercase;border-bottom:1px solid #222;margin:8px 0 4px'; z.appendChild(tt); } z.appendChild(cv); });
       z.appendChild(legende());
       var sg0 = el('div', 'sign'); ['Établi par', 'Le Chef de Service', 'Approuvé par le Chef de Division'].forEach(function (x) { var d = el('div'); d.appendChild(el('b', null, x)); d.appendChild(el('span')); d.appendChild(el('div', null, 'Date et signature')); sg0.appendChild(d); }); z.appendChild(sg0);
       return;
