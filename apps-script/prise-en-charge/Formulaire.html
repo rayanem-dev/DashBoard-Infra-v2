@@ -482,12 +482,14 @@
 
   /** « Effacer » : vide les champs saisis pour préparer une autre prise en charge (aucun fichier n'est supprimé). */
   function viderFormulaire() {
-    const carte = document.querySelector('.form-card');
+    const carte = document.getElementById('prestataire').closest('.form-card'); // la carte de saisie (la 1re .form-card est l'historique, masqué)
+    carte.querySelectorAll('tr[data-connu]').forEach(function(tr) { delete tr.dataset.connu; });
     carte.querySelectorAll('input, select, textarea').forEach(function(e) {
       if (e.type === 'checkbox' || e.type === 'radio') e.checked = e.defaultChecked;
       else if (e.tagName === 'SELECT') e.selectedIndex = 0;
       else e.value = '';
     });
+    corps.querySelectorAll('tr').forEach(marquer);
     majChampsSelonDocuments();
     const res = document.getElementById('resultat'); res.innerHTML = ''; res.className = '';
     const toast = document.getElementById('toast'); toast.style.display = 'none'; toast.innerHTML = '';
@@ -596,6 +598,7 @@
             if (!lignes[i]) return;
             lignes[i].querySelector('[data-champ="nom"]').value = p.nom || '';
             lignes[i].querySelector('[data-champ="prenom"]').value = p.prenom || '';
+            if (p.fonction) lignes[i].querySelector('[data-champ="fonction"]').value = p.fonction;
           });
           // Remplit la date si détectée et champ vide
           const champDate = document.getElementById('dateArrivee');

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-62",
+    "date": "2026-10-24",
+    "title": "Version 5.37.0 — Prise en charge : lecture des scans et bouton Vider",
+    "changes": [
+      "Prises en Charge + Autorisation d'Accès : la lecture d'une demande PDF scannée (« Charger la demande PDF ») sait maintenant lire une liste nominative avec colonnes Matricule, Nom, Prénom, Date de naissance, Fonction, N° : nom, prénom et fonction sont repris (la fonction est inscrite dans le tableau). Lecture aussi quand le scan n'est pas reconnu comme tableau (lignes de texte, une cellule par ligne) ; la date de la lettre (« Le : … ») sert de date d'arrivée proposée.",
+      "Le balai « Vider les champs » vide enfin la carte de saisie (il visait l'historique masqué)."
+    ]
+  },
+  {
     "id": "2026-10-24-61",
     "date": "2026-10-24",
     "title": "Version 5.36.1 — Noms classés par ordre alphabétique",

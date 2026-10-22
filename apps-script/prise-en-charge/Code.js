@@ -573,11 +573,11 @@ function extraireAvecGemini(base64Pdf, cleApi) {
   const url = "https://generativelanguage.googleapis.com/v1beta/models/" + modele + ":generateContent";
 
   const prompt = "Tu analyses une lettre de demande de prise en charge envoyée par une entreprise prestataire. "
-    + "Extrait la liste des personnes (agents) citées nommément dans la lettre, et la date de début d'accès/prise en charge si elle est mentionnée. "
+    + "Extrait la liste des personnes (agents) citées nommément dans la lettre (tableau « liste nominative » : colonnes NOM, PRENOM, FONCTION ; ignore la date de naissance et le numéro), et la date de début d'accès/prise en charge si elle est mentionnée. "
     + "Ignore l'en-tête, l'adresse, le numéro de contrat, la signature et tout ce qui n'est pas un nom de personne. "
     + "Corrige la casse : chaque nom et prénom doit commencer par une majuscule, le reste en minuscules. "
     + "Réponds UNIQUEMENT avec un JSON strictement de cette forme, sans texte autour : "
-    + '{"personnes":[{"nom":"...","prenom":"..."}],"dateDebut":"JJ/MM/AAAA ou null"}';
+    + '{"personnes":[{"nom":"...","prenom":"...","fonction":"..."}],"dateDebut":"JJ/MM/AAAA ou null"}';
 
   const payload = {
     contents: [{
@@ -610,7 +610,7 @@ function extraireAvecGemini(base64Pdf, cleApi) {
   const resultat = JSON.parse(texteJson);
   const personnes = (resultat.personnes || [])
     .filter(p => p.nom && p.prenom)
-    .map(p => ({ nom: capitaliser(p.nom), prenom: capitaliser(p.prenom) }));
+    .map(p => ({ nom: pecCap_(p.nom), prenom: pecCap_(p.prenom), fonction: pecFonction_(p.fonction) }));
 
   return {
     personnes,
@@ -658,66 +658,20 @@ function capitaliser(str) {
  */
 function extraireDonneesPEC(doc) {
   const body = doc.getBody();
-  const tables = body.getTables();
   let personnes = [];
-
-  const normalize = (str) => str.toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .trim();
-
-  for (let t = 0; t < tables.length; t++) {
-    const table = tables[t];
-    if (table.getNumRows() < 2) continue;
-
-    const headerRow = table.getRow(0);
-    let nomIdx = -1, prenomIdx = -1;
-    const numCols = headerRow.getNumCells();
-
-    for (let c = 0; c < numCols; c++) {
-      const headerText = normalize(headerRow.getCell(c).getText());
-      if (headerText.includes("nom") && !headerText.includes("prenom")) nomIdx = c;
-      if (headerText.includes("prenom")) prenomIdx = c;
+  const tables = body.getTables();
+  for (let t = 0; t < tables.length && personnes.length === 0; t++) {
+    const table = tables[t], lignes = [];
+    for (let r = 0; r < table.getNumRows(); r++) {
+      const row = table.getRow(r), cellules = [];
+      for (let c = 0; c < row.getNumCells(); c++) cellules.push(row.getCell(c).getText());
+      lignes.push(cellules);
     }
-
-    if (nomIdx === -1 || prenomIdx === -1) continue;
-
-    const numRows = table.getNumRows();
-    for (let r = 1; r < numRows; r++) {
-      const row = table.getRow(r);
-      if (row.getNumCells() <= Math.max(nomIdx, prenomIdx)) continue;
-      const nom = row.getCell(nomIdx).getText().trim();
-      const prenom = row.getCell(prenomIdx).getText().trim();
-      if (nom && prenom) personnes.push({ nom: capitaliser(nom), prenom: capitaliser(prenom) });
-    }
-
-    if (personnes.length > 0) break;
+    personnes = pecLireTableau_(lignes);
   }
-
-  if (personnes.length === 0) {
-    const text = body.getText();
-    const lignes = text.split(/\r?\n/);
-    // Accepte : "1. Nom Prenom", "1) Nom Prenom", "- nom prenom", "• nom prenom",
-    // "* nom prenom", ou juste "nom prenom" seuls sur la ligne — casse indifférente.
-    const ligneRegex = /^\s*(?:[-–—•*]\s*|\d{1,2}[\.\)]\s*)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'\-]*)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'\-]*)\s*$/;
-    lignes.forEach(ligne => {
-      const m = ligne.match(ligneRegex);
-      if (m) personnes.push({ nom: capitaliser(m[1]), prenom: capitaliser(m[2]) });
-    });
-  }
-
   const fullText = body.getText();
-  let dateDetectee = null;
-  const patternsDate = [
-    /ceci est du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i,
-    /à compter du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i,
-    /prise en charge[^\.]*?du\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i
-  ];
-  for (const p of patternsDate) {
-    const m = fullText.match(p);
-    if (m) { dateDetectee = m[1].replace(/-/g, "/"); break; }
-  }
-
-  return { personnes, dateDetectee };
+  if (personnes.length === 0) personnes = pecLireTexte_(fullText);   // OCR sans tableau reconstruit (scan penché, cadre pâle…)
+  return { personnes, dateDetectee: pecLireDate_(fullText) };
 }
 
 /******************************
