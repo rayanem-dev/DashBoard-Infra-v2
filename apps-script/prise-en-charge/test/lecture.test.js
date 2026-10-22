@@ -64,3 +64,8 @@ test('OCR réel du scan MAZOUZ SAID : une cellule par ligne, en-têtes mêlés �
   assert.deepStrictEqual(E('pecLireTexte_', txt), ATTENDU);
   assert.strictEqual(E('pecLireDate_', txt), '21/10/2026');
 });
+
+test('clé d\'entreprise pour la base par défaut', () => {
+  assert.strictEqual(E('pecCleEntreprise_', 'I/43/RNS/INFRA/2025 - ENCC SPA UNITE HAMIZ - Travaux'), 'encc spa unite hamiz');
+  assert.strictEqual(E('pecCleEntreprise_', 'I/44 - Étb Zatout - X'), E('pecCleEntreprise_', 'I/54 - ETB ZATOUT - Y'));
+});

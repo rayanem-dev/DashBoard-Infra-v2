@@ -119,3 +119,6 @@ function pecServiceVersEmputation_(service, emputations) {
   for (var i = 0; i < emputations.length; i += 1) { var e = pecNorm_(emputations[i]).replace(/^service\s+/, ''); if (e === n || e.indexOf(n) >= 0 || n.indexOf(e) >= 0) return emputations[i]; }
   return '';
 }
+
+/** Clé d'une entreprise pour se souvenir de sa base : 2e partie de « N° - Entreprise - Intitulé », sans accents ni casse. */
+function pecCleEntreprise_(prestataire) { var p = String(prestataire || '').split(' - '); return pecNorm_(p.length > 1 ? p[1] : p[0]); }

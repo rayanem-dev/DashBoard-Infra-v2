@@ -329,6 +329,8 @@ function obtenirOptionsFormulaire() {
 
   let prestataires = [];
   const servicesParPrestataire = {};   // « N° - Entreprise - Intitulé » → émputation (service du projet dans le Suivi CPM)
+  const basesParPrestataire = {};      // « N° - Entreprise - Intitulé » → base habituelle de l'entreprise (dernière base désignée)
+  const memoire = basesParEntreprise_();
   if (configSheet && configSheet.getLastRow() > 1) {
     const data = configSheet.getRange("A2:D" + configSheet.getLastRow()).getValues();
     data.forEach(([numContrat, entreprise, intitule, service]) => {
@@ -338,6 +340,7 @@ function obtenirOptionsFormulaire() {
         prestataires.push(option);
         const emp = pecServiceVersEmputation_(service, Object.keys(EMPUTATIONS));
         if (emp) servicesParPrestataire[option] = emp;
+        const bh = memoire[pecCleEntreprise_(option)]; if (bh) basesParPrestataire[option] = bh;
       }
     });
   }
@@ -345,6 +348,7 @@ function obtenirOptionsFormulaire() {
   return {
     prestataires: prestataires,
     servicesParPrestataire: servicesParPrestataire,
+    basesParPrestataire: basesParPrestataire,
     emputations: Object.keys(EMPUTATIONS),
     bases: BASES
   };
@@ -356,6 +360,16 @@ function obtenirOptionsFormulaire() {
  * lance la génération. Renvoie un objet {success, message, liens} au
  * formulaire pour affichage.
  */
+/** Base habituelle de chaque entreprise : { cléEntreprise: base }, gardée dans les propriétés du script (partagée par tous les utilisateurs). */
+function basesParEntreprise_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty("BASES_PAR_ENTREPRISE") || "{}"); } catch (e) { return {}; } }
+function retenirBaseEntreprise_(prestataire, base) {
+  try {
+    const cle = pecCleEntreprise_(prestataire); if (!cle || BASES.indexOf(base) === -1) return;
+    const m = basesParEntreprise_(); if (m[cle] === base) return; m[cle] = base;
+    PropertiesService.getScriptProperties().setProperty("BASES_PAR_ENTREPRISE", JSON.stringify(m));
+  } catch (e) { Logger.log("Base par défaut non mémorisée : " + e.message); }
+}
+
 function soumettreFormulairePEC(formData) {
   try {
     const ss = SpreadsheetApp.openById(PEC_SS_ID);
@@ -381,6 +395,7 @@ function soumettreFormulairePEC(formData) {
     // La liste de validation de C4 a pu être posée avec d'anciennes bases : on la remet à jour avant d'écrire
     sheet.getRange("C4").setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(BASES, true).setAllowInvalid(false).build());
     if (formData.base) sheet.getRange("C4").setValue(formData.base); else sheet.getRange("C4").clearContent();
+    if (formData.base && formData.genererPEC) retenirBaseEntreprise_(formData.prestataire, formData.base);   // la base désignée devient celle par défaut de cette entreprise
 
     // D5 Remplacement
     sheet.getRange("D5").setValue(!!formData.remplacement);

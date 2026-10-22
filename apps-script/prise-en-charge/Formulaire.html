@@ -383,15 +383,18 @@
     document.getElementById('dateDepart').value = d.toISOString().split('T')[0];
   });
 
-  let servicesParPrestataire = {};
+  let servicesParPrestataire = {}, basesParPrestataire = {};
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
     const emp = servicesParPrestataire[document.getElementById('prestataire').value];
+    const bh = basesParPrestataire[document.getElementById('prestataire').value], sb = document.getElementById('base');
+    if (bh && Array.from(sb.options).some(o => o.value === bh || o.text === bh)) sb.value = bh;   // dernière base désignée pour cette entreprise
     if (!emp) return;
     const sel = document.getElementById('emputation'); if (Array.from(sel.options).some(o => o.value === emp || o.text === emp)) sel.value = emp;
   }
   function remplirDropdowns(opts) {
     servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire;
+    basesParPrestataire = opts.basesParPrestataire || basesParPrestataire;
     const dlPrest = document.getElementById('listePrestataires');
     dlPrest.innerHTML = '';
     opts.prestataires.forEach(p => { const o = document.createElement('option'); o.value = p; dlPrest.appendChild(o); });
@@ -708,7 +711,13 @@
 
   function envoyerPEC(data) {
     google.script.run
-      .withSuccessHandler(afficherResultat)
+      .withSuccessHandler(function(res) {
+        if (res && res.success && data.genererPEC && data.base) {   // la base désignée devient celle par défaut de l'entreprise (sans attendre le rechargement)
+          const cle = p => normPrest(String(p || '').split(' - ')[1] || p);
+          Array.from(document.getElementById('listePrestataires').options).forEach(o => { if (cle(o.value) === cle(data.prestataire)) basesParPrestataire[o.value] = data.base; });
+        }
+        afficherResultat(res);
+      })
       .withFailureHandler(function(err) { afficherResultat({ success: false, message: err.message }); })
       .soumettreFormulairePEC(data);
   }

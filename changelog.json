@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-68",
+    "date": "2026-10-24",
+    "title": "Version 5.39.0 — Prise en charge : base par défaut de chaque entreprise",
+    "changes": [
+      "Prises en charge : la base désignée pour un prestataire est retenue (pour tous les utilisateurs) ; la fois suivante, en choisissant ce prestataire, sa base se sélectionne toute seule. Elle reste modifiable ; une nouvelle base désignée remplace la précédente."
+    ]
+  },
+  {
     "id": "2026-10-24-67",
     "date": "2026-10-24",
     "title": "Version 5.38.2 — Prise en charge : noms alignés à gauche",
