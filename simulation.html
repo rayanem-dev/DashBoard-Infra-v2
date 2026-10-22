@@ -59,6 +59,7 @@
   .sems { display: flex; gap: 6px; flex-wrap: wrap; align-items: stretch; }
   .sem { width: 58px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); padding: 4px 2px 6px; font: inherit; cursor: pointer; text-align: center; color: var(--text-dark); }
   .sem small { display: block; font-size: 9.5px; color: var(--text-muted); line-height: 1.2; } .sem span { display: block; font-size: 15px; font-weight: 800; line-height: 1.5; }
+  .sem.suite { border: 1.5px dashed currentColor; background: transparent; opacity: .85; } .sem.suite.sT { color: #3F8F2F; } .sem.suite.sR { color: #D9692D; } .sem.suite span, .sem.suite small { color: inherit; }
   .sem.auto span { color: #9CA3AF; font-weight: 600; } .sem.auto.oT span, .sem.auto.oR span { opacity: .8; }
   .sem.T { background: var(--c-T); border-color: var(--c-T); color: #fff; } .sem.R { background: var(--c-R); border-color: var(--c-R); color: #fff; }
   .sem.T small, .sem.R small { color: rgba(255,255,255,.85); }
@@ -328,10 +329,15 @@
       var a = x[1]; if (!a) return; var d = a.data, deb = debutDe(a);
       var ed = el('div', 'ed' + (x[0] === 'B' ? ' b' : '')), h = el('h3'); h.appendChild(el('span', null, x[0] + ' · ' + a.ligne.nom));
       h.appendChild(el('small', null, 'rotation ' + d.rotation.jours_travail + '/' + d.rotation.jours_repos + ' · relève le ' + JOURS[jourDe(deb)] + ' · reliquat actuel ' + sgn(d.solde || 0) + ' · début le ' + fr(deb))); ed.appendChild(h);
-      var ss = el('div', 'sems'), i0 = Simulation.diff(d.debut, deb);
+      var ss = el('div', 'sems'), i0 = Simulation.diff(d.debut, deb); a.rep = [];
       for (var i = 0; i < a.nb; i += 1) (function (i) {
         var c = a.cells[i], off = d.grille.charAt(i0 + i * 7), b = el('button', 'sem'); b.type = 'button';
-        function peindre() { b.className = 'sem ' + (c.v || 'auto o' + off); b.textContent = ''; b.appendChild(el('small', null, 'S' + (i + 1) + ' · ' + court(Simulation.addDays(deb, i * 7)))); b.appendChild(el('span', null, c.v || (off === 'T' || off === 'R' ? off : '·'))); b.title = c.v ? (c.v === 'T' ? 'Travail' : 'Repos') + ' (modifié)' : 'Prévu : ' + (off === 'T' ? 'travail' : off === 'R' ? 'repos' : '—'); }
+        function peindre() {
+          var su = a.suite && !c.v && i > a.suite.last ? a.suite.mod.charAt(i0 + i * 7) : '', lt = c.v || su || off;
+          b.className = 'sem ' + (c.v || (su === 'T' || su === 'R' ? 'suite s' + su : 'auto o' + off)); b.textContent = ''; b.appendChild(el('small', null, 'S' + (i + 1) + ' · ' + court(Simulation.addDays(deb, i * 7)))); b.appendChild(el('span', null, lt === 'T' || lt === 'R' ? lt : '·'));
+          b.title = c.v ? (c.v === 'T' ? 'Travail' : 'Repos') + ' (modifié)' : su ? 'Suite : la rotation habituelle reprend (' + (su === 'T' ? 'travail' : 'repos') + ')' : 'Prévu : ' + (off === 'T' ? 'travail' : off === 'R' ? 'repos' : '—');
+        }
+        a.rep.push(peindre);
         peindre();
         b.addEventListener('click', function () { c.v = c.v === '' ? 'T' : c.v === 'T' ? 'R' : ''; peindre(); majResultat(); });
         ss.appendChild(b);
@@ -363,7 +369,13 @@
   }
 
   // ---------- Résumé, bilan ----------
+  function majSuite(a) {
+    if (!a || !a.rep) return; var e = etat(a), last = -1, i;
+    for (i = 0; i < a.nb; i += 1) if (a.cells[i].v) last = i;
+    a.suite = e && e.m && !e.err && last >= 0 ? { last: last, mod: e.mod } : null; a.rep.forEach(function (f) { f(); });
+  }
   function majResultat() {
+    majSuite(S.A); majSuite(S.B);
     dessinerFrise();
     var A = S.A, B = S.B, eA = etat(A), eB = etat(B), r = $('resume'), bi = $('bilan'); r.textContent = ''; bi.textContent = ''; bi.className = 'bilan';
     [['A', A, eA], ['B', B, eB]].forEach(function (x) { var er = $('err-' + x[0]); if (er) er.textContent = x[2] ? x[2].err : ''; });

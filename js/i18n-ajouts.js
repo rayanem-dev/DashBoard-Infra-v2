@@ -193,6 +193,7 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^Suite : la rotation habituelle reprend \((travail|repos)\)$/, function (x) { return 'Continuation: the usual rotation resumes (' + (x === 'travail' ? 'work' : 'rest') + ')'; }],
     [/^Vis-à-vis presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Almost perfect face-to-face' + (c ? ': ' + c + ' day' + (c > 1 ? 's' : '') + ' of conflict' : '') + ' (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Vis-à-vis en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Face-to-face in conflict for ' + c + ' days (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Reliquat résultant : (.+)$/, function (x) { return 'Resulting balance: ' + x.replace(/\(avant :/g, '(before:'); }],
@@ -225,6 +226,7 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^Suite : la rotation habituelle reprend \((travail|repos)\)$/, function (x) { return 'التتمة: يستأنف التناوب المعتاد (' + (x === 'travail' ? 'عمل' : 'راحة') + ')'; }],
     [/^Vis-à-vis presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'تقابل شبه مثالي' + (c ? ': ' + c + ' يوم تعارض' : '') + ' (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Vis-à-vis en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'تقابل متعارض لمدة ' + c + ' يوم (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Reliquat résultant : (.+)$/, function (x) { return 'الرصيد الناتج: ' + x.replace(/\(avant :/g, '(قبل:'); }],

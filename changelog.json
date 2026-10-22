@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-60",
+    "date": "2026-10-24",
+    "title": "Version 5.36.0 — Simulation : la suite de la rotation est visible",
+    "changes": [
+      "Simulation : après les semaines modifiées à la main, les semaines suivantes affichent la rotation habituelle qui reprend (bordure en pointillés, lettre T ou R) au lieu de l'ancien planning prévu ; on voit ainsi le nouveau 4×4 (ou 28/28) qui démarre juste après."
+    ]
+  },
+  {
     "id": "2026-10-24-59",
     "date": "2026-10-24",
     "title": "Version 5.35.2 — Reliquat de la rotation recalculé jour par jour",
