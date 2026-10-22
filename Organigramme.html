@@ -53,6 +53,11 @@
   #feuille-vis .brs { display: flex; height: 13px; border: 1px solid #bbb; position: relative; background: #eee; } #feuille-vis .brs span { height: 100%; display: flex; align-items: center; justify-content: center; font: 700 8.5px/1 Arial, sans-serif; color: #fff; overflow: hidden; }
   #feuille-vis .brs .T { background: #4CAF2E; } #feuille-vis .brs .R { background: #EB7A33; } #feuille-vis .brs .x { background: #E5E7EB; } #feuille-vis .brs .C { background: #E11D48; } #feuille-vis .brs .V { background: #7C3AED; } #feuille-vis .brs .t { background: #FACC15; color: #111; } #feuille-vis .brs .o { background: #D1FAE5; }
   #feuille-vis .mois { position: relative; height: 12px; font-size: 9px; color: #444; margin-left: 178px; } #feuille-vis .mois span { position: absolute; top: 0; border-left: 1px solid #999; padding-left: 2px; white-space: nowrap; }
+  #feuille-vis table.pr { margin: 0; border-collapse: collapse; width: 100%; font-size: 11px; } #feuille-vis table.pr td { border: 0; padding: 0 4px 0 0; vertical-align: middle; } #feuille-vis table.pr thead td { font-size: 9px; color: #444; }
+  #feuille-vis table.pr tbody.paire { break-inside: avoid; page-break-inside: avoid; } #feuille-vis table.pr tbody.paire tr:first-child td { padding-top: 7px; border-top: 1px solid #999; }
+  #feuille-vis table.pr td.e { width: 270px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 270px; } #feuille-vis table.pr td.e small { display: inline; } #feuille-vis table.pr td.e b { font-size: 9px; background: #333; color: #fff; border-radius: 3px; padding: 0 4px; margin-right: 4px; } #feuille-vis table.pr td.e.f small { color: #555; font-size: 9px; margin-left: 4px; }
+  #feuille-vis table.pr td.e.ok { color: #166534; font-weight: 700; } #feuille-vis table.pr td.e.ko { color: #B42318; font-weight: 700; } #feuille-vis table.pr tr.svc td { background: #F3F3F3; font-weight: 700; font-size: 11px; text-transform: uppercase; padding: 3px 6px; border-top: 1px solid #222; }
+  #feuille-vis table.pr td .mois { margin-left: 0; height: 11px; }
   #feuille-vis .verdict { font-size: 11px; font-weight: 700; margin: 1px 0 4px 178px; } #feuille-vis .verdict.ok { color: #166534; } #feuille-vis .verdict.ko { color: #B42318; }
   #feuille-vis .legende { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10.5px; margin: 6px 0 0; } #feuille-vis .legende i { display: inline-block; width: 12px; height: 9px; margin-right: 4px; border: 1px solid #999; vertical-align: middle; }
   @media print { @page { size: A4 landscape; margin: 12mm; } body * { visibility: hidden !important; } #feuille-vis, #feuille-vis * { visibility: visible !important; } #feuille-vis { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; } #feuille-vis tr { break-inside: avoid; } }
@@ -85,7 +90,7 @@
   <div id="p-imp" hidden>
     <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
       <button class="btn-p" id="b-imprimer" type="button">🖨 Imprimer</button>
-      <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="c-plan" checked> Planning visible</label>
+      <select id="s-vue" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:13px"><option value="paires" selected>Paires de travail (compact)</option><option value="detail">Détaillée : travail + chambre</option><option value="tableau">Tableau sans planning</option></select>
       <select id="s-duree" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:13px"><option value="92">3 mois</option><option value="184" selected>6 mois</option><option value="350">1 an</option></select>
       <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="radio" name="grp" value="liste" checked> Liste simple</label>
       <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="radio" name="grp" value="service"> Regroupée par service</label>
@@ -198,6 +203,32 @@
     if (!nbPaires && (rest || dej.vus[p.uid])) return null;                                   // rien de nouveau à montrer pour cet agent
     dej.vus[p.uid] = true; return c;
   }
+  /** Vue compacte : une paire de travail par bloc (agent, vis-à-vis, ligne des conflits) ; les mois en tête, répétés à chaque page ; chaque paire une seule fois. */
+  function pairesCompactes(z, ids) {
+    var n = Number($('s-duree').value), i0 = Math.max(0, Simulation.diff(PLAN.debut, PLAN.auj)), parS = document.querySelector('input[name=grp]:checked').value === 'service';
+    var t = el('table', 'pr'), th = el('thead'), tr0 = el('tr'), tdv = el('td'), tdm = el('td'); tr0.appendChild(tdv); var mois = el('div', 'mois');
+    for (var k = i0; k < i0 + n; k += 1) { var d = Simulation.addDays(PLAN.debut, k); if (d.slice(8) === '01') { var sp = el('span', null, MOISF[Number(d.slice(5, 7)) - 1] + (d.slice(5, 7) === '01' ? ' ' + d.slice(0, 4) : '')); sp.style.left = ((k - i0) / n * 100) + '%'; mois.appendChild(sp); } }
+    tdm.appendChild(mois); tr0.appendChild(tdm); th.appendChild(tr0); t.appendChild(th);
+    var vus = {}, derniere = null, seuls = [];
+    function ligne(tb, tag, etiq, sous, bar, cls) { var tr = el('tr'), e = el('td', 'e ' + (cls || '')); if (tag) e.appendChild(el('b', null, tag)); e.appendChild(document.createTextNode(etiq)); if (sous) e.appendChild(el('small', null, sous)); tr.appendChild(e); var b = el('td'); b.appendChild(bar); tr.appendChild(b); tb.appendChild(tr); }
+    var txtE = function (q) { return [q.fonction, $('c-conf').checked ? (q.dependance || 'SONATRACH') : ''].filter(Boolean).join(' · '); };
+    ids.forEach(function (u) {
+      var p = parUid[u], q = ligneDe(p.vis_travail), gA = planDe(p), gB = q ? planDe(q) : '';
+      if (vus[p.uid]) return;
+      if (!q || !gA || !gB) { if (!vus[p.uid]) seuls.push(p); return; }
+      vus[p.uid] = vus[q.uid] = true;
+      if (parS && (p.service || 'Sans service') !== derniere) { derniere = p.service || 'Sans service'; var ts = el('tbody'), rs = el('tr', 'svc'), cs = el('td', null, derniere); cs.colSpan = 2; rs.appendChild(cs); ts.appendChild(rs); t.appendChild(ts); }
+      var tb = el('tbody', 'paire');
+      ligne(tb, 'A', p.nom, txtE(p), runs(gA, i0, n, cTR), 'f'); ligne(tb, 'B', q.nom, txtE(q), runs(gB, i0, n, cTR), 'f');
+      var cf = Simulation.conflits(gA, gB, PLAN.debut, { tolChev: 4, tolTrou: 4 }, i0), jr = 0; for (var m = i0; m < i0 + n; m += 1) { var c = cf.marques.charAt(m); if (c === 'C' || c === 'V') jr += 1; }
+      ligne(tb, '', jr <= 4 ? '✔ Presque parfait' + (jr ? ' (' + jr + ' j)' : '') : '✖ En conflit de ' + jr + ' jours', '', runs(cf.marques, i0, n, cVV), jr <= 4 ? 'ok' : 'ko');
+      t.appendChild(tb);
+    });
+    z.appendChild(t);
+    if (seuls.length) { var ps = el('p', null, 'Sans vis-à-vis de travail déclaré (ou planning non renseigné) : ' + seuls.map(function (x) { return x.nom; }).join(', ') + '.'); ps.style.cssText = 'font-size:11px;margin:8px 0 0;color:#444'; z.appendChild(ps); }
+    z.appendChild(legende());
+    var sg0 = el('div', 'sign'); ['Établi par', 'Le Chef de Service', 'Approuvé par le Chef de Division'].forEach(function (x) { var d2 = el('div'); d2.appendChild(el('b', null, x)); d2.appendChild(el('span')); d2.appendChild(el('div', null, 'Date et signature')); sg0.appendChild(d2); }); z.appendChild(sg0);
+  }
   function legende() { var g = el('div', 'legende'); [['#4CAF2E', 'Travail'], ['#EB7A33', 'Repos'], ['#E11D48', 'Les deux travaillent'], ['#7C3AED', 'Les deux en repos'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis correct']].forEach(function (x) { var s2 = el('span'), i2 = document.createElement('i'); i2.style.background = x[0]; s2.appendChild(i2); s2.appendChild(document.createTextNode(x[1])); g.appendChild(s2); }); return g; }
   function chargerPlan(suite) {
     if (PLAN || PLAN === false) { suite(); return; }
@@ -221,7 +252,8 @@
     var ent = el('div', 'ent'); var g = el('div'); g.appendChild(el('b', null, 'SONATRACH — Activité Exploration-Production')); g.appendChild(el('div', null, 'Direction Régionale Rhourde Nouss · Division Infrastructure')); ent.appendChild(g);
     ent.appendChild(el('div', null, 'Rhourde Nouss, le : ' + new Date().toLocaleDateString('fr-FR'))); z.appendChild(ent);
     z.appendChild(el('h2', null, 'Vis-à-vis du personnel')); z.appendChild(el('div', 'sous', 'Présentation pour approbation — ' + ids.length + ' agent(s)'));
-    if ($('c-plan').checked && PLAN) {
+    if ($('s-vue').value === 'paires' && PLAN) { pairesCompactes(z, ids); return; }
+    if ($('s-vue').value === 'detail' && PLAN) {
       var n = Number($('s-duree').value), i0 = Math.max(0, Simulation.diff(PLAN.debut, PLAN.auj));
       var parS = document.querySelector('input[name=grp]:checked').value === 'service', dernier = null;
       var dej = { paires: {}, vus: {} };
@@ -237,7 +269,7 @@
     t.appendChild(b); z.appendChild(t);
     var sg = el('div', 'sign'); ['Établi par', 'Le Chef de Service', 'Approuvé par le Chef de Division'].forEach(function (x) { var d = el('div'); d.appendChild(el('b', null, x)); d.appendChild(el('span')); d.appendChild(el('div', null, 'Date et signature')); sg.appendChild(d); }); z.appendChild(sg);
   }
-  $('c-conf').addEventListener('change', feuille); $('c-plan').addEventListener('change', feuille); $('s-duree').addEventListener('change', feuille); document.querySelectorAll('input[name=grp]').forEach(function (r) { r.addEventListener('change', feuille); });
+  $('c-conf').addEventListener('change', feuille); $('s-vue').addEventListener('change', feuille); $('s-duree').addEventListener('change', feuille); document.querySelectorAll('input[name=grp]').forEach(function (r) { r.addEventListener('change', feuille); });
   $('b-imprimer').addEventListener('click', function () { window.print(); });
   function onglet(liste, imp) {
     $('o-org').classList.toggle('actif', !liste && !imp); $('o-list').classList.toggle('actif', liste); $('o-imp').classList.toggle('actif', !!imp);

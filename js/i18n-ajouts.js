@@ -232,6 +232,9 @@
     ["3 mois", "3 months", "3 أشهر"],
     ["6 mois", "6 months", "6 أشهر"],
     ["1 an", "1 year", "سنة"],
+    ["Paires de travail (compact)", "Work pairs (compact)", "أزواج العمل (مختصر)"],
+    ["Détaillée : travail + chambre", "Detailed: work + room", "مفصّل: العمل + الغرفة"],
+    ["Tableau sans planning", "Table without schedule", "جدول بدون تخطيط"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
