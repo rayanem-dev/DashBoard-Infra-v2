@@ -229,8 +229,8 @@ var Synthese = (function () {
     function decider(a, decision) {
       var com = decision === 'refusee' ? prompt('Motif du refus (facultatif) :', '') : '';
       if (com === null) return;
-      if (decision === 'approuvee' && !confirm('Valider la demande de ' + a.agent + ' ? Elle sera enregistrée pour de bon (aucun e-mail ne part tout seul : utilisez « Envoyer… » pour la transmettre au secrétariat).')) return;
-      Api.call('simu_decider', { numero: a.numero, decision: decision, commentaire: com || '' }).then(function () { monterModifs(zone); }).catch(function (e) { alert(e.message); });
+      if (decision === 'approuvee' && !confirm('Valider la demande de ' + a.agent + ' ? Elle sera enregistrée pour de bon (une question vous sera posée ensuite pour prévenir l\'agent, le secrétariat et le chef de division par e-mail).')) return;
+      Api.call('simu_decider', { numero: a.numero, decision: decision, commentaire: com || '' }).then(function () { monterModifs(zone); if (window.NotifModif) NotifModif.proposer({ numeros: [a.numero], evenement: decision === 'approuvee' ? 'approbation' : 'refus', agent: a.agent }); }).catch(function (e) { alert(e.message); });
     }
     function envoyer(a) {
       var secr = confirm('Envoyer cette demande par e-mail au secrétariat (pour information) ?\nOK = secrétariat · Annuler = choisir un autre destinataire');

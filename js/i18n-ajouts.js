@@ -236,6 +236,19 @@
     ["Détaillée : travail + chambre", "Detailed: work + room", "مفصّل: العمل + الغرفة"],
     ["Tableau sans planning", "Table without schedule", "جدول بدون تخطيط"],
     ["✉ Informer l'agent", "✉ Notify the agent", "✉ إعلام العون"],
+    ["Prévenir par e-mail ?", "Notify by e-mail?", "إخطار بالبريد الإلكتروني؟"],
+    ["Demande approuvée : prévenir par e-mail ?", "Request approved: notify by e-mail?", "تمت الموافقة على الطلب: إخطار بالبريد؟"],
+    ["Demande rejetée : prévenir l'agent ?", "Request rejected: notify the agent?", "تم رفض الطلب: إخطار العون؟"],
+    ["L'agent", "The agent", "العون"],
+    ["Le secrétariat (pour traitement)", "The secretariat (for processing)", "الأمانة (للمعالجة)"],
+    ["Le chef de service (pour information)", "The service head (for information)", "رئيس المصلحة (للإعلام)"],
+    ["Le chef de division (pour information et signature)", "The division head (for information and signature)", "رئيس القسم (للإعلام والتوقيع)"],
+    ["Ne pas envoyer", "Do not send", "عدم الإرسال"],
+    ["✉ Envoyer", "✉ Send", "✉ إرسال"],
+    ["Cochez au moins un destinataire, ou « Ne pas envoyer ».", "Tick at least one recipient, or « Do not send ».", "حدّد مستلمًا واحدًا على الأقل أو « عدم الإرسال »."],
+    ["La modification est enregistrée. Choisissez qui prévenir :", "The change is saved. Choose who to notify:", "تم تسجيل التعديل. اختر من تريد إخطاره:"],
+    ["Choisissez qui prévenir de l'approbation :", "Choose who to notify of the approval:", "اختر من تريد إخطاره بالموافقة:"],
+    ["L'agent peut recevoir un e-mail lui indiquant que la modification est rejetée :", "The agent can receive an e-mail saying the change is rejected:", "يمكن للعون أن يتلقى بريدًا يفيد برفض التعديل:"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });

@@ -414,29 +414,51 @@ function modifAlertes_(req) {
 }
 
 /** Envoi par e-mail d'une demande (clic de l'agent ou du responsable) : cases secrétariat / chef de service / chef de division. */
+/** Objets des e-mails selon l'événement et le public : { creation | approbation | refus } × { agent, secretariat, chef_service, chef_division }. */
+var SIMU_OBJETS_ = {
+  creation: { agent: 'Modification de votre planning enregistrée', secretariat: 'Modification de planning (pour traitement)', chef_service: 'Modification de planning (pour information)', chef_division: 'Demande de modification de planning (pour information et signature)' },
+  approbation: { agent: 'Votre demande de modification de planning est approuvée', secretariat: 'Demande de modification de planning approuvée (pour traitement)', chef_service: 'Demande de modification de planning approuvée (pour information)', chef_division: 'Demande de modification de planning approuvée (pour information et signature)' },
+  refus: { agent: 'Votre demande de modification de planning est rejetée', secretariat: 'Demande de modification de planning rejetée (pour information)', chef_service: 'Demande de modification de planning rejetée (pour information)', chef_division: 'Demande de modification de planning rejetée (pour information)' }
+};
+/**
+ * Envoi des e-mails d'une demande, TOUJOURS à la demande de l'utilisateur (jamais automatique) : req.destinataires = { agent, secretariat, chef_service, chef_division } (cases cochées).
+ * Avec req.evenement ('creation' | 'approbation' | 'refus') chaque public reçoit son propre objet (agent informé, secrétariat « pour traitement », chef de division « pour information et signature »…) ;
+ * sans événement : ancien comportement (un seul message, objet fixe).
+ */
 function simuEnvoyer_(req) {
   var u = Auth.userFromToken(req.token);
   var r = simuLigne_(req.numero); if (!r) throw new Error('Demande introuvable');
   var cible = Store.utilisateur(r.email) || {}, moi = String(u.email).toLowerCase();
   var ok = String(r.email).toLowerCase() === moi || String(r.emetteur).toLowerCase() === moi || (simuNiveau_(u) >= 2 && simuDansPortee_(u, cible));
   if (!ok) throw simuDroits_();
-  var cases = req.destinataires || {}, dest = {};
+  var cases = req.destinataires || {}, publics = { agent: {}, secretariat: {}, chef_service: {}, chef_division: {} };
   Store.table('Utilisateurs').forEach(function (x) {
     if (String(x.actif) === '0' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x.email || ''))) return;
-    var role = Droits.roleCanon(x.role);
-    if ((cases.secretariat && role === 'secretariat') || (cases.chef_division && role === 'chef_division') ||
-        (cases.chef_service && role === 'chef_service' && !!simuNorm_(x.service) && simuNorm_(x.service) === simuNorm_(cible.service))) dest[String(x.email).toLowerCase()] = true;
+    var role = Droits.roleCanon(x.role), mail = String(x.email).toLowerCase();
+    if (cases.secretariat && role === 'secretariat') publics.secretariat[mail] = true;
+    if (cases.chef_division && role === 'chef_division') publics.chef_division[mail] = true;
+    if (cases.chef_service && role === 'chef_service' && !!simuNorm_(x.service) && simuNorm_(x.service) === simuNorm_(cible.service)) publics.chef_service[mail] = true;
   });
   if (cases.agent) {   // l'intéressé : son adresse de contact si elle est valable, sinon celle du compte
     var ac = Annuaire.analyserEmail(cible.email_contact), ad = Annuaire.analyserEmail(cible.email);
-    var adr = ac.valide ? ac.propre : ad.valide ? ad.propre : ''; if (adr) dest[adr.toLowerCase()] = true;
+    var adr = ac.valide ? ac.propre : ad.valide ? ad.propre : ''; if (adr) publics.agent[adr.toLowerCase()] = true;
   }
-  var liste = Object.keys(dest);
-  if (!liste.length) throw new Error('Cochez au moins un destinataire (ou aucune adresse trouvée)');
-  var d = simuDemandeDe_(r), site = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/';
-  Mail.envoyerDemande(liste, d, cases.agent && !cases.secretariat && !cases.chef_division && !cases.chef_service ? 'Votre demande de modification de planning' : req.pour_information ? 'Demande de modification de planning (pour information)' : 'Demande de modification de planning (pour décision)', site + 'demande.html?n=' + encodeURIComponent(d.numero), Annuaire.nomAffichable(u.nom, u.email));
-  Store.journal('modification_envoyee', u.email, String(r.numero) + ' → ' + liste.length + ' destinataire(s)');
-  return { emails: liste.length };
+  var d = simuDemandeDe_(r), site = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/', lien = site + 'demande.html?n=' + encodeURIComponent(d.numero), par = Annuaire.nomAffichable(u.nom, u.email);
+  var total = 0, objets = SIMU_OBJETS_[String(req.evenement)];
+  if (objets) {
+    var vus = {};   // une adresse ne reçoit qu'un message (priorité : agent, secrétariat, chef de service, chef de division)
+    ['agent', 'secretariat', 'chef_service', 'chef_division'].forEach(function (pub) {
+      var l = Object.keys(publics[pub]).filter(function (m) { return !vus[m]; }); if (!l.length) return;
+      l.forEach(function (m) { vus[m] = true; }); Mail.envoyerDemande(l, d, objets[pub], lien, par); total += l.length;
+    });
+  } else {
+    var dest = {}; ['agent', 'secretariat', 'chef_service', 'chef_division'].forEach(function (pub) { Object.keys(publics[pub]).forEach(function (m) { dest[m] = true; }); });
+    var liste = Object.keys(dest);
+    if (liste.length) { Mail.envoyerDemande(liste, d, cases.agent && !cases.secretariat && !cases.chef_division && !cases.chef_service ? 'Votre demande de modification de planning' : req.pour_information ? 'Demande de modification de planning (pour information)' : 'Demande de modification de planning (pour décision)', lien, par); total = liste.length; }
+  }
+  if (!total) throw new Error('Cochez au moins un destinataire (ou aucune adresse trouvée)');
+  Store.journal('modification_envoyee', u.email, String(r.numero) + ' → ' + total + ' destinataire(s)' + (req.evenement ? ' (' + req.evenement + ')' : ''));
+  return { emails: total };
 }
 
 // Aucun e-mail n'est envoyé automatiquement : l'envoi (simuEnvoyer_) se fait au clic de l'agent ou du responsable, avec des cases à cocher.

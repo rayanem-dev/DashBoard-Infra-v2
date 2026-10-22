@@ -157,6 +157,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/notif-modif.js"></script>
 <script src="js/raccourcis.js"></script>
 <script src="js/rotation.js"></script>
 <script>Rotation.exiger();</script>
@@ -521,9 +522,11 @@
     Api.call('simu_valider', { lot: lot, motif: $('motif').value, partenaire: partenaire }).then(function (r) {
       var s = $('succes'); s.textContent = ''; s.hidden = false;
       s.appendChild(el('b', null, (r.numeros.length > 1 ? 'Demandes ' + r.numeros.join(' et ') + ' enregistrées' : 'Demande ' + r.numeros[0] + ' enregistrée') + ' (en attente).'));
-      s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Aucun e-mail n\'est envoyé automatiquement. ')));
+      s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Une question vous sera posée pour prévenir par e-mail. ')));
       r.numeros.forEach(function (num) { var a = el('a', null, 'Document ' + num + ' à imprimer et signer →'); a.href = 'demande.html?n=' + encodeURIComponent(num); a.style.cssText = 'font-weight:700;color:var(--orange-main);margin-right:12px'; s.appendChild(a); });
+      var nomsA = lot.map(function (x) { var g = agents.filter(function (a) { return a.uid === x.uid; })[0]; return g ? g.nom : ''; }).filter(Boolean).join(' et ');
       annuler(true); window.scrollTo({ top: 0, behavior: 'smooth' }); listeDemandes();
+      NotifModif.proposer({ numeros: r.numeros, evenement: 'creation', agent: nomsA });   // question avant tout envoi : agent, secrétariat, chef de service, chef de division
     }).catch(function (err) { toast(err.message, true); btn.disabled = false; });
   }
   function annuler(silencieux) { S.A = S.B = S.C = null; $('motif').value = 'Raison de service'; majTout(); if (silencieux !== true) toast('Simulation annulée : rien n\'a été enregistré.'); }
@@ -570,7 +573,7 @@
     var ok = el('button', 'btn', approuver ? 'Approuver' : 'Refuser'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
     f.addEventListener('submit', function (e) {
       e.preventDefault(); ok.disabled = true;
-      Api.call('simu_decider', { numero: numero, decision: approuver ? 'approuvee' : 'refusee', commentaire: i.value }).then(function () { dlg.close(); toast(approuver ? 'Demande approuvée : le planning officiel est mis à jour.' : 'Demande refusée.'); listeDemandes(); })
+      Api.call('simu_decider', { numero: numero, decision: approuver ? 'approuvee' : 'refusee', commentaire: i.value }).then(function () { dlg.close(); toast(approuver ? 'Demande approuvée : le planning officiel est mis à jour.' : 'Demande refusée.'); listeDemandes(); NotifModif.proposer({ numeros: [numero], evenement: approuver ? 'approbation' : 'refus' }); })
         .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
     });
     dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');

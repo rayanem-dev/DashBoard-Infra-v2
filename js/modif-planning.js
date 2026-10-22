@@ -128,7 +128,7 @@
       e.preventDefault(); if (!courant) return; ok.disabled = true; msg.className = 'msg';
       var m = courant.m, p = direct ? Api.call('simu_valider', { uid: d.uid, debut: m.debut, periodes: m.periodes, reprise: m.reprise, motif: motif.value || 'Modification directe' }).then(function (v) { return Api.call('simu_decider', { numero: v.numero, decision: 'approuvee', commentaire: 'Modification directe' }); })
         : chef ? Api.call('simu_decider', { numero: options.numero, decision: 'approuvee', commentaire: motif.value, modif: m }) : Api.call('modif_moi', { debut: m.debut, periodes: m.periodes, reprise: m.reprise, motif: motif.value });
-      p.then(function (r) { if (options.onChange) options.onChange(r); if (chef) { dlg.close(); return; } suite(r); })
+      p.then(function (r) { if (options.onChange) options.onChange(r); if (chef) { dlg.close(); var num = (r && r.demande && r.demande.numero) || options.numero; if (window.NotifModif && num) NotifModif.proposer({ numeros: [num], evenement: direct ? 'creation' : 'approbation', agent: d.nom || '' }); return; } suite(r); })
         .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
     });
     if (annulerDemande) annulerDemande.addEventListener('click', function () {

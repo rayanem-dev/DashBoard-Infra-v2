@@ -339,3 +339,22 @@ test('informer l\'intéressé : seulement sur clic, adresse de contact, après d
   appel(m, 'simuEnvoyer_', 'chef.s1@x.dz', { numero: v.numero, destinataires: { agent: true } });
   assert.strictEqual(m.mails.length, 1); assert.strictEqual(m.mails[0].to, 'perso.alain@gmail.com'); assert.match(m.mails[0].subject, /Votre demande/);
 });
+
+test('e-mails par événement, à la demande : création, approbation, refus (agent, secrétariat, chef de service, chef de division)', () => {
+  const m = monde(); const tous = { agent: true, secretariat: true, chef_service: true, chef_division: true };
+  const v = appel(m, 'simuValider_', 'chef.s1@x.dz', MODIF);
+  appel(m, 'simuEnvoyer_', 'chef.s1@x.dz', { numero: v.numero, evenement: 'creation', destinataires: tous });
+  const sujets = m.mails.map(x => x.to + ' | ' + x.subject);
+  assert.strictEqual(m.mails.length, 4);
+  assert.ok(sujets.some(s => /agent\.a@x\.dz/.test(s) && /enregistrée/.test(s)), 'agent');
+  assert.ok(sujets.some(s => /secretaire@x\.dz/.test(s) && /pour traitement/.test(s)), 'secrétariat');
+  assert.ok(sujets.some(s => /chef\.s1@x\.dz/.test(s) && /pour information/.test(s)), 'chef de service');
+  assert.ok(sujets.some(s => /chef\.div@x\.dz/.test(s) && /signature/.test(s)), 'chef de division');
+  m.mails.length = 0;
+  appel(m, 'simuDecider_', 'chef.div@x.dz', { numero: v.numero, decision: 'approuvee' });
+  appel(m, 'simuEnvoyer_', 'chef.div@x.dz', { numero: v.numero, evenement: 'approbation', destinataires: { agent: true, secretariat: true, chef_division: true } });
+  assert.deepStrictEqual(m.mails.map(x => x.subject.replace(/^\[Planning\] /, '').replace(/ MOD-.*$/, '')).sort(), ['Demande de modification de planning approuvée (pour information et signature)', 'Demande de modification de planning approuvée (pour traitement)', 'Votre demande de modification de planning est approuvée']);
+  m.mails.length = 0;
+  appel(m, 'simuEnvoyer_', 'chef.div@x.dz', { numero: v.numero, evenement: 'refus', destinataires: { agent: true } });
+  assert.strictEqual(m.mails.length, 1); assert.match(m.mails[0].subject, /rejetée/);
+});

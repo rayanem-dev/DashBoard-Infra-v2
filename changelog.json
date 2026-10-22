@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-94",
+    "date": "2026-10-24",
+    "title": "Version 5.53.0 — E-mails des modifications de planning : qui est prévenu, et quand",
+    "changes": [
+      "Après chaque étape, une question propose les e-mails (rien ne part tout seul) : à la validation d'une modification créée par un responsable (secrétaire, chef de service ou chef de division, via la Simulation ou « Modification directe ») : l'agent, le secrétariat « pour traitement », le chef de service et le chef de division (cases cochées, modifiables). À l'approbation d'une demande (par exemple celle d'un agent) : l'agent (approuvée), le secrétariat « pour traitement » et le chef de division « pour information et signature ». Au refus : l'agent est prévenu que la modification est rejetée.",
+      "Chaque public reçoit son propre objet, et une adresse ne reçoit qu'un seul message."
+    ]
+  },
+  {
     "id": "2026-10-24-93",
     "date": "2026-10-24",
     "title": "Version 5.52.0 — Informer l'agent de la décision",
