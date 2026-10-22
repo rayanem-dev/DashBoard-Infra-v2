@@ -263,6 +263,11 @@
     }
 
     /* ====== RESPONSIVE MOBILE ====== */
+    .heure-sel { display: flex; align-items: center; gap: 8px; }
+    .heure-sel select { flex: 1; width: auto; min-width: 0; }
+    .heure-sel span { font-weight: 700; color: var(--text-muted); }
+    input[type="date"] { -webkit-appearance: none; appearance: none; min-height: 44px; text-align: left; }
+    input[type="date"]::-webkit-date-and-time-value { text-align: left; }
     @media (max-width: 640px) {
       .header-inner { padding: 14px 16px; }
       .logo-circle { width: 44px; height: 44px; font-size: 16px; border-radius: 12px; }
@@ -375,7 +380,10 @@
         </div>
         <div class="col form-group">
           <label>Heures :</label>
-          <input type="time" id="heureDeb" value="07:00">
+          <div class="heure-sel">
+            <select id="hSel" aria-label="Heures"></select><span>h</span><select id="mSel" aria-label="Minutes"></select>
+          </div>
+          <input type="hidden" id="heureDeb" value="07:00">
         </div>
       </div>
 
@@ -411,6 +419,16 @@
   document.getElementById('dateEntete').valueAsDate = new Date();
   document.getElementById('dateOp').valueAsDate = new Date();
   document.getElementById('heureDeb').value = "07:00";
+  // Heure choisie par deux listes (heures / minutes) : même taille sur tous les téléphones, contrairement au sélecteur d'heure du navigateur (très grand sur mobile)
+  (function () {
+    const h = document.getElementById('hSel'), m = document.getElementById('mSel'), cache = document.getElementById('heureDeb');
+    const deux = n => ('0' + n).slice(-2);
+    for (let i = 0; i < 24; i++) h.appendChild(new Option(deux(i), deux(i)));
+    for (let i = 0; i < 60; i += 5) m.appendChild(new Option(deux(i), deux(i)));
+    function depuisCache() { const [a, b] = (cache.value || '07:00').split(':'); h.value = a; if (!Array.from(m.options).some(o => o.value === b)) m.appendChild(new Option(b, b)); m.value = b; }
+    function versCache() { cache.value = h.value + ':' + m.value; }
+    h.addEventListener('change', versCache); m.addEventListener('change', versCache); depuisCache();
+  })();
 
   const donnees = {
     construction: { label: "Service Construction", imputation: "4300045300", agents: ["BEN MESSAOUD ELFAROUK", "DAMECHE MOHAMMED REDA", "MOHAMMED YACINE", "LEMSADFA MOHAMED", "ARIES YASSER"] },
