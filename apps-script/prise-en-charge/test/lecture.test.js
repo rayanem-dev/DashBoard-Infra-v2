@@ -36,6 +36,11 @@ test('texte : l\'identité de la 1re ligne séparée de sa date, l\'en-tête n\'
   assert.strictEqual(r[0].fonction, 'Macon');
   assert.deepStrictEqual(E('pecLireTexte_', 'FONCTION N° NTN 02/08/1985 MACON').length, 0);
 });
+test('texte lu colonne par colonne : les colonnes sont recollées', () => {
+  const l = ['MAT', '1', '2', '3', '4', '5', 'NOM', 'SIDHOUM', 'KHALFAOUI', 'AOUCHERIA', 'MESSALI', 'BOUCHOUFA', 'PRENOM', 'BADERDDINE', 'ABDELHAK', 'DJAMEL EDDINE', 'ANIS', 'AYME',
+    'DATE NAIS', '02/08/1985', '08/10/1979', '06/10/1991', '25/10/2005', '01/04/2005', 'FONCTION', 'MACON', 'MACON', 'Chauffeur de poids lourd', 'PLOMBIER', 'OURIER', 'N° NTN', '109850676010160007', '1097'];
+  assert.deepStrictEqual(E('pecLireTexte_', l.join('\n')), ATTENDU);
+});
 test('texte : une cellule par ligne (tableau mal reconstruit)', () => {
   const l = ['MAT', 'NOM', 'PRENOM', 'DATE NAIS', 'FONCTION', '1', 'SIDHOUM', 'BADERDDINE', '02/08/1985', 'MACON', '109850676010160007', '2', 'MESSALI', 'ANIS', '25/10/2005', 'PLOMBIER', '100050073005440009'];
   assert.deepStrictEqual(E('pecLireTexte_', l.join('\n')), [ATTENDU[0], ATTENDU[3]]);

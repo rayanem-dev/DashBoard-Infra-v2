@@ -671,7 +671,7 @@ function extraireDonneesPEC(doc) {
   }
   const fullText = body.getText();
   if (personnes.length === 0) personnes = pecLireTexte_(fullText);   // OCR sans tableau reconstruit (scan penché, cadre pâle…)
-  return { personnes, dateDetectee: pecLireDate_(fullText) };
+  return { personnes, dateDetectee: pecLireDate_(fullText), texte: fullText };
 }
 
 /******************************
@@ -1383,6 +1383,7 @@ function traiterPDFUploadPECWeb(base64Data, fileName) {
     const cleGemini = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
     let personnes = [];
     let dateDetectee = null;
+    let texteLu = '';
 
     if (cleGemini) {
       try {
@@ -1398,13 +1399,16 @@ function traiterPDFUploadPECWeb(base64Data, fileName) {
       const resultatOCR = extraireAvecOcrDrive(pdfBlob, fileName);
       personnes = resultatOCR.personnes;
       dateDetectee = resultatOCR.dateDetectee;
+      texteLu = resultatOCR.texte || '';
+      Logger.log('Texte lu par l\'OCR (' + fileName + ') :\n' + texteLu);
     }
 
+    const apercu = personnes.length < 2 && texteLu ? texteLu.replace(/\s*\n\s*/g, ' ¶ ').slice(0, 700) : '';
     if (personnes.length === 0) {
-      return { success: false, message: "Aucun nom/prénom identifié dans le document. Saisis manuellement." };
+      return { success: false, message: "Aucun nom/prénom identifié dans le document. Saisis manuellement.", apercuTexte: apercu };
     }
 
-    return { success: true, personnes: personnes.slice(0, 12), dateDetectee: dateDetectee };
+    return { success: true, personnes: personnes.slice(0, 12), dateDetectee: dateDetectee, apercuTexte: apercu };
   } catch (err) {
     return { success: false, message: err.message };
   }

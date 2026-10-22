@@ -52,6 +52,23 @@ function pecIdentite_(avant, apres) {
   if (mots.length < 2 || pecEnteteMots_(mots.join(' '))) return null;
   return { nom: pecCap_(mots[0]), prenom: pecCap_(mots.slice(1).join(' ')), fonction: pecFonction_(pecNumeros_(apres)) };
 }
+/** Texte lu colonne par colonne (l'OCR vide d'abord toute la colonne NOM, puis PRÉNOM, puis FONCTION…) : on recolle les colonnes ligne à ligne. */
+function pecLireColonnes_(lignes) {
+  var marques = [], i;
+  for (i = 0; i < lignes.length; i += 1) {
+    var mots = lignes[i].split(/\s+/);
+    if (mots.length <= 3 && pecEnteteMots_(lignes[i])) marques.push({ i: i, type: pecEntete_(lignes[i].replace(/\bnais\w*|\bdate\b/gi, '').trim()) || (pecEntete_(lignes[i]) || '') });
+  }
+  var cols = {}, k;
+  for (k = 0; k < marques.length; k += 1) {
+    var m = marques[k]; if (!m.type || cols[m.type]) continue;
+    var fin = k + 1 < marques.length ? marques[k + 1].i : lignes.length, vals = lignes.slice(m.i + 1, fin).filter(function (x) { return /[A-Za-zÀ-ÿ]{2}/.test(x) && !pecEnteteMots_(x); });
+    cols[m.type] = vals;
+  }
+  if (!cols.nom || !cols.prenom || cols.nom.length < 1 || cols.nom.length !== cols.prenom.length) return [];
+  var fct = cols.fonction && cols.fonction.length === cols.nom.length ? cols.fonction : null;
+  return cols.nom.map(function (n, j) { return { nom: pecCap_(n), prenom: pecCap_(cols.prenom[j]), fonction: fct ? pecFonction_(fct[j]) : '' }; });
+}
 /** Texte brut (lignes) → personnes. */
 function pecLireTexte_(texte) {
   var lignes = String(texte || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean), out = [], i, m;
@@ -68,6 +85,8 @@ function pecLireTexte_(texte) {
     if (p) out.push(p);
   });
   if (out.length) return out;
+  // 1 bis) lecture colonne par colonne
+  out = pecLireColonnes_(lignes); if (out.length) return out;
   // 2) une cellule par ligne : [n°] nom, prénom, date, fonction, numéro
   for (i = 0; i < lignes.length; i += 1) {
     m = PEC_DATE_.exec(lignes[i]); if (!m || lignes[i].replace(PEC_DATE_, '').trim().length > 2 || !pecNaissance_(m)) continue;

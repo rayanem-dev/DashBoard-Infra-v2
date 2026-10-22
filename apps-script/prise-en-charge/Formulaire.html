@@ -588,7 +588,7 @@
         .withSuccessHandler(function(res) {
           document.getElementById('spinnerPdf').style.display = "none";
           if (!res.success) {
-            document.getElementById('statusPdf').innerText = res.message;
+            document.getElementById('statusPdf').innerText = res.message + (res.apercuTexte ? " Texte lu par l'OCR : " + res.apercuTexte : '');
             document.getElementById('statusPdf').style.color = "#c5221f";
             return;
           }
@@ -606,9 +606,9 @@
             const parts = res.dateDetectee.split('/');
             if (parts.length === 3) champDate.value = parts[2] + '-' + parts[1] + '-' + parts[0];
           }
-          document.getElementById('statusPdf').innerText = res.personnes.length + " personne(s) extraite(s) et ajoutée(s) au tableau !";
+          document.getElementById('statusPdf').innerText = res.personnes.length + " personne(s) extraite(s) et ajoutée(s) au tableau !" + (res.apercuTexte ? " Vérifie : peu de personnes trouvées. Texte lu par l'OCR : " + res.apercuTexte : "");
           document.getElementById('statusPdf').style.color = "#137333";
-          setTimeout(fermerModalePDF, 1800);
+          setTimeout(fermerModalePDF, res.apercuTexte ? 60000 : 1800);
         })
         .withFailureHandler(function(err) {
           document.getElementById('spinnerPdf').style.display = "none";
