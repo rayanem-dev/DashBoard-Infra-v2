@@ -1,14 +1,14 @@
 /**
  * Annuaire téléphonique (fiches contact) : recherche dans l'accueil + liste complète par groupe.
- * Données : js/annuaire-data.js. Rendu sans innerHTML (texte sûr).
+ * Données : lues auprès de la passerelle après connexion (action « annuaire_fiches »), jamais publiées dans les fichiers du site. Rendu sans innerHTML (texte sûr).
  */
 var Annuaire = (function () {
-  var D = window.ANNUAIRE_DATA || { groupes: [], rows: [] };
+  var D = { groupes: [], rows: [] };
   function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   var index = [];
   function reindexer() { index = D.rows.map(function (r) { return norme(r[1] + ' ' + r[2] + ' ' + r[3] + ' ' + r[4] + ' ' + D.groupes[r[0]]); }); }
   reindexer();
-  var DONNEES_STATIQUES = D.rows.slice(), GROUPES_STATIQUES = D.groupes.slice(), charge = null;
+  var DONNEES_STATIQUES = [], GROUPES_STATIQUES = [], charge = null;
   function groupeIndex(libelle) { var i = D.groupes.indexOf(libelle); if (i === -1) { D.groupes.push(libelle); i = D.groupes.length - 1; } return i; }
   /**
    * Remplace les fiches du personnel (Sonatrach, ACOSCO, GTP) par celles construites depuis BDDORGA (action « annuaire_personnes »), complétées par les fiches du site ;
@@ -16,7 +16,11 @@ var Annuaire = (function () {
    */
   function charger() {
     if (charge) return charge;
-    charge = (window.Api ? Api.call('annuaire_personnes') : Promise.reject()).then(function (r) {
+    charge = (window.Api ? Api.call('annuaire_fiches') : Promise.reject()).then(function (f) {
+      DONNEES_STATIQUES = f.rows.slice(); GROUPES_STATIQUES = f.groupes.slice(); D.groupes = f.groupes.slice(); D.rows = f.rows.slice(); reindexer();
+      return Api.call('annuaire_personnes').catch(function () { return null; });
+    }).then(function (r) {
+      if (!r) return true;                      // fiches du site seules (BDDORGA indisponible)
       var remplace = {}; (r.remplace || []).forEach(function (n) { remplace[n] = 1; });
       var gardees = DONNEES_STATIQUES.filter(function (x) { return !(x[4] && x[4] !== 'PRESTATAIRE' && remplace[x[1]]); });
       D.groupes = GROUPES_STATIQUES.slice(); var rows = gardees.slice();

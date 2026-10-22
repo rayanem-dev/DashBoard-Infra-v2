@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-96",
+    "date": "2026-10-24",
+    "title": "Version 5.54.0 — Contrôle de sécurité : annuaire protégé, pages non indexées",
+    "changes": [
+      "Les fiches contact (téléphones, e-mails) ne sont plus dans les fichiers publics du site : elles sont servies par la passerelle, après connexion.",
+      "Toutes les pages sont marquées « ne pas indexer » (noindex + robots.txt) et ne transmettent plus leur adresse aux autres sites (referrer).",
+      "Rapport de sécurité et marche à suivre pour passer le dépôt en privé : docs/SECURITE.md."
+    ]
+  },
+  {
     "id": "2026-10-24-95",
     "date": "2026-10-24",
     "title": "Version 5.53.1 — Chef de division : demande d'accord ; l'agent n'écrit jamais au chef de division",

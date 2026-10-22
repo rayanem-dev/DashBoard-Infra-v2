@@ -115,6 +115,7 @@ function route_(req) {
     case 'email_contact_confirmer': { var uc = Auth.userFromToken(req.token); if (typeof preparerStructure_ === 'function') preparerStructure_(); return Auth.confirmerEmailContact(uc, req.code); }
     case 'admin_test_mail': return connexionsTestMail_(req);
     case 'annuaire_personnes': return annuairePersonnes_(req);
+    case 'annuaire_fiches': { Auth.userFromToken(req.token); return { groupes: ANNUAIRE_DATA.groupes, rows: ANNUAIRE_DATA.rows }; }   // fiches contact : réservées aux personnes connectées (le fichier n'est plus publié sur le site)
     case 'cpm_journal': return cpmJournalListe_(req);
     case 'cpm_instantane': return cpmInstantaneMaintenant_(req);
     case 'donnees_multi': return donneesMulti_(req);

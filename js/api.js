@@ -217,6 +217,10 @@
         throw erreur('Données de démonstration non disponibles pour cette source');
       case 'contacts_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoState.rapproches = demoState.rapproches || {};
         if (p.email) demoState.rapproches[p.nom] = p.email; else delete demoState.rapproches[p.nom]; return { enregistre: true };
+      case 'annuaire_fiches': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        return { groupes: ['Postes internes (4 chiffres)', 'Équipe Division Infrastructure — Collaborateurs & Bureaux › 🗒️ SECRÉTARIAT', 'Prestataires › MAINTENANCE'], rows: [
+          [0, 'Réception', '📞 1000', 'Standard', ''], [0, 'Sûreté interne', '📞 1111', 'Poste de garde', ''],
+          [1, 'DEMO Secrétaire', '📞 0555 00 00 00 | ✉️ secretariat@exemple.dz', 'SECRÉTAIRE', 'SONATRACH'], [2, 'Entreprise Atlas (démo)', '📞 0555 11 11 11', 'Maintenance', 'PRESTATAIRE']] };
       case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { remplace: ['HADJADJ Lamine', 'BOUAZIZ Hocine', 'LAKKAICHI Noureddine'], personnes: [
           { nom: 'HADJADJ Lamine', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0660514275', tels_alt: [], email: 'lamine.hadjadj@sonatrach.dz', email2: '', sona: 'sona12551', matricule: '90856S' },

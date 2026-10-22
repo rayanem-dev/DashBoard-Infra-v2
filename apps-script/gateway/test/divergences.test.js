@@ -44,7 +44,7 @@ test('appariement par matricule, SONA, e-mail puis nom (ordre des mots indiffér
   assert.strictEqual(r.prestataires_non_compares, 1); assert.strictEqual(r.appariees, 3); assert.strictEqual(r.fiches_personnes, 4);
 });
 test('sur les vraies fiches du site : analyse sans erreur, 107 personnes dont des prestataires', () => {
-  const w = {}; new Function('window', fs.readFileSync(path.join(racine, 'js', 'annuaire-data.js'), 'utf8'))(w);
+  const w = {}; new Function('window', fs.readFileSync(path.join(racine, 'data', 'annuaire-data.js'), 'utf8'))(w);
   const c = D.cartesPersonnes(w.ANNUAIRE_DATA); assert.strictEqual(c.length, 107);
   const r = D.comparer([], w.ANNUAIRE_DATA); assert.strictEqual(r.fiches_sans_bddorga.length, 107 - 58); assert.strictEqual(r.prestataires_non_compares, 58);
 });
