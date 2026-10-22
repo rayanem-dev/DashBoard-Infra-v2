@@ -558,7 +558,7 @@
   $('mode').addEventListener('change', function () { $('z-date').hidden = $('mode').value !== 'date'; if (S.A) { [S.A, S.B].forEach(function (a) { if (a) initCells(a); }); majTout(); } });
   $('dateDebut').addEventListener('change', function () { if (S.A) { dessinerEditeurs(); majResultat(); } });
   $('tol-cc').addEventListener('input', majTout); $('tol-vc').addEventListener('input', majTout); $('tol-c').addEventListener('input', majResultat); $('tol-v').addEventListener('input', majResultat);
-  $('raz').addEventListener('click', function () { [S.A, S.B].forEach(function (a) { if (a) { initCells(a); a.nb = 6; } }); dessinerEditeurs(); majResultat(); });
+  $('raz').addEventListener('click', function () { [S.A, S.B].forEach(function (a) { if (a) { initCells(a); a.nb = 6; } }); dessinerEditeurs(); majResultat(); chargerLiens(false); });   // le vis-à-vis de chambre essayé (« Utiliser ») revient aussi à celui déclaré
   $('proposer').addEventListener('click', proposer); $('nb-rot').addEventListener('change', function () { if (S.A && S.B) proposer(); }); $('valider').addEventListener('click', valider); $('annuler').addEventListener('click', function () { annuler(); });
   $('imprimer').addEventListener('click', function () { window.print(); });
 

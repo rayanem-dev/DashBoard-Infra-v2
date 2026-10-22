@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-73",
+    "date": "2026-10-24",
+    "title": "Version 5.41.3 — « Tout remettre comme prévu » rétablit aussi la chambre",
+    "changes": [
+      "Simulation : « Tout remettre comme prévu » remet aussi le vis-à-vis de chambre à celui déclaré dans l'Organigramme, après un essai avec « Utiliser » (avant, il restait sur l'agent essayé)."
+    ]
+  },
+  {
     "id": "2026-10-24-72",
     "date": "2026-10-24",
     "title": "Version 5.41.2 — Listing triable",
