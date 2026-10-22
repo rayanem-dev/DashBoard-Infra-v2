@@ -789,7 +789,7 @@ function genererPEC(ss, silencieux, options) {
     body.replaceText("{{Prénom" + num + "}}", prenom);
   }
 
-  // Centrer les noms/prénoms dans la cellule du tableau
+  // Cellule du tableau des noms/prénoms (alignés à gauche plus bas)
   const table = body.getTables()[0];
   const dataRow = table.getRow(1);
   const nomCell = dataRow.getCell(0);
@@ -880,12 +880,12 @@ function genererPEC(ss, silencieux, options) {
     }
   } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
 
-  // Noms toujours au milieu de leur case : centrés horizontalement et verticalement
+  // Noms alignés à gauche dans leur case (centrés verticalement)
   try {
     nomCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
     for (let i = 0; i < nomCell.getNumChildren(); i++) {
       const enfant = nomCell.getChild(i);
-      if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      if (enfant.getType() === DocumentApp.ElementType.PARAGRAPH) enfant.asParagraph().setAlignment(DocumentApp.HorizontalAlignment.LEFT);
     }
   } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
 
