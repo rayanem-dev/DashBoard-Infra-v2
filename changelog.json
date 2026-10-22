@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-77",
+    "date": "2026-10-24",
+    "title": "Version 5.45.0 — Privilèges : « Qui a accès à quoi »",
+    "changes": [
+      "Privilèges : nouvel onglet d'ouverture « Qui a accès à quoi » : une ligne par application, une colonne par rôle, une case à cocher pour donner ou retirer l'accès. Seule l'application de la ligne change : le niveau du rôle dans le module monte tout seul si nécessaire, et les autres applications du module gardent leur public actuel. Une application ne peut pas rester sans aucun rôle (elle serait ouverte à tous). Les anciens onglets restent disponibles pour le détail."
+    ]
+  },
+  {
     "id": "2026-10-24-76",
     "date": "2026-10-24",
     "title": "Version 5.44.0 — Modifier aussi la rotation en cours",

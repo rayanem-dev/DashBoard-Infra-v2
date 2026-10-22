@@ -12,6 +12,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/charte.css">
+<style>
+  .grille-wrap { overflow: auto; max-height: 75vh; border-radius: 12px; }
+  table.t.gacces { border-collapse: separate; border-spacing: 0; min-width: 100%; width: auto; }
+  table.gacces th.r { height: 130px; vertical-align: bottom; padding: 4px 2px; position: sticky; top: 0; background: var(--surface, #fff); z-index: 2; min-width: 38px; text-align: center; }
+  table.gacces th.r span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 12px; display: inline-block; text-transform: none; letter-spacing: 0; font-weight: 700; color: var(--text, #1F2937); }
+  table.gacces th.gapp { position: sticky; top: 0; left: 0; z-index: 4; background: var(--surface, #fff); text-align: left; min-width: 260px; vertical-align: bottom; }
+  table.gacces td.gapp { position: sticky; left: 0; background: var(--surface, #fff); z-index: 1; min-width: 260px; font-weight: 700; font-size: 13px; }
+  table.gacces td.gapp small { font-weight: 800; background: var(--tint-orange, #FFF1E6); color: var(--orange-main, #E85D04); border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+  table.gacces tr.mod td { background: var(--tint-orange, #FFF1E6); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; position: static; }
+  table.gacces td.c { text-align: center; padding: 2px; } table.gacces td.c input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--orange-main, #E85D04); }
+  table.gacces td.c.ouvert { background: rgba(22,163,74,.08); } table.gacces tr:hover td.gapp, table.gacces tr:hover td.c { background-color: rgba(232,93,4,.07); }
+</style>
+
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
@@ -23,14 +36,20 @@
 
 <main class="portail">
   <div class="onglets" role="tablist">
-    <button class="onglet actif" data-p="p-users">Utilisateurs</button>
+    <button class="onglet actif" data-p="p-grille">Qui a accès à quoi</button>
+    <button class="onglet" data-p="p-users">Utilisateurs</button>
     <button class="onglet" data-p="p-def">Rôles</button>
     <button class="onglet" data-p="p-roles">Droits par rôle</button>
     <button class="onglet" data-p="p-apps">Applications</button>
     <button class="onglet" data-p="p-exc">Exceptions</button>
     <button class="onglet" data-p="p-cnx" id="o-cnx">Connexions</button>
   </div>
-  <section class="panneau" id="p-users">
+  <section class="panneau" id="p-grille">
+    <p class="aide" style="margin-bottom:10px">Une ligne par application, une colonne par rôle : <b>cochez</b> pour donner l'accès, <b>décochez</b> pour le retirer. Seule l'application de la ligne change ; les niveaux des modules s'ajustent tout seuls (pastille <b>1</b> à <b>3</b> = niveau minimal requis). Les exceptions individuelles restent dans l'onglet Exceptions.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input type="text" id="g-filtre" class="filtre" placeholder="Filtrer une application…" style="max-width:300px"><span id="g-msg" style="font-size:12.5px"></span></div>
+    <div class="grille-wrap"><table class="t gacces" id="t-grille"></table></div>
+  </section>
+  <section class="panneau" id="p-users" hidden>
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
     <div style="margin:8px 0;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
       <button class="btn-s" id="b-mdp0000" type="button" title="Donne le mot de passe 0000 aux comptes qui n'en ont encore aucun (jamais connectés) ; chacun le change à sa première connexion">🔑 Donner 0000 aux comptes sans mot de passe</button>
@@ -80,6 +99,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/grille-acces.js"></script>
 <script src="js/employeurs.js"></script>
 <script src="js/rotation.js"></script>
 <script>Rotation.exiger();</script>
@@ -151,6 +171,44 @@
       tb.appendChild(tr);
     });
     t.appendChild(tb);
+  }
+
+  function dessinerGrille() {
+    var t = $('t-grille'), f = ($('g-filtre').value || '').toLowerCase(); t.textContent = '';
+    var hr = el('tr'); hr.appendChild(el('th', 'gapp', 'Application')); etat.roles.forEach(function (r) { var th = el('th', 'r'); th.title = r.libelle + ' — ' + r.nb_utilisateurs + ' personne(s)'; th.appendChild(el('span', null, r.libelle)); hr.appendChild(th); });
+    var th0 = el('thead'); th0.appendChild(hr); t.appendChild(th0);
+    var tb = el('tbody');
+    etat.modules.forEach(function (m) {
+      var apps = etat.applications.filter(function (a) { return String(a.module).toLowerCase() === String(m.id).toLowerCase() && (!f || (a.titre + ' ' + m.titre).toLowerCase().indexOf(f) !== -1); });
+      if (!apps.length) return;
+      var trm = el('tr', 'mod'), tdm = el('td', null, (m.icone || '') + ' ' + m.titre); tdm.colSpan = etat.roles.length + 1; trm.appendChild(tdm); tb.appendChild(trm);
+      apps.forEach(function (a) {
+        var tr = el('tr'), ta = el('td', 'gapp', a.titre); ta.appendChild(el('small', null, String(a.niveau_min))); ta.title = 'Niveau minimal ' + a.niveau_min + (a.roles.length ? ' · réservée à : ' + a.roles.join(', ') : ' · ouverte à tous les rôles ayant le niveau'); tr.appendChild(ta);
+        etat.roles.forEach(function (r) {
+          var td = el('td', 'c'), cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = GrilleAcces.acces(etat, r.id, a); cb.title = r.libelle + ' · ' + a.titre;
+          if (cb.checked) td.className += ' ouvert';
+          cb.addEventListener('change', function () { cocher(r, a, cb); });
+          td.appendChild(cb); tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      });
+    });
+    t.appendChild(tb);
+  }
+  var occupe = false;
+  function cocher(r, a, cb) {
+    var voulu = cb.checked, p = GrilleAcces.plan(etat, r.id, a.titre, voulu), msg = $('g-msg');
+    if (p.erreur) { cb.checked = !voulu; msg.textContent = p.erreur; msg.style.color = '#B42318'; toast(p.erreur, true); return; }
+    if (!p.ops.length) return;
+    if (occupe) { cb.checked = !voulu; return; }
+    occupe = true; msg.style.color = ''; msg.textContent = 'Enregistrement…';
+    // les restrictions d'abord (personne ne gagne un accès en cours de route), puis le niveau du rôle, puis la liste de l'application cochée
+    var ordre = p.ops.slice().sort(function (x, y) { return (x.type === 'droit') - (y.type === 'droit') || (x.titre === a.titre) - (y.titre === a.titre); });
+    ordre.reduce(function (chaine, op) {
+      return chaine.then(function () { return op.type === 'droit' ? Api.call('admin_droit', { role: op.role, module: op.module, niveau: op.niveau }) : Api.call('admin_app', { titre: op.titre, niveau_min: op.niveau_min, roles: op.roles }); });
+    }, Promise.resolve()).then(function () { toast((voulu ? 'Accès donné : ' : 'Accès retiré : ') + r.libelle + ' · ' + a.titre); msg.textContent = p.notes.join(' '); })
+      .catch(function (e) { toast(e.message, true); msg.textContent = e.message; msg.style.color = '#B42318'; })
+      .then(function () { occupe = false; return recharger(); });
   }
 
   function dessinerDef() {
@@ -297,16 +355,16 @@
     }).catch(function (e) { toast(e.message, true); });
   }
   function ouvrirConnexions(email) { $('o-cnx').click(); $('cnx-filtre').value = email; chargerConnexions(); diagnostic(email); }
-  function dessiner() { dessinerUsers(); dessinerDef(); dessinerRoles(); dessinerApps(); dessinerExc(); }
+  function dessiner() { dessinerGrille(); dessinerUsers(); dessinerDef(); dessinerRoles(); dessinerApps(); dessinerExc(); }
   function recharger() { return Api.call('admin_etat').then(function (r) { etat = r; dessiner(); }); }
 
   document.querySelectorAll('.onglet').forEach(function (b) {
     b.addEventListener('click', function () {
       document.querySelectorAll('.onglet').forEach(function (x) { x.classList.toggle('actif', x === b); });
-      ['p-users', 'p-def', 'p-roles', 'p-apps', 'p-exc', 'p-cnx'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; }); if (b.dataset.p === 'p-cnx') chargerConnexions();
+      ['p-grille', 'p-users', 'p-def', 'p-roles', 'p-apps', 'p-exc', 'p-cnx'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; }); if (b.dataset.p === 'p-cnx') chargerConnexions();
     });
   });
-  $('filtre').addEventListener('input', dessinerUsers);
+  $('filtre').addEventListener('input', dessinerUsers); $('g-filtre').addEventListener('input', dessinerGrille);
   $('b-emails').addEventListener('click', controleEmails);
   $('b-inviter-tous').addEventListener('click', function () {
     var f = $('filtre').value.toLowerCase();

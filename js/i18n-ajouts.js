@@ -210,6 +210,9 @@
     ["👥 Vis-à-vis", "👥 Counterparts", "👥 المقابلون"],
     ["🔀 Affectations", "🔀 Assignments", "🔀 التعيينات"],
     ["Changez la durée de la rotation en cours et des suivantes : les dates en dessous se recalculent. La rotation en cours ne peut pas descendre en dessous des jours déjà écoulés.", "Change the length of the current rotation and the following ones: the dates below are recalculated. The current rotation cannot go below the days already elapsed.", "غيّر مدة التناوب الحالي والتناوبات اللاحقة: تُعاد حساب التواريخ أسفله. لا يمكن أن ينزل التناوب الحالي عن الأيام المنقضية."],
+    ["Qui a accès à quoi", "Who has access to what", "من له حق الوصول إلى ماذا"],
+    ["Filtrer une application…", "Filter an application…", "تصفية تطبيق…"],
+    ["Une ligne par application, une colonne par rôle : cochez pour donner l'accès, décochez pour le retirer. Seule l'application de la ligne change ; les niveaux des modules s'ajustent tout seuls (pastille 1 à 3 = niveau minimal requis). Les exceptions individuelles restent dans l'onglet Exceptions.", "One row per application, one column per role: tick to give access, untick to remove it. Only the row's application changes; module levels adjust themselves (badge 1 to 3 = minimum level required). Individual exceptions stay in the Exceptions tab.", "سطر لكل تطبيق وعمود لكل دور: ضع علامة لمنح الوصول وأزلها لسحبه. يتغير تطبيق السطر فقط؛ تتعدل مستويات الوحدات تلقائيًا (الشارة 1 إلى 3 = المستوى الأدنى المطلوب). تبقى الاستثناءات الفردية في تبويب الاستثناءات."],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
