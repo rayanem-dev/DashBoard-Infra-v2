@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-74",
+    "date": "2026-10-24",
+    "title": "Version 5.42.0 — Changer le vis-à-vis d'un agent dans la simulation",
+    "changes": [
+      "Simulation : un petit bouton « ⇄ Vis-à-vis » à côté de l'agent A permet de changer son vis-à-vis de travail (B) et/ou de chambre (C) pour la simulation (champ vide = aucun) ; la case « Retenir » l'enregistre dans l'Organigramme pour la prochaine fois."
+    ]
+  },
+  {
     "id": "2026-10-24-73",
     "date": "2026-10-24",
     "title": "Version 5.41.3 — « Tout remettre comme prévu » rétablit aussi la chambre",

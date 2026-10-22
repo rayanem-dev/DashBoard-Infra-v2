@@ -353,7 +353,7 @@
     [['A', S.A], ['B', S.B]].forEach(function (x) {
       var a = x[1]; if (!a) return; var d = a.data, deb = debutDe(a);
       var ed = el('div', 'ed' + (x[0] === 'B' ? ' b' : '')), h = el('h3'); h.appendChild(el('span', null, x[0] + ' · ' + a.ligne.nom));
-      h.appendChild(el('small', null, 'rotation ' + d.rotation.jours_travail + '/' + d.rotation.jours_repos + ' · relève le ' + JOURS[jourDe(deb)] + ' · reliquat actuel ' + sgn(d.solde || 0) + ' · début le ' + fr(deb))); ed.appendChild(h);
+      h.appendChild(el('small', null, 'rotation ' + d.rotation.jours_travail + '/' + d.rotation.jours_repos + ' · relève le ' + JOURS[jourDe(deb)] + ' · reliquat actuel ' + sgn(d.solde || 0) + ' · début le ' + fr(deb))); if (x[0] === 'A') { var bv = el('button', 'btn-s', '⇄ Vis-à-vis'); bv.type = 'button'; bv.title = 'Changer le vis-à-vis de travail ou de chambre de ' + a.ligne.nom; bv.style.cssText = 'margin-left:10px;padding:3px 9px;font-size:12px'; bv.addEventListener('click', function () { choisirVis(a); }); h.appendChild(bv); } ed.appendChild(h);
       var ss = el('div', 'sems'), i0 = Simulation.diff(d.debut, deb); a.rep = [];
       for (var i = 0; i < a.nb; i += 1) (function (i) {
         var c = a.cells[i], off = d.grille.charAt(i0 + i * 7), b = el('button', 'sem'); b.type = 'button';
@@ -515,6 +515,37 @@
 
   // ---------- Demandes ----------
   var LIB = { en_attente: 'En attente', appliquee: 'Appliquée, à décider', approuvee: 'Approuvée', refusee: 'Refusée', remplacee: 'Remplacée', annulee: 'Annulée' };
+  /** Changer le vis-à-vis de travail (B) et/ou de chambre (C) de l'agent A pour cette simulation ; case « Retenir » = l'enregistrer dans l'Organigramme. */
+  function choisirVis(A) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog'; f.appendChild(el('h2', null, 'Vis-à-vis de ' + A.ligne.nom));
+    var dl = document.createElement('datalist'); dl.id = 'dl-vis'; var parLib = {};
+    var lib = function (x) { return x.nom + ' — ' + (x.dependance || 'SONATRACH') + (x.service ? ' · ' + x.service : ''); };
+    agents.filter(function (x) { return x.configuree && x.uid !== A.uid && ligneDeUid(x.uid); }).forEach(function (x) { parLib[norm(lib(x))] = x.uid; var o = document.createElement('option'); o.value = lib(x); dl.appendChild(o); });
+    f.appendChild(dl);
+    function champ(titre, actuel, aide) {
+      var w = el('div', 'champ'); w.appendChild(el('label', null, titre)); var i = document.createElement('input'); i.type = 'text'; i.setAttribute('list', 'dl-vis'); i.autocomplete = 'off'; i.placeholder = 'Choisir un agent… (vide = aucun)';
+      var ag = actuel && agents.filter(function (x) { return x.uid === actuel; })[0]; i.value = ag ? lib(ag) : ''; i.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit'; w.appendChild(i);
+      if (aide) { var a2 = el('div', 'aide2', aide); a2.style.margin = '4px 0 0'; w.appendChild(a2); } f.appendChild(w); return i;
+    }
+    var iB = champ('Vis-à-vis de travail (B)', S.B && S.B.uid, ''), iC = champ('Vis-à-vis de chambre (C)', S.C && S.C.uid, 'Laisser vide : pas de vis-à-vis de chambre, seul le travail compte.');
+    var w2 = el('label'); w2.style.cssText = 'display:flex;gap:8px;align-items:center;margin:10px 0;font-size:13px'; var cb = document.createElement('input'); cb.type = 'checkbox'; w2.appendChild(cb); w2.appendChild(document.createTextNode('Retenir pour ' + A.ligne.nom + ' (enregistrer dans l\'Organigramme)')); f.appendChild(w2);
+    var msg = el('div', 'msg'); f.appendChild(msg);
+    var bt = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', 'Appliquer'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); var uB = '', uC = '';
+      if (iB.value.trim()) { uB = parLib[norm(iB.value)]; if (!uB) { msg.textContent = 'Vis-à-vis de travail : choisissez un agent dans la liste.'; msg.className = 'msg err'; return; } }
+      if (iC.value.trim()) { uC = parLib[norm(iC.value)]; if (!uC) { msg.textContent = 'Vis-à-vis de chambre : choisissez un agent dans la liste.'; msg.className = 'msg err'; return; } }
+      ok.disabled = true;
+      var jobs = [];
+      if (uB !== (S.B ? S.B.uid : '')) { if (!uB) S.B = null; else jobs.push(donnees(uB).then(function (d) { S.B = { ligne: ligneDeUid(uB), uid: uB, data: d, cells: [], nb: 6 }; initCells(S.B); })); }
+      if (uC !== (S.C ? S.C.uid : '')) { if (!uC) S.C = null; else jobs.push(donnees(uC).then(function (d) { S.C = { ligne: ligneDeUid(uC), uid: uC, data: d }; })); }
+      Promise.all(jobs).then(function () {
+        if (cb.checked) { var moi = agents.filter(function (x) { return x.uid === A.uid; })[0] || {}; return Api.call('visavis_enregistrer', { uid: A.uid, vis_travail: uB, vis_chambre: uC }).then(function () { moi.vis_travail = uB; moi.vis_chambre = uC; toast('Vis-à-vis de ' + A.ligne.nom + ' enregistrés.'); }); }
+      }).then(function () { dlg.close(); majTout(); }).catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
   function dialogue(titre, approuver, numero) {
     var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
     f.appendChild(el('h2', null, titre)); var w = el('div', 'champ'); w.appendChild(el('label', null, 'Commentaire (facultatif)'));

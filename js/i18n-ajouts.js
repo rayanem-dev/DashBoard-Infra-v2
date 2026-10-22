@@ -198,6 +198,12 @@
     ["Aucun autre agent de cette entité avec un planning renseigné.", "No other agent of this entity with a schedule set.", "لا يوجد عون آخر من هذه الجهة له تخطيط مسجّل."],
     ["Enregistrer comme vis-à-vis de chambre", "Save as room counterpart", "حفظ كمقابل للغرفة"],
     ["Cliquer pour trier", "Click to sort", "انقر للفرز"],
+    ["⇄ Vis-à-vis", "⇄ Counterparts", "⇄ المقابلون"],
+    ["Vis-à-vis de travail (B)", "Work counterpart (B)", "مقابل العمل (B)"],
+    ["Vis-à-vis de chambre (C)", "Room counterpart (C)", "مقابل الغرفة (C)"],
+    ["Choisir un agent… (vide = aucun)", "Choose an agent… (empty = none)", "اختر عونًا… (فارغ = لا أحد)"],
+    ["Laisser vide : pas de vis-à-vis de chambre, seul le travail compte.", "Leave empty: no room counterpart, only work counts.", "اتركه فارغًا: لا مقابل للغرفة، العمل وحده يُحتسب."],
+    ["Appliquer", "Apply", "تطبيق"],
   ];
   var en = {}, ar = {};
   T.forEach(function (r) { en[r[0]] = r[1]; ar[r[0]] = r[2]; });
@@ -205,6 +211,8 @@
   function pl(n, un, plu) { return Number(n) > 1 ? plu : un; }
   function grp(g, d) { var m = /^(\d+) services?$/.exec(g); return m ? m[1] + (d === ar ? ' مصلحة' : (m[1] > 1 ? ' services' : ' service')) : (d[g] || g); }
   var M_EN = [
+    [/^Vis-à-vis de (.+)$/, function (n) { return 'Counterparts of ' + n; }],
+    [/^Retenir pour (.+) \(enregistrer dans l'Organigramme\)$/, function (n) { return 'Keep for ' + n + ' (save in the Organigram)'; }],
     [/^Autres vis-à-vis de chambre possibles \(même entité : (.+)\)$/, function (e) { return 'Other possible room counterparts (same entity: ' + e + ')'; }],
     [/^Vis-à-vis de chambre presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Almost perfect room counterpart' + (c ? ': ' + c + ' day' + (c > 1 ? 's' : '') + ' of conflict' : '') + ' (over a ' + l + '-day rotation from ' + d + ').'; }],
     [/^Vis-à-vis de chambre en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'Room counterpart in conflict for ' + c + ' days (over a ' + l + '-day rotation from ' + d + ').'; }],
@@ -241,6 +249,8 @@
   ];
   var JOURS_AR = function (n) { n = Number(n); return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n + (n >= 3 && n <= 10 ? ' أيام' : ' يومًا'); };
   var M_AR = [
+    [/^Vis-à-vis de (.+)$/, function (n) { return 'مقابلو ' + n; }],
+    [/^Retenir pour (.+) \(enregistrer dans l'Organigramme\)$/, function (n) { return 'اعتماد لـ ' + n + ' (حفظ في الهيكل التنظيمي)'; }],
     [/^Autres vis-à-vis de chambre possibles \(même entité : (.+)\)$/, function (e) { return 'مقابلون آخرون محتملون للغرفة (نفس الجهة: ' + e + ')'; }],
     [/^Vis-à-vis de chambre presque parfait(?: : (\d+) jours? de conflit)? \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'مقابل الغرفة شبه مثالي' + (c ? ': ' + c + ' يوم تعارض' : '') + ' (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
     [/^Vis-à-vis de chambre en conflit de (\d+) jours \(sur une rotation de (\d+) jours à partir du (.+)\)\.$/, function (c, l, d) { return 'مقابل الغرفة متعارض لمدة ' + c + ' يوم (على تناوب من ' + l + ' يوم ابتداءً من ' + d + ').'; }],
