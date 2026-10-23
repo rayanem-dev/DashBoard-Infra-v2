@@ -295,7 +295,7 @@ function planning_(req) {
   var lignes = Store.table('Utilisateurs').filter(function (x) {
     return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi || (vis && vis[String(x.uid)]));
   }).map(function (x) {
-    var l = { nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
+    var l = { uid: String(x.uid || ''), nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
     if (niv >= 3) l.email = x.email;
     var rot = rotationDe_(x.email);
     if (!rot) return l;

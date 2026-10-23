@@ -57,7 +57,7 @@ function profilAcces_(u) {
   var vus = {}, non = [];
   Store.table('Applications').forEach(function (a) {
     var cle = String(a.url || a.titre); if (ok[cle] || vus[cle] || !a.titre) return; vus[cle] = true;
-    non.push({ titre: a.titre, emoji: a.emoji || '', description: String(a.description || '').slice(0, 200), module: a.module });
+    non.push({ titre: a.titre, emoji: a.emoji || '', url: String(a.url || ''), description: String(a.description || '').slice(0, 200), module: a.module });
   });
   return { accessibles: accessibles, non_accessibles: non };
 }
