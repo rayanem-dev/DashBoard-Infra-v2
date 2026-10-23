@@ -42,7 +42,9 @@ test('entreprise tirée du prestataire du formulaire ; visite sur site ignorée'
   assert.strictEqual(E('enqEntrepriseDe_', '24.INFRA.25 - ENCC SPA - Génie civil'), 'ENCC SPA');
   assert.strictEqual(E('enqEntrepriseDe_', 'Visite sur site - Direction'), '');
   assert.strictEqual(E('enqEntrepriseDe_', ''), '');
-  assert.strictEqual(E('enqEntrepriseDe_', 'ORGANISME - SONATRACH | Division Laboratoires - Direction'), '');
+  assert.strictEqual(E('enqEntrepriseDe_', 'ORGANISME - SONATRACH | Division Laboratoires - Direction'), 'SONATRACH | Division Laboratoires');
+  assert.strictEqual(E('enqContratDe_', 'ORGANISME - SONATRACH | Division Laboratoires - Direction'), '');
+  assert.strictEqual(E('enqContratDe_', '24.INFRA.25 - ENCC SPA - Génie civil'), '24.INFRA.25');
 });
 test('ligne libre : toujours à la suite de la dernière personne (jamais dans un trou, jamais sur une ligne remplie)', () => {
   const col = { h: 2, fr: 1, fonction: 0 };

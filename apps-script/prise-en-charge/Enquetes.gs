@@ -191,10 +191,15 @@ function enqPlanNoms_(onglets, cpm) {
   return res;
 }
 
-/** « 12.3.INFRA.25 - ENCC SPA - Génie civil » → « ENCC SPA » ; « Visite sur site… » ou « ORGANISME - … » → '' (pas un prestataire). */
+/** Contrat de l'option : le premier élément ; vide pour un organisme (pas de contrat : un seul onglet d'Enquête à son nom, qui garde l'historique de toutes ses entrées). */
+function enqContratDe_(prestataire) {
+  var c = String(prestataire || '').split(' - ')[0].trim();
+  return c.toUpperCase() === 'ORGANISME' ? '' : c;
+}
+/** « 12.3.INFRA.25 - ENCC SPA - Génie civil » → « ENCC SPA » ; « Visite sur site… » → '' (pas un prestataire) ; « ORGANISME - SONATRACH | Division X - … » → « SONATRACH | Division X » (organisme hors Suivi CPM : son onglet d'Enquête porte son nom). */
 function enqEntrepriseDe_(prestataire) {
   var t = String(prestataire || '').trim();
-  if (!t || /^visite sur site/i.test(t) || /^organisme - /i.test(t)) return '';   // visite sur site ou organisme hors Suivi CPM : pas de prestataire, donc pas d'Enquête
+  if (!t || /^visite sur site/i.test(t)) return '';
   var p = t.split(' - ');
   return (p.length > 1 ? p[1] : p[0]).trim();
 }
@@ -313,7 +318,7 @@ function injecterEnquetes_(formData) {
     if (!gens.length) return r;
     if (!r.entreprise) { r.erreur = 'visite sur site : rien à ajouter'; return r; }
     var ignorer = formData.ignorerEnquetes || [];
-    var contrat = String(formData.prestataire || '').split(' - ')[0].trim();
+    var contrat = enqContratDe_(formData.prestataire);
     var lock = LockService.getScriptLock(); lock.waitLock(30000);
     try {
       var ss = enqClasseur_(), onglets = enqLireTout_(ss), idx = enqIndex_(onglets), cible = enqOngletPour_(onglets, r.entreprise, contrat);
@@ -444,9 +449,9 @@ function verifierEnquetes(formData) {
     var gens = (formData.personnes || []).filter(function (p) { return Badges.vide(p.nom); });
     if (!gens.length || !enqEntrepriseDe_(formData.prestataire)) return { ok: true, deja: [] };
     var onglets = enqLireTout_(enqClasseur_()), idx = enqIndex_(onglets), deja = [];
-    var cible = enqOngletPour_(onglets, enqEntrepriseDe_(formData.prestataire), String(formData.prestataire || '').split(' - ')[0].trim());
+    var cible = enqOngletPour_(onglets, enqEntrepriseDe_(formData.prestataire), enqContratDe_(formData.prestataire));
     gens.forEach(function (p) {
-      if (enqDejaChezCeContrat_(idx, cible, Badges.vide(p.nom), Badges.vide(p.prenom), enqEntrepriseDe_(formData.prestataire), String(formData.prestataire || '').split(' - ')[0].trim())) return; // déjà chez ce prestataire / ce contrat : ignoré sans avertir
+      if (enqDejaChezCeContrat_(idx, cible, Badges.vide(p.nom), Badges.vide(p.prenom), enqEntrepriseDe_(formData.prestataire), enqContratDe_(formData.prestataire))) return; // déjà chez ce prestataire / ce contrat : ignoré sans avertir
       var t = enqTrouver_(idx, Badges.vide(p.nom), Badges.vide(p.prenom));
       if (t) deja.push({ nomComplet: enqNomComplet_(p.nom, p.prenom), onglet: t.onglet, date: t.date || '' });
     });
