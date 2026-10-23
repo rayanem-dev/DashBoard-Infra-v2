@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-112",
+    "date": "2026-10-24",
+    "title": "Version 5.60.2 — Impression des vis-à-vis : fonction et employeur en entier",
+    "changes": [
+      "Sur la feuille « Imprimer par vis-à-vis », la fonction et l'employeur de chaque agent ne sont plus coupés avec « … » : ils passent à la ligne sous le nom."
+    ]
+  },
+  {
     "id": "2026-10-24-111",
     "date": "2026-10-24",
     "title": "Version 5.60.1 — Document de demande : matricule et signataires selon l'employeur",
