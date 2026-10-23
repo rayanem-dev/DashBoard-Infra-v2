@@ -1,42 +1,57 @@
-# Publication automatique du site statique sur GitHub Pages.
-# Prérequis : Settings > Pages > Source = « GitHub Actions » (sur un dépôt privé, selon l'offre GitHub).
+# Publication du SITE (pages, css, js, img…) dans un dépôt PUBLIC réduit au site : le code, les scripts Apps Script et la documentation restent dans ce dépôt PRIVÉ.
+# Le site garde son adresse (https://rayanem-dev.github.io/DashBoard-Infra-v2/) parce que le dépôt public porte ce nom : toutes les applications qui y font référence continuent de fonctionner sans aucune modification.
+# Prérequis (une fois) : voir docs/SECURITE.md — dépôt public « DashBoard-Infra-v2 » (Pages : Deploy from a branch › main › / (root)) + secret SITE_DEPLOY_TOKEN ici (jeton à accès limité à ce seul dépôt, droit « Contents : Read and write »).
 name: Publier le site
 
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths-ignore: ['apps-script/**', 'docs/**', '.github/workflows/deploy-gateway.yml']
+    paths-ignore: ['apps-script/**', 'docs/**', 'data/**', '.github/workflows/deploy-gateway.yml']
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: site
   cancel-in-progress: true
 
+env:
+  SITE_REPO: rayanem-dev/DashBoard-Infra-v2   # dépôt PUBLIC du site (jamais ce dépôt-ci)
+
 jobs:
-  deploy:
+  publier:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Ne publier que le site
+      - name: Construire le site (rien d'autre que les fichiers du site)
         run: |
           mkdir _site
           cp -r *.html *.json *.png sw.js css js img badges _site/
           printf 'User-agent: *\nDisallow: /\n' > _site/robots.txt   # site interne : à ne pas indexer
+          touch _site/.nojekyll
           rm -f _site/js/annuaire-data.js   # garde-fou : les fiches contact ne sont servies que par la passerelle, après connexion
-          rm -f _site/*-ancien.html   # anciennes pages (données non protégées) : non publiées
-          # version.json = version de js/version.js (compare par le pied de page : ✓ à jour / ⚠ à déployer)
+          rm -f _site/*-ancien.html         # anciennes pages (données non protégées) : non publiées
+          # version.json = version de js/version.js (comparée par le pied de page : ✓ à jour / ⚠ à déployer)
           node -e "const v=require('fs').readFileSync('js/version.js','utf8').match(/PORTAIL_VERSION = '([^']+)'/)[1]; require('fs').writeFileSync('_site/version.json', JSON.stringify({version: v}))"
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          # contrôle : aucun fichier qui n'a pas à être public
+          if find _site -name '*.gs' -o -name '*.md' -o -name '.env*' | grep -q .; then echo '::error::Fichier non public dans le site'; find _site -name '*.gs' -o -name '*.md' -o -name '.env*'; exit 1; fi
+      - name: Vérifier le jeton de publication
+        env:
+          TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "::error::Secret SITE_DEPLOY_TOKEN manquant : voir docs/SECURITE.md (publication du site)"; exit 1; fi
+      - name: Publier dans le dépôt public du site
+        env:
+          TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
+        run: |
+          set -e
+          git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${SITE_REPO}.git" _pub || { mkdir _pub && git -C _pub init -b main && git -C _pub remote add origin "https://x-access-token:${TOKEN}@github.com/${SITE_REPO}.git"; }
+          find _pub -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r _site/. _pub/
+          cd _pub
+          git config user.name "Publication du site"; git config user.email "site@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "Site déjà à jour."; exit 0; fi
+          git commit -q -m "Site ${GITHUB_SHA::7} — $(date -u +%Y-%m-%d\ %H:%M)"
+          git push origin HEAD:main
