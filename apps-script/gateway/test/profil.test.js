@@ -24,3 +24,11 @@ test('fiche fusionnée : corrections non vides prioritaires, nom officiel conser
   assert.strictEqual(f.wifi_user, 'wf.x'); assert.strictEqual(f.photo, true);
   const g = profilFusion_(pub, null); assert.strictEqual(g.nom_affiche, 'MADANI RAYANE'); assert.strictEqual(g.photo, false); assert.strictEqual(pub.telephone, '0550', 'l\'original n\'est pas modifié');
 });
+
+test('photos de profil pour les badges : même personne (ordre libre), une seule correspondance, sinon vide', () => {
+  const { profilPhotosPour_ } = require('../Profil.gs');
+  const meme = (a, b) => { const n = s => s.toLowerCase().split(/\s+/).filter(Boolean).sort().join(' '); return n(a) === n(b); };
+  const us = [{ email: 'a@x.dz', nom: 'MADANI RAYANE' }, { email: 'b@x.dz', nom: 'KACEM Mohamed' }, { email: 'c@x.dz', nom: 'KACEM Mohamed' }, { email: 'd@x.dz', nom: 'DEBBI Miloud' }];
+  const pr = { 'a@x.dz': { photo: 'IMG-A' }, 'b@x.dz': { photo: 'IMG-B' }, 'c@x.dz': { photo: 'IMG-C' }, 'd@x.dz': {} };
+  assert.deepStrictEqual(profilPhotosPour_([{ nom: 'Rayane', prenom: 'Madani' }, { nom: 'KACEM', prenom: 'Mohamed' }, { nom: 'DEBBI', prenom: 'Miloud' }, { nom: '', prenom: '' }], us, pr, meme), ['IMG-A', '', '', ''], 'homonymes : rien ; sans photo : rien');
+});

@@ -32,12 +32,31 @@
   var B = window.Badges, dernier = { p: {}, e: {} };
   var CHAMPS = ['nom', 'prenom', 'fonction', 'entreprise', 'contrat', 'structure', 'nomAr', 'prenomAr', 'photo'];
   function egal(a, b) { return CHAMPS.every(function (k) { return String(a[k] || '') === String(b[k] || ''); }); }
+  /** Photo de profil du portail → format du badge (22 × 28 mm, 264 × 336 px, recadrée au centre). */
+  function versBadge(src) {
+    return new Promise(function (ok) {
+      var i = new Image(); i.onload = function () {
+        var c = document.createElement('canvas'); c.width = 264; c.height = 336; var x = c.getContext('2d'), r = 264 / 336, h = i.height, w = h * r; if (w > i.width) { w = i.width; h = w / r; }
+        x.fillStyle = '#fff'; x.fillRect(0, 0, 264, 336); x.drawImage(i, (i.width - w) / 2, (i.height - h) / 2, w, h, 0, 0, 264, 336); ok(c.toDataURL('image/jpeg', .85));
+      }; i.onerror = function () { ok(''); }; i.src = src;
+    });
+  }
+  /** Les personnes sans photo reçoivent automatiquement celle de leur profil, si elles ont un compte au portail (même nom) ; rien n'est enregistré tant qu'on ne modifie pas la fiche. */
+  function photosProfil(personnes) {
+    var sans = personnes.filter(function (p) { return !p.photo && p.nom; });
+    if (!sans.length) return Promise.resolve();
+    return Api.call('badges_photos_profils', { personnes: sans.slice(0, 80).map(function (p) { return { nom: p.nom, prenom: p.prenom }; }) }).then(function (r) {
+      return Promise.all(sans.slice(0, 80).map(function (p, i) { var ph = (r.photos || [])[i]; return ph ? versBadge(ph).then(function (u) { if (u) { p.photo = u; p.photoProfil = true; } }) : null; }));
+    });
+  }
   var adaptateur = {
     nom: 'portail',
     charger: function (force) {
       return Api.call('badges_donnees', force ? { force: true } : {}).then(function (r) {
-        dernier = { p: {}, e: {} }; r.personnes.forEach(function (p) { dernier.p[p.id] = p; }); r.entreprises.forEach(function (e) { dernier.e[B.norm(e.nom)] = e; });
-        return r;
+        return photosProfil(r.personnes).catch(function () { /* sans photos de profil : badges comme avant */ }).then(function () {
+          dernier = { p: {}, e: {} }; r.personnes.forEach(function (p) { dernier.p[p.id] = p; }); r.entreprises.forEach(function (e) { dernier.e[B.norm(e.nom)] = e; });
+          return r;
+        });
       });
     },
     fonctionsEnquetes: function () { return Api.call('badges_enquetes_fonctions', {}); },

@@ -92,7 +92,7 @@
     var b = $('p-badges'); b.textContent = ''; var pe = window.Employeur && Employeur.pastille(U.dependance); if (pe) { pe.style.marginLeft = '0'; b.appendChild(pe); } if (U.role_libelle) b.appendChild(el('span', 'ok-pill att-pill', U.role_libelle));
     $('b-retirer').hidden = !photo;
   }
-  /** Image choisie → deux JPEG carrés (grand 160 px, miniature 56 px), recadrés au centre : jamais d'envoi de l'original. */
+  /** Image choisie → deux JPEG carrés (grand 240 px, miniature 56 px), recadrés au centre : jamais d'envoi de l'original. */
   function reduire(img, t, q) { var c = document.createElement('canvas'); c.width = c.height = t; var x = c.getContext('2d'), s = Math.min(img.width, img.height), sx = (img.width - s) / 2, sy = (img.height - s) / 2; x.fillStyle = '#fff'; x.fillRect(0, 0, t, t); x.drawImage(img, sx, sy, s, s, 0, 0, t, t); return c.toDataURL('image/jpeg', q); }
   $('b-photo').addEventListener('click', function () { $('f-photo').click(); });
   $('f-photo').addEventListener('change', function () {
@@ -100,7 +100,7 @@
     if (!/^image\//.test(f.type)) return msg('m-photo', 'Choisissez une image.');
     var rd = new FileReader(); rd.onload = function () {
       var img = new Image(); img.onload = function () {
-        var g = reduire(img, 160, .85), m = reduire(img, 56, .8); msg('m-photo', 'Enregistrement…', true);
+        var g = reduire(img, 240, .85); if (g.length > 44000) g = reduire(img, 240, .7); if (g.length > 44000) g = reduire(img, 200, .7); var m = reduire(img, 56, .8); msg('m-photo', 'Enregistrement…', true);
         Api.call('profil_photo', { grand: g, mini: m }).then(function () { photo = g; try { sessionStorage.removeItem('infra_avatar'); } catch (e) {} dessinerTete(); msg('m-photo', 'Photo enregistrée (visible partout dans le portail).', true); }).catch(function (e) { msg('m-photo', e.message); });
       }; img.onerror = function () { msg('m-photo', 'Image illisible.'); }; img.src = rd.result;
     }; rd.readAsDataURL(f);

@@ -135,4 +135,24 @@ function accesTraiter_(req) {
   Store.journal('acces_traite', u.email, String(r.numero) + ' ' + statut);
   return { numero: String(r.numero), statut: statut };
 }
-if (typeof module !== 'undefined') module.exports = { profilValider_: profilValider_, profilFusion_: profilFusion_ };
+/**
+ * Photos de profil pour les badges : pour chaque personne demandée { nom, prenom }, la photo (grand format) de l'agent du portail qui porte le même nom, sinon ''.
+ * PURE : `meme(a, b)` compare deux noms (enqMemePersonne_ côté passerelle), `utilisateurs` = [{ email, nom }], `profils` = { email: { photo } }.
+ */
+function profilPhotosPour_(personnes, utilisateurs, profils, meme) {
+  var avec = utilisateurs.filter(function (x) { return profils[String(x.email || '').toLowerCase()] && String(profils[String(x.email).toLowerCase()].photo || '').trim(); });
+  return personnes.map(function (p) {
+    var voulu = String(p.nom || '') + ' ' + String(p.prenom || '');
+    if (!String(voulu).trim()) return '';
+    var trouves = avec.filter(function (x) { return meme(voulu, x.nom); });
+    return trouves.length === 1 ? String(profils[String(trouves[0].email).toLowerCase()].photo) : '';   // un homonyme douteux : aucune photo plutôt qu'une mauvaise
+  });
+}
+/** « Badges » : photos de profil des personnes à imprimer (droit Badges, lecture) ; 80 personnes au plus par appel. */
+function badgesPhotosProfils_(req) {
+  badgesDroit_(req, 1); profilsPrets_();
+  var l = (Array.isArray(req.personnes) ? req.personnes : []).slice(0, 80);
+  var us = Store.table('Utilisateurs').filter(function (x) { return String(x.actif) !== '0' && x.email; }).map(function (x) { return { email: x.email, nom: Annuaire.nomAffichable(x.nom, x.email) }; });
+  return { photos: profilPhotosPour_(l, us, profilsParEmail_(), enqMemePersonne_) };
+}
+if (typeof module !== 'undefined') module.exports = { profilValider_: profilValider_, profilFusion_: profilFusion_, profilPhotosPour_: profilPhotosPour_ };
