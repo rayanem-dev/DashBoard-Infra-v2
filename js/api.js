@@ -454,10 +454,11 @@
       case 'modif_moi_annuler': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var lan = demoMods(), ean = lan.filter(function (x) { return x.email === demoState.user.email && x.statut === 'appliquee'; })[0];
         if (!ean) throw erreur('Aucune demande en cours'); ean.statut = 'annulee'; saveMods(lan); return { numero: ean.numero }; }
       case 'modif_alertes': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        if (demoState.user.role !== 'chef_division') return { niveau: 0, alertes: [] };
+        var mesd = demoMods().filter(function (x) { return (x.statut === 'appliquee' || x.statut === 'en_attente') && x.email === demoState.user.email; }).map(function (x) { return { numero: x.numero, debut: x.modif.debut, motif: x.motif, statut: x.statut }; });
+        if (demoState.user.role !== 'chef_division') return { niveau: 0, alertes: [], mes: mesd };
         return { niveau: 3, alertes: demoMods().filter(function (x) { return (x.statut === 'appliquee' || x.statut === 'en_attente') && x.email !== demoState.user.email; }).reverse().map(function (x) {
           var u3 = DEMO_USERS.filter(function (y) { return y.email === x.email; })[0] || {};
-          return { numero: x.numero, agent: u3.nom, service: u3.service, debut: x.modif.debut, motif: x.motif, statut: x.statut, hors_rotation: !!x.hors, peut_decider: true }; }).sort(function (a, b) { return (b.hors_rotation ? 1 : 0) - (a.hors_rotation ? 1 : 0); }) }; }
+          return { numero: x.numero, agent: u3.nom, service: u3.service, debut: x.modif.debut, motif: x.motif, statut: x.statut, hors_rotation: !!x.hors, peut_decider: true }; }).sort(function (a, b) { return (b.hors_rotation ? 1 : 0) - (a.hors_rotation ? 1 : 0); }), mes: mesd }; }
       case 'simu_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var cs = p.destinataires || {}, nb = (cs.secretariat ? 1 : 0) + (cs.chef_service ? 1 : 0) + (cs.chef_division ? 1 : 0) + (cs.agent ? 1 : 0);
         if (!nb) throw erreur('Cochez au moins un destinataire (ou aucune adresse trouvée)'); return { emails: nb }; }
       case 'emettreCode': exigerAdmin(); return { code: String(Math.floor(100000 + Math.random() * 900000)) };

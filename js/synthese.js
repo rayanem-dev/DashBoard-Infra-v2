@@ -204,9 +204,19 @@ var Synthese = (function () {
   function fr2(iso) { return iso ? String(iso).slice(8, 10) + '/' + String(iso).slice(5, 7) + '/' + String(iso).slice(0, 4) : ''; }
   function monterModifs(zone) {
     return Api.call('modif_alertes').then(function (r) {
-      var l = (r && r.alertes) || []; if (!l.length) { zone.hidden = true; return; }
-      var sub = panneau(zone, '🔔', 'Demandes de modification de planning', null, [['Toutes les demandes', 'simulation.html']]);
-      sub.textContent = l.length + ' demande' + (l.length > 1 ? 's' : '') + ' en attente de décision — déjà appliquée' + (l.length > 1 ? 's' : '') + ' au planning de l\'agent ; un refus rétablit son planning initial';
+      var l = (r && r.alertes) || [], mes = (r && r.mes) || []; if (!l.length && !mes.length) { zone.hidden = true; return; }
+      var sub = panneau(zone, '🔔', l.length ? 'Demandes de modification de planning' : 'Votre demande de modification de planning', null, [[l.length ? 'Toutes les demandes' : 'Voir', 'simulation.html#demandes']]);
+      sub.textContent = l.length ? l.length + ' demande' + (l.length > 1 ? 's' : '') + ' en attente de décision — déjà appliquée' + (l.length > 1 ? 's' : '') + ' au planning de l\'agent ; un refus rétablit son planning initial'
+        : mes.length + ' demande' + (mes.length > 1 ? 's' : '') + ' en attente de la décision de votre responsable';
+      // vos propres demandes en attente (l'intéressé)
+      if (mes.length) {
+        var um = el('ul', 'syn-puces syn-modifs');
+        mes.forEach(function (a) {
+          var li = el('li'), t = el('div'); t.appendChild(el('strong', null, 'Votre demande ' + a.numero)); t.appendChild(document.createTextNode(' — à partir du ' + fr2(a.debut) + ' · ' + (a.motif || '') + ' · ' + (a.statut === 'appliquee' ? 'déjà appliquée à votre planning, en attente de décision' : 'en attente de décision')));
+          li.appendChild(t); var b0 = el('div', 'syn-actions'), v0 = el('a', 'syn-actu', 'Voir'); v0.href = 'demande.html?n=' + encodeURIComponent(a.numero); v0.target = '_blank'; v0.rel = 'noopener'; b0.appendChild(v0); li.appendChild(b0); um.appendChild(li);
+        });
+        zone.appendChild(um);
+      }
       var ul = el('ul', 'syn-puces syn-modifs');
       l.forEach(function (a) {
         var li = el('li', a.hors_rotation ? 'syn-hors' : '');

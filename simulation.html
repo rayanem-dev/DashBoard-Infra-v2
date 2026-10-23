@@ -613,10 +613,10 @@
       });
       var supp = r.demandes.filter(function (d) { return d.peut_supprimer; }).map(function (d) { return d.numero; });
       var bt = $('b-nettoyer'); bt.hidden = !supp.length; bt.textContent = '🗑 Supprimer les demandes refusées, annulées ou remplacées (' + supp.length + ')'; bt.onclick = function () { supprimerDemandes(supp, supp.length + ' demande(s) refusée(s), annulée(s) ou remplacée(s)'); };
-      t.appendChild(b); $('nb-att').textContent = att ? '(' + att + ')' : '';
+      t.appendChild(b); $('nb-att').textContent = att ? '(' + att + ')' : ''; window.dispatchEvent(new Event('demandes-maj'));
     }).catch(function (e) { toast(e.message, true); });
   }
-  function onglet(d) { $('p-simu').hidden = d; $('p-dem').hidden = !d; $('o-simu').classList.toggle('actif', !d); $('o-dem').classList.toggle('actif', d); }
+  function onglet(d) { if ((location.hash === '#demandes') !== d) { try { history.replaceState(null, '', d ? '#demandes' : location.pathname + location.search); window.dispatchEvent(new HashChangeEvent('hashchange')); } catch (e) { /* rien */ } } $('p-simu').hidden = d; $('p-dem').hidden = !d; $('o-simu').classList.toggle('actif', !d); $('o-dem').classList.toggle('actif', d); }
 
   $('o-simu').addEventListener('click', function () { onglet(false); }); $('o-dem').addEventListener('click', function () { onglet(true); });
   $('service').addEventListener('change', dessinerFrise); $('vue').addEventListener('change', dessinerFrise);
@@ -627,6 +627,8 @@
   $('proposer').addEventListener('click', proposer); $('nb-rot').addEventListener('change', function () { if (S.A && S.B) proposer(); }); $('valider').addEventListener('click', valider); $('annuler').addEventListener('click', function () { annuler(); });
   $('imprimer').addEventListener('click', function () { window.print(); });
 
+  window.addEventListener('hashchange', function () { onglet(location.hash === '#demandes'); });
+  if (location.hash === '#demandes') onglet(true);
   charger().then(listeDemandes).catch(function (e) {
     if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
     if (e.code === 'DROITS') { location.replace('portail.html'); return; }
