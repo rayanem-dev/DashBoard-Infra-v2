@@ -37,12 +37,12 @@
     // la rotation EN COURS peut aussi être modifiée (raccourcie ou prolongée, jamais en dessous des jours déjà écoulés) : on part de son début, si la rotation de l'agent et la limite de 30 jours le permettent
     if (g.charAt(ia) === 'T' || g.charAt(ia) === 'R') { var ic = ia; while (ic > 0 && g.charAt(ic - 1) === g.charAt(ic)) ic -= 1; var dc = Simulation.addDays(F, ic); if (dc >= rot.depuis && dc >= Simulation.addDays(auj, -30)) iS = Math.min(iS, ic); }
     if (d.en_cours_modif && Simulation.estDate(d.en_cours_modif.debut)) { var ip = Math.max(0, Simulation.diff(F, d.en_cours_modif.debut)); while (ip > 0 && g.charAt(ip - 1) === g.charAt(ip)) ip -= 1; iS = Math.min(iS, ip); }
-    var lignes = blocs(g, iS, NB_LIGNES).map(function (b) { return { type: b.type, jours: b.jours, orig: b.jours, verrou: b.idx + b.jours <= ia, min: b.idx <= ia && b.idx + b.jours > ia ? ia - b.idx + 1 : 1 }; });
+    var lignes = blocs(g, iS, NB_LIGNES).map(function (b) { return { type: b.type, jours: b.jours, orig: b.jours, verrou: b.idx + b.jours <= ia, min: !chef && b.idx <= ia && b.idx + b.jours > ia ? ia - b.idx + 1 : 1 }; });   // un responsable peut régulariser (raccourcir) la rotation en cours ; l'agent, non
     var actuel = blocs(d.grille_actuelle, iS, NB_LIGNES), debutS = Simulation.addDays(F, iS);
 
     var dlg = el('dialog', 'dlg mp'), f = el('form'); f.method = 'dialog';
     f.appendChild(el('h2', null, options.titre || 'Modifier mon planning'));
-    f.appendChild(el('p', 'sous', 'Changez la durée de la rotation en cours et des suivantes : les dates en dessous se recalculent. La rotation en cours ne peut pas descendre en dessous des jours déjà écoulés.'));
+    f.appendChild(el('p', 'sous', 'Changez la durée de la rotation en cours et des suivantes : les dates en dessous se recalculent. ' + (chef ? 'Responsable : vous pouvez régulariser la rotation en cours, même en dessous des jours déjà écoulés.' : 'La rotation en cours ne peut pas descendre en dessous des jours déjà écoulés.')));
     var zone = el('div'); f.appendChild(zone);
 
     function tableau(titre, rows, editable) {
