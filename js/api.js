@@ -253,6 +253,7 @@
       case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'DURAND Marc', champ: 'Téléphone', valeur: '0550000001' }, { nom: 'LEROY Pierre Antoine', champ: 'Identifiant SONA', valeur: 'sona00004' }, { nom: 'LEROY Pierre Antoine', champ: 'Matricule', valeur: '10004D' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
+      case 'badges_photos_profils': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { photos: (p.personnes || []).map(function () { return ''; }) }; }
       case 'badges_donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var bd = demoBdg(); return { personnes: bd.pers, entreprises: bd.ent, historique: bd.hist, utilisateur: demoState.user.nom || 'Démo', avertissements: [], niveau: 3 };
       case 'badges_personnes_sauver': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
