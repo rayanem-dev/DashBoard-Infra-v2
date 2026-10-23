@@ -28,3 +28,19 @@ test("invitation : lien, première connexion et applications accordées", () => 
   Mail.envoyerInvitation('a@x.dz', 'Z', menu, 'u', false);
   assert.ok(MailApp.sent[MailApp.sent.length - 1].subject.includes('Invitation'));
 });
+
+test("demande approuvée : le document PDF est joint ; en attente : pas de pièce jointe", () => {
+  const d = { numero: 'MOD-1', date: '2026-10-22', statut: 'approuvee', motif: 'Régul', emetteur: 'X', decide_par: 'Y', decide_le: '2026-10-23', agent: { nom: 'A<b>', prenom: 'B', fonction: 'F', service: 'S', division: 'INFRA' }, actuel: [{ type: 'T', du: '2026-10-01', au: '2026-10-28', jours: 28 }], modifie: [{ type: 'R', du: '2026-10-01', au: '2026-10-20', jours: 20 }] };
+  const noms = [];
+  global.Utilities = { newBlob: (h, t, n) => ({ getAs: ty => ({ setName: nm => { noms.push([ty, nm, h]); return { nom: nm }; } }) }) };
+  Mail.envoyerDemande(['a@x.dz'], d, 'Titre', 'https://l', 'Moi');
+  const m = MailApp.sent[MailApp.sent.length - 1];
+  assert.strictEqual(m.attachments.length, 1); assert.deepStrictEqual(noms[0].slice(0, 2), ['application/pdf', 'Demande_MOD-1.pdf']);
+  assert.ok(noms[0][2].includes('DEMANDE DE MODIFICATION DE PLANNING') && noms[0][2].includes('A&lt;b&gt;') && noms[0][2].includes('20'));
+  Mail.envoyerDemande(['a@x.dz'], Object.assign({}, d, { statut: 'en_attente' }), 'Titre', 'https://l', 'Moi');
+  assert.strictEqual(MailApp.sent[MailApp.sent.length - 1].attachments, undefined);
+  global.Utilities = { newBlob() { throw new Error('conversion impossible'); } };
+  Mail.envoyerDemande(['a@x.dz'], d, 'Titre', 'https://l', 'Moi');
+  assert.strictEqual(MailApp.sent[MailApp.sent.length - 1].attachments, undefined, "l'e-mail part même si la conversion échoue");
+  delete global.Utilities;
+});

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-106",
+    "date": "2026-10-24",
+    "title": "Version 5.58.0 — E-mail d'une demande validée : document PDF en pièce jointe",
+    "changes": [
+      "Quand une demande de modification est validée (approuvée) et que vous envoyez l'e-mail, le document de la demande (plannings actuel et modifié, décision) est joint en PDF. Si la conversion échoue, l'e-mail part quand même avec le lien. Rien ne part automatiquement : l'envoi reste au clic, avec les cases à cocher."
+    ]
+  },
+  {
     "id": "2026-10-24-105",
     "date": "2026-10-24",
     "title": "Version 5.57.1 — Vis-à-vis : bouton de permutation retiré",

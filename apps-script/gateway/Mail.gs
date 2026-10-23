@@ -21,20 +21,38 @@ var Mail = (function () {
   }
   function fr(d) { return /^\d{4}-\d{2}-\d{2}/.test(String(d)) ? String(d).slice(8, 10) + '/' + String(d).slice(5, 7) + '/' + String(d).slice(0, 4) : String(d || ''); }
   function lignes(t) { return (t || []).map(function (p) { return '<tr><td>' + (p.type === 'T' ? 'Travail' : 'Récupération') + '</td><td>' + fr(p.du) + '</td><td>' + fr(p.au) + '</td><td style="text-align:right">' + p.jours + '</td></tr>'; }).join(''); }
+  /** Document « Demande de modification de planning » (HTML mis en page pour l'impression), converti en PDF et joint à l'e-mail quand la demande est approuvée. */
+  function documentDemande(d) {
+    var a = d.agent || {}, nom = esc((a.nom + ' ' + a.prenom).trim());
+    var tab = function (t) { return '<table style="width:100%;border:1px solid #000;border-collapse:collapse;font-size:12px">' + (t || []).map(function (p) { return '<tr><td style="padding:3px 6px">' + (p.type === 'T' ? 'Travail du' : 'Récupération du') + '</td><td><b>' + fr(p.du) + '</b></td><td>au</td><td><b>' + fr(p.au) + '</b></td><td>Nbr.jours</td><td style="text-align:right"><b>' + p.jours + '</b></td></tr>'; }).join('') + '</table>'; };
+    return '<html><head><meta charset="utf-8"></head><body style="font-family:Times New Roman,serif;font-size:13px;margin:24px">' +
+      '<table style="width:100%"><tr><td><b>Activité Amont<br>Division Production<br>Direction Régionale<br>' + esc(d.ville || 'Rhourde Nouss') + '</b></td><td style="text-align:right"><b>' + esc(d.ville || 'Rhourde Nouss') + ' le , ' + fr(d.date) + '</b></td></tr></table>' +
+      '<div style="border:3px double #000;padding:14px;text-align:center;margin:22px 0"><b>DEMANDE DE MODIFICATION DE PLANNING</b> — n° ' + esc(d.numero) + '</div>' +
+      '<p>Nom : <b>' + esc(a.nom) + '</b> &nbsp; Prénom : <b>' + esc(a.prenom) + '</b> &nbsp; Mle : ' + esc(a.matricule) + '<br>Fonction : <b>' + esc(a.fonction) + '</b> &nbsp; Service : ' + esc(a.service) + ' &nbsp; Division : <b>' + esc(a.division) + '</b><br>Motif : <b>' + esc(d.motif) + '</b></p>' +
+      '<p><b>PLANNING ACTUEL :</b></p>' + tab(d.actuel) + '<p><b>PLANNING MODIFIÉ :</b></p>' + tab(d.modifie) +
+      '<p>Émise par : ' + esc(d.emetteur) + (d.decide_par ? '<br>Approuvée par : <b>' + esc(d.decide_par) + '</b> le ' + fr(d.decide_le) + (d.commentaire ? ' — ' + esc(d.commentaire) : '') : '') + '</p></body></html>';
+  }
+  /** Pièce jointe PDF de la demande ; en cas d'échec de la conversion, l'e-mail part quand même (avec le lien). */
+  function pdfDemande(d) {
+    try { if (typeof Utilities === 'undefined' || !Utilities.newBlob) return []; return [Utilities.newBlob(documentDemande(d), 'text/html', 'demande.html').getAs('application/pdf').setName('Demande_' + d.numero + '.pdf')]; } catch (e) { return []; }
+  }
   /** Demande de modification de planning : à l'intéressé, au responsable, au chef de division et au secrétariat (un seul message). */
   function envoyerDemande(dest, d, titre, lien, parNom) {
     if (!dest.length) return;
     var nom = esc((d.agent.nom + ' ' + d.agent.prenom).trim()), st = d.statut === 'approuvee' ? 'Approuvée' : d.statut === 'refusee' ? 'Refusée' : d.statut === 'appliquee' ? 'Appliquée au planning, en attente de décision' : 'En attente de décision';
     var tab = function (t) { return '<table cellpadding="4" style="border-collapse:collapse;font-size:13px"><tr style="background:#f3f4f6"><th align="left">Statut</th><th align="left">Du</th><th align="left">Au</th><th align="right">Jours</th></tr>' + lignes(t) + '</table>'; };
-    MailApp.sendEmail({
+    var pj = d.statut === 'approuvee' ? pdfDemande(d) : [];   // demande validée : le document est joint
+    var msg = {
       to: dest.join(','), name: 'Division Infrastructure RNS', subject: '[Planning] ' + titre + ' ' + d.numero + ' — ' + (d.agent.nom + ' ' + d.agent.prenom).trim(),
       htmlBody: '<p><b>' + esc(titre) + '</b> n° ' + esc(d.numero) + '</p>' +
         '<p>Agent : <b>' + nom + '</b> (' + esc(d.agent.fonction) + ' — ' + esc(d.agent.service) + ')<br>Motif : ' + esc(d.motif) + '<br>Émise par : ' + esc(d.emetteur) + '<br>Situation : <b>' + st + '</b>' +
         (d.decide_par ? '<br>Décision de : ' + esc(d.decide_par) + (d.commentaire ? ' — ' + esc(d.commentaire) : '') : '') + '</p>' +
         '<p><u>Planning actuel</u></p>' + tab(d.actuel) + '<p><u>Planning modifié</u></p>' + tab(d.modifie) +
         '<p>Document à imprimer, signer et valider : <a href="' + esc(lien) + '">' + esc(lien) + '</a> (connexion au portail requise).</p>' +
-        '<p>— Tableau de bord Division Infrastructure</p>'
-    });
+        (pj.length ? '<p>📎 Le document de la demande validée est joint à ce message (PDF).</p>' : '') + '<p>— Tableau de bord Division Infrastructure</p>'
+    };
+    if (pj.length) msg.attachments = pj;
+    MailApp.sendEmail(msg);
   }
   /** Changement d'affectation : à l'intéressé, à l'auteur, au chef de division et au secrétariat. */
   function envoyerAffectation(dest, a) {
@@ -60,7 +78,7 @@ var Mail = (function () {
   function envoyerInvitation(email, nom, menu, lien, mdpDefaut) {
     MailApp.sendEmail({ to: email, name: 'Division Infrastructure RNS', subject: 'Invitation : votre accès au portail Division Infrastructure', htmlBody: corpsInvitation(nom, menu, lien, mdpDefaut) });
   }
-  return { corpsInvitation: corpsInvitation, envoyerInvitation: envoyerInvitation, masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande, envoyerAffectation: envoyerAffectation };
+  return { corpsInvitation: corpsInvitation, envoyerInvitation: envoyerInvitation, masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande, documentDemande: documentDemande, envoyerAffectation: envoyerAffectation };
 })();
 
 if (typeof module !== 'undefined') module.exports = Mail;
