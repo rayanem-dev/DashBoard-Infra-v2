@@ -605,6 +605,9 @@
           inf.addEventListener('click', function () { if (!confirm('Envoyer par e-mail à ' + d.agent + ' la décision sur la demande ' + d.numero + ' (' + (LIB[d.statut] || d.statut).toLowerCase() + ') ?')) return; inf.disabled = true;
             Api.call('simu_envoyer', { numero: d.numero, destinataires: { agent: true } }).then(function (x) { toast('✉ E-mail envoyé à ' + d.agent + ' (' + x.emails + ').'); }).catch(function (e) { toast(e.message, true); }).then(function () { inf.disabled = false; }); });
           ac.appendChild(inf); }
+        if (d.peut_annuler) { var an = el('button', 'btn-s', '↩ Annuler'); an.type = 'button'; an.title = 'Demande faite par erreur : l\'annuler (le planning revient comme avant), puis la supprimer ou en refaire une'; an.style.marginLeft = '6px';
+          an.addEventListener('click', function () { if (!confirm('Annuler la demande ' + d.numero + ' de ' + d.agent + ' ? Le planning redevient celui d\'avant cette demande. Vous pourrez ensuite la supprimer ou en refaire une correcte.')) return;
+            Api.call('simu_annuler', { numero: d.numero }).then(function () { toast('Demande ' + d.numero + ' annulée.'); listeDemandes(); }).catch(function (e) { toast(e.message, true); }); }); ac.appendChild(an); }
         if (d.peut_supprimer) { var su = el('button', 'btn-s', '🗑'); su.type = 'button'; su.title = 'Supprimer cette demande de la liste'; su.style.marginLeft = '6px'; su.addEventListener('click', function () { supprimerDemandes([d.numero], 'la demande ' + d.numero); }); ac.appendChild(su); }
         tr.appendChild(ac); b.appendChild(tr);
       });
