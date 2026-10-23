@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-117",
+    "date": "2026-10-24",
+    "title": "Version 5.61.3 — Privilèges : même classement que le menu du portail",
+    "changes": [
+      "Le tableau « Qui a accès à quoi » classe maintenant les applications dans les mêmes familles et le même ordre que le menu du portail (Pilotage, Marchés, Accès site, Personnel, Logistique, Administration, Informatique). Seul l'affichage change : les droits restent portés par les modules."
+    ]
+  },
+  {
     "id": "2026-10-24-116",
     "date": "2026-10-24",
     "title": "Version 5.61.2 — Dossiers CPM : le bouton « Ouvrir le fichier » suit les droits",
