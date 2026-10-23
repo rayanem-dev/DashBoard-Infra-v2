@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-100",
+    "date": "2026-10-24",
+    "title": "Version 5.55.1 — Modifier le planning : plus de blocage sur la rotation en cours",
+    "changes": [
+      "Si la durée saisie pour la rotation en cours est inférieure aux jours déjà écoulés, la valeur remonte toute seule au minimum en quittant la case (bouton « min » ajouté), au lieu de laisser un message rouge et un bouton grisé."
+    ]
+  },
+  {
     "id": "2026-10-24-99",
     "date": "2026-10-24",
     "title": "Version 5.55.0 — Ancienne application installée : passage à la nouvelle",
