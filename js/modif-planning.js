@@ -53,7 +53,9 @@
         var n = el('td', 'n');
         if (editable && !r.verrou) {
           var inp = document.createElement('input'); inp.type = 'number'; inp.min = r.min || 1; inp.max = 120; inp.step = 1; inp.value = r.jours; if (r.min > 1) inp.title = 'Rotation en cours : au moins ' + r.min + ' jours (déjà écoulés)'; inp.setAttribute('aria-label', 'Nombre de jours, ligne ' + (i + 1));
-          inp.addEventListener('input', function () { r.jours = Math.floor(Number(inp.value)); calculer(); }); n.appendChild(inp);
+          inp.addEventListener('input', function () { r.jours = Math.floor(Number(inp.value)); calculer(); });
+          inp.addEventListener('change', function () { if (r.min > 1 && r.jours < r.min) { r.jours = r.min; inp.value = r.min; calculer(); } }); n.appendChild(inp);   // en quittant la case, une valeur trop basse est remontée au minimum au lieu de bloquer
+          if (r.min > 1) { var mn = el('button', 'btn-s', 'min ' + r.min); mn.type = 'button'; mn.title = 'Mettre le minimum (jours déjà écoulés)'; mn.style.cssText = 'margin-left:6px;font-size:11px;padding:2px 8px'; mn.addEventListener('click', function () { r.jours = r.min; inp.value = r.min; calculer(); }); n.appendChild(mn); }
         } else { n.textContent = r.jours + ' j'; if (editable) tr.className += ' verrou'; }
         tr.appendChild(n); t.appendChild(tr); cellules.push(ligne);
       });
@@ -98,7 +100,7 @@
     function modif() {
       var k = -1; lignes.forEach(function (r, i) { if (r.jours !== HAB[r.type]) k = i; });
       var n = Math.max(k, 0) + 1, ps = lignes.slice(0, n).map(function (r) { return { type: r.type, jours: r.jours }; });
-      for (var q = 0; q < n; q += 1) if (lignes[q].min > 1 && lignes[q].jours < lignes[q].min) return { erreur: 'Ligne ' + (q + 1) + ' : la rotation en cours a déjà ' + lignes[q].min + ' jours écoulés, elle ne peut pas être plus courte.' };
+      for (var q = 0; q < n; q += 1) if (lignes[q].min > 1 && lignes[q].jours < lignes[q].min) return { erreur: 'Ligne ' + (q + 1) + ' : la rotation en cours a déjà ' + lignes[q].min + ' jours écoulés, elle ne peut pas être plus courte. Saisissez ' + lignes[q].min + ' ou plus (ou touchez « min ' + lignes[q].min + ' ») : le minimum revient tout seul en quittant la case.' };
       for (var i = 0; i < ps.length; i += 1) if (!(ps[i].jours >= 1 && ps[i].jours <= 120 && Math.floor(ps[i].jours) === ps[i].jours)) return { erreur: 'Ligne ' + (i + 1) + ' : de 1 à 120 jours' };
       return { m: { debut: debutS, periodes: ps, reprise: Simulation.autre(ps[ps.length - 1].type) } };
     }
