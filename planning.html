@@ -103,6 +103,10 @@
   // Jours fériés (nationaux en rouge, religieux en vert) : repère en haut de chaque jour, nom dans l'infobulle de la souris
   var _fer = {}; function ferMap(debut, n) { var k = debut + '|' + n; return _fer[k] || (_fer[k] = Holidays.carte(debut, plus(debut, n))); }
   function ferCoul(h) { return h.type === 'religieuse' ? '#047857' : '#B91C1C'; }
+  function photoPlanning(cible, uid, nom) {
+    if (!uid) return;
+    (function essai(k) { if (window.Avatar) { var p = Avatar.pastille(uid, nom, 22); p.style.marginRight = '6px'; cible.insertBefore(p, cible.firstChild); } else if (k < 20) setTimeout(function () { essai(k + 1); }, 200); })(0);
+  }
   function infobulleJour(debut, i, etat) { var d = plus(debut, i), h = ferMap(debut, 400)[d]; return jourFr(d) + (etat ? ' — ' + etat : '') + (h ? '\n' + (h.type === 'religieuse' ? '🕌 ' : '🇩🇿 ') + h.nom : ''); }
   function frise(grille, debut, n, px, aujIdx, etiquettes) {
     // teintes « prévu » et fond selon le thème (clair / sombre)
@@ -178,7 +182,7 @@
     lignes.forEach(function (l) {
       var tr = el('tr', l.moi ? 'moi' : ''); var n = el('td', 'nom'); n.title = [l.fonction, l.service].filter(Boolean).join(' · ');
       // le nom se tronque (…) mais l'employeur et le bouton restent toujours visibles
-      var w = el('div', 'nl'), nm = el('b', null, l.nom || ''); w.appendChild(nm); n.appendChild(w);
+      var w = el('div', 'nl'), nm = el('b', null, l.nom || ''); w.appendChild(nm); n.appendChild(w); photoPlanning(w, l.uid, l.nom);
       var pe = Employeur.pastille(l.dependance); if (pe) { pe.style.flex = 'none'; w.appendChild(pe); }
       Employeur.teinter(n, l.dependance);
       if (data.peutModifier && l.email) {

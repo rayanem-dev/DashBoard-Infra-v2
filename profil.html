@@ -75,6 +75,7 @@
 </main>
 <div class="toast" id="toast" role="status"></div>
 <script src="js/employeurs.js"></script>
+<script src="js/rubriques.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -163,19 +164,26 @@
   });
 
   // ---------- accès ----------
+  /** Classe les applications dans les mêmes familles et le même ordre que le menu du portail : la liste suit donc tout seul les changements de catégories et les nouvelles applications. */
+  function grouper(liste) {
+    var defs = window.Rubriques ? Rubriques.definitions : [], par = {}, autres = {}, ordre = [];
+    liste.forEach(function (x) { var r = window.Rubriques ? Rubriques.rubriqueDe({ titre: x.titre, url: x.url || '', rubrique: x.rubrique }) : ''; if (r) (par[r] = par[r] || []).push(x); else { var k = x.module || 'Autres'; if (!autres[k]) { autres[k] = []; ordre.push(k); } autres[k].push(x); } });
+    var out = []; defs.forEach(function (d) { if (par[d.id]) out.push({ titre: d.icone + ' ' + d.titre, apps: par[d.id] }); }); ordre.forEach(function (k) { out.push({ titre: '📁 ' + k, apps: autres[k] }); });
+    return out;
+  }
+  function entete(z, t, n) { var h = el('div', null, t + ' (' + n + ')'); h.style.cssText = 'font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin:10px 0 2px'; z.appendChild(h); }
   function dessinerAcces(a, dem) {
     var att = {}; dem.forEach(function (d) { if (d.statut === 'en_attente') att[d.titre] = true; });
     $('s-acc').textContent = '✅ J\'ai accès à ' + a.accessibles.length + ' application(s)'; var la = $('l-acc'); la.textContent = '';
-    a.accessibles.forEach(function (x) { var d = el('div', 'pfapp'); d.appendChild(el('span', null, x.emoji || '▫️')); var t = el('div', 't'); var lk = el('a', null, x.titre); lk.href = x.url; lk.style.cssText = 'color:inherit;font-weight:700;text-decoration:none'; if (/^https?:/.test(x.url)) lk.target = '_blank'; t.appendChild(lk); t.appendChild(el('small', null, x.module || '')); d.appendChild(t); la.appendChild(d); });
+    grouper(a.accessibles).forEach(function (g) { entete(la, g.titre, g.apps.length); g.apps.forEach(function (x) { var d = el('div', 'pfapp'); d.appendChild(el('span', null, x.emoji || '▫️')); var t = el('div', 't'); var lk = el('a', null, x.titre); lk.href = x.url; lk.style.cssText = 'color:inherit;font-weight:700;text-decoration:none'; if (/^https?:/.test(x.url)) lk.target = '_blank'; t.appendChild(lk); d.appendChild(t); la.appendChild(d); }); });
     $('s-non').textContent = '⛔ Je n\'ai pas accès à ' + a.non_accessibles.length + ' application(s)'; var ln = $('l-non'); ln.textContent = '';
-    a.non_accessibles.forEach(function (x) {
+    grouper(a.non_accessibles).forEach(function (g) { entete(ln, g.titre, g.apps.length); g.apps.forEach(function (x) {
       var d = el('div', 'pfapp'); d.appendChild(el('span', null, x.emoji || '▫️')); var t = el('div', 't'); t.appendChild(el('b', null, x.titre)); if (x.description) t.appendChild(el('small', null, x.description)); d.appendChild(t);
       if (att[x.titre]) d.appendChild(el('span', 'ok-pill att-pill', 'Demande envoyée'));
       else { var b = el('button', 'btn-s', 'Demander l\'accès'); b.type = 'button'; b.addEventListener('click', function () {
         var motif = prompt('Pourquoi avez-vous besoin de « ' + x.titre + ' » ? (facultatif)\nLa demande sera envoyée par e-mail au secrétariat.'); if (motif === null) return;
         b.disabled = true; Api.call('acces_demander', { titre: x.titre, motif: motif }).then(function (r) { msg('m-acc', 'Demande ' + r.numero + ' envoyée au secrétariat.', true); charger(); }).catch(function (e) { msg('m-acc', e.message); b.disabled = false; }); }); d.appendChild(b); }
-      ln.appendChild(d);
-    });
+      ln.appendChild(d); }); });
     var suivies = dem.filter(function (d) { return d.statut !== 'en_attente'; }).slice(0, 5);
     if (suivies.length) { var h = el('div', 'msg', 'Dernières demandes traitées : ' + suivies.map(function (d) { return d.titre + ' (' + (d.statut === 'accordee' ? 'accordée' : 'refusée') + ')'; }).join(', ')); la.appendChild(h); }
   }

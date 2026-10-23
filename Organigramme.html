@@ -118,9 +118,14 @@
   function telSur(t) { return String(t || '').replace(/[^\d+]/g, ''); }
   var D = null, ouvert = true;
 
+  /** Photo de profil en tête d'un élément (rond de 26 px) : l'avatar du portail se charge juste après la page, on réessaie quelques instants. */
+  function photoDe(cible, uid, nom, t) {
+    if (!uid) return;
+    (function essai(k) { if (window.Avatar) { var p = Avatar.pastille(uid, nom, t); p.style.marginRight = '6px'; cible.insertBefore(p, cible.firstChild); } else if (k < 20) setTimeout(function () { essai(k + 1); }, 200); })(0);
+  }
   function membre(m) {
     var d = el('div', 'membre' + (m.chef ? ' chef' : '')); d.dataset.t = norm(m.nom + ' ' + m.fonction);
-    var n = el('div', 'n', m.nom); var pe = Employeur.pastille(m.dependance); if (pe) { pe.style.marginLeft = '8px'; n.appendChild(pe); }
+    var n = el('div', 'n', m.nom); photoDe(n, m.uid, m.nom, 26); var pe = Employeur.pastille(m.dependance); if (pe) { pe.style.marginLeft = '8px'; n.appendChild(pe); }
     d.appendChild(n); d.appendChild(el('div', 'f', m.fonction || '—'));
     var t = telSur(m.telephone); if (t) { var a = el('a', 'tel', '📞 ' + m.telephone); a.href = 'tel:' + t; d.appendChild(a); }
     return d;
@@ -155,7 +160,7 @@
     L.slice().sort(function (a, b) { var x = cleTri(a, tri.col), y = cleTri(b, tri.col); if (!x !== !y && (tri.col === 'vis_travail' || tri.col === 'vis_chambre')) return x ? -1 : 1; return (x < y ? -1 : x > y ? 1 : (a.nom < b.nom ? -1 : 1)) * (x === y ? 1 : tri.sens); }).forEach(function (p) {
       var tr = el('tr'); tr.dataset.t = norm(p.nom + ' ' + p.fonction + ' ' + p.service + ' ' + p.dependance); tr.dataset.e = p.dependance || 'SONATRACH';
       var tcs = el('td', 'sel'), cs = document.createElement('input'); cs.type = 'checkbox'; cs.checked = !!sel[p.uid]; cs.setAttribute('aria-label', 'Sélectionner ' + p.nom); cs.addEventListener('change', function () { if (cs.checked) sel[p.uid] = true; else delete sel[p.uid]; compterSel(); }); tcs.appendChild(cs); tr.appendChild(tcs);
-      tr.appendChild(el('td', null, p.nom)).style.fontWeight = '700'; tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', null, p.service || '—'));
+      var tn = el('td', null, p.nom); tn.style.fontWeight = '700'; photoDe(tn, p.uid, p.nom, 26); tr.appendChild(tn); tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', null, p.service || '—'));
       var te = el('td'); var pe = Employeur.pastille(p.dependance); if (pe) { pe.style.marginLeft = '0'; te.appendChild(pe); } else te.textContent = p.dependance || 'SONATRACH'; tr.appendChild(te);
       tr.appendChild(el('td', null, p.telephone || '—'));
       ['vis_travail', 'vis_chambre'].forEach(function (c) {

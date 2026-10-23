@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-125",
+    "date": "2026-10-24",
+    "title": "Version 5.65.0 — Photos partout et accès classés comme le menu",
+    "changes": [
+      "La photo de profil s'affiche maintenant dans l'Organigramme, le Listing des vis-à-vis et le Planning (initiales quand il n'y a pas de photo).",
+      "« Mon profil › Mes accès » est classé dans les mêmes familles et le même ordre que le menu du portail : un changement de catégorie ou une nouvelle application y apparaît tout seul (la liste est relue à chaque ouverture)."
+    ]
+  },
+  {
     "id": "2026-10-24-124",
     "date": "2026-10-24",
     "title": "Version 5.64.1 — Badges : photo de profil reprise automatiquement",
