@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/charte.css">
+<style>@keyframes rappel { 0%,100% { box-shadow: 0 0 0 0 rgba(232,93,4,0); } 50% { box-shadow: 0 0 0 5px rgba(232,93,4,.45); } } #liste.rappel { animation: rappel .6s ease 3; border-color: var(--orange-main, #E85D04); }</style>
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
@@ -94,6 +95,17 @@
     $('choix').hidden = true; $('q').hidden = true; document.querySelector('label[for="q"]').hidden = true; msg('m-login', '');
     $('mdp').focus();
   }
+  /** Un seul résultat : c'est la personne (le mot de passe reste exigé) ; plusieurs : on montre qu'il faut cliquer sur son nom dans la liste. Renvoie true si une personne est choisie. */
+  function choisirSeul() {
+    if (choisi) return true;
+    var sel = $('liste'), box = $('choix');
+    if (!box.hidden && sel.options.length === 1) { selectionner(sel.options[0].value, sel.options[0].textContent); return true; }
+    if (!box.hidden && sel.options.length > 1) { msg('m-login', 'Cliquez d\'abord sur votre nom dans la liste, puis saisissez votre mot de passe.'); sel.focus(); sel.classList.remove('rappel'); void sel.offsetWidth; sel.classList.add('rappel'); }
+    return false;
+  }
+  // les agents qui tapent le début de leur nom, voient leur nom et passent au mot de passe sans cliquer : le choix se fait tout seul s'il n'y a qu'un résultat
+  $('mdp').addEventListener('focus', function () { if (!choisi && !$('choix').hidden && $('liste').options.length === 1) choisirSeul(); });
+  $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(minuteur); if (!choisi) { if ($('liste').options.length) choisirSeul(); else rechercher(); } } });
   $('liste').addEventListener('change', function () { var o = this.options[this.selectedIndex]; if (o) selectionner(this.value, o.textContent); });
   $('liste').addEventListener('click', function () { var o = this.options[this.selectedIndex]; if (o && choisi !== this.value) selectionner(this.value, o.textContent); });
   $('sel-changer').addEventListener('click', function () {
@@ -108,7 +120,7 @@
 
   $('f-login').addEventListener('submit', function (e) {
     e.preventDefault();
-    if (!choisi) return msg('m-login', 'Tapez votre nom, puis cliquez sur votre nom dans les résultats.');
+    if (!choisi && !choisirSeul()) return msg('m-login', $('choix').hidden ? 'Tapez votre nom, puis cliquez sur votre nom dans les résultats.' : 'Cliquez d\'abord sur votre nom dans la liste.');
     if (!$('mdp').value) return msg('m-login', 'Saisissez votre mot de passe.');
     occupe($('b-login'), true); msg('m-login', '');
     Api.call('login', { ident: choisi, mdp: $('mdp').value, remember: $('r1').checked }).then(entrer)
@@ -116,7 +128,7 @@
   });
 
   $('l-code').addEventListener('click', function () {
-    if (!choisi) return msg('m-login', 'Tapez d\'abord votre nom, puis cliquez sur votre nom dans les résultats.');
+    if (!choisi && !choisirSeul()) return msg('m-login', 'Tapez d\'abord votre nom, puis cliquez sur votre nom dans les résultats.');
     msg('m-login', 'Envoi du code…', true);
     Api.call('demanderCode', { ident: choisi }).then(function (r) {
       $('s-code').textContent = 'Un code à 6 chiffres vient d\'être envoyé à ' + r.masque + ' (valable ' + r.minutes + ' minutes).';
