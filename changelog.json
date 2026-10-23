@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-116",
+    "date": "2026-10-24",
+    "title": "Version 5.61.2 — Dossiers CPM : le bouton « Ouvrir le fichier » suit les droits",
+    "changes": [
+      "Dans « Dossiers CPM — Détail », le bouton « Ouvrir le fichier » (qui ouvre le Suivi CPM V5) n'apparaît que pour les personnes qui ont l'application « Suivi CPM V5 ». Chaque application reste indépendante."
+    ]
+  },
+  {
     "id": "2026-10-24-115",
     "date": "2026-10-24",
     "title": "Version 5.61.1 — Prise en charge hôtel : nuitées sans le dernier jour",
