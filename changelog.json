@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-113",
+    "date": "2026-10-24",
+    "title": "Version 5.60.3 — Nouvelles applications ajoutées toutes seules au catalogue",
+    "changes": [
+      "Une application ajoutée au code (comme « Prise en charge hôtel ») apparaît maintenant dans le portail dès le déploiement suivant, sans manipulation manuelle dans Apps Script."
+    ]
+  },
+  {
     "id": "2026-10-24-112",
     "date": "2026-10-24",
     "title": "Version 5.60.2 — Impression des vis-à-vis : fonction et employeur en entier",

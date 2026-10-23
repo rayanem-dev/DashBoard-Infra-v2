@@ -162,8 +162,10 @@ function preparerLiensRapport_() {
 /** Ajoute au catalogue la carte « Contrôle de l'annuaire » (administration, secrétariat) une seule fois. Idempotent. */
 function preparerAnnuaire_() {
   var props = PropertiesService.getScriptProperties();
-  if (props.getProperty('ANN_PRET') === '1') return;
-  try { ajouterApplicationsManquantes(); props.setProperty('ANN_PRET', '1'); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera */ }
+  // le catalogue se complète tout seul à chaque nouvelle application ajoutée au code (signature = les titres du catalogue de départ), sans relancer mettreAJourStructure à la main
+  var sig = SEED_APPS.length + ':' + SEED_APPS.map(function (r) { return String(r[1]); }).join('|').length;
+  if (props.getProperty('ANN_PRET') === sig) return;
+  try { ajouterApplicationsManquantes(); props.setProperty('ANN_PRET', sig); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera */ }
 }
 /** Prépare le module « affectation » tout seul au premier passage (onglet Affectations, module, droits, carte). Idempotent. */
 function preparerAffectation_() {
