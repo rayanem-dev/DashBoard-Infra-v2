@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-98",
+    "date": "2026-10-24",
+    "title": "Version 5.54.2 — Plus de données personnelles réelles dans les fichiers du site",
+    "changes": [
+      "Feuille de pointage : l'effectif de la division n'est plus écrit dans la page publique ; il est servi par la passerelle après connexion (module planning).",
+      "Mode démonstration : les noms, téléphones, e-mails et identifiants réels sont remplacés par des données fictives."
+    ]
+  },
+  {
     "id": "2026-10-24-97",
     "date": "2026-10-24",
     "title": "Version 5.54.1 — Publication du site : notes de documentation écartées",
