@@ -12,6 +12,31 @@
       'html[data-theme="dark"] body > header { filter: none !important; }';
     document.head.appendChild(st);
   }
+  /**
+   * Ancienne application installée (créée à partir de l'ancienne adresse) : l'ancienne page l'envoie ici avec ?depuis=ancien.
+   * Dans ce cas, et tant que cet onglet / cette fenêtre reste ouvert, un écran invite à désinstaller l'ancienne application et à installer la nouvelle ;
+   * l'accès se fait depuis le navigateur. Une application installée depuis la nouvelle adresse n'est jamais concernée.
+   */
+  (function () {
+    if (NOM) return;
+    var depuis = /[?&]depuis=ancien\b/.test(location.search), memo = false;
+    try { if (depuis) sessionStorage.setItem('infra_ancienne_app', '1'); memo = sessionStorage.getItem('infra_ancienne_app') === '1'; } catch (e) { memo = depuis; }
+    var autonome = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    if (!memo || !autonome) return;
+    function monter() {
+      var nouveau = location.origin + location.pathname.replace(/[^\/]*$/, '') + 'connexion.html';
+      var d = document.createElement('div'); d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-modal', 'true');
+      d.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#F5F5F0;color:#1A1A2E;font-family:Inter,Arial,sans-serif;display:grid;place-items:center;padding:24px;overflow:auto';
+      d.innerHTML = '<div style="max-width:520px;text-align:center"><div style="font-size:42px">🔄</div><h1 style="font-size:22px;margin:8px 0">Cette application est l\'ancienne version</h1>' +
+        '<p style="line-height:1.5">Le portail de la Division Infrastructure a changé d\'adresse. Pour continuer, installez la nouvelle application :</p>' +
+        '<ol style="text-align:left;line-height:1.7;display:inline-block"><li><b>Désinstallez</b> cette application (menu ⋮ en haut à droite › Désinstaller).</li><li>Ouvrez le <b>nouveau portail</b> dans votre navigateur (bouton ci-dessous).</li><li>Cliquez sur l\'icône <b>Installer</b> de la barre d\'adresse (ou menu ⋮ › Installer).</li></ol>' +
+        '<p style="margin:14px 0"><a id="ia-lien" target="_blank" rel="noopener" style="display:inline-block;background:#E85D04;color:#fff;font-weight:700;padding:12px 20px;border-radius:10px;text-decoration:none">Ouvrir le nouveau portail dans le navigateur</a></p>' +
+        '<p style="font-size:12px;color:#666;word-break:break-all">' + nouveau + '</p></div>';
+      d.querySelector('#ia-lien').href = nouveau;
+      document.body.appendChild(d);
+    }
+    if (document.body) monter(); else document.addEventListener('DOMContentLoaded', monter);
+  })();
   /** Télécharge toutes les pièces en parallèle ; elles s'exécutent dans l'ordre de la liste (async=false). */
   function chargerTout(liste, suite) {
     var restant = liste.length; if (!restant) { suite(); return; }
