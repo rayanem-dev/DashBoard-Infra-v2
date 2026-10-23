@@ -191,10 +191,10 @@ function enqPlanNoms_(onglets, cpm) {
   return res;
 }
 
-/** « 12.3.INFRA.25 - ENCC SPA - Génie civil » → « ENCC SPA » ; « Visite sur site… » → '' (pas un prestataire). */
+/** « 12.3.INFRA.25 - ENCC SPA - Génie civil » → « ENCC SPA » ; « Visite sur site… » ou « ORGANISME - … » → '' (pas un prestataire). */
 function enqEntrepriseDe_(prestataire) {
   var t = String(prestataire || '').trim();
-  if (!t || /^visite sur site/i.test(t)) return '';
+  if (!t || /^visite sur site/i.test(t) || /^organisme - /i.test(t)) return '';   // visite sur site ou organisme hors Suivi CPM : pas de prestataire, donc pas d'Enquête
   var p = t.split(' - ');
   return (p.length > 1 ? p[1] : p[0]).trim();
 }

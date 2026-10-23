@@ -174,6 +174,13 @@
     <label>Prestataire</label>
     <input type="text" id="prestataire" list="listePrestataires" placeholder="Tapez pour chercher, ou ouvrez la liste ▾" autocomplete="off">
     <datalist id="listePrestataires"></datalist>
+    <div style="margin:-4px 0 10px"><button type="button" id="btnOrg" class="btn-s" style="font-size:12px">➕ Organisme hors Suivi CPM</button>
+      <div id="formOrg" hidden style="margin-top:8px;padding:10px;border:1.5px dashed #bbb;border-radius:10px">
+        <p style="margin:0 0 6px;font-size:12px;color:#666">Un organisme qui n'est pas dans le Suivi CPM (ex. une division Sonatrach). Il est enregistré à part : le Suivi CPM n'est pas touché.</p>
+        <input type="text" id="orgNom" placeholder="Organisme (ex. SONATRACH | Division Laboratoires)" autocomplete="off" style="width:100%;margin-bottom:6px">
+        <input type="text" id="orgDetail" placeholder="Détail (ex. Direction Laboratoires &amp; Carothèque centrale)" autocomplete="off" style="width:100%;margin-bottom:6px">
+        <button type="button" id="orgOk" class="btn-s">Ajouter et choisir</button> <button type="button" id="orgAnn" class="btn-s">Annuler</button> <span id="orgMsg" style="font-size:12px"></span>
+      </div></div>
 
     <div class="form-row" id="rowEmpBase">
       <div class="field">
@@ -376,7 +383,7 @@
   // on laisse l'utilisateur saisir librement, sans écraser sa saisie.
   document.getElementById('dateArrivee').addEventListener('change', function() {
     if (!this.value) return;
-    const estVisiteSurSite = document.getElementById('prestataire').value.trim().startsWith('Visite sur site');
+    const v0 = document.getElementById('prestataire').value.trim(), estVisiteSurSite = v0.startsWith('Visite sur site') || v0.startsWith('ORGANISME - ');
     if (estVisiteSurSite) return;
     const d = new Date(this.value + 'T00:00:00');
     d.setDate(d.getDate() + 28);
@@ -407,6 +414,18 @@
     sBase.innerHTML = '';
     opts.bases.forEach(b => sBase.innerHTML += `<option>${b}</option>`);
   }
+
+  // Organisme hors Suivi CPM : ajouté à part (onglet « Organismes »), puis choisi tout seul
+  document.getElementById('btnOrg').addEventListener('click', function () { const f = document.getElementById('formOrg'); f.hidden = !f.hidden; if (!f.hidden) document.getElementById('orgNom').focus(); });
+  document.getElementById('orgAnn').addEventListener('click', function () { document.getElementById('formOrg').hidden = true; });
+  document.getElementById('orgOk').addEventListener('click', function () {
+    const nom = document.getElementById('orgNom').value, detail = document.getElementById('orgDetail').value, msg = document.getElementById('orgMsg');
+    if (!nom.trim()) { msg.textContent = 'Indiquez le nom de l\'organisme.'; return; }
+    msg.textContent = 'Enregistrement…';
+    google.script.run.withFailureHandler(e => { msg.textContent = (e && e.message) || 'Échec'; }).withSuccessHandler(function (option) {
+      google.script.run.withSuccessHandler(function (opts) { remplirDropdowns(opts); document.getElementById('prestataire').value = option; appliquerService(); document.getElementById('formOrg').hidden = true; msg.textContent = ''; document.getElementById('orgNom').value = ''; document.getElementById('orgDetail').value = ''; }).obtenirOptionsFormulaire();
+    }).ajouterOrganisme(nom, detail, document.getElementById('emputation').value, document.getElementById('base').value);
+  });
 
   google.script.run.withSuccessHandler(remplirDropdowns).obtenirOptionsFormulaire();
   // À chaque ouverture, la liste des prestataires est resynchronisée avec le Suivi CPM (sans bruit : la saisie en cours n'est pas touchée)

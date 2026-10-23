@@ -79,3 +79,12 @@ test('courriel d\'entreprise (PDF avec texte) : « 1- NOM PRENOM en qualité Fon
   assert.strictEqual(E('pecLireContrat_', txt), 'I/80/RNS/INFRA/2026');
   assert.strictEqual(E('pecCleContrat_', 'I/80/RNS/INFRA/2026'), E('pecCleContrat_', '80.INFRA.26'));
 });
+
+test('organisme hors Suivi CPM : option « ORGANISME - nom - détail », sans contrat dans le Suivi CPM', () => {
+  assert.strictEqual(E('pecOptionOrganisme_', 'SONATRACH | Division Laboratoires', 'Direction Laboratoires & Carothèque centrale'), 'ORGANISME - SONATRACH | Division Laboratoires - Direction Laboratoires & Carothèque centrale');
+  assert.strictEqual(E('pecOptionOrganisme_', '  Division  A - B ', ''), 'ORGANISME - Division A – B');   // « - » seul = séparateur de la liste : remplacé
+  assert.strictEqual(E('pecOptionOrganisme_', '', 'x'), '');
+  assert.strictEqual(E('pecSansContrat_', 'ORGANISME - SONATRACH | Division Laboratoires'), true);
+  assert.strictEqual(E('pecSansContrat_', 'Visite sur site - (D12) - x'), true);
+  assert.strictEqual(E('pecSansContrat_', '12/2026 - ENTREPRISE X - Travaux'), false);
+});

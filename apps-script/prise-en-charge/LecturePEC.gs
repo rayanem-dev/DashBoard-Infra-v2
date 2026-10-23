@@ -158,3 +158,14 @@ function pecCleContrat_(c) {
   var an = g[g.length - 1]; if (an.length === 4) an = an.slice(2);
   return String(Number(g[0])) + '-' + an;
 }
+
+/** Organismes hors Suivi CPM (ex. une division Sonatrach) : option « ORGANISME - Nom - Détail » ; le nom et le détail ne contiennent jamais « - » seul (c'est le séparateur de la liste). */
+var PEC_ORGANISME = 'ORGANISME';
+function pecOptionOrganisme_(nom, detail) {
+  var net = function (t) { return String(t || '').replace(/\s+/g, ' ').replace(/\s-\s/g, ' – ').trim(); };
+  nom = net(nom); detail = net(detail);
+  if (!nom) return '';
+  return PEC_ORGANISME + ' - ' + nom + (detail ? ' - ' + detail : '');
+}
+/** Une prise en charge sans contrat dans le Suivi CPM : « Visite sur site » ou un organisme (la date de fin vient de la date de départ saisie). */
+function pecSansContrat_(option) { var t = String(option || '').trim(); return t.indexOf('Visite sur site') === 0 || t.indexOf(PEC_ORGANISME + ' - ') === 0; }

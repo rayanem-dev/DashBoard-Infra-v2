@@ -319,6 +319,30 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+const ORGANISMES_TAB = "Organismes";
+/** Organismes hors Suivi CPM : [{ option, nom, detail, emputation, base }] (onglet « Organismes » : Organisme | Détail | Émputation | Base). */
+function lireOrganismes_(ss) {
+  const sh = ss.getSheetByName(ORGANISMES_TAB);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues()
+    .map(r => ({ nom: String(r[0] || "").trim(), detail: String(r[1] || "").trim(), emputation: String(r[2] || "").trim(), base: String(r[3] || "").trim() }))
+    .filter(o => o.nom).map(o => Object.assign(o, { option: pecOptionOrganisme_(o.nom, o.detail) }));
+}
+/** Ajoute un organisme à la liste (appelé par le formulaire) ; ne touche ni au Suivi CPM ni à « Config ». Renvoie l'option à sélectionner. */
+function ajouterOrganisme(nom, detail, emputation, base) {
+  const option = pecOptionOrganisme_(nom, detail);
+  if (!option) throw new Error("Indiquez le nom de l'organisme.");
+  if (option.length > 200) throw new Error("Nom trop long (200 caractères au plus).");
+  const ss = SpreadsheetApp.openById(PEC_SS_ID);
+  let sh = ss.getSheetByName(ORGANISMES_TAB);
+  if (!sh) { sh = ss.insertSheet(ORGANISMES_TAB); sh.getRange("A1:D1").setValues([["Organisme", "Détail", "Émputation", "Base"]]); sh.setFrozenRows(1); }
+  if (!lireOrganismes_(ss).some(o => o.option.toLowerCase() === option.toLowerCase())) {
+    const emp = emputation && EMPUTATIONS[emputation] !== undefined ? emputation : "";
+    sh.appendRow([option.split(" - ")[1], option.split(" - ").slice(2).join(" - "), emp, BASES.indexOf(base) !== -1 ? base : ""]);
+  }
+  return option;
+}
+
 /**
  * Renvoie toutes les options nécessaires pour remplir les listes déroulantes
  * du formulaire web (prestataires, émputations, bases).
@@ -344,6 +368,13 @@ function obtenirOptionsFormulaire() {
       }
     });
   }
+
+  // organismes hors Suivi CPM (onglet « Organismes » du classeur PEC : jamais écrit dans le Suivi CPM ni dans « Config », qui est reconstruit à chaque synchronisation)
+  lireOrganismes_(ss).forEach(o => {
+    prestataires.push(o.option);
+    if (o.emputation && EMPUTATIONS[o.emputation] !== undefined) servicesParPrestataire[o.option] = o.emputation;
+    const bh = o.base || memoire[pecCleEntreprise_(o.option)]; if (bh) basesParPrestataire[o.option] = bh;
+  });
 
   return {
     prestataires: prestataires,
@@ -739,7 +770,7 @@ function genererPEC(ss, silencieux, options) {
   // Date de départ : si non saisie, on prend automatiquement arrivée + 28 jours —
   // SAUF pour une "Visite sur site", où la durée est généralement courte et limitée :
   // dans ce cas on respecte strictement ce qui est saisi, sans calcul automatique.
-  const estVisiteSurSitePEC = prestataireCell.toString().trim().startsWith("Visite sur site");
+  const estVisiteSurSitePEC = pecSansContrat_(prestataireCell);
   let dateDepartVal = sheet.getRange("F6").getValue();
   let dateDepartObj = null;
   if (dateDepartVal instanceof Date) {
@@ -1126,7 +1157,7 @@ function genererAutorisations(ss, silencieux) {
 
   // Date de fin de la période d'accès (voir datesFin_) : date de départ choisie / visite sur site → autorisation ET macaron suivent cette date ;
   // sinon autorisation mensuelle et macaron jusqu'à la fin du contrat (Suivi CPM).
-  const estVisiteSurSite = prestataireCell.trim().startsWith("Visite sur site");
+  const estVisiteSurSite = pecSansContrat_(prestataireCell);
   const departVal = pecSheet.getRange("F6").getValue();
   const df = datesFin_({
     aujourdhui: today, depart: departVal, visite: estVisiteSurSite && departVal instanceof Date,
