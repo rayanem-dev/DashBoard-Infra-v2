@@ -78,10 +78,7 @@
   if (window.Api && Api.demo) $('demo').hidden = false;
   var CLE = 'pointage_effectif', CLE_X = 'pointage_croix';
   // Effectif de la division (fiche de pointage d'origine) : seules ces personnes sont concernées ; la fonction est celle de BDDORGA quand elle y figure
-  var DEPART = [
-    { t: 'Direction et services', l: [['LAMINE Hadjadj', 'CHEF Division Infrastructure'], ['REBAHI Redouane', 'CHEF SCE ELECTROMECAN N3'], ['BEN MESSAOUD ELFarouk', 'CHEF SERVICE CONSTRUCTION'], ['HAMBLI Mohamed', 'CHEF SERVICE ENTRETIEN'], ['OUADAN MUSTAPHA', 'INGENIEUR HYDRAULIQUE N2'], ['DAMECHE Med Rida', 'ING TRAVAUX PPL'], ['LAKKAICHI NOUREDDINE', 'INGENIEUR HYDRAULIQUE N2'], ['LEMSADFA MOHAMED', 'CONTROLEUR PPL (ED)'], ['MOKRANI MILOUD', 'CONTROLEUR PPL (ED)'], ['HAMMAD MED YACINE', 'SUPERVISEUR PRESTATIONS TRAVAUX N2'], ['BOUCHIKHI DJELLOUL', 'CONTROLEUR N3 (ED)'], ['ZARROUK Sid Ahmed', 'ORDONNATEUR N4'], ['ZAOUAI BRAHIM', 'ORDONNATEUR'], ['SAHEB ABDERAOUF', 'Preparateur'], ['FEKHAR ABDELMADJID', 'Preparateur']] },
-    { t: 'Génie civil et travaux', l: [['AICHOUCHE MOHAMED', 'INGÉNIEUR GÉNIE CIVIL'], ['CHAOUI OUSSAMA', 'INGÉNIEUR GÉNIE CIVIL'], ['BOUAZIZ HOCINE', 'INGÉNIEUR GÉNIE CIVIL'], ['MALEK AHMED AMINE', 'INGÉNIEUR GÉNIE CIVIL'], ['RAYANE REDHA MADANI', 'PRÉPARATEUR (SECRÉTAIRE)'], ['HAMIDI AHCENE', 'CONDUCTEUR /T G.CIVIL'], ['AZEGGAGH LOUCIF', 'INGÉNIEUR GÉNIE CIVIL'], ['BELHEINE TADJ EDDINE', 'INGÉNIEUR GÉNIE CIVIL'], ['MEZROUA ABDELDJALIL', 'MÉTREUR VÉRIFICATEUR'], ['LACHI CHOAYB', 'PRÉPARATEUR (SECRÉTAIRE)'], ['CHAREF KAMAL', 'CONDUCTEUR /T G.CIVIL'], ['KRIBIA MOHAMMED LAMINE', 'INGÉNIEUR GÉNIE CIVIL'], ['TOUAHRI ABDELLATIF', 'CONDUCTEUR /T G.CIVIL'], ['ZERROUKI AREZKI', 'CONDUCTEUR /T G.CIVIL'], ['ADNANE ABDELMOUMEN', 'INGÉNIEUR GÉNIE CIVIL'], ['BENRITAB ABDESSALEM', 'INGÉNIEUR GÉNIE CIVIL']] }
-  ];
+  var DEPART = [];   // effectif : servi par la passerelle après connexion (action pointage_effectif)
   var JOURS = 7, MOIS = ['JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
   function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
@@ -92,7 +89,7 @@
 
   // ----- effectif (modifiable, gardé sur cet ordinateur) -----
   function depart() { return DEPART.map(function (g) { return { t: g.t, l: g.l.map(function (x) { return { nom: x[0], fonction: x[1], actif: true }; }) }; }); }
-  var eff; try { eff = JSON.parse(localStorage.getItem(CLE) || 'null'); } catch (e) { eff = null; } if (!Array.isArray(eff) || eff.length !== DEPART.length) eff = depart();
+  var eff; try { eff = JSON.parse(localStorage.getItem(CLE) || 'null'); } catch (e) { eff = null; } if (!Array.isArray(eff)) eff = [];
   function sauverEff() { try { localStorage.setItem(CLE, JSON.stringify(eff)); } catch (e) { /* stockage indisponible */ } }
   // nom et fonction de BDDORGA : une personne de l'effectif est rapprochée de BDDORGA quand tous les mots de son nom s'y retrouvent (ordre libre)
   var annuaire = [];
@@ -104,6 +101,8 @@
     return tous[0];
   }
   function affiche(p) { var a = rapprocher(p); return { nom: a && a.nom ? a.nom : p.nom, fonction: a && a.fonction ? a.fonction : p.fonction }; }
+  function appliquerDepart(g) { DEPART = g || []; if (!eff.length) { eff = depart(); sauverEff(); } dessinerEff(); feuilles(); }
+  if (window.Api) Api.call('pointage_effectif').then(function (r) { appliquerDepart(r.groupes); }).catch(function () { /* sans la liste de départ : l'effectif enregistré dans ce navigateur, ou à saisir à la main */ });
   if (window.Api) Api.call('annuaire_personnes').then(function (r) { annuaire = (r.personnes || []).filter(function (p) { return p.nom; }); dessinerEff(); feuilles(); }).catch(function () { /* sans annuaire : noms et fonctions de la fiche d'origine */ });
 
   function dessinerEff() {

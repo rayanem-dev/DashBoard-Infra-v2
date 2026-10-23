@@ -217,15 +217,17 @@
         throw erreur('Données de démonstration non disponibles pour cette source');
       case 'contacts_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoState.rapproches = demoState.rapproches || {};
         if (p.email) demoState.rapproches[p.nom] = p.email; else delete demoState.rapproches[p.nom]; return { enregistre: true };
+      case 'pointage_effectif': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        return { groupes: [{ t: 'Direction et services', l: [['DURAND Marc', 'CHEF Division Infrastructure'], ['MARTIN Hugo', 'CHEF SERVICE CONSTRUCTION']] }, { t: 'Génie civil et travaux', l: [['BERNARD Louis', 'INGÉNIEUR GÉNIE CIVIL'], ['LEROY Pierre Antoine', 'TECHNICIEN']] }] };
       case 'annuaire_fiches': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { groupes: ['Postes internes (4 chiffres)', 'Équipe Division Infrastructure — Collaborateurs & Bureaux › 🗒️ SECRÉTARIAT', 'Prestataires › MAINTENANCE'], rows: [
           [0, 'Réception', '📞 1000', 'Standard', ''], [0, 'Sûreté interne', '📞 1111', 'Poste de garde', ''],
           [1, 'DEMO Secrétaire', '📞 0555 00 00 00 | ✉️ secretariat@exemple.dz', 'SECRÉTAIRE', 'SONATRACH'], [2, 'Entreprise Atlas (démo)', '📞 0555 11 11 11', 'Maintenance', 'PRESTATAIRE']] };
       case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        return { remplace: ['HADJADJ Lamine', 'BOUAZIZ Hocine', 'LAKKAICHI Noureddine'], personnes: [
-          { nom: 'HADJADJ Lamine', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0660514275', tels_alt: [], email: 'lamine.hadjadj@sonatrach.dz', email2: '', sona: 'sona12551', matricule: '90856S' },
-          { nom: 'BOUAZIZ Hocine', employeur: 'GTP', section: '📑 CPM — CELLULE PASSATION MARCHÉ', service: 'CPM', fonction: 'CPM — CELLULE PASSATION MARCHÉ', tel: '0659191322', tels_alt: [], email: 'hocinbouaziz463@gmail.com', email2: '', sona: 'soni0299', matricule: '' },
-          { nom: 'LAKKAICHI Noureddine', employeur: 'SONATRACH', section: '', service: 'Travaux Entretien', fonction: '', tel: '0661775887', tels_alt: [], email: 'lakkaichi@gmail.com', email2: 'noureddine.lakkaichi@sonatrach.dz', sona: '', matricule: '' } ] };
+        return { remplace: ['DURAND Marc', 'MARTIN Hugo', 'BERNARD Louis'], personnes: [
+          { nom: 'DURAND Marc', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0550000001', tels_alt: [], email: 'marc.durand@exemple.dz', email2: '', sona: 'sona00001', matricule: '10001A' },
+          { nom: 'MARTIN Hugo', employeur: 'GTP', section: '📑 CPM — CELLULE PASSATION MARCHÉ', service: 'CPM', fonction: 'CPM — CELLULE PASSATION MARCHÉ', tel: '0550000002', tels_alt: [], email: 'hugo.martin@example.com', email2: '', sona: 'sona00002', matricule: '' },
+          { nom: 'BERNARD Louis', employeur: 'SONATRACH', section: '', service: 'Travaux Entretien', fonction: '', tel: '0550000003', tels_alt: [], email: 'louis.bernard@example.com', email2: 'louis.bernard@exemple.dz', sona: '', matricule: '' } ] };
       case 'email_contact_demander': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(p.adresse || '').replace(/\s+/g, ''))) throw erreur('Adresse e-mail invalide', 'ADRESSE');
         demoState.ec = String(p.adresse).replace(/\s+/g, '').toLowerCase(); return { masque: demoState.ec.slice(0, 2) + '***@' + demoState.ec.split('@')[1] };
@@ -248,7 +250,7 @@
       case 'admin_mdp': exigerAdmin(); return { mdp: p.mdp || 'k7m2p9xq' };
       case 'admin_test_mail': exigerAdmin(); return { envoye: true };
       case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'HADJADJ Lamine', champ: 'Téléphone', valeur: '0660514275' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Identifiant SONA', valeur: 'sona29432' }, { nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Matricule', valeur: '77589N' }] };
+        if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'DURAND Marc', champ: 'Téléphone', valeur: '0550000001' }, { nom: 'LEROY Pierre Antoine', champ: 'Identifiant SONA', valeur: 'sona00004' }, { nom: 'LEROY Pierre Antoine', champ: 'Matricule', valeur: '10004D' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
       case 'badges_donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var bd = demoBdg(); return { personnes: bd.pers, entreprises: bd.ent, historique: bd.hist, utilisateur: demoState.user.nom || 'Démo', avertissements: [], niveau: 3 };
@@ -263,18 +265,18 @@
         at.items.forEach(function (it) { var k = it.n + '|' + B.cle(it); if (vus[k]) return; vus[k] = 1; bn.hist.push({ date: jour, ref: it.ref, n: it.n, annee: it.annee, cle: B.cle(it), nom: it.nom, prenom: it.prenom, fonction: it.fonction, entreprise: it.entreprise, structure: it.structure || cf.structure, contrat: it.contrat, imprime_par: demoState.user.nom || 'Démo' }); });
         saveBdg(bn); return { items: at.items, historique: bn.hist };
       case 'contacts_divergences': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        var rap = demoState.rapproches || {}, khat = !!rap['KHATIRI Mohammed Sadek Elslam'];
+        var rap = demoState.rapproches || {}, khat = !!rap['LEROY Pierre Antoine'];
         return { appariees: khat ? 42 : 41, fiches_personnes: 49, bddorga: 52, prestataires_non_compares: 58,
-          rapproches: khat ? [{ nom: 'KHATIRI Mohammed Sadek Elslam', bddorga: 'KHATIRI MOHAMED SADEK ELISLAM', email: 'k@exemple.dz' }] : [],
+          rapproches: khat ? [{ nom: 'LEROY Pierre Antoine', bddorga: 'LEROY PIERRE ANTOINE', email: 'k@exemple.dz' }] : [],
           correspondances_probables: khat ? [] : [
-            { nom: 'KHATIRI Mohammed Sadek Elslam', employeur: 'SONATRACH', section: 'SECTION ÉLECTRICITÉ', tels: ['562303481'], email: '', candidats: [{ nom: 'KHATIRI MOHAMED SADEK ELISLAM', email: 'k@exemple.dz', service: 'Travaux Entretien', employeur: 'SONATRACH', score: 0.97, indices: ['même téléphone', 'même employeur'] }] },
+            { nom: 'LEROY Pierre Antoine', employeur: 'SONATRACH', section: 'SECTION ÉLECTRICITÉ', tels: ['550000004'], email: '', candidats: [{ nom: 'LEROY PIERRE ANTOINE', email: 'k@exemple.dz', service: 'Travaux Entretien', employeur: 'SONATRACH', score: 0.97, indices: ['même téléphone', 'même employeur'] }] },
             { nom: 'BENALI Karimaa', employeur: 'ACOSCO', section: 'SECTION FROID', tels: ['600000001'], email: '', candidats: [{ nom: 'BENALI KARIMA', email: 'bk@exemple.dz', service: 'Service Construction', employeur: 'ACOSCO', score: 0.9, ambigu: true, indices: ['même employeur'] }, { nom: 'BENALI KARIMA', email: 'bk2@exemple.dz', service: 'Travaux Entretien', employeur: 'ACOSCO', score: 0.9, indices: ['même employeur'] }] }],
           divergences: [
-            { nom: 'AZEGGAGH Loucif', champ: 'Téléphone', fiche: '661383013', bddorga: '0661383099', genre: 'different' },
-            { nom: 'BOUAZIZ Hocine', champ: 'Employeur', fiche: 'GTP', bddorga: 'ACOSCO', genre: 'different' },
-            { nom: 'BOUAZIZ Hocine', champ: 'Identifiant SONA', fiche: '', bddorga: 'sona20001', genre: 'manque_fiche' },
-            { nom: 'HADJADJ Lamine', champ: 'E-mail', fiche: 'lamine.hadjadj@sonatrach.dz', bddorga: 'l.hadjadj@sonatrach.dz', genre: 'different' },
-            { nom: 'MEKKI Sofiane', champ: 'Matricule', fiche: '90210X', bddorga: '', genre: 'manque_bddorga' } ].concat(khat ? [{ nom: 'KHATIRI Mohammed Sadek Elslam', champ: 'Téléphone', fiche: '562303481', bddorga: '0562000000', genre: 'different' }] : []),
+            { nom: 'DUBOIS Loïc', champ: 'Téléphone', fiche: '661383013', bddorga: '0550000006', genre: 'different' },
+            { nom: 'MARTIN Hugo', champ: 'Employeur', fiche: 'GTP', bddorga: 'ACOSCO', genre: 'different' },
+            { nom: 'MARTIN Hugo', champ: 'Identifiant SONA', fiche: '', bddorga: 'sona00005', genre: 'manque_fiche' },
+            { nom: 'DURAND Marc', champ: 'E-mail', fiche: 'marc.durand@exemple.dz', bddorga: 'm.durand@exemple.dz', genre: 'different' },
+            { nom: 'GIRARD Paul', champ: 'Matricule', fiche: '10003C', bddorga: '', genre: 'manque_bddorga' } ].concat(khat ? [{ nom: 'LEROY Pierre Antoine', champ: 'Téléphone', fiche: '550000004', bddorga: '0550000007', genre: 'different' }] : []),
           fiches_sans_bddorga: [{ nom: 'INCONNU Paul', employeur: 'SONATRACH', section: 'SECTION FROID' }],
           bddorga_sans_fiche: [{ nom: 'NOUVEAU Karim', service: 'Travaux Entretien', employeur: 'ACOSCO' }] };
       case 'cpm_instantane': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { base: false, evenements: 0, dossiers: 52 };
@@ -463,7 +465,7 @@
   }
   function cibleDemo(email) { var u = DEMO_USERS.filter(function (x) { return x.email === email; })[0]; if (!u) throw erreur('Utilisateur inconnu'); return u; }
   function pub(u) {
-    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: (demoProfil[u.email] || {}).matricule || u.matricule || (u.role === 'chef_division' ? '90514B' : ''), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
+    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: (demoProfil[u.email] || {}).matricule || u.matricule || (u.role === 'chef_division' ? '10002B' : ''), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
              service: u.service, fonction: u.fonction || '', dependance: u.dependance || 'SONATRACH', telephone: u.telephone || '',
              sona: u.sona || ('sona' + (10000 + Number(String(u.uid).slice(1)))), date_integration: u.date_integration || '2025-03-17',
              wifi_user: 'wf.' + String(u.email).split('@')[0], sap: (demoProfil[u.email] || {}).sap || '', nin_masque: masquerNin((demoProfil[u.email] || {}).nin), nin_renseigne: !!(demoProfil[u.email] || {}).nin };

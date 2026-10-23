@@ -5,7 +5,7 @@ name: Déployer la passerelle
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths: ['apps-script/gateway/**', 'js/simulation.js', 'data/annuaire-data.js', 'badges/badges.js', 'apps-script/prise-en-charge/Enquetes.gs', '.github/workflows/deploy-gateway.yml']
+    paths: ['apps-script/gateway/**', 'js/simulation.js', 'data/annuaire-data.js', 'data/pointage-effectif.js', 'badges/badges.js', 'apps-script/prise-en-charge/Enquetes.gs', '.github/workflows/deploy-gateway.yml']
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +26,9 @@ jobs:
 
       - name: "Copier les fiches contact (source privée : data/annuaire-data.js, non publiée sur le site)"
         run: sed 's/^window\.ANNUAIRE_DATA = /var ANNUAIRE_DATA = /' data/annuaire-data.js > apps-script/gateway/AnnuaireContacts.gs
+
+      - name: "Copier l'effectif du pointage (source privée : data/pointage-effectif.js)"
+        run: cp data/pointage-effectif.js apps-script/gateway/PointageEffectif.gs
 
       - name: "Copier le moteur des badges (partagé avec le site, badges/badges.js)"
         run: cp badges/badges.js apps-script/gateway/BadgesMoteur.gs
