@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Simulation de planning – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<style>
+  .onglets { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); margin-bottom: 14px; }
+  .onglets button { border: 0; background: var(--surface); padding: 9px 18px; font: inherit; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+  .onglets button + button { border-left: 1.5px solid var(--border); }
+  .onglets button.actif { background: var(--orange-main); color: #fff; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 18px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .barre { display: flex; gap: 14px 20px; flex-wrap: wrap; align-items: flex-end; }
+  .barre label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 3px; }
+  .barre select, .barre input { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); }
+  .barre .lien { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+  details.opt { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; } details.opt input { width: 64px; margin: 0 14px 0 6px; padding: 5px 7px; border: 1.5px solid var(--border); border-radius: 8px; font: inherit; }
+  .aide2 { font-size: 12.5px; color: var(--text-muted); margin: 0 0 8px; }
+
+  /* frise : une ligne par agent ; les deux agents choisis se collent en tête, l'un sous l'autre */
+  .frise-zone { overflow-x: auto; padding-bottom: 4px; }
+  .frise { min-width: min-content; }
+  .frise .ligne { display: flex; align-items: center; height: 22px; cursor: default; }
+  .frise .ligne.ag { cursor: pointer; } .frise .ligne.ag:hover .etiq { color: var(--orange-main); }
+  .frise .etiq { position: sticky; left: 0; z-index: 2; background: var(--surface); width: 190px; flex: none; font-size: 12px; font-weight: 600; padding-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frise .etiq b { display: inline-block; min-width: 18px; text-align: center; border-radius: 5px; color: #fff; font-size: 10.5px; margin-right: 5px; padding: 0 3px; }
+  .frise .ligne.selA .etiq b { background: #2563EB; } .frise .ligne.selB .etiq b { background: #9333EA; } .frise .ligne.selC .etiq b { background: #0D9488; }
+  .frise .ligne.selA, .frise .ligne.selB, .frise .ligne.selC { height: 26px; }
+  .frise .ligne.selA .etiq, .frise .ligne.selB .etiq, .frise .ligne.selC .etiq { font-weight: 800; }
+  .frise .ligne.actuel { height: 9px; } .frise .ligne.actuel .etiq { font-size: 9px; font-weight: 500; color: var(--text-muted); } .frise .ligne.actuel i { height: 6px; opacity: .55; }
+  .frise .ligne.sep { height: 8px; }
+  .frise .jours { display: flex; }
+  .frise i { display: block; width: var(--w, 5px); height: 14px; }
+  .frise .ligne.selA i, .frise .ligne.selB i, .frise .ligne.selC i { height: 18px; }
+  .frise i.T { background: var(--c-T); } .frise i.R { background: var(--c-R); } .frise i.x { background: #E5E7EB; }
+  .frise i.pre { opacity: .4; }
+  .frise .jours { position: relative; } .frise .jours .lg { position: absolute; top: 0; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; font: 700 10px/1 Inter, Arial, sans-serif; color: #fff; text-shadow: 0 0 2px rgba(0,0,0,.45); pointer-events: none; white-space: nowrap; } .frise .jours .lg.t { color: #111; text-shadow: none; }
+  .frise i.C { background: #E11D48; } .frise i.V { background: #7C3AED; } .frise i.t { background: #FACC15; } .frise i.o { background: #D1FAE5; }
+  .frise i.auj { box-shadow: inset 2px 0 0 #111; }
+  .frise .mois { height: 16px; font-size: 10px; color: var(--text-muted); }
+  .frise .mois span { display: block; overflow: visible; white-space: nowrap; border-left: 1px solid #D1D5DB; padding-left: 3px; }
+  .frise .ligne.autres i { opacity: .8; }
+  .frise i { box-sizing: border-box; } .frise i.fn { border-top: 4px solid #B91C1C; } .frise i.fr { border-top: 4px solid #047857; }
+  .legende-s .fe { display: inline-block; width: 11px; height: 8px; border-radius: 2px; margin-right: 4px; background: #E5E7EB; vertical-align: -1px; } .legende-s .fe.n { border-top: 4px solid #B91C1C; } .legende-s .fe.r { border-top: 4px solid #047857; }
+  .legende-s { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); margin-top: 6px; }
+  .legende-s i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+
+  /* éditeur des semaines */
+  .ed { border-left: 4px solid #2563EB; padding: 2px 0 2px 12px; margin: 10px 0; } .ed.b { border-color: #9333EA; }
+  .ed h3 { font-size: 13px; margin: 0 0 6px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; } .ed h3 small { font-weight: 500; color: var(--text-muted); }
+  .sems { display: flex; gap: 6px; flex-wrap: wrap; align-items: stretch; }
+  .sem { width: 58px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); padding: 4px 2px 6px; font: inherit; cursor: pointer; text-align: center; color: var(--text-dark); }
+  .sem small { display: block; font-size: 9.5px; color: var(--text-muted); line-height: 1.2; } .sem span { display: block; font-size: 15px; font-weight: 800; line-height: 1.5; }
+  .sem.suite { border: 1.5px dashed currentColor; background: transparent; opacity: .85; } .sem.suite.sT { color: #3F8F2F; } .sem.suite.sR { color: #D9692D; } .sem.suite span, .sem.suite small { color: inherit; }
+  .sem.auto span { color: #9CA3AF; font-weight: 600; } .sem.auto.oT span, .sem.auto.oR span { opacity: .8; }
+  .sem.T { background: var(--c-T); border-color: var(--c-T); color: #fff; } .sem.R { background: var(--c-R); border-color: var(--c-R); color: #fff; }
+  .sem.T small, .sem.R small { color: rgba(255,255,255,.85); }
+  .sem:hover { border-color: var(--orange-main); }
+  .ed .mini { display: flex; gap: 6px; flex-direction: column; justify-content: center; } .ed .mini button { padding: 3px 9px; }
+  .resume { font-size: 13px; margin: 8px 0 0; line-height: 1.5; } .resume b { font-weight: 800; }
+  .erreur { color: #B42318; font-size: 12.5px; font-weight: 600; margin: 4px 0 0; }
+  .bilan { font-size: 13px; margin-top: 8px; } .bilan.ok { color: #166534; } .bilan.ko { color: #B42318; } .bilan ul { margin: 4px 0 0 18px; padding: 0; }
+  .props { display: grid; gap: 8px; margin-top: 8px; }
+  .prop { display: flex; gap: 12px; align-items: center; justify-content: space-between; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 12.5px; flex-wrap: wrap; }
+  .prop.top { border-color: #86EFAC; background: var(--tint-ok); } .prop .l { margin: 1px 0; } .prop small { color: var(--text-muted); }
+  .btn-p { padding: 10px 18px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-p:disabled { opacity: .45; cursor: not-allowed; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .succes { background: var(--tint-ok); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+  table.dem { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dem th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1.5px solid var(--border); }
+  table.dem td { padding: 9px 10px; border-bottom: 1px solid #F1F3F5; vertical-align: top; }
+  .st { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+  .st.appliquee, .st.en_attente { background: #FEF3C7; color: #92400E; } .st.approuvee { background: #DCFCE7; color: #166534; } .st.refusee { background: #FEE2E2; color: #991B1B; }
+  @media (max-width: 720px) { .frise .etiq { width: 120px; } .sem { width: 52px; } .barre .lien { margin-left: 0; } }
+  @media print { .no-print { display: none !important; } .bloc { box-shadow: none; break-inside: avoid; } }
+  .edit-pres { margin: 4px 0 14px; padding: 12px 14px; border: 1px solid var(--line, #E5E7EB); border-radius: 12px; background: rgba(0,0,0,.02); }
+  .edit-pres h2 { margin-top: 0; font-size: 1.05rem; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Simulation de planning</h1><p>Sonatrach · RNS · Test à vide, rien n'est enregistré</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+
+<main class="portail">
+  <div class="onglets no-print" role="tablist"><button class="actif" id="o-simu" type="button">Simulation</button><button id="o-dem" type="button">Demandes <span id="nb-att"></span></button></div>
+
+  <section id="p-simu">
+    <div class="succes" id="succes" hidden></div>
+
+    <div class="bloc no-print">
+      <div class="barre">
+        <div><label for="service">Service</label><select id="service"></select></div>
+        <div><label for="mode">Le changement commence</label><select id="mode"><option value="cette">Cette rotation (début du bloc en cours)</option><option value="prochaine">La prochaine rotation (prochaine relève)</option><option value="date">À partir d'une date (relève suivante)</option></select></div>
+        <div id="z-date" hidden><label for="dateDebut">Date de début</label><input type="date" id="dateDebut"></div>
+        <div><label for="vue">Durée affichée</label><select id="vue"><option value="92">3 mois</option><option value="184" selected>6 mois</option><option value="350">1 an</option></select></div>
+        <a class="lien" href="simulation-v1.html">Ancienne version (Modif 1.0)</a>
+      </div>
+      <details class="opt"><summary>Tolérances du vis-à-vis (4 jours par défaut)</summary>
+        <div class="aide2" id="tol-info" style="margin:0 0 6px">Chevauchement et trou tolérés : 4 jours par défaut, modifiables. Vert « vis-à-vis presque parfait » jusqu'à 4 jours de conflit, rouge au-delà.</div>
+        Chevauchement toléré (jours de relève)<input type="number" id="tol-c" min="0" max="15" value="4"> Trou toléré (jours)<input type="number" id="tol-v" min="0" max="15" value="4">
+        <br>Vis-à-vis de chambre : chevauchement toléré<input type="number" id="tol-cc" min="0" max="30" value="4"> Trou toléré (jours)<input type="number" id="tol-vc" min="0" max="60" value="6">
+      </details>
+    </div>
+
+    <div class="bloc">
+      <h2 id="t-grp">Équipes</h2>
+      <div id="couv"></div>
+      <p class="aide2 no-print" id="aide-grp">Cliquez sur un agent (A), puis sur son vis-à-vis (B) : les deux se placent l'un sous l'autre en haut du graphique. Cliquez de nouveau pour retirer.</p>
+    <div id="b-edit" class="edit-pres" hidden>
+      <h2>Changer les semaines à la main</h2>
+      <p class="aide2 no-print">Pour chaque agent, cliquez sur une semaine : <b>travail</b> → <b>repos</b> → retour au planning prévu. Le graphique et le résumé suivent aussitôt ; ensuite la rotation habituelle reprend.</p>
+      <div id="editeurs"></div>
+      <div class="resume" id="resume"></div>
+      <div class="bilan" id="bilan"></div>
+      <div class="actions no-print"><button class="btn-s" id="imprimer" type="button">🖨 Imprimer</button><button class="btn-s" id="raz" type="button">↺ Tout remettre comme prévu</button></div>
+    </div>
+      <div class="frise-zone"><div class="frise" id="frise"></div></div>
+      <div class="legende-s" id="legende"></div>
+    </div>
+
+    <div class="bloc no-print" id="b-prop" hidden>
+      <h2>💡 Propositions automatiques</h2>
+      <p class="aide2">Le changement se fait par semaines entières, à la relève de chacun. Choisissez le nombre de rotations sur lesquelles il peut s\'étaler : les propositions donnent le vis-à-vis le plus parfait, de la plus rapide à celles qui durent plusieurs séjours. « Utiliser » les place dans l\'éditeur ci-dessus.</p>
+      <div class="barre" style="margin:0 0 8px"><div><label for="nb-rot">Nombre de rotations</label><input type="number" id="nb-rot" min="1" max="4" value="2" style="width:70px"></div><span class="aide2" style="margin:0">Sur combien de rotations le changement peut s'étaler (par pas d'une semaine). Les propositions vont de la plus rapide à celles qui durent plusieurs séjours.</span></div>
+      <div class="actions" style="margin-top:0"><button class="btn-s" id="proposer" type="button">Proposer des combinaisons</button><span class="aide2" id="prop-aide" style="margin:0"></span></div>
+      <div class="props" id="props"></div>
+    </div>
+
+    <div class="bloc no-print" id="b-valider" hidden>
+      <h2>Décision</h2>
+      <div class="barre"><div style="flex:1;min-width:240px"><label for="motif">Motif de la demande</label><input type="text" id="motif" maxlength="120" value="Raison de service" style="width:100%"></div></div>
+      <div class="actions"><button class="btn-p" id="valider" type="button">✔ Valider et émettre la demande</button><button class="btn-s" id="annuler" type="button">✖ Annuler la simulation</button></div>
+      <p class="aide2" style="margin:8px 0 0">« Valider » enregistre une demande par agent modifié (statut <b>en attente</b>), n'envoie aucun e-mail tout seul et prépare le document à signer. Tant que ce n'est pas approuvé, le planning officiel ne change pas.</p>
+    </div>
+  </section>
+
+  <section id="p-dem" hidden>
+    <div style="margin:0 0 8px"><button class="btn-s" id="b-nettoyer" type="button" hidden></button></div>
+    <div class="bloc" style="padding:0;overflow:auto"><table class="dem" id="t-dem"></table></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/notif-modif.js"></script>
+<script src="js/raccourcis.js"></script>
+<script src="js/rotation.js"></script>
+<script>Rotation.exiger();</script>
+<script src="js/simulation.js"></script>
+<script src="js/couverture.js"></script>
+<script src="js/feries.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function fr(d) { return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : ''; }
+  function court(d) { return d ? d.slice(8, 10) + '/' + d.slice(5, 7) : ''; }
+  function toast(t, err) { var z = $('toast'); z.textContent = t; z.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { z.className = 'toast'; }, 4000); }
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
+  var MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  var MAX_SEM = 12;
+
+  var lignes = [], agents = [], F = '', auj = '';           // planning de toute la division (grille depuis F) et liste des agents (uid)
+  var S = { A: null, B: null, C: null };                              // agents choisis : { ligne, uid, data, cells: [{v}], nb }
+  var FER = {};                                              // jours fériés par date
+  var cache = {};                                            // uid → données
+  var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  function jourDe(iso) { return new Date(iso + 'T12:00:00').getDay(); }
+  /** Écart (0 à 3 jours) entre les jours de relève de A et de B : le chevauchement et le trou qu'il impose ne sont pas des conflits. */
+  function ecartReleve() { if (!S.A || !S.B) return null; var k = Math.abs(jourDe(debutDe(S.A)) - jourDe(debutDe(S.B))) % 7; return Math.min(k, 7 - k); }
+  function majTolerance() { var e = ecartReleve(); if (e === null) return; $('tol-info').textContent = 'Jours de relève : ' + S.A.ligne.nom + ' le ' + JOURS[jourDe(debutDe(S.A))] + ', ' + S.B.ligne.nom + ' le ' + JOURS[jourDe(debutDe(S.B))] + ' : ' + (e ? 'écart de ' + e + ' jour' + (e > 1 ? 's' : '') + '.' : 'même jour.'); }
+  function sgn(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n) + ' j'; }
+  function sem(n) { return n % 7 === 0 ? (n / 7) + ' sem.' : n + ' j'; }
+  function optsCh() { return { tolChev: Number($('tol-cc').value) || 0, tolTrou: Number($('tol-vc').value) || 0 }; }
+  function opts() { return { tolChev: Number($('tol-c').value) || 0, tolTrou: Number($('tol-v').value) || 0 }; }
+
+  // ---------- Chargement ----------
+  function charger() {
+    return Promise.all([Api.call('simu_agents'), Api.call('planning', { debut: Simulation.addDays(Rotation.aujourdhui(), -40), jours: 370 })]).then(function (rs) {
+      agents = rs[0].agents; var p = rs[1]; auj = p.aujourdhui; F = p.debut; FER = Holidays.carte(F, Simulation.addDays(F, 400));
+      lignes = p.lignes.filter(function (l) { return l.configuree && l.grille; }).sort(function (a, b) { return String(a.nom).localeCompare(String(b.nom), 'fr', { sensitivity: 'base' }); });
+      var sv = {}, s = $('service'); s.textContent = ''; s.appendChild(new Option('Toute la division', ''));
+      lignes.forEach(function (l) { if (l.service) sv[l.service] = 1; });
+      Object.keys(sv).sort().forEach(function (k) { s.appendChild(new Option(k, k)); });
+      dessinerFrise();
+    });
+  }
+  function uidDe(l) {
+    var c = agents.filter(function (a) { return norm(a.nom) === norm(l.nom); });
+    return c.length ? (c.filter(function (a) { return norm(a.service) === norm(l.service); })[0] || c[0]).uid : '';
+  }
+  function donnees(uid) {
+    if (cache[uid]) return Promise.resolve(cache[uid]);
+    return Api.call('simu_donnees', { uid: uid, debut: F, jours: 370 }).then(function (d) { cache[uid] = d; return d; });
+  }
+
+  // ---------- Sélection ----------
+  function cliquer(l) {
+    var cle = S.A && S.A.ligne === l ? 'A' : S.B && S.B.ligne === l ? 'B' : '';
+    if (cle) { S[cle] = null; if (cle === 'A') { S.A = S.B; S.B = null; } majTout(); if (cle === 'A') chargerLiens(false); return; }
+    var uid = uidDe(l); if (!uid) { toast('Cet agent n\'est pas accessible pour la simulation.', true); return; }
+    var cible = !S.A ? 'A' : 'B';
+    donnees(uid).then(function (d) {
+      S[cible] = { ligne: l, uid: uid, data: d, cells: [], nb: 6 }; initCells(S[cible]); majTout(); if (cible === 'A') chargerLiens(true);
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  /** Vis-à-vis déclarés (Organigramme › Listing) : le vis-à-vis de travail de A est proposé en B, celui de chambre est affiché en C. */
+  function ligneDeUid(uid) {
+    var ag = agents.filter(function (a) { return a.uid === uid; })[0]; if (!ag) return null;
+    var c = lignes.filter(function (l) { return norm(l.nom) === norm(ag.nom); });
+    return c.length ? (c.filter(function (l) { return norm(l.service) === norm(ag.service); })[0] || c[0]) : null;
+  }
+  function chargerLiens(prop) {
+    var A = S.A; S.C = null; if (!A) { majTout(); return; }
+    var ag = agents.filter(function (x) { return x.uid === A.uid; })[0] || {}, jobs = [];
+    if (prop && !S.B && ag.vis_travail && ag.vis_travail !== A.uid) { var lb = ligneDeUid(ag.vis_travail); if (lb) jobs.push(donnees(ag.vis_travail).then(function (d) { if (S.A === A && !S.B) { S.B = { ligne: lb, uid: ag.vis_travail, data: d, cells: [], nb: 6 }; initCells(S.B); } }).catch(function () {})); }
+    if (ag.vis_chambre && ag.vis_chambre !== A.uid) { var lc = ligneDeUid(ag.vis_chambre); if (lc) jobs.push(donnees(ag.vis_chambre).then(function (d) { if (S.A === A) S.C = { ligne: lc, uid: ag.vis_chambre, data: d }; }).catch(function () {})); }
+    Promise.all(jobs).then(function () { if (S.A === A) majTout(); });
+  }
+  function initCells(a) { a.cells = []; for (var i = 0; i < MAX_SEM; i += 1) a.cells.push({ v: '' }); }
+
+  // ---------- Début et modification d'un agent ----------
+  /** Début de la modification d'un agent, toujours sur SA relève (son jour de relève ne change pas : son vol en dépend). */
+  function debutDe(a) {
+    var d = a.data, g = d.grille, idx = Simulation.diff(d.debut, auj), mode = $('mode').value, i;
+    if (mode === 'cette') {                                  // début du bloc (travail ou repos) en cours
+      i = idx; while (i > 0 && g.charAt(i - 1) === g.charAt(i)) i -= 1;
+      var dd = Simulation.addDays(d.debut, i);
+      if (i > 0 && dd >= d.rotation.depuis && dd >= Simulation.addDays(auj, -30)) return dd;
+      i = Simulation.prochaineReleve(g, idx + 1);            // bloc commencé trop tôt : on prend la relève suivante
+    } else if (mode === 'date' && Simulation.estDate($('dateDebut').value)) i = Simulation.prochaineReleve(g, Math.max(0, Simulation.diff(d.debut, $('dateDebut').value)));
+    else i = Simulation.prochaineReleve(g, idx + 1);
+    return Simulation.addDays(d.debut, i);
+  }
+  /** Modification issue des semaines cochées : null si rien n'est changé. Les semaines « prévu » reprennent les lettres du planning officiel. */
+  function modifDe(a) {
+    var d = a.data, deb = debutDe(a), last = -1, i, k;
+    for (i = 0; i < a.nb; i += 1) if (a.cells[i].v) last = i;
+    if (last < 0) return null;
+    var i0 = Simulation.diff(d.debut, deb), lettres = '';
+    for (i = 0; i <= last; i += 1) for (k = 0; k < 7; k += 1) lettres += a.cells[i].v || d.grille.charAt(i0 + i * 7 + k);
+    var periodes = [];
+    for (i = 0; i < lettres.length; i += 1) { var c = lettres.charAt(i); if (periodes.length && periodes[periodes.length - 1].type === c) periodes[periodes.length - 1].jours += 1; else periodes.push({ type: c, jours: 1 }); }
+    return { debut: deb, periodes: periodes, reprise: Simulation.autre(lettres.charAt(lettres.length - 1)) };
+  }
+  function etat(a) {
+    if (!a) return null; var d = a.data, m = modifDe(a);
+    if (!m) return { m: null, err: '', mod: d.grille };
+    var err = Simulation.valider(m, d.rotation, d.aujourdhui);
+    return { m: m, err: err, mod: err ? d.grille : Simulation.appliquer(d.grille, d.debut, m, d.rotation) };
+  }
+  /** Phrase du type « travaille 5 semaines (1 de plus que prévu), puis repos 3 semaines, puis reprise de la rotation habituelle (travail) le 03/01 ». */
+  function phrase(a, e) {
+    var d = a.data, nom = a.ligne.nom, m = e.m; if (!m) return nom + ' : planning inchangé.';
+    var out = [], idx = Simulation.diff(d.debut, m.debut);
+    m.periodes.forEach(function (p) {
+      var st = d.grille.charAt(idx), lib = p.type === 'T' ? 'travail' : 'repos', t = '';
+      if (st === p.type) {
+        var r = 0; while (idx + r < d.grille.length && d.grille.charAt(idx + r) === st) r += 1;
+        if (p.jours === r) t = lib + ' ' + sem(p.jours) + ' (comme prévu)';
+        else if (p.jours < r) t = (p.type === 'R' ? 'écourte son repos : ' : 'écourte son travail : ') + sem(p.jours) + ' au lieu de ' + sem(r);
+        else t = (p.type === 'R' ? 'prolonge son repos : ' : 'prolonge son travail : ') + sem(p.jours) + ' au lieu de ' + sem(r);
+      } else t = (p.type === 'R' ? 'part en repos ' : 'vient travailler ') + sem(p.jours) + (st === 'T' || st === 'R' ? ' (au lieu de ' + (st === 'T' ? 'travail' : 'repos') + ' prévu)' : '');
+      out.push(t); idx += p.jours;
+    });
+    return nom + ' : ' + out.join(' → ') + ' ; puis rotation habituelle (' + (m.reprise === 'T' ? 'travail' : 'repos') + ') dès le ' + fr(Simulation.dateReprise(m)) + '.';
+  }
+
+  // ---------- Frise ----------
+  function classeFer(i) { var h = FER[Simulation.addDays(F, i)]; return h ? (h.type === 'religieuse' ? ' fr' : ' fn') : ''; }
+  var LIBTR = { T: 'Travail', R: 'Repos' };
+  /** Une rangée de jours ; `texte(i)` donne la ligne d'infobulle propre à la rangée (état du jour, vis-à-vis…). */
+  /** Écrit le nombre de jours sur chaque bande de la ligne (travail, repos, conflits, tolérés) quand la bande est assez large ; les bandes coupées par le bord de la fenêtre ne sont pas comptées (durée inconnue). */
+  var PXJ = 8;
+  function etiqueter(j) {
+    var el0 = j.children, n = el0.length, i = 0;
+    function cle(k) { var c = el0[k].className.split(/\s+/)[0]; return c === 'T' || c === 'R' || c === 'C' || c === 'V' || c === 't' ? c + (/\bpre\b/.test(el0[k].className) ? 'p' : '') : ''; }
+    while (i < n) {
+      var c = cle(i), f = i; while (i < n && cle(i) === c) i += 1;
+      var len = i - f; if (!c || len * PXJ < 22 || ((c === 'T' || c === 'R' || c === 'Tp' || c === 'Rp') && (f === 0 || i === n))) continue;
+      var sp = el('span', 'lg' + (c.charAt(0) === 't' ? ' t' : ''), len + ' j'); sp.style.left = 'calc(var(--w) * ' + f + ')'; sp.style.width = 'calc(var(--w) * ' + len + ')'; j.appendChild(sp);
+    }
+  }
+  function jours(g, i0, n, pre, extra, texte, etiq) {
+    var j = el('div', 'jours');
+    for (var i = i0; i < i0 + n; i += 1) { var c = g.charAt(i), b = document.createElement('i'); b.className = (c === 'T' || c === 'R' ? c : 'x') + (pre != null && i < pre ? ' pre' : '') + (extra && extra(i) ? ' ' + extra(i) : '') + classeFer(i); j.appendChild(b); }
+    Survol.attacher(j, function (x) { var w = j.firstChild ? j.firstChild.getBoundingClientRect().width : 0, i = w ? i0 + Math.floor(x / w) : -1; if (i < i0 || i >= i0 + n) return ''; return infobulle(i, texte ? texte(i) : (LIBTR[g.charAt(i)] || '')); });
+    if (etiq) etiqueter(j);
+    return j;
+  }
+  function infobulle(i, etat) { var d = Simulation.addDays(F, i), h = FER[d]; return jourFr(d) + (etat ? ' — ' + etat : '') + (h ? '\n' + (h.type === 'religieuse' ? '🕌 ' : '🇩🇿 ') + h.nom : ''); }
+  function rangee(cls, etiqHtml, titre) { var l = el('div', 'ligne ' + cls), e = el('div', 'etiq'); if (etiqHtml) { e.appendChild(etiqHtml); } e.title = titre || ''; l.appendChild(e); return l; }
+  function dessinerFrise() {
+    var z = $('frise'); z.textContent = ''; if (!F) return;
+    var n = Math.min(Number($('vue').value), 360), i0 = Math.max(0, Simulation.diff(F, Simulation.addDays(auj, -14)));
+    z.style.setProperty('--w', n > 250 ? '3px' : n > 120 ? '5px' : '8px'); PXJ = n > 250 ? 3 : n > 120 ? 5 : 8;
+    var iAuj = Simulation.diff(F, auj), jAuj = function (i) { return i === iAuj ? 'auj' : ''; };
+    var lm = el('div', 'ligne mois'); lm.appendChild(el('div', 'etiq', '')); var jm = el('div', 'jours'), i = i0;
+    while (i < i0 + n) { var d = Simulation.addDays(F, i), jr = Number(d.slice(8, 10)); var w = Math.min(i0 + n - i, new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate() - jr + 1);
+      var sp = el('span', null, w < 5 ? '' : MOIS[Number(d.slice(5, 7)) - 1] + (d.slice(5, 7) === '01' || i === i0 ? ' ' + d.slice(0, 4) : '')); sp.style.width = 'calc(var(--w) * ' + w + ')'; jm.appendChild(sp); i += w; }
+    lm.appendChild(jm); z.appendChild(lm);
+    var A = S.A, B = S.B, eA = etat(A), eB = etat(B), leg = [['var(--c-T)', 'Travail'], ['var(--c-R)', 'Repos']];
+    function etiq(tag, nom, couleur) { var s = el('span'); if (tag) { var b = el('b', null, tag); s.appendChild(b); } s.appendChild(document.createTextNode(nom)); return s; }
+    // 1) les agents choisis, l'un sous l'autre : le planning prévu en fin trait, puis le simulé
+    [['A', A, eA], ['B', B, eB]].forEach(function (x) {
+      var a = x[1], e = x[2]; if (!a) return;
+      var act = rangee('actuel', etiq('', 'prévu'), 'Planning actuel'); act.appendChild(jours(a.data.grille, i0, n, null, jAuj)); z.appendChild(act);
+      var l = rangee('ag sel' + x[0], etiq(x[0], a.ligne.nom), a.ligne.nom + ' — clic pour retirer');
+      var depuis = e.m ? Simulation.diff(F, e.m.debut) : null;
+      l.appendChild(jours(e.mod, i0, n, depuis, jAuj, null, true)); l.addEventListener('click', function () { cliquer(a.ligne); }); z.appendChild(l);
+    });
+    if (A && B) {
+      var deb = Math.min.apply(null, [eA, eB].map(function (e, k) { var a = k ? B : A; return e.m ? Simulation.diff(F, e.m.debut) : Simulation.diff(F, auj); }));
+      var c = Simulation.conflits(eA.mod, eB.mod, F, opts(), deb), l2 = rangee('', el('span', null, 'Vis-à-vis'), ''), j2 = el('div', 'jours');
+      for (var k = i0; k < i0 + n; k += 1) { var mk = c.marques.charAt(k), b2 = document.createElement('i'); b2.className = (k < deb ? 'x pre' : (mk === 'C' || mk === 'V' || mk === 't' ? mk : 'o')) + classeFer(k); j2.appendChild(b2); }
+      Survol.attacher(j2, function (x) { var w = j2.firstChild ? j2.firstChild.getBoundingClientRect().width : 0, q = w ? i0 + Math.floor(x / w) : -1; if (q < i0 || q >= i0 + n) return ''; var m2 = c.marques.charAt(q);
+        return infobulle(q, q < deb ? '' : m2 === 'C' ? 'les deux travaillent' : m2 === 'V' ? 'les deux en repos' : m2 === 't' ? 'toléré (relève)' : 'vis-à-vis OK'); });
+      etiqueter(j2); l2.appendChild(j2); z.appendChild(l2);
+      leg = leg.concat([['#E11D48', 'Les deux travaillent'], ['#7C3AED', 'Les deux en repos'], ['#FACC15', 'Toléré (relève)'], ['#D1FAE5', 'Vis-à-vis']]);
+    }
+    // vis-à-vis de CHAMBRE (déclaré dans l'Organigramme) : l'agent C et le contrôle chevauchement / trou de A avec lui
+    if (A && S.C) {
+      var Cc = S.C, gC = B && B.uid === Cc.uid && eB ? eB.mod : Cc.data.grille;
+      var lC = rangee('ag selC', etiq('C', Cc.ligne.nom), Cc.ligne.nom + ' — vis-à-vis de chambre de ' + A.ligne.nom); lC.appendChild(jours(gC, i0, n, null, jAuj, null, true)); z.appendChild(lC);
+      var debC = eA.m ? Simulation.diff(F, eA.m.debut) : iAuj, cch = Simulation.conflits(eA.mod, gC, F, optsCh(), debC), l3 = rangee('', el('span', null, 'Chambre'), ''), j3 = el('div', 'jours');
+      for (var q = i0; q < i0 + n; q += 1) { var mq = cch.marques.charAt(q), b3 = document.createElement('i'); b3.className = (q < debC ? 'x pre' : (mq === 'C' || mq === 'V' || mq === 't' ? mq : 'o')) + classeFer(q); j3.appendChild(b3); }
+      Survol.attacher(j3, function (x) { var w = j3.firstChild ? j3.firstChild.getBoundingClientRect().width : 0, q2 = w ? i0 + Math.floor(x / w) : -1; if (q2 < i0 || q2 >= i0 + n) return ''; var m3 = cch.marques.charAt(q2);
+        return infobulle(q2, q2 < debC ? '' : m3 === 'C' ? 'les deux sur site (chambre partagée)' : m3 === 'V' ? 'chambre vide' : m3 === 't' ? 'toléré' : 'chambre OK'); });
+      etiqueter(j3); l3.appendChild(j3); z.appendChild(l3);
+    }
+    if (A || B) z.appendChild(el('div', 'ligne sep'));
+    // 2) les autres agents du service choisi
+    var svc = $('service').value, nb = 0;
+    lignes.forEach(function (l) {
+      if (svc && l.service !== svc) return; if ((A && A.ligne === l) || (B && B.ligne === l) || (S.C && S.C.ligne === l)) return; nb += 1;
+      var r = rangee('ag autres', el('span', null, l.nom), l.nom + (l.service ? ' — ' + l.service : '')); r.appendChild(jours(l.grille, i0, n, null, jAuj)); r.addEventListener('click', function () { cliquer(l); }); z.appendChild(r);
+    });
+    $('t-grp').textContent = svc ? 'Service : ' + svc : 'Toute la division';
+    // couverture de l'équipe (simulation incluse) : jours sans personne et pics de présence, d'aujourd'hui à la fin de la période affichée
+    var gc = [];
+    lignes.forEach(function (l) {
+      if (svc && l.service !== svc) return; if (!l.grille) return;
+      var g = l.grille; if (A && A.ligne === l && eA && eA.mod) g = eA.mod; if (B && B.ligne === l && eB && eB.mod) g = eB.mod; gc.push(g);
+    });
+    Couverture.monter($('couv'), Couverture.analyser(gc, { debut: F, de: iAuj, a: i0 + n }), (svc || 'division') + (A || B ? ' · simulation incluse' : ''));
+    var lg = $('legende'); lg.textContent = ''; leg.forEach(function (x) { var s = el('span'), i2 = document.createElement('i'); i2.style.background = x[0]; s.appendChild(i2); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
+    [['n', 'Jour férié national'], ['r', 'Jour férié religieux']].forEach(function (x) { var s = el('span'); s.appendChild(el('span', 'fe ' + x[0])); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
+  }
+
+  // ---------- Éditeurs de semaines ----------
+  function dessinerEditeurs() {
+    var z = $('editeurs'); z.textContent = '';
+    [['A', S.A], ['B', S.B]].forEach(function (x) {
+      var a = x[1]; if (!a) return; var d = a.data, deb = debutDe(a);
+      var ed = el('div', 'ed' + (x[0] === 'B' ? ' b' : '')), h = el('h3'); h.appendChild(el('span', null, x[0] + ' · ' + a.ligne.nom));
+      h.appendChild(el('small', null, 'rotation ' + d.rotation.jours_travail + '/' + d.rotation.jours_repos + ' · relève le ' + JOURS[jourDe(deb)] + ' · reliquat actuel ' + sgn(d.solde || 0) + ' · début le ' + fr(deb))); if (x[0] === 'A') { var bv = el('button', 'btn-s', '⇄ Vis-à-vis'); bv.type = 'button'; bv.title = 'Changer le vis-à-vis de travail ou de chambre de ' + a.ligne.nom; bv.style.cssText = 'margin-left:10px;padding:3px 9px;font-size:12px'; bv.addEventListener('click', function () { choisirVis(a); }); h.appendChild(bv); } ed.appendChild(h);
+      var ss = el('div', 'sems'), i0 = Simulation.diff(d.debut, deb); a.rep = [];
+      for (var i = 0; i < a.nb; i += 1) (function (i) {
+        var c = a.cells[i], off = d.grille.charAt(i0 + i * 7), b = el('button', 'sem'); b.type = 'button';
+        function peindre() {
+          var su = a.suite && !c.v && i > a.suite.last ? a.suite.mod.charAt(i0 + i * 7) : '', lt = c.v || su || off;
+          b.className = 'sem ' + (c.v || (su === 'T' || su === 'R' ? 'suite s' + su : 'auto o' + off)); b.textContent = ''; b.appendChild(el('small', null, 'S' + (i + 1) + ' · ' + court(Simulation.addDays(deb, i * 7)))); b.appendChild(el('span', null, lt === 'T' || lt === 'R' ? lt : '·'));
+          b.title = c.v ? (c.v === 'T' ? 'Travail' : 'Repos') + ' (modifié)' : su ? 'Suite : la rotation habituelle reprend (' + (su === 'T' ? 'travail' : 'repos') + ')' : 'Prévu : ' + (off === 'T' ? 'travail' : off === 'R' ? 'repos' : '—');
+        }
+        a.rep.push(peindre);
+        peindre();
+        b.addEventListener('click', function () { c.v = c.v === '' ? 'T' : c.v === 'T' ? 'R' : ''; peindre(); majResultat(); });
+        ss.appendChild(b);
+      })(i);
+      var mini = el('div', 'mini'), plus = el('button', 'btn-s', '+ semaine'), moins = el('button', 'btn-s', '− semaine'); plus.type = moins.type = 'button';
+      plus.addEventListener('click', function () { if (a.nb < MAX_SEM) { a.nb += 1; dessinerEditeurs(); majResultat(); } });
+      moins.addEventListener('click', function () { if (a.nb > 1) { a.nb -= 1; dessinerEditeurs(); majResultat(); } });
+      mini.appendChild(plus); mini.appendChild(moins); ss.appendChild(mini); ed.appendChild(ss);
+      var er = el('p', 'erreur'); er.id = 'err-' + x[0]; ed.appendChild(er); z.appendChild(ed);
+    });
+  }
+
+  // ---------- Conflits : comptés sur UNE seule rotation à partir du début de la modification ----------
+  function cycle(a) { return Number(a.data.rotation.jours_travail) + Number(a.data.rotation.jours_repos); }
+  /** { jours, deb, len } : jours de conflit (hors tolérance) pendant une rotation (la plus longue des deux), de max(début de la modification, aujourd'hui) à +len jours. */
+  function conflitsRotation(gA, gB, mA, mB, A, B, o) {
+    var iAuj = Simulation.diff(F, auj), dA = mA ? Simulation.diff(F, mA.debut) : iAuj, dB = mB ? Simulation.diff(F, mB.debut) : iAuj;
+    var deb = Math.max(Math.min(dA, dB), iAuj), len = Math.max(cycle(A), cycle(B)), fin = deb + len - 1, jours = 0;
+    Simulation.conflits(gA, gB, F, o || opts(), deb).plages.forEach(function (p) {
+      if (p.tolere) return; var a = Math.max(Simulation.diff(F, p.du), deb), b = Math.min(Simulation.diff(F, p.au), fin); if (b >= a) jours += b - a + 1;
+    });
+    return { jours: jours, deb: deb, len: len };
+  }
+  var SEUIL_PARFAIT = 4; // jusqu'à 4 jours de conflit : vis-à-vis « presque parfait »
+  function bonVis(c) { return c.jours <= SEUIL_PARFAIT; }
+  function phraseConflit(c, chambre) {
+    var pe = ' (sur une rotation de ' + c.len + ' jours à partir du ' + fr(Simulation.addDays(F, c.deb)) + ')';
+    return bonVis(c) ? (chambre ? 'Vis-à-vis de chambre presque parfait' : 'Vis-à-vis presque parfait') + (c.jours ? ' : ' + c.jours + ' jour' + (c.jours > 1 ? 's' : '') + ' de conflit' : '') + pe + '.' : (chambre ? 'Vis-à-vis de chambre en conflit de ' : 'Vis-à-vis en conflit de ') + c.jours + ' jours' + pe + '.';
+  }
+
+  /** Chambre en conflit : autres agents de la MÊME ENTITÉ que le vis-à-vis de chambre actuel, du moins au plus en conflit avec A (simulé). */
+  function propositionsChambre(A, eA, zone) {
+    var actuel = agents.filter(function (x) { return x.uid === S.C.uid; })[0] || {}, entite = norm(actuel.dependance || '');
+    var prises = {}; agents.forEach(function (x) { if (x.vis_chambre && x.uid !== A.uid) prises[x.vis_chambre] = x; });
+    var cand = agents.filter(function (x) { return x.configuree && x.uid !== A.uid && x.uid !== S.C.uid && norm(x.dependance || '') === entite; }).map(function (x) {
+      var l = ligneDeUid(x.uid); if (!l || !l.grille) return null;
+      return { ag: x, ligne: l, c: conflitsRotation(eA.mod, l.grille, eA.m, null, A, A, optsCh()), prise: prises[x.uid] };
+    }).filter(Boolean).sort(function (p, q) { return (p.prise ? 1 : 0) - (q.prise ? 1 : 0) || p.c.jours - q.c.jours || (p.ag.nom < q.ag.nom ? -1 : 1); }).slice(0, 5);
+    var bloc = el('div'); bloc.style.cssText = 'margin-top:6px;padding:8px 10px;border:1px dashed #D1D5DB;border-radius:10px;font-size:12.5px';
+    bloc.appendChild(el('div', null, 'Autres vis-à-vis de chambre possibles (même entité : ' + (actuel.dependance || 'SONATRACH') + ')')).style.fontWeight = '800';
+    if (!cand.length) { bloc.appendChild(el('div', null, 'Aucun autre agent de cette entité avec un planning renseigné.')); zone.appendChild(bloc); return; }
+    cand.forEach(function (x) {
+      var r = el('div'); r.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px';
+      var t = el('span', null, (bonVis(x.c) ? '✔ ' : '✖ ') + x.ag.nom + (x.ag.service ? ' · ' + x.ag.service : '') + ' — ' + (bonVis(x.c) ? (x.c.jours ? 'presque parfait : ' + x.c.jours + ' j de conflit' : 'aucun conflit') : 'conflit de ' + x.c.jours + ' j') + (x.prise ? ' (déjà vis-à-vis de chambre de ' + x.prise.nom + ')' : ''));
+      t.style.cssText = 'font-weight:700;color:' + (bonVis(x.c) ? '#166534' : '#B42318'); r.appendChild(t);
+      var u = el('button', 'btn-s', 'Utiliser'); u.type = 'button'; u.addEventListener('click', function () { donnees(x.ag.uid).then(function (d) { S.C = { ligne: x.ligne, uid: x.ag.uid, data: d }; majTout(); }).catch(function (e) { toast(e.message, true); }); });
+      var en = el('button', 'btn-s', 'Enregistrer comme vis-à-vis de chambre'); en.type = 'button';
+      en.addEventListener('click', function () {
+        var moi = agents.filter(function (a) { return a.uid === A.uid; })[0] || {};
+        Api.call('visavis_enregistrer', { uid: A.uid, vis_travail: moi.vis_travail || '', vis_chambre: x.ag.uid }).then(function () { moi.vis_chambre = x.ag.uid; if (!x.ag.vis_chambre) x.ag.vis_chambre = A.uid; toast('Vis-à-vis de chambre de ' + A.ligne.nom + ' : ' + x.ag.nom + ' (enregistré).'); u.click(); }).catch(function (e) { toast(e.message, true); });
+      });
+      r.appendChild(u); r.appendChild(en); bloc.appendChild(r);
+    });
+    zone.appendChild(bloc);
+  }
+
+  // ---------- Résumé, bilan ----------
+  function majSuite(a) {
+    if (!a || !a.rep) return; var e = etat(a), last = -1, i;
+    for (i = 0; i < a.nb; i += 1) if (a.cells[i].v) last = i;
+    a.suite = e && e.m && !e.err && last >= 0 ? { last: last, mod: e.mod } : null; a.rep.forEach(function (f) { f(); });
+  }
+  function majResultat() {
+    majSuite(S.A); majSuite(S.B);
+    dessinerFrise();
+    var A = S.A, B = S.B, eA = etat(A), eB = etat(B), r = $('resume'), bi = $('bilan'); r.textContent = ''; bi.textContent = ''; bi.className = 'bilan';
+    [['A', A, eA], ['B', B, eB]].forEach(function (x) { var er = $('err-' + x[0]); if (er) er.textContent = x[2] ? x[2].err : ''; });
+    $('valider').disabled = !((eA && eA.m && !eA.err) || (eB && eB.m && !eB.err)) || !!(eA && eA.err) || !!(eB && eB.err);
+    var phrases = [];
+    [[A, eA], [B, eB]].forEach(function (x) { if (x[0] && !x[1].err) phrases.push(x[1].m ? phrase(x[0], x[1]) : x[0].ligne.nom + ' : planning inchangé.'); });
+    phrases.forEach(function (t) { var p = el('div'); p.textContent = t; r.appendChild(p); });
+    var items = [];
+    [[A, eA], [B, eB]].forEach(function (x) { if (x[0] && x[1].m && !x[1].err) { var q = Simulation.reliquat(x[0].data.grille, x[1].mod, x[0].data.debut, x[1].m), so = x[0].data.solde || 0; items.push([x[0].ligne.nom, q, so]); } });
+    if (items.length) {
+      var d = el('div'); d.style.marginTop = '4px'; d.appendChild(document.createTextNode('Reliquat de cette rotation : '));
+      items.forEach(function (t, i) { if (i) d.appendChild(document.createTextNode(' · ')); var sp = el('span', null, t[0] + ' ' + sgn(t[1])); sp.style.cssText = 'font-weight:800;font-size:1.05em;color:' + (t[1] > 0 ? '#15803D' : t[1] < 0 ? '#DC2626' : '#111'); d.appendChild(sp); });
+      bi.appendChild(d);
+      var d2 = el('div', null, 'Reliquat résultant : ' + items.map(function (t) { return t[0] + ' ' + sgn(t[2] + t[1]) + ' (avant : ' + sgn(t[2]) + ')'; }).join(' · ')); d2.style.cssText = 'font-size:12.5px;color:var(--text-muted)'; bi.appendChild(d2);
+      var ex = el('div', null, '+ : jours travaillés en plus (à récupérer) · − : jours de repos en plus. Calcul jour par jour, comparé au planning prévu : travail alors que le repos était prévu +1, repos alors que le travail était prévu −1, depuis le début de la modification jusqu\'à la fin du bloc prévu en cours.'); ex.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; bi.appendChild(ex);
+    }
+    if (A && B && !eA.err && !eB.err) {
+      var c = conflitsRotation(eA.mod, eB.mod, eA.m, eB.m, A, B), v = el('div');
+      v.textContent = (bonVis(c) ? '✔ ' : '✖ ') + phraseConflit(c);
+      v.style.cssText = 'font-weight:700;margin-top:6px;color:' + (bonVis(c) ? '#166534' : '#B42318'); bi.appendChild(v);
+    }
+    if (A && S.C && !eA.err && (!B || !eB.err)) {   // vis-à-vis de chambre : A (simulé) face à C
+      var gC2 = B && eB && B.uid === S.C.uid ? eB.mod : S.C.data.grille, c2 = conflitsRotation(eA.mod, gC2, eA.m, null, A, S.C, optsCh()), v2 = el('div');
+      v2.textContent = (bonVis(c2) ? '✔ ' : '✖ ') + phraseConflit(c2, true); v2.appendChild(el('span', null, ' — ' + A.ligne.nom + ' ↔ ' + S.C.ligne.nom));
+      v2.style.cssText = 'font-weight:700;margin-top:4px;color:' + (bonVis(c2) ? '#166534' : '#B42318'); bi.appendChild(v2);
+      if (!bonVis(c2)) propositionsChambre(A, eA, bi);
+      }
+  }
+  function majTout() {
+    var a = S.A; $('b-edit').hidden = !a; $('b-valider').hidden = !a; $('b-prop').hidden = !(S.A && S.B);
+    $('aide-grp').textContent = !a ? 'Cliquez sur un agent (A), puis sur son vis-à-vis (B) : les deux se placent l\'un sous l\'autre en haut du graphique. Cliquez de nouveau pour retirer.' : !S.B ? 'A choisi. Cliquez sur un second agent (B) pour le mettre en vis-à-vis.' : 'A et B sont l\'un sous l\'autre en haut. Modifiez leurs semaines ci-dessous ou demandez des propositions.';
+    $('props').textContent = ''; $('prop-aide').textContent = '';
+    majTolerance(); dessinerEditeurs(); majResultat();
+  }
+
+  // ---------- Propositions ----------
+  function cellsDe(a, m) {
+    initCells(a); if (!m) return; var l = '', n; m.periodes.forEach(function (p) { for (var i = 0; i < p.jours; i += 1) l += p.type; });
+    n = Math.ceil(l.length / 7); a.nb = Math.max(6, Math.min(MAX_SEM, n));
+    for (var w = 0; w < n && w < MAX_SEM; w += 1) a.cells[w].v = l.charAt(w * 7);
+  }
+  function proposer() {
+    var A = S.A, B = S.B; if (!A || !B) return; var o = opts();
+    var dA = debutDe(A), dB = debutDe(B), debut = dA < dB ? dA : dB;
+    var nbRot = Math.max(1, Math.min(4, Math.round(Number($('nb-rot').value)) || 2)), cy = Math.max(Number(A.data.rotation.jours_travail) + Number(A.data.rotation.jours_repos), Number(B.data.rotation.jours_travail) + Number(B.data.rotation.jours_repos)), tMax = Math.max(7, Math.round(nbRot * cy / 7) * 7);
+    $('prop-aide').textContent = 'Calcul…'; $('props').textContent = '';
+    setTimeout(function () {
+      var res = Simulation.proposerPaire({ offA: A.data.grille, offB: B.data.grille, debutF: F, rotA: A.data.rotation, rotB: B.data.rotation, debut: debut, debutA: dA, debutB: dB, tolChev: o.tolChev, tolTrou: o.tolTrou, pas: 7, alignerReleve: false,
+        maxTransition: tMax, maxTotal: tMax, preference: 'indifferent', soldeA: A.data.solde || 0, soldeB: B.data.solde || 0, max: 80 });
+      var sA = A.data.solde || 0, sB = B.data.solde || 0;
+      res.forEach(function (r) { r.pire = Math.max(Math.abs(sA + r.reliquatA), Math.abs(sB + r.reliquatB)); r.cr = conflitsRotation(r.grilleA, r.grilleB, r.A, r.B, A, B); });
+      var bons = res.filter(function (r) { return r.stable; }); if (!bons.length) bons = res.slice();
+      bons.sort(function (p, q) { return p.cr.jours - q.cr.jours || p.transition - q.transition || p.pire - q.pire; });
+      bons = bons.slice(0, 8); var z = $('props'); z.textContent = '';
+      $('prop-aide').textContent = !bons.length ? 'Aucune combinaison trouvée : essayez « À partir d\'une date » ou des tolérances plus larges.' : bons.length + ' proposition(s) : le vis-à-vis le plus parfait d\'abord, puis la plus rapide.';
+      bons.forEach(function (r, i) {
+        var d = el('div', 'prop' + (i === 0 && r.cr.jours === 0 ? ' top' : '')), t = el('div');
+        [[A, r.A], [B, r.B]].forEach(function (x) { t.appendChild(el('div', 'l', x[1] ? phrase(x[0], { m: x[1] }) : x[0].ligne.nom + ' : inchangé.')); });
+        var l2 = el('div', 'l'); l2.appendChild(document.createTextNode('Reliquat de cette rotation : ')); [[A, r.reliquatA, sA], [B, r.reliquatB, sB]].forEach(function (x, k) { if (k) l2.appendChild(document.createTextNode(' · ')); var sp = el('span', null, x[0].ligne.nom + ' ' + sgn(x[1])); sp.style.cssText = 'font-weight:800;font-size:1.05em;color:' + (x[1] > 0 ? '#15803D' : x[1] < 0 ? '#DC2626' : '#111'); l2.appendChild(sp); });
+        var l3 = el('div', 'l', 'Reliquat résultant : ' + A.ligne.nom + ' ' + sgn(sA + r.reliquatA) + ' · ' + B.ligne.nom + ' ' + sgn(sB + r.reliquatB)); l3.style.cssText = 'font-size:12.5px;color:var(--text-muted)';
+        t.appendChild(l2); t.appendChild(l3);
+        var cf = el('div', 'l', (bonVis(r.cr) ? '✔ ' : '✖ ') + phraseConflit(r.cr)); cf.style.cssText = 'font-weight:700;color:' + (bonVis(r.cr) ? '#166534' : '#B42318'); t.appendChild(cf);
+        d.appendChild(t); var b = el('button', 'btn-s', 'Utiliser'); b.type = 'button';
+        b.addEventListener('click', function () { cellsDe(A, r.A); cellsDe(B, r.B); dessinerEditeurs(); majResultat(); window.scrollTo({ top: $('b-edit').offsetTop - 70, behavior: 'smooth' }); });
+        d.appendChild(b); z.appendChild(d);
+      });
+    }, 20);
+  }
+
+  // ---------- Valider / annuler ----------
+  function valider() {
+    var A = S.A, B = S.B, eA = etat(A), eB = etat(B), lot = [];
+    if (eA && eA.m && !eA.err) lot.push({ uid: A.uid, debut: eA.m.debut, periodes: eA.m.periodes, reprise: eA.m.reprise });
+    if (eB && eB.m && !eB.err) lot.push({ uid: B.uid, debut: eB.m.debut, periodes: eB.m.periodes, reprise: eB.m.reprise });
+    if (!lot.length) return;
+    var partenaire = B ? (lot.length === 1 && lot[0].uid === B.uid ? A.uid : B.uid) : '', btn = $('valider'); btn.disabled = true;
+    Api.call('simu_valider', { lot: lot, motif: $('motif').value, partenaire: partenaire }).then(function (r) {
+      var s = $('succes'); s.textContent = ''; s.hidden = false;
+      s.appendChild(el('b', null, (r.numeros.length > 1 ? 'Demandes ' + r.numeros.join(' et ') + ' enregistrées' : 'Demande ' + r.numeros[0] + ' enregistrée') + ' (en attente).'));
+      s.appendChild(document.createTextNode(' ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s). ' : 'Une question vous sera posée pour prévenir par e-mail. ')));
+      r.numeros.forEach(function (num) { var a = el('a', null, 'Document ' + num + ' à imprimer et signer →'); a.href = 'demande.html?n=' + encodeURIComponent(num); a.style.cssText = 'font-weight:700;color:var(--orange-main);margin-right:12px'; s.appendChild(a); });
+      var nomsA = lot.map(function (x) { var g = agents.filter(function (a) { return a.uid === x.uid; })[0]; return g ? g.nom : ''; }).filter(Boolean).join(' et ');
+      annuler(true); window.scrollTo({ top: 0, behavior: 'smooth' }); listeDemandes();
+      NotifModif.proposer({ numeros: r.numeros, evenement: 'creation', agent: nomsA });   // question avant tout envoi : agent, secrétariat, chef de service, chef de division
+    }).catch(function (err) { toast(err.message, true); btn.disabled = false; });
+  }
+  function annuler(silencieux) { S.A = S.B = S.C = null; $('motif').value = 'Raison de service'; majTout(); if (silencieux !== true) toast('Simulation annulée : rien n\'a été enregistré.'); }
+
+  // ---------- Demandes ----------
+  var LIB = { en_attente: 'En attente', appliquee: 'Appliquée, à décider', approuvee: 'Approuvée', refusee: 'Refusée', remplacee: 'Remplacée', annulee: 'Annulée' };
+  /** Changer le vis-à-vis de travail (B) et/ou de chambre (C) de l'agent A pour cette simulation ; case « Retenir » = l'enregistrer dans l'Organigramme. */
+  function choisirVis(A) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog'; f.appendChild(el('h2', null, 'Vis-à-vis de ' + A.ligne.nom));
+    var dl = document.createElement('datalist'); dl.id = 'dl-vis'; var parLib = {};
+    var lib = function (x) { return x.nom + ' — ' + (x.dependance || 'SONATRACH') + (x.service ? ' · ' + x.service : ''); };
+    agents.filter(function (x) { return x.configuree && x.uid !== A.uid && ligneDeUid(x.uid); }).forEach(function (x) { parLib[norm(lib(x))] = x.uid; var o = document.createElement('option'); o.value = lib(x); dl.appendChild(o); });
+    f.appendChild(dl);
+    function champ(titre, actuel, aide) {
+      var w = el('div', 'champ'); w.appendChild(el('label', null, titre)); var i = document.createElement('input'); i.type = 'text'; i.setAttribute('list', 'dl-vis'); i.autocomplete = 'off'; i.placeholder = 'Choisir un agent… (vide = aucun)';
+      var ag = actuel && agents.filter(function (x) { return x.uid === actuel; })[0]; i.value = ag ? lib(ag) : ''; i.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit'; w.appendChild(i);
+      if (aide) { var a2 = el('div', 'aide2', aide); a2.style.margin = '4px 0 0'; w.appendChild(a2); } f.appendChild(w); return i;
+    }
+    var iB = champ('Vis-à-vis de travail (B)', S.B && S.B.uid, ''), iC = champ('Vis-à-vis de chambre (C)', S.C && S.C.uid, 'Laisser vide : pas de vis-à-vis de chambre, seul le travail compte.');
+    var w2 = el('label'); w2.style.cssText = 'display:flex;gap:8px;align-items:center;margin:10px 0;font-size:13px'; var cb = document.createElement('input'); cb.type = 'checkbox'; w2.appendChild(cb); w2.appendChild(document.createTextNode('Retenir pour ' + A.ligne.nom + ' (enregistrer dans l\'Organigramme)')); f.appendChild(w2);
+    var msg = el('div', 'msg'); f.appendChild(msg);
+    var bt = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', 'Appliquer'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); var uB = '', uC = '';
+      if (iB.value.trim()) { uB = parLib[norm(iB.value)]; if (!uB) { msg.textContent = 'Vis-à-vis de travail : choisissez un agent dans la liste.'; msg.className = 'msg err'; return; } }
+      if (iC.value.trim()) { uC = parLib[norm(iC.value)]; if (!uC) { msg.textContent = 'Vis-à-vis de chambre : choisissez un agent dans la liste.'; msg.className = 'msg err'; return; } }
+      ok.disabled = true;
+      var jobs = [];
+      if (uB !== (S.B ? S.B.uid : '')) { if (!uB) S.B = null; else jobs.push(donnees(uB).then(function (d) { S.B = { ligne: ligneDeUid(uB), uid: uB, data: d, cells: [], nb: 6 }; initCells(S.B); })); }
+      if (uC !== (S.C ? S.C.uid : '')) { if (!uC) S.C = null; else jobs.push(donnees(uC).then(function (d) { S.C = { ligne: ligneDeUid(uC), uid: uC, data: d }; })); }
+      Promise.all(jobs).then(function () {
+        if (cb.checked) { var moi = agents.filter(function (x) { return x.uid === A.uid; })[0] || {}; return Api.call('visavis_enregistrer', { uid: A.uid, vis_travail: uB, vis_chambre: uC }).then(function () { moi.vis_travail = uB; moi.vis_chambre = uC; toast('Vis-à-vis de ' + A.ligne.nom + ' enregistrés.'); }); }
+      }).then(function () { dlg.close(); majTout(); }).catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
+  function dialogue(titre, approuver, numero) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
+    f.appendChild(el('h2', null, titre)); var w = el('div', 'champ'); w.appendChild(el('label', null, 'Commentaire (facultatif)'));
+    var i = document.createElement('input'); i.type = 'text'; i.maxLength = 200; i.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit'; w.appendChild(i); f.appendChild(w);
+    var msg = el('div', 'msg'); f.appendChild(msg);
+    var bt = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', approuver ? 'Approuver' : 'Refuser'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); ok.disabled = true;
+      Api.call('simu_decider', { numero: numero, decision: approuver ? 'approuvee' : 'refusee', commentaire: i.value }).then(function () { dlg.close(); toast(approuver ? 'Demande approuvée : le planning officiel est mis à jour.' : 'Demande refusée.'); listeDemandes(); NotifModif.proposer({ numeros: [numero], evenement: approuver ? 'approbation' : 'refus' }); })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
+  function supprimerDemandes(numeros, quoi) {
+    if (!numeros.length || !confirm('Supprimer ' + quoi + ' de la liste ? Le planning officiel n\'est pas modifié (ces demandes n\'ont pas d\'effet).')) return;
+    Api.call('simu_supprimer', { numeros: numeros }).then(function (r) { toast(r.supprimees.length + ' demande(s) supprimée(s).'); listeDemandes(); }).catch(function (e) { toast(e.message, true); });
+  }
+  function listeDemandes() {
+    return Api.call('simu_liste').then(function (r) {
+      var t = $('t-dem'); t.textContent = '';
+      var h = el('thead'), hr = el('tr'); ['N°', 'Agent', 'À partir du', 'Motif', 'Émise par', 'Statut', ''].forEach(function (x) { hr.appendChild(el('th', null, x)); }); h.appendChild(hr); t.appendChild(h);
+      var b = el('tbody'), att = 0;
+      if (!r.demandes.length) { var tr0 = el('tr'), td0 = el('td', null, 'Aucune demande pour le moment.'); td0.colSpan = 7; tr0.appendChild(td0); b.appendChild(tr0); }
+      r.demandes.forEach(function (d) {
+        if (d.statut === 'en_attente' || d.statut === 'appliquee') att += 1;
+        var tr = el('tr'); tr.appendChild(el('td', null, d.numero)); var a = el('td'); a.appendChild(el('b', null, d.agent)); a.appendChild(el('div', 'aide', d.service)); tr.appendChild(a);
+        tr.appendChild(el('td', null, fr(d.debut))); tr.appendChild(el('td', null, d.motif)); tr.appendChild(el('td', null, d.emetteur));
+        var s = el('td'); s.appendChild(el('span', 'st ' + d.statut, LIB[d.statut] || d.statut)); if (d.decide_par) s.appendChild(el('div', 'aide', 'par ' + d.decide_par + (d.commentaire ? ' — ' + d.commentaire : ''))); tr.appendChild(s);
+        var ac = el('td'), lien = el('a', null, 'Document'); lien.href = 'demande.html?n=' + encodeURIComponent(d.numero); lien.style.cssText = 'font-weight:700;color:var(--orange-main);margin-right:10px'; ac.appendChild(lien);
+        if (d.peut_decider) {
+          var ap = el('button', 'btn-s', 'Approuver'); ap.type = 'button'; ap.addEventListener('click', function () { dialogue('Approuver la demande ' + d.numero, true, d.numero); });
+          var re = el('button', 'btn-s', 'Refuser'); re.type = 'button'; re.style.marginLeft = '6px'; re.addEventListener('click', function () { dialogue('Refuser la demande ' + d.numero, false, d.numero); });
+          ac.appendChild(ap); ac.appendChild(re);
+        }
+        if (d.peut_informer) { var inf = el('button', 'btn-s', '✉ Informer l\'agent'); inf.type = 'button'; inf.title = 'Envoie à ' + d.agent + ' le résultat de la demande par e-mail (rien ne part tout seul)'; inf.style.marginLeft = '6px';
+          inf.addEventListener('click', function () { if (!confirm('Envoyer par e-mail à ' + d.agent + ' la décision sur la demande ' + d.numero + ' (' + (LIB[d.statut] || d.statut).toLowerCase() + ') ?')) return; inf.disabled = true;
+            Api.call('simu_envoyer', { numero: d.numero, destinataires: { agent: true } }).then(function (x) { toast('✉ E-mail envoyé à ' + d.agent + ' (' + x.emails + ').'); }).catch(function (e) { toast(e.message, true); }).then(function () { inf.disabled = false; }); });
+          ac.appendChild(inf); }
+        if (d.peut_supprimer) { var su = el('button', 'btn-s', '🗑'); su.type = 'button'; su.title = 'Supprimer cette demande de la liste'; su.style.marginLeft = '6px'; su.addEventListener('click', function () { supprimerDemandes([d.numero], 'la demande ' + d.numero); }); ac.appendChild(su); }
+        tr.appendChild(ac); b.appendChild(tr);
+      });
+      var supp = r.demandes.filter(function (d) { return d.peut_supprimer; }).map(function (d) { return d.numero; });
+      var bt = $('b-nettoyer'); bt.hidden = !supp.length; bt.textContent = '🗑 Supprimer les demandes refusées, annulées ou remplacées (' + supp.length + ')'; bt.onclick = function () { supprimerDemandes(supp, supp.length + ' demande(s) refusée(s), annulée(s) ou remplacée(s)'); };
+      t.appendChild(b); $('nb-att').textContent = att ? '(' + att + ')' : '';
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  function onglet(d) { $('p-simu').hidden = d; $('p-dem').hidden = !d; $('o-simu').classList.toggle('actif', !d); $('o-dem').classList.toggle('actif', d); }
+
+  $('o-simu').addEventListener('click', function () { onglet(false); }); $('o-dem').addEventListener('click', function () { onglet(true); });
+  $('service').addEventListener('change', dessinerFrise); $('vue').addEventListener('change', dessinerFrise);
+  $('mode').addEventListener('change', function () { $('z-date').hidden = $('mode').value !== 'date'; if (S.A) { [S.A, S.B].forEach(function (a) { if (a) initCells(a); }); majTout(); } });
+  $('dateDebut').addEventListener('change', function () { if (S.A) { dessinerEditeurs(); majResultat(); } });
+  $('tol-cc').addEventListener('input', majTout); $('tol-vc').addEventListener('input', majTout); $('tol-c').addEventListener('input', majResultat); $('tol-v').addEventListener('input', majResultat);
+  $('raz').addEventListener('click', function () { [S.A, S.B].forEach(function (a) { if (a) { initCells(a); a.nb = 6; } }); dessinerEditeurs(); majResultat(); chargerLiens(false); });   // le vis-à-vis de chambre essayé (« Utiliser ») revient aussi à celui déclaré
+  $('proposer').addEventListener('click', proposer); $('nb-rot').addEventListener('change', function () { if (S.A && S.B) proposer(); }); $('valider').addEventListener('click', valider); $('annuler').addEventListener('click', function () { annuler(); });
+  $('imprimer').addEventListener('click', function () { window.print(); });
+
+  charger().then(listeDemandes).catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    if (e.code === 'DROITS') { location.replace('portail.html'); return; }
+    $('aide-grp').textContent = '⚠ Impossible de charger les plannings : ' + e.message; toast(e.message, true);
+  });
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

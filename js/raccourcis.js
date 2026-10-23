@@ -1,0 +1,40 @@
+/**
+ * Raccourcis entre les pages liées (Planning, Simulation, Organigramme, Vis-à-vis, Affectations) : une barre sous l'en-tête, pour passer de l'une à l'autre
+ * sans repasser par le portail. Chaque raccourci n'apparaît que si la page est dans le menu de l'utilisateur (droits). Nécessite js/api.js.
+ * Dans la page : <script src="js/raccourcis.js"></script> (après api.js).
+ */
+(function () {
+  var LIENS = [
+    { f: 'planning.html', href: 'planning.html', t: '🗓️ Planning' },
+    { f: 'simulation.html', href: 'simulation.html', t: '🔮 Simulation' },
+    { f: 'organigramme.html', href: 'Organigramme.html', t: '🏛️ Organigramme' },
+    { f: 'organigramme.html', href: 'Organigramme.html#vis', t: '👥 Vis-à-vis', hash: '#vis' },
+    { f: 'affectation.html', href: 'affectation.html', t: '🔀 Affectations' }
+  ];
+  var page = (location.pathname.split('/').pop() || '').toLowerCase(), CLE = 'gm_pages';
+  function fichier(u) { return String(u || '').split(/[?#]/)[0].split('/').pop().toLowerCase(); }
+  function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
+  function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE) || 'null'); return o && Date.now() - o.t < 600000 ? o.f : null; } catch (e) { return null; } }
+  var derniers = null;
+  window.addEventListener('hashchange', function () { var n = document.getElementById('raccourcis'); if (n && derniers) { n.remove(); dessiner(derniers); } });
+  function dessiner(fichiers) {
+    var entete = document.querySelector('header'); if (!entete || document.getElementById('raccourcis')) return;
+    var vis = LIENS.filter(function (l) { return fichiers.indexOf(l.f) !== -1; });
+    if (vis.length < 2) return;                      // un seul lien (la page elle-même) : rien à raccourcir
+    if (!document.getElementById('raccourcis-css')) { var st = document.createElement('style'); st.id = 'raccourcis-css';
+      st.textContent = '#raccourcis{display:flex;gap:8px;flex-wrap:wrap;align-items:center;max-width:1400px;margin:10px auto 0;padding:0 16px}#raccourcis a{padding:6px 13px;border:1.5px solid var(--border,#E5E7EB);border-radius:999px;background:var(--surface,#fff);color:var(--text,#1F2937);font:700 12.5px Inter,Arial,sans-serif;text-decoration:none;white-space:nowrap}#raccourcis a:hover{border-color:var(--orange-main,#E85D04);color:var(--orange-main,#E85D04)}#raccourcis a.ici{background:var(--orange-main,#E85D04);border-color:var(--orange-main,#E85D04);color:#fff;pointer-events:none}@media print{#raccourcis{display:none}}';
+      document.head.appendChild(st); }
+    var nav = document.createElement('nav'); nav.id = 'raccourcis'; nav.setAttribute('aria-label', 'Pages liées');
+    vis.forEach(function (l) {
+      var a = document.createElement('a'); a.href = l.href; a.textContent = l.t;
+      var ici = l.f === page && (l.hash ? location.hash === l.hash : !(page === 'organigramme.html' && location.hash === '#vis'));
+      if (ici) a.className = 'ici'; nav.appendChild(a);
+    });
+    // la bascule d'onglet de l'Organigramme (même page) : le lien « Vis-à-vis » ouvre l'onglet sans recharger
+    derniers = fichiers;
+    entete.parentNode.insertBefore(nav, entete.nextSibling);
+  }
+  var f0 = connu(); if (f0) dessiner(f0);
+  if (!window.Api) return;
+  Api.call('menu').then(function (r) { var f = pagesDe(r); try { sessionStorage.setItem(CLE, JSON.stringify({ t: Date.now(), f: f })); } catch (e) { /* rien */ } if (!f0) dessiner(f); }).catch(function () { /* pas de session : pas de raccourcis */ });
+})();

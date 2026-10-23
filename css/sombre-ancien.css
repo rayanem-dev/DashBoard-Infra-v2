@@ -1,0 +1,13 @@
+/* Thème sombre pour les pages reprises de l'ancien site (variables communes : --white, --gray-light, --text-dark, --border…). */
+:root[data-theme="dark"] {
+  --white: #1E2433; --gray-light: #161B27; --text-dark: #E8EAF0; --text-muted: #9AA3B5; --border: #323A4D; --gray-dark: #E8EAF0;
+  --shadow-card: 0 4px 20px rgba(0,0,0,.35); --shadow-hover: 0 8px 32px rgba(0,0,0,.5);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] body { background: #0F1320; color: var(--text-dark); }
+:root[data-theme="dark"] header, :root[data-theme="dark"] .link-card .icon { color: #fff; }
+:root[data-theme="dark"] table, :root[data-theme="dark"] th, :root[data-theme="dark"] td { border-color: var(--border); }
+:root[data-theme="dark"] th { background: #232B3D; color: var(--text-dark); }
+:root[data-theme="dark"] input, :root[data-theme="dark"] select, :root[data-theme="dark"] textarea { background: #161B27; color: var(--text-dark); border-color: var(--border); }
+:root[data-theme="dark"] [style*="background:#fff"], :root[data-theme="dark"] [style*="background: #fff"], :root[data-theme="dark"] [style*="background:white"], :root[data-theme="dark"] [style*="background: white"] { background: var(--white) !important; color: var(--text-dark); }
+:root[data-theme="dark"] .note-box { background: #3A2312; border-color: #6B3A1A; color: #FDBA74; }

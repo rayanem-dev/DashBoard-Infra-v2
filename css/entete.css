@@ -1,0 +1,12 @@
+/* En-tête commun du site (même rendu que css/charte.css) pour les anciennes pages qui ont leur propre feuille de style. */
+header.bandeau, .bandeau { position: static !important; margin: 0; padding: 0; border: 0; } .bandeau { --orange-main: #E85D04; --orange-light: #F48C06; background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); box-shadow: 0 2px 20px rgba(0,0,0,.4); font-family: 'Inter', sans-serif; }
+.bandeau .bandeau-inner { max-width: 1400px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.bandeau .logo-area { display: flex; align-items: center; gap: 16px; }
+.bandeau .logo-circle { width: 52px; height: 52px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -1px; box-shadow: 0 4px 14px rgba(232,93,4,.5); flex-shrink: 0; }
+.bandeau .logo-text h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: .3px; margin: 0; }
+.bandeau .logo-text p { font-size: 12px; color: rgba(255,255,255,.55); margin: 2px 0 0; letter-spacing: .5px; text-transform: uppercase; }
+.bandeau .bandeau-droite { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: rgba(255,255,255,.8); font-size: 13px; }
+.bandeau .btn-ghost { display: inline-block; text-decoration: none; background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 9px 14px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.bandeau .btn-ghost:hover { background: rgba(255,255,255,.18); }
+@media (max-width: 600px) { .bandeau .bandeau-inner { padding: 14px 16px; } .bandeau .logo-text h1 { font-size: 16px; } }
+@media print { .bandeau { display: none !important; } }

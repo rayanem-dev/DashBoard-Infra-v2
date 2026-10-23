@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rapports journaliers – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Rapports journaliers</h1><p>Sonatrach · RNS · Suivi des chantiers</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives (les rapports ne sont pas enregistrés au-delà de cette session)</div>
+
+<main class="portail">
+  <div class="onglets" role="tablist">
+    <button class="onglet actif" data-p="p-saisie" id="o-saisie">Saisir mon rapport</button>
+    <button class="onglet" data-p="p-journal">Journal</button>
+    <button class="onglet" data-p="p-synth" id="o-synth" hidden>Synthèse du jour</button>
+    <button class="onglet" data-p="p-chantiers" id="o-chantiers" hidden>Chantiers</button>
+  </div>
+
+  <section class="panneau" id="p-saisie">
+    <form class="form" id="f" autocomplete="off">
+      <div class="deux">
+        <div class="champ"><label for="chantier">Chantier</label><select id="chantier"></select></div>
+        <div class="champ"><label for="date">Date</label><input type="date" id="date"></div>
+      </div>
+      <div class="deux">
+        <div class="champ"><label for="effectif">Effectif présent</label><input type="number" id="effectif" min="0" max="1000" step="1" inputmode="numeric"></div>
+        <div class="champ"><label for="avancement">Avancement estimé (%) — facultatif</label><input type="number" id="avancement" min="0" max="100" step="0.1" inputmode="decimal"></div>
+      </div>
+      <div class="champ"><label>Avancement par ouvrage / zone</label>
+        <div id="lignes"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn-s" type="button" id="b-ligne">+ Ligne</button><button class="btn-s" type="button" id="b-reprendre" title="Reprend aussi le texte du dernier rapport de ce chantier">↻ Reprendre le dernier rapport</button></div>
+        <p class="aide" id="reprise" style="margin-top:6px"></p></div>
+      <div class="champ"><label for="travaux">Travaux réalisés — texte libre <span class="aide" style="font-weight:400">(facultatif si des lignes sont remplies)</span></label><textarea id="travaux" maxlength="1000"></textarea></div>
+      <div class="champ"><label for="difficultes">Difficultés / incidents — facultatif</label><textarea id="difficultes" maxlength="1000"></textarea></div>
+      <div class="champ"><label for="commentaire">Commentaire du jour — facultatif</label><textarea id="commentaire" maxlength="1000"></textarea></div>
+      <button class="btn" id="b-save" type="submit" style="max-width:320px">Enregistrer le rapport</button>
+      <p class="aide" id="deja" style="margin-top:10px"></p>
+      <div class="msg" id="m" role="alert"></div>
+    </form>
+  </section>
+
+  <section class="panneau" id="p-journal" hidden>
+    <div class="barre">
+      <label class="aide" for="du" style="margin:0">Du</label><input type="date" id="du" style="min-width:150px">
+      <label class="aide" for="au" style="margin:0">au</label><input type="date" id="au" style="min-width:150px">
+      <select id="f-chantier" aria-label="Chantier"><option value="">Tous les chantiers</option></select>
+      <button class="btn-s" id="b-filtre" type="button">Afficher</button>
+    </div>
+    <div id="liste"></div>
+  </section>
+
+  <section class="panneau" id="p-synth" hidden>
+    <div class="barre"><label class="aide" for="s-date" style="margin:0">Jour</label><input type="date" id="s-date" style="min-width:160px"><span id="s-resume" class="aide"></span></div>
+    <div class="grille-synthese" id="synth"></div>
+  </section>
+
+  <section class="panneau" id="p-chantiers" hidden>
+    <div class="barre"><button class="btn-s" id="b-sync" type="button" title="Lit le Suivi CPM (sans rien y écrire) : un chantier par contrat « en exécution »">↻ Synchroniser avec le Suivi CPM</button><span id="c-resume" class="aide"></span></div>
+    <p class="aide">Un chantier par contrat en exécution. Indiquez le <b>service</b> de chacun : les conducteurs ne voient que les chantiers de leur service (un chantier sans service est visible de tous).</p>
+    <div id="c-liste"></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/rotation.js"></script>
+<script>Rotation.exiger();</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  var niveau = 0, chantiers = [], mails = {}, mesRapports = [], lignes = [];
+  var auj = Rotation.aujourdhui();
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function plus(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  function nomChantier(id) { var c = chantiers.filter(function (x) { return x.id === id; })[0]; return c ? c.nom : id; }
+  function msg(texte, ok) { var m = $('m'); m.textContent = texte || ''; m.className = 'msg' + (texte ? (ok ? ' ok' : ' err') : ''); }
+
+  // ----- Lignes par ouvrage / zone : { zone, texte, avancement, prev } (prev = avancement du dernier rapport, affiché en rappel)
+  function dessinerLignes() {
+    var z = $('lignes'); z.textContent = '';
+    lignes.forEach(function (l, i) {
+      var r = el('div', 'ligne-rap'); r.style.cssText = 'display:grid;grid-template-columns:minmax(120px,1fr) 2fr 90px auto auto;gap:6px;margin-bottom:6px;align-items:start';
+      var zi = el('input'); zi.placeholder = 'Ouvrage / zone (ex. Base de vie)'; zi.value = l.zone || ''; zi.maxLength = 120; zi.oninput = function () { l.zone = zi.value; };
+      var ti = el('input'); ti.placeholder = 'Ce qui a été fait'; ti.value = l.texte || ''; ti.maxLength = 600; ti.oninput = function () { l.texte = ti.value; };
+      var ai = el('input'); ai.type = 'number'; ai.min = 0; ai.max = 100; ai.step = 0.1; ai.placeholder = '%'; ai.value = l.avancement === '' || l.avancement == null ? '' : l.avancement; ai.oninput = function () { l.avancement = ai.value; };
+      if (l.prev !== '' && l.prev != null) ai.title = 'Dernier rapport : ' + l.prev + ' %';
+      var sup = el('button', 'btn-s', '✕'); sup.type = 'button'; sup.onclick = function () { lignes.splice(i, 1); dessinerLignes(); };
+      var rl = el('label'); rl.style.cssText = 'display:flex;gap:4px;align-items:center;font-size:12px;white-space:nowrap;margin:0;padding:6px 2px'; rl.title = 'Travaux de routine de la prestation (réparations, entretien courant…)';
+      var rc = el('input'); rc.type = 'checkbox'; rc.checked = !!l.routine; rc.onchange = function () { l.routine = rc.checked; }; rl.appendChild(rc); rl.appendChild(document.createTextNode('routine'));
+      r.appendChild(zi); r.appendChild(ti); r.appendChild(ai); r.appendChild(rl); r.appendChild(sup);
+      if (l.prev !== '' && l.prev != null) { var n = el('div', 'aide', 'Dernier rapport : ' + l.prev + ' %'); n.style.cssText = 'grid-column:1/-1;margin:-2px 0 4px'; r.appendChild(n); }
+      z.appendChild(r);
+    });
+  }
+  function dernierRapport(chantier, avant) {
+    return mesRapports.filter(function (x) { return x.chantier === chantier && x.le_mien && x.date < avant; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0] || null;
+  }
+  // ----- Saisie : préremplit si un rapport existe déjà pour (date, chantier) ; sinon reprend les ouvrages (et leur avancement) du dernier rapport
+  function prerempli() {
+    var d = $('date').value, c = $('chantier').value;
+    var r = mesRapports.filter(function (x) { return x.date === d && x.chantier === c && x.le_mien; })[0];
+    ['effectif', 'avancement', 'travaux', 'difficultes', 'commentaire'].forEach(function (k) { $(k).value = r ? (r[k] === '' ? '' : r[k]) : ''; });
+    $('deja').textContent = r ? 'Un rapport existe déjà pour ce chantier et ce jour : vous le modifiez.' : '';
+    var p = dernierRapport(c, d); $('reprise').textContent = '';
+    if (r) lignes = (r.lignes || []).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, prev: '', routine: !!l.routine }; });
+    else if (p && (p.lignes || []).length) {
+      lignes = p.lignes.map(function (l) { return { zone: l.zone, texte: '', avancement: l.avancement, prev: l.avancement, routine: !!l.routine }; });
+      $('reprise').textContent = 'Ouvrages repris du rapport du ' + Rotation.frDate(p.date) + ' : mettez à jour le texte et l\'avancement.';
+    } else lignes = [];
+    dessinerLignes();
+  }
+  $('b-ligne').addEventListener('click', function () { lignes.push({ zone: '', texte: '', avancement: '', prev: '' }); dessinerLignes(); });
+  $('b-reprendre').addEventListener('click', function () {
+    var p = dernierRapport($('chantier').value, $('date').value); if (!p) { toast('Aucun rapport précédent pour ce chantier', true); return; }
+    lignes = (p.lignes || []).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, prev: l.avancement, routine: !!l.routine }; });
+    if (!lignes.length && p.travaux) $('travaux').value = p.travaux;
+    $('effectif').value = p.effectif; dessinerLignes(); $('reprise').textContent = 'Rapport du ' + Rotation.frDate(p.date) + ' repris : à mettre à jour.';
+  });
+  // Après un enregistrement, on met à jour la liste SANS toucher aux champs (l'utilisateur a pu déjà commencer autre chose).
+  function chargerMesRapports() {
+    return Api.call('rapports_liste', { du: plus(auj, -60), au: auj }).then(function (r) {
+      mesRapports = r.rapports;
+      var d = $('date').value, c = $('chantier').value;
+      $('deja').textContent = mesRapports.some(function (x) { return x.date === d && x.chantier === c && x.le_mien; }) ? 'Un rapport existe déjà pour ce chantier et ce jour : vous le modifiez.' : '';
+    });
+  }
+  $('date').max = auj; $('date').value = auj;
+  $('chantier').addEventListener('change', prerempli); $('date').addEventListener('change', prerempli);
+
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault(); msg('');
+    var p = { chantier: $('chantier').value, date: $('date').value, effectif: $('effectif').value, avancement: $('avancement').value,
+              travaux: $('travaux').value, difficultes: $('difficultes').value, commentaire: $('commentaire').value,
+              lignes: lignes.filter(function (l) { return (l.zone || '').trim() || (l.texte || '').trim() || (l.avancement !== '' && l.avancement != null); }).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, routine: !!l.routine }; }) };
+    if (!p.travaux.trim() && !p.lignes.some(function (l) { return (l.texte || '').trim().length >= 3; })) return msg('Décrivez les travaux réalisés (au moins une ligne ou le texte libre).');
+    if (p.effectif === '') return msg('Indiquez l\'effectif présent.');
+    $('b-save').disabled = true;
+    Api.call('rapport_enregistrer', p).then(function (r) { toast(r.modifie ? 'Rapport modifié' : 'Rapport enregistré'); return chargerMesRapports(); })
+      .catch(function (err) { msg(err.message); }).then(function () { $('b-save').disabled = false; });
+  });
+
+  // ----- Journal
+  function ligne(titre, texte) { var b = el('div', 'bloc'); b.appendChild(el('b', null, titre)); b.appendChild(document.createTextNode(texte)); return b; }
+  function lignesHtml(ls) {
+    var b = el('div', 'bloc'); b.appendChild(el('b', null, 'Travaux réalisés'));
+    var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px'; ls.forEach(function (l) { u.appendChild(el('li', null, (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''))); });
+    b.appendChild(u); return b;
+  }
+  function fiche(r) {
+    var f = el('div', 'fiche'); var h = el('header'); h.appendChild(el('h4', null, nomChantier(r.chantier)));
+    h.appendChild(el('span', 'meta', Rotation.frDate(r.date) + ' · ' + (r.auteur_nom || r.auteur_email) + ' · effectif ' + r.effectif));
+    if (r.avancement !== '' && r.avancement != null) h.appendChild(el('span', 'pastille', 'Avancement ' + r.avancement + ' %'));
+    f.appendChild(h); f.appendChild(r.lignes && r.lignes.length ? lignesHtml(r.lignes) : ligne('Travaux réalisés', r.travaux));
+    if (r.lignes && r.lignes.length && /\S/.test(r.travaux) && r.travaux.indexOf('• ') !== 0) f.appendChild(ligne('Précisions', r.travaux));
+    if (r.difficultes) f.appendChild(ligne('Difficultés', r.difficultes));
+    if (r.commentaire) f.appendChild(ligne('Commentaire', r.commentaire));
+    if (r.visa_par) f.appendChild(el('div', 'visa', 'Vu par ' + r.visa_par + (r.visa_note ? ' — ' + r.visa_note : '')));
+    if (r.peut_viser) {
+      var b = el('button', 'btn-s', r.visa_par ? 'Modifier le visa' : 'Viser'); b.type = 'button'; b.style.marginTop = '10px';
+      b.addEventListener('click', function () {
+        var note = window.prompt('Observation (facultatif) :', r.visa_note || ''); if (note === null) return;
+        Api.call('rapport_viser', { id: r.id, note: note }).then(function () { toast('Visa enregistré'); return journal(); }).catch(function (e) { toast(e.message, true); });
+      });
+      f.appendChild(b);
+    }
+    return f;
+  }
+  function journal() {
+    return Api.call('rapports_liste', { du: $('du').value, au: $('au').value, chantier: $('f-chantier').value }).then(function (r) {
+      var z = $('liste'); z.textContent = '';
+      if (!r.rapports.length) z.appendChild(el('p', 'vide', 'Aucun rapport sur cette période.'));
+      r.rapports.forEach(function (x) { z.appendChild(fiche(x)); });
+      if (r.tronque) z.appendChild(el('p', 'aide', 'Résultats limités aux 300 plus récents : affinez la période.'));
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  $('b-filtre').addEventListener('click', journal);
+
+  // ----- Synthèse (niveau 3)
+  function synthese() {
+    return Api.call('rapports_synthese', { date: $('s-date').value }).then(function (s) {
+      var z = $('synth'); z.textContent = '';
+      $('s-resume').textContent = s.manquants ? s.manquants + ' chantier(s) sans rapport ce jour' : 'Tous les chantiers ont un rapport';
+      s.chantiers.forEach(function (c) {
+        var f = el('div', 'fiche' + (c.rapports.length ? '' : ' manquant')); var h = el('header'); h.appendChild(el('h4', null, c.nom));
+        h.appendChild(el('span', 'pastille ' + (c.rapports.length ? 'vert' : 'rouge'), c.rapports.length ? c.rapports.length + ' rapport(s)' : 'Aucun rapport'));
+        f.appendChild(h);
+        if (c.rapports.length) {
+          f.appendChild(el('div', 'meta', 'Effectif cumulé : ' + c.effectif + (c.avancement != null ? ' · Avancement : ' + c.avancement + ' %' : '')));
+          c.rapports.forEach(function (r) { f.appendChild(ligne(r.auteur_nom || r.auteur_email, (r.lignes && r.lignes.length ? r.lignes.map(function (l) { return '• ' + (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''); }).join('\n') + (r.travaux && r.travaux.indexOf('• ') !== 0 ? '\n' + r.travaux : '') : r.travaux) + (r.difficultes ? '\n⚠ ' + r.difficultes : '') + (r.commentaire ? '\n💬 ' + r.commentaire : ''))); });
+        }
+        z.appendChild(f);
+      });
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  $('s-date').addEventListener('change', synthese);
+
+  // ----- Chantiers (niveau 3) : service de chacun, activation, synchronisation avec le Suivi CPM (lecture seule)
+  var SERVICES = ['Construction', 'Électromécanique', 'Travaux Entretien'];
+  function chantiersAdmin() {
+    return Api.call('rapports_chantiers_admin').then(function (r) {
+      var z = $('c-liste'); z.textContent = '';
+      var sans = r.chantiers.filter(function (c) { return !c.service && c.actif; }).length;
+      $('c-resume').textContent = r.chantiers.filter(function (c) { return c.actif; }).length + ' chantier(s) actif(s)' + (sans ? ' · ' + sans + ' sans service' : '');
+      var t = el('table', 'tab'); t.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
+      var th = el('tr'); ['Chantier', 'Contrat', 'Service', 'Actif'].forEach(function (x) { var c = el('th', null, x); c.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:2px solid var(--border,#ddd)'; th.appendChild(c); }); t.appendChild(th);
+      r.chantiers.sort(function (a, b) { return (b.actif - a.actif) || String(a.nom).localeCompare(String(b.nom), 'fr'); }).forEach(function (c) {
+        var tr = el('tr'); if (!c.actif) tr.style.opacity = '.55';
+        var cell = function (n) { var td = el('td'); td.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border,#eee)'; if (n != null) td.textContent = n; return td; };
+        tr.appendChild(cell(c.nom)); tr.appendChild(cell(c.contrat || (c.source === 'manuel' ? 'routine' : '')));
+        var ts = cell(); var sel = el('select'); [''].concat(SERVICES).forEach(function (sv) { var o = el('option', null, sv || '— à définir —'); o.value = sv; sel.appendChild(o); });
+        if (c.service && SERVICES.indexOf(c.service) < 0) { var o = el('option', null, c.service); o.value = c.service; sel.appendChild(o); } sel.value = c.service || '';
+        sel.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, service: sel.value }).then(function () { toast('Service enregistré'); }).catch(function (e) { toast(e.message, true); }); };
+        ts.appendChild(sel); tr.appendChild(ts);
+        var ta = cell(); var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!c.actif; cb.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, actif: cb.checked }).then(function () { toast(cb.checked ? 'Chantier activé' : 'Chantier désactivé'); tr.style.opacity = cb.checked ? '' : '.55'; }).catch(function (e) { toast(e.message, true); }); };
+        ta.appendChild(cb); tr.appendChild(ta); t.appendChild(tr);
+      });
+      z.appendChild(t);
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  $('b-sync').addEventListener('click', function () {
+    var b = $('b-sync'); b.disabled = true;
+    Api.call('rapports_chantiers_sync').then(function (r) { toast(r.ajoutes + ' ajouté(s), ' + r.renommes + ' renommé(s), ' + r.desactives + ' désactivé(s), ' + r.reactives + ' réactivé(s)' + (r.routines ? ', ' + r.routines + ' chantier(s) de routine' : '')); return chantiersAdmin(); })
+      .catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+  });
+
+  // ----- Onglets
+  document.querySelectorAll('.onglet').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.onglet').forEach(function (x) { x.classList.toggle('actif', x === b); });
+      ['p-saisie', 'p-journal', 'p-synth', 'p-chantiers'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; });
+      if (b.dataset.p === 'p-journal') journal(); if (b.dataset.p === 'p-synth') synthese(); if (b.dataset.p === 'p-chantiers') chantiersAdmin();
+    });
+  });
+
+  // ----- Démarrage
+  $('du').value = plus(auj, -6); $('au').value = auj; $('s-date').value = auj; $('s-date').max = auj;
+  Api.call('rapports_chantiers').then(function (r) {
+    chantiers = r.chantiers;
+    [$('chantier'), $('f-chantier')].forEach(function (s, i) { chantiers.forEach(function (c) { var o = el('option', null, c.nom); o.value = c.id; s.appendChild(o); }); });
+    return Api.call('rapports_liste', { du: plus(auj, -60), au: auj });
+  }).then(function (r) {
+    niveau = r.niveau; mesRapports = r.rapports; prerempli();
+    if (niveau < 2) { $('o-saisie').hidden = true; $('p-saisie').hidden = true; document.querySelector('[data-p=p-journal]').click(); }
+    if (niveau >= 3) { $('o-synth').hidden = false; $('o-chantiers').hidden = false; }
+  }).catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : le module « Rapports journaliers » n\'est pas activé pour votre compte.'; return; }
+    toast(e.message, true);
+  });
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dossiers CPM — Détail — Division Infrastructure RNS</title>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/synthese.js"></script><script src="js/garde.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/sombre-ancien.css">
+<style>
+  :root {
+    --orange-main: #E85D04; --orange-light: #F48C06; --gray-dark: #1A1A2E; --gray-mid: #2D2D44;
+    --gray-light: #F8F9FA; --white: #FFFFFF; --text-dark: #1C1C1C; --text-muted: #6B7280;
+    --border: #E5E7EB; --green: #16A34A; --blue: #2563EB; --amber: #B45309; --red: #DC2626;
+    --shadow-card: 0 4px 20px rgba(232,93,4,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 32px rgba(232,93,4,0.22), 0 2px 8px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #F5F5F0; color: var(--text-dark); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+  .header-inner { max-width: 1300px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .logo-area { display: flex; align-items: center; gap: 16px; }
+  .logo-circle { width: 52px; height: 52px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: white; box-shadow: 0 4px 14px rgba(232,93,4,0.5); }
+  .logo-text h1 { font-size: 18px; font-weight: 700; color: white; display:flex; align-items:center; gap:8px; }
+  .v5-badge { font-size: 11px; font-weight: 800; color: white; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(232,93,4,0.5); }
+  .logo-text p { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .nav-link { text-decoration: none; background: rgba(255,255,255,0.1); color: white; font-size: 12px; font-weight: 700; padding: 9px 16px; border-radius: 10px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.2); transition: background 0.2s; }
+  .nav-link:hover { background: rgba(255,255,255,0.18); }
+  .nav-link.primary { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); border: none; }
+
+  main { max-width: 1300px; margin: 0 auto; padding: 26px 20px 60px; }
+
+  /* ── SUMMARY STRIP ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+  .sum-card { background: var(--white); border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow-card); border: 1px solid var(--border); cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; }
+  .sum-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .sum-card .n { font-size: 24px; font-weight: 800; }
+  .sum-card .l { font-size: 11.5px; font-weight: 600; color: var(--text-muted); margin-top: 4px; }
+  .sum-card.total .n { color: var(--gray-dark); }
+  .sum-card.attribue .n { color: var(--orange-main); }
+  .sum-card.execution .n { color: #1D6FA5; }
+  .sum-card.echu .n { color: #52525B; }
+  .sum-card.echeance { background: linear-gradient(135deg, #FFF3E0, #FFE8D6); border-color: #F4B36A; }
+  .sum-card.echeance .n { color: #9A5B0F; }
+  .sum-card.echeance.active { outline: 3px solid #F4B36A; }
+
+  /* ── SEARCH + FILTERS ── */
+  .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 22px; }
+  .search-box { position: relative; flex: 1; min-width: 240px; max-width: 420px; }
+  .search-box input { width: 100%; padding: 12px 16px 12px 42px; border: 2px solid var(--border); border-radius: 12px; font-size: 13.5px; outline: none; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; }
+  .search-box input:focus { border-color: var(--orange-main); box-shadow: 0 0 0 4px rgba(232,93,4,0.10); }
+  .search-box .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 15px; }
+  .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-tab { border: 1.5px solid var(--border); background: var(--white); padding: 9px 16px; border-radius: 20px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .filter-tab:hover { border-color: var(--orange-light); color: var(--orange-main); }
+  .filter-tab.active { background: var(--gray-dark); border-color: var(--gray-dark); color: white; }
+
+  /* ── GROUPS ── */
+  .group { margin-bottom: 30px; }
+  .group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .group-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .group-title { font-size: 14.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray-dark); }
+  .group-count { font-size: 11.5px; font-weight: 700; color: white; background: var(--gray-mid); padding: 2px 10px; border-radius: 20px; }
+  .group-line { flex: 1; height: 1px; background: var(--border); }
+
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+
+  /* ── DOSSIER CARD ── */
+  .dcard { background: var(--white); border-radius: 18px; padding: 18px 20px; box-shadow: var(--shadow-card); border: 1px solid var(--border); border-left: 5px solid var(--gray-mid); transition: box-shadow 0.2s, transform 0.15s; position: relative; }
+  .dcard:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .dcard-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .dcard h3 { font-size: 14.5px; font-weight: 700; color: var(--gray-dark); line-height: 1.35; }
+  .dcard .etape-pill { display: inline-block; margin-top: 8px; font-size: 10.5px; font-weight: 600; color: var(--text-muted); background: var(--gray-light); padding: 3px 9px; border-radius: 20px; max-width: 100%; }
+  .statut-chip { display: inline-block; margin-top: 6px; margin-right: 6px; font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .gauge-wrap { position: relative; width: 54px; height: 54px; flex-shrink: 0; }
+  .gauge-wrap svg { transform: rotate(-90deg); }
+  .gauge-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--gray-dark); }
+  .gauge-sub { position: absolute; bottom: -16px; left: 0; right: 0; text-align: center; font-size: 8px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+
+  .echeance-flag-wrap { position: absolute; top: -10px; right: 14px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; z-index: 2; }
+  .echeance-flag { background: linear-gradient(135deg,#F4B36A,#E8940A); color: white; font-size: 9.5px; font-weight: 800; padding: 3px 9px; border-radius: 20px; box-shadow: 0 2px 8px rgba(232,148,10,0.5); white-space: nowrap; }
+  .echeance-remain { font-size: 9px; font-weight: 700; color: #B8720A; background: #FFF3E0; padding: 1px 8px; border-radius: 10px; white-space: nowrap; }
+
+  .dcard .commentaire { font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-top: 12px; }
+  .meta-item .lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); font-weight: 700; }
+  .meta-item .val { font-size: 12.5px; color: var(--text-dark); font-weight: 600; margin-top: 1px; word-break: break-word; }
+
+  .contact-block { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; }
+  .contact-line { font-size: 11.5px; color: var(--text-muted); display: flex; gap: 6px; align-items: flex-start; }
+  .contact-line a { color: var(--text-dark); text-decoration: none; font-weight: 600; }
+  .contact-line a:hover { color: var(--orange-main); text-decoration: underline; }
+
+  .empty-note { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 13.5px; }
+  .loading, .error-box { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; }
+  .error-box { color: var(--red); }
+  .spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--orange-main); border-radius: 50%; margin: 0 auto 14px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .journal { max-width: 1300px; margin: 28px auto 0; background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 4px 20px 14px; box-shadow: var(--shadow-card); }
+  .journal[hidden] { display: none; }
+  .journal summary { cursor: pointer; font-weight: 800; font-size: 14.5px; padding: 14px 0; }
+  .journal-info { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .rapport-barre { margin: 6px 0 10px; font-size: 13px; } .rapport-barre select { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); color: var(--text-dark); font: inherit; }
+  .rapport-groupe { font-size: 14px; font-weight: 800; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid #E85D04; }
+  .rapport-dossier { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .rapport-etiq { font-size: 11.5px; color: var(--text-muted); margin-bottom: 2px; }
+  .rapport-obs { font-size: 13.5px; line-height: 1.5; font-weight: 700; overflow-wrap: anywhere; }
+  .rapport-copier { flex: none; border: 1.5px solid var(--border); background: var(--white); color: var(--text-dark); border-radius: 8px; padding: 5px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .rapport-copier.ok { background: #16A34A; border-color: #16A34A; color: #fff; }
+  .syn-semaine { font-size: 13px; font-weight: 800; margin: 14px 0 4px; }
+  .syn-puces { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
+  .syn-puces li { margin-bottom: 2px; }
+  .journal-jour { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 14px 0 6px; }
+  .journal-ligne { font-size: 13.5px; line-height: 1.5; padding: 5px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+  .journal-ligne b { font-weight: 700; }
+  .journal-etiq { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 1px 8px; border-radius: 999px; margin-right: 6px; background: #E5E7EB; color: #374151; }
+  .journal-etiq.nouveau { background: #D4EDBC; color: #3F6B2E; } .journal-etiq.retire { background: #3D3D3D; color: #fff; } .journal-etiq.statut { background: #BFE1F6; color: #155479; }
+</style>
+<link rel="stylesheet" href="css/entete.css">
+</head>
+<body>
+
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">CP</div>
+    <div class="logo-text"><h1>Dossiers CPM <span class="v5-badge">V5</span></h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="https://docs.google.com/spreadsheets/d/1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I/edit?usp=sharing" target="_blank" rel="noopener">📂 Ouvrir le fichier</a><a class="btn-ghost" href="portail.html">← Retour au portail</a></div>
+</div></header>
+
+<main>
+  <div id="content" class="loading"><div class="spinner"></div>Chargement des dossiers…</div>
+  <details class="journal" id="journal" hidden>
+    <summary>🕘 Le journal des changements du CPM (90 derniers jours)</summary>
+    <p class="journal-info" id="journal-info"></p>
+    <div id="journal-liste"></div>
+  </details>
+  <details class="journal" id="rapport" hidden>
+    <summary>📋 Texte pour le rapport hebdomadaire (colonne O.B.S du PowerPoint)</summary>
+    <p class="journal-info">Choisissez la semaine (du samedi au vendredi), puis cliquez sur « Copier » à côté d'un dossier et collez dans la case O.B.S de la diapositive : le texte est déjà en <b>gras</b>.</p>
+    <div class="rapport-barre"><label for="rapport-semaine">Semaine</label> <select id="rapport-semaine"></select>
+      <button type="button" id="rapport-diapos" class="rapport-copier" style="margin-left:10px" title="Ajoute à la fin du rapport hebdomadaire (Google Slides) les diapositives des dossiers non achevés">📥 Injecter dans la diapo hebdomadaire</button>
+      <button type="button" id="rapport-pptx" class="rapport-copier" title="Télécharge les mêmes diapositives en fichier PowerPoint">⬇ .pptx</button> <span id="rapport-diapos-etat" class="journal-info"></span></div>
+    <div id="rapport-contenu"></div>
+  </details>
+</main>
+
+<script>
+const CPM_CSV_URL = "cpm"; // source lue par la passerelle (js/donnees.js)
+
+// Colonnes (0-indexées, A=0) — Suivi CPM V5
+const COL = {
+  DEBUT_CDC: 0, TYPE: 1, N_DOSSIER: 2, INTITULE: 3, ETAPE: 4, DATE_LIMITE: 5,
+  ECHEANCE_G: 6, POURCENT: 7, STATUT: 8, COMMENTAIRE: 9, ATTRIB_FINALE: 10,
+  DUREE_PASSATION: 11, ATTRIBUTION: 12, N_CONTRAT: 13, MONTANT: 14, DATE_SIGNATURE: 15,
+  DATE_ODS: 16, DUREE_CONTRAT: 17, ECHEANCE: 18, N_PROJET_SAP: 19, CODE_SAP: 20,
+  ADRESSE: 21, VILLE: 22, TEL: 23, AUTRE_TEL: 24, FAX: 25, EMAIL: 26
+};
+
+const STATUT_STYLES = {
+  'attribue':   { label: 'Attribué',             chipBg: '#7CD5B0', chipText: '#0B4A34', accent: '#1f9d6c' },
+  'execution':  { label: 'Contrat en exécution', chipBg: '#BFE1F6', chipText: '#155479', accent: '#2f8fc4' },
+  'echu':       { label: 'Contrat échu',         chipBg: '#8B8D91', chipText: '#FFFFFF', accent: '#6b6d72' },
+  'encours':    { label: 'Dossier en cours',     chipBg: '#D4EDBC', chipText: '#3F6B2E', accent: '#5fae70' },
+  'bloque':     { label: 'Bloqué',                chipBg: '#B10202', chipText: '#FFFFFF', accent: '#B10202' },
+  'infructueux':{ label: 'Infructueux',           chipBg: '#3D3D3D', chipText: '#FFFFFF', accent: '#3D3D3D' },
+  'nondemarre': { label: 'Non démarré',           chipBg: '#FFF6E8', chipText: '#8a6a2f', accent: '#c99a3e' },
+  'autre':      { label: 'Autre / non renseigné', chipBg: '#F1F1F1', chipText: '#6B7280', accent: '#9CA3AF' }
+};
+const STATUT_ORDER = ['attribue', 'encours', 'execution', 'echu', 'bloque', 'infructueux', 'nondemarre', 'autre'];
+
+let ALL_DOSSIERS = [];
+let activeFilter = new URLSearchParams(window.location.search).get('echeance') === '1' ? 'echeance' : 'all';
+
+function normalize(str) {
+  return (str || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function statutKey(rawStatut) {
+  const s = normalize(rawStatut);
+  if (s.includes('attribue')) return 'attribue';
+  if (s.includes('execution')) return 'execution';
+  if (s.includes('echu') || s.includes('termine')) return 'echu';
+  if (s.includes('en cours')) return 'encours';
+  if (s.includes('bloque')) return 'bloque';
+  if (s.includes('infructueux')) return 'infructueux';
+  if (s.includes('non demarre')) return 'nondemarre';
+  return 'autre';
+}
+
+function parseFrDate(str) {
+  if (!str) return null;
+  const parts = str.trim().split('/');
+  if (parts.length !== 3) return null;
+  const d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+  if (!d || !m || !y || y < 1990) return null;
+  const dt = new Date(y, m - 1, d);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], next = text[i + 1];
+    if (inQuotes) {
+      if (c === '"' && next === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (field !== '' || row.length) { row.push(field); rows.push(row); row = []; field = ''; }
+        if (c === '\r' && next === '\n') i++;
+      } else field += c;
+    }
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function formatDureeRestante(jours) {
+  if (jours === null || jours === undefined) return '';
+  if (jours <= 0) return 'Échéance dépassée';
+  const mois = Math.floor(jours / 30);
+  const joursRestants = jours % 30;
+  if (mois === 0) return `il reste ${joursRestants} jour${joursRestants > 1 ? 's' : ''}`;
+  if (joursRestants === 0) return `il reste ${mois} mois`;
+  return `il reste ${mois} mois et ${joursRestants} jour${joursRestants > 1 ? 's' : ''}`;
+}
+
+function renderGauge(pct, color, sub) {
+  const r = 22, c = 2 * Math.PI * r;
+  const p = Math.max(0, Math.min(100, pct));
+  const offset = c - (p / 100) * c;
+  return `<div class="gauge-wrap"><svg width="54" height="54" viewBox="0 0 54 54">
+      <circle cx="27" cy="27" r="${r}" fill="none" stroke="#F0F0EC" stroke-width="6"/>
+      <circle cx="27" cy="27" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"/>
+    </svg><div class="gauge-pct">${p.toFixed(0)}%</div>${sub ? `<div class="gauge-sub">${sub}</div>` : ''}</div>`;
+}
+
+function metaItem(label, value) {
+  if (!value || !value.trim()) return '';
+  return `<div class="meta-item"><div class="lbl">${label}</div><div class="val">${escapeHtml(value)}</div></div>`;
+}
+
+function escapeHtml(s) {
+  return (s || '').toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function renderCard(d) {
+  const style = STATUT_STYLES[d.key] || STATUT_STYLES.autre;
+  const contratLabel = 'N° Contrat';
+  const contratValue = d.nContrat;
+
+  // Pour les contrats en exécution : jauge = % de consommation du contrat (Q/R/S), pas le % Réalisé (souvent figé à 100%)
+  const gaugePct = (d.key === 'execution' && d.pctConsomme !== null) ? d.pctConsomme : d.pct;
+  const gaugeSub = (d.key === 'execution' && d.pctConsomme !== null) ? 'consommé' : '';
+
+  const contactLines = [];
+  if (d.adresse || d.ville) contactLines.push(`<div class="contact-line">📍 <span>${escapeHtml([d.adresse, d.ville].filter(Boolean).join(', '))}</span></div>`);
+  if (d.tel) contactLines.push(`<div class="contact-line">☎️ <a href="tel:${escapeHtml(d.tel)}">${escapeHtml(d.tel)}</a></div>`);
+  if (d.autreTel) contactLines.push(`<div class="contact-line">☎️ <a href="tel:${escapeHtml(d.autreTel)}">${escapeHtml(d.autreTel)}</a> <span style="opacity:.6">(autre)</span></div>`);
+  if (d.fax) contactLines.push(`<div class="contact-line">📠 <span>${escapeHtml(d.fax)}</span></div>`);
+  if (d.email) contactLines.push(`<div class="contact-line">✉️ <a href="mailto:${escapeHtml(d.email)}">${escapeHtml(d.email)}</a></div>`);
+
+  return `<div class="dcard" style="border-left-color:${style.accent}">
+    ${d.echeanceProche ? `<div class="echeance-flag-wrap"><span class="echeance-flag">⏳ Arrive à échéance</span><span class="echeance-remain">${formatDureeRestante(d.joursRestants)}</span></div>` : ''}
+    <div class="dcard-top" style="${d.echeanceProche ? 'margin-top:16px;' : ''}">
+      <div>
+        <h3>${escapeHtml(d.intitule) || '<em style="color:#9CA3AF">Sans intitulé</em>'}</h3>
+        <span class="statut-chip" style="background:${style.chipBg};color:${style.chipText}">${style.label}</span>
+        ${d.etape ? `<div class="etape-pill" title="${escapeHtml(d.etape)}">${escapeHtml(d.etape.length > 60 ? d.etape.slice(0,60) + '…' : d.etape)}</div>` : ''}
+      </div>
+      ${renderGauge(gaugePct, style.accent, gaugeSub)}
+    </div>
+    ${d.commentaire ? `<div class="commentaire">💬 ${escapeHtml(d.commentaire)}</div>` : ''}
+    <div class="meta-grid">
+      ${metaItem('Durée Passation', d.dureePassation ? d.dureePassation + ' j.' : '')}
+      ${metaItem('Attribution', d.attribution)}
+      ${metaItem(contratLabel, contratValue)}
+      ${d.key === 'execution' ? metaItem('N° Projet SAP', d.nProjetSap) : ''}
+      ${metaItem('Code Sap Fournisseur', d.codeSap)}
+      ${d.key === 'execution' ? metaItem('Jours restants', d.joursRestants !== null ? (d.joursRestants > 0 ? d.joursRestants + ' j.' : 'Échéance dépassée') : '') : ''}
+    </div>
+    ${contactLines.length ? `<div class="contact-block">${contactLines.join('')}</div>` : ''}
+  </div>`;
+}
+
+function renderAll() {
+  const content = document.getElementById('content');
+  const q = normalize(document.getElementById('search-input') ? document.getElementById('search-input').value : '');
+
+  let filtered = ALL_DOSSIERS.filter(d => {
+    if (activeFilter === 'echeance') return d.echeanceProche && (!q || d.searchBlob.includes(q));
+    if (activeFilter !== 'all' && d.key !== activeFilter) return false;
+    if (q && !d.searchBlob.includes(q)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    content.innerHTML = renderToolbarAndSummary() + `<div class="empty-note">Aucun dossier ne correspond à ce filtre.</div>`;
+    attachEvents();
+    return;
+  }
+
+  const groups = {};
+  filtered.forEach(d => { (groups[d.key] = groups[d.key] || []).push(d); });
+
+  let html = renderToolbarAndSummary();
+
+  STATUT_ORDER.forEach(key => {
+    if (!groups[key] || groups[key].length === 0) return;
+    const style = STATUT_STYLES[key];
+    html += `<div class="group">
+      <div class="group-header">
+        <span class="statut-chip" style="background:${style.chipBg};color:${style.chipText}">${style.label}</span>
+        <span class="group-count">${groups[key].length}</span>
+        <span class="group-line"></span>
+      </div>
+      <div class="cards-grid">${groups[key].map(renderCard).join('')}</div>
+    </div>`;
+  });
+
+  content.innerHTML = html;
+  attachEvents();
+}
+
+function renderToolbarAndSummary() {
+  const total = ALL_DOSSIERS.length;
+  const count = k => ALL_DOSSIERS.filter(d => d.key === k).length;
+  const echeanceCount = ALL_DOSSIERS.filter(d => d.echeanceProche).length;
+
+  const categoryTiles = STATUT_ORDER
+    .filter(k => count(k) > 0)
+    .map(k => {
+      const s = STATUT_STYLES[k];
+      return `<div class="sum-card" data-filter="${k}" style="background:${s.chipBg};${activeFilter===k ? 'outline:3px solid '+s.accent+';' : ''}">
+        <div class="n" style="color:${s.chipText}">${count(k)}</div>
+        <div class="l" style="color:${s.chipText};opacity:.85">${s.label}</div>
+      </div>`;
+    }).join('');
+
+  return `
+    <div class="summary-grid">
+      <div class="sum-card total" data-filter="all"><div class="n">${total}</div><div class="l">Total dossiers</div></div>
+      ${categoryTiles}
+      <div class="sum-card echeance ${activeFilter==='echeance' ? 'active' : ''}" data-filter="echeance"><div class="n">⏳ ${echeanceCount}</div><div class="l">Arrivée à échéance (contrats en exécution, ≥60% du délai consommé)</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-box"><span class="icon">🔍</span><input type="text" id="search-input" placeholder="Rechercher un intitulé, une entreprise, une adresse…" value="${document.getElementById('search-input') ? escapeHtml(document.getElementById('search-input').value) : ''}"/></div>
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="filter-tab ${activeFilter==='all'?'active':''}" data-filter="all">Tout</button>
+        ${STATUT_ORDER.filter(k => count(k) > 0).map(k => `<button class="filter-tab ${activeFilter===k?'active':''}" data-filter="${k}">${STATUT_STYLES[k].label}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function attachEvents() {
+  const input = document.getElementById('search-input');
+  if (input) {
+    let minuteur = 0; input.addEventListener('input', () => { clearTimeout(minuteur); minuteur = setTimeout(renderAll, 180); }); // recherche différée : on ne redessine pas toutes les cartes à chaque lettre
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+  document.querySelectorAll('.filter-tab').forEach(btn => {
+    btn.addEventListener('click', () => { activeFilter = btn.dataset.filter; renderAll(); });
+  });
+  document.querySelectorAll('.sum-card[data-filter]').forEach(card => {
+    card.addEventListener('click', () => { activeFilter = card.dataset.filter; renderAll(); });
+  });
+}
+
+async function init() {
+  const content = document.getElementById('content');
+  try {
+    const text = await Donnees.csv(CPM_CSV_URL);
+    const rows = parseCSV(text);
+
+    let headerIdx = rows.findIndex(r => r.some(cell => normalize(cell) === 'statut'));
+    if (headerIdx === -1) headerIdx = 1;
+    const data = rows.slice(headerIdx + 1);
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    ALL_DOSSIERS = data
+      .filter(r => (r[COL.INTITULE] && r[COL.INTITULE].trim() !== '') || (r[COL.STATUT] && r[COL.STATUT].trim() !== ''))
+      .map(r => {
+        const key = statutKey(r[COL.STATUT]);
+        const pctStr = (r[COL.POURCENT] || '').replace('%', '').trim();
+        const pct = parseFloat(pctStr.replace(',', '.')) || 0;
+
+        // Q = Date ODS (début), R = Durée du contrat (mois), S = Échéance (fin)
+        const dateODS = parseFrDate(r[COL.DATE_ODS]);
+        const dureeMois = parseFloat((r[COL.DUREE_CONTRAT] || '').toString().replace(',', '.')) || null;
+        let echeanceDate = parseFrDate(r[COL.ECHEANCE]);
+        if (!echeanceDate && dateODS && dureeMois) {
+          echeanceDate = new Date(dateODS);
+          // durée de plus de 60 = en JOURS (ex. 580), sinon en mois ; la date de fin est incluse (ODS + 18 mois → veille)
+          if (dureeMois > 60) echeanceDate.setDate(echeanceDate.getDate() + Math.round(dureeMois) - 1);
+          else { echeanceDate.setMonth(echeanceDate.getMonth() + Math.round(dureeMois)); echeanceDate.setDate(echeanceDate.getDate() - 1); }
+        }
+
+        let pctConsomme = null, joursRestants = null;
+        if (echeanceDate) {
+          joursRestants = Math.round((echeanceDate - today) / (1000 * 60 * 60 * 24));
+          if (dateODS) {
+            const totalJours = Math.round((echeanceDate - dateODS) / (1000 * 60 * 60 * 24));
+            if (totalJours > 0) {
+              const elapsedJours = totalJours - joursRestants;
+              pctConsomme = Math.max(0, Math.min(100, Math.round((elapsedJours / totalJours) * 100)));
+            }
+          }
+        }
+
+        // "Arrivée à échéance" = contrat en exécution ayant consommé ≥ 60% de son délai total
+        const echeanceProche = !!(key === 'execution' && pctConsomme !== null && pctConsomme >= 60);
+
+        const d = {
+          key,
+          intitule: r[COL.INTITULE] || '',
+          etape: r[COL.ETAPE] || '',
+          pct,
+          pctConsomme,
+          joursRestants,
+          commentaire: r[COL.COMMENTAIRE] || '',
+          dureePassation: (r[COL.DUREE_PASSATION] || '').trim(),
+          attribution: r[COL.ATTRIBUTION] || '',
+          nContrat: r[COL.N_CONTRAT] || '',
+          nProjetSap: r[COL.N_PROJET_SAP] || '',
+          codeSap: r[COL.CODE_SAP] || '',
+          adresse: r[COL.ADRESSE] || '',
+          ville: r[COL.VILLE] || '',
+          tel: r[COL.TEL] || '',
+          autreTel: r[COL.AUTRE_TEL] || '',
+          fax: r[COL.FAX] || '',
+          email: r[COL.EMAIL] || '',
+          echeanceProche
+        };
+        d.searchBlob = normalize([d.intitule, d.etape, d.attribution, d.nContrat, d.nProjetSap, d.ville, d.adresse, d.commentaire].join(' '));
+        return d;
+      });
+
+    renderAll();
+  } catch (e) {
+    content.className = 'error-box';
+    content.innerHTML = "Impossible de charger les dossiers. Vérifie ta connexion internet ou que le fichier est bien partagé publiquement.<br><br><small>" + escapeHtml(e.message) + "</small>";
+  }
+}
+init();
+</script>
+
+<script src="js/pied.js"></script>
+<script src="js/rapportdiapos.js"></script>
+<script>
+// Journal des changements (chaque nuit, la passerelle compare la feuille CPM à la veille) — semaines du samedi au vendredi
+(function () {
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function fr(iso) { var p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  /** Copie du texte riche (gras conservé dans PowerPoint / Word) avec repli en texte simple. */
+  function copier(bouton, html, texte) {
+    function fait() { var t = bouton.textContent; bouton.textContent = 'Copié ✓'; bouton.classList.add('ok'); setTimeout(function () { bouton.textContent = t; bouton.classList.remove('ok'); }, 1800); }
+    function repli() {
+      var d = document.createElement('div'); d.innerHTML = html; d.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(d);
+      var r = document.createRange(); r.selectNodeContents(d); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      try { document.execCommand('copy'); fait(); } catch (e) { /* rien */ } sel.removeAllRanges(); document.body.removeChild(d);
+    }
+    if (navigator.clipboard && window.ClipboardItem) {
+      navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([texte], { type: 'text/plain' }) })]).then(fait, repli);
+    } else repli();
+  }
+  function dessinerRapport(evenements, debut) {
+    var zone = document.getElementById('rapport-contenu'); zone.textContent = '';
+    var r = Synthese.rapportSemaine(evenements, debut), total = 0;
+    r.groupes.forEach(function (g) {
+      if (!g.dossiers.length) return; total += g.dossiers.length;
+      zone.appendChild(el('div', 'rapport-groupe', g.titre + ' (' + g.dossiers.length + ')'));
+      g.dossiers.forEach(function (d) {
+        var ligne = el('div', 'rapport-dossier'), txt = el('div');
+        txt.appendChild(el('div', 'rapport-etiq', (d.numero ? d.numero + ' — ' : '') + d.intitule));
+        var obs = el('div', 'rapport-obs'); d.lignes.forEach(function (l, i) { if (i) obs.appendChild(document.createElement('br')); obs.appendChild(document.createTextNode(l)); }); txt.appendChild(obs);
+        var b = el('button', 'rapport-copier', 'Copier'); b.type = 'button'; b.addEventListener('click', function () { copier(b, Synthese.htmlObs(d), Synthese.texteObs(d)); });
+        ligne.appendChild(txt); ligne.appendChild(b); zone.appendChild(ligne);
+      });
+    });
+    if (!total) zone.appendChild(el('p', 'journal-info', 'Aucun changement cette semaine.'));
+  }
+  Api.call('cpm_journal').then(function (r) {
+    var box = document.getElementById('journal'), liste = document.getElementById('journal-liste'); box.hidden = false;
+    document.getElementById('journal-info').textContent = r.dernier_instantane ? 'Dernière lecture de la feuille : ' + new Date(r.dernier_instantane).toLocaleString('fr-FR') : 'Le journal démarre à la première lecture de la feuille (chaque nuit).';
+    if (!r.evenements.length) liste.appendChild(el('p', 'journal-info', 'Aucun changement enregistré pour le moment.')); else Synthese.listeSemaines(liste, r.evenements);
+    // Rapport hebdomadaire : semaines proposées = celles qui ont des changements + la dernière semaine terminée
+    var rap = document.getElementById('rapport'); rap.hidden = false;
+    var auj = new Date().toISOString().slice(0, 10), debuts = Synthese.semaines(r.evenements).map(function (w) { return w.debut; });
+    var derniere = Synthese.debutSemaine(new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)); if (debuts.indexOf(derniere) === -1) debuts.push(derniere);
+    debuts.sort().reverse();
+    var sel = document.getElementById('rapport-semaine');
+    debuts.forEach(function (d) { var o = document.createElement('option'); o.value = d; var f = new Date(d + 'T00:00:00Z'); f.setUTCDate(f.getUTCDate() + 6); o.textContent = 'Du ' + fr(d) + ' au ' + fr(f.toISOString().slice(0, 10)); sel.appendChild(o); });
+    // semaine proposée par défaut : la dernière semaine terminée (samedi → vendredi écoulé)
+    sel.value = debuts.indexOf(derniere) !== -1 ? derniere : debuts[0];
+    sel.addEventListener('change', function () { dessinerRapport(r.evenements, sel.value); });
+    dessinerRapport(r.evenements, sel.value);
+    // Diapositives « dossiers non achevés » (jauges) : un .pptx à ajouter à la fin du rapport hebdomadaire
+    var bd = document.getElementById('rapport-diapos'), etat = document.getElementById('rapport-diapos-etat');
+    function chargerPptx() {
+      if (window.PptxGenJS) return Promise.resolve();
+      return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'; s.onload = ok; s.onerror = function () { ko(new Error('bibliothèque PowerPoint indisponible')); }; document.head.appendChild(s); });
+    }
+    function preparer() { return Donnees.csv(CPM_CSV_URL).then(function (t) { return RapportDiapos.preparer(Synthese.parseCSV(t), r.evenements, sel.value, Synthese); }); }
+    function lancer(bouton, action) {
+      bouton.disabled = true; etat.textContent = 'Création des diapositives…';
+      preparer().then(function (rap) {
+        if (!rap.groupes.length) { etat.textContent = 'Aucun dossier à moins de 100 %.'; return; }
+        return action(rap);
+      }).catch(function (e) { etat.textContent = 'Impossible : ' + (e && e.message ? e.message : 'erreur'); }).then(function () { bouton.disabled = false; });
+    }
+    bd.addEventListener('click', function () {
+      lancer(bd, function (rap) {
+        return Api.call('rapport_diapos', { rapport: rap }).then(function (res) {
+          etat.textContent = res.diapositives + ' diapositive' + (res.diapositives > 1 ? 's' : '') + ' ajoutée' + (res.diapositives > 1 ? 's' : '') + ' à la fin du rapport' + (res.remplacees ? ' (' + res.remplacees + ' ancienne' + (res.remplacees > 1 ? 's' : '') + ' remplacée' + (res.remplacees > 1 ? 's' : '') + ')' : '') + ' — ';
+          var a = document.createElement('a'); a.href = res.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ouvrir le rapport'; etat.appendChild(a);
+        });
+      });
+    });
+    document.getElementById('rapport-pptx').addEventListener('click', function () {
+      lancer(this, function (rap) {
+        return chargerPptx().then(function () {
+          var p = new PptxGenJS(), n = RapportDiapos.construire(p, rap);
+          return p.writeFile({ fileName: 'Rapport hebdo - dossiers non achevés - ' + sel.value + '.pptx' }).then(function () { etat.textContent = n + ' diapositive(s) téléchargée(s).'; });
+        });
+      });
+    });
+    if (location.hash === '#journal') { box.open = true; box.scrollIntoView(); }
+    if (location.hash === '#rapport') { rap.open = true; rap.scrollIntoView(); }
+  }).catch(function () { /* pas de droit ou journal indisponible : on n'affiche rien */ });
+})();
+</script>
+</body>
+</html>

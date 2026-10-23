@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Portail – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css?v=5.4.3">
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">SH</div>
+    <div class="logo-text"><h1>Tableau de Bord – Division Infrastructure</h1><p id="bandeau-version">Sonatrach · RNS · Version 5.4.6</p></div></div>
+  <div class="barre-haut" id="barre-haut" hidden>
+    <input type="search" id="recherche" placeholder="Rechercher…" aria-label="Rechercher une application ou un contact" title="Rechercher une application ou un contact" autocomplete="off">
+    <span class="date-badge" id="date-badge"></span>
+  </div>
+  <div class="bandeau-droite"><span id="zone-installer"></span><span id="qui"></span><button class="btn-ghost" id="quitter" type="button">Se déconnecter</button></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+
+<main class="portail">
+  <section class="agent" id="accueil" aria-label="Ma fiche">
+    <div class="agent-corps">
+    <div class="agent-gauche">
+    <div class="agent-entete">
+      <div class="avatar" id="avatar" aria-hidden="true"></div>
+      <div class="agent-id">
+        <p class="agent-salut" id="salut">Bonjour</p>
+        <h2 id="nom-agent">Chargement…</h2>
+        <p class="agent-poste" id="agent-poste"></p>
+        <div class="agent-badges" id="agent-badges"></div>
+      </div>
+    </div>
+      <div class="agent-infos" id="fiche"></div>
+    </div>
+      <div class="jauge-bloc" id="statut" hidden>
+        <nav class="raccourcis" id="raccourcis" aria-label="Raccourcis planning" hidden></nav>
+        <div class="jauge" id="jauge" role="img" aria-label="Rotation"><div class="j-centre"><b id="j-reste">–</b><small id="j-lib">jours</small></div></div>
+        <div class="jauge-texte">
+          <span class="etat-pill" id="j-etat"></span>
+          <p id="phrase"></p>
+          <div class="jauge-barre" id="j-barre" aria-hidden="true"><i id="j-barre-i"></i></div>
+          <p class="jauge-dates" id="j-dates"></p>
+          <button class="btn-s" id="b-rot" type="button"></button>
+        </div>
+        <a class="par-sijil" id="sijil" href="https://rayanem-dev.github.io/pointage-app/" target="_blank" rel="noopener" title="Sijil — gestion des pointages et des rotations"><img src="img/sijil-symbole.png" alt="" width="14" height="14"><span>Propulsé par <b>Sijil</b></span></a>
+      </div>
+      <aside class="mes-apps" id="mes-apps" aria-label="Mes applications" hidden>
+        <h3>Mes applications <small id="mes-apps-n"></small></h3>
+        <div class="mes-apps-grille" id="mes-apps-grille"></div>
+      </aside>
+    </div>
+    <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
+    <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
+  </section>
+  <div class="outils" id="outils" hidden>
+    <div class="onglets-modules" id="onglets-modules"></div>
+  </div>
+  <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
+  <section class="syntheses" id="syntheses"><div class="syn syn-alerte-modifs" id="syn-modifs" hidden></div><div class="syn" id="syn-chantiers" hidden></div><div class="syn" id="syn-cpm" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
+  <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
+  <div id="modules"></div>
+  <section id="annuaire-zone" class="annuaire-zone" hidden>
+    <h3 id="annuaire-titre">📞 Annuaire</h3>
+    <div id="annuaire-liste"></div>
+  </section>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/donnees.js"></script>
+<script src="js/annuaire.js"></script>
+<script src="js/rotation.js"></script>
+<script src="js/employeurs.js"></script>
+<script src="js/simulation.js"></script>
+<script src="js/modif-planning.js"></script>
+<script src="js/notif-modif.js"></script>
+<script src="js/synthese.js"></script>
+<script src="js/boutoninstaller.js"></script>
+<script src="js/rubriques.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  if (window.SIJIL_URL) $('sijil').href = window.SIJIL_URL;
+  var ROLES = { agent: 'Agent', conducteur: 'Conducteur des travaux', chef_service: 'Chef de service', chef_division: 'Chef de division', secretariat: 'Secrétariat', cpm: 'Cellule Passation de marché' };
+  var NIVEAUX = { 1: 'Droit : lecture', 2: 'Droit : saisie', 3: 'Droit : administration' }; // droit de la personne sur ce module (pas le nom d'un module)
+
+  function el(tag, cls, texte) { var e = document.createElement(tag); if (cls) e.className = cls; if (texte != null) e.textContent = texte; return e; }
+  // N'autorise que http(s) et les pages relatives du site : jamais javascript: ni data:
+  function lienSur(u) { u = String(u || ''); return /^(https?:\/\/|[A-Za-z0-9_\-\/]+\.html)/.test(u) ? u : '#'; }
+  // Les applications Apps Script s'ouvrent dans le site (même en-tête, « Retour au portail ») au lieu d'une page nue
+  function lienApp(a) { var u = lienSur(a.url); return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_\-]+\/exec$/.test(u) ? 'app.html?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(a.titre || '') + '&e=' + encodeURIComponent(String(a.emoji || a.icone || '').slice(0, 8)) : u; }
+
+  // Applications les plus utilisées d'abord dans « Mes applications » : un compteur par application et par personne, gardé dans ce navigateur
+  var UID = '';
+  function cleUsage() { return 'infra_usage_' + UID; }
+  function usages() { try { return JSON.parse(localStorage.getItem(cleUsage()) || '{}'); } catch (e) { return {}; } }
+  function compter(titre) { if (!titre) return; try { var o = usages(); o[titre] = (o[titre] || 0) + 1; localStorage.setItem(cleUsage(), JSON.stringify(o)); } catch (e) { /* stockage indisponible */ } }
+
+  // ---------- Fiche de l'agent ----------
+  function initiales(nom) { var m = String(nom || '').trim().split(/\s+/).filter(function (x) { return /[A-Za-zÀ-ÿ]/.test(x); }); return ((m[0] || '?').charAt(0) + (m[1] ? m[1].charAt(0) : '')).toUpperCase(); }
+  function anciennete(iso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return '';
+    var d = new Date(iso + 'T00:00:00'), n = new Date(); if (isNaN(d) || d > n) return '';
+    var mois = (n.getFullYear() - d.getFullYear()) * 12 + n.getMonth() - d.getMonth() - (n.getDate() < d.getDate() ? 1 : 0);
+    if (mois >= 12) { var an = Math.floor(mois / 12), r = mois % 12; return an + ' an' + (an > 1 ? 's' : '') + (r ? ' ' + r + ' mois' : ''); }
+    if (mois >= 1) return mois + ' mois';
+    var j = Math.floor((n - d) / 86400000); return j <= 0 ? 'aujourd\'hui' : j + ' jour' + (j > 1 ? 's' : '');
+  }
+  function dessinerFiche(u) {
+    $('qui').textContent = u.nom;
+    $('salut').textContent = ['Bonjour', u.civilite].filter(Boolean).join(' ');
+    $('nom-agent').textContent = u.nom;
+        var av = $('avatar'); av.textContent = initiales(u.nom); var st = Employeur.style(u.dependance);
+    av.style.background = st ? st.fond : ''; av.style.color = st ? st.texte : ''; if (st) av.style.boxShadow = '0 0 0 3px ' + st.texte + '33';
+    var bd = $('agent-badges'); bd.textContent = '';
+    var pe = Employeur.pastille(u.dependance);
+    if (!pe) { pe = el('span', 'emp', String(u.dependance || 'SONATRACH').toUpperCase()); pe.style.background = '#FCE9D6'; pe.style.color = '#B94E00'; pe.style.border = '1px solid #B94E0066'; }
+    pe.style.marginLeft = '0'; bd.appendChild(pe);
+    $('accueil').setAttribute('data-emp', Annuaire.cleEmployeur(u.dependance) || 'sh');
+    bd.appendChild(el('span', 'role-pill', u.role_libelle || ROLES[u.role] || u.role || ''));
+    var integ = u.date_integration ? Rotation.frDate(u.date_integration) + (anciennete(u.date_integration) ? ' · ' + anciennete(u.date_integration) : '') : '';
+    var manque = [];
+    function ajouter(k, lib, v, vide) { if (v) return [lib, v]; if (vide) { manque.push(k); return [lib, null]; } return null; }
+    // 4 lignes de 2 colonnes (carte basse) : l'ancienneté va sous le nom, le Wi-Fi remplace le téléphone quand il manque
+    var champs = [['Fonction', u.fonction], ['Service', u.service], ajouter('matricule', 'Matricule', u.matricule, true), ajouter('sap', 'Matricule SAP', u.sap, true), ajouter('nin', 'NIN', u.nin_masque, true),
+      ['Identifiant SONA', u.sona], ['E-mail', u.email_contact || u.email], u.telephone ? ['Téléphone', u.telephone] : ['Wi-Fi', u.wifi_user]].filter(function (c) { return c && (c[1] || c[1] === null); });
+    $('agent-poste').textContent = integ ? 'Intégré le ' + integ : '';
+    var fiche = $('fiche'); fiche.textContent = '';
+    champs.forEach(function (c) {
+      var d = el('div'); d.appendChild(el('span', null, c[0]));
+      if (c[1] === null) { var b = el('button', 'a-completer', 'à compléter'); b.type = 'button'; b.addEventListener('click', function () { ouvrirProfil(u, manque); }); d.appendChild(b); }
+      else { var v = el('b', null, c[1]); v.title = c[1]; d.appendChild(v); }
+      if (c[0] === 'E-mail') { var be = el('button', 'a-completer', 'modifier'); be.type = 'button'; be.title = 'Changer l\'adresse où vous recevez vos codes'; be.addEventListener('click', function () { ouvrirEmail(u); }); d.appendChild(be); }
+      fiche.appendChild(d);
+    });
+    if (st) $('accueil').style.setProperty('--agent-bord', st.texte);
+  }
+
+  // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
+  // Mes applications : une icône par application autorisée pour cet utilisateur (nom au survol), même ouverture que les cartes du bas
+  function mesApps(menu) {
+    var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0, liste = [], us = usages(); g.textContent = '';
+    (menu || []).forEach(function (m) {
+      (m.apps || []).forEach(function (a) {
+        var u = lienApp(a); if (u === '#' || vues[u]) return; vues[u] = 1; n += 1; liste.push({ a: a, u: u, rang: n });
+      });
+    });
+    liste.sort(function (x, y) { return (us[y.a.titre] || 0) - (us[x.a.titre] || 0) || x.rang - y.rang; });   // les plus utilisées d'abord, puis l'ordre du menu
+    liste.forEach(function (x) {
+      var a = x.a, c = el('a', 'mes-app', a.emoji || '📄'); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
+      if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
+      c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
+      g.appendChild(c);
+    });
+    $('mes-apps-n').textContent = n ? '(' + n + ')' : ''; box.hidden = !n;
+  }
+  function raccourcis(menu) {
+    var nav = $('raccourcis'); nav.textContent = '';
+    function niv(id) { var m = (menu || []).filter(function (x) { return x.id === id; })[0]; return m ? m.niveau : 0; }
+    [['📅', 'Mon planning', 'planning.html?moi=1', niv('planning') >= 1], ['👥', 'Planning des équipes', 'planning.html', niv('planning') >= 2],
+     ['🧪', 'Simulation de planning', 'simulation.html', niv('simulation') >= 2]].forEach(function (x) {
+      if (!x[3]) return;
+      var a = el('a', 'raccourci', x[0]); a.href = x[2]; a.title = x[1]; a.setAttribute('aria-label', x[1]); a.appendChild(el('span', null, x[1])); nav.appendChild(a);
+    });
+    nav.hidden = !nav.children.length;
+  }
+
+  // ---------- Recherche, filtres par module, date, synthèses (comme l'ancien accueil) ----------
+  var modulesFiltre = '', verrouContenu = false, aDesApps = false;
+  function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache || modulesFiltre === '__annuaire'; $('syntheses').hidden = cache; if (cache) $('annuaire-zone').hidden = true; $('outils').hidden = cache || !aDesApps; $('barre-haut').hidden = cache || !aDesApps; }
+  function filtrer() {
+    var brut = $('recherche').value, q = norme(brut).trim(), vus = 0, zoneA = $('annuaire-zone'), liste = $('annuaire-liste');
+    var modeAnnuaire = modulesFiltre === '__annuaire';
+    $('modules').hidden = verrouContenu || modeAnnuaire;
+    document.querySelectorAll('#modules .module').forEach(function (sec) {
+      var dansModule = !modulesFiltre || sec.dataset.m === modulesFiltre, n = 0;
+      sec.querySelectorAll('.app').forEach(function (c) { var ok = dansModule && (!q || c.dataset.t.indexOf(q) !== -1); c.classList.toggle('cache', !ok); if (ok) n += 1; });
+      sec.classList.toggle('cache', n === 0 && (q || modulesFiltre)); vus += n;
+    });
+    // Annuaire téléphonique : liste complète (onglet) ou résultats de la recherche (2 lettres minimum)
+    var nb = 0;
+    if (verrouContenu) { zoneA.hidden = true; }
+    else if (modeAnnuaire) { nb = Annuaire.lister(liste, brut); zoneA.hidden = false; $('annuaire-titre').textContent = '📞 Annuaire — ' + nb + ' contact(s)'; }
+    else if (q.length >= 2 && !modulesFiltre) { liste.textContent = ''; var g = document.createElement('div'); g.className = 'contacts'; nb = Annuaire.rechercher(g, brut, 24); liste.appendChild(g); zoneA.hidden = !nb; $('annuaire-titre').textContent = '📞 Annuaire — ' + nb + ' contact(s)' + (nb > 24 ? ' (24 affichés : précisez la recherche)' : ''); }
+    else zoneA.hidden = true;
+    $('aucun-resultat').hidden = !(q || modulesFiltre) || vus > 0 || nb > 0 || modeAnnuaire;
+  }
+  function outilsAccueil(menu) {
+    aDesApps = menu.some(function (m) { return m.apps.length; }); afficherContenu();
+    $('date-badge').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var on = $('onglets-modules'); on.textContent = '';
+    function bouton(id, lib) { var b = el('button', modulesFiltre === id ? 'actif' : '', lib); b.type = 'button'; b.addEventListener('click', function () { modulesFiltre = id; on.querySelectorAll('button').forEach(function (x) { x.classList.remove('actif'); }); b.classList.add('actif'); filtrer(); }); on.appendChild(b); }
+    bouton('', 'Tout'); menu.forEach(function (m) { if (m.apps.length) bouton(m.id, (m.icone || '') + ' ' + m.titre); }); bouton('__annuaire', '📞 Annuaire');
+    // Synthèses : seulement pour qui a accès aux applications correspondantes
+    var urls = []; menu.forEach(function (m) { m.apps.forEach(function (a) { urls.push(String(a.url)); }); });
+    function a(f) { return urls.some(function (u) { return u.indexOf(f) !== -1; }); }
+    if (a('Avancement_des_Chantiers.html')) Synthese.monterChantiers($('syn-chantiers'));
+    if (a('Dossiers_CPM.html')) { Synthese.monterCpm($('syn-cpm')); Synthese.monterJournal($('syn-journal')); }
+  }
+  $('recherche').addEventListener('input', filtrer);
+  // Fiches du personnel : lues depuis BDDORGA (complétées par les fiches du site) ; on rafraîchit la recherche une fois chargées
+  Annuaire.charger().then(function () { filtrer(); });
+
+  function dessiner(r) {
+    UID = String((r.user && r.user.uid) || ''); dessinerFiche(r.user); raccourcis(r.menu); mesApps(r.menu);
+    if (r.menu.some(function (m) { return m.id === 'simulation' && m.niveau >= 2; })) Synthese.monterModifs($('syn-modifs')); // demandes de modification de planning à décider
+    $('alerte-mdp').hidden = !r.mdp_par_defaut;
+    // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
+    var groupes = window.Rubriques ? Rubriques.regrouper(r.menu) : r.menu;
+    var zone = $('modules'); zone.textContent = ''; outilsAccueil(groupes);
+    if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
+    groupes.forEach(function (m) {
+      var sec = el('section', 'module'); sec.dataset.m = m.id; sec.dataset.n = String(Math.min((m.apps || []).length, 3));
+      var h = el('h3', null, (m.icone || '') + ' ' + m.titre); h.appendChild(el('span', 'niveau', NIVEAUX[m.niveau] || '')); sec.appendChild(h);
+      var g = el('div', 'grille');
+      if (!m.apps.length) g.appendChild(el('p', 'vide', 'Bientôt disponible.'));
+      m.apps.forEach(function (a) {
+        var c = el('a', 'app'); c.href = lienApp(a); c.dataset.t = norme((a.titre || '') + ' ' + (a.description || '') + ' ' + (m.titre || '') + ' ' + (a.mots || ''));
+        // Pages du site : même onglet (la session est propre à l'onglet) ; sites externes : nouvel onglet.
+        if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
+        c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));
+        c.appendChild(el('p', null, a.description || '')); c.appendChild(el('div', 'ouvrir', 'Ouvrir →'));
+        c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
+        g.appendChild(c);
+      });
+      sec.appendChild(g); zone.appendChild(sec);
+    });
+  }
+
+  // L'agent complète lui-même les champs vides de sa fiche ; une valeur déjà enregistrée ne se modifie plus (secrétariat).
+  function ouvrirProfil(u, manque) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
+    f.appendChild(el('h2', null, 'Compléter ma fiche'));
+    f.appendChild(el('p', 'aide', 'Ces informations ne sont visibles que par vous et le secrétariat. Une fois enregistrées, elles ne se modifient plus ici : en cas d\'erreur, contactez le secrétariat.'));
+    var defs = { matricule: ['Matricule', 'ex. 90514B', 15], sap: ['Matricule SAP', 'ex. 00123456', 15], nin: ['NIN (numéro d\'identification nationale, 18 chiffres)', '18 chiffres', 18] }, champs = {};
+    manque.forEach(function (k) {
+      var w = el('div', 'champ'), l = el('label', null, defs[k][0]), i = el('input'); i.type = 'text'; i.placeholder = defs[k][1]; i.maxLength = defs[k][2]; i.autocomplete = 'off';
+      if (k === 'nin') i.inputMode = 'numeric';
+      i.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit;font-size:15px'; champs[k] = i; w.appendChild(l); w.appendChild(i); f.appendChild(w);
+    });
+    var msg = el('div', 'msg'); f.appendChild(msg);
+    var bt = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', 'Enregistrer'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); msg.className = 'msg'; var p = {}; Object.keys(champs).forEach(function (k) { p[k] = champs[k].value.trim(); });
+      if (!Object.keys(p).some(function (k) { return p[k]; })) { msg.textContent = 'Renseignez au moins un champ.'; msg.className = 'msg err'; return; }
+      ok.disabled = true;
+      Api.call('profil_enregistrer', p).then(function (r) { dlg.close(); dessinerFiche(r.user); dessinerStatut(); })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
+
+  // Changer l'adresse e-mail où arrivent les codes (espaces ou caractères invisibles copiés d'un tableur, faute de frappe…) : un code est envoyé à la NOUVELLE adresse pour la confirmer.
+  function ouvrirEmail(u) {
+    var dlg = el('dialog', 'dlg'), f = el('form'); f.method = 'dialog';
+    f.appendChild(el('h2', null, 'Mon adresse e-mail'));
+    f.appendChild(el('p', 'aide', 'C\'est à cette adresse que vous recevez vos codes de connexion. Si elle est fausse ou si vous ne recevez rien, saisissez la bonne : un code de confirmation y sera envoyé.'));
+    var cur = el('p', 'aide', 'Adresse actuelle : ' + (u.email_contact || u.email || '—')); f.appendChild(cur);
+    var w1 = el('div', 'champ'); w1.appendChild(el('label', null, 'Nouvelle adresse e-mail')); var a = el('input'); a.type = 'email'; a.autocomplete = 'email'; a.inputMode = 'email'; a.autocapitalize = 'off'; a.spellcheck = false;
+    a.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit;font-size:15px'; w1.appendChild(a); f.appendChild(w1);
+    var w2 = el('div', 'champ'); w2.hidden = true; w2.appendChild(el('label', null, 'Code reçu par e-mail')); var c = el('input'); c.type = 'text'; c.inputMode = 'numeric'; c.maxLength = 6; c.autocomplete = 'one-time-code';
+    c.style.cssText = 'width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit;font-size:15px'; w2.appendChild(c); f.appendChild(w2);
+    var msg = el('div', 'msg'); f.appendChild(msg);
+    var bt = el('div', 'boutons'), ann = el('button', 'btn-s', 'Annuler'); ann.type = 'button'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = el('button', 'btn', 'Envoyer le code'); ok.type = 'submit'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    var etape = 1;
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); msg.className = 'msg'; ok.disabled = true;
+      if (etape === 1) {
+        Api.call('email_contact_demander', { adresse: a.value }).then(function (r) { etape = 2; w2.hidden = false; a.readOnly = true; ok.textContent = 'Confirmer'; ok.disabled = false; msg.textContent = 'Un code a été envoyé à ' + r.masque + ' (valable 30 minutes). Pensez à regarder vos courriers indésirables.'; msg.className = 'msg ok'; c.focus(); })
+          .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+      } else {
+        Api.call('email_contact_confirmer', { code: c.value }).then(function (r) { u.email_contact = r.email_contact; dlg.close(); dessinerFiche(u); })
+          .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+      }
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
+
+  function ouvrirMdp() {
+    var dlg = document.createElement('dialog'); dlg.className = 'dlg';
+    var f = document.createElement('form'); f.method = 'dialog';
+    var h = document.createElement('h2'); h.textContent = 'Changer mon mot de passe'; f.appendChild(h);
+    var champs = {}; [['ancien', 'Mot de passe actuel', 'current-password'], ['nouveau', 'Nouveau mot de passe (4 caractères minimum)', 'new-password'], ['confirmer', 'Confirmer le nouveau', 'new-password']].forEach(function (c) {
+      var w = document.createElement('div'); w.className = 'champ'; var l = document.createElement('label'); l.textContent = c[1];
+      var i = document.createElement('input'); i.type = 'password'; i.autocomplete = c[2]; i.style.cssText = 'width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font:inherit;font-size:15px';
+      champs[c[0]] = i; w.appendChild(l); w.appendChild(i); f.appendChild(w);
+    });
+    var msg = document.createElement('div'); msg.className = 'msg'; f.appendChild(msg);
+    var bt = document.createElement('div'); bt.className = 'boutons';
+    var ann = document.createElement('button'); ann.type = 'button'; ann.className = 'btn-s'; ann.textContent = 'Annuler'; ann.addEventListener('click', function () { dlg.close(); });
+    var ok = document.createElement('button'); ok.type = 'submit'; ok.className = 'btn'; ok.textContent = 'Enregistrer'; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault(); msg.className = 'msg';
+      if (champs.nouveau.value !== champs.confirmer.value) { msg.textContent = 'Les deux nouveaux mots de passe sont différents.'; msg.className = 'msg err'; return; }
+      ok.disabled = true;
+      Api.call('changer_mdp', { ancien: champs.ancien.value, nouveau: champs.nouveau.value }).then(function () { dlg.close(); $('alerte-mdp').hidden = true; })
+        .catch(function (err) { msg.textContent = err.message; msg.className = 'msg err'; ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+  }
+  $('b-mdp-alerte').addEventListener('click', ouvrirMdp);
+  $('b-mdp').addEventListener('click', ouvrirMdp);
+
+  // Tant que le planning est vierge : modules masqués et fenêtre OBLIGATOIRE (ni Annuler, ni Échap) ; l'accès s'ouvre dès l'enregistrement.
+  var verrou = false, verrouRel = false;
+  function verrouiller(on, nomAffiche) {
+    verrouContenu = on; afficherContenu();
+    var bandeau = $('verrou'); if (bandeau) bandeau.hidden = !on;
+    if (on && !verrou) {
+      verrou = true;
+      Rotation.ouvrir({ obligatoire: true, titre: 'Bienvenue — renseignez votre planning', onOk: function () { verrou = false; dessinerStatut(nomAffiche); } });
+    } else if (!on) verrou = false;
+  }
+  var COUL = { T: '#4EA72E', R: '#E97132' };
+  function dessinerStatut(nomAffiche, deja) {
+    return (deja ? Promise.resolve(deja) : Api.call('situation')).then(function (r) {
+      var box = $('statut'); if (!r.acces) { box.hidden = true; return; }
+      verrouiller(r.acces && !r.configuree, nomAffiche);
+      if (r.acces && r.configuree && r.reliquat_renseigne === false && !verrouRel) { verrouRel = true; verrouContenu = true; afficherContenu(); Rotation.reliquat({ onOk: function () { verrouRel = false; verrouContenu = false; afficherContenu(); dessinerStatut(nomAffiche); } }); }
+      box.hidden = false;
+      var j = $('jauge'), s = r.configuree ? r.situation : null;
+      var pill = $('j-etat'), dates = $('j-dates'), barre = $('j-barre'), bi = $('j-barre-i'); dates.style.color = ''; dates.style.fontWeight = '';
+      barre.hidden = true; dates.textContent = '';
+      if (!r.configuree) {
+        j.className = 'jauge vide'; j.style.setProperty('--p', 0); $('j-reste').textContent = '?'; $('j-lib').textContent = '';
+        pill.className = 'etat-pill neutre'; pill.textContent = 'Rotation non renseignée';
+        $('phrase').textContent = 'Indiquez où vous en êtes dans votre rotation pour afficher votre planning, vos jours restants et votre prochain changement.';
+        $('b-rot').textContent = 'Configurer ma rotation';
+      } else if (!s) {
+        j.className = 'jauge vide'; j.style.setProperty('--p', 0); $('j-reste').textContent = '–'; $('j-lib').textContent = '';
+        pill.className = 'etat-pill neutre'; pill.textContent = 'Rotation à vérifier'; $('phrase').textContent = 'Votre rotation est enregistrée mais ne peut pas être calculée : vérifiez-la.'; $('b-rot').textContent = 'Modifier';
+      } else if (s.avant) {
+        j.className = 'jauge vide'; j.style.setProperty('--p', 0); $('j-reste').textContent = '…'; $('j-lib').textContent = 'à venir';
+        pill.className = 'etat-pill neutre'; pill.textContent = 'Pas encore commencée'; $('phrase').textContent = Rotation.phrase(s); $('b-rot').textContent = 'Modifier';
+      } else {
+        var pct = Math.max(2, Math.min(100, Math.round(s.jour / s.total * 100)));
+        j.className = 'jauge'; j.style.setProperty('--c', COUL[s.statut]); j.style.setProperty('--p', pct);
+        $('j-reste').textContent = s.restants; $('j-lib').textContent = s.restants > 1 ? 'jours restants' : 'jour restant';
+        pill.className = 'etat-pill ' + s.statut; pill.textContent = (s.statut === 'T' ? 'Au travail' : 'En repos') + ' · jour ' + s.jour + '/' + s.total;
+        $('phrase').textContent = Rotation.phrase(s);
+        bi.style.width = pct + '%'; bi.style.background = COUL[s.statut]; barre.hidden = false;
+        // reliquat actuel (initial + demandes approuvées) : positif en vert, négatif en rouge
+        var sol = r.solde != null ? r.solde : r.reliquat, nj = Math.abs(sol || 0);
+        dates.textContent = '';
+        if (sol > 0) { dates.style.color = 'var(--ok)'; dates.textContent = 'Vous avez un reliquat positif de ' + nj + ' jour' + (nj > 1 ? 's' : '') + '.'; }
+        else if (sol < 0) { dates.style.color = 'var(--err)'; dates.textContent = 'Vous avez un reliquat négatif de ' + nj + ' jour' + (nj > 1 ? 's' : '') + '.'; }
+        else { dates.style.color = ''; dates.textContent = 'Vous n\'avez aucun reliquat.'; }
+        dates.style.fontWeight = sol ? '700' : '';
+        j.setAttribute('aria-label', 'Rotation : jour ' + s.jour + ' sur ' + s.total + ', ' + s.restants + ' jours restants');
+        $('b-rot').textContent = 'Modifier ma rotation';
+      }
+      $('b-rot').onclick = function () { Rotation.ouvrir({ valeurs: r.rotation, onOk: function () { dessinerStatut(nomAffiche); } }); };
+    }).catch(function () {
+      // Lecture impossible (réseau, serveur Google lent) : on le dit et on propose de réessayer, au lieu de faire disparaître le volet
+      var box = $('statut'); box.hidden = false;
+      $('j-reste').textContent = '–'; $('j-lib').textContent = ''; $('jauge').className = 'jauge vide'; $('j-barre').hidden = true; $('j-dates').textContent = '';
+      var pill = $('j-etat'); pill.className = 'etat-pill neutre'; pill.textContent = 'Indisponible';
+      $('phrase').textContent = 'Votre rotation n\'a pas pu être lue pour le moment (serveur Google lent).';
+      $('b-rot').textContent = 'Réessayer'; $('b-rot').onclick = function () { dessinerStatut(nomAffiche); };
+    });
+  }
+
+  if (window.BoutonInstaller) BoutonInstaller.monter({ cible: '#zone-installer', langue: 'fr', serviceWorker: 'sw.js' });
+  // En parallèle (au lieu de l'une après l'autre) : le menu, la situation de rotation et la lecture groupée des feuilles de suivi
+  var situation = Api.call('situation').then(function (r) { return { r: r }; }, function () { return { r: null }; });
+  Donnees.prefetch(['cpm', 'forage', 'terrassement', 'electricite']);
+  Api.call('menu').then(function (r) { try { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(String(a.url || '').split(/[?#]/)[0].split('/').pop().toLowerCase()); }); }); sessionStorage.setItem('gm_pages', JSON.stringify({ t: Date.now(), f: f })); } catch (e) { /* stockage indisponible */ } dessiner(r); return situation.then(function (s) { return dessinerStatut(r.user.nom, s.r); }); }).catch(function (e) {
+    if (e.code === 'SESSION' || !Api.token() && !Api.demo) { Api.setToken(''); location.replace('connexion.html'); return; }
+    $('nom-agent').textContent = 'Erreur : ' + e.message;
+  });
+
+  $('quitter').addEventListener('click', function () {
+    Donnees.vider(); Api.call('logout', { rt: Api.remember() }).catch(function () {}).then(function () { Api.setToken(''); Api.setRemember(''); location.replace('connexion.html'); });
+  });
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

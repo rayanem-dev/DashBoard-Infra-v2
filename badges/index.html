@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Badges prestataires</title>
+<meta name="theme-color" content="#E18500">
+<style>
+  :root { --orange-main:#E18500; --orange-pale:#FFEFD1; --text-dark:#1c1c1c; --text-muted:#6b7280; --border:#e5e7eb; --surface:#fff; --surface-2:#f8fafc; --page:#f5f5f0; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --text-dark:#f1f1f1; --text-muted:#a0a7b4; --border:#374151; --surface:#1f2937; --surface-2:#111827; --page:#0f172a; --orange-pale:#4a3416; } }
+  body { margin:0; background:var(--page); color:var(--text-dark); font-family:Inter,Calibri,Arial,sans-serif; }
+  header { background:#222; color:#fff; padding:14px 22px; display:flex; align-items:center; gap:14px; border-bottom:4px solid var(--orange-main); }
+  header img { height:40px; background:#fff; padding:3px; border-radius:6px; } header h1 { font-size:18px; margin:0; } header p { margin:2px 0 0; font-size:12px; opacity:.75; }
+  main { max-width:1180px; margin:0 auto; padding:18px 16px 60px; }
+</style>
+</head>
+<body>
+<header><img src="logo-sonatrach.png" alt=""><div><h1>Badges prestataires</h1><p id="sous-titre">Préparation et impression recto-verso</p></div></header>
+<main><div id="app"></div></main>
+<script src="config.js"></script><script src="badges.js"></script><script src="qrcode.js"></script><script src="autodetect.js"></script><script src="app.js"></script>
+<script>
+  BadgesApp.monter(document.getElementById('app'), { prefixe: 'badges_' });
+  if (window.BADGES_CONFIG && BADGES_CONFIG.base) document.getElementById('sous-titre').textContent = BADGES_CONFIG.base + ' — préparation et impression recto-verso';
+</script>
+</body>
+</html>

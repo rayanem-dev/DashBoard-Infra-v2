@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Autorisation GAZ-OIL – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .gz { max-width: 1200px; margin: 0 auto; padding: 16px 16px 40px; display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .gz label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 3px; }
+  .gz label small { text-transform: none; font-weight: 500; letter-spacing: 0; }
+  .gz input, .gz textarea { width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .gz textarea { resize: vertical; } .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .calc { margin-top: 6px; padding: 8px 10px; border-radius: 9px; background: var(--tint-orange); font-weight: 700; font-size: 13.5px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .btn-p { padding: 10px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .histo { display: flex; gap: 8px; align-items: center; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-top: 6px; font-size: 12.5px; } .histo .i { flex: 1; min-width: 0; } .histo b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .apercu { overflow: auto; background: #E5E7EB; padding: 14px; border-radius: 14px; }
+  #feuille { background: #fff; color: #000; width: 210mm; height: 297mm; margin: 0 auto; padding: 12mm 18mm; box-shadow: 0 2px 14px rgba(0,0,0,.2); font-family: Arial, Helvetica, sans-serif; position: relative; transform-origin: top left; box-sizing: border-box; font-size: 10.5pt; }
+  #feuille .logo { height: 24mm; display: block; } #feuille .dest { position: absolute; left: 100mm; top: 14mm; font-weight: 700; font-size: 10.5pt; line-height: 1.9; } #feuille .trait { position: absolute; left: 100mm; right: 0; top: 40mm; border-top: 3px solid #E58A00; }
+  #feuille .ent { font-weight: 700; font-size: 10pt; line-height: 1.5; margin-top: 1mm; } #feuille .date { position: absolute; right: 18mm; top: 49mm; font-weight: 700; }
+  #feuille .obj { margin-top: 14mm; font-weight: 700; font-size: 11pt; } #feuille p { margin: 0 0 6mm; line-height: 1.5; } #feuille ul { margin: 2mm 0 5mm 8mm; padding: 0; line-height: 1.55; }
+  #feuille .pied { position: absolute; left: 18mm; right: 18mm; bottom: 8mm; border-top: 3px solid #E58A00; padding-top: 2mm; text-align: center; font-size: 7pt; line-height: 1.7; }
+  .pt { color: #666; }
+  @media (max-width: 1000px) { .gz { grid-template-columns: 1fr; } }
+  @media print { @page { size: A4 portrait; margin: 0; } html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } body > *:not(main), .gz > *:not(.apercu) { display: none !important; }
+    html, body { height: auto !important; min-height: 0 !important; padding: 0 !important; overflow: hidden !important; } .gz { display: block !important; padding: 0 !important; max-width: none !important; position: absolute; left: 0; top: 0; width: 210mm; } .apercu { background: none !important; padding: 0 !important; overflow: visible !important; } #feuille { box-shadow: none !important; margin: 0 !important; transform: none !important; height: 296mm !important; overflow: hidden; } }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">GO</div>
+    <div class="logo-text"><h1>Autorisation d'approvisionnement GAZ-OIL</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="gz">
+  <div>
+    <div class="bloc">
+      <h2>⛽ Nouvelle autorisation</h2>
+      <label for="f-ent">Entreprise <small>(tapez pour chercher : le numéro de contrat se remplit tout seul)</small></label><input type="text" id="f-ent" list="dl-ent" placeholder="Tapez pour chercher, ou ouvrez la liste ▾" autocomplete="off">
+      <datalist id="dl-ent"></datalist>
+      <label for="f-ctr">Contrat N°</label><input type="text" id="f-ctr" placeholder="I/43/RNS/INFRA/2025">
+      <div class="deux"><div><label for="f-l">Quantité (litres)</label><input type="number" min="1" step="1" id="f-l" placeholder="400"></div><div><label for="f-c">Contenance d'un fût (L)</label><input type="number" min="1" step="1" id="f-c"></div></div>
+      <div class="calc" id="calc">Saisissez la quantité : elle est divisée en fûts.</div>
+      <label for="f-per">Période (date)</label><input type="date" id="f-per">
+      <label for="f-a">Destinataire <small>(une ligne par ligne)</small></label><textarea id="f-a" rows="2"></textarea>
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">Nouvelle autorisation</button></div>
+    </div>
+    <div class="bloc"><h2>🗂 Historique <button class="btn-s" id="h-tout" type="button" style="float:right">🗑 Tout supprimer</button></h2><div id="histo"></div></div>
+  </div>
+  <div class="apercu"><div id="feuille" data-i18n-non></div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script src="js/gazoil.js"></script>
+<script src="js/donnees.js"></script>
+<script src="js/synthese.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var CLE = 'gazoil_histo', CH = ['ent', 'ctr', 'l', 'c', 'per', 'a'];
+  var DEF = { c: '200', a: 'A Monsieur\nLe Chef de Division AT' };      // un fût = 200 L ; destinataire habituel (modifiables)
+  var CONSIGNES = ['Utilise les futs adaptés aux produits combustibles.', 'Amarrer les futs lors du transport.', 'Respecter les limitations de vitesse.', 'Avoir un extincteur à la porte.', 'Interdit de fumer.'];
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fr(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.className = 'toast show'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3000); }
+  function pts(n) { return '<span class="pt">' + new Array(n + 1).join('_') + '</span>'; }
+  function lire() { var v = {}; CH.forEach(function (k) { v[k] = $('f-' + k).value; }); return v; }
+  function ecrire(v) { CH.forEach(function (k) { $('f-' + k).value = v[k] || ''; }); apercu(); }
+  function neuf() { return { c: DEF.c, a: DEF.a, per: iso() }; }
+  // la lettre est toujours datée d'aujourd'hui, écrite en lettres : « 21 Octobre 2026 »
+  var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  function aujourdhuiLettres() { var d = new Date(); return d.getDate() + ' ' + MOIS[d.getMonth()] + ' ' + d.getFullYear(); }
+  function apercu() {
+    var v = lire(), rep = Gazoil.repartir(v.l, v.c), an = String(new Date().getFullYear());
+    $('calc').textContent = rep.texte ? '= ' + rep.texte + (rep.futs > 1 || rep.reste ? ' (' + rep.futs + ' fût' + (rep.futs > 1 ? 's' : '') + ' au total)' : '') : 'Saisissez la quantité : elle est divisée en fûts.';
+    var dest = String(v.a || '').split(/\r?\n/).filter(function (x) { return x.trim(); });
+    $('feuille').innerHTML =
+      '<img class="logo" src="badges/logo-sonatrach.png" alt="Sonatrach">' +
+      '<div class="dest">' + dest.map(E).join('<br>') + '</div><div class="trait"></div>' +
+      '<div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure<br>N° ' + pts(5) + 'SH/E&amp;P/PROD/RNS-INFRA/' + E(an) + '</div>' +
+      '<div class="date">Rhourde Nouss : &nbsp;' + aujourdhuiLettres() + '</div>' +
+      '<div class="obj">Objet : &nbsp;Autorisation d’approvisionnement de GAZ-OIL En Bag<br><span style="font-weight:400;font-size:10pt"><b>Réf :</b> Contrat N°' + (E(v.ctr) || pts(10)) + '</span></div>' +
+      '<p style="margin-top:8mm">Nous vous demandons de bien vouloir autoriser l’entreprise <b>' + (E(v.ent) || pts(8)) + '</b></p>' +
+      '<p>De s’approvisionner en GAZ-OIL ' + (rep.texte ? E(rep.texte) : pts(12)) + '</p>' +
+      '<p><b>Période :</b> &nbsp;&nbsp; <b>' + (fr(v.per) || pts(8)) + '</b></p>' +
+      '<p style="margin-top:12mm">Salutations.</p>' +
+      '<p style="margin-top:10mm"><b>Respecter les Consignes de sécurité :</b></p><ul>' + CONSIGNES.map(function (c) { return '<li>' + E(c) + '</li>'; }).join('') + '</ul>' +
+      '<p><b>Le Chef De Division Infrastructures</b></p>' +
+      '<p style="position:absolute;left:18mm;bottom:30mm"><b>Copie ASI</b></p>' +
+      '<div class="pied">Direction Régionale Rhourde-Nouss - BP 27 Hassi Messaoud – Ouargla Algérie<br>Tél. : 029 74 01 48 &nbsp; Fax : 029 74 01 40 &nbsp; www.sonatrach.dz &nbsp; Secrétariat.RNS@sonatrach.dz</div>';
+    ajuster();
+  }
+  function ajuster() { var z = $('feuille').parentNode, l = z.clientWidth - 28, w = $('feuille').offsetWidth || 794; var k = Math.min(1, l / w); $('feuille').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuille').offsetHeight * k + 28) + 'px' : ''; }
+  window.addEventListener('resize', ajuster);
+  CH.forEach(function (k) { $('f-' + k).addEventListener('input', apercu); });
+
+  // Entreprises : toutes celles du Suivi CPM (lecture seule). Choisir une entreprise remplit le numéro de contrat (I/43/RNS/INFRA/2025).
+  var contrats = [];
+  function numeroLong(n) { var m = /^(\d{1,3})\s*\.\s*([A-Za-z]+)\s*\.\s*(\d{2})$/.exec(String(n || '').trim()); return m ? 'I/' + m[1] + '/RNS/' + m[2].toUpperCase() + '/20' + m[3] : String(n || '').trim(); }
+  function libelle(c) { return c.entreprise + (c.contrat ? ' — ' + c.contrat : '') + (c.projet ? ' — ' + c.projet : '') + (c.statut ? ' (' + c.statut + ')' : ''); }
+  if (window.Donnees && window.Synthese) Donnees.csv('cpm').then(function (txt) {
+    var rows = Synthese.parseCSV(txt), h = rows.findIndex(function (r) { return r.some(function (c) { return /^statut$/i.test(String(c).trim()); }); }); if (h < 0) h = 1;
+    var vus = {};
+    // toutes les entreprises du Suivi CPM, même hors contrat en exécution (contrat échu, etc.) : elles peuvent avoir à débarrasser leur matériel, se rapatrier…
+    rows.slice(h + 1).forEach(function (r) {
+      var ent = String(r[12] || '').replace(/\s+/g, ' ').trim(); if (!ent) return;
+      var num = numeroLong(r[13]), st = String(r[8] || '').replace(/\s+/g, ' ').trim(), cle = ent.toLowerCase() + '|' + num;
+      if (vus[cle]) return; vus[cle] = 1;
+      contrats.push({ entreprise: ent, contrat: num, projet: String(r[3] || '').replace(/\s+/g, ' ').trim(), statut: Synthese.cleStatut(st) === 'execution' ? '' : st });
+    });
+    contrats.sort(function (a, b) { return a.entreprise.localeCompare(b.entreprise, 'fr') || a.contrat.localeCompare(b.contrat); });
+    var dl = $('dl-ent'); contrats.forEach(function (c) { var o = document.createElement('option'); o.value = libelle(c); dl.appendChild(o); });
+  }).catch(function () { /* sans le Suivi CPM : entreprise et contrat à saisir à la main */ });
+  $('f-ent').addEventListener('input', function () {
+    var c = contrats.filter(function (x) { return libelle(x) === $('f-ent').value; })[0];
+    if (c) { $('f-ent').value = c.entreprise; $('f-ctr').value = c.contrat; apercu(); }
+  });
+
+  // historique (ce navigateur)
+  function histo() { try { return JSON.parse(localStorage.getItem(CLE) || '[]'); } catch (e) { return []; } }
+  function sauver(l) { try { localStorage.setItem(CLE, JSON.stringify(l.slice(0, 60))); } catch (e) { /* stockage indisponible */ } dessinerHisto(); }
+  function dessinerHisto() {
+    var z = $('histo'), l = histo(); z.textContent = ''; $('h-tout').hidden = !l.length;
+    if (!l.length) { var p = document.createElement('p'); p.style.cssText = 'font-size:12.5px;color:var(--text-muted)'; p.textContent = 'Aucune autorisation enregistrée sur cet ordinateur.'; z.appendChild(p); return; }
+    l.forEach(function (v, i) {
+      var d = document.createElement('div'); d.className = 'histo'; var c = document.createElement('div'); c.className = 'i';
+      var b = document.createElement('b'); b.textContent = (v.ent || '(sans entreprise)') + ' — ' + (Gazoil.repartir(v.l, v.c).texte || ''); var s = document.createElement('small'); s.textContent = fr(v.per) + ' · ' + (v.ctr || '');
+      c.appendChild(b); c.appendChild(s); d.appendChild(c);
+      var o = document.createElement('button'); o.className = 'btn-s'; o.type = 'button'; o.textContent = 'Rouvrir'; o.onclick = function () { ecrire(v); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      var x = document.createElement('button'); x.className = 'btn-s'; x.type = 'button'; x.textContent = '🗑'; x.title = 'Supprimer'; x.onclick = function () { if (!confirm('Supprimer cette autorisation de l\'historique ?')) return; var h = histo(); h.splice(i, 1); sauver(h); };
+      d.appendChild(o); d.appendChild(x); z.appendChild(d);
+    });
+  }
+  function garder() { var v = lire(); if (!String(v.ent).trim() || !(Number(v.l) > 0)) { toast('Indiquez l\'entreprise et la quantité en litres.'); return false; } var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); return true; }
+  $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
+  $('b-imp').onclick = function () { garder(); window.print(); };          // impression en un clic
+  $('b-vider').onclick = function () { ecrire(neuf()); };
+  $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
+  ecrire(neuf()); dessinerHisto();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

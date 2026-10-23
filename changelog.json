@@ -1,0 +1,1616 @@
+[
+  {
+    "id": "2026-10-24-97",
+    "date": "2026-10-24",
+    "title": "Version 5.54.1 — Publication du site : notes de documentation écartées",
+    "changes": [
+      "La publication du site dans le dépôt public écarte les fichiers de notes (.md) au lieu de s'arrêter ; elle continue de refuser tout script serveur ou fichier de configuration."
+    ]
+  },
+  {
+    "id": "2026-10-24-96",
+    "date": "2026-10-24",
+    "title": "Version 5.54.0 — Contrôle de sécurité : annuaire protégé, pages non indexées",
+    "changes": [
+      "Les fiches contact (téléphones, e-mails) ne sont plus dans les fichiers publics du site : elles sont servies par la passerelle, après connexion.",
+      "Toutes les pages sont marquées « ne pas indexer » (noindex + robots.txt) et ne transmettent plus leur adresse aux autres sites (referrer).",
+      "Rapport de sécurité et marche à suivre pour passer le dépôt en privé : docs/SECURITE.md."
+    ]
+  },
+  {
+    "id": "2026-10-24-95",
+    "date": "2026-10-24",
+    "title": "Version 5.53.1 — Chef de division : demande d'accord ; l'agent n'écrit jamais au chef de division",
+    "changes": [
+      "Création d'une modification : le chef de division reçoit « Demande de modification de planning (demande d'accord) » ; à l'approbation il reste « pour information et signature ».",
+      "Un agent qui envoie sa demande par e-mail ne peut écrire qu'à son chef de service et/ou au secrétariat : la case « Chef de division » n'existe plus dans « Modifier mon planning » et le serveur refuse l'envoi direct au chef de division."
+    ]
+  },
+  {
+    "id": "2026-10-24-94",
+    "date": "2026-10-24",
+    "title": "Version 5.53.0 — E-mails des modifications de planning : qui est prévenu, et quand",
+    "changes": [
+      "Après chaque étape, une question propose les e-mails (rien ne part tout seul) : à la validation d'une modification créée par un responsable (secrétaire, chef de service ou chef de division, via la Simulation ou « Modification directe ») : l'agent, le secrétariat « pour traitement », le chef de service et le chef de division (cases cochées, modifiables). À l'approbation d'une demande (par exemple celle d'un agent) : l'agent (approuvée), le secrétariat « pour traitement » et le chef de division « pour information et signature ». Au refus : l'agent est prévenu que la modification est rejetée.",
+      "Chaque public reçoit son propre objet, et une adresse ne reçoit qu'un seul message."
+    ]
+  },
+  {
+    "id": "2026-10-24-93",
+    "date": "2026-10-24",
+    "title": "Version 5.52.0 — Informer l'agent de la décision",
+    "changes": [
+      "Simulation › Demandes : un bouton « ✉ Informer l'agent » apparaît sur les demandes approuvées ou refusées : il envoie à l'agent (son adresse de contact, sinon celle de son compte) le résultat de la demande, avec les plannings actuel et modifié. Comme toujours, aucun e-mail ne part tout seul : ni à la validation, ni à la décision."
+    ]
+  },
+  {
+    "id": "2026-10-24-92",
+    "date": "2026-10-24",
+    "title": "Version 5.51.2 — Demande de modification : PDF épuré",
+    "changes": [
+      "Demande de modification de planning : la mention « Demande … APPROUVÉE dans le portail par … » et la ligne « Demande n° … émise par … depuis le portail » n'apparaissent plus à l'impression ni dans le PDF (elles restent à l'écran)."
+    ]
+  },
+  {
+    "id": "2026-10-24-91",
+    "date": "2026-10-24",
+    "title": "Version 5.51.1 — Impression : les jours de conflit se comptent sur une rotation",
+    "changes": [
+      "Imprimer par vis-à-vis : les jours de conflit sont comptés sur UNE rotation à partir d'aujourd'hui (le plus long des deux cycles), comme dans la Simulation, et non sur toute la période affichée (ex. 18 jours sur une rotation de 56 jours au lieu de 107 jours sur 6 mois). Le verdict le précise : « … / rotation de 56 j »."
+    ]
+  },
+  {
+    "id": "2026-10-24-90",
+    "date": "2026-10-24",
+    "title": "Version 5.51.0 — Impression compacte des paires de travail",
+    "changes": [
+      "Imprimer par vis-à-vis : nouvelle vue par défaut « Paires de travail (compact) » : une seule bande par paire (agent, vis-à-vis, ligne des conflits et verdict), l'une sous l'autre, les mois écrits une fois en tête et répétés à chaque page, chaque paire montrée une seule fois, sans cadre par personne. Les agents sans vis-à-vis de travail sont listés en bas. La vue « Détaillée : travail + chambre » (avec les vis-à-vis de chambre) et le tableau restent au choix."
+    ]
+  },
+  {
+    "id": "2026-10-24-89",
+    "date": "2026-10-24",
+    "title": "Version 5.50.1 — Impression des vis-à-vis sans doublon",
+    "changes": [
+      "Imprimer par vis-à-vis : quand deux agents sont vis-à-vis l'un de l'autre et sont tous deux sélectionnés, la paire n'est montrée qu'une fois (dans la fiche du premier) ; la fiche du second n'apparaît que si elle montre autre chose (un autre vis-à-vis)."
+    ]
+  },
+  {
+    "id": "2026-10-24-88",
+    "date": "2026-10-24",
+    "title": "Version 5.50.0 — Impression des vis-à-vis avec le planning visible",
+    "changes": [
+      "Imprimer par vis-à-vis : chaque agent choisi a sa fiche avec son planning en barres (travail / repos, nombre de jours sur chaque bande), celui de son vis-à-vis de travail et de son vis-à-vis de chambre, la ligne des conflits (les deux travaillent / les deux en repos / toléré) et le verdict « presque parfait » ou « en conflit de X jours ». Durée au choix (3 mois, 6 mois, 1 an), regroupement par service possible, légende et cases de signature ; la liste simple reste disponible en décochant « Planning visible »."
+    ]
+  },
+  {
+    "id": "2026-10-24-87",
+    "date": "2026-10-24",
+    "title": "Version 5.49.0 — Imprimer les vis-à-vis pour approbation",
+    "changes": [
+      "Organigramme › Listing · vis-à-vis : une case par personne (et une case « toutes celles affichées »), un sélecteur « Cocher tout un service » et « Tout décocher ».",
+      "Nouvel onglet « Imprimer par vis-à-vis » : feuille A4 paysage prête pour l'approbation (en-tête Sonatrach, date, tableau agent / vis-à-vis de travail / vis-à-vis de chambre, trois cases de signature), en liste simple ou regroupée par service, avec ou sans l'employeur ; impression en un clic."
+    ]
+  },
+  {
+    "id": "2026-10-24-86",
+    "date": "2026-10-24",
+    "title": "Version 5.48.0 — Applications les plus utilisées en premier ; suppression des demandes sans effet",
+    "changes": [
+      "Portail : dans « Mes applications », les petites icônes sont classées de la plus utilisée à la moins utilisée (compteur par personne, gardé dans ce navigateur ; le nombre d'ouvertures s'affiche au survol).",
+      "Simulation › Demandes : une poubelle 🗑 supprime une demande refusée, annulée ou remplacée (les erreurs de test), et un bouton supprime d'un coup toutes celles de la liste. Les demandes approuvées, appliquées ou en attente ne se suppriment pas : le planning officiel n'est jamais touché."
+    ]
+  },
+  {
+    "id": "2026-10-24-85",
+    "date": "2026-10-24",
+    "title": "Version 5.47.0 — Simulation : durées écrites sur le graphique",
+    "changes": [
+      "Simulation : le nombre de jours est écrit sur chaque bande des lignes A, B, de la chambre et du vis-à-vis (travail, repos, jours en conflit ou toléré), quand la bande est assez large. Les bandes coupées par le bord de la fenêtre ne sont pas étiquetées."
+    ]
+  },
+  {
+    "id": "2026-10-24-84",
+    "date": "2026-10-24",
+    "title": "Version 5.46.5 — Renommage : une prise en charge corrigée n'est pas apprise",
+    "changes": [
+      "Renommage de documents : la correction du nom d'une prise en charge n'est plus mémorisée comme règle (elle aurait imposé cette entreprise à toutes les autres prises en charge) ; la règle intégrée PEC_ENTREPRISE_date continue de s'appliquer."
+    ]
+  },
+  {
+    "id": "2026-10-24-83",
+    "date": "2026-10-24",
+    "title": "Version 5.46.4 — Renommage : jamais d'écrasement",
+    "changes": [
+      "Renommage de documents : si un fichier du dossier porte déjà le nom proposé (ex. PEC_SPA UNITE HAMIZ_2026-10-22.pdf), le nouveau prend « (1) », « (2) »… au lieu de l'écraser. Dans une même liste, les doublons étaient déjà numérotés."
+    ]
+  },
+  {
+    "id": "2026-10-24-82",
+    "date": "2026-10-24",
+    "title": "Version 5.46.3 — Renommage : bouton Télécharger et conseil sur le dossier",
+    "changes": [
+      "Renommage de documents : un bouton « ⬇ Télécharger » par fichier enregistre une copie sous le nom proposé, sans choisir de dossier. Avant « Remplacer le nom », un message rappelle de choisir un sous-dossier (le navigateur refuse Documents, Téléchargements et Bureau eux-mêmes)."
+    ]
+  },
+  {
+    "id": "2026-10-24-81",
+    "date": "2026-10-24",
+    "title": "Version 5.46.2 — Renommage : entreprise retrouvée par le contrat",
+    "changes": [
+      "Renommage d'une prise en charge : si le nom de l'entreprise n'est pas lisible dans le scan, il est retrouvé par le n° de contrat (ex. 73.INFRA.25) dans le Suivi CPM ; l'entreprise est aussi cherchée en milieu de ligne quand l'OCR mélange les colonnes.",
+      "Chaque fichier a un petit « Texte lu » dépliable pour voir ce que l'OCR a lu."
+    ]
+  },
+  {
+    "id": "2026-10-24-80",
+    "date": "2026-10-24",
+    "title": "Version 5.46.1 — Renommage : prise en charge lue malgré l'OCR",
+    "changes": [
+      "Renommage de documents : la prise en charge n'était pas reconnue parce que l'OCR éclate le tableau (colonnes en désordre, en-têtes déformés, guillemet devant « ETS … »). La reconnaissance se contente maintenant du titre « PRISE EN CHARGE » avec un repère du tableau, et ignore les signes parasites devant le nom de l'entreprise. Testée sur le texte réel lu par l'OCR : PEC_ETS MESSAI_2026-10-22."
+    ]
+  },
+  {
+    "id": "2026-10-24-79",
+    "date": "2026-10-24",
+    "title": "Version 5.46.0 — Renommage : prises en charge reconnues",
+    "changes": [
+      "Renommage de documents : une prise en charge (document du portail ou lettre de l'entreprise) est reconnue d'office et nommée « PEC_ENTREPRISE_AAAA-MM-JJ » (ex. PEC_ETS MESSAI_2026-10-22). Une règle apprise de vos corrections garde la priorité.",
+      "Plusieurs fichiers au même nom : le premier garde son nom, les suivants prennent « (1) », « (2) »…",
+      "« Ce que l'outil a appris » est replié par défaut."
+    ]
+  },
+  {
+    "id": "2026-10-24-78",
+    "date": "2026-10-24",
+    "title": "Version 5.45.1 — Requête de transport : heure adaptée au téléphone",
+    "changes": [
+      "Requête de transport : l'heure se choisit avec deux listes (heures, minutes par 5) de la taille des autres champs, au lieu du sélecteur d'heure du navigateur, très grand sur téléphone. Le champ date est aussi harmonisé."
+    ]
+  },
+  {
+    "id": "2026-10-24-77",
+    "date": "2026-10-24",
+    "title": "Version 5.45.0 — Privilèges : « Qui a accès à quoi »",
+    "changes": [
+      "Privilèges : nouvel onglet d'ouverture « Qui a accès à quoi » : une ligne par application, une colonne par rôle, une case à cocher pour donner ou retirer l'accès. Seule l'application de la ligne change : le niveau du rôle dans le module monte tout seul si nécessaire, et les autres applications du module gardent leur public actuel. Une application ne peut pas rester sans aucun rôle (elle serait ouverte à tous). Les anciens onglets restent disponibles pour le détail."
+    ]
+  },
+  {
+    "id": "2026-10-24-76",
+    "date": "2026-10-24",
+    "title": "Version 5.44.0 — Modifier aussi la rotation en cours",
+    "changes": [
+      "Modifier le planning : la rotation en cours est maintenant modifiable (elle commence à son vrai début et s'affiche en première ligne) : on peut la prolonger ou la raccourcir, sans descendre en dessous des jours déjà écoulés ; les suivantes restent modifiables comme avant."
+    ]
+  },
+  {
+    "id": "2026-10-24-75",
+    "date": "2026-10-24",
+    "title": "Version 5.43.0 — Raccourcis entre les pages liées",
+    "changes": [
+      "Planning, Simulation, Organigramme (organigramme et vis-à-vis) et Affectations : une barre de raccourcis sous l'en-tête permet de passer de l'une à l'autre sans repasser par le portail. Chaque raccourci n'apparaît que si votre compte a accès à la page."
+    ]
+  },
+  {
+    "id": "2026-10-24-74",
+    "date": "2026-10-24",
+    "title": "Version 5.42.0 — Changer le vis-à-vis d'un agent dans la simulation",
+    "changes": [
+      "Simulation : un petit bouton « ⇄ Vis-à-vis » à côté de l'agent A permet de changer son vis-à-vis de travail (B) et/ou de chambre (C) pour la simulation (champ vide = aucun) ; la case « Retenir » l'enregistre dans l'Organigramme pour la prochaine fois."
+    ]
+  },
+  {
+    "id": "2026-10-24-73",
+    "date": "2026-10-24",
+    "title": "Version 5.41.3 — « Tout remettre comme prévu » rétablit aussi la chambre",
+    "changes": [
+      "Simulation : « Tout remettre comme prévu » remet aussi le vis-à-vis de chambre à celui déclaré dans l'Organigramme, après un essai avec « Utiliser » (avant, il restait sur l'agent essayé)."
+    ]
+  },
+  {
+    "id": "2026-10-24-72",
+    "date": "2026-10-24",
+    "title": "Version 5.41.2 — Listing triable",
+    "changes": [
+      "Organigramme › Listing : un clic sur le titre d'une colonne trie le tableau (nom, fonction, service, employeur, téléphone, vis-à-vis de travail ou de chambre) ; un second clic inverse l'ordre."
+    ]
+  },
+  {
+    "id": "2026-10-24-71",
+    "date": "2026-10-24",
+    "title": "Version 5.41.1 — Chambre : autres vis-à-vis proposés",
+    "changes": [
+      "Simulation : quand le vis-à-vis de chambre est en conflit (chevauchement ou trou trop long), on propose d'autres agents de la même entité que le vis-à-vis actuel, classés du moins au plus en conflit avec l'agent simulé ; « Utiliser » les essaie dans la simulation, « Enregistrer comme vis-à-vis de chambre » les retient (selon vos droits).",
+      "Trou toléré pour la chambre ramené à 6 jours : 7 jours sans occupant est déjà un trou trop long."
+    ]
+  },
+  {
+    "id": "2026-10-24-70",
+    "date": "2026-10-24",
+    "title": "Version 5.41.0 — Vis-à-vis de travail et de chambre",
+    "changes": [
+      "Organigramme : nouvel onglet « Listing · vis-à-vis » (informations de base de chaque agent) avec, pour chacun, son vis-à-vis de travail et son vis-à-vis de chambre. Modifiables par l'administrateur, le chef de division et le chef de service (pour son service), les autres consultent. Un lien posé chez un agent est posé chez son vis-à-vis s'il n'en a pas déjà un ; un champ vide = pas de vis-à-vis.",
+      "Simulation : en choisissant l'agent A, son vis-à-vis de travail est proposé en B et son vis-à-vis de chambre apparaît en C (ligne « Chambre » sous le graphique). Deuxième verdict : « Vis-à-vis de chambre presque parfait / en conflit de X jours » (chevauchement toléré 4 j, trou toléré 14 j, modifiables). Sans vis-à-vis de chambre déclaré, seul le vis-à-vis de travail compte. Les propositions automatiques tiennent encore compte du seul vis-à-vis de travail (étape suivante)."
+    ]
+  },
+  {
+    "id": "2026-10-24-69",
+    "date": "2026-10-24",
+    "title": "Version 5.40.0 — Prise en charge : lecture des courriels d'entreprises",
+    "changes": [
+      "Charger la demande PDF : en plus des tableaux scannés, la lecture comprend maintenant les listes en phrases d'un courriel imprimé en PDF (« 1- CHENNA ILYAS en qualité Manoeuvre ») : nom, prénom et fonction sont repris (la fonction s'arrête avant « , en vue de… »).",
+      "Le n° de contrat cité (« Contrat N° I/80/RNS/INFRA/2026 ») choisit tout seul le prestataire correspondant (puis son service et sa base) ; « prévu le 22/10/2026 » donne la date d'arrivée.",
+      "Nouvelles formulations : il suffit d'ajouter une expression dans la liste PEC_FORMULES_ du script."
+    ]
+  },
+  {
+    "id": "2026-10-24-68",
+    "date": "2026-10-24",
+    "title": "Version 5.39.0 — Prise en charge : base par défaut de chaque entreprise",
+    "changes": [
+      "Prises en charge : la base désignée pour un prestataire est retenue (pour tous les utilisateurs) ; la fois suivante, en choisissant ce prestataire, sa base se sélectionne toute seule. Elle reste modifiable ; une nouvelle base désignée remplace la précédente."
+    ]
+  },
+  {
+    "id": "2026-10-24-67",
+    "date": "2026-10-24",
+    "title": "Version 5.38.2 — Prise en charge : noms alignés à gauche",
+    "changes": [
+      "Document de prise en charge : les noms et prénoms sont alignés à gauche dans leur case (toujours centrés verticalement)."
+    ]
+  },
+  {
+    "id": "2026-10-24-66",
+    "date": "2026-10-24",
+    "title": "Version 5.38.1 — Prise en charge : scan lu ligne à ligne",
+    "changes": [
+      "Lecture d'une demande PDF scannée : le texte réel de l'OCR (une cellule par ligne, en-têtes mêlés à la première ligne, numéros d'ordre et numéros NTN en vrac) est maintenant lu correctement : les 5 personnes et leur fonction sont reprises. La reconstruction par « ligne précédente » qui ne trouvait que « Djamel Eddine » est corrigée."
+    ]
+  },
+  {
+    "id": "2026-10-24-65",
+    "date": "2026-10-24",
+    "title": "Version 5.38.0 — Le projet choisit son service",
+    "changes": [
+      "Prises en charge + Autorisation d'accès : en choisissant le prestataire (contrat / projet), l'émputation (service) se règle toute seule d'après la colonne « Service » du Suivi CPM ; elle reste modifiable.",
+      "Règle générale notée dans le README : dans tout écran où l'on choisit un projet et un service, le projet règle le service."
+    ]
+  },
+  {
+    "id": "2026-10-24-64",
+    "date": "2026-10-24",
+    "title": "Version 5.37.2 — Prise en charge : lecture d'un scan colonne par colonne",
+    "changes": [
+      "Lecture d'une demande PDF scannée : quand l'OCR restitue le tableau colonne par colonne (toute la colonne NOM, puis PRÉNOM, puis FONCTION…), les colonnes sont recollées ligne à ligne : toutes les personnes et leur fonction sont reprises (avant, seule « Djamel Eddine » était trouvée).",
+      "Si peu de personnes sont trouvées, le texte lu par l'OCR s'affiche sous le bouton pour comprendre pourquoi (et il est écrit dans le journal du script)."
+    ]
+  },
+  {
+    "id": "2026-10-24-63",
+    "date": "2026-10-24",
+    "title": "Version 5.37.1 — Prise en charge : en-têtes de colonnes écartés",
+    "changes": [
+      "Lecture d'une demande PDF scannée : les mots d'en-tête (Fonction, N° NTN, Date de naissance…) ne sont plus pris pour une personne ; quand l'OCR sépare le nom de la date et de la fonction, la ligne précédente est utilisée (la première personne n'est plus perdue)."
+    ]
+  },
+  {
+    "id": "2026-10-24-62",
+    "date": "2026-10-24",
+    "title": "Version 5.37.0 — Prise en charge : lecture des scans et bouton Vider",
+    "changes": [
+      "Prises en Charge + Autorisation d'Accès : la lecture d'une demande PDF scannée (« Charger la demande PDF ») sait maintenant lire une liste nominative avec colonnes Matricule, Nom, Prénom, Date de naissance, Fonction, N° : nom, prénom et fonction sont repris (la fonction est inscrite dans le tableau). Lecture aussi quand le scan n'est pas reconnu comme tableau (lignes de texte, une cellule par ligne) ; la date de la lettre (« Le : … ») sert de date d'arrivée proposée.",
+      "Le balai « Vider les champs » vide enfin la carte de saisie (il visait l'historique masqué)."
+    ]
+  },
+  {
+    "id": "2026-10-24-61",
+    "date": "2026-10-24",
+    "title": "Version 5.36.1 — Noms classés par ordre alphabétique",
+    "changes": [
+      "Planning des équipes et Simulation : les agents sont toujours classés par ordre alphabétique, quelle que soit la sélection (service, division, filtres)."
+    ]
+  },
+  {
+    "id": "2026-10-24-60",
+    "date": "2026-10-24",
+    "title": "Version 5.36.0 — Simulation : la suite de la rotation est visible",
+    "changes": [
+      "Simulation : après les semaines modifiées à la main, les semaines suivantes affichent la rotation habituelle qui reprend (bordure en pointillés, lettre T ou R) au lieu de l'ancien planning prévu ; on voit ainsi le nouveau 4×4 (ou 28/28) qui démarre juste après."
+    ]
+  },
+  {
+    "id": "2026-10-24-59",
+    "date": "2026-10-24",
+    "title": "Version 5.35.2 — Reliquat de la rotation recalculé jour par jour",
+    "changes": [
+      "Simulation : le reliquat se calcule maintenant jour par jour contre le planning prévu (travail au lieu de repos +1, repos au lieu de travail −1), depuis le début de la modification jusqu'à la fin du bloc prévu en cours ; la règle est expliquée sous le résultat. Corrige les cas à plusieurs périodes où des jours étaient comptés deux fois (ex. 2 sem. de travail, 2 sem. de repos, 4 sem. de travail : +14 j et non −28 j)."
+    ]
+  },
+  {
+    "id": "2026-10-24-58",
+    "date": "2026-10-24",
+    "title": "Version 5.35.1 — Simulation : vis-à-vis presque parfait",
+    "changes": [
+      "Simulation : chevauchement et trou tolérés à 4 jours par défaut (modifiables).",
+      "Verdict du vis-à-vis : jusqu'à 4 jours de conflit, « Vis-à-vis presque parfait » en vert ; au-delà, « Vis-à-vis en conflit de X jours » en rouge (simulation à la main et propositions)."
+    ]
+  },
+  {
+    "id": "2026-10-24-57",
+    "date": "2026-10-24",
+    "title": "Version 5.35.0 — Simulation : reliquat de la rotation et jours de relève",
+    "changes": [
+      "Simulation : le reliquat de la rotation proposée ou simulée (jours + ou −) est mis en avant en gras pour chaque agent ; le reliquat résultant est indiqué ensuite, séparément.",
+      "Le jour de relève de chaque agent est affiché (ex. dimanche, lundi) et la tolérance du vis-à-vis se règle automatiquement d'après l'écart entre les deux jours de relève."
+    ]
+  },
+  {
+    "id": "2026-10-24-56",
+    "date": "2026-10-24",
+    "title": "Version 5.34.1 — Reliquat concédé corrigé",
+    "changes": [
+      "Simulation : le reliquat concédé ne compte plus en entier une période de repos (ou de travail) qui recouvre un repos (ou un travail) déjà prévu. Exemple : 6 semaines de repos posées sur 4 semaines de travail prévues = −28 j (et non −42 j)."
+    ]
+  },
+  {
+    "id": "2026-10-24-55",
+    "date": "2026-10-24",
+    "title": "Version 5.34.0 — Simulation : édition près des agents, propositions simplifiées",
+    "changes": [
+      "Simulation : « Changer les semaines à la main » se place juste au-dessus du graphique, près des agents A et B, pour voir les modifications directement.",
+      "Propositions automatiques simplifiées : un seul réglage, le nombre de rotations (2 par défaut, modifiable ; les propositions se recalculent aussitôt). Changement par semaines entières ; classées du vis-à-vis le plus parfait, de la plus rapide à celles qui durent plusieurs séjours."
+    ]
+  },
+  {
+    "id": "2026-10-24-54",
+    "date": "2026-10-24",
+    "title": "Version 5.33.1 — Traductions complétées",
+    "changes": [
+      "Anglais et arabe : toutes les cartes d'applications (titres et descriptions), le menu et les rubriques, les pages Planning, Simulation, Privilèges, Documents administratifs, Renommage, Repas à emporter, Ordre de travail, GAZ-OIL, Feuille de pointage, Badges, Rapports et Divergences sont traduits ; les phrases avec noms, dates ou nombres aussi.",
+      "Le verdict de couverture (Planning, Simulation) est maintenant traduit, y compris l'infobulle.",
+      "Les feuilles officielles imprimables (documents, ordre de travail, GAZ-OIL, pointage, repas) restent en français, comme les documents réels."
+    ]
+  },
+  {
+    "id": "2026-10-23-53",
+    "date": "2026-10-23",
+    "title": "Version 5.33.0 — Couverture des équipes",
+    "changes": [
+      "Planning des équipes et Simulation : un verdict en haut dit si le planning de l'équipe affichée (service, division ou sélection) est « équilibré », « à ajuster » ou « insuffisant ». Il compte les jours sans personne et les pics de présence ; au survol (ou au clic) : le détail des dates et ce qu'il faut faire. Dans la Simulation, les agents A et B simulés sont pris en compte. Correct sous 2 % de jours vides, insuffisant au-delà de 10 % ou avec un trou de 7 jours."
+    ]
+  },
+  {
+    "id": "2026-10-23-52",
+    "date": "2026-10-23",
+    "title": "Version 5.32.5 — Planning : bouton Configurer toujours visible",
+    "changes": [
+      "Planning des équipes : le bouton de la rotation (✎, ou « ⚙ Configurer » pour un agent non configuré) était coupé quand le nom était long ; il reste maintenant toujours visible, c'est le nom qui se tronque (…). Colonne des noms un peu plus large."
+    ]
+  },
+  {
+    "id": "2026-10-23-51",
+    "date": "2026-10-23",
+    "title": "Version 5.32.4 — Pointage : en-tête de la division",
+    "changes": [
+      "Feuille de pointage : l'en-tête de chaque page reprend le logo Sonatrach et « Activité Exploration - Production / Division Production / Direction Régionale Rhourde Nouss / Division Infrastructure », avec MATIN ou APRÈS-MIDI au centre et le mois à droite."
+    ]
+  },
+  {
+    "id": "2026-10-23-50",
+    "date": "2026-10-23",
+    "title": "Version 5.32.3 — Pointage : pages remplies",
+    "changes": [
+      "Feuille de pointage : les lignes sont agrandies pour remplir la page, et recalculées instantanément à chaque ajout, retrait ou (dé)cochage d'une personne (peu de personnes = lignes plus hautes et texte plus grand). Colonnes nom et fonction élargies : plus de noms coupés."
+    ]
+  },
+  {
+    "id": "2026-10-23-49",
+    "date": "2026-10-23",
+    "title": "Version 5.32.2 — Pointage : pas de doublon à l'ajout",
+    "changes": [
+      "Feuille de pointage : en ajoutant une personne à l'effectif, la liste ne propose plus celles qui y sont déjà (cochées ou non) ; une personne déjà présente est refusée avec un message."
+    ]
+  },
+  {
+    "id": "2026-10-23-48",
+    "date": "2026-10-23",
+    "title": "Version 5.32.1 — Pointage : matin et après-midi",
+    "changes": [
+      "Feuille de pointage : 4 pages — 2 pour le matin (orange Sonatrach adouci) puis 2 pour l'après-midi (bleu Sonatrach adouci), avec un grand bandeau « MATIN » ou « APRÈS-MIDI » : on reconnaît la page au premier regard. Une colonne par jour (avec le jour de la semaine)."
+    ]
+  },
+  {
+    "id": "2026-10-23-47",
+    "date": "2026-10-23",
+    "title": "Version 5.32.0 — Feuille de pointage",
+    "changes": [
+      "Nouvelle application « Feuille de pointage » (module RH) : fiche hebdomadaire de la division (semaine du … au …, matin et soir sur 7 jours, A4 paysage, une page par groupe) avec les noms et fonctions de BDDORGA (pages Sonatrach et Autre). Seul l'effectif de la fiche d'origine est concerné (les autres sont à l'atelier) ; on peut décocher, retirer ou ajouter une personne. Croix cliquables à l'écran, « Imprimer » en un clic."
+    ]
+  },
+  {
+    "id": "2026-10-23-46",
+    "date": "2026-10-23",
+    "title": "Version 5.31.4 — ID de script corrigés",
+    "changes": [
+      "Déploiement de la Requête transport et de la Commande de pièces : les deux ID de script étaient inversés ; le garde-fou l'a détecté sans rien écraser, corrigé."
+    ]
+  },
+  {
+    "id": "2026-10-23-45",
+    "date": "2026-10-23",
+    "title": "Version 5.31.3 — Déploiement Requête transport et Commande de pièces",
+    "changes": [
+      "Requête transport et Commande de pièces : ID de script renseignés, déploiement automatique actif (avec un garde-fou : le déploiement doit appartenir au script, sinon rien n'est écrasé)."
+    ]
+  },
+  {
+    "id": "2026-10-23-44",
+    "date": "2026-10-23",
+    "title": "Version 5.31.2 — En-tête uniforme",
+    "changes": [
+      "Avancement des chantiers, Dossiers CPM et Suivi chantier : même en-tête que toutes les autres pages (logo, titre, « Sonatrach · RNS · Division Infrastructure », boutons de navigation et « ← Retour au portail »).",
+      "Requête transport et Commande de pièces : déploiement automatique préparé (il manque l'ID de script de chacune) afin que le masquage du double en-tête arrive dans ces deux applications."
+    ]
+  },
+  {
+    "id": "2026-10-23-43",
+    "date": "2026-10-23",
+    "title": "Version 5.31.1 — Un seul en-tête",
+    "changes": [
+      "Applications Apps Script ouvertes dans le site (Prise en charge, Dotation, Bon de sortie, Fiche d'évaluation, Requête transport, Commande de pièces) : plus de double en-tête. L'en-tête du site fait foi ; celui de l'application est masqué quand elle est ouverte depuis le portail (la Prise en charge garde sa barre d'icônes 📤 🧹 🕘 ❓). Ouvertes directement, elles gardent leur en-tête."
+    ]
+  },
+  {
+    "id": "2026-10-23-42",
+    "date": "2026-10-23",
+    "title": "Version 5.31.0 — Les applications s'ouvrent dans le site",
+    "changes": [
+      "Les applications Apps Script (Prise en charge, Dotation, Bon de sortie, Fiche d'évaluation, Requête transport, Commande de pièces…) s'ouvrent maintenant dans le site avec le même en-tête que les autres pages (titre, « ← Retour au portail ») au lieu d'une page nue. Seules les adresses /exec de la division sont acceptées."
+    ]
+  },
+  {
+    "id": "2026-10-23-41",
+    "date": "2026-10-23",
+    "title": "Version 5.30.4 — Dotations : téléphone et impression en un clic",
+    "changes": [
+      "Dotations : affichage adapté au téléphone (types en grille, champs et quantités pleine largeur, police 16 px pour éviter le zoom, historique réorganisé, gros boutons).",
+      "Dotations : bouton « 🖨 Imprimer » en un clic après la génération et sur chaque ligne de l'historique (le PDF s'ouvre directement dans la fenêtre d'impression)."
+    ]
+  },
+  {
+    "id": "2026-10-23-40",
+    "date": "2026-10-23",
+    "title": "Version 5.30.3 — Autorisation GAZ-OIL : champ du numéro retiré",
+    "changes": [
+      "Autorisation GAZ-OIL : le champ « N° du courrier » est supprimé ; le numéro reste une ligne à compléter sur la feuille imprimée."
+    ]
+  },
+  {
+    "id": "2026-10-23-39",
+    "date": "2026-10-23",
+    "title": "Version 5.30.2 — Autorisation GAZ-OIL : toutes les entreprises",
+    "changes": [
+      "Autorisation GAZ-OIL : la liste reprend toutes les entreprises du Suivi CPM, même hors contrat en exécution (contrat échu, etc.), pour débarrasser leur matériel ou se rapatrier ; le statut est indiqué entre parenthèses quand le contrat n'est plus en exécution."
+    ]
+  },
+  {
+    "id": "2026-10-23-38",
+    "date": "2026-10-23",
+    "title": "Version 5.30.1 — Autorisation GAZ-OIL : entreprise en liste et date en lettres",
+    "changes": [
+      "Autorisation GAZ-OIL : l'entreprise se choisit dans une liste avec recherche (contrats en exécution du Suivi CPM, lecture seule) et le numéro de contrat se remplit tout seul.",
+      "La lettre est toujours datée d'aujourd'hui, écrite en lettres (ex. « Rhourde Nouss : 21 Octobre 2026 ») ; la case de date est supprimée."
+    ]
+  },
+  {
+    "id": "2026-10-23-37",
+    "date": "2026-10-23",
+    "title": "Version 5.30.0 — Autorisation GAZ-OIL",
+    "changes": [
+      "Nouvelle application « Autorisation GAZ-OIL » (module Logistique) : lettre d'autorisation d'approvisionnement en GAZ-OIL en fûts. La quantité en litres est divisée automatiquement en fûts de 200 L (400 L = 2 fûts de 200 L ; 500 L = 2 fûts de 200 L et 1 fût de 100 L). Impression en un clic, historique sur l'ordinateur."
+    ]
+  },
+  {
+    "id": "2026-10-23-36",
+    "date": "2026-10-23",
+    "title": "Version 5.29.5 — Reliquat sur l'accueil",
+    "changes": [
+      "Accueil : la ligne « Du … → prochain changement le … » (déjà dite dans la phrase au-dessus) est remplacée par le reliquat actuel : « Vous avez un reliquat positif de X jours » en vert, « négatif de X jours » en rouge, ou « aucun reliquat »."
+    ]
+  },
+  {
+    "id": "2026-10-23-35",
+    "date": "2026-10-23",
+    "title": "Version 5.29.4 — Fiche d'évaluation : saut de page propre",
+    "changes": [
+      "PDF de la fiche d'évaluation : plus de ligne coupée entre deux pages ; le saut de page se fait avant la section IV (Moyens matériels) et le tableau reprend avec son en-tête (N°, Désignation, 100 % … 10 %) sur la 2e page."
+    ]
+  },
+  {
+    "id": "2026-10-23-34",
+    "date": "2026-10-23",
+    "title": "Version 5.29.3 — Fiche d'évaluation déployée",
+    "changes": [
+      "Fiche d'évaluation : déploiement automatique activé (ID de script renseigné). Les boutons Imprimer en un clic et Envoyer au secrétariat, ainsi que les filets du tableau, arrivent dans l'application."
+    ]
+  },
+  {
+    "id": "2026-10-23-33",
+    "date": "2026-10-23",
+    "title": "Version 5.29.2 — Historique des prises en charge plus lisible",
+    "changes": [
+      "Historique des prises en charge : pour chaque demande, le contrat et l'entreprise (ex. « 43.INFRA.25 - ENCC SPA UNITE HAMIZ ») en titre, puis directement les agents saisis avec nom, prénom, matricule du véhicule et véhicule."
+    ]
+  },
+  {
+    "id": "2026-10-23-32",
+    "date": "2026-10-23",
+    "title": "Version 5.29.1 — Déploiement de la fiche d'évaluation",
+    "changes": [
+      "Fiche d'évaluation : déploiement automatique préparé (comme les autres applications) afin que les nouveautés — bouton Imprimer en un clic, envoi au secrétariat, filets du tableau — arrivent dans l'application ; il ne manque que l'ID de script."
+    ]
+  },
+  {
+    "id": "2026-10-23-31",
+    "date": "2026-10-23",
+    "title": "Version 5.29.0 — Ordre de travail",
+    "changes": [
+      "Nouvelle application « Ordre de travail » (module Logistique) : la feuille de la division en A4 paysage, avec Division, Lieu et Imputation de l'Infrastructure par défaut (modifiables), équipement, description, AVEC / SANS pièces, heures, résumé des travaux, pièces de rechange, agents intervenants, approbations ; « Imprimer » en un clic et historique sur l'ordinateur.",
+      "Tous les boutons « Imprimer / PDF » deviennent « Imprimer » (impression en un clic).",
+      "Prise en charge et autorisation d'accès : l'historique s'ouvre par une petite icône 🕘 en haut."
+    ]
+  },
+  {
+    "id": "2026-10-23-30",
+    "date": "2026-10-23",
+    "title": "Version 5.28.5 — Renommage direct et impression en un clic",
+    "changes": [
+      "Renommage de documents : plus de colonnes Type ni Agent ; le nom proposé est ce que l'outil a lu dans le document (titre et date). « Remplacer le nom » renomme le fichier directement dans son dossier (le dossier choisi est gardé), « Renommer tous les fichiers » fait de même pour toute la liste ; le ZIP reste disponible.",
+      "Fiche d'évaluation : bouton « 🖨 Imprimer » en un clic (après génération et dans l'archive). L'impression en un clic devient la norme pour les documents générés (enregistrée dans la brique _output de la bibliothèque)."
+    ]
+  },
+  {
+    "id": "2026-10-23-29",
+    "date": "2026-10-23",
+    "title": "Version 5.28.4 — Fiche d'évaluation : envoi au secrétariat et filets",
+    "changes": [
+      "Fiche d'évaluation : bouton « ✉️ Envoyer au secrétariat » (après génération et dans chaque ligne de l'archive), avec confirmation ; l'e-mail ne part qu'au clic.",
+      "PDF de la fiche : les lignes du tableau des renseignements (Entrepreneur, Contrat, Montant, Date ODS, Date d'entrée en vigueur, Délai, Date de mise en service) ont maintenant leurs filets horizontaux."
+    ]
+  },
+  {
+    "id": "2026-10-23-28",
+    "date": "2026-10-23",
+    "title": "Version 5.28.3 — Historique à la demande",
+    "changes": [
+      "Prise en charge et autorisation d'accès : l'historique des demandes ne s'affiche plus tout seul ; un bouton « Afficher l'historique » en haut l'ouvre (et « Masquer » le referme)."
+    ]
+  },
+  {
+    "id": "2026-10-23-27",
+    "date": "2026-10-23",
+    "title": "Version 5.28.2 — Prise en charge : historique en haut",
+    "changes": [
+      "Prise en charge et autorisation d'accès : l'historique des demandes déjà créées (date, prestataire, base, documents, personnes, état dans les Enquêtes) s'affiche en haut du formulaire et se met à jour après chaque génération."
+    ]
+  },
+  {
+    "id": "2026-10-23-26",
+    "date": "2026-10-23",
+    "title": "Version 5.28.1 — Début n-1 accepté et effacer mon planning",
+    "changes": [
+      "Page « Où en êtes-vous ? » : le début de la rotation précédente (n-1) est maintenant accepté, pas seulement celui de la rotation en cours.",
+      "Bouton « Effacer mon planning » (rouge) avec double confirmation, pour l'agent et pour le secrétariat / chef de division sur un agent : la rotation et les demandes sont retirées, l'agent redevient « non configuré »."
+    ]
+  },
+  {
+    "id": "2026-10-23-25",
+    "date": "2026-10-23",
+    "title": "Version 5.28.0 — Une seule page « Où en êtes-vous ? »",
+    "changes": [
+      "Une seule page pour tous (première saisie comme correction) : statut, début de la rotation EN COURS, reliquat au début de cette rotation, rotation habituelle, puis les cases de durée de chaque rotation à partir de ce début. Tout est à 28 / 28 ; l'agent qui est déjà dans une rotation ajustée la saisit directement (ex. 20 jours). Les dates se recalculent au fur et à mesure.",
+      "Cette page remplace l'ancienne petite fenêtre au portail (« Bienvenue »), « Modifier ma rotation », le crayon des équipes et « Corriger le planning actuel » ; elle part du début de la rotation en cours et des durées réelles déjà enregistrées. Le planning de départ n'attend aucune décision (c'est la situation réelle) ; une demande de modification en cours est annulée à la correction."
+    ]
+  },
+  {
+    "id": "2026-10-23-24",
+    "date": "2026-10-23",
+    "title": "Version 5.27.5 — Corriger le planning actuel saisi par erreur",
+    "changes": [
+      "Écran de modification du planning : bouton « Corriger le planning actuel (saisi par erreur) » sous « Planning actuel », pour l'agent (son propre planning) comme pour le secrétariat et le chef de division (celui d'un agent) : statut, date de début et rotation de base peuvent être ressaisis."
+    ]
+  },
+  {
+    "id": "2026-10-23-23",
+    "date": "2026-10-23",
+    "title": "Version 5.27.4 — Saisir son reliquat dans le planning",
+    "changes": [
+      "Écran « Modifier mon planning » : case « Au début de la rotation, combien avez-vous de reliquat ? » avec bouton « Enregistrer le reliquat », pour le saisir ou le corriger sans modifier le planning (l'agent pour lui-même, le secrétariat et le chef de division pour un agent). Même formulation dans la fenêtre « Où en êtes-vous ? »."
+    ]
+  },
+  {
+    "id": "2026-10-23-22",
+    "date": "2026-10-23",
+    "title": "Version 5.27.3 — Aucun e-mail automatique",
+    "changes": [
+      "Demandes de modification de planning : plus aucun e-mail ne part tout seul (ni à l'enregistrement, ni à la validation ou au refus). L'envoi se fait uniquement au clic (« Envoyer par e-mail » / « Envoyer… »), avec les cases à cocher secrétariat, chef de service, chef de division."
+    ]
+  },
+  {
+    "id": "2026-10-23-21",
+    "date": "2026-10-23",
+    "title": "Version 5.27.2 — Planning : le crayon ouvre le planning de l'agent",
+    "changes": [
+      "Planning des équipes : le crayon d'un agent qui a déjà un planning ouvre maintenant le tableau « Planning actuel / Planning modifié » (au lieu de la fenêtre « Où en êtes-vous ? ») ; la modification est enregistrée et validée tout de suite par le responsable. La fenêtre « Où en êtes-vous ? » reste pour un agent sans planning, et un bouton « Rotation de base… » permet de changer sa rotation habituelle."
+    ]
+  },
+  {
+    "id": "2026-10-23-20",
+    "date": "2026-10-23",
+    "title": "Version 5.27.1 — Annuler sa demande de modification",
+    "changes": [
+      "L'agent peut annuler sa demande de modification (en cas d'erreur) et retrouver son planning initial, tant qu'elle n'est pas approuvée : bouton dans le message de la page Planning, dans l'écran de modification et après l'enregistrement."
+    ]
+  },
+  {
+    "id": "2026-10-23-19",
+    "date": "2026-10-23",
+    "title": "Version 5.27.0 — Modifier mon planning",
+    "changes": [
+      "Planning : bouton « Modifier mon planning ». Sans planning enregistré : la petite fenêtre « Où en êtes-vous ? » ; sinon le tableau « Planning actuel / Planning modifié » où l'agent règle la durée de ses prochaines rotations (14, 35, 28…) et les dates se recalculent. La demande est appliquée tout de suite (mon planning et planning global), sans e-mail ; envoi facultatif au chef de service, au secrétariat ou au chef de division (cases à cocher).",
+      "Contrôle du retour à la rotation : si l'agent n'est pas rentré dans sa rotation à la fin de ses changements, un message reste affiché jusqu'à la décision d'un responsable. L'écart de jours est affiché ; le reliquat est modifié à la validation.",
+      "Décision : le chef de service de l'agent, le secrétariat ou le chef de division peut valider, corriger puis valider, ou refuser (retour au planning initial). Une validation est envoyée automatiquement au secrétariat. Ils sont alertés sur leur page d'accueil (message en plus pour qui sort de sa rotation).",
+      "Planning : lignes compactes (fonction et service au survol du nom), « 6 restants » écrit dans la bande du jour, impression PDF paysage en marges réduites et pleine largeur."
+    ]
+  },
+  {
+    "id": "2026-10-23-18",
+    "date": "2026-10-23",
+    "title": "Version 5.26.3 — Renommage : titres et dates",
+    "changes": [
+      "Renommage de documents : l'outil lit maintenant le titre (ligne « Objet », ATTESTATION…, titre en majuscules) et la date (14/02/2026, 14 février 2026…) de chaque document et propose « Titre_date » ; la lecture des scans et photos (OCR) est activée d'office, et le titre / la date détectés s'affichent sous chaque fichier."
+    ]
+  },
+  {
+    "id": "2026-10-23-17",
+    "date": "2026-10-23",
+    "title": "Version 5.26.2 — Prise en charge : doublons Enquêtes",
+    "changes": [
+      "Prise en charge : un agent déjà enregistré dans les Enquêtes chez le même prestataire et le même contrat (y compris dans un ancien onglet sans numéro de contrat) est ignoré directement, sans question. La question n'est posée que s'il figure dans un autre contrat ou chez un autre prestataire."
+    ]
+  },
+  {
+    "id": "2026-10-23-16",
+    "date": "2026-10-23",
+    "title": "Version 5.26.1 — Journal du CPM automatique",
+    "changes": [
+      "Journal des changements du CPM : le nouvel état est écrit en gras (ex. « Contrat en exécution → Contrat échu »).",
+      "Le journal se met à jour tout seul : à l'ouverture, si le dernier relevé a plus de 6 h, le suivi est relu automatiquement ; le relevé de nuit s'installe seul à la première connexion (plus besoin de cliquer sur Actualiser)."
+    ]
+  },
+  {
+    "id": "2026-10-23-15",
+    "date": "2026-10-23",
+    "title": "Version 5.26.0 — Accueil rangé par métiers",
+    "changes": [
+      "Accueil : les applications sont rangées en 7 rubriques par métier (Pilotage & chantiers, Marchés & entreprises, Accès site & sûreté, Personnel, Logistique & moyens généraux, Administration & secrétariat, Informatique & accès) au lieu des modules ; seules les rubriques où vous avez des applications s'affichent. Les droits ne changent pas : chaque agent voit exactement les mêmes applications qu'avant.",
+      "La recherche trouve aussi une application par des mots usuels (« collation », « renommer », « imprimé », « conge »…), en plus de son nom et de sa description."
+    ]
+  },
+  {
+    "id": "2026-10-23-14",
+    "date": "2026-10-23",
+    "title": "Version 5.25.0 — Application « Repas à emporter »",
+    "changes": [
+      "Nouvelle application à part entière « Repas à emporter » (module Logistique, carte ajoutée au catalogue) : désignations, date, nombre de personnes (calculé d'après les lignes), imputation analytique (codes habituels proposés) et observations ; aperçu A4 paysage de la mise en page de la Direction Régionale ; impression / PDF en un clic ; historique des prises en charge établies, à rouvrir ou supprimer."
+    ]
+  },
+  {
+    "id": "2026-10-23-13",
+    "date": "2026-10-23",
+    "title": "Version 5.24.6 — Dotation : heure et lieu seulement pour collation et pause café",
+    "changes": [
+      "Dotation, « Repas & collations » : « Heure » et « Lieu » ne s'affichent (et ne sont pris en compte) que pour Collation et Pause café ; masqués pour Casse-croûte et Repas à emporter."
+    ]
+  },
+  {
+    "id": "2026-10-23-12",
+    "date": "2026-10-23",
+    "title": "Version 5.24.5 — Dotation : casse-croûte sans heure ni lieu",
+    "changes": [
+      "Dotation, « Repas & collations » : en choisissant Casse-croûte, les champs « Heure » et « Lieu » sont masqués (et ignorés) ; ils restent pour les autres types."
+    ]
+  },
+  {
+    "id": "2026-10-23-11",
+    "date": "2026-10-23",
+    "title": "Version 5.24.4 — Dotation : casse-croûte plus fidèle au modèle",
+    "changes": [
+      "Casse-croûte : tout le texte est noir (seuls les filets du haut et du bas sont orange ; la date et l'adresse ne héritent plus de la couleur orange) ; tailles de police alignées sur le modèle STEP (10 à 13 points au lieu de 8 à 9) ; noms, imputation, période et structure en texte normal, titres de colonnes et signatures en gras ; filet de l'en-tête sur une seule ligne ; logo un peu plus grand."
+    ]
+  },
+  {
+    "id": "2026-10-23-10",
+    "date": "2026-10-23",
+    "title": "Version 5.24.3 — Dotation : correctif « texte vide »",
+    "changes": [
+      "Dotation, « Repas & collations » : correction de l'erreur « Impossible d'insérer un élément de texte vide » (Google Docs refuse un texte vide : une espace insécable le remplace, par exemple pour une imputation ou une structure laissée vide). Un test reproduit désormais cette règle de Google Docs pour les quatre types."
+    ]
+  },
+  {
+    "id": "2026-10-23-09",
+    "date": "2026-10-23",
+    "title": "Version 5.24.2 — Dotation : casse-croûte au modèle STEP",
+    "changes": [
+      "Dotation, « Repas & collations », type Casse-croûte : mise en page du modèle « STEP » (A Monsieur / Chef de Division MG, date, « PRISE EN CHARGE » puis « ☒ CASSE CROUTE » sans soulignement, tableau Nom des agents · Nbre d'agent · Compte analytique · Période de la dotation · Structure, signatures Chef Division Infrastructures / Preneur / Chef Division DMG, pied de page).",
+      "Le titre est descendu pour que le bloc soit centré dans la page ; la période s'écrit « 11/10/2026 Au 17/10/2026 » sur une ligne."
+    ]
+  },
+  {
+    "id": "2026-10-23-08",
+    "date": "2026-10-23",
+    "title": "Version 5.24.1 — Dotation : correctif des prises en charge repas",
+    "changes": [
+      "Dotation, « Repas & collations » : correction de l'erreur « Cannot read properties of null (reading 'setSpacingBefore') » à la génération (les cellules du tableau et le premier paragraphe du document sont maintenant utilisés tels qu'ils existent, au lieu d'être vidés)."
+    ]
+  },
+  {
+    "id": "2026-10-23-07",
+    "date": "2026-10-23",
+    "title": "Version 5.24.0 — Renommage de documents, repas & collations, autorisation seule",
+    "changes": [
+      "Nouvelle application « Renommage de documents » (module RH, carte ajoutée au catalogue) : dépose de PDF / JPG / PNG ; reconnaissance du type (titre de congé, fiche de paie, contrat, attestations CNAS…), de l'agent (liste BDDORGA) et des dates grâce au moteur de Sijil ; nom proposé et corrigeable ; l'outil apprend de vos corrections (règles exportables) ; renommage dans le dossier (Chrome / Edge) ou ZIP ; conversion des photos en PDF. Les fichiers restent sur l'ordinateur.",
+      "Dotation : nouvel onglet « 🍴 Repas & collations » : prises en charge Collation, Pause café, Repas à emporter et Casse-croûte (mise en page paysage des modèles Word, PDF et Google Doc, classés dans l'historique).",
+      "Prise en charge et autorisation d'accès : en ne cochant que « Autorisation d'accès », émputation, base et options de la prise en charge sont masquées (plus besoin de les remplir) ; titre « Nouvelle demande » retiré."
+    ]
+  },
+  {
+    "id": "2026-10-23-06",
+    "date": "2026-10-23",
+    "title": "Version 5.23.2 — Prise en charge : bouton Tout supprimer",
+    "changes": [
+      "Prise en charge et autorisation d'accès : bouton « 🗑 Tout supprimer » au-dessus de la liste des fichiers à imprimer (confirmation avant de mettre à la corbeille tous les PDF et documents générés).",
+      "Le bloc « fichiers générés » (ouvrir, imprimer en un clic, e-mail, supprimer, tout supprimer) est enregistré dans la bibliothèque personnelle sous le nom « _output », pour le réutiliser dans d'autres applications."
+    ]
+  },
+  {
+    "id": "2026-10-23-05",
+    "date": "2026-10-23",
+    "title": "Version 5.23.1 — Prise en charge : impression en un clic",
+    "changes": [
+      "Prise en charge et autorisation d'accès : le bouton « 🖨️ Imprimer » de chaque fichier ouvre directement la fenêtre d'impression du navigateur sur l'imprimante par défaut : il ne reste qu'à valider (au lieu d'ouvrir le PDF puis de cliquer plusieurs fois).",
+      "L'envoi vers l'imprimante Xerox (@PrintByXerox) est retiré de l'application : il est rangé dans la bibliothèque personnelle sous le nom « _xerox », à activer quand le réseau Sonatrach l'autorisera. L'envoi par e-mail au secrétariat reste."
+    ]
+  },
+  {
+    "id": "2026-10-23-04",
+    "date": "2026-10-23",
+    "title": "Version 5.23.0 — Prise en charge et autorisation d'accès : en-tête compact, impression directe",
+    "changes": [
+      "L'application s'appelle maintenant « Prise en charge et autorisation d'accès ».",
+      "Les icônes (📤 charger une demande PDF, 🧹 vider les champs, ❓ aide) passent dans l'en-tête, qui est plus bas : plus d'espace vide en haut de page.",
+      "Chaque fichier généré a un bouton « 📠 Envoyer à l'imprimante » (envoi direct vers l'imprimante Xerox, comme dans Requête transport), séparé du bouton « 📄 Ouvrir », en plus de l'envoi par e-mail et de la corbeille."
+    ]
+  },
+  {
+    "id": "2026-10-23-03",
+    "date": "2026-10-23",
+    "title": "Version 5.22.1 — Prises en charge : écran simplifié",
+    "changes": [
+      "Prises en charge : les « actions rapides » sont remplacées par deux petites icônes à côté de « Nouvelle demande » : 📤 charger une demande PDF et 🧹 vider les champs pour saisir une autre prise en charge (l'ancien « Effacer » supprimait tous les fichiers : ce n'est plus le cas).",
+      "Retirés : Actualiser prestataires (la liste se resynchronise automatiquement à chaque ouverture), Générer (déjà présent plus bas), Imprimer et Ouvrir dossier PDF.",
+      "Les fichiers déjà générés s'affichent toujours en bas de page, prêts à imprimer, envoyer par e-mail ou supprimer."
+    ]
+  },
+  {
+    "id": "2026-10-23-02",
+    "date": "2026-10-23",
+    "title": "Version 5.22.0 — Prises en charge : fichiers à imprimer et envoi par e-mail",
+    "changes": [
+      "Prises en charge : le bouton « Imprimer » affiche maintenant les fichiers générés (prises en charge, autorisations, macarons) avec la présentation de Dotation : pastille de type, nom, date, lien pour ouvrir le PDF et l'imprimer, et corbeille.",
+      "Chaque fichier a le bouton « ✉️ Envoyer par email » de Requête transport : le PDF part en pièce jointe au secrétariat Infrastructure RNS.",
+      "Important : l'envoi d'e-mails demande une autorisation à donner UNE fois dans l'éditeur Apps Script (exécuter la fonction autoriserEnvoiMail)."
+    ]
+  },
+  {
+    "id": "2026-10-23-01",
+    "date": "2026-10-23",
+    "title": "Version 5.21.1 — Prise en charge : noms en une ligne",
+    "changes": [
+      "Prise en charge (PDF) : chaque nom est précédé d'un tiret (« - NOM PRÉNOM ») et tient sur une seule ligne : la colonne des noms est élargie en réduisant d'abord la colonne « nombre de personnes », puis les dates, l'imputation, les observations et le code (largeur totale inchangée, minimums respectés).",
+      "L'imputation analytique est centrée horizontalement et verticalement dans sa case."
+    ]
+  },
+  {
+    "id": "2026-10-22-29",
+    "date": "2026-10-22",
+    "title": "Version 5.21.0 — Simulation : conflits sur une rotation, relève respectée, jours fériés",
+    "changes": [
+      "Simulation : les jours de conflit sont comptés sur UNE seule rotation (la plus longue des deux agents) et écrits en clair : « Cette simulation résulte de 2 jours de conflit pour X et Y » ; même phrase sur chaque proposition automatique. La liste des plages de conflit est supprimée (déjà visible sur le graphique).",
+      "Propositions automatiques : semaines entières qui commencent à la relève propre de chaque agent (son jour de relève ne change jamais, son vol en dépend). Le début se choisit : cette rotation (début du bloc en cours), la prochaine rotation, ou une date (relève suivante). Les semaines à cocher à la main suivent la même règle.",
+      "Survol : au passage de la souris sur un jour du graphique (simulation et planning), la date, l'état et le jour férié éventuel s'affichent.",
+      "Jours fériés nationaux (rouge) et religieux estimés (vert), repris de Sijil, repérés en haut de chaque jour dans les graphiques de la simulation et du planning (groupe et individuel)."
+    ]
+  },
+  {
+    "id": "2026-10-22-28",
+    "date": "2026-10-22",
+    "title": "Version 5.20.0 — Simulation de planning simplifiée",
+    "changes": [
+      "Nouvelle simulation : un sélecteur de service (ou toute la division) affiche toutes les équipes sur un graphique ; en cliquant deux agents (A et B), ils se placent l'un sous l'autre en haut avec leur ligne de vis-à-vis.",
+      "Modification à la main : pour chaque agent, des cases semaine par semaine (jusqu'à 12) à passer en travail ou en repos ; le graphique, le résumé en phrases (« écourte son repos à 3 semaines… »), le reliquat et le vis-à-vis se mettent à jour aussitôt.",
+      "Propositions automatiques : décalages de 1 à 8 semaines pour les deux agents, classés du plus petit reliquat (positif ou négatif) au plus grand, selon que le changement commence maintenant, à la prochaine rotation ou à une date ; « Utiliser » les reporte dans les cases.",
+      "L'ancienne page est conservée en secours sous le nom « Modif 1.0 » (lien en haut de la nouvelle page)."
+    ]
+  },
+  {
+    "id": "2026-10-22-27",
+    "date": "2026-10-22",
+    "title": "Version 5.19.1 — Documents administratifs : impression bien ajustée",
+    "changes": [
+      "Documents administratifs : l'impression est imposée en A4 portrait (plus de paysage mémorisé par le navigateur), avec marges internes de 14 mm ; la feuille ne déborde plus à droite.",
+      "L'en-tête et le pied de page du navigateur (date, titre de la page, adresse) n'apparaissent plus sur les PDF."
+    ]
+  },
+  {
+    "id": "2026-10-22-26",
+    "date": "2026-10-22",
+    "title": "Version 5.19.0 — Documents administratifs : 3 nouveaux modèles et recherche BDDORGA",
+    "changes": [
+      "Trois modèles ajoutés depuis le dossier « Imprimés administratifs » : Demande de modification de planning (formulaire), Prolongation de mission (OM) et Questionnaire (absence ou motif professionnel) — 28 modèles au total.",
+      "Les modèles qui ne figurent pas dans le dossier « Imprimés » (ordre de mission, prise en charge hôtel, réservation de vol, bordereau d'envoi, convocation visite médicale, note d'intérim) sont rangés à part, dans « Autres modèles ».",
+      "Dans les champs « nom » (agent, personne visée par une sanction, intérimaire, convoqués…), la liste de BDDORGA est proposée pendant la frappe ; le choix remplit aussi matricule, fonction et service."
+    ]
+  },
+  {
+    "id": "2026-10-22-25",
+    "date": "2026-10-22",
+    "title": "Version 5.18.2 — Prises en charge : correctif de déploiement",
+    "changes": [
+      "Prises en charge : correction d'un fichier dupliqué par erreur dans la version 5.18.0 / 5.18.1 (le script ne se serait pas exécuté correctement) ; les règles « macaron = fin du contrat, sauf date choisie » sont conservées."
+    ]
+  },
+  {
+    "id": "2026-10-22-24",
+    "date": "2026-10-22",
+    "title": "Version 5.18.1 — Macaron : toujours la fin du contrat",
+    "changes": [
+      "Macaron : sauf date de départ choisie à la main, il s'arrête toujours à la fin du contrat (Suivi CPM), même si cette date est déjà dépassée. Il ne suit l'autorisation que si la fin du contrat est introuvable."
+    ]
+  },
+  {
+    "id": "2026-10-22-23",
+    "date": "2026-10-22",
+    "title": "Version 5.18.0 — Prises en charge : fin d'autorisation et de macaron",
+    "changes": [
+      "Autorisation d'accès et macaron : si la date de départ a été choisie à la main (par exemple 3 jours), l'autorisation ET le macaron s'arrêtent à cette date.",
+      "Si la date de départ n'est pas touchée (+28 jours automatique) : l'autorisation reste mensuelle (fin du mois, ou du mois suivant avec « valable 2 mois ») et le macaron va jusqu'à la fin du contrat, calculée depuis le Suivi CPM (date ODS + délai, lecture seule).",
+      "Sans fin de contrat lisible, ou contrat déjà terminé, le macaron suit l'autorisation ; la visite sur site garde la date de départ saisie."
+    ]
+  },
+  {
+    "id": "2026-10-22-22",
+    "date": "2026-10-22",
+    "title": "Version 5.17.4 — Prise en charge : case Observations compacte et centrée",
+    "changes": [
+      "Prise en charge (PDF) : dans la case « Observations », les lignes vides laissées par le modèle (remplacement, chambre absents) sont supprimées ; la base, puis une seule ligne d'espace, puis la fonction, le tout centré au milieu de la case."
+    ]
+  },
+  {
+    "id": "2026-10-22-21",
+    "date": "2026-10-22",
+    "title": "Version 5.17.3 — Prises en charge : nouvelle base acceptée",
+    "changes": [
+      "Prises en charge : la base « SHARM EL SHEIKH VIP » est maintenant acceptée à la génération (la liste de validation de la feuille est remise à jour automatiquement avant l'écriture ; fin de l'erreur « cellule C4 »)."
+    ]
+  },
+  {
+    "id": "2026-10-22-20",
+    "date": "2026-10-22",
+    "title": "Version 5.17.2 — Accueil sur téléphone",
+    "changes": [
+      "Accueil sur téléphone et petite tablette : les trois cartes (fiche, rotation, applications) s'empilent en une seule colonne ; fin du texte écrasé sur deux colonnes étroites. Sur ordinateur, rien ne change."
+    ]
+  },
+  {
+    "id": "2026-10-22-19",
+    "date": "2026-10-22",
+    "title": "Version 5.17.1 — Accueil plus compact",
+    "changes": [
+      "Accueil : les trois cartes sont beaucoup plus basses (hauteur de la carte rotation), sans espace vide ; la fiche personnelle est plus étroite et « Mes applications » plus large.",
+      "Fiche : l'ancienneté passe sous le nom ; le Wi-Fi remplace le téléphone quand celui-ci n'est pas renseigné ; les raccourcis du planning et « Propulsé par Sijil » ne rallongent plus la carte rotation."
+    ]
+  },
+  {
+    "id": "2026-10-22-18",
+    "date": "2026-10-22",
+    "title": "Version 5.17.0 — Accueil plus homogène",
+    "changes": [
+      "Accueil : fiche personnelle, rotation et « Mes applications » sont maintenant trois cartes de même hauteur et de même style, avec plus d'air.",
+      "Fiche personnelle : informations rangées sur deux colonnes, avec en plus la fonction et le service (BDDORGA), le téléphone et l'identifiant Wi-Fi quand ils existent ; le lien « modifier » de l'e-mail passe discrètement en haut à droite de sa case.",
+      "Sur écran moyen, « Mes applications » passe sous les deux autres cartes ; sur téléphone, tout s'empile."
+    ]
+  },
+  {
+    "id": "2026-10-22-17",
+    "date": "2026-10-22",
+    "title": "Version 5.16.4 — Prise en charge : case Observations centrée",
+    "changes": [
+      "Prise en charge (PDF) : le contenu de la case « Observations » (base, remplacement, chambre, fonction) est centré horizontalement et verticalement."
+    ]
+  },
+  {
+    "id": "2026-10-22-16",
+    "date": "2026-10-22",
+    "title": "Version 5.16.3 — Prises en charge : recherche du prestataire",
+    "changes": [
+      "Prises en charge : la case « Prestataire » cherche pendant la frappe (sans tenir compte des accents ni des majuscules) tout en gardant la liste déroulante. Un seul prestataire correspondant est choisi tout seul en quittant la case ; une saisie hors liste est refusée à l'envoi."
+    ]
+  },
+  {
+    "id": "2026-10-22-15",
+    "date": "2026-10-22",
+    "title": "Version 5.16.2 — Prises en charge : base « Sharm El Sheikh VIP »",
+    "changes": [
+      "Prises en charge : nouvel emplacement « SHARM EL SHEIKH VIP » dans la liste des bases."
+    ]
+  },
+  {
+    "id": "2026-10-22-14",
+    "date": "2026-10-22",
+    "title": "Version 5.16.1 — Bon de sortie : matériel en évidence",
+    "changes": [
+      "Bon de sortie matériel : le matériel est affiché en gras, en plus grand, aligné à gauche sous la phrase ; un matériel par ligne, chacun précédé d'un tiret ajouté automatiquement.",
+      "Cases « Lieu d'enlèvement » et « Lieu de destination » plus petites, avec le lieu en gras, plus grand et centré."
+    ]
+  },
+  {
+    "id": "2026-10-22-13",
+    "date": "2026-10-22",
+    "title": "Version 5.16.0 — Aide intégrée",
+    "changes": [
+      "Un petit « ? » discret en bas à gauche de chaque page et de chaque application ouvre l'aide : à quoi sert la page, pas à pas et conseils, avec une capture d'écran.",
+      "Une liste déroulante en haut de l'aide permet de passer à l'aide de n'importe quelle autre page ou application."
+    ]
+  },
+  {
+    "id": "2026-10-22-12",
+    "date": "2026-10-22",
+    "title": "Version 5.15.1 — Allègement du site",
+    "changes": [
+      "Retrait de deux anciennes pages plus utilisées (ancien accueil et ancien organigramme) : 300 Ko de moins."
+    ]
+  },
+  {
+    "id": "2026-10-22-11",
+    "date": "2026-10-22",
+    "title": "Version 5.15.0 — Documents administratifs",
+    "changes": [
+      "Nouvelle application « Documents administratifs » (module RH, tous les agents) : 25 formulaires de la Direction Régionale Rhourde Nouss repris de vos modèles Word — ordre de mission, compte rendu de mission, prise en charge hôtel, réservation, prêts (social, véhicule, construction, CAL), avance sur salaire, mutations, mise en disponibilité, note d'intérim, ITP, nuisance, PAP & PAC, sanctions, audience, requête, attestation, etc.",
+      "Les formulaires se préremplissent avec vos informations (nom, matricule, fonction, service, date de recrutement), l'aperçu se met à jour à chaque frappe, les cases vides s'impriment en pointillés ; impression ou PDF en un clic.",
+      "La carte est ajoutée automatiquement au catalogue au prochain affichage du portail."
+    ]
+  },
+  {
+    "id": "2026-10-22-10",
+    "date": "2026-10-22",
+    "title": "Version 5.14.1 — Fiche d'évaluation au catalogue",
+    "changes": [
+      "La carte « Fiche d'évaluation » (module logistique, niveau 2 : conducteurs, chefs d'atelier et de service) apparaît dans le menu avec son adresse."
+    ]
+  },
+  {
+    "id": "2026-10-22-09",
+    "date": "2026-10-22",
+    "title": "Version 5.14.0 — Fiche d'évaluation",
+    "changes": [
+      "Nouvelle application « Fiche d'évaluation » : cartouche remplie depuis le Suivi CPM (lecture seule), cases à cliquer, taux de satisfaction calculé automatiquement, PDF dans la mise en page de la fiche Word, archive consultable avec modification et suppression. À installer dans Apps Script (voir apps-script/fiche-evaluation/README.md)."
+    ]
+  },
+  {
+    "id": "2026-10-22-08",
+    "date": "2026-10-22",
+    "title": "Version 5.13.1 — Rapports : case « routine »",
+    "changes": [
+      "Rapports journaliers : chaque ligne a une case « routine » pour les travaux de routine de la prestation (réparations, entretien courant) ; ils restent rattachés au chantier du contrat. Les chantiers de routine séparés ne sont pas recréés si on les a désactivés."
+    ]
+  },
+  {
+    "id": "2026-10-22-07",
+    "date": "2026-10-22",
+    "title": "Version 5.13.0 — Rapports journaliers : lignes par ouvrage et chantiers du CPM",
+    "changes": [
+      "Rapports journaliers : le conducteur remplit des lignes « ouvrage / zone — ce qui a été fait — avancement % » ; les ouvrages et l'avancement du dernier rapport sont repris automatiquement (avec rappel « dernier rapport : 96 % »), il ne reste qu'à mettre à jour. Plusieurs conducteurs peuvent rapporter sur un même chantier.",
+      "Chantiers : un chantier par contrat « en exécution » du Suivi CPM (lecture seule, rien n'est écrit dans le CPM), plus deux chantiers de routine (électromécanique, entretien). Onglet « Chantiers » (niveau 3) : bouton de synchronisation et service de chaque chantier ; un conducteur ne voit que les chantiers de son service (un chantier sans service est visible de tous)."
+    ]
+  },
+  {
+    "id": "2026-10-22-06",
+    "date": "2026-10-22",
+    "title": "Version 5.12.2 — Bon de sortie : signataires désignés, preneur BDDORGA ou Enquêtes",
+    "changes": [
+      "Bon de sortie matériel : « Je soussigné(e) » limité aux signataires désignés (onglet « Signataires » du fichier Organigramme ou liste dans le code ; contrôle refait à la génération). Si personne n'est désigné, tout BDDORGA peut signer.",
+      "Le preneur se choisit dans BDDORGA ou dans les Enquêtes administratives, ou se saisit librement ; le commentaire sur BDDORGA est masqué."
+    ]
+  },
+  {
+    "id": "2026-10-22-05",
+    "date": "2026-10-22",
+    "title": "Version 5.12.1 — Bon de sortie matériel au catalogue",
+    "changes": [
+      "La carte « Bon de sortie matériel » (module logistique) apparaît dans le menu avec son adresse ; déploiement automatique branché sur le projet Apps Script."
+    ]
+  },
+  {
+    "id": "2026-10-22-04",
+    "date": "2026-10-22",
+    "title": "Version 5.12.0 — Bon de sortie matériel",
+    "changes": [
+      "Nouvelle application « Bon de sortie matériel » : nom, fonction et matricule choisis dans BDDORGA, matériel en chiffre et en lettre, lieux, trois visas, génération du PDF (mise en page du modèle) et envoi par e-mail au secrétariat ou à d'autres adresses, ou à l'imprimante Xerox. À installer dans Apps Script (voir apps-script/bon-sortie/README.md)."
+    ]
+  },
+  {
+    "id": "2026-10-22-03",
+    "date": "2026-10-22",
+    "title": "Version 5.11.1 — Fonctions proposées",
+    "changes": [
+      "Saisie Enquêtes et fiche d'une personne : en tapant la fonction, les fonctions déjà inscrites dans les Enquêtes (toutes entreprises confondues, les plus fréquentes d'abord) sont proposées. Une fonction nouvelle est simplement enregistrée avec la personne."
+    ]
+  },
+  {
+    "id": "2026-10-22-02",
+    "date": "2026-10-22",
+    "title": "Version 5.11.0 — Saisie Enquêtes : intitulé automatique, recherche, majuscules",
+    "changes": [
+      "Saisie Enquêtes : le contrat choisi remplit tout seul son intitulé (et une entreprise qui n'a qu'un contrat remplit contrat et intitulé).",
+      "Saisie Enquêtes : en tapant un nom, les personnes déjà présentes dans les Enquêtes sont proposées (avec leur entreprise) ; à l'injection, la même fenêtre que dans Prises en charge demande si on l'ajoute quand même.",
+      "NOM en majuscules et Prénom avec sa majuscule : la saisie est corrigée à la sortie du champ (Badges et Prises en charge) et c'est ce qui est écrit dans les Enquêtes."
+    ]
+  },
+  {
+    "id": "2026-10-22-01",
+    "date": "2026-10-22",
+    "title": "Version 5.10.1 — Carte Badges prestataires",
+    "changes": [
+      "La carte « Badges prestataires » est remise automatiquement dans le catalogue si elle manque ou si elle est rangée dans un autre module (le module affichait « Bientôt disponible »)."
+    ]
+  },
+  {
+    "id": "2026-10-21-30",
+    "date": "2026-10-21",
+    "title": "Version 5.10.0 — Badges : import / export Excel, wilaya, lien des Enquêtes",
+    "changes": [
+      "Saisie Enquêtes : « Importer (Excel) » et « Exporter (Excel) » au format des onglets des Enquêtes (titre, wilaya, en-têtes arabes). L'import remplit seulement le formulaire : à l'injection, l'onglet « ENTREPRISE · contrat » est créé s'il n'existe pas, sinon seules les personnes manquantes sont ajoutées. Rien n'est jamais écrasé.",
+      "Saisie Enquêtes : wilaya par défaut « إليزي » (reprise dans l'en-tête des onglets créés) et champs supplémentaires : adresse, date d'embauche, n° d'identification, acte de naissance, téléphone.",
+      "Entreprises & contrats : bouton « ⬇ Excel » pour exporter l'onglet d'une entreprise.",
+      "Menu : l'ancien lien cassé des Enquêtes administratives est remplacé par le Google Sheets actuel."
+    ]
+  },
+  {
+    "id": "2026-10-21-29",
+    "date": "2026-10-21",
+    "title": "Version 5.9.0 — Badges : fiche des Enquêtes, photos, ordre des onglets ; invitations",
+    "changes": [
+      "Badges › Modifier : les informations des Enquêtes (naissance, lieu, père, mère, adresse, date d'embauche, n° d'identification, acte de naissance, téléphone) sont affichées et peuvent être renseignées ; elles sont écrites dans l'onglet de la personne, sans jamais rien effacer.",
+      "Photos : recadrées au format du badge (22 × 28 mm, 264 × 336 px, moins de 40 ko) ; une copie est classée dans « Photos badges / entreprise » à côté du fichier Enquêtes quand l'accès à Drive est autorisé.",
+      "Badges : onglets dans l'ordre du travail (Saisie, Entreprises & contrats, Badges) ; l'onglet utilisé en dernier est retenu.",
+      "Privilèges : bouton « Inviter » (par compte, ou pour les comptes affichés) : e-mail avec le lien, la première connexion et la liste des applications accordées."
+    ]
+  },
+  {
+    "id": "2026-10-21-28",
+    "date": "2026-10-21",
+    "title": "Version 5.8.2 — Liste imprimée : signataires",
+    "changes": [
+      "Liste des personnes imprimée : si les personnes dépendent d'une structure (entreprise saisie), les visas deviennent « Le chef de la sécurité interne ou l'assistant Sûreté Interne » et « Le chef de la structure … ». Sans structure, rien ne change."
+    ]
+  },
+  {
+    "id": "2026-10-21-27",
+    "date": "2026-10-21",
+    "title": "Version 5.8.1 — Saisie Enquêtes : plus de champs",
+    "changes": [
+      "Saisie Enquêtes : colonne Structure (celle du badge) et, avec « + Plus de champs », nom et prénom en arabe, date et lieu de naissance, père, mère. Ils sont écrits dans les colonnes correspondantes des Enquêtes ; la structure ajoute une colonne « الهيكل — Structure » à l'onglet, relue ensuite par Badges."
+    ]
+  },
+  {
+    "id": "2026-10-21-26",
+    "date": "2026-10-21",
+    "title": "Version 5.8.0 — Mode support",
+    "changes": [
+      "Privilèges : bouton « Se connecter en tant que » sur chaque utilisateur actif, pour l'aider ou tester son environnement. La session dure 2 h, un bandeau rouge « Mode support » reste affiché avec « Revenir à mon compte », et chaque ouverture est inscrite au journal.",
+      "En mode support, le changement de mot de passe, de l'e-mail de contact et toute action d'administration sont interdits."
+    ]
+  },
+  {
+    "id": "2026-10-21-25",
+    "date": "2026-10-21",
+    "title": "Version 5.7.1 — Badges : contrats en exécution et impression des listes",
+    "changes": [
+      "Badges › Entreprises & contrats : seuls les contrats « en exécution » du suivi CPM sont affichés (case pour voir aussi les autres) ; les entreprises sans contrat en exécution sont masquées.",
+      "Bouton « Imprimer » sur chaque ligne : liste des personnes de l'entreprise et du contrat (A4, enregistrable en PDF)."
+    ]
+  },
+  {
+    "id": "2026-10-21-24",
+    "date": "2026-10-21",
+    "title": "Version 5.7.0 — Badges : saisie des Enquêtes",
+    "changes": [
+      "Badges : nouvel onglet « Saisie Enquêtes » (niveau 2 du module badges). On saisit une entreprise (même hors suivi CPM), son contrat et ses personnes, ou on les détecte dans un PDF ; elles sont ajoutées à l'onglet « ENTREPRISE · contrat » des Enquêtes administratives, avec avertissement si un agent y figure déjà.",
+      "Impression de la liste des personnes d'une entreprise (A4, enregistrable en PDF)."
+    ]
+  },
+  {
+    "id": "2026-10-21-23",
+    "date": "2026-10-21",
+    "title": "Version 5.6.1 — Badges : actualisation immédiate",
+    "changes": [
+      "Badges : « Actualiser les sources » relit tout de suite les Enquêtes administratives et le suivi CPM (avant, les personnes ajoutées par Prises en charge pouvaient mettre jusqu'à 5 minutes à apparaître)."
+    ]
+  },
+  {
+    "id": "2026-10-21-22",
+    "date": "2026-10-21",
+    "title": "Version 5.6.0 — Badges : détection automatique depuis un PDF",
+    "changes": [
+      "Badges, « Importer des personnes » : on peut charger un PDF (prise en charge, demande de prise en charge, liste). Nom, prénom, fonction, entreprise et contrat sont détectés et placés dans le tableau, à vérifier avant d'importer. Les PDF scannés sont lus par reconnaissance de caractères."
+    ]
+  },
+  {
+    "id": "2026-10-21-21",
+    "date": "2026-10-21",
+    "title": "Version 5.5.7 — Enquêtes : colonne de date",
+    "changes": [
+      "Enquêtes : l'ajout de la colonne « Date d'enregistrement » ne sort plus de la grille de la feuille, et se fait avant l'écriture de la personne (plus de ligne à moitié remplie)."
+    ]
+  },
+  {
+    "id": "2026-10-21-20",
+    "date": "2026-10-21",
+    "title": "Version 5.5.6 — Enquêtes : plus d'avertissement pour un agent déjà au bon contrat",
+    "changes": [
+      "Prises en charge : un agent déjà inscrit dans l'onglet de son prestataire et de son contrat est ignoré directement, sans fenêtre d'avertissement. L'avertissement n'apparaît que s'il figure chez un autre prestataire ou un autre contrat."
+    ]
+  },
+  {
+    "id": "2026-10-21-19",
+    "date": "2026-10-21",
+    "title": "Version 5.5.5 — Prises en charge : numéro de chambre",
+    "changes": [
+      "Un numéro de chambre comme « 04/09 » reste un texte au lieu d'être transformé en date dans la prise en charge."
+    ]
+  },
+  {
+    "id": "2026-10-21-18",
+    "date": "2026-10-21",
+    "title": "Version 5.5.4 — Traduction des applications",
+    "changes": [
+      "Requête transport, Commande de pièces, Dotation et Prises en charge sont traduites en arabe et en anglais (titres, champs, boutons, messages). Le changement est pris en compte sans recoller les fichiers dans Apps Script."
+    ]
+  },
+  {
+    "id": "2026-10-21-17",
+    "date": "2026-10-21",
+    "title": "Version 5.5.3 — Requête transport",
+    "changes": [
+      "Requête transport : ARIES YASSER ajouté à la liste « Formulée par » du Service Construction."
+    ]
+  },
+  {
+    "id": "2026-10-21-16",
+    "date": "2026-10-21",
+    "title": "Version 5.5.2 — Liens de retour des applications, thème sombre",
+    "changes": [
+      "Commande de pièces et Requête transport : le bouton de retour pointait vers une page inexistante ; il ramène maintenant au portail.",
+      "Thème sombre des applications : l'en-tête garde ses couleurs d'origine."
+    ]
+  },
+  {
+    "id": "2026-10-21-15",
+    "date": "2026-10-21",
+    "title": "Version 5.5.1 — Site plus rapide",
+    "changes": [
+      "Chargement du pied de page en parallèle ; les dictionnaires de traduction (≈ 130 ko) ne sont plus téléchargés en français, seulement en arabe ou en anglais.",
+      "Lecture groupée des feuilles de suivi rétablie : une seule requête au lieu d'une par feuille à l'ouverture du portail.",
+      "Police : poids 300 inutilisé retiré ; tous les liens externes s'ouvrent désormais avec « noopener »."
+    ]
+  },
+  {
+    "id": "2026-10-21-14",
+    "date": "2026-10-21",
+    "title": "Version 5.5.0 — Pied de page, langue et thème sur toutes les applications",
+    "changes": [
+      "Prises en charge, Dotation, Commande de pièces, Requête transport et la page Demande de modification : même pied de page (version, copyright), sélecteur de langue et bascule clair / sombre que le portail."
+    ]
+  },
+  {
+    "id": "2026-10-21-13",
+    "date": "2026-10-21",
+    "title": "Version 5.4.8 — Enquêtes : numéro d'agent",
+    "changes": [
+      "Enquêtes : la colonne du numéro est reconnue par son en-tête exact (« رقم »), jamais une colonne comme « رقم الهاتف » ; le numéro s'écrit sur deux chiffres (01, 02…)."
+    ]
+  },
+  {
+    "id": "2026-10-21-12",
+    "date": "2026-10-21",
+    "title": "Version 5.4.7 — Enquêtes : avertissement avant injection, date d'enregistrement, numéro d'agent",
+    "changes": [
+      "Prises en charge : avant de générer, les agents déjà présents dans les Enquêtes sont signalés avec le nom de leur onglet ; au choix « OK, générer et ajouter quand même » ou « Ignorer ».",
+      "Enquêtes : une colonne « Date d'enregistrement » est ajoutée à l'onglet du prestataire (créée au premier ajout) et remplie à chaque injection.",
+      "Enquêtes : le numéro d'agent suivant est maintenant trouvé même quand la colonne des numéros est à droite des noms."
+    ]
+  },
+  {
+    "id": "2026-10-21-11",
+    "date": "2026-10-21",
+    "title": "Version 5.4.6 — Version dans l'en-tête, Enquêtes plus claires",
+    "changes": [
+      "L'en-tête du portail affiche désormais le numéro de version à jour (au lieu de « Version 4.0 (en construction) »).",
+      "Prises en charge : l'injection dans les Enquêtes indique l'onglet et la ligne écrits, ou la raison exacte d'un échec."
+    ]
+  },
+  {
+    "id": "2026-10-21-10",
+    "date": "2026-10-21",
+    "title": "Version 5.4.5 — Privilèges : 0000 pour les comptes sans mot de passe",
+    "changes": [
+      "Gestion des privilèges : bouton « Donner 0000 aux comptes sans mot de passe » (jamais connectés). Les comptes à large accès (secrétariat, chefs, sécurité) en sont exclus sauf case cochée ; le résultat indique combien de comptes ont été mis à jour."
+    ]
+  },
+  {
+    "id": "2026-10-21-09",
+    "date": "2026-10-21",
+    "title": "Version 5.4.4 — Durée des contrats en mois ou en jours",
+    "changes": [
+      "Suivi CPM : une durée de plus de 60 est comprise comme un nombre de jours (ex. 580), sinon comme des mois ; la date de fin est incluse (01/05/2025 + 18 mois = 31/10/2026)."
+    ]
+  },
+  {
+    "id": "2026-10-21-08",
+    "date": "2026-10-21",
+    "title": "Version 5.4.3 — Rotation : relecture automatique et message de secours",
+    "changes": [
+      "Accueil : la lecture de la rotation est rejouée automatiquement si le serveur Google répond mal, et le volet ne disparaît plus : il affiche « Indisponible » avec un bouton « Réessayer »."
+    ]
+  },
+  {
+    "id": "2026-10-21-07",
+    "date": "2026-10-21",
+    "title": "Version 5.4.2 — Fiche personnelle encore plus compacte",
+    "changes": [
+      "Accueil : la fiche personnelle est encore réduite (trois colonnes d'informations à toutes les largeurs, textes et photo plus petits)."
+    ]
+  },
+  {
+    "id": "2026-10-21-06",
+    "date": "2026-10-21",
+    "title": "Version 5.4.1 — Mes applications : anciennes icônes, sans ascenseur",
+    "changes": [
+      "Accueil : « Mes applications » retrouve ses icônes d'origine (emojis, nom au survol) ; toutes les applications sont visibles sans ascenseur, sur plusieurs lignes."
+    ]
+  },
+  {
+    "id": "2026-10-21-05",
+    "date": "2026-10-21",
+    "title": "Version 5.4.0 — Mes applications en écran « tablette »",
+    "changes": [
+      "Accueil : « Mes applications » devient un écran de tuiles (icône colorée par module + nom), 12 par page, avec pages par glissement, flèches ou points — plus d'ascenseur.",
+      "Nouveau pack d'icônes (Lucide) enregistré sur le site : aucune requête externe."
+    ]
+  },
+  {
+    "id": "2026-10-21-04",
+    "date": "2026-10-21",
+    "title": "Version 5.3.3 — Fiche personnelle compacte",
+    "changes": [
+      "Accueil : la fiche personnelle est réduite au minimum (photo, textes et espaces plus petits) et la rotation reprend sa disposition en largeur : la carte du haut est nettement moins haute."
+    ]
+  },
+  {
+    "id": "2026-10-21-03",
+    "date": "2026-10-21",
+    "title": "Version 5.3.2 — Raccourcis du planning dans le volet rotation",
+    "changes": [
+      "Accueil : les icônes du planning (mon planning, équipes, simulation) sont maintenant dans le volet de la rotation, plus dans la fiche personnelle."
+    ]
+  },
+  {
+    "id": "2026-10-21-02",
+    "date": "2026-10-21",
+    "title": "Version 5.3.1 — Prises en charge : un seul champ Fonction",
+    "changes": [
+      "Prises en charge : un seul champ Fonction (celui du tableau des personnes) ; une seule case « Fonction dans Observations » dans les options de la prise en charge.",
+      "Le lien « Rapport Hebdomadaire Infra » ouvre le rapport à la diapositive 1."
+    ]
+  },
+  {
+    "id": "2026-10-21-01",
+    "date": "2026-10-21",
+    "title": "Version 5.3.0 — Accueil en trois volets : « Mes applications »",
+    "changes": [
+      "Accueil : la fiche de l'agent est divisée en trois volets — fiche, rotation et « Mes applications » (une icône par application autorisée, nom au survol).",
+      "Le lien « Rapport Hebdomadaire Infra » ouvre le rapport Google Slides actuel (diapositive 14) ; le lien du Suivi CPM pointe sur le bon fichier.",
+      "Prises en charge : option « fonction dans la case Observations » ; noms centrés ; onglets des Enquêtes créés et normalisés (ENTREPRISE · contrat)."
+    ]
+  },
+  {
+    "id": "2026-10-20-11",
+    "date": "2026-10-20",
+    "title": "Version 5.2.5 — Pages plus rapides à s'afficher",
+    "changes": [
+      "Dossiers CPM et pages reprises : la page s'affiche tout de suite quand l'accès a été vérifié il y a moins de 10 minutes (la vérification se refait en arrière-plan) ; la police Inter ne bloque plus l'affichage ; la recherche de dossiers n'est plus recalculée à chaque lettre."
+    ]
+  },
+  {
+    "id": "2026-10-20-10",
+    "date": "2026-10-20",
+    "title": "Version 5.2.4 — Pages du site : vérification d'accès plus fiable",
+    "changes": [
+      "Pages reprises de l'ancien site (Dossiers CPM, Avancement…) : un refus d'accès n'est affiché qu'après une seconde vérification, pour éviter un faux « Vous n'avez pas accès » quand le serveur Google répond de façon incomplète."
+    ]
+  },
+  {
+    "id": "2026-10-20-09",
+    "date": "2026-10-20",
+    "title": "Version 5.2.3 — Accueil plus rapide",
+    "changes": [
+      "Accueil : le menu, la rotation et les feuilles de suivi (CPM, chantiers) sont demandés en même temps et en une seule requête pour les feuilles, au lieu d'une suite d'appels ; les feuilles lues sont gardées 2 minutes dans l'onglet (retour sur l'accueil instantané) ; connexion au serveur Google préparée à l'avance."
+    ]
+  },
+  {
+    "id": "2026-10-20-08",
+    "date": "2026-10-20",
+    "title": "Version 5.2.2 — Rapport hebdomadaire : injection directe dans Google Slides",
+    "changes": [
+      "Dossiers CPM : le bouton « Injecter dans la diapo hebdomadaire » ajoute les diapositives des dossiers non achevés à la fin du rapport (Google Slides), dans le style du rapport ; relancer remplace les diapositives précédentes. Le téléchargement .pptx reste disponible."
+    ]
+  },
+  {
+    "id": "2026-10-20-07",
+    "date": "2026-10-20",
+    "title": "Version 5.2.1 — Diapositives du rapport : présentation en tableau",
+    "changes": [
+      "Rapport hebdomadaire : les diapositives « dossiers non achevés » reprennent une présentation de tableau sobre (en-tête sombre, jauge d'avancement, commentaire en gras si modifié cette semaine)."
+    ]
+  },
+  {
+    "id": "2026-10-20-06",
+    "date": "2026-10-20",
+    "title": "Version 5.2.0 — Rapport hebdomadaire : diapositives des dossiers non achevés",
+    "changes": [
+      "Dossiers CPM, section « Texte pour le rapport hebdomadaire » : bouton « Injecter dans la diapo hebdomadaire » qui crée des diapositives (N° de dossier, intitulé, avancement en jauge, commentaire en gras si modifié cette semaine) pour tous les dossiers à moins de 100 %, à ajouter à la fin du PowerPoint."
+    ]
+  },
+  {
+    "id": "2026-10-20-05",
+    "date": "2026-10-20",
+    "title": "Version 5.1.9 — Journal et rapport hebdomadaire sans les lignes « Étape »",
+    "changes": [
+      "Texte du rapport hebdomadaire (colonne O.B.S) et journal de l'accueil : les lignes « Étape » ne sont plus affichées ; il reste l'avancement (97% → 98%) et le commentaire."
+    ]
+  },
+  {
+    "id": "2026-10-20-04",
+    "date": "2026-10-20",
+    "title": "Version 5.1.8 — Journal du CPM : aperçu plus clair",
+    "changes": [
+      "Accueil : dans le journal des changements du CPM, l'intitulé du dossier est en gras, suivi du seul changement (avancement « 97% → 98% », ou le nouveau commentaire). La page « Tout voir » ne change pas."
+    ]
+  },
+  {
+    "id": "2026-10-20-03",
+    "date": "2026-10-20",
+    "title": "Version 5.1.7 — Journal du CPM : bouton Actualiser",
+    "changes": [
+      "Accueil : le panneau « Le journal des changements du CPM » a un bouton « Actualiser » qui relit le suivi CPM tout de suite (au lieu d'attendre la nuit), et affiche la raison quand les données sont indisponibles."
+    ]
+  },
+  {
+    "id": "2026-10-20-02",
+    "date": "2026-10-20",
+    "title": "Version 5.1.6 — Badges : entreprise choisie avec son contrat",
+    "changes": [
+      "Badges : l'entreprise se choisit avec son numéro de contrat (une entreprise qui a plusieurs contrats apparaît une fois par contrat), dans la liste, le filtre et la fiche.",
+      "Nouveau bouton « Définir l'entreprise / contrat » pour appliquer le même contrat à plusieurs personnes d'un coup ; avertissement avant d'imprimer des badges sans contrat.",
+      "L'onglet Entreprises affiche une ligne par contrat avec le nombre de personnes."
+    ]
+  },
+  {
+    "id": "2026-10-20-01",
+    "date": "2026-10-20",
+    "title": "Version 5.1.5 — Badges : logo remonté",
+    "changes": [
+      "Badges : le logo est remonté de 1,5 mm."
+    ]
+  },
+  {
+    "id": "2026-10-19-05",
+    "date": "2026-10-19",
+    "title": "Version 5.1.4 — Badges : traits orange dégagés",
+    "changes": [
+      "Badges : le trait orange du haut est descendu et le pied de page abaissé pour que le texte ne touche plus les traits."
+    ]
+  },
+  {
+    "id": "2026-10-19-04",
+    "date": "2026-10-19",
+    "title": "Version 5.1.3 — Badges identiques au modèle",
+    "changes": [
+      "Les badges reprennent exactement la mise en page du modèle BADGE_ENCC.pptx : dimensions, positions du logo, des traits orange, des lignes de texte et du pied de page, Berlin Sans FB 11 pt non gras, imprimés à l'échelle de l'A4.",
+      "Le numéro de contrat reste au verso, comme dans le modèle."
+    ]
+  },
+  {
+    "id": "2026-10-19-03",
+    "date": "2026-10-19",
+    "title": "Version 5.1.2 — Badges : police Berlin Sans FB 11",
+    "changes": [
+      "Les badges s'impriment en Berlin Sans FB 11 pt (modifiable dans Réglages) ; les textes trop longs se réduisent automatiquement pour tenir sur la ligne."
+    ]
+  },
+  {
+    "id": "2026-10-19-02",
+    "date": "2026-10-19",
+    "title": "Version 5.1.1 — Badges : entreprises rapprochées",
+    "changes": [
+      "Badges : les entreprises écrites avec une petite faute (MHENNI / MEHENNI) sont rapprochées toutes seules.",
+      "Nouveau bouton « C'est la même entreprise que… » pour rattacher une entreprise des Enquêtes à celle du CPM (ex. SARL ATIA MEHDI → SARL ATIA ET FRERES) ; le choix est mémorisé."
+    ]
+  },
+  {
+    "id": "2026-10-19-01",
+    "date": "2026-10-19",
+    "title": "Version 5.1 — Badges prestataires",
+    "changes": [
+      "Nouvelle application « Badges prestataires » : choisissez des personnes, l'application prépare les badges recto-verso (9 par feuille A4) selon la charte, avec numéro automatique et QR code.",
+      "Les entreprises et contrats viennent du suivi CPM ; les noms et fonctions viennent des Enquêtes administratives.",
+      "Chaque badge imprimé est enregistré dans un historique (exportable en Excel) ; une réimpression garde le même numéro.",
+      "Une version autonome et vierge est aussi disponible pour partager avec d'autres sites (dossier « badges »)."
+    ]
+  },
+  {
+    "id": "2026-10-18-02",
+    "date": "2026-10-18",
+    "title": "Version 5.0.1 — Connexion plus fiable",
+    "changes": [
+      "Quand Google répond par une page d'erreur au lieu des données, la recherche et le menu sont rejoués automatiquement, et le message affiché est clair (au lieu de « Unexpected token »)."
+    ]
+  },
+  {
+    "id": "2026-10-17-02",
+    "date": "2026-10-17",
+    "title": "Version 5.0 — Adresse e-mail modifiable et recherche en haut",
+    "changes": [
+      "Vous pouvez corriger vous-même l'adresse e-mail où arrivent vos codes de connexion, depuis votre fiche sur la page d'accueil (bouton « modifier »).",
+      "La barre de recherche et la date sont remontées en haut de la page d'accueil.",
+      "Le secrétariat peut voir le journal des connexions et dépanner un compte plus facilement."
+    ]
+  },
+  {
+    "id": "2026-10-17-01",
+    "date": "2026-10-17",
+    "title": "Version 4.9 — Annuaire toujours à jour",
+    "changes": [
+      "Les fiches du personnel se mettent à jour toutes seules depuis BDDORGA : numéro de téléphone, e-mail, matricule et identifiant SONA.",
+      "Les informations qui manquaient d'un côté sont complétées par l'autre, et les numéros s'affichent avec le 0 au début."
+    ]
+  },
+  {
+    "id": "2026-10-16-03",
+    "date": "2026-10-16",
+    "title": "Version 4.8 — Fiches contact en couleurs et contrôle de l'annuaire",
+    "changes": [
+      "Les fiches contact ont un code couleur selon l'employeur : orange clair pour Sonatrach, mauve pour ACOSCO, vert pour GTP.",
+      "Votre fiche personnelle reprend le même style que les fiches contact.",
+      "Le secrétariat dispose d'une page pour comparer l'annuaire avec BDDORGA et repérer les différences."
+    ]
+  },
+  {
+    "id": "2026-10-16-02",
+    "date": "2026-10-16",
+    "title": "Version 4.7.1 — Accueil plus compact",
+    "changes": [
+      "Les rubriques de l'accueil se rangent maintenant côte à côte au lieu d'être empilées.",
+      "L'étiquette orange indique désormais votre droit sur la rubrique (« Droit : administration »), pour ne plus la confondre avec un nom de rubrique."
+    ]
+  },
+  {
+    "id": "2026-10-16-01",
+    "date": "2026-10-16",
+    "title": "Version 4.7 — Le texte du rapport hebdomadaire prêt à copier",
+    "changes": [
+      "Sur la page « Dossiers CPM », une nouvelle section prépare, pour chaque semaine (du samedi au vendredi), le texte des observations (O.B.S) des trois tableaux du rapport : DAO et CF, contrats d'application, convention cadre.",
+      "Un bouton « Copier » met le texte en gras, prêt à coller dans la diapositive."
+    ]
+  },
+  {
+    "id": "2026-10-15-04",
+    "date": "2026-10-15",
+    "title": "Version 4.6 — Le journal des changements sur l'accueil",
+    "changes": [
+      "L'accueil montre maintenant, côte à côte : l'avancement des chantiers, le suivi CPM et le journal des changements du CPM.",
+      "Le journal regroupe les changements par semaine, du samedi au vendredi.",
+      "Le résumé par e-mail part le samedi matin et couvre la semaine qui vient de se terminer."
+    ]
+  },
+  {
+    "id": "2026-10-15-03",
+    "date": "2026-10-15",
+    "title": "Version 4.5 — Journal des changements du suivi CPM",
+    "changes": [
+      "Chaque nuit, le portail compare le suivi CPM à la veille et note ce qui a changé : nouveau dossier, changement de statut, dates, montants.",
+      "Chaque samedi matin, la direction reçoit par e-mail un résumé de la semaine : « ce qui a bougé ».",
+      "Le journal est aussi consultable en bas de la page « Dossiers CPM »."
+    ]
+  },
+  {
+    "id": "2026-10-15-02",
+    "date": "2026-10-15",
+    "title": "Version 4.4 — Données protégées et pages de suivi complètes",
+    "changes": [
+      "Les chiffres du suivi CPM et de l'avancement des chantiers sont maintenant lus par le portail : les fichiers n'ont plus besoin d'être ouverts à tout le monde.",
+      "Les pages de suivi ont le même pied de page, le choix de la langue et le mode sombre que le reste du portail."
+    ]
+  },
+  {
+    "id": "2026-10-15-01",
+    "date": "2026-10-15",
+    "title": "Version 4.3 — Suivi des chantiers et dossiers CPM dans le portail",
+    "changes": [
+      "Les pages « Avancement des chantiers », « Suivi chantier » et « Dossiers CPM » s'ouvrent maintenant depuis le portail, après connexion.",
+      "Chaque personne ne voit que les pages auxquelles son rôle donne droit."
+    ]
+  },
+  {
+    "id": "2026-10-14-03",
+    "date": "2026-10-14",
+    "title": "Version 4.2.1 — Fiche personnelle plus claire",
+    "changes": [
+      "Votre fiche est maintenant partagée en deux moitiés égales : vos informations à gauche, votre rotation à droite."
+    ]
+  },
+  {
+    "id": "2026-10-14-02",
+    "date": "2026-10-14",
+    "title": "Version 4.2 — Annuaire, langues et mode sombre",
+    "changes": [
+      "L'annuaire téléphonique est de retour : tapez un nom ou un service dans la recherche, ou ouvrez l'onglet « Annuaire ».",
+      "Le site existe maintenant en français, en anglais et en arabe : le choix se fait en bas à droite.",
+      "Un mode sombre est disponible : bouton soleil / lune en bas à droite."
+    ]
+  },
+  {
+    "id": "2026-10-14-01",
+    "date": "2026-10-14",
+    "title": "Version 4.0 — Le nouveau portail",
+    "changes": [
+      "Connexion simple : vous tapez votre nom, puis votre mot de passe.",
+      "Votre fiche personnelle et votre planning de travail et de repos, avec impression en PDF.",
+      "Simulation d'un changement de planning entre deux agents, avec la demande à signer.",
+      "Changement de service du personnel depuis l'organigramme, qui se met à jour tout seul.",
+      "Recherche des applications, synthèses des dossiers CPM et des chantiers, et installation sur le téléphone."
+    ]
+  },
+  {
+    "id": "2026-09-19-01",
+    "date": "2026-09-19",
+    "title": "Icône dédiée et installation sur écran d'accueil",
+    "changes": [
+      "Ajout d'une icône personnalisée pour l'application, basée sur le logo de la Division Infrastructure",
+      "Le tableau de bord peut désormais être installé sur l'écran d'accueil (Android et iPhone) pour un accès direct, en plein écran, sans passer par le navigateur",
+      "Une bande d'invitation à l'installation apparaît automatiquement pour les nouveaux visiteurs"
+    ]
+  },
+  {
+    "id": "2026-09-17-01",
+    "date": "2026-09-17",
+    "title": "Ajout de la dotation et nettoyage de la page d'accueil",
+    "changes": [
+      "Ajout de l'application « Dotation Vivres & Eau Minérale » dans la catégorie Logistique & Stocks",
+      "Retrait de la bande « Organigramme Interactif » pleine largeur au-dessus des filtres (l'accès à l'organigramme reste disponible via son card dans RH & Personnel)",
+      "Ajout de cette bande de suivi des modifications"
+    ]
+  }
+]
