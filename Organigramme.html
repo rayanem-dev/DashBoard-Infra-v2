@@ -171,42 +171,12 @@
           }).catch(function (e) { inp.className = 'vv ko'; inp.title = e.message; inp.value = ancien && parUid[ancien] ? libelle(parUid[ancien]) : ''; alert(e.message); });
         });
         td.appendChild(inp);
-        if (c === 'vis_chambre' && p.modifiable) { var pm = el('button', 'btn-s', '⇄'); pm.type = 'button'; pm.title = 'Permuter la chambre avec un autre agent'; pm.style.cssText = 'margin-left:6px;padding:4px 8px'; pm.addEventListener('click', function () { permuter(p); }); td.appendChild(pm); }
         tr.appendChild(td);
       });
       tb.appendChild(tr);
     });
   }
   $('s-ent').addEventListener('change', filtrer);
-  /** Permutation des vis-à-vis de chambre entre deux agents : A prend la chambre de B et B celle de A (les liens inverses suivent). */
-  function permuter(A) {
-    var dlg = document.createElement('dialog'), f = el('form'); f.method = 'dialog'; dlg.className = 'dlg-perm'; dlg.style.cssText = 'border:0;border-radius:14px;padding:18px;width:min(520px,94vw)';
-    f.appendChild(el('h2', null, 'Permuter la chambre de ' + A.nom));
-    f.appendChild(el('p', 'aide', 'Chambre actuelle de ' + A.nom + ' : ' + (A.vis_chambre && parUid[A.vis_chambre] ? libelle(parUid[A.vis_chambre]) : 'aucun vis-à-vis') + '. Choisissez l\'agent avec qui permuter : chacun prend le vis-à-vis de chambre de l\'autre.'));
-    var inp = el('input', 'vv'); inp.setAttribute('list', 'dl-pers'); inp.placeholder = 'Agent avec qui permuter…'; inp.autocomplete = 'off'; inp.style.width = '100%'; f.appendChild(inp);
-    var info = el('div', 'aide'); info.style.margin = '10px 0'; f.appendChild(info);
-    var bt = el('div'); bt.style.cssText = 'display:flex;gap:8px;justify-content:flex-end'; var ann = el('button', 'btn-s', 'Annuler'), ok = el('button', 'btn-p', 'Permuter'); ann.type = 'button'; ok.type = 'button'; ok.disabled = true; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
-    function nom(u) { return u && parUid[u] ? parUid[u].nom : 'aucun'; }
-    var B = null;
-    inp.addEventListener('input', function () {
-      var u = parLibelle[norm(inp.value.trim())]; B = u ? parUid[u] : null; ok.disabled = true; info.textContent = '';
-      if (!B) return;
-      if (B.uid === A.uid) { info.textContent = 'Choisissez une autre personne.'; return; }
-      if (!B.modifiable) { info.textContent = 'Vous ne pouvez pas modifier les vis-à-vis de ' + B.nom + '.'; return; }
-      if (A.vis_chambre === B.uid || B.vis_chambre === A.uid) { info.textContent = 'Ces deux agents sont déjà vis-à-vis de chambre l\'un de l\'autre : rien à permuter.'; return; }
-      info.textContent = A.nom + ' aura ' + nom(B.vis_chambre) + ' · ' + B.nom + ' aura ' + nom(A.vis_chambre) + '.'; ok.disabled = false;
-    });
-    ann.addEventListener('click', function () { dlg.close(); });
-    ok.addEventListener('click', function () {
-      ok.disabled = true; var X = A.vis_chambre || '', Y = B.vis_chambre || '', ech = [];
-      function ecrire(u, ch) { var q = parUid[u]; return Api.call('visavis_enregistrer', { uid: u, vis_travail: q.vis_travail || '', vis_chambre: ch }).catch(function (e) { ech.push(q.nom + ' : ' + e.message); }); }
-      // les liens des deux agents d'abord, puis les liens inverses chez leurs anciens/nouveaux vis-à-vis (si l'on a le droit)
-      ecrire(A.uid, Y).then(function () { return ecrire(B.uid, X); }).then(function () { return Y && Y !== B.uid ? ecrire(Y, A.uid) : null; }).then(function () { return X && X !== A.uid ? ecrire(X, B.uid) : null; })
-        .then(function () { return Api.call('visavis_liste'); }).then(function (r) { L = r.personnes; dessinerListing(); filtrer(); dlg.close(); alert(ech.length ? 'Permutation faite, sauf : ' + ech.join(' ; ') : 'Permutation faite : ' + A.nom + ' ⇄ ' + B.nom + '.'); })
-        .catch(function (e) { alert(e.message); ok.disabled = false; });
-    });
-    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', ''); inp.focus();
-  }
   document.querySelectorAll('#tab-list th[data-col]').forEach(function (th) { th.title = 'Cliquer pour trier'; th.addEventListener('click', function () { var c = th.dataset.col; tri = { col: c, sens: tri.col === c ? -tri.sens : 1 }; if (L) { dessinerListing(); filtrer(); } }); });
   $('s-svc').addEventListener('change', function () { var v = this.value; if (!v) return; L.forEach(function (p) { if (p.service === v) sel[p.uid] = true; }); compterSel(); dessinerListing(); filtrer(); });
   $('b-decocher').addEventListener('click', function () { sel = {}; $('c-tout').checked = false; compterSel(); dessinerListing(); filtrer(); });

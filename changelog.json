@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-105",
+    "date": "2026-10-24",
+    "title": "Version 5.57.1 — Vis-à-vis : bouton de permutation retiré",
+    "changes": [
+      "Le bouton ⇄ de permutation de chambre est retiré (la modification du vis-à-vis de chambre existe déjà dans la liste). La vue par entité reste."
+    ]
+  },
+  {
     "id": "2026-10-24-104",
     "date": "2026-10-24",
     "title": "Version 5.57.0 — Vis-à-vis : vue par entité et permutation de chambre",
