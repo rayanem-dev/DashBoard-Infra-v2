@@ -101,6 +101,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/rubriques.js"></script>
 <script src="js/grille-acces.js"></script>
 <script src="js/employeurs.js"></script>
 <script src="js/rotation.js"></script>
@@ -180,11 +181,21 @@
     var hr = el('tr'); hr.appendChild(el('th', 'gapp', 'Application')); etat.roles.forEach(function (r) { var th = el('th', 'r'); th.title = r.libelle + ' — ' + r.nb_utilisateurs + ' personne(s)'; th.appendChild(el('span', null, r.libelle)); hr.appendChild(th); });
     var th0 = el('thead'); th0.appendChild(hr); t.appendChild(th0);
     var tb = el('tbody');
-    etat.modules.forEach(function (m) {
-      var apps = etat.applications.filter(function (a) { return String(a.module).toLowerCase() === String(m.id).toLowerCase() && (!f || (a.titre + ' ' + m.titre).toLowerCase().indexOf(f) !== -1); });
-      if (!apps.length) return;
-      var trm = el('tr', 'mod'), tdm = el('td', null, (m.icone || '') + ' ' + m.titre); tdm.colSpan = etat.roles.length + 1; trm.appendChild(tdm); tb.appendChild(trm);
-      apps.forEach(function (a) {
+    // mêmes familles et même ordre que le menu du portail (Rubriques) ; une application sans famille reste rangée sous son module
+    var groupes = [], parId = {};
+    function groupe(id, titre, icone) { if (!parId[id]) { parId[id] = { id: id, titre: titre, icone: icone, apps: [] }; groupes.push(parId[id]); } return parId[id]; }
+    var defs = window.Rubriques ? Rubriques.definitions : [];
+    defs.forEach(function (d) { groupe(d.id, d.titre, d.icone); });
+    etat.applications.forEach(function (a) {
+      var m = etat.modules.filter(function (x) { return String(x.id).toLowerCase() === String(a.module).toLowerCase(); })[0] || { id: a.module, titre: a.module, icone: '📁' };
+      if (f && (a.titre + ' ' + m.titre).toLowerCase().indexOf(f) === -1) return;
+      var r = window.Rubriques ? Rubriques.rubriqueDe(a) : '', d = defs.filter(function (x) { return x.id === r; })[0];
+      (d ? groupe(d.id) : groupe('mod-' + m.id, m.titre, m.icone || '📁')).apps.push(a);
+    });
+    groupes.forEach(function (g) {
+      if (!g.apps.length) return;
+      var trm = el('tr', 'mod'), tdm = el('td', null, (g.icone || '') + ' ' + g.titre); tdm.colSpan = etat.roles.length + 1; trm.appendChild(tdm); tb.appendChild(trm);
+      g.apps.forEach(function (a) {
         var tr = el('tr'), ta = el('td', 'gapp', a.titre); ta.appendChild(el('small', null, String(a.niveau_min))); ta.title = 'Niveau minimal ' + a.niveau_min + (a.roles.length ? ' · réservée à : ' + a.roles.join(', ') : ' · ouverte à tous les rôles ayant le niveau'); tr.appendChild(ta);
         etat.roles.forEach(function (r) {
           var td = el('td', 'c'), cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = GrilleAcces.acces(etat, r.id, a); cb.title = r.libelle + ' · ' + a.titre;
