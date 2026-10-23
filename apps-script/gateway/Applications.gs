@@ -133,6 +133,14 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Prise en charge hôtel",
+  "Demande de prise en charge à l'hôtel (ex. Hôtel PLAZA à Boumerdes) pour un agent en mission : identité, ordre de mission, dates, nuitées calculées automatiquement, objet et imputation ; impression en un clic et historique.",
+  "🏨",
+  "hotel-prise-en-charge.html",
+  1
+ ],
+ [
+  "logistique",
   "Repas à emporter",
   "Prise en charge « repas à emporter » prête à imprimer : désignations, date, nombre de personnes, imputation analytique et observations, avec historique des prises en charge établies.",
   "🥡",
