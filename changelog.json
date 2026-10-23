@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-114",
+    "date": "2026-10-24",
+    "title": "Version 5.61.0 — Prise en charge hôtel : choix de l'agent et titre centré",
+    "changes": [
+      "Prise en charge hôtel : un champ « Agent » (annuaire) remplit automatiquement nom, prénom, fonction et matricule ; le titre encadré est centré sur la page."
+    ]
+  },
+  {
     "id": "2026-10-24-113",
     "date": "2026-10-24",
     "title": "Version 5.60.3 — Nouvelles applications ajoutées toutes seules au catalogue",
