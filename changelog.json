@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-104",
+    "date": "2026-10-24",
+    "title": "Version 5.57.0 — Vis-à-vis : vue par entité et permutation de chambre",
+    "changes": [
+      "Listing des vis-à-vis : une liste « Vue par entité » (ACOSCO, GTP, SONATRACH…) n'affiche que les agents d'une entreprise.",
+      "Bouton ⇄ à côté du vis-à-vis de chambre : permute la chambre de deux agents (chacun prend le vis-à-vis de l'autre, les liens inverses suivent si vous en avez le droit)."
+    ]
+  },
+  {
     "id": "2026-10-24-103",
     "date": "2026-10-24",
     "title": "Version 5.56.2 — Document de demande : dernière rotation entière",
