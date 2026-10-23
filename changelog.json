@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-111",
+    "date": "2026-10-24",
+    "title": "Version 5.60.1 — Document de demande : matricule et signataires selon l'employeur",
+    "changes": [
+      "Le matricule (suivi du numéro SAP entre parenthèses s'il existe) est repris sur le document de demande de modification.",
+      "Signataires en bas du document : pour un agent SONATRACH, « Décision du chef de division » et « Avis du chef de division PE » ; pour un agent d'une autre entreprise, « Le chef de division Infrastructure » seul."
+    ]
+  },
+  {
     "id": "2026-10-24-110",
     "date": "2026-10-24",
     "title": "Version 5.60.0 — Demandes en attente : barre du haut et page d'accueil",

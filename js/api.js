@@ -173,7 +173,7 @@
     var u = DEMO_USERS.filter(function (x) { return x.email === m.email; })[0] || {}, p = String(u.nom || '').split(/\s+/);
     var emet = DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}, dec = DEMO_USERS.filter(function (x) { return x.email === m.decide_par; })[0];
     return { numero: m.numero, ville: 'Rhourde Nouss', date: m.cree_le.slice(0, 10), statut: m.statut,
-      agent: { nom: p[0] || '', prenom: p.slice(1).join(' '), matricule: u.matricule || '', fonction: u.fonction || '', service: u.service || '', division: 'INFRA' },
+      agent: { nom: p[0] || '', prenom: p.slice(1).join(' '), matricule: u.matricule || '', fonction: u.fonction || '', service: u.service || '', division: 'INFRA', dependance: u.dependance || 'SONATRACH' },
       motif: m.motif, actuel: m.actuel, modifie: m.modifie, emetteur: emet.nom || '', decide_par: dec ? dec.nom : '', decide_le: m.decide_le || '', commentaire: m.commentaire || '' };
   }
 

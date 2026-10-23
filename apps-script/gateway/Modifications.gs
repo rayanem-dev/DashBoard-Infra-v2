@@ -198,7 +198,7 @@ function simuDemandeDe_(r) {
   var c = Store.utilisateur(r.email) || {}, emet = Store.utilisateur(r.emetteur) || {};
   var nom = Annuaire.nomAffichable(c.nom, r.email), p = nom.split(/\s+/);
   return { numero: String(r.numero), ville: VILLE_, date: String(r.cree_le).slice(0, 10), statut: String(r.statut),
-           agent: { nom: p[0] || '', prenom: p.slice(1).join(' '), matricule: c.matricule || '', fonction: c.fonction || '', service: c.service || '', division: 'INFRA' },
+           agent: { nom: p[0] || '', prenom: p.slice(1).join(' '), matricule: String(c.matricule || '').trim() + (c.sap && String(c.sap).trim() && String(c.sap).trim() !== String(c.matricule || '').trim() ? ' (' + String(c.sap).trim() + ')' : ''), fonction: c.fonction || '', service: c.service || '', division: 'INFRA', dependance: String(c.dependance || '').trim() || 'SONATRACH' },
            motif: String(r.motif || ''), actuel: simuJson_(r.actuel, []), modifie: simuJson_(r.modifie, []), emetteur: Annuaire.nomAffichable(emet.nom, r.emetteur),
            decide_par: r.decide_par ? Annuaire.nomAffichable((Store.utilisateur(r.decide_par) || {}).nom, r.decide_par) : '', decide_le: String(r.decide_le || ''), commentaire: String(r.commentaire || '') };
 }

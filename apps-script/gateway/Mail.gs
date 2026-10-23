@@ -30,6 +30,7 @@ var Mail = (function () {
       '<div style="border:3px double #000;padding:14px;text-align:center;margin:22px 0"><b>DEMANDE DE MODIFICATION DE PLANNING</b> — n° ' + esc(d.numero) + '</div>' +
       '<p>Nom : <b>' + esc(a.nom) + '</b> &nbsp; Prénom : <b>' + esc(a.prenom) + '</b> &nbsp; Mle : ' + esc(a.matricule) + '<br>Fonction : <b>' + esc(a.fonction) + '</b> &nbsp; Service : ' + esc(a.service) + ' &nbsp; Division : <b>' + esc(a.division) + '</b><br>Motif : <b>' + esc(d.motif) + '</b></p>' +
       '<p><b>PLANNING ACTUEL :</b></p>' + tab(d.actuel) + '<p><b>PLANNING MODIFIÉ :</b></p>' + tab(d.modifie) +
+      '<table style="width:100%;margin-top:18px"><tr>' + (!a.dependance || /^sonatrach$/i.test(String(a.dependance).trim()) ? '<td style="width:50%"><b><u>DECISION DU CHEF DE DIVISION</u></b></td><td><b><u>AVIS DU CHEF DE DIVISION PE</u></b></td>' : '<td><b><u>LE CHEF DE DIVISION INFRASTRUCTURE</u></b></td>') + '</tr></table>' +
       '<p>Émise par : ' + esc(d.emetteur) + (d.decide_par ? '<br>Approuvée par : <b>' + esc(d.decide_par) + '</b> le ' + fr(d.decide_le) + (d.commentaire ? ' — ' + esc(d.commentaire) : '') : '') + '</p></body></html>';
   }
   /** Pièce jointe PDF de la demande ; en cas d'échec de la conversion, l'e-mail part quand même (avec le lien). */

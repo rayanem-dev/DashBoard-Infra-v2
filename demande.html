@@ -83,8 +83,11 @@
     id.appendChild(champ('Motif', d.motif, '1 / -1')); p.appendChild(id);
     p.appendChild(el('h3', null, 'PLANNING ACTUEL :')); p.appendChild(tableau(d.actuel));
     p.appendChild(el('h3', null, 'PLANNING MODIFIE:')); p.appendChild(tableau(d.modifie));
-    var s = el('div', 'signatures'); var a = el('div'); a.appendChild(el('u', null, 'DECISION DU CHEF DE DIVISION')); a.appendChild(el('div', 'zone')); var b = el('div'); b.appendChild(el('u', null, 'AVIS DU CHEF DE DIVISION PE')); b.appendChild(el('div', 'zone'));
-    s.appendChild(a); s.appendChild(b); p.appendChild(s);
+    // agent SONATRACH : décision du chef de division et avis du chef de division PE ; prestataire : le chef de division Infrastructure seul
+    var s = el('div', 'signatures'), sonatrach = !d.agent.dependance || /^sonatrach$/i.test(String(d.agent.dependance).trim());
+    function sig(t) { var x = el('div'); x.appendChild(el('u', null, t)); x.appendChild(el('div', 'zone')); s.appendChild(x); }
+    if (sonatrach) { sig('DECISION DU CHEF DE DIVISION'); sig('AVIS DU CHEF DE DIVISION PE'); } else sig('LE CHEF DE DIVISION INFRASTRUCTURE');
+    p.appendChild(s);
     var st = el('div', 'statut ' + d.statut);
     st.textContent = d.statut === 'approuvee' ? 'Demande ' + d.numero + ' APPROUVÉE dans le portail' + (d.decide_par ? ' par ' + d.decide_par : '') + (d.decide_le ? ' le ' + fr(d.decide_le) : '') + (d.commentaire ? ' — ' + d.commentaire : '') + '. Le planning officiel est mis à jour.'
       : d.statut === 'refusee' ? 'Demande ' + d.numero + ' REFUSÉE dans le portail' + (d.decide_par ? ' par ' + d.decide_par : '') + (d.decide_le ? ' le ' + fr(d.decide_le) : '') + (d.commentaire ? ' — ' + d.commentaire : '') + '. Le planning officiel n\'est pas modifié.'
