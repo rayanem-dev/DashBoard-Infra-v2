@@ -218,6 +218,8 @@
     ["Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)", "Saves a copy under the proposed name in your Downloads (no folder to choose)", "يحفظ نسخة بالاسم المقترح في التنزيلات (دون اختيار مجلد)"],
     ["Choisissez le dossier qui contient le fichier : un sous-dossier (ex. « Scans »), pas Documents, Téléchargements ou Bureau eux-mêmes, que le navigateur refuse. Sinon utilisez « Télécharger ».", "Choose the folder that contains the file: a subfolder (e.g. « Scans »), not Documents, Downloads or Desktop themselves, which the browser refuses. Otherwise use « Download ».", "اختر المجلد الذي يحتوي الملف: مجلدًا فرعيًا (مثل « Scans »)، وليس المستندات أو التنزيلات أو سطح المكتب نفسها، فالمتصفح يرفضها. وإلا فاستعمل « تنزيل »."],
     ["Supprimer cette demande de la liste", "Delete this request from the list", "حذف هذا الطلب من القائمة"],
+    ["↩ Annuler", "↩ Cancel", "↩ إلغاء"],
+    ["Demande faite par erreur : l'annuler (le planning revient comme avant), puis la supprimer ou en refaire une", "Request made by mistake: cancel it (the schedule goes back to how it was), then delete it or make a new one", "طلب بالخطأ: ألغِه (يعود الجدول كما كان) ثم احذفه أو أنشئ طلباً جديداً"],
     ["🖨 Imprimer par vis-à-vis", "🖨 Print by counterpart", "🖨 طباعة حسب المقابل"],
     ["Cocher tout un service :", "Tick a whole service:", "حدّد مصلحة كاملة:"],
     ["Tout décocher", "Untick all", "إلغاء التحديد"],

@@ -367,3 +367,15 @@ test('un agent écrit à son chef de service et/ou au secrétariat, jamais direc
   appel(m, 'simuEnvoyer_', 'agent.a@x.dz', { numero: v.numero, destinataires: { chef_service: true, secretariat: true, agent: true } });
   const a = m.mails.map(x => x.to).join(','); assert.ok(/chef\.s1@x\.dz/.test(a) && /secretaire@x\.dz/.test(a) && !/agent\.a@x\.dz/.test(a) && !/chef\.div/.test(a));
 });
+
+test('annulation par erreur : une demande approuvée peut être annulée, puis supprimée', () => {
+  const m = monde();
+  m.tables.Modifications.push({ numero: 'MOD-1', email: 'agent.a@x.dz', emetteur: 'chef.s1@x.dz', statut: 'approuvee' }, { numero: 'MOD-2', email: 'agent.a@x.dz', emetteur: 'chef.s1@x.dz', statut: 'refusee' }, { numero: 'MOD-4', email: 'agent.b@x.dz', emetteur: 'chef.s2@x.dz', statut: 'approuvee' });
+  assert.throws(() => appel(m, 'simuAnnuler_', 'agent.a@x.dz', { numero: 'MOD-1' }), /Droits/);
+  assert.throws(() => appel(m, 'simuAnnuler_', 'chef.s1@x.dz', { numero: 'MOD-2' }), /peuvent être annulées/);
+  assert.throws(() => appel(m, 'simuAnnuler_', 'chef.s1@x.dz', { numero: 'MOD-4' }), /Droits/);
+  appel(m, 'simuAnnuler_', 'chef.s1@x.dz', { numero: 'MOD-1' });
+  assert.strictEqual(m.tables.Modifications.find(x => x.numero === 'MOD-1').statut, 'annulee');
+  appel(m, 'simuSupprimer_', 'chef.s1@x.dz', { numero: 'MOD-1' });
+  assert.ok(!m.tables.Modifications.some(x => x.numero === 'MOD-1'));
+});

@@ -158,6 +158,8 @@ function simuLigne_(numero) {
 
 /** Statuts qu'on peut supprimer de la liste : sans effet sur le planning officiel (refusée, annulée, remplacée). Une demande approuvée, appliquée ou en attente se décide, elle ne se supprime pas. */
 var SIMU_SUPPRIMABLES_ = ['refusee', 'annulee', 'remplacee'];
+/** Demandes encore en vigueur ou en attente qu'un responsable peut annuler en cas d'erreur : le planning revient à ce qu'il était sans elles, puis elle devient supprimable. */
+var SIMU_ANNULABLES_ = ['en_attente', 'appliquee', 'approuvee'];
 function simuResume_(r, u) {
   var cible = Store.utilisateur(r.email) || {}, emet = Store.utilisateur(r.emetteur) || {};
   var m = { debut: jour_(r.debut), periodes: simuJson_(r.periodes, []), reprise: String(r.reprise) };
@@ -165,7 +167,7 @@ function simuResume_(r, u) {
            reprise_le: m.periodes.length ? Simulation.dateReprise(m) : '', motif: String(r.motif || ''), statut: String(r.statut), emetteur: Annuaire.nomAffichable(emet.nom, r.emetteur),
            decide_par: r.decide_par ? Annuaire.nomAffichable((Store.utilisateur(r.decide_par) || {}).nom, r.decide_par) : '', decide_le: String(r.decide_le || ''), commentaire: String(r.commentaire || ''),
            peut_decider: simuAttend_(r) && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible) && String(r.email).toLowerCase() !== String(u.email).toLowerCase(),
-           peut_informer: (String(r.statut) === 'approuvee' || String(r.statut) === 'refusee') && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible), peut_supprimer: SIMU_SUPPRIMABLES_.indexOf(String(r.statut)) !== -1 && simuNiveau_(u) >= 2 && (simuDansPortee_(u, cible) || String(r.emetteur).toLowerCase() === String(u.email).toLowerCase()), hors_rotation: simuAttend_(r) ? simuHorsRotation_(r) : false, par_agent: String(r.email).toLowerCase() === String(r.emetteur).toLowerCase() };
+           peut_informer: (String(r.statut) === 'approuvee' || String(r.statut) === 'refusee') && simuNiveau_(u) >= 2 && simuDansPortee_(u, cible), peut_annuler: SIMU_ANNULABLES_.indexOf(String(r.statut)) !== -1 && simuNiveau_(u) >= 2 && (simuDansPortee_(u, cible) || String(r.emetteur).toLowerCase() === String(u.email).toLowerCase()), peut_supprimer: SIMU_SUPPRIMABLES_.indexOf(String(r.statut)) !== -1 && simuNiveau_(u) >= 2 && (simuDansPortee_(u, cible) || String(r.emetteur).toLowerCase() === String(u.email).toLowerCase()), hors_rotation: simuAttend_(r) ? simuHorsRotation_(r) : false, par_agent: String(r.email).toLowerCase() === String(r.emetteur).toLowerCase() };
 }
 /** Demande qui attend la décision d'un supérieur : en attente (émise par un responsable) ou appliquée (émise par l'agent lui-même, déjà en vigueur). */
 function simuAttend_(r) { return String(r.statut) === 'en_attente' || String(r.statut) === 'appliquee'; }
@@ -225,6 +227,19 @@ function simuSupprimer_(req) {
   });
   if (!faites.length && refusees.length) throw new Error('Seules les demandes refusées, annulées ou remplacées peuvent être supprimées (' + refusees.join(', ') + ').');
   return { supprimees: faites, ignorees: refusees };
+}
+
+/** Annule une demande faite par erreur (même approuvée) : sans effet sur le planning ensuite ; elle reste dans l'historique jusqu'à sa suppression. */
+function simuAnnuler_(req) {
+  var u = Auth.userFromToken(req.token);
+  if (simuNiveau_(u) < 2) throw simuDroits_();
+  var r = simuLigne_(req.numero); if (!r) throw new Error('Demande introuvable');
+  var cible = Store.utilisateur(r.email) || {};
+  if (SIMU_ANNULABLES_.indexOf(String(r.statut)) === -1) throw new Error('Seules les demandes en attente, appliquées ou approuvées peuvent être annulées.');
+  if (!simuDansPortee_(u, cible) && String(r.emetteur).toLowerCase() !== String(u.email).toLowerCase()) throw simuDroits_();
+  Store.maj('Modifications', { numero: String(r.numero) }, { statut: 'annulee', decide_par: u.email, decide_le: new Date().toISOString(), commentaire: 'Annulée par erreur de saisie' });
+  Store.journal('modification_annulee_responsable', u.email, String(r.numero) + ' ' + r.email + ' (' + r.statut + ')');
+  return { demande: { numero: String(r.numero), statut: 'annulee' } };
 }
 
 function simuDecider_(req) {

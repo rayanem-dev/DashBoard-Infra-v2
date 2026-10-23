@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-101",
+    "date": "2026-10-24",
+    "title": "Version 5.56.0 — Demandes : annuler une demande faite par erreur",
+    "changes": [
+      "Dans la liste des demandes, un bouton « ↩ Annuler » permet à un responsable d'annuler une demande en attente, appliquée ou même approuvée par erreur : le planning revient comme avant. Elle peut ensuite être supprimée (🗑) ou remplacée par une nouvelle demande correcte."
+    ]
+  },
+  {
     "id": "2026-10-24-100",
     "date": "2026-10-24",
     "title": "Version 5.55.1 — Modifier le planning : plus de blocage sur la rotation en cours",

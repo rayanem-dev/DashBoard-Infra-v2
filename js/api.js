@@ -405,10 +405,14 @@
                    emetteur: (DEMO_USERS.filter(function (x) { return x.email === m.emetteur; })[0] || {}).nom, decide_par: m.decide_par || '', decide_le: m.decide_le || '', commentaire: m.commentaire || '',
                    peut_decider: (m.statut === 'en_attente' || m.statut === 'appliquee') && demoState.user.role === 'chef_division' && m.email !== demoState.user.email,
                    peut_informer: (m.statut === 'approuvee' || m.statut === 'refusee') && demoState.user.role === 'chef_division',
+                   peut_annuler: ['en_attente', 'appliquee', 'approuvee'].indexOf(m.statut) !== -1 && demoState.user.role === 'chef_division',
                    peut_supprimer: ['refusee', 'annulee', 'remplacee'].indexOf(m.statut) !== -1 && demoState.user.role === 'chef_division' }; });
         return { niveau: demoState.user.role === 'chef_division' ? 3 : 0, demandes: lq }; }
       case 'simu_demande': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var dm = demoMods().filter(function (m) { return m.numero === p.numero; })[0];
         if (!dm) throw erreur('Demande introuvable'); return { demande: demoDoc(dm) }; }
+      case 'simu_annuler': { exigerAdmin(); var la = demoMods(), da = la.filter(function (m) { return m.numero === p.numero; })[0];
+        if (!da) throw erreur('Demande introuvable'); if (['en_attente', 'appliquee', 'approuvee'].indexOf(da.statut) === -1) throw erreur('Seules les demandes en attente, appliquées ou approuvées peuvent être annulées.');
+        da.statut = 'annulee'; da.decide_par = demoState.user.email; da.decide_le = new Date().toISOString(); da.commentaire = 'Annulée par erreur de saisie'; saveMods(la); return { demande: { numero: da.numero, statut: 'annulee' } }; }
       case 'simu_supprimer': { exigerAdmin(); var ls = demoMods(), nums = Array.isArray(p.numeros) ? p.numeros : [p.numero], sup = [];
         ls = ls.filter(function (m) { if (nums.indexOf(m.numero) !== -1 && ['refusee', 'annulee', 'remplacee'].indexOf(m.statut) !== -1) { sup.push(m.numero); return false; } return true; });
         if (!sup.length) throw erreur('Seules les demandes refusées, annulées ou remplacées peuvent être supprimées.'); saveMods(ls); return { supprimees: sup, ignorees: [] }; }
