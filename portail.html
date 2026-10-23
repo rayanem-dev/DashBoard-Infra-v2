@@ -40,6 +40,7 @@
         <h2 id="nom-agent">Chargement…</h2>
         <p class="agent-poste" id="agent-poste"></p>
         <div class="agent-badges" id="agent-badges"></div>
+        <a class="lien-profil" id="lien-profil" href="profil.html">👤 Mon profil</a>
       </div>
     </div>
       <div class="agent-infos" id="fiche"></div>
@@ -59,6 +60,7 @@
       <aside class="mes-apps" id="mes-apps" aria-label="Mes applications" hidden>
         <h3>Mes applications <small id="mes-apps-n"></small></h3>
         <div class="mes-apps-grille" id="mes-apps-grille"></div>
+        <button class="btn-s" id="mes-apps-plus" type="button" hidden></button>
       </aside>
     </div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
@@ -121,8 +123,10 @@
   }
   function dessinerFiche(u) {
     $('qui').textContent = u.nom;
-    $('salut').textContent = ['Bonjour', u.civilite].filter(Boolean).join(' ');
-    $('nom-agent').textContent = u.nom;
+    // « Bonjour Rayane 👋 » : le nom affiché choisi dans le profil, sinon le prénom (le nom de BDDORGA s'écrit NOM Prénom)
+    var pre = (u.nom_affiche && u.nom_affiche !== u.nom) ? u.nom_affiche : (String(u.nom || '').trim().split(/\s+/).slice(1).join(' ') || u.nom);
+    $('salut').textContent = ['Bonjour', u.civilite, pre].filter(Boolean).join(' ') + ' 👋';
+    $('nom-agent').textContent = (u.nom_affiche && u.nom_affiche !== u.nom) ? u.nom_affiche + ' · ' + u.nom : u.nom;
         var av = $('avatar'); av.textContent = initiales(u.nom); var st = Employeur.style(u.dependance);
     av.style.background = st ? st.fond : ''; av.style.color = st ? st.texte : ''; if (st) av.style.boxShadow = '0 0 0 3px ' + st.texte + '33';
     var bd = $('agent-badges'); bd.textContent = '';
@@ -132,12 +136,15 @@
     $('accueil').setAttribute('data-emp', Annuaire.cleEmployeur(u.dependance) || 'sh');
     bd.appendChild(el('span', 'role-pill', u.role_libelle || ROLES[u.role] || u.role || ''));
     var integ = u.date_integration ? Rotation.frDate(u.date_integration) + (anciennete(u.date_integration) ? ' · ' + anciennete(u.date_integration) : '') : '';
+    // photo de profil (chargée avec l'avatar du compte)
+    (function essai(n) { if (window.Avatar && u.uid) Avatar.photos().then(function (m) { if (m[u.uid]) { av.textContent = ''; var im = new Image(); im.src = m[u.uid]; im.alt = ''; im.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%'; av.appendChild(im); } }); else if (n < 20) setTimeout(function () { essai(n + 1); }, 250); })(0);
     var manque = [];
     function ajouter(k, lib, v, vide) { if (v) return [lib, v]; if (vide) { manque.push(k); return [lib, null]; } return null; }
     // 4 lignes de 2 colonnes (carte basse) : l'ancienneté va sous le nom, le Wi-Fi remplace le téléphone quand il manque
     var champs = [['Fonction', u.fonction], ['Service', u.service], ajouter('matricule', 'Matricule', u.matricule, true), ajouter('sap', 'Matricule SAP', u.sap, true), ajouter('nin', 'NIN', u.nin_masque, true),
       ['Identifiant SONA', u.sona], ['E-mail', u.email_contact || u.email], u.telephone ? ['Téléphone', u.telephone] : ['Wi-Fi', u.wifi_user]].filter(function (c) { return c && (c[1] || c[1] === null); });
     $('agent-poste').textContent = integ ? 'Intégré le ' + integ : '';
+    var lp = $('lien-profil'); lp.textContent = manque.length ? '👤 Mon profil · ⚠ ' + manque.length + ' information' + (manque.length > 1 ? 's' : '') + ' à compléter' : '👤 Mon profil'; lp.classList.toggle('a-faire', !!manque.length);
     var fiche = $('fiche'); fiche.textContent = '';
     champs.forEach(function (c) {
       var d = el('div'); d.appendChild(el('span', null, c[0]));
@@ -160,12 +167,14 @@
     });
     liste.sort(function (x, y) { return (us[y.a.titre] || 0) - (us[x.a.titre] || 0) || x.rang - y.rang; });   // les plus utilisées d'abord, puis l'ordre du menu
     liste.forEach(function (x) {
-      var a = x.a, c = el('a', 'mes-app', a.emoji || '📄'); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
+      var a = x.a, c = el('a', 'mes-app'); c.appendChild(el('span', 'mes-app-ico', a.emoji || '📄')); c.appendChild(el('span', 'mes-app-nom', a.titre || '')); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
       if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
       c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
       g.appendChild(c);
     });
     $('mes-apps-n').textContent = n ? '(' + n + ')' : ''; box.hidden = !n;
+    var plus = $('mes-apps-plus'); g.classList.add('replie'); plus.hidden = n <= 12; plus.textContent = 'Voir toutes mes applications (' + n + ') ▾';
+    plus.onclick = function () { var ouvert = g.classList.toggle('replie') === false; plus.textContent = ouvert ? 'Réduire ▴' : 'Voir toutes mes applications (' + n + ') ▾'; };
   }
   function raccourcis(menu) {
     var nav = $('raccourcis'); nav.textContent = '';
