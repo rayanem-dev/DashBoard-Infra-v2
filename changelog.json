@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-99",
+    "date": "2026-10-24",
+    "title": "Version 5.55.0 — Ancienne application installée : passage à la nouvelle",
+    "changes": [
+      "Quand l'ancienne application installée sur un poste s'ouvre (adresse d'origine), elle arrive sur le nouveau portail avec un écran qui explique comment la désinstaller et installer la nouvelle (bouton pour ouvrir le nouveau portail dans le navigateur). Les applications installées depuis la nouvelle adresse et les onglets du navigateur ne sont pas concernés."
+    ]
+  },
+  {
     "id": "2026-10-24-98",
     "date": "2026-10-24",
     "title": "Version 5.54.2 — Plus de données personnelles réelles dans les fichiers du site",
