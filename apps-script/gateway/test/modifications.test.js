@@ -51,9 +51,12 @@ const MODIF = { uid: 'u3', debut: '2026-10-20', periodes: [{ type: 'R', jours: 1
 test('droits : un agent ne simule pas ; un chef de service ne voit que son service ; chef de division : tous', () => {
   const m = monde();
   assert.throws(() => appel(m, 'simuAgents_', 'agent.a@x.dz', {}), /Droits/);
-  assert.deepStrictEqual(appel(m, 'simuAgents_', 'chef.s1@x.dz', {}).agents.map(a => a.uid).sort(), ['u2', 'u3']);
+  const ag1 = appel(m, 'simuAgents_', 'chef.s1@x.dz', {}).agents;
+  assert.strictEqual(ag1.length, 6, 'un chef de service voit tout le monde');
+  assert.deepStrictEqual(ag1.filter(a => a.modifiable).map(a => a.uid).sort(), ['u2', 'u3'], 'mais ne modifie que son service');
   assert.strictEqual(appel(m, 'simuAgents_', 'chef.div@x.dz', {}).agents.length, 6);
-  assert.throws(() => appel(m, 'simuDonnees_', 'chef.s1@x.dz', { uid: 'u4' }), /Droits/); // agent d'un autre service
+  assert.ok(appel(m, 'simuDonnees_', 'chef.s1@x.dz', { uid: 'u4' }).grille.length > 0);   // lecture : tout le monde
+  assert.throws(() => appel(m, 'simuValider_', 'chef.s1@x.dz', { uid: 'u4', debut: '2026-10-01', periodes: [{ type: 'T', jours: 10 }], reprise: 'R', motif: 'test' }), /Droits/); // modification : son service seulement
   const d = appel(m, 'simuDonnees_', 'chef.s1@x.dz', { uid: 'u3', debut: '2026-09-01', jours: 60 });
   assert.strictEqual(d.grille.length, 60); assert.strictEqual(d.grille.charAt(0), 'T'); assert.strictEqual(d.rotation.jours_travail, 28);
   const e = appel(m, 'simuDonnees_', 'chef.div@x.dz', { uid: 'u4', debut: '2026-09-01', jours: 60 });

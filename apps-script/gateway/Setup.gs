@@ -33,7 +33,9 @@ function ajouterDroitsParDefaut() {
 }
 
 // Module « simulation » : niveau 2 = pour son service (chef de service, intérim) ; 3 = pour tous (chef de division, secrétariat).
-var DROITS_SIMULATION_ = [['chef_service', 'simulation', 2], ['interim_chef_service', 'simulation', 2], ['chef_division', 'simulation', 3], ['secretariat', 'simulation', 3]];
+// Niveau 1 (tous les autres rôles) : l'agent simule et consulte son propre planning et ses vis-à-vis seulement.
+var DROITS_SIMULATION_ = [['chef_service', 'simulation', 2], ['interim_chef_service', 'simulation', 2], ['chef_division', 'simulation', 3], ['secretariat', 'simulation', 3],
+  ['agent', 'simulation', 1], ['conducteur', 'simulation', 1], ['dessinateur', 'simulation', 1], ['chef_atelier', 'simulation', 1], ['cadre_sup', 'simulation', 1], ['ordonnateur', 'simulation', 1], ['cpm', 'simulation', 1]];
 /** Crée le module « simulation » et ses droits par défaut s'ils n'existent pas (ne touche jamais aux réglages existants). */
 function ajouterModuleSimulation() {
   var db = SpreadsheetApp.openById(prop_('DB_ID'));
@@ -189,8 +191,29 @@ function preparerAffectation_() {
  * Prépare le module « simulation » tout seul au premier passage (onglet Modifications, module, droits par défaut, carte) : plus besoin de lancer
  * mettreAJourStructure pour l'ouvrir. Idempotent ; la propriété SIMU_PRET évite de le refaire. Ne touche à aucun réglage existant.
  */
+/**
+ * Une seule fois : Simulation et Organigramme/Vis-à-vis deviennent accessibles à tous (niveau 1 du module « simulation »), chacun ne voyant que lui et ses vis-à-vis ;
+ * les chefs de division / de service voient tout le monde. L'application « Organigramme » passe dans le module « simulation » (le module « rh » ouvrait aussi la formation, la permanence…).
+ */
+function preparerVisibilite_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('SIMU_VIS_V1') === '1') return;
+  try {
+    var db = SpreadsheetApp.openById(prop_('DB_ID'));
+    ajouterModuleSimulation();
+    var sh = db.getSheetByName('Applications'), v = sh.getDataRange().getValues();
+    for (var i = 1; i < v.length; i += 1) {
+      var url = String(v[i][4]).toLowerCase();
+      if (url === 'simulation.html') sh.getRange(i + 1, 6).setValue(1);
+      if (url === 'organigramme.html') { sh.getRange(i + 1, 1).setValue('simulation'); sh.getRange(i + 1, 6).setValue(1); }
+    }
+    props.setProperty('SIMU_VIS_V1', '1');
+    ['TBL_Modules', 'TBL_DroitsRole', 'TBL_Applications'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
 function preparerSimulation_() {
   var props = PropertiesService.getScriptProperties();
+  if (typeof preparerVisibilite_ === 'function' && props.getProperty('SIMU_PRET') === '1') preparerVisibilite_();
   if (props.getProperty('SIMU_PRET') === '1') return;
   var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
   try {

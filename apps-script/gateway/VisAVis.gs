@@ -42,12 +42,23 @@ function visavisPlan_(carte, uid, travail, chambre, connus) {
   return { plan: plan };
 }
 
+/**
+ * Droit de lecture du listing / de l'organigramme : le module « rh » ou « simulation » niveau 2 ouvrent tout ; un agent (simulation niveau 1) ne voit que lui-même et ses vis-à-vis ; sinon refus.
+ * Renvoie null (tout le monde) ou { uid: true }.
+ */
+function visibiliteListe_(u) {
+  var a = acces_(u);
+  if ((a.rh || 0) >= 1 || (a.simulation || 0) >= 2) return null;
+  if ((a.simulation || 0) >= 1) return simuVisibles_(u);
+  throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+}
 function visavisListe_(req) {
   var u = Auth.userFromToken(req.token);
-  if ((acces_(u).rh || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  var restreint = visibiliteListe_(u);   // null = tout le monde ; sinon { uid: true } (lui-même et ses vis-à-vis)
   var carte = visavisCarte_(), niv = (typeof affNiveau_ === 'function') ? affNiveau_(u) : 0, personnes = [];
   Store.table('Utilisateurs').forEach(function (x) {
     if (String(x.actif) === '0' || !x.uid || !x.email) return;
+    if (restreint && !restreint[String(x.uid)]) return;
     var l = carte[String(x.uid)] || {};
     personnes.push({ uid: String(x.uid), nom: Annuaire.nomAffichable(x.nom, x.email), fonction: x.fonction || '', service: String(x.service || '').replace(/\s+/g, ' ').trim(), dependance: x.dependance || '', telephone: x.telephone || '',
       vis_travail: l.vis_travail || '', vis_chambre: l.vis_chambre || '', modifiable: niv >= 3 || (niv >= 2 && affDansPortee_(u, x)) });

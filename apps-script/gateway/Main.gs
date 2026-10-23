@@ -221,6 +221,10 @@ function module_(id) {
 }
 
 // ---------- Planning (rotations) ----------
+/** Personnes visibles dans le planning d'un agent sans droit « équipes » : ses vis-à-vis (déclarés dans l'outil Vis-à-vis). */
+function visibilitePlanning_(u) {
+  try { return (typeof simuVisibles_ === 'function') ? simuVisibles_(u) : null; } catch (e) { return {}; }
+}
 function jour_(v) {
   var s = String(v == null ? '' : v);
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
@@ -279,8 +283,9 @@ function planning_(req) {
   var tous = niv >= 2; // 1 = son propre planning seulement ; 2 = tout le monde ; 3 = tout le monde + modification
   var moi = String(u.email).toLowerCase();
   var mods = correctionsParEmail_(); // demandes de modification approuvées
+  var vis = tous ? null : visibilitePlanning_(u);   // niveau 1 : son planning + ses vis-à-vis (travail et chambre) quand ils existent
   var lignes = Store.table('Utilisateurs').filter(function (x) {
-    return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi);
+    return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi || (vis && vis[String(x.uid)]));
   }).map(function (x) {
     var l = { nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
     if (niv >= 3) l.email = x.email;

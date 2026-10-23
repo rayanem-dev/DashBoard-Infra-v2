@@ -24,6 +24,18 @@ function simuCible_(u, uid) {
   if (!simuDansPortee_(u, c)) throw simuDroits_();
   return c;
 }
+/**
+ * Qui l'utilisateur peut VOIR (planning, simulation, vis-à-vis) : `null` = tout le monde (niveau 2 ou 3 : chef de division, chef de service et intérim, secrétariat) ;
+ * sinon un objet { uid: true } : lui-même et ses vis-à-vis (travail et chambre, dans les deux sens). Modifier reste limité par simuDansPortee_.
+ */
+function simuVisibles_(u) {
+  if (simuNiveau_(u) >= 2) return null;
+  var moi = String(u.uid || ''), ok = {}; if (moi) ok[moi] = true;
+  var carte = {}; try { carte = (typeof visavisCarte_ === 'function') ? visavisCarte_() : {}; } catch (e) { carte = {}; }
+  var l = carte[moi] || {}; if (l.vis_travail) ok[String(l.vis_travail)] = true; if (l.vis_chambre) ok[String(l.vis_chambre)] = true;
+  Object.keys(carte).forEach(function (k) { if (carte[k].vis_travail === moi || carte[k].vis_chambre === moi) ok[k] = true; });
+  return ok;
+}
 function simuJson_(v, defaut) { try { return JSON.parse(String(v)); } catch (e) { return defaut; } }
 
 /**
@@ -62,11 +74,11 @@ function correctionsValideesDe_(email) { return correctionsParEmail_(true)[Strin
 function simuAgents_(req) {
   if (typeof preparerSimulation_ === 'function') preparerSimulation_();
   var u = Auth.userFromToken(req.token);
-  if (simuNiveau_(u) < 2) throw simuDroits_();
-  var rots = {}; Store.table('Rotations').forEach(function (r) { rots[String(r.email).toLowerCase()] = true; });
+  if (simuNiveau_(u) < 1) throw simuDroits_();
+  var vis = simuVisibles_(u), rots = {}; Store.table('Rotations').forEach(function (r) { rots[String(r.email).toLowerCase()] = true; });
   var liens = (typeof visavisCarte_ === 'function') ? visavisCarte_() : {};
-  var agents = Store.table('Utilisateurs').filter(function (x) { return String(x.actif) !== '0' && x.uid && x.email && simuDansPortee_(u, x); })
-    .map(function (x) { return { uid: String(x.uid), nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service || '', fonction: x.fonction || '', dependance: x.dependance || '', configuree: !!rots[String(x.email).toLowerCase()], vis_travail: (liens[String(x.uid)] || {}).vis_travail || '', vis_chambre: (liens[String(x.uid)] || {}).vis_chambre || '' }; })
+  var agents = Store.table('Utilisateurs').filter(function (x) { return String(x.actif) !== '0' && x.uid && x.email && (!vis || vis[String(x.uid)]); })
+    .map(function (x) { return { uid: String(x.uid), nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service || '', fonction: x.fonction || '', dependance: x.dependance || '', modifiable: simuDansPortee_(u, x), configuree: !!rots[String(x.email).toLowerCase()], vis_travail: (liens[String(x.uid)] || {}).vis_travail || '', vis_chambre: (liens[String(x.uid)] || {}).vis_chambre || '' }; })
     .sort(function (a, b) { return a.nom < b.nom ? -1 : 1; });
   return { agents: agents, niveau: simuNiveau_(u), moi: String(u.uid || '') };
 }
@@ -74,8 +86,10 @@ function simuAgents_(req) {
 /** Rotation + planning officiel de l'agent sur la fenêtre demandée (le calcul de la simulation se fait dans le navigateur, sur cette grille). */
 function simuDonnees_(req) {
   var u = Auth.userFromToken(req.token);
-  if (simuNiveau_(u) < 2) throw simuDroits_();
-  var c = simuCible_(u, req.uid);
+  if (simuNiveau_(u) < 1) throw simuDroits_();
+  var c = Store.parUid(req.uid), vis = simuVisibles_(u);
+  if (!c || String(c.actif) === '0') throw new Error('Agent inconnu');
+  if (vis && !vis[String(c.uid)]) throw simuDroits_();   // un agent ne voit que lui-même et ses vis-à-vis
   var rot = rotationDe_(c.email); if (!rot) throw new Error('Cet agent n\'a pas encore renseigné sa rotation');
   var auj = Dates.today();
   var debut = Dates.isDate(req.debut) ? req.debut : Dates.addDays(auj, -35);
