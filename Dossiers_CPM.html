@@ -131,7 +131,7 @@
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">CP</div>
     <div class="logo-text"><h1>Dossiers CPM <span class="v5-badge">V5</span></h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
-  <div class="bandeau-droite"><a class="btn-ghost" href="https://docs.google.com/spreadsheets/d/1gCOLKACGOTgzSs7pY_qYESD27du0O3Q6OmrHiqjrJ2I/edit?usp=sharing" target="_blank" rel="noopener">📂 Ouvrir le fichier</a><a class="btn-ghost" href="portail.html">← Retour au portail</a></div>
+  <div class="bandeau-droite"><a class="btn-ghost" id="b-fichier" href="#" target="_blank" rel="noopener" style="display:none">📂 Ouvrir le fichier</a><a class="btn-ghost" href="portail.html">← Retour au portail</a></div>
 </div></header>
 
 <main>
@@ -541,6 +541,10 @@ init();
     if (location.hash === '#rapport') { rap.open = true; rap.scrollIntoView(); }
   }).catch(function () { /* pas de droit ou journal indisponible : on n'affiche rien */ });
 })();
+</script>
+<script>
+// « Ouvrir le fichier » : seulement pour qui a l'application « Suivi CPM V5 » dans son menu (chaque application reste indépendante) ; le lien vient du menu, il n'est plus écrit dans la page.
+(function () { if (!window.Api) return; Api.call('menu').then(function (r) { var url = ''; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { if (/suivi cpm/i.test(a.titre || '') && /^https:\/\//.test(a.url || '')) url = a.url; }); }); var b = document.getElementById('b-fichier'); if (url && b) { b.href = url; b.style.display = ''; } }).catch(function () { /* pas de session : bouton caché */ }); })();
 </script>
 </body>
 </html>
