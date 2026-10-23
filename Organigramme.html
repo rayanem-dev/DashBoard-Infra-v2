@@ -84,7 +84,7 @@
   <div class="grille-s" id="services"></div>
   <div id="p-list" hidden>
     <p class="aide" id="aide-list" style="margin:0 0 10px">Les informations de base de chaque agent et ses deux vis-à-vis : celui du <b>travail</b> (qui tient le poste pendant son repos) et celui de la <b>chambre</b> (qui occupe la même chambre, souvent d'une autre entité). Ils servent à la Simulation du planning. Seuls l'administrateur, le chef de division et le chef de service (pour son service) peuvent les modifier.</p>
-    <div style="margin:0 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label for="s-svc" style="font-size:13px;font-weight:700">Cocher tout un service :</label><select id="s-svc" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:13px"></select><button class="btn-s" id="b-decocher" type="button">Tout décocher</button></div>
+    <div style="margin:0 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label for="s-svc" style="font-size:13px;font-weight:700">Cocher tout un service :</label><select id="s-svc" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:13px"></select><label for="s-ent" style="font-size:13px;font-weight:700;margin-left:8px">Vue par entité :</label><select id="s-ent" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:13px"></select><button class="btn-s" id="b-decocher" type="button">Tout décocher</button></div>
     <div style="overflow:auto"><table class="listing" id="tab-list"><thead><tr><th class="sel"><input type="checkbox" id="c-tout" title="Sélectionner / désélectionner les personnes affichées"></th><th data-col="nom">Nom</th><th data-col="fonction">Fonction</th><th data-col="service">Service</th><th data-col="dependance">Employeur</th><th data-col="telephone">Téléphone</th><th data-col="vis_travail">Vis-à-vis travail</th><th data-col="vis_chambre">Vis-à-vis chambre</th></tr></thead><tbody id="corps-list"></tbody></table></div>
     <datalist id="dl-pers"></datalist>
     <p class="aide" style="margin:8px 0 0">Cochez les personnes à présenter (case en tête de colonne = toutes celles affichées), puis ouvrez l'onglet « Imprimer par vis-à-vis ».</p>
@@ -149,9 +149,11 @@
     L.forEach(function (p) { parUid[p.uid] = p; parLibelle[norm(libelle(p))] = p.uid; var o = document.createElement('option'); o.value = libelle(p); dl.appendChild(o); });
     var ss = $('s-svc'), sv = {}; L.forEach(function (p) { if (p.service) sv[p.service] = (sv[p.service] || 0) + 1; });
     ss.textContent = ''; ss.appendChild(new Option('— choisir un service —', '')); Object.keys(sv).sort().forEach(function (k) { ss.appendChild(new Option(k + ' (' + sv[k] + ')', k)); });
+    var se = $('s-ent'), ev = se.value, en = {}; L.forEach(function (p) { var k = p.dependance || 'SONATRACH'; en[k] = (en[k] || 0) + 1; });
+    se.textContent = ''; se.appendChild(new Option('— toutes les entités —', '')); Object.keys(en).sort().forEach(function (k) { se.appendChild(new Option(k + ' (' + en[k] + ')', k)); }); se.value = en[ev] ? ev : '';
     document.querySelectorAll('#tab-list th[data-col]').forEach(function (th) { var c = th.dataset.col, base = th.dataset.base || (th.dataset.base = th.textContent); th.textContent = base + (tri.col === c ? (tri.sens > 0 ? ' ▲' : ' ▼') : ''); });
     L.slice().sort(function (a, b) { var x = cleTri(a, tri.col), y = cleTri(b, tri.col); if (!x !== !y && (tri.col === 'vis_travail' || tri.col === 'vis_chambre')) return x ? -1 : 1; return (x < y ? -1 : x > y ? 1 : (a.nom < b.nom ? -1 : 1)) * (x === y ? 1 : tri.sens); }).forEach(function (p) {
-      var tr = el('tr'); tr.dataset.t = norm(p.nom + ' ' + p.fonction + ' ' + p.service + ' ' + p.dependance);
+      var tr = el('tr'); tr.dataset.t = norm(p.nom + ' ' + p.fonction + ' ' + p.service + ' ' + p.dependance); tr.dataset.e = p.dependance || 'SONATRACH';
       var tcs = el('td', 'sel'), cs = document.createElement('input'); cs.type = 'checkbox'; cs.checked = !!sel[p.uid]; cs.setAttribute('aria-label', 'Sélectionner ' + p.nom); cs.addEventListener('change', function () { if (cs.checked) sel[p.uid] = true; else delete sel[p.uid]; compterSel(); }); tcs.appendChild(cs); tr.appendChild(tcs);
       tr.appendChild(el('td', null, p.nom)).style.fontWeight = '700'; tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', null, p.service || '—'));
       var te = el('td'); var pe = Employeur.pastille(p.dependance); if (pe) { pe.style.marginLeft = '0'; te.appendChild(pe); } else te.textContent = p.dependance || 'SONATRACH'; tr.appendChild(te);
@@ -168,10 +170,42 @@
             Api.call('visavis_liste').then(function (r) { L = r.personnes; dessinerListing(); filtrer(); }).catch(function () {});
           }).catch(function (e) { inp.className = 'vv ko'; inp.title = e.message; inp.value = ancien && parUid[ancien] ? libelle(parUid[ancien]) : ''; alert(e.message); });
         });
-        td.appendChild(inp); tr.appendChild(td);
+        td.appendChild(inp);
+        if (c === 'vis_chambre' && p.modifiable) { var pm = el('button', 'btn-s', '⇄'); pm.type = 'button'; pm.title = 'Permuter la chambre avec un autre agent'; pm.style.cssText = 'margin-left:6px;padding:4px 8px'; pm.addEventListener('click', function () { permuter(p); }); td.appendChild(pm); }
+        tr.appendChild(td);
       });
       tb.appendChild(tr);
     });
+  }
+  $('s-ent').addEventListener('change', filtrer);
+  /** Permutation des vis-à-vis de chambre entre deux agents : A prend la chambre de B et B celle de A (les liens inverses suivent). */
+  function permuter(A) {
+    var dlg = document.createElement('dialog'), f = el('form'); f.method = 'dialog'; dlg.className = 'dlg-perm'; dlg.style.cssText = 'border:0;border-radius:14px;padding:18px;width:min(520px,94vw)';
+    f.appendChild(el('h2', null, 'Permuter la chambre de ' + A.nom));
+    f.appendChild(el('p', 'aide', 'Chambre actuelle de ' + A.nom + ' : ' + (A.vis_chambre && parUid[A.vis_chambre] ? libelle(parUid[A.vis_chambre]) : 'aucun vis-à-vis') + '. Choisissez l\'agent avec qui permuter : chacun prend le vis-à-vis de chambre de l\'autre.'));
+    var inp = el('input', 'vv'); inp.setAttribute('list', 'dl-pers'); inp.placeholder = 'Agent avec qui permuter…'; inp.autocomplete = 'off'; inp.style.width = '100%'; f.appendChild(inp);
+    var info = el('div', 'aide'); info.style.margin = '10px 0'; f.appendChild(info);
+    var bt = el('div'); bt.style.cssText = 'display:flex;gap:8px;justify-content:flex-end'; var ann = el('button', 'btn-s', 'Annuler'), ok = el('button', 'btn-p', 'Permuter'); ann.type = 'button'; ok.type = 'button'; ok.disabled = true; bt.appendChild(ann); bt.appendChild(ok); f.appendChild(bt);
+    function nom(u) { return u && parUid[u] ? parUid[u].nom : 'aucun'; }
+    var B = null;
+    inp.addEventListener('input', function () {
+      var u = parLibelle[norm(inp.value.trim())]; B = u ? parUid[u] : null; ok.disabled = true; info.textContent = '';
+      if (!B) return;
+      if (B.uid === A.uid) { info.textContent = 'Choisissez une autre personne.'; return; }
+      if (!B.modifiable) { info.textContent = 'Vous ne pouvez pas modifier les vis-à-vis de ' + B.nom + '.'; return; }
+      if (A.vis_chambre === B.uid || B.vis_chambre === A.uid) { info.textContent = 'Ces deux agents sont déjà vis-à-vis de chambre l\'un de l\'autre : rien à permuter.'; return; }
+      info.textContent = A.nom + ' aura ' + nom(B.vis_chambre) + ' · ' + B.nom + ' aura ' + nom(A.vis_chambre) + '.'; ok.disabled = false;
+    });
+    ann.addEventListener('click', function () { dlg.close(); });
+    ok.addEventListener('click', function () {
+      ok.disabled = true; var X = A.vis_chambre || '', Y = B.vis_chambre || '', ech = [];
+      function ecrire(u, ch) { var q = parUid[u]; return Api.call('visavis_enregistrer', { uid: u, vis_travail: q.vis_travail || '', vis_chambre: ch }).catch(function (e) { ech.push(q.nom + ' : ' + e.message); }); }
+      // les liens des deux agents d'abord, puis les liens inverses chez leurs anciens/nouveaux vis-à-vis (si l'on a le droit)
+      ecrire(A.uid, Y).then(function () { return ecrire(B.uid, X); }).then(function () { return Y && Y !== B.uid ? ecrire(Y, A.uid) : null; }).then(function () { return X && X !== A.uid ? ecrire(X, B.uid) : null; })
+        .then(function () { return Api.call('visavis_liste'); }).then(function (r) { L = r.personnes; dessinerListing(); filtrer(); dlg.close(); alert(ech.length ? 'Permutation faite, sauf : ' + ech.join(' ; ') : 'Permutation faite : ' + A.nom + ' ⇄ ' + B.nom + '.'); })
+        .catch(function (e) { alert(e.message); ok.disabled = false; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); }); dlg.appendChild(f); document.body.appendChild(dlg); dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', ''); inp.focus();
   }
   document.querySelectorAll('#tab-list th[data-col]').forEach(function (th) { th.title = 'Cliquer pour trier'; th.addEventListener('click', function () { var c = th.dataset.col; tri = { col: c, sens: tri.col === c ? -tri.sens : 1 }; if (L) { dessinerListing(); filtrer(); } }); });
   $('s-svc').addEventListener('change', function () { var v = this.value; if (!v) return; L.forEach(function (p) { if (p.service === v) sel[p.uid] = true; }); compterSel(); dessinerListing(); filtrer(); });
@@ -289,7 +323,8 @@
   window.addEventListener('hashchange', selonAncre); if (location.hash === '#vis') selonAncre();
   function filtrer() {
     var f = norm($('q').value);
-    document.querySelectorAll('#corps-list tr').forEach(function (tr) { tr.classList.toggle('cache', !!f && tr.dataset.t.indexOf(f) === -1); });
+    var fe = $('s-ent').value;
+    document.querySelectorAll('#corps-list tr').forEach(function (tr) { tr.classList.toggle('cache', (!!f && tr.dataset.t.indexOf(f) === -1) || (!!fe && tr.dataset.e !== fe)); });
     document.querySelectorAll('.svc, .racine').forEach(function (b) {
       var serviceOk = !f || b.dataset.t.indexOf(f) !== -1, vus = 0;
       b.querySelectorAll('.membre').forEach(function (m) { var ok = serviceOk || m.dataset.t.indexOf(f) !== -1; m.classList.toggle('cache', !ok); if (ok) vus += 1; });
