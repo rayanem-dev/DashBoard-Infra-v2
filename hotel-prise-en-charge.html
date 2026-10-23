@@ -60,7 +60,7 @@
       <label for="f-mle">Matricule <small>(ex. 58880S (63040624))</small></label><input type="text" id="f-mle" autocomplete="off">
       <div class="deux"><div><label for="f-om">N° ordre de mission</label><input type="text" id="f-om" placeholder="975/INFR/2026" autocomplete="off"></div><div><label for="f-dom">Date de l'ordre de mission</label><input type="date" id="f-dom"></div></div>
       <div class="deux"><div><label for="f-du">Séjour du</label><input type="date" id="f-du"></div><div><label for="f-au">au</label><input type="date" id="f-au"></div></div>
-      <label for="f-nuits">Nombre de nuitées <small>(calculé : du premier au dernier jour inclus ; modifiable)</small></label><input type="number" min="1" id="f-nuits">
+      <label for="f-nuits">Nombre de nuitées <small>(calculé : le dernier jour n'est pas compté ; modifiable)</small></label><input type="number" min="1" id="f-nuits">
       <label for="f-lieu">Lieu de mission</label><input type="text" id="f-lieu" autocomplete="off">
       <label for="f-objet">Objet précis de la mission <small>(une ligne = un tiret)</small></label><textarea id="f-objet" rows="3"></textarea>
       <label for="f-imp">Imputation</label><input type="text" id="f-imp" list="dl-imp" placeholder="4300045200" autocomplete="off">
@@ -84,8 +84,8 @@
   var CHAMPS = ['hotel', 'ville', 'num', 'doc', 'nom', 'prenom', 'fonc', 'mle', 'om', 'dom', 'du', 'au', 'nuits', 'lieu', 'objet', 'imp'], CLE = 'hotel_prise_en_charge_histo', nuitsManuel = false;
   function lire() { var v = {}; CHAMPS.forEach(function (c) { v[c] = $('f-' + c).value; }); return v; }
   function ecrire(v) { CHAMPS.forEach(function (c) { $('f-' + c).value = v[c] || ''; }); nuitsManuel = !!v.nuits && v.nuits !== String(calcNuits(v.du, v.au)); apercu(); }
-  /** Nuitées = nombre de jours du premier au dernier jour inclus (du 19 au 24 : 06). */
-  function calcNuits(du, au) { if (!/^\d{4}-\d{2}-\d{2}$/.test(du || '') || !/^\d{4}-\d{2}-\d{2}$/.test(au || '')) return ''; var n = Math.round((Date.parse(au + 'T00:00:00Z') - Date.parse(du + 'T00:00:00Z')) / 86400000) + 1; return n >= 1 ? n : ''; }
+  /** Nuitées = nombre de nuits : le dernier jour n'est pas compté (du 25 au 27 : 02). */
+  function calcNuits(du, au) { if (!/^\d{4}-\d{2}-\d{2}$/.test(du || '') || !/^\d{4}-\d{2}-\d{2}$/.test(au || '')) return ''; var n = Math.round((Date.parse(au + 'T00:00:00Z') - Date.parse(du + 'T00:00:00Z')) / 86400000); return n >= 1 ? n : ''; }
   function pts(n) { return '<span class="pt">' + new Array(n + 1).join('…') + '</span>'; }
   function apercu() {
     var v = lire(), obj = lignes(v.objet), an = (v.doc || iso()).slice(2, 4), n = v.nuits ? (Number(v.nuits) < 10 ? '0' + Number(v.nuits) : v.nuits) : '';
