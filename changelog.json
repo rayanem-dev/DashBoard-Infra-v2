@@ -1,10 +1,18 @@
 [
   {
+    "id": "2026-10-24-120",
+    "date": "2026-10-24",
+    "title": "Version 5.62.2 — Organismes hors Suivi CPM : injectés dans les Enquêtes",
+    "changes": [
+      "Les personnes d'une prise en charge pour un organisme hors Suivi CPM sont injectées dans les Enquêtes administratives sous le nom de l'organisme (un onglet à son nom, créé au premier envoi puis réutilisé), ce qui garde l'historique de leurs entrées. Il n'y a pas de contrat : un seul onglet par organisme."
+    ]
+  },
+  {
     "id": "2026-10-24-119",
     "date": "2026-10-24",
     "title": "Version 5.62.1 — Prises en charge : organismes hors Suivi CPM",
     "changes": [
-      "Prises en charge + autorisation d'accès : le bouton « ➕ Organisme hors Suivi CPM » ajoute un organisme (ex. SONATRACH | Division Laboratoires — Direction Laboratoires & Carothèque centrale) dans un onglet à part « Organismes » ; le Suivi CPM n'est jamais modifié. L'organisme se choisit comme un prestataire ; il se comporte comme une visite sur site (date de fin = date de départ saisie, pas d'Enquête administrative)."
+      "Prises en charge + autorisation d'accès : le bouton « ➕ Organisme hors Suivi CPM » ajoute un organisme (ex. SONATRACH | Division Laboratoires — Direction Laboratoires & Carothèque centrale) dans un onglet à part « Organismes » ; le Suivi CPM n'est jamais modifié. L'organisme se choisit comme un prestataire ; il se comporte comme une visite sur site (date de fin = date de départ saisie)."
     ]
   },
   {
