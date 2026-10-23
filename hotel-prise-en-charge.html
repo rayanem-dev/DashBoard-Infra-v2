@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prise en charge hôtel – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .re { max-width: 1280px; margin: 0 auto; padding: 16px 16px 40px; display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .re label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 3px; }
+  .re label small { text-transform: none; font-weight: 500; letter-spacing: 0; }
+  .re input, .re textarea { width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .re textarea { resize: vertical; } .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .btn-p { padding: 10px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .histo { display: flex; gap: 8px; align-items: center; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-top: 6px; font-size: 12.5px; } .histo .i { flex: 1; min-width: 0; } .histo b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .apercu { overflow: auto; background: #E5E7EB; padding: 14px; border-radius: 14px; }
+  #feuille { background: #fff; color: #000; width: 210mm; height: 296mm; overflow: hidden; margin: 0 auto; padding: 14mm 18mm; box-shadow: 0 2px 14px rgba(0,0,0,.2); font-family: Calibri, Carlito, Arial, sans-serif; font-size: 11pt; position: relative; transform-origin: top left; box-sizing: border-box; }
+  #feuille .ent { font-size: 9.5pt; font-weight: 700; line-height: 1.35; } #feuille .ent img { height: 20mm; display: block; margin-bottom: 1mm; }
+  #feuille .ligne1 { display: flex; justify-content: space-between; font-size: 10.5pt; margin-top: 8mm; }
+  #feuille .titre { border: 3px double #000; width: 62%; margin: 8mm auto 10mm 12mm; padding: 4mm 5mm; text-align: center; font-weight: 700; font-size: 12pt; line-height: 1.35; }
+  #feuille table { width: 100%; border-collapse: collapse; } #feuille td { padding: 2.2mm 1.5mm; vertical-align: top; font-size: 11pt; }
+  #feuille .bloc2 { margin-top: 3mm; line-height: 1.5; } #feuille .tiret { margin: 1mm 0 0 10mm; }
+  #feuille .dir { margin-top: 12mm; font-weight: 700; } #feuille .pt { color: #555; }
+  #feuille .pied { position: absolute; left: 18mm; bottom: 12mm; font-family: "Times New Roman", serif; font-size: 10pt; line-height: 1.3; } #feuille .pied { text-align: left; } #feuille .pied span { color: #0645ad; text-decoration: underline; }
+  @media (max-width: 980px) { .re { grid-template-columns: 1fr; } }
+  @media print { @page { size: A4 portrait; margin: 0; } html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; min-height: 0 !important; height: auto !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } body > *:not(main), .re > *:not(.apercu) { display: none !important; }
+    .re { display: block !important; padding: 0 !important; max-width: none !important; } .apercu { background: none !important; padding: 0 !important; overflow: visible !important; height: auto !important; } #feuille { box-shadow: none !important; margin: 0 !important; transform: none !important; } }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🏨</div>
+    <div class="logo-text"><h1>Prise en charge : hôtel</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="re">
+  <div>
+    <div class="bloc">
+      <h2>🏨 Nouvelle demande de prise en charge</h2>
+      <div class="deux"><div><label for="f-hotel">Hôtel</label><input type="text" id="f-hotel" list="dl-hotel" autocomplete="off"></div><div><label for="f-ville">Ville</label><input type="text" id="f-ville" autocomplete="off"></div></div>
+      <datalist id="dl-hotel"><option value="Hôtel PLAZA"></datalist>
+      <div class="deux"><div><label for="f-num">N° <small>(laisser vide pour le remplir à la main)</small></label><input type="text" id="f-num" inputmode="numeric" placeholder="____"></div><div><label for="f-doc">Date du document</label><input type="date" id="f-doc"></div></div>
+      <div class="deux"><div><label for="f-nom">Nom</label><input type="text" id="f-nom" autocomplete="off"></div><div><label for="f-prenom">Prénom</label><input type="text" id="f-prenom" autocomplete="off"></div></div>
+      <label for="f-fonc">Fonction</label><input type="text" id="f-fonc" autocomplete="off">
+      <label for="f-mle">Matricule <small>(ex. 58880S (63040624))</small></label><input type="text" id="f-mle" autocomplete="off">
+      <div class="deux"><div><label for="f-om">N° ordre de mission</label><input type="text" id="f-om" placeholder="975/INFR/2026" autocomplete="off"></div><div><label for="f-dom">Date de l'ordre de mission</label><input type="date" id="f-dom"></div></div>
+      <div class="deux"><div><label for="f-du">Séjour du</label><input type="date" id="f-du"></div><div><label for="f-au">au</label><input type="date" id="f-au"></div></div>
+      <label for="f-nuits">Nombre de nuitées <small>(calculé : du premier au dernier jour inclus ; modifiable)</small></label><input type="number" min="1" id="f-nuits">
+      <label for="f-lieu">Lieu de mission</label><input type="text" id="f-lieu" autocomplete="off">
+      <label for="f-objet">Objet précis de la mission <small>(une ligne = un tiret)</small></label><textarea id="f-objet" rows="3"></textarea>
+      <label for="f-imp">Imputation</label><input type="text" id="f-imp" list="dl-imp" placeholder="4300045200" autocomplete="off">
+      <datalist id="dl-imp"><option value="4300045000">Division</option><option value="4300045100">Électromécanique</option><option value="4300045200">Travaux Entretien</option><option value="4300045300">Construction</option></datalist>
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">🧹 Nouvelle demande</button></div>
+    </div>
+    <div class="bloc"><h2>🗂 Historique <button class="btn-s" id="h-tout" type="button" style="float:right">🗑 Tout supprimer</button></h2><div id="histo"></div></div>
+  </div>
+  <div class="apercu"><div id="feuille" data-i18n-non></div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fr(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function lignes(t) { return String(t || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.className = 'toast show'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3000); }
+  var CHAMPS = ['hotel', 'ville', 'num', 'doc', 'nom', 'prenom', 'fonc', 'mle', 'om', 'dom', 'du', 'au', 'nuits', 'lieu', 'objet', 'imp'], CLE = 'hotel_prise_en_charge_histo', nuitsManuel = false;
+  function lire() { var v = {}; CHAMPS.forEach(function (c) { v[c] = $('f-' + c).value; }); return v; }
+  function ecrire(v) { CHAMPS.forEach(function (c) { $('f-' + c).value = v[c] || ''; }); nuitsManuel = !!v.nuits && v.nuits !== String(calcNuits(v.du, v.au)); apercu(); }
+  /** Nuitées = nombre de jours du premier au dernier jour inclus (du 19 au 24 : 06). */
+  function calcNuits(du, au) { if (!/^\d{4}-\d{2}-\d{2}$/.test(du || '') || !/^\d{4}-\d{2}-\d{2}$/.test(au || '')) return ''; var n = Math.round((Date.parse(au + 'T00:00:00Z') - Date.parse(du + 'T00:00:00Z')) / 86400000) + 1; return n >= 1 ? n : ''; }
+  function pts(n) { return '<span class="pt">' + new Array(n + 1).join('…') + '</span>'; }
+  function apercu() {
+    var v = lire(), obj = lignes(v.objet), an = (v.doc || iso()).slice(2, 4), n = v.nuits ? (Number(v.nuits) < 10 ? '0' + Number(v.nuits) : v.nuits) : '';
+    var hotel = E(v.hotel || 'Hôtel PLAZA'), ville = E(v.ville || '');
+    $('feuille').innerHTML =
+      '<div class="ent"><img src="badges/logo-sonatrach.png" alt="Sonatrach">EXPLORATION - PRODUCTION<br>Division Production<br>Direction Régionale Rhourde-Nouss</div>' +
+      '<div class="ligne1"><b>N° ' + (E(v.num) || '________') + ' /DP/RN/' + E(an) + '.</b><span><b>RNS Le</b> : ' + (fr(v.doc) || pts(8)) + '</span></div>' +
+      '<div class="titre">Demande prise en charge « ' + hotel + ' »' + (ville ? '<br>A ' + ville : '') + '</div>' +
+      '<table><tr><td style="width:55%"><b>Nom :</b> ' + (E(v.nom) || pts(8)) + '</td><td><b>Prénom :</b> ' + (E(v.prenom) || pts(8)) + '</td></tr>' +
+      '<tr><td><b>Fonction:</b> ' + (E(v.fonc) || pts(8)) + '</td><td><b>Mle :</b> ' + (E(v.mle) || pts(6)) + '</td></tr>' +
+      '<tr><td><b>N° Ordre de Mission :</b> ' + (E(v.om) || pts(6)) + '</td><td><b>Du :</b> ' + (fr(v.dom) || pts(6)) + '</td></tr>' +
+      '<tr><td><b>Du</b> ' + (fr(v.du) || pts(6)) + ' <b>Au</b> ' + (fr(v.au) || pts(6)) + '</td><td><b>Nombre de nuitées : ' + (n || pts(2)) + '</b></td></tr></table>' +
+      '<div class="bloc2"><b>Lieu de Mission : ' + (E(v.lieu) || pts(8)) + '</b></div>' +
+      '<div class="bloc2"><b>Objet Précis de la Mission</b> :' + (obj.length ? obj.map(function (l) { return '<div class="tiret">- ' + E(l) + '</div>'; }).join('') : '<div class="tiret">' + pts(30) + '</div>') + '</div>' +
+      '<div class="bloc2" style="margin-top:10mm"><b>Imputation</b> : ' + (E(v.imp) || pts(8)) + '</div>' +
+      '<div class="dir">Le Directeur Régional</div>' +
+      '<div class="pied">Mail: <span>liaison-rns@amt.sonatrach.dz</span><br>Téléphone: (029) 74 01 10<br>Poste: 4263/4622<br>Fax: (029) 74 02 56 / (029) 74 01 40</div>';
+    ajuster();
+  }
+  function ajuster() { var z = $('feuille').parentNode, l = z.clientWidth - 28, w = $('feuille').offsetWidth || 794; var k = Math.min(1, l / w); $('feuille').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuille').offsetHeight * k + 28) + 'px' : ''; }
+  window.addEventListener('resize', ajuster);
+  CHAMPS.forEach(function (c) { $('f-' + c).addEventListener('input', function () {
+    if (c === 'nuits') nuitsManuel = !!$('f-nuits').value;
+    if ((c === 'du' || c === 'au') && !nuitsManuel) $('f-nuits').value = calcNuits($('f-du').value, $('f-au').value);
+    if (c === 'ville' && !$('f-lieu').dataset.m) $('f-lieu').value = $('f-ville').value;
+    if (c === 'lieu') $('f-lieu').dataset.m = '1';
+    apercu(); }); });
+
+  // historique (ce navigateur)
+  function histo() { try { return JSON.parse(localStorage.getItem(CLE) || '[]'); } catch (e) { return []; } }
+  function sauver(l) { try { localStorage.setItem(CLE, JSON.stringify(l.slice(0, 40))); } catch (e) { /* stockage indisponible */ } dessinerHisto(); }
+  function dessinerHisto() {
+    var z = $('histo'), l = histo(); z.textContent = ''; $('h-tout').hidden = !l.length;
+    if (!l.length) { var p = document.createElement('p'); p.className = 'aide'; p.style.cssText = 'font-size:12.5px;color:var(--text-muted)'; p.textContent = 'Aucune demande enregistrée sur cet ordinateur.'; z.appendChild(p); return; }
+    l.forEach(function (v, i) {
+      var d = document.createElement('div'); d.className = 'histo'; var c = document.createElement('div'); c.className = 'i';
+      var b = document.createElement('b'); b.textContent = ((v.nom || '') + ' ' + (v.prenom || '')).trim() || '(sans nom)'; var s = document.createElement('small'); s.textContent = fr(v.du) + ' → ' + fr(v.au) + ' · ' + (v.nuits || '?') + ' nuitée(s) · ' + (v.hotel || '');
+      c.appendChild(b); c.appendChild(s); d.appendChild(c);
+      var o = document.createElement('button'); o.className = 'btn-s'; o.type = 'button'; o.textContent = 'Rouvrir'; o.onclick = function () { ecrire(v); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      var x = document.createElement('button'); x.className = 'btn-s'; x.type = 'button'; x.textContent = '🗑'; x.title = 'Supprimer'; x.onclick = function () { var h = histo(); h.splice(i, 1); sauver(h); };
+      d.appendChild(o); d.appendChild(x); z.appendChild(d);
+    });
+  }
+  function garder() { var v = lire(); if (!(v.nom || v.prenom).trim()) { toast('Indiquez au moins le nom de l\'agent.'); return false; } var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); return true; }
+  $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
+  $('b-imp').onclick = function () { garder(); window.print(); };
+  function neuf() { $('f-lieu').dataset.m = ''; ecrire({ hotel: 'Hôtel PLAZA', ville: 'Boumerdes', lieu: 'Boumerdes', doc: iso() }); }
+  $('b-vider').onclick = neuf;
+  $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
+  neuf(); dessinerHisto();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

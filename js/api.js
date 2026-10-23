@@ -54,6 +54,7 @@
         { titre: 'Renommage de documents', description: 'Renomme les PDF, JPG et scans (type, agent, date) et apprend de vos corrections.', emoji: '🏷️', url: 'renommage.html' },
         { titre: 'Autorisation GAZ-OIL', description: 'Autorisation d\'approvisionnement en GAZ-OIL (fûts de 200 L), imprimable en un clic.', emoji: '⛽', url: 'autorisation-gazoil.html' },
         { titre: 'Ordre de travail', description: 'Ordre de travail de la division, imprimable en un clic, avec historique.', emoji: '🛠', url: 'ordre-travail.html' },
+        { titre: 'Prise en charge hôtel', description: 'Demande de prise en charge à l\'hôtel pour un agent en mission, imprimable en un clic, avec historique.', emoji: '🏨', url: 'hotel-prise-en-charge.html' },
         { titre: 'Repas à emporter', description: 'Prise en charge repas à emporter prête à imprimer, avec historique.', emoji: '🥡', url: 'repas-emporter.html' } ] },
       { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
