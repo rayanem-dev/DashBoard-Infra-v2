@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-107",
+    "date": "2026-10-24",
+    "title": "Version 5.58.1 — Modifier le planning : régulariser la rotation précédente",
+    "changes": [
+      "Un responsable voit maintenant aussi la rotation précédente (déjà terminée, jusqu'à 30 jours en arrière) comme première ligne modifiable, pour régulariser par exemple un départ qui a duré 20 jours au lieu de 28."
+    ]
+  },
+  {
     "id": "2026-10-24-106",
     "date": "2026-10-24",
     "title": "Version 5.58.0 — E-mail d'une demande validée : document PDF en pièce jointe",
