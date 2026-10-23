@@ -89,17 +89,20 @@ function simuModif_(req) {
   return { debut: String(req.debut || ''), periodes: (Array.isArray(req.periodes) ? req.periodes : []).map(function (p) { return { type: String(p && p.type), jours: Number(p && p.jours) }; }), reprise: String(req.reprise || '') };
 }
 
+/** Lignes commençant dans la fenêtre (la dernière est entière), 14 au plus. */
+function simuLignes_(l, fin) { return l.filter(function (x) { return x.du <= fin; }).slice(0, 14); }
+
 /** Tableaux « actuel » / « modifié » de la demande, recalculés côté serveur (jamais pris tels quels du navigateur). */
 function simuTableaux_(rot, corr, m) {
   var jt = Number(rot.jours_travail), jr = Number(rot.jours_repos), cy = jt + jr;
   var F = Dates.addDays(m.debut, -(cy + 30)); if (F < rot.depuis) F = rot.depuis;
   var rep = Simulation.dateReprise(m), fin = Dates.addDays(rep, 2 * cy - 1);
-  var n = Simulation.diff(F, fin) + 1;
+  var n = Simulation.diff(F, fin) + cy + 1;   // une rotation de marge : la dernière ligne affichée est toujours une rotation entière, jamais coupée à la fin de la fenêtre
   var off = Planning.grille(rot, corr, F, n), mod = Simulation.appliquer(off, F, m, rot);
   var du = m.debut; // début de la période en cours la veille de la modification : repère pour le lecteur
   if (du > F) { var c = off.charAt(Simulation.diff(F, du) - 1); var i = Simulation.diff(F, du) - 1; while (i > 0 && off.charAt(i - 1) === c) i -= 1; du = Dates.addDays(F, i); }
   var rq = Simulation.reliquatDetail(off, mod, F, m), retour = Simulation.retour(Planning.grille(rot, [], F, n), mod, F, cy);
-  return { retour: retour, actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14), reprise: rep, reliquat: rq.pic, reliquat_net: rq.net };
+  return { retour: retour, actuel: simuLignes_(Simulation.tableau(off, F, du, Dates.addDays(fin, cy)), fin), modifie: simuLignes_(Simulation.tableau(mod, F, du, Dates.addDays(fin, cy)), fin), reprise: rep, reliquat: rq.pic, reliquat_net: rq.net };
 }
 
 function simuNumero_() {

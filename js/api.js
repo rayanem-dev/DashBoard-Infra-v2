@@ -389,9 +389,9 @@
           if (!rv) throw erreur('Cet agent n\'a pas encore renseigné sa rotation');
           var mv = { debut: it.debut, periodes: it.periodes, reprise: it.reprise }, ev = Simulation.valider(mv, rv, auj()); if (ev) throw erreur(cv.nom + ' : ' + ev);
           var cy = rv.jours_travail + rv.jours_repos, F = plus(mv.debut, -(cy + 30)); if (F < rv.depuis) F = rv.depuis;
-          var fin = plus(Simulation.dateReprise(mv), 2 * cy - 1), nn = ecart(F, fin) + 1, off = demoGrilleDe(cv.email, F, nn), mod = Simulation.appliquer(off, F, mv, rv);
+          var fin = plus(Simulation.dateReprise(mv), 2 * cy - 1), nn = ecart(F, fin) + cy + 1, off = demoGrilleDe(cv.email, F, nn), mod = Simulation.appliquer(off, F, mv, rv);
           var du = mv.debut; if (du > F) { var ii = ecart(F, du) - 1, cc = off.charAt(ii); while (ii > 0 && off.charAt(ii - 1) === cc) ii -= 1; du = plus(F, ii); }
-          return { cv: cv, mv: mv, rq: Simulation.reliquatDetail(off, mod, F, mv), actuel: Simulation.tableau(off, F, du, fin).slice(0, 14), modifie: Simulation.tableau(mod, F, du, fin).slice(0, 14) };
+          return { cv: cv, mv: mv, rq: Simulation.reliquatDetail(off, mod, F, mv), actuel: Simulation.tableau(off, F, du, plus(fin, cy)).filter(function (x) { return x.du <= fin; }).slice(0, 14), modifie: Simulation.tableau(mod, F, du, plus(fin, cy)).filter(function (x) { return x.du <= fin; }).slice(0, 14) };
         });
         var lm = demoMods(), numerosV = [], docsV = [];
         prepV.forEach(function (q) {
