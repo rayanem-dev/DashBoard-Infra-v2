@@ -418,17 +418,20 @@ function modifMoiAnnuler_(req) {
   return { numero: String(en.numero) };
 }
 
-/** Alertes de la page d'accueil : demandes qui attendent la décision du chef de service (son service), du secrétariat ou du chef de division (tous). */
+/** Alertes de la page d'accueil : demandes qui attendent la décision du chef de service ou de son intérim (son service), du secrétariat ou du chef de division (tous) ; `mes` = les demandes de l'intéressé lui-même en attente. */
 function modifAlertes_(req) {
-  var u = Auth.userFromToken(req.token), niv = simuNiveau_(u);
-  if (niv < 2) return { niveau: niv, alertes: [] };
+  var u = Auth.userFromToken(req.token), niv = simuNiveau_(u), moi = String(u.email).toLowerCase();
   var l = [];
   try { l = Store.table('Modifications'); } catch (e) { l = []; }
+  // l'intéressé voit ses propres demandes qui attendent une décision (quel que soit son niveau)
+  var mes = l.filter(function (r) { return simuAttend_(r) && String(r.email).toLowerCase() === moi; })
+    .sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? 1 : -1; }).slice(0, 10).map(function (r) { return simuResume_(r, u); });
+  if (niv < 2) return { niveau: niv, alertes: [], mes: mes };
   var alertes = l.filter(function (r) { return simuAttend_(r) && String(r.email).toLowerCase() !== String(u.email).toLowerCase() && simuDansPortee_(u, Store.utilisateur(r.email) || {}); })
     .sort(function (a, b) { return String(a.cree_le) < String(b.cree_le) ? 1 : -1; }).slice(0, 50)
     .map(function (r) { return simuResume_(r, u); });
   alertes.sort(function (a, b) { return (b.hors_rotation ? 1 : 0) - (a.hors_rotation ? 1 : 0); });
-  return { niveau: niv, alertes: alertes };
+  return { niveau: niv, alertes: alertes, mes: mes };
 }
 
 /** Envoi par e-mail d'une demande (clic de l'agent ou du responsable) : cases secrétariat / chef de service / chef de division. */

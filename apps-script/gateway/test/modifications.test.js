@@ -211,6 +211,12 @@ test('alertes de l\'accueil : chef de service (son service), secrétariat et che
   assert.throws(() => appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero: hors.numero, decision: 'approuvee' }), /propre demande/);
   appel(m, 'simuDecider_', 'chef.div@x.dz', { numero: hors.numero, decision: 'approuvee' });
   assert.strictEqual(al('chef.div@x.dz').length, 1, 'une fois décidée, l\'alerte disparaît');
+  // l'intéressé voit sa propre demande en attente (et seulement la sienne) ; une fois décidée, elle disparaît
+  const mes = t => appel(m, 'modifAlertes_', t, {}).mes.map(a => a.numero);
+  assert.deepStrictEqual(mes('agent.a@x.dz'), [ok.numero]); assert.deepStrictEqual(mes('chef.s1@x.dz'), [hors.numero].filter(() => false));
+  assert.strictEqual(mes('agent.b@x.dz').length, 0);
+  appel(m, 'simuDecider_', 'chef.s1@x.dz', { numero: ok.numero, decision: 'approuvee' });
+  assert.strictEqual(mes('agent.a@x.dz').length, 0);
 });
 
 test('envoi par e-mail : cases à cocher, seulement au clic, réservé à l\'agent et à sa portée', () => {

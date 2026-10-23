@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-110",
+    "date": "2026-10-24",
+    "title": "Version 5.60.0 — Demandes en attente : barre du haut et page d'accueil",
+    "changes": [
+      "Un raccourci « 📋 Demandes » est ajouté dans la barre du haut (Planning, Simulation, Organigramme…), avec le nombre de demandes en attente de votre validation, par exemple « Demandes (1) ».",
+      "Page d'accueil : l'intéressé voit ses propres demandes en attente de décision (« Votre demande n° … »). Le chef de service, son intérimaire, le secrétariat et le chef de division continuent de voir les demandes à valider, avec « Modifier / Valider / Refuser »."
+    ]
+  },
+  {
     "id": "2026-10-24-108",
     "date": "2026-10-24",
     "title": "Version 5.59.0 — Nouvelle application : Prise en charge hôtel",
