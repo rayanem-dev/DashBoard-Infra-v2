@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-97",
+    "date": "2026-10-24",
+    "title": "Version 5.54.1 — Publication du site : notes de documentation écartées",
+    "changes": [
+      "La publication du site dans le dépôt public écarte les fichiers de notes (.md) au lieu de s'arrêter ; elle continue de refuser tout script serveur ou fichier de configuration."
+    ]
+  },
+  {
     "id": "2026-10-24-96",
     "date": "2026-10-24",
     "title": "Version 5.54.0 — Contrôle de sécurité : annuaire protégé, pages non indexées",
