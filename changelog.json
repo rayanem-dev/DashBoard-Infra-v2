@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-118",
+    "date": "2026-10-24",
+    "title": "Version 5.62.0 — Outils ouverts à tous : chacun voit son planning et ses vis-à-vis",
+    "changes": [
+      "Planning, Simulation, Organigramme et Vis-à-vis sont accessibles à tout le monde. Chef de division, chefs de service (et intérim) et secrétariat voient toute la division ; les autres ne voient que leur planning et leurs vis-à-vis (travail et chambre) quand ils sont déclarés.",
+      "Un agent peut simuler avec ses vis-à-vis mais n'émet pas de demande depuis la Simulation (il utilise « Modifier mon planning »). Un chef de service voit tout le monde mais ne modifie que son service.",
+      "L'application Organigramme passe dans le module « Simulation » (le module RH ouvrait aussi la formation, la permanence…). La mise à jour se fait toute seule au prochain déploiement."
+    ]
+  },
+  {
     "id": "2026-10-24-117",
     "date": "2026-10-24",
     "title": "Version 5.61.3 — Privilèges : même classement que le menu du portail",

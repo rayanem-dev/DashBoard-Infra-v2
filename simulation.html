@@ -195,7 +195,10 @@
   // ---------- Chargement ----------
   function charger() {
     return Promise.all([Api.call('simu_agents'), Api.call('planning', { debut: Simulation.addDays(Rotation.aujourdhui(), -40), jours: 370 })]).then(function (rs) {
-      agents = rs[0].agents; var p = rs[1]; auj = p.aujourdhui; F = p.debut; FER = Holidays.carte(F, Simulation.addDays(F, 400));
+      agents = rs[0].agents; var p = rs[1];
+      if (rs[0].niveau < 2) {   // un agent simule seulement : la demande de modification se fait depuis « Mon planning »
+        $('valider').hidden = true; var nt = $('note-agent'); if (!nt) { nt = document.createElement('p'); nt.id = 'note-agent'; nt.className = 'aide'; nt.textContent = 'Simulation seule : rien n\'est enregistré. Pour demander une modification de votre planning, utilisez « Modifier mon planning » dans Mon planning.'; $('valider').parentNode.appendChild(nt); }
+      } auj = p.aujourdhui; F = p.debut; FER = Holidays.carte(F, Simulation.addDays(F, 400));
       lignes = p.lignes.filter(function (l) { return l.configuree && l.grille; }).sort(function (a, b) { return String(a.nom).localeCompare(String(b.nom), 'fr', { sensitivity: 'base' }); });
       var sv = {}, s = $('service'); s.textContent = ''; s.appendChild(new Option('Toute la division', ''));
       lignes.forEach(function (l) { if (l.service) sv[l.service] = 1; });
