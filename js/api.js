@@ -351,6 +351,29 @@
           if (!c[1].test(v)) throw erreur(c[2] + ' : format invalide.'); dp[c[0]] = v; fait += 1; });
         if (!fait) throw erreur('Rien à enregistrer : ces champs sont déjà renseignés (pour les corriger, contactez le secrétariat).');
         return { user: pub(demoState.user) }; }
+      case 'me': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { user: pub(demoState.user), acces: {} }; }
+      case 'profil_moi': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var mn = menuDemo(demoState.user.role), okU = {}, acc = [], non = [];
+        mn.forEach(function (m) { m.apps.forEach(function (a) { okU[a.url] = true; acc.push({ titre: a.titre, emoji: a.emoji || '', url: a.url, module: m.titre }); }); });
+        menuDemo('chef_division').forEach(function (m) { m.apps.forEach(function (a) { if (!okU[a.url]) { okU[a.url] = true; non.push({ titre: a.titre, emoji: a.emoji || '', description: a.description || '', module: m.titre }); } }); });
+        var dd = []; try { dd = JSON.parse(localStorage.getItem('infra_v2_demo_acces') || '[]').filter(function (x) { return x.email === demoState.user.email; }); } catch (e) { dd = []; }
+        return { user: pub(demoState.user), photo: (demoProfil[demoState.user.email] || {}).photo || '', acces: { accessibles: acc, non_accessibles: non }, demandes: dd }; }
+      case 'profil_maj': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var dm = demoProfil[demoState.user.email] = demoProfil[demoState.user.email] || {}, nb = 0;
+        ['nom_affiche', 'civilite', 'telephone', 'date_integration', 'wifi_user'].forEach(function (k) { if (p[k] !== undefined) { dm[k] = String(p[k]).trim(); nb += 1; } });
+        if (!nb) throw erreur('Rien à enregistrer.'); return { user: pub(demoState.user) }; }
+      case 'profil_photo': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var dq = demoProfil[demoState.user.email] = demoProfil[demoState.user.email] || {}; dq.photo = p.grand || ''; dq.mini = p.mini || ''; return { photo: dq.photo }; }
+      case 'photos_mini': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var ph = {}; DEMO_USERS.forEach(function (x) { var q = demoProfil[x.email]; if (q && q.mini) ph[x.uid] = q.mini; }); return { photos: ph }; }
+      case 'acces_demander': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var lst = []; try { lst = JSON.parse(localStorage.getItem('infra_v2_demo_acces') || '[]'); } catch (e) { lst = []; }
+        if (lst.some(function (x) { return x.email === demoState.user.email && x.titre === p.titre && x.statut === 'en_attente'; })) throw erreur('Vous avez déjà une demande en attente pour cette application.');
+        var no = 'ACC-DEMO-' + (lst.length + 1); lst.push({ numero: no, email: demoState.user.email, agent: demoState.user.nom, titre: p.titre, motif: p.motif || '', statut: 'en_attente', cree_le: new Date().toISOString() });
+        try { localStorage.setItem('infra_v2_demo_acces', JSON.stringify(lst)); } catch (e) {} return { numero: no, emails: 0 }; }
+      case 'acces_demandes': { exigerAdmin(); var l2 = []; try { l2 = JSON.parse(localStorage.getItem('infra_v2_demo_acces') || '[]'); } catch (e) { l2 = []; } return { demandes: l2.slice().reverse() }; }
+      case 'acces_traiter': { exigerAdmin(); var l3 = []; try { l3 = JSON.parse(localStorage.getItem('infra_v2_demo_acces') || '[]'); } catch (e) { l3 = []; }
+        l3.forEach(function (x) { if (x.numero === p.numero) { x.statut = p.statut === 'refusee' ? 'refusee' : 'accordee'; x.traite_par = demoState.user.email; } });
+        try { localStorage.setItem('infra_v2_demo_acces', JSON.stringify(l3)); } catch (e) {} return { numero: p.numero, statut: p.statut }; }
       case 'organigramme': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var gr = {}, ordre = [];
         DEMO_USERS.forEach(function (x) { var sv = demoService(x); if (!gr[sv]) { gr[sv] = { nom: sv, racine: false, membres: [] }; ordre.push(sv); }
           var chef = x.role === 'chef_division'; if (chef) gr[sv].racine = true;
@@ -471,10 +494,11 @@
   }
   function cibleDemo(email) { var u = DEMO_USERS.filter(function (x) { return x.email === email; })[0]; if (!u) throw erreur('Utilisateur inconnu'); return u; }
   function pub(u) {
-    return { email: u.email, nom: u.nom, civilite: u.civilite || '', matricule: (demoProfil[u.email] || {}).matricule || u.matricule || (u.role === 'chef_division' ? '10002B' : ''), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
-             service: u.service, fonction: u.fonction || '', dependance: u.dependance || 'SONATRACH', telephone: u.telephone || '',
-             sona: u.sona || ('sona' + (10000 + Number(String(u.uid).slice(1)))), date_integration: u.date_integration || '2025-03-17',
-             wifi_user: 'wf.' + String(u.email).split('@')[0], sap: (demoProfil[u.email] || {}).sap || '', nin_masque: masquerNin((demoProfil[u.email] || {}).nin), nin_renseigne: !!(demoProfil[u.email] || {}).nin };
+    return { uid: u.uid, email: u.email, nom: u.nom, civilite: (demoProfil[u.email] || {}).civilite || u.civilite || '', matricule: (demoProfil[u.email] || {}).matricule || u.matricule || (u.role === 'chef_division' ? '10002B' : ''), role: u.role, role_libelle: ({ chef_division: 'Chef de division', conducteur: 'Conducteur des travaux', cpm: 'Cellule Passation de marché', agent: 'Agent' })[u.role] || u.role,
+             service: u.service, fonction: u.fonction || '', dependance: u.dependance || 'SONATRACH', telephone: (demoProfil[u.email] || {}).telephone || u.telephone || '',
+             sona: u.sona || ('sona' + (10000 + Number(String(u.uid).slice(1)))), date_integration: (demoProfil[u.email] || {}).date_integration || u.date_integration || '2025-03-17',
+             wifi_user: ((demoProfil[u.email] || {}).wifi_user) || 'wf.' + String(u.email).split('@')[0], sap: (demoProfil[u.email] || {}).sap || '', nin_masque: masquerNin((demoProfil[u.email] || {}).nin), nin_renseigne: !!(demoProfil[u.email] || {}).nin,
+             nom_affiche: (demoProfil[u.email] || {}).nom_affiche || u.nom, photo: !!(demoProfil[u.email] || {}).photo };
   }
   var demoProfil = {};
   function masquerNin(v) { return v ? v.slice(0, 4) + '••••••' + v.slice(-4) : ''; }

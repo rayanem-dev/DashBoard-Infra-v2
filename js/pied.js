@@ -103,4 +103,6 @@
     var bv = document.getElementById('bandeau-version'); if (bv && window.PORTAIL_VERSION) bv.textContent = 'Sonatrach · RNS · Version ' + window.PORTAIL_VERSION;
     monter();
   });
+  // avatar du compte en haut à droite (pages du site connectées ; ni la connexion ni les applications Apps Script)
+  if (!NOM && !/connexion\.html/.test(location.pathname) && window.Api && !window.Avatar) { var av = document.createElement('script'); av.src = BASE + 'js/avatar.js'; document.head.appendChild(av); }
 })();

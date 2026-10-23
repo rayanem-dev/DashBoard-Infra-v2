@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-24-122",
+    "date": "2026-10-24",
+    "title": "Version 5.63.0 — Mon profil : avatar, photo, informations et accès",
+    "changes": [
+      "Un avatar (photo ou initiales) apparaît en haut à droite de chaque page : un clic ouvre « Mon profil », « Changer mon mot de passe » et « Se déconnecter ».",
+      "Nouvelle page « Mon profil » : photo (visible dans le portail), informations venant de BDDORGA (verrouillées 🔒) et champs modifiables (nom affiché, civilité, date d'intégration, téléphone, identifiant Wi-Fi, matricule SAP et NIN à compléter une fois, e-mail de contact avec code de confirmation), changement de mot de passe.",
+      "« Mes accès » : liste des applications accordées et non accordées, avec « Demander l'accès » (un e-mail part au secrétariat au clic). Les demandes apparaissent dans Privilèges, avec « Accordée / Refusée ».",
+      "Les corrections de l'agent sont gardées à part (onglet Profils) : la synchronisation avec BDDORGA ne les écrase pas ; le nom officiel reste celui des plannings, vis-à-vis et documents."
+    ]
+  },
+  {
     "id": "2026-10-24-121",
     "date": "2026-10-24",
     "title": "Version 5.62.3 — Connexion : le nom se choisit tout seul quand il est seul",
