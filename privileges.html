@@ -47,6 +47,7 @@
     <button class="onglet" data-p="p-cnx" id="o-cnx">Connexions</button>
   </div>
   <section class="panneau" id="p-grille">
+    <div id="z-acces" class="bloc" hidden style="margin-bottom:12px"><h3 style="margin:0 0 6px;font-size:14px">📨 Demandes d'accès <span id="n-acces"></span></h3><div id="l-acces"></div></div>
     <p class="aide" style="margin-bottom:10px">Une ligne par application, une colonne par rôle : <b>cochez</b> pour donner l'accès, <b>décochez</b> pour le retirer. Seule l'application de la ligne change ; les niveaux des modules s'ajustent tout seuls (pastille <b>1</b> à <b>3</b> = niveau minimal requis). Les exceptions individuelles restent dans l'onglet Exceptions.</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input type="text" id="g-filtre" class="filtre" placeholder="Filtrer une application…" style="max-width:300px"><span id="g-msg" style="font-size:12.5px"></span></div>
     <div class="grille-wrap"><table class="t gacces" id="t-grille"></table></div>
@@ -208,6 +209,20 @@
     });
     t.appendChild(tb);
   }
+  // demandes d'accès faites par les agents depuis « Mon profil » (le secrétariat accorde l'accès dans la grille ci-dessous, puis marque la demande traitée)
+  function chargerAcces() {
+    Api.call('acces_demandes').then(function (r) {
+      var z = $('z-acces'), l = $('l-acces'); l.textContent = ''; var att = r.demandes.filter(function (d) { return d.statut === 'en_attente'; });
+      z.hidden = !r.demandes.length; $('n-acces').textContent = att.length ? '(' + att.length + ' en attente)' : '';
+      r.demandes.slice(0, 20).forEach(function (d) {
+        var li = el('div'); li.style.cssText = 'display:flex;gap:8px;align-items:center;border-top:1px solid var(--border);padding:6px 0;font-size:13px;flex-wrap:wrap';
+        var t = el('div'); t.style.flex = '1'; t.appendChild(el('b', null, d.agent)); t.appendChild(document.createTextNode(' (' + (d.service || '') + ') demande « ' + d.titre + ' »' + (d.motif ? ' — ' + d.motif : '') + (d.statut !== 'en_attente' ? ' · ' + (d.statut === 'accordee' ? 'accordée' : 'refusée') : ''))); li.appendChild(t);
+        if (d.statut === 'en_attente') ['accordee', 'refusee'].forEach(function (st) { var b = el('button', 'btn-s', st === 'accordee' ? '✓ Accordée' : '✕ Refusée'); b.type = 'button'; b.title = st === 'accordee' ? 'À cliquer après avoir donné l\'accès dans la grille ci-dessous' : 'Marque la demande refusée'; b.addEventListener('click', function () { Api.call('acces_traiter', { numero: d.numero, statut: st }).then(chargerAcces).catch(function (e) { alert(e.message); }); }); li.appendChild(b); });
+        l.appendChild(li);
+      });
+    }).catch(function () { /* pas de droit ou pas encore de demandes */ });
+  }
+  chargerAcces();
   var occupe = false;
   function cocher(r, a, cb) {
     var voulu = cb.checked, p = GrilleAcces.plan(etat, r.id, a.titre, voulu), msg = $('g-msg');

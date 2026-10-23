@@ -18,7 +18,8 @@
   if (!window.Api) { location.replace('connexion.html'); return; }
   var CLE_MENU = 'gm_pages', TTL_MENU = 600000;
   function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
-  function autorise(r) { return pagesDe(r).indexOf(page) !== -1; }
+  var LIBRES = ['profil.html'];   // pages personnelles : ouvertes à tout compte connecté (une session valide suffit, la connexion est vérifiée par menu)
+  function autorise(r) { return LIBRES.indexOf(page) !== -1 || pagesDe(r).indexOf(page) !== -1; }
   function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return !!(o && Date.now() - o.t < TTL_MENU && o.f.indexOf(page) !== -1); } catch (e) { return false; } }
   function retenir(r) { try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), f: pagesDe(r) })); } catch (e) { /* stockage indisponible */ } }
   function oublier() { try { sessionStorage.removeItem(CLE_MENU); } catch (e) { /* rien */ } }

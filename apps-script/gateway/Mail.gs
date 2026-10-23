@@ -55,6 +55,13 @@ var Mail = (function () {
     if (pj.length) msg.attachments = pj;
     MailApp.sendEmail(msg);
   }
+  /** Demande d'accès à une application : au secrétariat (envoyée seulement au clic de l'agent sur « Demander l'accès »). */
+  function envoyerDemandeAcces(dest, d) {
+    if (!dest.length) return;
+    MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: '[Accès] Demande d\'accès : ' + d.titre + ' — ' + d.agent,
+      htmlBody: '<p><b>Demande d\'accès</b> n° ' + esc(d.numero) + '</p><p>Agent : <b>' + esc(d.agent) + '</b> (' + esc(d.service) + ')<br>Application : <b>' + esc(d.titre) + '</b>' + (d.motif ? '<br>Motif : ' + esc(d.motif) : '') +
+        '</p><p>À traiter dans le portail : Privilèges → « Demandes d\'accès ».</p><p>— Tableau de bord Division Infrastructure</p>' });
+  }
   /** Changement d'affectation : à l'intéressé, à l'auteur, au chef de division et au secrétariat. */
   function envoyerAffectation(dest, a) {
     if (!dest.length) return;
@@ -79,7 +86,7 @@ var Mail = (function () {
   function envoyerInvitation(email, nom, menu, lien, mdpDefaut) {
     MailApp.sendEmail({ to: email, name: 'Division Infrastructure RNS', subject: 'Invitation : votre accès au portail Division Infrastructure', htmlBody: corpsInvitation(nom, menu, lien, mdpDefaut) });
   }
-  return { corpsInvitation: corpsInvitation, envoyerInvitation: envoyerInvitation, masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande, documentDemande: documentDemande, envoyerAffectation: envoyerAffectation };
+  return { corpsInvitation: corpsInvitation, envoyerInvitation: envoyerInvitation, masquer: masquer, envoyerCode: envoyerCode, envoyerDemande: envoyerDemande, envoyerDemandeAcces: envoyerDemandeAcces, documentDemande: documentDemande, envoyerAffectation: envoyerAffectation };
 })();
 
 if (typeof module !== 'undefined') module.exports = Mail;

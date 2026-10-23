@@ -64,6 +64,13 @@ function route_(req) {
       return { code: Auth.emettreCode(req.email) };
     }
     case 'profil_enregistrer': return profilEnregistrer_(req);
+    case 'profil_moi': return profilMoi_(req);
+    case 'profil_maj': return profilMaj_(req);
+    case 'profil_photo': return profilPhoto_(req);
+    case 'photos_mini': return photosMini_(req);
+    case 'acces_demander': return accesDemander_(req);
+    case 'acces_demandes': return accesDemandes_(req);
+    case 'acces_traiter': return accesTraiter_(req);
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
     case 'rotation_enregistrer': return rotationEnregistrer_(req);
     case 'reliquat_enregistrer': return reliquatEnregistrer_(req);
@@ -320,7 +327,7 @@ function libelleRole_(role) {
   for (var i = 0; i < ROLES_INFO_.length; i += 1) if (ROLES_INFO_[i].id === c) return ROLES_INFO_[i].libelle;
   return role || '';
 }
-function pubUser_(u) { var p = Auth.publique(u); p.role_libelle = libelleRole_(u.role); return p; }
+function pubUser_(u) { var p = Auth.publique(u); p.uid = String(u.uid || ''); p.role_libelle = libelleRole_(u.role); try { if (typeof profilFusion_ === 'function') p = profilFusion_(p, profilDe_(u.email)); } catch (e) { /* onglet Profils absent : fiche sans corrections */ } return p; }
 
 /** Si l'onglet « Roles » est vide, y recopie d'abord les rôles d'origine (sinon le premier rôle créé ferait disparaître les autres). */
 function semerRoles_() {

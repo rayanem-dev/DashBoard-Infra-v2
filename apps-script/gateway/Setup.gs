@@ -287,6 +287,8 @@ var SCHEMA_ = {
   Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire', 'reliquat', 'reliquat_net'],
   Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
   VisAVis: ['uid', 'vis_travail', 'vis_chambre', 'maj_par', 'maj_le'],
+  Profils: ['email', 'nom_affiche', 'civilite', 'telephone', 'date_integration', 'wifi_user', 'photo_mini', 'photo', 'maj_le'],
+  DemandesAcces: ['numero', 'email', 'titre', 'motif', 'statut', 'cree_le', 'traite_par', 'traite_le'],
   Journal: ['date', 'action', 'email', 'detail']
 };
 
