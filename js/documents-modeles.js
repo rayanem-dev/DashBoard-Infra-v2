@@ -57,7 +57,16 @@
   function ligneIdentite(v) { return KV([['Nom et prénom', V(v, 'agent')], ['Matricule', V(v, 'matricule')], ['Fonction', V(v, 'fonction')], ['Structure', V(v, 'structure')]]); }
 
   /** En-têtes : « dr » (Direction Régionale), « dag » (Direction Générale / Affaires Sociales / RH). */
+  /** Ordre de mission : mise en page de l'original (logo grand format, titre à droite sous un trait orange, pied de page avec l'adresse de la Direction Régionale). */
+  function enteteOdm(v) {
+    return '<div class="odm-tete"><div class="odm-g"><img class="odm-logo" src="img/odm-logo.jpeg" alt="Sonatrach"><div class="odm-ent"><b>Activité Exploration - Production</b><br><b>Division Production</b><br><b>Direction Régionale Rhourde Nouss</b><br>' +
+      '<b>N° </b><span class="odm-sou">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><b>' + E(v.ref || 'SH/E&P/PROD/RNS-INFRA/' + (String(v.date || '').slice(0, 4) || '')) + '</b></div></div>' +
+      '<div class="odm-d"><h2>ORDRE DE MISSION</h2><div class="odm-trait"></div><div class="odm-date"><b>Rhourde Nouss :</b> ' + (/^\d{4}-\d{2}-\d{2}$/.test(String(v.date || '')) ? frDate(v.date) : pts(10)) + '</div></div></div>';
+  }
+  var PIED_ODM = '<div class="odm-pied"><div class="odm-trait2"></div><div class="odm-adr">Direction Régionale Rhourde-Nouss - BP 27 Hassi Messaoud – Ouargla Algérie</div>' +
+    '<div class="odm-contacts"><span>☎ Tél. : 029 74 01 48</span><span>⎙ Fax : 029 74 01 40</span><span>⊕ www.sonatrach.dz</span><span>✉ Secrétariat.RNS@sonatrach.dz</span></div></div>';
   function entete(type, v) {
+    if (type === 'odm') return enteteOdm(v || {});
     var g = type === 'dag'
       ? '<b>Ressources Humaines</b><br>Direction Affaires Sociales'
       : '<b>Activité Exploration - Production</b><br><b>Division Production</b><br>Direction Régionale Rhourde Nouss' + (v && v.entete_division ? '<br>' + E(v.entete_division) : '');
@@ -74,12 +83,14 @@
       { k: 'objet', l: 'Objet de la mission', t: 'textarea' }, { k: 'depart', l: 'Date de départ', t: 'date' }, { k: 'retour', l: 'Date de retour', t: 'date' },
       { k: 'trajet', l: 'Trajet à effectuer', def: 'RNS - ALGER - RNS' }, { k: 'accompagne', l: 'Accompagné de', def: '/' },
       { k: 'transport', l: 'Moyen de transport', t: 'select', opts: ['Avion', 'Véhicule de service', 'Véhicule personnel', 'Train', 'Autre'] },
-      { k: 'signataire', l: 'Signataire', def: 'P/Le Chef de Division Infrastructures' }], 'dr',
+      { k: 'signataire', l: 'Signataire', def: 'Le Chef de Division Infrastructures' }], 'odm',
     function (v) {
-      return titre('ORDRE DE MISSION') + '<div class="deux"><div>N° ' + V(v, 'ref', 14) + '</div><div class="droite">Rhourde Nouss : ' + V(v, 'date', 10) + '</div></div>' +
-        P('Numéro : ' + V(v, 'numero', 6)) +
-        KV([['NOM & PRÉNOM', V(v, 'agent')], ['FONCTION', V(v, 'fonction')], ['OBJET', T(v, 'objet', 2)], ['DATE DÉPART', V(v, 'depart')], ['DATE RETOUR', V(v, 'retour')],
-          ['TRAJET À EFFECTUER', V(v, 'trajet')], ['ACCOMPAGNÉ', V(v, 'accompagne', 6)], ['MOYEN TRANSPORT', V(v, 'transport')]]) + signature(v.signataire || 'Le Chef de Division', v);
+      var an = String(v.date || '').slice(0, 4);
+      var ligne = function (l, x) { return '<tr><th>' + l + '</th><td>' + x + '</td></tr>'; };
+      return '<div class="odm-num"><b>Numéro &nbsp;&nbsp;: ' + (String(v.numero || '').trim() ? E(v.numero) : '……..') + '/' + (an || '') + '</b></div>' +
+        '<table class="odm-t">' + ligne('NOM &amp; PRENOM :', V(v, 'agent')) + ligne('FONCTION :', V(v, 'fonction')) + ligne('OBJET :', T(v, 'objet', 2)) + ligne('DATE DÉPART :', V(v, 'depart')) + ligne('DATE RETOUR :', V(v, 'retour')) +
+        ligne('TRAJET A EFFECTUER :', V(v, 'trajet')) + ligne('ACCOMPAGNE :', V(v, 'accompagne', 6)) + ligne('MOYEN TRANSPORT :', V(v, 'transport')) + '</table>' +
+        '<div class="odm-sign"><b>' + E(v.signataire || 'Le Chef de Division Infrastructures') + '</b></div>' + PIED_ODM;
     });
 
   modele('demande-mission', 'missions', 'Demande de mission', 'Demande au Directeur Régional d\'autoriser une mission de travail.',
@@ -362,10 +373,15 @@
     'table{border-collapse:collapse;width:100%;margin:8px 0;page-break-inside:avoid}table.kv th{width:34%;text-align:left;background:#f2f2f2;border:1px solid #333;padding:6px 8px;font-size:10pt}table.kv td{border:1px solid #333;padding:6px 8px}' +
     'table.tgr th,table.tgr td{border:1px solid #333;padding:5px 7px;text-align:left;font-size:10pt;vertical-align:top}table.tgr th{background:#f2f2f2}table.tgr td{height:24px}table.tgr.serre{table-layout:fixed}table.tgr.serre td,table.tgr.serre th{font-size:9pt;padding:3px 4px}.c{text-align:center}' +
     'table.visas th,table.visas td{border:1px solid #333;padding:6px 8px;font-size:10pt}table.visas th{background:#f2f2f2}.cadre{border:1px solid #333;margin:10px 0;padding:6px 10px;page-break-inside:avoid}.cadre-t{text-align:center;font-weight:700;text-decoration:underline;margin-bottom:6px}' +
-    '.sign{text-align:right;margin:22px 0 40px}.avis{border:1px solid #333;padding:8px 10px;font-size:10pt;min-height:78px}.grille-avis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.case-c{margin-right:12px;white-space:nowrap}.pt-s{font-size:9.5pt}';
+    '.sign{text-align:right;margin:22px 0 40px}.avis{border:1px solid #333;padding:8px 10px;font-size:10pt;min-height:78px}.grille-avis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.case-c{margin-right:12px;white-space:nowrap}.pt-s{font-size:9.5pt}' +
+    // ordre de mission (mise en page de l'original)
+    '.doc.odm{position:relative;min-height:263mm}.odm-tete{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.odm-logo{width:22mm;height:auto;display:block}.odm-ent{font-size:9.5pt;line-height:1.45;margin-top:1mm}.odm-sou{display:inline-block;width:14mm;border-bottom:1px solid #000}' +
+    '.odm-d{flex:1;max-width:58%;text-align:center;margin-top:8mm;align-self:flex-start}.odm-d h2{font-size:15pt;margin:0 0 4mm;text-transform:none}.odm-trait{height:2.2mm;background:#F0A030;margin:0 -15mm 0 0}.odm-date{text-align:right;font-size:9.5pt;margin-top:6mm;padding-right:2mm}' +
+    '.odm-num{font-size:9.5pt;margin:12mm 0 14mm 5mm}.odm-t{border:1px solid #000;width:100%;margin:0}.odm-t th{width:31%;text-align:left;background:none;border:0;border-right:1px solid #000;border-bottom:1px solid #000;padding:3.4mm 2mm;font-size:9.5pt;vertical-align:middle;height:11mm}.odm-t td{border:0;border-bottom:1px solid #000;padding:3.4mm 3mm;font-size:9.5pt;vertical-align:middle}.odm-t tr:last-child th,.odm-t tr:last-child td{border-bottom:0}.odm-t .val{font-weight:400}' +
+    '.odm-sign{font-size:9.5pt;margin:6mm 0 0 5mm}.odm-pied{position:absolute;left:-15mm;right:-15mm;bottom:-8mm;text-align:center;font-size:7pt;color:#666}.odm-trait2{height:2mm;background:#F0A030;width:55%;margin-bottom:9mm}.odm-adr{margin-bottom:3mm}.odm-contacts{display:flex;justify-content:center;gap:9mm;flex-wrap:wrap}';
   /** HTML complet d'un document (fragment à insérer dans la page ou dans une fenêtre d'impression). */
   function rendre(m, v, logo) {
-    var h = '<div class="doc">' + entete(m.entete, v || {}) + m.html(v || {}) + '</div>';
+    var h = '<div class="doc' + (m.entete === 'odm' ? ' odm' : '') + '">' + entete(m.entete, v || {}) + m.html(v || {}) + '</div>';
     return h.replace('@LOGO@', E(logo || 'badges/logo-sonatrach.png'));
   }
   function trouver(id) { return M.filter(function (m) { return m.id === id; })[0] || null; }
