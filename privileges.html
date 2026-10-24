@@ -179,7 +179,7 @@
 
   function dessinerGrille() {
     var t = $('t-grille'), f = ($('g-filtre').value || '').toLowerCase(); t.textContent = '';
-    var hr = el('tr'); hr.appendChild(el('th', 'gapp', 'Application')); etat.roles.forEach(function (r) { var th = el('th', 'r'); th.title = r.libelle + ' — ' + r.nb_utilisateurs + ' personne(s)'; th.appendChild(el('span', null, r.libelle)); hr.appendChild(th); });
+    var hr = el('tr'); hr.appendChild(el('th', 'gapp', 'Application')); var thT = el('th', 'r'); thT.title = 'Tout le personnel : coche ou décoche d\'un coup tous les rôles, sauf Prestataire et Invité (à ouvrir à la main)'; thT.appendChild(el('span', null, '✔ Tout le personnel')); hr.appendChild(thT); etat.roles.forEach(function (r) { var th = el('th', 'r'); th.title = r.libelle + ' — ' + r.nb_utilisateurs + ' personne(s)'; th.appendChild(el('span', null, r.libelle)); hr.appendChild(th); });
     var th0 = el('thead'); th0.appendChild(hr); t.appendChild(th0);
     var tb = el('tbody');
     // mêmes familles et même ordre que le menu du portail (Rubriques) ; une application sans famille reste rangée sous son module
@@ -195,9 +195,13 @@
     });
     groupes.forEach(function (g) {
       if (!g.apps.length) return;
-      var trm = el('tr', 'mod'), tdm = el('td', null, (g.icone || '') + ' ' + g.titre); tdm.colSpan = etat.roles.length + 1; trm.appendChild(tdm); tb.appendChild(trm);
+      var trm = el('tr', 'mod'), tdm = el('td', null, (g.icone || '') + ' ' + g.titre); tdm.colSpan = etat.roles.length + 2; trm.appendChild(tdm); tb.appendChild(trm);
       g.apps.forEach(function (a) {
         var tr = el('tr'), ta = el('td', 'gapp', a.titre); ta.appendChild(el('small', null, String(a.niveau_min))); ta.title = 'Niveau minimal ' + a.niveau_min + (a.roles.length ? ' · réservée à : ' + a.roles.join(', ') : ' · ouverte à tous les rôles ayant le niveau'); tr.appendChild(ta);
+        var tt = el('td', 'c'), cbT = document.createElement('input'); cbT.type = 'checkbox'; cbT.title = 'Tout le personnel (sauf Prestataire et Invité) · ' + a.titre;
+        var cibles = etat.roles.filter(function (r) { return ['prestataire', 'guest'].indexOf(r.id) === -1; }), ouverts = cibles.filter(function (r) { return GrilleAcces.acces(etat, r.id, a); }).length;
+        cbT.checked = ouverts === cibles.length; cbT.indeterminate = ouverts > 0 && ouverts < cibles.length; if (cbT.checked) tt.className += ' ouvert';
+        cbT.addEventListener('change', function () { cocherTous(a, cbT.checked, cbT); }); tt.appendChild(cbT); tr.appendChild(tt);
         etat.roles.forEach(function (r) {
           var td = el('td', 'c'), cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = GrilleAcces.acces(etat, r.id, a); cb.title = r.libelle + ' · ' + a.titre;
           if (cb.checked) td.className += ' ouvert';
@@ -224,6 +228,27 @@
   }
   chargerAcces();
   var occupe = false;
+  /** « Tout le personnel » : donne ou retire l'accès à CETTE application pour tous les rôles sauf Prestataire et Invité, un rôle après l'autre (chaque étape tient compte de la précédente) ; les autres applications du module ne s'ouvrent pas. */
+  function cocherTous(a, voulu, cb) {
+    if (occupe) { cb.checked = !voulu; return; }
+    var msg = $('g-msg'), roles = etat.roles.filter(function (r) { return ['prestataire', 'guest'].indexOf(r.id) === -1; }), ignores = [], faits = 0;
+    if (!confirm((voulu ? 'Donner l\'accès à « ' + a.titre + ' » à tout le personnel' : 'Retirer l\'accès à « ' + a.titre + ' » à tout le personnel') + ' (' + roles.length + ' rôles, sans Prestataire ni Invité) ?\nLes autres applications de sa catégorie ne sont pas modifiées.')) { cb.checked = !voulu; return; }
+    occupe = true; msg.style.color = ''; msg.textContent = 'Enregistrement…';
+    roles.reduce(function (chaine, r) {
+      return chaine.then(function () {
+        var p = GrilleAcces.plan(etat, r.id, a.titre, voulu);
+        if (p.erreur) { ignores.push(r.libelle + ' (' + p.erreur.replace(/\.$/, '') + ')'); return null; }
+        if (!p.ops.length) return null;
+        faits += 1; msg.textContent = (voulu ? 'Accès donné à ' : 'Accès retiré à ') + r.libelle + '…';
+        var ordre = p.ops.slice().sort(function (x, y) { return (x.type === 'droit') - (y.type === 'droit') || (x.titre === a.titre) - (y.titre === a.titre); });
+        return ordre.reduce(function (c, op) { return c.then(function () { return op.type === 'droit' ? Api.call('admin_droit', { role: op.role, module: op.module, niveau: op.niveau }) : Api.call('admin_app', { titre: op.titre, niveau_min: op.niveau_min, roles: op.roles }); }); }, Promise.resolve()).then(function () { return recharger(true); });
+      });
+    }, Promise.resolve()).then(function () {
+      toast((voulu ? 'Accès donné : ' : 'Accès retiré : ') + a.titre + ' · ' + faits + ' rôle(s) modifié(s)');
+      msg.textContent = ignores.length ? 'Non modifié : ' + ignores.join(' ; ') : '';
+    }).catch(function (e) { toast(e.message, true); msg.textContent = e.message; msg.style.color = '#B42318'; })
+      .then(function () { occupe = false; return recharger(); });
+  }
   function cocher(r, a, cb) {
     var voulu = cb.checked, p = GrilleAcces.plan(etat, r.id, a.titre, voulu), msg = $('g-msg');
     if (p.erreur) { cb.checked = !voulu; msg.textContent = p.erreur; msg.style.color = '#B42318'; toast(p.erreur, true); return; }

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-127",
+    "date": "2026-10-24",
+    "title": "Version 5.67.0 — Privilèges : case « Tout le personnel » par application",
+    "changes": [
+      "Dans « Qui a accès à quoi », une colonne « ✔ Tout le personnel » coche ou décoche d'un coup tous les rôles pour UNE application (sauf Prestataire et Invité, à ouvrir à la main). Les autres applications de la même catégorie ne sont pas ouvertes : chaque rôle est traité l'un après l'autre en protégeant le public actuel des autres applications.",
+      "Les cases par rôle existaient déjà pour chaque application ; elles continuent de ne toucher que l'application de leur ligne."
+    ]
+  },
+  {
     "id": "2026-10-24-126",
     "date": "2026-10-24",
     "title": "Version 5.66.0 — Carte personnelle réduite, corrections de fiche",
