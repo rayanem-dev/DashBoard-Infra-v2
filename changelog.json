@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-128",
+    "date": "2026-10-24",
+    "title": "Version 5.67.1 — Ordre de mission : même rendu que l'original",
+    "changes": [
+      "Ordre de mission (Documents administratifs) : mise en page identique à l'original Word : grand logo, titre à droite sous un trait orange, N° et Numéro, tableau noir avec libellés en gras et valeurs en texte normal, signataire « Le Chef de Division Infrastructures » et pied de page avec l'adresse et les contacts de la Direction Régionale."
+    ]
+  },
+  {
     "id": "2026-10-24-127",
     "date": "2026-10-24",
     "title": "Version 5.67.0 — Privilèges : case « Tout le personnel » par application",
