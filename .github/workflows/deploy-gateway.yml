@@ -5,7 +5,7 @@ name: Déployer la passerelle
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths: ['apps-script/gateway/**', 'js/simulation.js', 'data/annuaire-data.js', 'data/pointage-effectif.js', 'badges/badges.js', 'apps-script/prise-en-charge/Enquetes.gs', '.github/workflows/deploy-gateway.yml']
+    paths: ['apps-script/gateway/**', 'js/simulation.js', 'data/annuaire-data.js', 'data/pointage-effectif.js', 'badges/badges.js', 'apps-script/prise-en-charge/Enquetes.gs', 'data/videos/**', 'outils/generer-videos-gateway.js', '.github/workflows/deploy-gateway.yml']
   workflow_dispatch:
 
 concurrency:
