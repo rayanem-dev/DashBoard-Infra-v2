@@ -21,6 +21,7 @@
   table.gacces th.r span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 12px; display: inline-block; text-transform: none; letter-spacing: 0; font-weight: 700; color: var(--text, #1F2937); }
   table.gacces th.gapp { position: sticky; top: 0; left: 0; z-index: 4; background: var(--surface, #fff); text-align: left; min-width: 260px; vertical-align: bottom; }
   table.gacces td.gapp { position: sticky; left: 0; background: var(--surface, #fff); z-index: 1; min-width: 260px; font-weight: 700; font-size: 13px; }
+  table.gacces select.cat { margin-top: 3px; max-width: 240px; font: inherit; font-size: 11.5px; font-weight: 500; padding: 2px 4px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text-muted); }
   table.gacces td.gapp small { font-weight: 800; background: var(--tint-orange, #FFF1E6); color: var(--orange-main, #E85D04); border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
   table.gacces tr.mod td { background: var(--tint-orange, #FFF1E6); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; position: static; }
   table.gacces td.c { text-align: center; padding: 2px; } table.gacces td.c input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--orange-main, #E85D04); }
@@ -197,7 +198,11 @@
       if (!g.apps.length) return;
       var trm = el('tr', 'mod'), tdm = el('td', null, (g.icone || '') + ' ' + g.titre); tdm.colSpan = etat.roles.length + 2; trm.appendChild(tdm); tb.appendChild(trm);
       g.apps.forEach(function (a) {
-        var tr = el('tr'), ta = el('td', 'gapp', a.titre); ta.appendChild(el('small', null, String(a.niveau_min))); ta.title = 'Niveau minimal ' + a.niveau_min + (a.roles.length ? ' · réservée à : ' + a.roles.join(', ') : ' · ouverte à tous les rôles ayant le niveau'); tr.appendChild(ta);
+        var tr = el('tr'), ta = el('td', 'gapp', a.titre); ta.appendChild(el('small', null, String(a.niveau_min)));
+        var sc = document.createElement('select'); sc.className = 'cat'; sc.title = 'Déplacer « ' + a.titre + ' » dans une autre catégorie (affichage uniquement, aucun droit ne change)'; sc.setAttribute('aria-label', 'Catégorie de ' + a.titre);
+        var o0 = el('option', null, '↔ Catégorie : automatique'); o0.value = ''; sc.appendChild(o0);
+        defs.forEach(function (dd) { var oo = el('option', null, dd.icone + ' ' + dd.titre); oo.value = dd.id; sc.appendChild(oo); });
+        sc.value = a.rubrique || ''; sc.addEventListener('change', function () { agir('admin_rubrique', { titre: a.titre, rubrique: sc.value }, 'Catégorie mise à jour'); }); ta.appendChild(document.createElement('br')); ta.appendChild(sc); ta.title = 'Niveau minimal ' + a.niveau_min + (a.roles.length ? ' · réservée à : ' + a.roles.join(', ') : ' · ouverte à tous les rôles ayant le niveau'); tr.appendChild(ta);
         var tt = el('td', 'c'), cbT = document.createElement('input'); cbT.type = 'checkbox'; cbT.title = 'Tout le personnel (sauf Prestataire et Invité) · ' + a.titre;
         var cibles = etat.roles.filter(function (r) { return ['prestataire', 'guest'].indexOf(r.id) === -1; }), ouverts = cibles.filter(function (r) { return GrilleAcces.acces(etat, r.id, a); }).length;
         cbT.checked = ouverts === cibles.length; cbT.indeterminate = ouverts > 0 && ouverts < cibles.length; if (cbT.checked) tt.className += ' ouvert';

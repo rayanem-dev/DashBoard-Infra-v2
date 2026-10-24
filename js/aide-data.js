@@ -52,7 +52,7 @@ window.AIDE = {
   'privileges.html': { titre: 'Gestion des privilèges', img: 'privileges',
     resume: 'Administration : rôles, droits par module, exceptions individuelles, comptes et codes de secours.',
     etapes: ['Onglets : Comptes, Rôles, Droits, Exceptions, Applications.', 'Un compte = un rôle ; chaque rôle a un niveau par module (1 voir, 2 modifier, 3 administrer).', '« ✉ Inviter » envoie l\'invitation ; « 👤 Se connecter en tant que » ouvre le portail comme cet agent (mode support, 2 h).', 'Onglet Applications : modifiez les cartes du catalogue et les rôles qui les voient.'],
-    astuces: ['Une carte n\'apparaît que si le niveau du module suffit ET si le rôle figure dans la liste de la carte (quand il y en a une).'] },
+    astuces: ['Une carte n\'apparaît que si le niveau du module suffit ET si le rôle figure dans la liste de la carte (quand il y en a une).', 'Onglet « Applications » (grille) : la liste « ↔ Catégorie » sous chaque application la déplace dans une autre catégorie du menu ; « automatique » rétablit le rangement d\'origine. Aucun droit n\'est modifié.'] },
   'divergences.html': { titre: 'Contrôle de l\'annuaire', img: 'divergences',
     resume: 'Compare chaque fiche contact avec BDDORGA et liste les différences.',
     etapes: ['Lisez les noms à rapprocher puis cliquez sur la bonne personne.', 'Consultez les valeurs différentes ou manquantes (« Copier ce tableau »).', '« Voir ce qui serait écrit » puis « Écrire dans BDDORGA » complète les cases vides.'],

@@ -336,6 +336,7 @@
         demoRoles = demoRoles.filter(function (r) { return r.id !== p.id; }); demoDroits = demoDroits.filter(function (d) { return d.role !== p.id; }); return {}; }
       case 'admin_app': { exigerAdmin(); var ap = demoApps.filter(function (x) { return x.titre === p.titre; })[0]; if (!ap) throw erreur('Application inconnue');
         ap.niveau_min = p.niveau_min; ap.roles = p.roles || []; return {}; }
+      case 'admin_rubrique': { exigerAdmin(); var ar = demoApps.filter(function (x) { return x.titre === p.titre; })[0]; if (!ar) throw erreur('Application inconnue'); ar.rubrique = p.rubrique || ''; return {}; }
       case 'admin_droit': exigerAdmin(); demoDroits = demoDroits.filter(function (d) { return !(d.role === p.role && d.module === p.module); });
         if (Number(p.niveau) > 0) demoDroits.push({ role: p.role, module: p.module, niveau: Number(p.niveau) }); return {};
       case 'admin_exception': exigerAdmin(); demoExceptions = demoExceptions.filter(function (d) { return !(d.email === p.email && d.module === p.module); });
