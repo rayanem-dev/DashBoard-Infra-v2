@@ -17,13 +17,14 @@ function habLigne_(lignes, i, col, cd, cb, a, p) {
     nomAr: p.nomAr, prenomAr: p.prenomAr, naiss: v(col.naiss), lieu: v(col.lieu), pere: v(col.pere), mere: v(col.mere), adresse: v(col.adresse), embauche: v(col.embauche), nin: v(col.nin), acte: v(col.acte), tel: v(col.tel) };
 }
 function habilitationsDonnees_(req) {
-  var u = badgesDroit_(req, 1), niveau = acces_(u).badges || 0, ok = habColonnesVisibles_(niveau), rows = [], ents = {};
+  var u = badgesDroit_(req, 1), niveau = acces_(u).badges || 0, ok = habColonnesVisibles_(niveau), rows = [], ents = {}, onglets = [];
   enqClasseur_().getSheets().forEach(function (sh) {
     var lignes = sh.getDataRange().getDisplayValues(), a = Badges.analyserEnquetes(lignes, sh.getName());
     if (a.erreur || !a.personnes.length) return;
     var col = Badges.colonnesEnquetes(lignes), cd = enqColDate_(lignes, col), cb = enqColBase_(lignes, col);
+    onglets.push({ onglet: sh.getName(), entreprise: a.entreprise, nb: a.personnes.length });
     a.personnes.forEach(function (p) { var r = habLigne_(lignes, p.ligne - 1, col, cd, cb, a, p), o = {}; ok.forEach(function (c) { o[c.id] = r[c.id] || ''; }); rows.push(o); ents[a.entreprise] = true; });
   });
-  return { colonnes: ok.map(function (c) { return { id: c.id, libelle: c.l, sensible: !!c.sensible }; }), lignes: rows, entreprises: Object.keys(ents).sort(), niveau: niveau };
+  return { colonnes: ok.map(function (c) { return { id: c.id, libelle: c.l, sensible: !!c.sensible }; }), lignes: rows, entreprises: Object.keys(ents).sort(), onglets: onglets, niveau: niveau };
 }
 if (typeof module !== 'undefined') module.exports = { habColonnesVisibles_: habColonnesVisibles_ };
