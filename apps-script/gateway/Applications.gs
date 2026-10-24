@@ -132,6 +132,14 @@ var SEED_APPS = [
   1
  ],
  [
+  "badges",
+  "Prestataires présents sur site",
+  "Liste des prestataires présents sur site à une date choisie, par entreprise, d'après les Enquêtes administratives : page claire, impression en un clic et extraction Excel légère (toutes les entreprises ou une seule).",
+  "🧑‍🏭",
+  "presents.html",
+  1
+ ],
+ [
   "logistique",
   "Prise en charge hôtel",
   "Demande de prise en charge à l'hôtel (ex. Hôtel PLAZA à Boumerdes) pour un agent en mission : identité, ordre de mission, dates, nuitées calculées automatiquement, objet et imputation ; impression en un clic et historique.",

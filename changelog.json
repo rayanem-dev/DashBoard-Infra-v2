@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-129",
+    "date": "2026-10-24",
+    "title": "Version 5.68.0 — Prestataires présents sur site",
+    "changes": [
+      "Nouvelle application « Prestataires présents sur site » : choisissez une date, la page liste par entreprise les personnes présentes d'après les Enquêtes administratives (date d'enregistrement ≤ date choisie, contrat du Suivi CPM en cours ; deux contrôles décochables).",
+      "Impression en un clic (feuille A4 par entreprise) et extraction Excel légère (CSV) pour toutes les entreprises ou une seule. Lecture seule : rien n'est modifié dans les Enquêtes ni le CPM."
+    ]
+  },
+  {
     "id": "2026-10-24-128",
     "date": "2026-10-24",
     "title": "Version 5.67.1 — Ordre de mission : même rendu que l'original",
