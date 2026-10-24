@@ -11,7 +11,8 @@ L'agent choisit un contrat en exécution (la **cartouche** se remplit depuis le 
 1. Créer un projet Apps Script, y mettre `Code.js`, `Fiche.html` (nom du fichier : `Fiche`) et `appsscript.json`.
 2. **Déployer › Application Web** (exécuter en tant que : moi ; accès : tout le monde) et autoriser Sheets (Suivi CPM) et Drive.
 3. Ajouter l'adresse `/exec` dans le catalogue du portail (onglet Applications de BDDORGA, module `cpm`, titre « Fiche d'évaluation »).
-4. Déploiement automatique : `.github/workflows/deploy-fiche-evaluation.yml` envoie le dossier au projet Apps Script et met à jour la MÊME adresse /exec à chaque modification. L'ID de script est renseigné dans ce fichier.
+4. **Autoriser l'envoi d'e-mails (une fois, par le propriétaire du projet)** : dans l'éditeur Apps Script, choisir la fonction `autoriserEnvoiMail` puis ▶ Exécuter, accepter l'autorisation « Envoyer des e-mails en votre nom » (script.send_mail). Sans cela, le bouton « Envoyer au secrétariat » affiche « Vous n'êtes pas autorisé à appeler MailApp.sendEmail ». L'e-mail ne part jamais tout seul : seulement au clic, après confirmation.
+5. Déploiement automatique : `.github/workflows/deploy-fiche-evaluation.yml` envoie le dossier au projet Apps Script et met à jour la MÊME adresse /exec à chaque modification. L'ID de script est renseigné dans ce fichier.
 
 ## Tests
 `node --test apps-script/fiche-evaluation/test/*.test.js`
