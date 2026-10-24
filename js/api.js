@@ -61,7 +61,8 @@
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
         { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
       { id: 'badges', titre: 'Badges prestataires', icone: '🪪', niveau: 3, apps: [
-        { titre: 'Badges prestataires', description: 'Prépare et imprime les badges (recto-verso), numérotation automatique et historique.', emoji: '🪪', url: 'badges.html' } ] },
+        { titre: 'Badges prestataires', description: 'Prépare et imprime les badges (recto-verso), numérotation automatique et historique.', emoji: '🪪', url: 'badges.html' },
+        { titre: 'Prestataires présents sur site', description: 'Qui est présent sur site à une date choisie, par entreprise, avec impression et extraction Excel.', emoji: '🧑‍🏭', url: 'presents.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
         { titre: 'Contrôle de l\'annuaire', description: 'Compare les fiches contact avec BDDORGA.', emoji: '🔎', url: 'divergences.html' },
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' } ] }
@@ -253,6 +254,10 @@
       case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'DURAND Marc', champ: 'Téléphone', valeur: '0550000001' }, { nom: 'LEROY Pierre Antoine', champ: 'Identifiant SONA', valeur: 'sona00004' }, { nom: 'LEROY Pierre Antoine', champ: 'Matricule', valeur: '10004D' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
+      case 'presents_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var bp = demoBdg(), gr0 = {}, ordre0 = [], dd = String(p.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+        bp.pers.forEach(function (x, i) { var k = x.entreprise; if (!gr0[k]) { gr0[k] = { entreprise: k, contrat: x.contrat || '', intitule: '', debut: '', fin: '', personnes: [] }; ordre0.push(k); } gr0[k].personnes.push({ nom: x.nom, prenom: x.prenom, fonction: x.fonction, structure: x.structure || '', date_enreg: i % 3 === 0 ? '' : '2026-0' + (1 + (i % 9)) + '-15' }); });
+        var ent0 = ordre0.map(function (k) { var g = gr0[k]; g.personnes = g.personnes.filter(function (q) { return !q.date_enreg || q.date_enreg <= dd; }); return g; }).filter(function (g) { return g.personnes.length; });
+        return { date: dd, entreprises: ent0, total: ent0.reduce(function (n, g) { return n + g.personnes.length; }, 0), exclus: { apres: 0, sans_date: 0, contrat: 0 }, avertissements: [], sans_date_total: 3 }; }
       case 'badges_photos_profils': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { photos: (p.personnes || []).map(function () { return ''; }) }; }
       case 'badges_donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var bd = demoBdg(); return { personnes: bd.pers, entreprises: bd.ent, historique: bd.hist, utilisateur: demoState.user.nom || 'Démo', avertissements: [], niveau: 3 };

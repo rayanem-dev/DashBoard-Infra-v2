@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prestataires présents sur site – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .pr { max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; }
+  .barre { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end; margin-bottom: 14px; }
+  .barre label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 3px; }
+  .barre input[type=date], .barre input[type=search] { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .barre .case { display: flex; gap: 6px; align-items: center; font-size: 13px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text-dark); margin: 0; }
+  .barre input[type=checkbox] { width: auto; margin: 0; flex: none; } .barre .cases { display: flex; flex-direction: column; gap: 4px; }
+  .btn-p { padding: 9px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .tuiles { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tuile { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-card); padding: 10px 18px; min-width: 130px; } .tuile b { display: block; font-size: 26px; line-height: 1.1; color: var(--orange-main); } .tuile span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .note { font-size: 12.5px; color: var(--text-muted); margin: 0 0 12px; } .note.alerte { color: #92400E; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; padding: 8px 12px; }
+  .ent { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); margin-bottom: 10px; overflow: hidden; }
+  .ent > summary { list-style: none; cursor: pointer; padding: 12px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .ent > summary::-webkit-details-marker { display: none; }
+  .ent .nom { font-weight: 800; font-size: 15px; } .ent .sous { font-size: 12px; color: var(--text-muted); flex-basis: 100%; margin-top: -4px; }
+  .ent .nb { background: var(--tint-orange, #FFF1E6); color: #B94E00; font-weight: 800; border-radius: 999px; padding: 2px 10px; font-size: 12.5px; }
+  .ent .outils { margin-inline-start: auto; display: flex; gap: 6px; }
+  table.t { width: 100%; border-collapse: collapse; font-size: 13.5px; } table.t th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 6px 16px; border-top: 1px solid var(--border); background: var(--surface-2, #F8F8F6); } table.t td { padding: 7px 16px; border-top: 1px solid var(--border); } table.t td.n { width: 44px; color: var(--text-muted); }
+  .vide { text-align: center; color: var(--text-muted); padding: 40px 10px; }
+  #feuille-print { display: none; }
+  @media print {
+    @page { size: A4 portrait; margin: 14mm; }
+    html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(main) { display: none !important; } .pr > *:not(#feuille-print) { display: none !important; } .pr { padding: 0; max-width: none; }
+    #feuille-print { display: block; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
+    #feuille-print .tete { display: flex; align-items: center; gap: 10px; border-bottom: 2.5px solid #F0A030; padding-bottom: 6px; margin-bottom: 10px; } #feuille-print .tete img { height: 16mm; } #feuille-print h1 { font-size: 15pt; margin: 0; } #feuille-print .tete div { font-size: 9pt; }
+    #feuille-print .e { break-inside: avoid; margin-bottom: 9px; } #feuille-print .e h2 { font-size: 11pt; margin: 0 0 3px; background: #f2f2f2; padding: 3px 6px; } #feuille-print table { width: 100%; border-collapse: collapse; } #feuille-print td, #feuille-print th { border: 1px solid #555; padding: 2px 6px; font-size: 9.5pt; text-align: left; } #feuille-print th { background: #fafafa; }
+    #feuille-print .pied { margin-top: 10px; font-size: 8.5pt; color: #444; }
+  }
+  @media (max-width: 640px) { .ent .outils { flex-basis: 100%; margin: 0; } table.t td, table.t th { padding: 6px 10px; } .col-struct { display: none; } }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🧑‍🏭</div>
+    <div class="logo-text"><h1>Prestataires présents sur site</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="pr">
+  <div class="barre">
+    <div><label for="f-date">Présents le</label><input type="date" id="f-date"></div>
+    <div><button class="btn-s" id="b-auj" type="button">Aujourd'hui</button></div>
+    <div><label for="f-q">Rechercher</label><input type="search" id="f-q" placeholder="Entreprise ou personne…" autocomplete="off"></div>
+    <div class="cases"><label class="case"><input type="checkbox" id="f-sans" checked> Compter les personnes sans date d'enregistrement</label><label class="case"><input type="checkbox" id="f-ctr" checked> Contrat en cours à cette date</label></div>
+    <div style="margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-csv" type="button">⬇ Excel (toutes les entreprises)</button><button class="btn-s" id="b-maj" type="button" title="Relire les Enquêtes maintenant">↻ Actualiser</button></div>
+  </div>
+  <div class="tuiles"><div class="tuile"><b id="n-ent">–</b><span>entreprises</span></div><div class="tuile"><b id="n-pers">–</b><span>personnes présentes</span></div></div>
+  <p class="note" id="note"></p>
+  <div id="liste"></div>
+  <div id="feuille-print"></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fr(i) { return i ? String(i).slice(8, 10) + '/' + String(i).slice(5, 7) + '/' + String(i).slice(0, 4) : ''; }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function toast(m, e) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (e ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  var D = null, charge = 0;
+
+  function charger(force) {
+    var n = ++charge; $('note').textContent = 'Chargement des Enquêtes…'; $('note').className = 'note';
+    Api.call('presents_donnees', { date: $('f-date').value || iso(), sans_date: $('f-sans').checked, contrat_valide: $('f-ctr').checked, force: !!force }).then(function (r) { if (n !== charge) return; D = r; dessiner(); })
+      .catch(function (e) { if (n !== charge) return; $('note').textContent = 'Lecture impossible : ' + e.message; $('note').className = 'note alerte'; });
+  }
+  function filtrees() {
+    var q = norm($('f-q').value).trim(); if (!D) return [];
+    if (!q) return D.entreprises;
+    return D.entreprises.map(function (g) {
+      if (norm(g.entreprise + ' ' + g.contrat).indexOf(q) !== -1) return g;
+      var ps = g.personnes.filter(function (p) { return norm(p.nom + ' ' + p.prenom + ' ' + p.fonction).indexOf(q) !== -1; });
+      return ps.length ? Object.assign({}, g, { personnes: ps }) : null;
+    }).filter(Boolean);
+  }
+  function csv(groupes, nom) {
+    var l = [['Entreprise', 'Contrat', 'Nom', 'Prénom', 'Fonction', 'Structure', 'Date d\'enregistrement', 'Présent le']];
+    groupes.forEach(function (g) { g.personnes.forEach(function (p) { l.push([g.entreprise, g.contrat, p.nom, p.prenom, p.fonction, p.structure, fr(p.date_enreg), fr(D.date)]); }); });
+    var txt = '﻿' + l.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';'); }).join('\r\n');
+    var a = el('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'text/csv;charset=utf-8' })); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function dessiner() {
+    var gs = filtrees(), z = $('liste'); z.textContent = '';
+    var tot = gs.reduce(function (n, g) { return n + g.personnes.length; }, 0);
+    $('n-ent').textContent = gs.length; $('n-pers').textContent = tot;
+    var x = D.exclus || {}, notes = [];
+    if (x.apres) notes.push(x.apres + ' enregistrée(s) après le ' + fr(D.date));
+    if (x.contrat) notes.push(x.contrat + ' dont le contrat n\'est pas en cours');
+    if (x.sans_date) notes.push(x.sans_date + ' sans date d\'enregistrement');
+    var n = el('span'); $('note').textContent = 'Présents le ' + fr(D.date) + ' d\'après les Enquêtes administratives' + (notes.length ? ' · non comptées : ' + notes.join(', ') : '') + (D.sans_date_total && $('f-sans').checked ? ' · ' + D.sans_date_total + ' personne(s) sans date d\'enregistrement comptées (inscrites avant que la date soit tenue)' : '') + '.' + ((D.avertissements || []).length ? ' ⚠ ' + D.avertissements.join(' ') : '');
+    $('note').className = 'note' + ((D.avertissements || []).length ? ' alerte' : '');
+    if (!gs.length) { z.appendChild(el('p', 'vide', 'Aucun prestataire présent à cette date.')); }
+    gs.forEach(function (g) {
+      var d = el('details', 'ent'); d.open = gs.length <= 12; var s = el('summary');
+      s.appendChild(el('span', 'nom', g.entreprise)); s.appendChild(el('span', 'nb', g.personnes.length + (g.personnes.length > 1 ? ' personnes' : ' personne')));
+      var o = el('span', 'outils'); var b = el('button', 'btn-s', '⬇ Excel'); b.type = 'button'; b.title = 'Extraire seulement cette entreprise'; b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); csv([g], 'presents_' + g.entreprise.replace(/[^A-Za-z0-9]+/g, '_') + '_' + D.date + '.csv'); }); o.appendChild(b); s.appendChild(o);
+      var sous = [g.contrat ? 'Contrat ' + g.contrat : '', g.intitule, g.debut || g.fin ? 'du ' + (fr(g.debut) || '…') + ' au ' + (fr(g.fin) || '…') : ''].filter(Boolean).join(' · '); if (sous) s.appendChild(el('span', 'sous', sous));
+      d.appendChild(s);
+      var t = el('table', 't'), h = el('thead'), hr = el('tr'); ['N°', 'Nom et prénom', 'Fonction', 'Structure', 'Enregistré le'].forEach(function (x, i) { var th = el('th', i === 3 ? 'col-struct' : '', x); hr.appendChild(th); }); h.appendChild(hr); t.appendChild(h);
+      var tb = el('tbody'); g.personnes.forEach(function (p, i) { var tr = el('tr'); tr.appendChild(el('td', 'n', String(i + 1))); var c = el('td'); c.appendChild(el('b', null, p.nom)); c.appendChild(document.createTextNode(' ' + p.prenom)); tr.appendChild(c); tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', 'col-struct', p.structure || '—')); tr.appendChild(el('td', null, fr(p.date_enreg) || '—')); tb.appendChild(tr); });
+      t.appendChild(tb); d.appendChild(t); z.appendChild(d);
+    });
+    // feuille imprimable
+    var fp = $('feuille-print');
+    fp.innerHTML = '<div class="tete"><img src="badges/logo-sonatrach.png" alt=""><div><h1>Prestataires présents sur site au ' + E(fr(D.date)) + '</h1><div>Direction Régionale Rhourde-Nouss · Division Infrastructure · ' + tot + ' personne(s), ' + gs.length + ' entreprise(s)</div></div></div>' +
+      gs.map(function (g) { return '<div class="e"><h2>' + E(g.entreprise) + ' — ' + g.personnes.length + (g.contrat ? ' · contrat ' + E(g.contrat) : '') + '</h2><table><thead><tr><th style="width:8mm">N°</th><th>Nom et prénom</th><th>Fonction</th></tr></thead><tbody>' + g.personnes.map(function (p, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + E(p.nom) + '</b> ' + E(p.prenom) + '</td><td>' + E(p.fonction) + '</td></tr>'; }).join('') + '</tbody></table></div>'; }).join('') +
+      '<div class="pied">Établi le ' + E(fr(iso())) + ' d\'après les Enquêtes administratives (date d\'enregistrement ≤ ' + E(fr(D.date)) + ', contrat en cours).</div>';
+  }
+  $('f-date').value = iso();
+  ['f-date', 'f-sans', 'f-ctr'].forEach(function (id) { $(id).addEventListener('change', function () { charger(false); }); });
+  $('f-q').addEventListener('input', function () { if (D) dessiner(); });
+  $('b-auj').addEventListener('click', function () { $('f-date').value = iso(); charger(false); });
+  $('b-maj').addEventListener('click', function () { charger(true); });
+  $('b-imp').addEventListener('click', function () { if (!D) return; window.print(); });
+  $('b-csv').addEventListener('click', function () { if (!D) return; csv(filtrees(), 'presents_' + D.date + '.csv'); });
+  charger(false);
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
