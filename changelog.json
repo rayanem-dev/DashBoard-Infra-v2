@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-139",
+    "date": "2026-10-24",
+    "title": "Version 5.72.2 — Bouton d'aide plus visible",
+    "changes": [
+      "Le bouton « ? » d'aide (en bas à gauche) est maintenant plein, aux couleurs orange du site, au lieu d'un rond transparent gris."
+    ]
+  },
+  {
     "id": "2026-10-24-138",
     "date": "2026-10-24",
     "title": "Version 5.72.1 — Vidéo de formation privée",
