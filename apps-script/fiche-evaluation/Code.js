@@ -9,7 +9,7 @@ const SUIVI_CPM_TAB = 'suivi';
 const DOSSIER_FICHES = 'Fiches d’évaluation';   // dossier Drive (créé à la première fiche) : un PDF par fiche, ses réponses dans la description du fichier
 
 // Colonnes du Suivi CPM (indices 0 = A), les mêmes que la passerelle
-const CPM_COL = { intitule: 3, statut: 8, attribue_a: 12, n_contrat: 13, montant: 14, date_signature: 15, date_ods: 16, duree: 17 };
+const CPM_COL = { intitule: 3, statut: 8, attribue_a: 12, n_contrat: 13, montant: 14, date_signature: 15, date_ods: 16, duree: 17, unite: 35 };
 
 /** Boîtes e-mail des services (« Envoyer au service ») : choix fait à l'écran, e-mail jamais automatique. À modifier ici si une adresse change. */
 const SERVICES_MAIL = [
@@ -70,7 +70,7 @@ function tauxFr_(t) { return t == null ? '' : String(t).replace('.', ',') + ' %'
 
 /** « 53.INFRA.25 » (forme du Suivi CPM) → « I/53/RNS/INFRA/2025 » (forme de la fiche) ; toute autre forme est gardée telle quelle. */
 function numeroLong_(n) {
-  const v = propre_(n), m = /^(\d{1,3})\s*\.\s*([A-Za-z]+)\s*\.\s*(\d{2})$/.exec(v);
+  const v = propre_(n), m = /^(\d{1,3})\s*[.,\-]\s*([A-Za-z]+)\s*[.,\-]\s*(?:20)?(\d{2})$/.exec(v);   // « 53.INFRA.25 », « 03.INFRA.2026 » et la faute « 40,INFRA,26 » du Suivi CPM
   return m ? 'I/' + m[1] + '/RNS/' + m[2].toUpperCase() + '/20' + m[3] : v;
 }
 /** Montant du CPM → « 162 300 000,00 DA HT » (nombre seul, avec ou sans espaces / virgule) ; un texte déjà formé est gardé. */
@@ -84,10 +84,12 @@ function montantFr_(m) {
   return e.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',' + d + ' DA HT';
 }
 /** Durée du CPM : plus de 60 = jours, sinon mois (même règle que le Suivi CPM) → « 36 Mois » / « 540 Jours ». */
-function delaiFr_(d) {
+function delaiFr_(d, unite) {
   const v = propre_(d); if (!v) return '';
   if (/[a-z]/i.test(v)) return v;
   const n = Number(v.replace(',', '.')); if (!isFinite(n)) return v;
+  const u = norm_(unite);   // colonne « Unité durée » du Suivi CPM : prioritaire ; à défaut, plus de 60 = jours
+  if (u.indexOf('jour') === 0) return n + ' Jours'; if (u.indexOf('mois') === 0) return n + ' Mois';
   return n > 60 ? n + ' Jours' : n + ' Mois';
 }
 
@@ -99,10 +101,12 @@ function contratsDepuis_(lignes) {
   const vus = {}, out = [], v = (r, k) => propre_(r[CPM_COL[k]]);
   lignes.slice(h + 1).forEach(r => {
     if (norm_(v(r, 'statut')).indexOf('execution') < 0) return;
-    const brut = v(r, 'n_contrat'); if (!brut || vus[brut]) return; vus[brut] = 1;
-    const ods = v(r, 'date_ods');
-    out.push({ contrat: numeroLong_(brut), numeroCpm: brut, entrepreneur: v(r, 'attribue_a'), montant: montantFr_(v(r, 'montant')),
-      dateOds: ods, dateVigueur: ods, dateService: ods, delai: delaiFr_(v(r, 'duree')), projet: v(r, 'intitule') });
+    const brut = v(r, 'n_contrat'), cle = brut || (v(r, 'attribue_a') + '|' + v(r, 'intitule')); if (!cle || vus[cle]) return; vus[cle] = 1;
+    const ods = v(r, 'date_ods'), montant = montantFr_(v(r, 'montant')), delai = delaiFr_(v(r, 'duree'), v(r, 'unite'));
+    // champs vides dans le Suivi CPM (à compléter là-bas, la fiche reste modifiable à la main)
+    const manques = []; if (!brut) manques.push('n° de contrat'); if (!v(r, 'attribue_a')) manques.push('entrepreneur'); if (!montant) manques.push('montant'); if (!ods) manques.push('date ODS'); if (!delai) manques.push('durée');
+    out.push({ contrat: numeroLong_(brut), numeroCpm: brut, entrepreneur: v(r, 'attribue_a'), montant: montant,
+      dateOds: ods, dateVigueur: ods, dateService: ods, delai: delai, projet: v(r, 'intitule'), manques: manques });
   });
   return out.sort((a, b) => a.entrepreneur.localeCompare(b.entrepreneur, 'fr') || a.contrat.localeCompare(b.contrat));
 }

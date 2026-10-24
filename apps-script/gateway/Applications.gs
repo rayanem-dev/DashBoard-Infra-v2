@@ -230,7 +230,7 @@ var SEED_APPS = [
  [
   "cpm",
   "Vivier des Entreprises",
-  "Base des prestataires, sous-traitants et partenaires, et inscription d'une nouvelle entreprise : consultez la base et envoyez le formulaire d'inscription en un clic (lien et message à copier).",
+  "Vivier des prestataires, sous-traitants et partenaires : recherche par activité, ajout, correction et suppression d'une entreprise directement dans le portail, et lien d'inscription à envoyer aux entreprises extérieures.",
   "🏢",
   "vivier.html",
   1
@@ -433,7 +433,7 @@ function fusionnerVivier_() {
       var url = String(v[i][4]), titre = String(v[i][1]);
       if (url === 'vivier.html') { garde = garde || i + 1; continue; }
       if (/1olPzVux6UclQVytVphOIFFvIxCEbhfgUJieqwipls7g/.test(url) || /1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/.test(url) || /^(Inscription au )?Vivier des Entreprises$/.test(titre)) {
-        if (!garde && /^Vivier des Entreprises$/.test(titre)) { garde = i + 1; sh.getRange(i + 1, 3).setValue("Base des prestataires, sous-traitants et partenaires, et inscription d'une nouvelle entreprise : consultez la base et envoyez le formulaire d'inscription en un clic (lien et message à copier)."); sh.getRange(i + 1, 5).setValue('vivier.html'); }
+        if (!garde && /^Vivier des Entreprises$/.test(titre)) { garde = i + 1; sh.getRange(i + 1, 3).setValue("Vivier des prestataires, sous-traitants et partenaires : recherche par activité, ajout, correction et suppression d'une entreprise directement dans le portail, et lien d'inscription à envoyer aux entreprises extérieures."); sh.getRange(i + 1, 5).setValue('vivier.html'); }
         else suppr.push(i + 1);
       }
     }

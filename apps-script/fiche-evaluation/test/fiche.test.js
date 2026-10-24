@@ -25,7 +25,15 @@ test('cartouche depuis le Suivi CPM : contrats en exécution, formats de la fich
   const l = (statut, contrat, extra) => { const r = new Array(19).fill(''); r[3] = 'Terrassement'; r[8] = statut; r[12] = 'ETB ZATOUT ABDENCER'; r[13] = contrat; r[14] = '162300000'; r[16] = '10/05/2025'; r[17] = '36'; return Object.assign(r, extra || {}); };
   const lignes = [['', '', '', 'Intitulé', '', '', '', '', 'Statut'], l('Contrat en exécution', '53.INFRA.25'), l('Contrat échu', '10.INFRA.24'), l('Contrat en exécution', '53.INFRA.25')];
   const r = contratsDepuis_(lignes);
-  assert.deepStrictEqual(r, [{ contrat: 'I/53/RNS/INFRA/2025', numeroCpm: '53.INFRA.25', entrepreneur: 'ETB ZATOUT ABDENCER', montant: '162 300 000,00 DA HT', dateOds: '10/05/2025', dateVigueur: '10/05/2025', dateService: '10/05/2025', delai: '36 Mois', projet: 'Terrassement' }]);
+  assert.deepStrictEqual(r, [{ contrat: 'I/53/RNS/INFRA/2025', numeroCpm: '53.INFRA.25', entrepreneur: 'ETB ZATOUT ABDENCER', montant: '162 300 000,00 DA HT', dateOds: '10/05/2025', dateVigueur: '10/05/2025', dateService: '10/05/2025', delai: '36 Mois', manques: [], projet: 'Terrassement' }]);
+});
+test('cartouche : numéro avec année sur 4 chiffres ou faute de frappe, unité de durée, champs manquants signalés', () => {
+  assert.strictEqual(numeroLong_('03.INFRA.2026'), 'I/03/RNS/INFRA/2026'); assert.strictEqual(numeroLong_('40,INFRA,26'), 'I/40/RNS/INFRA/2026');
+  assert.strictEqual(delaiFr_('6', 'jours'), '6 Jours'); assert.strictEqual(delaiFr_('540', 'mois'), '540 Mois'); assert.strictEqual(delaiFr_('11', ''), '11 Mois');
+  const r = new Array(36).fill(''); r[3] = 'Étude'; r[8] = 'Contrat en exécution'; r[12] = 'ENAGEO';
+  const out = contratsDepuis_([['', '', '', 'Intitulé', '', '', '', '', 'Statut'], r]);
+  assert.strictEqual(out.length, 1, 'un contrat en exécution sans n° reste dans la liste');
+  assert.deepStrictEqual(out[0].manques, ['n° de contrat', 'montant', 'date ODS', 'durée']);
 });
 test('PDF : cartouche, case cochée « X » à la bonne colonne, taux, échappement', () => {
   const c = criteres_(), h = ficheHtml_({ cartouche: { entrepreneur: 'ETB <b>Z', contrat: 'I/53/RNS/INFRA/2025', date: '2025-11-25', projet: 'Terrassement', dateOds: '10/05/2025' }, notes: { [c[0].id]: 70, [c[1].id]: 80 }, suggestion: 'Ligne 1\nLigne 2' }, 'AAAA');

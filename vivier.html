@@ -28,6 +28,21 @@
   .cadre { width: 100%; height: 70vh; min-height: 420px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
   textarea.msg { width: 100%; box-sizing: border-box; min-height: 150px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); }
   .ok { font-size: 12.5px; color: #15803D; font-weight: 600; }
+  .barre { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; margin-bottom: 14px; }
+  .barre label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 3px; }
+  .barre input, .barre select, dialog input, dialog textarea { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .tuiles { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; } .tuile { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-card); padding: 10px 18px; min-width: 120px; } .tuile b { display: block; font-size: 26px; line-height: 1.1; color: var(--orange-main); } .tuile span { font-size: 12px; color: var(--text-muted); }
+  .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .fiche { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; display: flex; flex-direction: column; gap: 5px; }
+  .fiche h3 { margin: 0; font-size: 15px; } .fiche .act { align-self: flex-start; font-size: 11.5px; font-weight: 700; background: var(--tint-orange, #FFF1E6); color: #B94E00; border-radius: 999px; padding: 2px 10px; }
+  .fiche .l { font-size: 13px; color: var(--text-dark); word-break: break-word; } .fiche .l a { color: inherit; } .fiche .com { font-size: 12.5px; color: var(--text-muted); font-style: italic; }
+  .fiche .outils { margin-top: auto; padding-top: 8px; display: flex; gap: 6px; }
+  dialog { border: 0; border-radius: 16px; padding: 0; max-width: 560px; width: calc(100% - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.3); background: var(--surface); color: var(--text-dark); } dialog::backdrop { background: rgba(0,0,0,.45); }
+  dialog form { padding: 18px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; } dialog h2 { grid-column: 1/-1; margin: 0 0 2px; font-size: 17px; } dialog label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); display: block; margin-bottom: 3px; } dialog .plein { grid-column: 1/-1; } dialog input, dialog textarea { width: 100%; box-sizing: border-box; }
+  dialog .pied-d { grid-column: 1/-1; display: flex; gap: 8px; justify-content: flex-end; align-items: center; } dialog .err { color: #B42318; font-size: 13px; margin-inline-end: auto; }
+  .vide { text-align: center; color: var(--text-muted); padding: 40px 10px; }
+  .btn-s.dang { color: #B42318; border-color: #F3B7B0; }
+  @media (max-width: 560px) { dialog form { grid-template-columns: 1fr; } }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -39,64 +54,105 @@
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 <main class="vv">
-  <div class="onglets" role="tablist">
-    <button class="onglet" role="tab" id="o-base" aria-selected="true" aria-controls="p-base" type="button">🏢 Base du vivier</button>
-    <button class="onglet" role="tab" id="o-insc" aria-selected="false" aria-controls="p-insc" type="button">📝 Inscription d'une entreprise</button>
+  <div class="barre">
+    <div style="flex:1;min-width:200px"><label for="f-q">Rechercher</label><input type="search" id="f-q" style="width:100%;box-sizing:border-box" placeholder="Nom, activité, téléphone, e-mail, ville…"></div>
+    <div><label for="f-act">Activité</label><select id="f-act"><option value="">Toutes</option></select></div>
+    <div id="z-mod" hidden style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-p" id="b-add" type="button">+ Ajouter une entreprise</button>
+      <button class="btn-s" id="b-sync" type="button" title="Ajoute à la base les nouvelles réponses du formulaire destiné aux entreprises extérieures">↻ Réponses du formulaire</button>
+    </div>
+    <div><button class="btn-s" id="b-lien" type="button" title="Lien du formulaire à envoyer à une entreprise qui veut s'inscrire (rien n'est envoyé automatiquement)">🔗 Lien d'inscription</button></div>
+    <span id="ok" class="ok" role="status"></span>
   </div>
-
-  <section id="p-base" role="tabpanel">
-    <div class="carte">
-      <h2>Base des prestataires, sous-traitants et partenaires</h2>
-      <p>Les entreprises déjà inscrites (activité, téléphone, e-mail, adresse, commentaire). Les fiches se corrigent directement dans la feuille Google.</p>
-      <div class="actions">
-        <a class="btn-p" id="l-base" target="_blank" rel="noopener">Ouvrir la base dans Google Sheets ↗</a>
-        <button class="btn-s" id="b-cadre" type="button">Afficher ici</button>
-      </div>
-    </div>
-    <iframe class="cadre" id="cadre" title="Base du vivier" hidden></iframe>
-  </section>
-
-  <section id="p-insc" role="tabpanel" hidden>
-    <div class="carte">
-      <h2>Faire inscrire une entreprise</h2>
-      <p>Envoyez le formulaire à l'entreprise ou au prestataire qui souhaite intégrer le vivier : ses réponses arrivent dans la base. Rien n'est envoyé automatiquement.</p>
-      <div class="actions">
-        <a class="btn-p" id="l-form" target="_blank" rel="noopener">Ouvrir le formulaire ↗</a>
-        <button class="btn-s" id="b-lien" type="button">Copier le lien</button>
-        <button class="btn-s" id="b-msg" type="button">Copier le message à envoyer</button>
-        <span class="ok" id="ok" role="status"></span>
-      </div>
-    </div>
-    <div class="carte">
-      <h2>Message prêt à envoyer</h2>
-      <textarea class="msg" id="msg" readonly aria-label="Message à envoyer à l'entreprise"></textarea>
-    </div>
-  </section>
+  <div class="tuiles"><div class="tuile"><b id="n-tot">0</b><span id="n-lib">entreprises</span></div><div class="tuile"><b id="n-act">0</b><span>activités</span></div></div>
+  <div class="grille" id="grille"></div>
+  <p class="vide" id="vide" hidden>Aucune entreprise ne correspond.</p>
 </main>
+
+<dialog id="dlg">
+  <form method="dialog" id="frm" novalidate>
+    <h2 id="d-titre">Ajouter une entreprise</h2>
+    <div class="plein"><label for="c-nom">Nom de l'entreprise *</label><input id="c-nom" maxlength="120" required></div>
+    <div class="plein"><label for="c-activite">Type d'activité</label><input id="c-activite" maxlength="120" list="l-act" placeholder="Ex. Génie civil, Électricité, Location de matériel…"><datalist id="l-act"></datalist></div>
+    <div><label for="c-telephone">Téléphone</label><input id="c-telephone" maxlength="40" inputmode="tel"></div>
+    <div><label for="c-telephone2">Autre téléphone</label><input id="c-telephone2" maxlength="40" inputmode="tel"></div>
+    <div><label for="c-email">E-mail</label><input id="c-email" maxlength="120" type="email"></div>
+    <div><label for="c-email2">Autre e-mail</label><input id="c-email2" maxlength="120" type="email"></div>
+    <div><label for="c-fax">Fax</label><input id="c-fax" maxlength="40"></div>
+    <div class="plein"><label for="c-adresse">Adresse</label><input id="c-adresse" maxlength="250"></div>
+    <div class="plein"><label for="c-commentaire">Commentaire</label><textarea id="c-commentaire" rows="2" maxlength="500"></textarea></div>
+    <div class="pied-d"><span class="err" id="d-err" role="alert"></span><button class="btn-s" type="button" id="d-annuler">Annuler</button><button class="btn-p" type="submit" id="d-ok">Enregistrer</button></div>
+  </form>
+</dialog>
 <script>
 (function () {
-  var BASE = 'https://docs.google.com/spreadsheets/d/1olPzVux6UclQVytVphOIFFvIxCEbhfgUJieqwipls7g/edit?gid=1473964080#gid=1473964080';
-  var FORM = 'https://docs.google.com/forms/d/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/viewform';
-  var MSG = 'Bonjour,\n\nDans le cadre de la mise à jour du vivier des entreprises de la Division Infrastructure (Sonatrach – RNS), nous vous invitons à renseigner vos coordonnées et votre domaine d\'activité via le formulaire suivant :\n\n' + FORM + '\n\nMerci de le remplir dans les meilleurs délais.\n\nCordialement,\nDivision Infrastructure – RNS';
   var $ = function (i) { return document.getElementById(i); };
-  $('l-base').href = BASE; $('l-form').href = FORM; $('msg').value = MSG;
+  var etat = { l: [], peut: false, lien: '' }, edition = null;
+  var CH = ['nom', 'activite', 'telephone', 'telephone2', 'email', 'email2', 'fax', 'adresse', 'commentaire'];
   if (window.Api && Api.demo) $('demo').hidden = false;
-  function onglet(nom) {
-    [['base', 'p-base'], ['insc', 'p-insc']].forEach(function (p) {
-      var actif = p[0] === nom; $('o-' + p[0]).setAttribute('aria-selected', actif ? 'true' : 'false'); $(p[1]).hidden = !actif;
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function dire(t, mauvais) { var o = $('ok'); o.textContent = t; o.style.color = mauvais ? '#B42318' : ''; clearTimeout(dire.t); dire.t = setTimeout(function () { o.textContent = ''; }, 3500); }
+  function charger() {
+    return Api.call('vivier_liste').then(function (r) {
+      etat.l = r.entreprises || []; etat.peut = !!r.peut_modifier; etat.lien = r.lien_formulaire || '';
+      $('z-mod').hidden = !etat.peut; $('z-mod').style.display = etat.peut ? 'flex' : 'none';
+      var acts = {}; etat.l.forEach(function (e) { if (e.activite) acts[e.activite] = 1; });
+      var sel = $('f-act'), cur = sel.value; sel.textContent = ''; var o0 = el('option', null, 'Toutes'); o0.value = ''; sel.appendChild(o0);
+      var dl = $('l-act'); dl.textContent = '';
+      Object.keys(acts).sort(function (a, b) { return norm(a) < norm(b) ? -1 : 1; }).forEach(function (a) { var o = el('option', null, a); o.value = a; sel.appendChild(o); var d = document.createElement('option'); d.value = a; dl.appendChild(d); });
+      sel.value = acts[cur] ? cur : ''; $('n-act').textContent = Object.keys(acts).length; dessiner();
+    }).catch(function (e) { dire(e.message, true); });
+  }
+  function ligne(f, icone, txt, href) { if (!txt) return; var d = el('div', 'l'); d.appendChild(document.createTextNode(icone + ' ')); if (href) { var a = el('a', null, txt); a.href = href; d.appendChild(a); } else d.appendChild(document.createTextNode(txt)); f.appendChild(d); }
+  function dessiner() {
+    var q = norm($('f-q').value), act = $('f-act').value, g = $('grille'); g.textContent = '';
+    var l = etat.l.filter(function (e) { return (!act || e.activite === act) && (!q || norm(CH.map(function (k) { return e[k]; }).join(' ')).indexOf(q) !== -1); });
+    $('n-tot').textContent = l.length; $('n-lib').textContent = l.length > 1 ? 'entreprises' : 'entreprise'; $('vide').hidden = !!l.length;
+    l.forEach(function (e) {
+      var f = el('article', 'fiche'); f.appendChild(el('h3', null, e.nom)); if (e.activite) f.appendChild(el('span', 'act', e.activite));
+      [e.telephone, e.telephone2].forEach(function (t) { ligne(f, '📞', t, t ? 'tel:' + t.replace(/[^\d+]/g, '') : ''); });
+      [e.email, e.email2].forEach(function (m) { ligne(f, '✉️', m, m ? 'mailto:' + m : ''); });
+      ligne(f, '📠', e.fax); ligne(f, '📍', e.adresse);
+      if (e.commentaire) f.appendChild(el('div', 'com', e.commentaire));
+      if (etat.peut) {
+        var o = el('div', 'outils'), b1 = el('button', 'btn-s', '✏️ Modifier'), b2 = el('button', 'btn-s dang', '🗑 Supprimer'); b1.type = b2.type = 'button';
+        b1.onclick = function () { ouvrir(e); }; b2.onclick = function () { supprimer(e); }; o.appendChild(b1); o.appendChild(b2); f.appendChild(o);
+      }
+      g.appendChild(f);
     });
-    try { location.hash = nom; } catch (e) { /* rien */ }
   }
-  $('o-base').onclick = function () { onglet('base'); }; $('o-insc').onclick = function () { onglet('insc'); };
-  if (location.hash === '#insc') onglet('insc');
-  $('b-cadre').onclick = function () { var c = $('cadre'); c.src = BASE.replace('/edit?', '/edit?rm=minimal&'); c.hidden = false; $('b-cadre').hidden = true; };
-  function copier(txt, libelle) {
-    function fait() { $('ok').textContent = '✓ ' + libelle + ' copié'; setTimeout(function () { $('ok').textContent = ''; }, 2500); }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(fait, function () { $('msg').select(); });
-    else { $('msg').select(); try { document.execCommand('copy'); fait(); } catch (e) { /* sélection manuelle */ } }
+  function ouvrir(e) {
+    edition = e || null; $('d-titre').textContent = e ? 'Modifier l\'entreprise' : 'Ajouter une entreprise'; $('d-err').textContent = '';
+    CH.forEach(function (k) { $('c-' + k).value = e ? (e[k] || '') : ''; });
+    if (typeof $('dlg').showModal === 'function') $('dlg').showModal(); else $('dlg').setAttribute('open', '');
+    $('c-nom').focus();
   }
-  $('b-lien').onclick = function () { copier(FORM, 'Lien'); };
-  $('b-msg').onclick = function () { copier(MSG, 'Message'); };
+  function fermer() { if ($('dlg').close) $('dlg').close(); else $('dlg').removeAttribute('open'); }
+  $('frm').addEventListener('submit', function (ev) {
+    ev.preventDefault(); var fiche = {}; CH.forEach(function (k) { fiche[k] = $('c-' + k).value; });
+    if (!fiche.nom.trim()) { $('d-err').textContent = 'Le nom de l\'entreprise est obligatoire.'; return; }
+    $('d-ok').disabled = true;
+    Api.call('vivier_enregistrer', { id: edition ? edition.id : '', fiche: fiche }).then(function () { fermer(); dire(edition ? '✓ Fiche modifiée' : '✓ Entreprise ajoutée'); return charger(); })
+      .catch(function (e) { $('d-err').textContent = e.message; }).then(function () { $('d-ok').disabled = false; });
+  });
+  $('d-annuler').onclick = fermer; $('b-add').onclick = function () { ouvrir(null); };
+  function supprimer(e) {
+    if (!confirm('Supprimer « ' + e.nom + ' » du vivier ?')) return;
+    Api.call('vivier_supprimer', { id: e.id }).then(function () { dire('✓ Entreprise supprimée'); return charger(); }).catch(function (x) { dire(x.message, true); });
+  }
+  $('b-sync').onclick = function () {
+    $('b-sync').disabled = true;
+    Api.call('vivier_synchroniser').then(function (r) { dire(r.ajoutees ? '✓ ' + r.ajoutees + ' nouvelle(s) entreprise(s) ajoutée(s)' : 'Rien de nouveau dans le formulaire'); return charger(); })
+      .catch(function (e) { dire(e.message, true); }).then(function () { $('b-sync').disabled = false; });
+  };
+  $('b-lien').onclick = function () {
+    var txt = 'Bonjour,\n\nDans le cadre de la mise à jour du vivier des entreprises de la Division Infrastructure (Sonatrach – RNS), nous vous invitons à renseigner vos coordonnées et votre domaine d\'activité via le formulaire suivant :\n\n' + etat.lien + '\n\nMerci de le remplir dans les meilleurs délais.\n\nCordialement,\nDivision Infrastructure – RNS';
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { dire('✓ Message avec le lien copié : collez-le dans un e-mail ou un WhatsApp'); }, function () { prompt('Copiez ce message :', txt); });
+    else prompt('Copiez ce message :', txt);
+  };
+  $('f-q').addEventListener('input', dessiner); $('f-act').addEventListener('change', dessiner);
+  charger();
 })();
 </script>
 <script src="js/pied.js"></script>

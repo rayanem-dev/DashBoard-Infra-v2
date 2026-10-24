@@ -13,9 +13,21 @@ test('le catalogue n\'a plus qu\'une carte Vivier, vers vivier.html', () => {
   assert.ok(!/Inscription au Vivier/.test(seed));
   assert.ok(/"vivier\.html"/.test(seed));
 });
-test('la page Vivier a ses deux onglets et le lien du formulaire', () => {
+test('la page Vivier est une vraie application (liste, ajout, modification, suppression) et non plus de simples liens', () => {
   const h = lire('vivier.html');
-  assert.ok(/id="p-base"/.test(h) && /id="p-insc"/.test(h) && /forms\/d\/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY\/viewform/.test(h));
+  ['vivier_liste', 'vivier_enregistrer', 'vivier_supprimer', 'vivier_synchroniser'].forEach(a => assert.ok(h.includes(a), a));
+  assert.ok(!/docs\.google\.com\/spreadsheets/.test(h));
+});
+test('vivier : validation et déduplication', () => {
+  const V = require('../Vivier.gs');
+  assert.strictEqual(V.vivierTexte_(' — '), ''); assert.strictEqual(V.vivierTexte_('  A   B '), 'A B');
+  assert.strictEqual(V.vivierCle_('S.A.R.L. Électro  Sud'), V.vivierCle_('electro sud'));
+  assert.throws(() => V.vivierValider_({ nom: '' }), /obligatoire/);
+  assert.throws(() => V.vivierValider_({ nom: 'X', email: 'pas-un-mail' }), /e-mail/);
+  assert.strictEqual(V.vivierValider_({ nom: ' ETS  X ', email: 'A@B.DZ', fax: '—' }).email, 'a@b.dz');
+  const rep = [['Horodateur', 'Nom', 'Type'], ['', 'ETS Neuf', 'BTP', '029', '', 'x@y.dz'], ['', 'Ets neuf', 'BTP'], ['', 'Déjà là'], ['', '—']];
+  const n = V.vivierDepuisReponses_(rep, ['deja la']);
+  assert.deepStrictEqual(n.map(x => x.nom), ['ETS Neuf']); assert.strictEqual(n[0].email, 'x@y.dz');
 });
 
 test('catégories : l\'action admin_rubrique n\'accepte que les familles du portail', () => {

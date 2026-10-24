@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-142",
+    "date": "2026-10-24",
+    "title": "Version 5.75.0 — Vivier des Entreprises : application complète ; fiche d'évaluation fiabilisée",
+    "changes": [
+      "Vivier des Entreprises : une seule application dans le portail. On y recherche et filtre les entreprises, on en ajoute, on corrige ou on supprime une fiche (plus besoin de la feuille ni du formulaire Google). Le lien d'inscription pour les entreprises extérieures se copie en un clic, et les réponses du formulaire peuvent être ajoutées à la base.",
+      "Fiche d'évaluation : contrats du Suivi CPM mieux lus (numéro avec année sur 4 chiffres ou faute de frappe, unité de durée jours/mois lue dans le Suivi CPM, contrats en exécution sans numéro conservés) ; un ⚠ signale les informations manquantes dans le Suivi CPM (n°, montant, ODS, durée)."
+    ]
+  },
+  {
     "id": "2026-10-24-141",
     "date": "2026-10-24",
     "title": "Version 5.74.0 — Déplacer une application d'une catégorie à une autre",

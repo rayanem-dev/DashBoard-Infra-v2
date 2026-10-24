@@ -151,13 +151,13 @@
     google.script.run
       .withSuccessHandler(l => {
         contrats = l || []; const s = $('contratCpm');
-        contrats.forEach((c, i) => { const o = el('option', null, c.entrepreneur + ' — ' + c.contrat + ' — ' + c.projet.slice(0, 70)); o.value = i; s.appendChild(o); });
-        $('aideCpm').textContent = contrats.length + ' contrat(s) en exécution dans le Suivi CPM (lecture seule). Tout reste modifiable.';
+        contrats.forEach((c, i) => { const o = el('option', null, (c.manques && c.manques.length ? '⚠ ' : '') + c.entrepreneur + ' — ' + (c.contrat || 'sans n°') + ' — ' + c.projet.slice(0, 70)); o.value = i; s.appendChild(o); });
+        $('aideCpm').textContent = contrats.length + ' contrat(s) en exécution dans le Suivi CPM (lecture seule). Tout reste modifiable. ⚠ = information manquante dans le Suivi CPM.';
       })
       .withFailureHandler(e => { $('aideCpm').textContent = 'Suivi CPM indisponible : ' + e.message + ' — saisie à la main possible.'; })
       .getContrats();
   }
-  $('contratCpm').addEventListener('change', () => { const c = contrats[$('contratCpm').value]; if (c) remplir(c); });
+  $('contratCpm').addEventListener('change', () => { const c = contrats[$('contratCpm').value]; if (c) { remplir(c); $('aideCpm').textContent = c.manques && c.manques.length ? '⚠ Non renseigné dans le Suivi CPM : ' + c.manques.join(', ') + ' — à compléter dans le Suivi CPM ou à saisir ici.' : contrats.length + ' contrat(s) en exécution dans le Suivi CPM (lecture seule). Tout reste modifiable.'; } });
 
   $('btnGenerer').addEventListener('click', () => {
     const cartouche = {}; CHAMPS.forEach(k => cartouche[k] = $(k).value);
