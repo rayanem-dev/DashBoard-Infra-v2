@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fichier des habilitations – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .pr { max-width: 1280px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 12px 16px; margin-bottom: 12px; }
+  .bloc h2 { font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
+  .ligne { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; }
+  .ligne label.l { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 3px; }
+  .ligne input[type=date], .ligne input[type=search] { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .cases { display: flex; flex-wrap: wrap; gap: 6px 14px; } .cases label { text-transform: none; letter-spacing: 0; color: var(--text-dark); display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 600; cursor: pointer; } .cases input { width: auto; margin: 0; }
+  .cases.sens label { color: #92400E; }
+  .btn-p { padding: 9px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .tuiles { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; } .tuile { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-card); padding: 8px 18px; min-width: 120px; } .tuile b { display: block; font-size: 24px; color: var(--orange-main); line-height: 1.1; } .tuile span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .note { font-size: 12.5px; color: var(--text-muted); margin: 0 0 10px; }
+  .tab { overflow: auto; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); } table.t { width: 100%; border-collapse: collapse; font-size: 13px; } table.t th { position: sticky; top: 0; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #fff; background: var(--orange-main); padding: 8px 10px; white-space: nowrap; } table.t td { padding: 6px 10px; border-top: 1px solid var(--border); vertical-align: top; } table.t tr:nth-child(even) td { background: var(--surface-2, #FAFAF7); }
+  #feuille-print { display: none; }
+  @media print {
+    @page { size: A4 landscape; margin: 0; }
+    html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(main) { display: none !important; } .pr > *:not(#feuille-print) { display: none !important; } .pr { padding: 0; max-width: none; }
+    #feuille-print { display: block; width: 100%; box-sizing: border-box; padding: 0 12mm; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 9pt; }
+    #feuille-print .tete { display: flex; align-items: center; gap: 10px; border-bottom: 2.5px solid #F0A030; padding-bottom: 5px; margin-bottom: 8px; } #feuille-print .tete img { height: 14mm; } #feuille-print h1 { font-size: 14pt; margin: 0; } #feuille-print .tete div { font-size: 8.5pt; }
+    #feuille-print table.cadre { width: 100%; border: 0; border-collapse: collapse; } #feuille-print table.cadre > thead > tr > td, #feuille-print table.cadre > tfoot > tr > td, #feuille-print table.cadre > tbody > tr > td { border: 0; padding: 0; } #feuille-print .esp { height: 12mm; }
+    #feuille-print table.d { width: 100%; border-collapse: collapse; } #feuille-print table.d th, #feuille-print table.d td { border: 1px solid #555; padding: 2px 5px; font-size: 8.5pt; text-align: left; vertical-align: top; } #feuille-print table.d th { background: #f2f2f2; } #feuille-print table.d tr { break-inside: avoid; }
+    #feuille-print .pied { margin-top: 8px; font-size: 8pt; color: #444; }
+  }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🗃️</div>
+    <div class="logo-text"><h1>Fichier des habilitations</h1><p>Enquêtes administratives · extraction en vrac</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="pr">
+  <div class="bloc">
+    <h2>1 · Quelles personnes ?</h2>
+    <div class="ligne">
+      <div><label class="l" for="f-q">Rechercher</label><input type="search" id="f-q" placeholder="Nom, fonction, entreprise…" autocomplete="off"></div>
+      <div><label class="l" for="f-du">Prise en charge entre le</label><input type="date" id="f-du"></div><div><label class="l" for="f-au">et le</label><input type="date" id="f-au"></div>
+      <div><label class="l">Entreprises</label><details id="d-ent"><summary class="btn-s" style="display:inline-block;cursor:pointer" id="s-ent">Toutes</summary><div class="bloc" style="position:absolute;z-index:5;max-height:300px;overflow:auto;min-width:280px;margin-top:4px"><div style="display:flex;gap:6px;margin-bottom:6px"><button class="btn-s" id="e-tout" type="button">Tout cocher</button><button class="btn-s" id="e-rien" type="button">Tout décocher</button></div><div class="cases" id="l-ent" style="flex-direction:column"></div></div></details></div>
+    </div>
+  </div>
+  <div class="bloc">
+    <h2>2 · Quelles colonnes ? <span style="font-weight:400;text-transform:none;letter-spacing:0">(cochez celles à afficher, imprimer ou exporter)</span></h2>
+    <div class="cases" id="l-col"></div>
+    <div class="cases sens" id="l-sens" style="margin-top:8px"></div>
+    <div style="margin-top:8px;display:flex;gap:6px"><button class="btn-s" id="c-ess" type="button">Essentiel</button><button class="btn-s" id="c-tout" type="button">Toutes</button><button class="btn-s" id="c-rien" type="button">Aucune</button></div>
+  </div>
+  <div class="tuiles"><div class="tuile"><b id="n-pers">–</b><span>personnes</span></div><div class="tuile"><b id="n-ent">–</b><span>entreprises</span></div><div class="tuile"><b id="n-col">–</b><span>colonnes</span></div>
+    <div style="margin-inline-start:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-xl" type="button">⬇ Excel</button><button class="btn-s" id="b-maj" type="button">↻ Actualiser</button></div></div>
+  <p class="note" id="note"></p>
+  <div class="tab"><table class="t" id="t"></table></div>
+  <div id="feuille-print"></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fr(i) { return /^\d{4}-\d{2}-\d{2}$/.test(String(i || '')) ? String(i).slice(8, 10) + '/' + String(i).slice(5, 7) + '/' + String(i).slice(0, 4) : String(i || ''); }
+  function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  var D = null, cols = {}, ents = {}, ESSENTIEL = ['entreprise', 'nom', 'prenom', 'fonction', 'date_pec', 'base'], MAX = 600;
+
+  function charger() {
+    $('note').textContent = 'Lecture du fichier des Enquêtes…';
+    Api.call('habilitations_donnees').then(function (r) {
+      D = r; D.entreprises.forEach(function (e) { if (!(e in ents)) ents[e] = true; });
+      var presents = {}; D.colonnes.forEach(function (c) { presents[c.id] = 1; if (!(c.id in cols)) cols[c.id] = ESSENTIEL.indexOf(c.id) !== -1; });
+      Object.keys(cols).forEach(function (k) { if (!presents[k]) delete cols[k]; });
+      menus(); dessiner();
+    }).catch(function (e) { $('note').textContent = 'Lecture impossible : ' + e.message; });
+  }
+  function menus() {
+    var lc = $('l-col'), ls = $('l-sens'); lc.textContent = ''; ls.textContent = '';
+    D.colonnes.forEach(function (c) { var l = el('label'), i = el('input'); i.type = 'checkbox'; i.checked = !!cols[c.id]; i.addEventListener('change', function () { cols[c.id] = i.checked; dessiner(); }); l.appendChild(i); l.appendChild(document.createTextNode(c.libelle)); (c.sensible ? ls : lc).appendChild(l); });
+    if (D.colonnes.some(function (c) { return c.sensible; })) { var t = el('b', null, 'Données personnelles : '); t.style.cssText = 'font-size:12px;color:#92400E'; ls.insertBefore(t, ls.firstChild); }
+    var le = $('l-ent'); le.textContent = '';
+    D.entreprises.forEach(function (e) { var l = el('label'), i = el('input'); i.type = 'checkbox'; i.checked = ents[e] !== false; i.addEventListener('change', function () { ents[e] = i.checked; dessiner(); }); l.appendChild(i); l.appendChild(document.createTextNode(e)); le.appendChild(l); });
+  }
+  function colonnes() { return D.colonnes.filter(function (c) { return cols[c.id]; }); }
+  function lignes() {
+    var q = norm($('f-q').value).trim(), du = $('f-du').value, au = $('f-au').value;
+    return D.lignes.filter(function (l) {
+      if (ents[l.entreprise] === false) return false;
+      if ((du || au) && (!l.date_pec || (du && l.date_pec < du) || (au && l.date_pec > au))) return false;
+      return !q || norm(Object.keys(l).map(function (k) { return l[k]; }).join(' ')).indexOf(q) !== -1;
+    });
+  }
+  function val(c, l) { return c.id === 'date_pec' ? fr(l[c.id]) : (l[c.id] || ''); }
+  function dessiner() {
+    var cs = colonnes(), ls = lignes(), t = $('t'); t.textContent = '';
+    var nEnt = {}; ls.forEach(function (l) { nEnt[l.entreprise] = 1; });
+    $('n-pers').textContent = ls.length; $('n-ent').textContent = Object.keys(nEnt).length; $('n-col').textContent = cs.length;
+    var coches = D.entreprises.filter(function (e) { return ents[e] !== false; }).length; $('s-ent').textContent = coches === D.entreprises.length ? 'Toutes (' + coches + ')' : coches + ' sur ' + D.entreprises.length;
+    $('note').textContent = (D.lignes.length) + ' personnes dans le fichier' + (ls.length > MAX ? ' · aperçu limité aux ' + MAX + ' premières lignes (l\'impression et l\'Excel reprennent tout)' : '') + (D.niveau < 2 ? ' · les colonnes personnelles (naissance, NIN, adresse…) demandent le droit de saisie des Badges' : '') + '.';
+    if (!cs.length) { t.appendChild(el('caption', null, 'Cochez au moins une colonne.')); return; }
+    var h = el('thead'), hr = el('tr'); hr.appendChild(el('th', null, 'N°')); cs.forEach(function (c) { hr.appendChild(el('th', null, c.libelle)); }); h.appendChild(hr); t.appendChild(h);
+    var b = el('tbody'); ls.slice(0, MAX).forEach(function (l, i) { var tr = el('tr'); tr.appendChild(el('td', null, String(i + 1))); cs.forEach(function (c) { tr.appendChild(el('td', null, val(c, l) || '—')); }); b.appendChild(tr); }); t.appendChild(b);
+    // feuille imprimable (A4 paysage, marges recréées dans la feuille pour ne pas imprimer l'adresse du site)
+    $('feuille-print').innerHTML = '<table class="cadre"><thead><tr><td><div class="esp"></div></td></tr></thead><tfoot><tr><td><div class="esp"></div></td></tr></tfoot><tbody><tr><td><div class="tete"><img src="badges/logo-sonatrach.png" alt=""><div><h1>Fichier des habilitations</h1><div>Direction Régionale Rhourde-Nouss · Division Infrastructure · ' + ls.length + ' personne(s) · ' + Object.keys(nEnt).length + ' entreprise(s)</div></div></div>' +
+      '<table class="d"><thead><tr><th style="width:8mm">N°</th>' + cs.map(function (c) { return '<th>' + E(c.libelle) + '</th>'; }).join('') + '</tr></thead><tbody>' + ls.map(function (l, i) { return '<tr><td>' + (i + 1) + '</td>' + cs.map(function (c) { return '<td>' + E(val(c, l)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>' +
+      '<div class="pied">Extrait le ' + E(fr(iso())) + ' du fichier des Enquêtes administratives.</div></td></tr></tbody></table>';
+  }
+  function excel() {
+    var cs = colonnes(), ls = lignes(); if (!cs.length) return;
+    var lg = cs.map(function (c) { var m = c.libelle.length; ls.forEach(function (l) { m = Math.max(m, String(val(c, l)).length); }); return Math.min(42, Math.max(10, m + 3)); });
+    var haut = [{ cellules: [{ v: 'Fichier des habilitations', s: 'titre' }], hauteur: 30 }, { cellules: [{ v: 'Extrait le ' + fr(iso()) + ' · ' + ls.length + ' personne(s) · Direction Régionale Rhourde-Nouss · Division Infrastructure', s: 'sous' }] }, { cellules: [] },
+      { cellules: cs.map(function (c) { return { v: c.libelle, s: 'entete' }; }), hauteur: 22 }];
+    ls.forEach(function (l) { haut.push({ cellules: cs.map(function (c) { return { v: val(c, l), s: c.id === 'nom' ? 'gras' : 'texte' }; }) }); });
+    var b = XlsxMini.blob({ feuilles: [{ nom: 'Habilitations', largeurs: lg, fusions: ['A1:' + XlsxMini.col(Math.max(cs.length - 1, 1)) + '1', 'A2:' + XlsxMini.col(Math.max(cs.length - 1, 1)) + '2'], figer: 4, filtre: 'A4:' + XlsxMini.col(cs.length - 1) + (haut.length), lignes: haut }] });
+    var a = el('a'); a.href = URL.createObjectURL(b); a.download = 'habilitations_' + iso() + '.xlsx'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  $('f-q').addEventListener('input', function () { if (D) dessiner(); }); ['f-du', 'f-au'].forEach(function (i) { $(i).addEventListener('change', function () { if (D) dessiner(); }); });
+  $('e-tout').addEventListener('click', function () { D.entreprises.forEach(function (e) { ents[e] = true; }); menus(); dessiner(); }); $('e-rien').addEventListener('click', function () { D.entreprises.forEach(function (e) { ents[e] = false; }); menus(); dessiner(); });
+  $('c-ess').addEventListener('click', function () { Object.keys(cols).forEach(function (k) { cols[k] = ESSENTIEL.indexOf(k) !== -1; }); menus(); dessiner(); });
+  $('c-tout').addEventListener('click', function () { Object.keys(cols).forEach(function (k) { cols[k] = true; }); menus(); dessiner(); }); $('c-rien').addEventListener('click', function () { Object.keys(cols).forEach(function (k) { cols[k] = false; }); menus(); dessiner(); });
+  $('b-imp').addEventListener('click', function () { if (D) window.print(); }); $('b-xl').addEventListener('click', function () { if (D) excel(); }); $('b-maj').addEventListener('click', charger);
+  charger();
+})();
+</script>
+<script src="js/xlsx-mini.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

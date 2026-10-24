@@ -1,43 +1,44 @@
-// Prestataires présents sur site : dates, fin de contrat, filtrage par date.
+// Prestataires présents sur site d'après les prises en charge : séjours (entrée / sortie), 28 jours par défaut, option « toutes les entrées ».
 const test = require('node:test');
 const assert = require('node:assert');
-const { presentsCalculer_, presentsDate_, presentsFinContrat_ } = require('../Presents.gs');
+const { presentsCalculer_, presentsSejours_, presentsDate_ } = require('../Presents.gs');
+const entrepriseDe = p => String(p || '').split(' - ')[1] || '', contratDe = p => String(p || '').split(' - ')[0].trim();
 
 test('dates lues : jj/mm/aaaa, aaaa-mm-jj, objet Date ; le reste est vide', () => {
-  assert.strictEqual(presentsDate_('07/10/2026'), '2026-10-07'); assert.strictEqual(presentsDate_('2026-10-07'), '2026-10-07'); assert.strictEqual(presentsDate_('7.1.26'), '2026-01-07');
-  assert.strictEqual(presentsDate_(new Date(2026, 9, 7)), '2026-10-07'); assert.strictEqual(presentsDate_('à compléter'), ''); assert.strictEqual(presentsDate_(''), '');
+  assert.strictEqual(presentsDate_('07/10/2026'), '2026-10-07'); assert.strictEqual(presentsDate_('2026-10-07 14:30'), '2026-10-07'); assert.strictEqual(presentsDate_(new Date(2026, 9, 7)), '2026-10-07');
+  assert.strictEqual(presentsDate_('à compléter'), '');
 });
-test('fin de contrat : échéance indiquée, sinon ODS + durée en mois (ou en jours au-delà de 60), moins un jour', () => {
-  assert.strictEqual(presentsFinContrat_('31/12/2026', '', ''), '2026-12-31');
-  assert.strictEqual(presentsFinContrat_('', '01/01/2026', '12'), '2026-12-31');
-  assert.strictEqual(presentsFinContrat_('', '01/01/2026', '90'), '2026-03-31');
-  assert.strictEqual(presentsFinContrat_('', '', '12'), '');
-});
-const G = [
-  { entreprise: 'B SPA', contrat: '2.INFRA.26', debut: '2026-01-01', fin: '2026-12-31', personnes: [{ nom: 'ZED', prenom: 'Ali', date_enreg: '10/03/2026' }, { nom: 'ABD', prenom: 'Omar', date_enreg: '' }, { nom: 'LATE', prenom: 'X', date_enreg: '01/11/2026' }] },
-  { entreprise: 'A SARL', contrat: '1.INFRA.25', debut: '2025-01-01', fin: '2025-12-31', personnes: [{ nom: 'OLD', prenom: 'Y', date_enreg: '01/02/2025' }] },
-  { entreprise: 'C', contrat: '', personnes: [{ nom: 'SANS', prenom: 'Contrat', date_enreg: '01/01/2026' }] }
+const L = [
+  { date: '2026-10-01 09:00', prestataire: '2.INFRA.26 - B SPA - Génie civil', base: 'BASE CENTRALE', documents: 'PEC+Autorisation', nom: 'ZED', prenom: 'Ali', arrivee: '2026-10-02', depart: '2026-10-10' },
+  { date: '2026-10-01 09:00', prestataire: '2.INFRA.26 - B SPA - Génie civil', base: 'BASE CENTRALE', documents: 'PEC', nom: 'ABD', prenom: 'Omar', arrivee: '2026-10-02', depart: '' },
+  { date: '2026-09-01 09:00', prestataire: '1.INFRA.26 - A SARL - Forage', base: 'BASE ZINA', documents: 'PEC', nom: 'LONG', prenom: 'Sam', arrivee: '', depart: '' },
+  { date: '2026-10-01 09:00', prestataire: '1.INFRA.26 - A SARL - Forage', base: '', documents: 'Autorisation', nom: 'SANSPEC', prenom: 'X', arrivee: '2026-10-02', depart: '2026-10-05' }
 ];
-test('présents à une date : date d\'enregistrement, contrat en cours, tri par entreprise puis par nom', () => {
-  const r = presentsCalculer_(G, '2026-10-07');
-  assert.deepStrictEqual(r.entreprises.map(e => e.entreprise), ['B SPA', 'C']);
-  assert.deepStrictEqual(r.entreprises[0].personnes.map(p => p.nom), ['ABD', 'ZED']);   // LATE enregistré après la date : absent
-  assert.deepStrictEqual(r.exclus, { apres: 1, sans_date: 0, contrat: 1, hors_plage: 0, autre_base: 0 }); assert.strictEqual(r.total, 3);
-  const a = presentsCalculer_(G, '2025-06-01'); assert.deepStrictEqual(a.entreprises.map(e => e.entreprise), ['A SARL', 'C'].filter(x => x !== 'C'), 'contrat 2026 pas commencé, et C enregistré en 2026');
+test('séjours : seules les prises en charge hébergées ; départ absent = entrée + 28 jours ; ancienne ligne = date de la demande', () => {
+  const s = presentsSejours_(L, entrepriseDe, contratDe);
+  assert.deepStrictEqual(s.map(x => [x.nom, x.entree, x.sortie, x.sortie_defaut]), [['ZED', '2026-10-02', '2026-10-10', false], ['ABD', '2026-10-02', '2026-10-30', true], ['LONG', '2026-09-01', '2026-09-29', true]]);
+  assert.strictEqual(s[0].entreprise, 'B SPA'); assert.strictEqual(s[0].contrat, '2.INFRA.26');
 });
-test('options : sans date exclus ; contrat non contrôlé', () => {
-  const r = presentsCalculer_(G, '2026-10-07', { sansDate: false }); assert.deepStrictEqual(r.entreprises[0].personnes.map(p => p.nom), ['ZED']); assert.strictEqual(r.exclus.sans_date, 1);
-  const s = presentsCalculer_(G, '2026-10-07', { contratValide: false }); assert.ok(s.entreprises.some(e => e.entreprise === 'A SARL'));
+test('présents à D : entrée ≤ D ≤ sortie ; prise en charge expirée non affichée ; option « toutes les entrées »', () => {
+  const s = presentsSejours_(L, entrepriseDe, contratDe);
+  const a = presentsCalculer_(s, '2026-10-12');
+  assert.deepStrictEqual(a.entreprises.map(e => [e.entreprise, e.personnes.map(p => p.nom)]), [['B SPA', ['ABD']]]);   // ZED parti le 10, LONG sorti le 29/09
+  assert.deepStrictEqual(a.exclus, { sorti: 2, avant: 0, hors_plage: 0, autre_base: 0 });
+  const t = presentsCalculer_(s, '2026-10-12', { toutes: true });
+  assert.deepStrictEqual(t.entreprises.map(e => e.personnes.map(p => p.nom)), [['LONG'], ['ABD', 'ZED']]); assert.strictEqual(t.total, 3);
+  const av = presentsCalculer_(s, '2026-09-15'); assert.deepStrictEqual(av.entreprises.map(e => e.entreprise), ['A SARL']); assert.strictEqual(av.exclus.avant, 2);
+});
+test('filtres : période d\'entrée, base ; une personne revenue n\'apparaît qu\'une fois (séjour le plus récent)', () => {
+  const s = presentsSejours_(L.concat([{ date: '2026-10-11', prestataire: '2.INFRA.26 - B SPA - Génie civil', base: 'BASE ZINA', documents: 'PEC', nom: 'ZED', prenom: 'Ali', arrivee: '2026-10-11', depart: '2026-11-01' }]), entrepriseDe, contratDe);
+  const r = presentsCalculer_(s, '2026-10-12', { toutes: true });
+  const zed = r.entreprises.filter(e => e.entreprise === 'B SPA')[0].personnes.filter(p => p.nom === 'ZED'); assert.strictEqual(zed.length, 1); assert.strictEqual(zed[0].entree, '2026-10-11'); assert.strictEqual(zed[0].base, 'BASE ZINA');
+  assert.strictEqual(presentsCalculer_(s, '2026-10-12', { base: 'BASE ZINA' }).total, 1);
+  assert.strictEqual(presentsCalculer_(s, '2026-10-12', { toutes: true, regDu: '2026-10-11' }).total, 1);
 });
 
-test('filtre par date de prise en charge : bornes incluses, les personnes sans date sont écartées', () => {
-  const r = presentsCalculer_(G, '2026-12-01', { regDu: '2026-03-10', regAu: '2026-03-10' });
-  assert.deepStrictEqual(r.entreprises.map(e => e.personnes.map(p => p.nom)), [['ZED']]); assert.strictEqual(r.exclus.hors_plage, 3);
-  const a = presentsCalculer_(G, '2026-12-01', { regDu: '2026-03-11' }); assert.deepStrictEqual(a.entreprises.map(e => e.personnes.map(p => p.nom)), [['LATE']]);
-});
-
-test('base d\'hébergement : conservée dans la liste, filtrable', () => {
-  const g = [{ entreprise: 'E', contrat: '', personnes: [{ nom: 'A', prenom: 'a', date_enreg: '01/01/2026', base: 'BASE DE VIE CENTRALE' }, { nom: 'B', prenom: 'b', date_enreg: '01/01/2026', base: 'BASE ZINA' }, { nom: 'C', prenom: 'c', date_enreg: '01/01/2026' }] }];
-  assert.deepStrictEqual(presentsCalculer_(g, '2026-06-01').entreprises[0].personnes.map(p => p.base), ['BASE DE VIE CENTRALE', 'BASE ZINA', '']);
-  const r = presentsCalculer_(g, '2026-06-01', { base: 'BASE ZINA' }); assert.deepStrictEqual(r.entreprises[0].personnes.map(p => p.nom), ['B']); assert.strictEqual(r.exclus.autre_base, 2);
+test('habilitations : colonnes personnelles réservées au niveau 2', () => {
+  const { habColonnesVisibles_ } = require('../Habilitations.gs');
+  const n1 = habColonnesVisibles_(1).map(c => c.id), n2 = habColonnesVisibles_(2).map(c => c.id);
+  assert.ok(n1.includes('nom') && n1.includes('date_pec') && n1.includes('base')); assert.ok(!n1.includes('nin') && !n1.includes('adresse') && !n1.includes('tel'));
+  assert.ok(n2.includes('nin') && n2.includes('adresse') && n2.includes('naiss'));
 });

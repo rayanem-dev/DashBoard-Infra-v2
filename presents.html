@@ -58,10 +58,10 @@
   <div class="barre">
     <div><label for="f-date">Présents le</label><input type="date" id="f-date"></div>
     <div><button class="btn-s" id="b-auj" type="button">Aujourd'hui</button></div>
-    <div><label for="f-du">Prise en charge entre le</label><input type="date" id="f-du"></div><div><label for="f-au">et le</label><input type="date" id="f-au"></div>
+    <div><label for="f-du">Entrée entre le</label><input type="date" id="f-du"></div><div><label for="f-au">et le</label><input type="date" id="f-au"></div>
     <div><label for="f-base">Base</label><select id="f-base" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:14px;background:var(--surface);color:var(--text-dark)"><option value="">Toutes les bases</option></select></div>
     <div><label for="f-q">Rechercher</label><input type="search" id="f-q" placeholder="Entreprise ou personne…" autocomplete="off"></div>
-    <div class="cases"><label class="case"><input type="checkbox" id="f-sans" checked> Compter les personnes sans date de prise en charge</label><label class="case"><input type="checkbox" id="f-ctr" checked> Contrat en cours à cette date</label></div>
+    <div class="cases"><label class="case" title="Coché : toute personne entrée à cette date ou avant est affichée, même si sa prise en charge est terminée. Décoché : seulement les prises en charge en cours à cette date."><input type="checkbox" id="f-toutes"> Afficher toutes les entrées, sans tenir compte des sorties</label></div>
     <div style="margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-csv" type="button">⬇ Excel (toutes les entreprises)</button><button class="btn-s" id="b-maj" type="button" title="Relire les Enquêtes maintenant">↻ Actualiser</button></div>
   </div>
   <div class="tuiles"><div class="tuile"><b id="n-ent">–</b><span>entreprises</span></div><div class="tuile"><b id="n-pers">–</b><span>personnes présentes</span></div></div>
@@ -84,7 +84,7 @@
 
   function charger(force) {
     var n = ++charge; $('note').textContent = 'Chargement des Enquêtes…'; $('note').className = 'note';
-    Api.call('presents_donnees', { date: $('f-date').value || iso(), sans_date: $('f-sans').checked, contrat_valide: $('f-ctr').checked, reg_du: $('f-du').value, reg_au: $('f-au').value, base: $('f-base').value, force: !!force }).then(function (r) { if (n !== charge) return; D = r; dessiner(); })
+    Api.call('presents_donnees', { date: $('f-date').value || iso(), toutes: $('f-toutes').checked, reg_du: $('f-du').value, reg_au: $('f-au').value, base: $('f-base').value, force: !!force }).then(function (r) { if (n !== charge) return; D = r; dessiner(); })
       .catch(function (e) { if (n !== charge) return; $('note').textContent = 'Lecture impossible : ' + e.message; $('note').className = 'note alerte'; });
   }
   function filtrees() {
@@ -99,7 +99,7 @@
   /** Classeur Excel : feuille « Synthèse » (titre, tuiles comme à l'écran, une ligne par entreprise) et feuille « Détail » (une ligne par personne, filtrable). */
   function excel(groupes, nom) {
     var X = XlsxMini, nE = groupes.length, nP = groupes.reduce(function (n, g) { return n + g.personnes.length; }, 0);
-    var filtres = ['Présents le ' + fr(D.date), $('f-ctr').checked ? 'contrat en cours' : '', $('f-du').value || $('f-au').value ? 'prise en charge ' + (fr($('f-du').value) ? 'du ' + fr($('f-du').value) : '') + (fr($('f-au').value) ? ' au ' + fr($('f-au').value) : '') : '', $('f-base').value ? 'base : ' + $('f-base').value : '', nE === 1 && groupes.length < (D.entreprises || []).length ? 'entreprise : ' + groupes[0].entreprise : ''].filter(Boolean).join(' · ');
+    var filtres = [$('f-toutes').checked ? 'Toutes les entrées jusqu\'au ' + fr(D.date) + ' (sorties ignorées)' : 'Présence réelle le ' + fr(D.date), $('f-du').value || $('f-au').value ? 'entrée ' + (fr($('f-du').value) ? 'du ' + fr($('f-du').value) : '') + (fr($('f-au').value) ? ' au ' + fr($('f-au').value) : '') : '', $('f-base').value ? 'base : ' + $('f-base').value : '', nE === 1 && groupes.length < (D.entreprises || []).length ? 'entreprise : ' + groupes[0].entreprise : ''].filter(Boolean).join(' · ');
     var syn = [
       { cellules: [{ v: 'Prestataires présents sur site', s: 'titre' }], hauteur: 32 },
       { cellules: [{ v: 'Situation au ' + fr(D.date) + ' · Direction Régionale Rhourde-Nouss · Division Infrastructure', s: 'sous' }] },
@@ -108,18 +108,18 @@
       { cellules: [{ v: nE > 1 ? 'entreprises' : 'entreprise', s: 'tuileL' }, { v: '', s: 'tuileL' }, { v: nP > 1 ? 'personnes présentes' : 'personne présente', s: 'tuileL' }, { v: '', s: 'tuileL' }], hauteur: 20 },
       { cellules: [{ v: filtres, s: 'sous' }] },
       { cellules: [] },
-      { cellules: ['Entreprise', 'Contrat', 'Période du contrat', 'Personnes', 'Bases'].map(function (t) { return { v: t, s: 'entete' }; }), hauteur: 22 }
+      { cellules: ['Entreprise', 'Contrat', 'Dernière fin de prise en charge', 'Personnes', 'Bases'].map(function (t) { return { v: t, s: 'entete' }; }), hauteur: 22 }
     ];
     groupes.forEach(function (g) {
       var bases = {}; g.personnes.forEach(function (p) { if (p.base) bases[p.base] = true; });
-      syn.push({ cellules: [{ v: g.entreprise, s: 'gras' }, { v: g.contrat || '—', s: 'texte' }, { v: g.debut || g.fin ? (fr(g.debut) || '…') + ' → ' + (fr(g.fin) || '…') : '—', s: 'texte' }, { v: g.personnes.length, s: 'centre' }, { v: Object.keys(bases).join(', ') || '—', s: 'texte' }] });
+      syn.push({ cellules: [{ v: g.entreprise, s: 'gras' }, { v: g.contrat || '—', s: 'texte' }, { v: g.personnes.map(function (p) { return p.sortie; }).sort().pop() ? fr(g.personnes.map(function (p) { return p.sortie; }).sort().pop()) : '—', s: 'texte' }, { v: g.personnes.length, s: 'centre' }, { v: Object.keys(bases).join(', ') || '—', s: 'texte' }] });
     });
     syn.push({ cellules: [{ v: 'Total', s: 'bande' }, { v: '', s: 'bande' }, { v: '', s: 'bande' }, { v: nP, s: 'bande' }, { v: '', s: 'bande' }] });
-    var det = [{ cellules: ['Entreprise', 'Contrat', 'Nom', 'Prénom', 'Fonction', 'Structure', 'Base', 'Date de prise en charge'].map(function (t) { return { v: t, s: 'entete' }; }), hauteur: 22 }];
-    groupes.forEach(function (g) { g.personnes.forEach(function (p) { det.push({ cellules: [g.entreprise, g.contrat, p.nom, p.prenom, p.fonction, p.structure, p.base, fr(p.date_enreg)].map(function (v, i) { return { v: v || '', s: i === 2 ? 'gras' : 'texte' }; }) }); }); });
+    var det = [{ cellules: ['Entreprise', 'Contrat', 'Nom', 'Prénom', 'Fonction', 'Base', 'Prise en charge (entrée)', 'Fin de prise en charge'].map(function (t) { return { v: t, s: 'entete' }; }), hauteur: 22 }];
+    groupes.forEach(function (g) { g.personnes.forEach(function (p) { det.push({ cellules: [g.entreprise, g.contrat, p.nom, p.prenom, p.fonction, p.base, fr(p.entree), fr(p.sortie) + (p.sortie_defaut ? ' (28 j par défaut)' : '')].map(function (v, i) { return { v: v || '', s: i === 2 ? 'gras' : 'texte' }; }) }); }); });
     var b = X.blob({ feuilles: [
-      { nom: 'Synthèse', grille: false, largeurs: [34, 22, 26, 14, 34], fusions: ['A1:E1', 'A2:E2', 'A4:B4', 'C4:D4', 'A5:B5', 'C5:D5', 'A6:E6'], lignes: syn },
-      { nom: 'Détail', largeurs: [30, 20, 20, 20, 28, 22, 24, 20], figer: 1, filtre: 'A1:H' + det.length, lignes: det }] });
+      { nom: 'Synthèse', grille: false, largeurs: [34, 22, 30, 14, 34], fusions: ['A1:E1', 'A2:E2', 'A4:B4', 'C4:D4', 'A5:B5', 'C5:D5', 'A6:E6'], lignes: syn },
+      { nom: 'Détail', largeurs: [30, 20, 20, 20, 28, 24, 22, 26], figer: 1, filtre: 'A1:H' + det.length, lignes: det }] });
     var a = el('a'); a.href = URL.createObjectURL(b); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
   function dessiner() {
@@ -128,32 +128,31 @@
     var tot = gs.reduce(function (n, g) { return n + g.personnes.length; }, 0);
     $('n-ent').textContent = gs.length; $('n-pers').textContent = tot;
     var x = D.exclus || {}, notes = [];
-    if (x.apres) notes.push(x.apres + ' prise(s) en charge après le ' + fr(D.date));
+    if (x.sorti) notes.push(x.sorti + ' dont la prise en charge est terminée');
+    if (x.avant) notes.push(x.avant + ' pas encore entrées');
+    if (x.hors_plage) notes.push(x.hors_plage + ' hors de la période d\'entrée choisie');
     if (x.autre_base) notes.push(x.autre_base + ' dans une autre base');
-    if (x.hors_plage) notes.push(x.hors_plage + ' hors de la période de prise en charge choisie');
-    if (x.contrat) notes.push(x.contrat + ' dont le contrat n\'est pas en cours');
-    if (x.sans_date) notes.push(x.sans_date + ' sans date de prise en charge');
-    var n = el('span'); $('note').textContent = 'Présents le ' + fr(D.date) + ' d\'après les Enquêtes administratives' + (notes.length ? ' · non comptées : ' + notes.join(', ') : '') + (D.sans_date_total && $('f-sans').checked ? ' · ' + D.sans_date_total + ' personne(s) sans date de prise en charge comptées (inscrites avant que la date soit tenue)' : '') + '.' + ((D.avertissements || []).length ? ' ⚠ ' + D.avertissements.join(' ') : '');
-    $('note').className = 'note' + ((D.avertissements || []).length ? ' alerte' : '');
+    $('note').textContent = ($('f-toutes').checked ? 'Toutes les entrées jusqu\'au ' + fr(D.date) + ', sorties non prises en compte' : 'Présence réelle le ' + fr(D.date) + ' d\'après les prises en charge (fin de prise en charge = date de départ saisie, sinon ' + (D.duree_defaut || 28) + ' jours après l\'entrée)') + (notes.length ? ' · non comptées : ' + notes.join(', ') : '') + '.' + (D.nb_sejours ? '' : ' Aucune prise en charge enregistrée avec des dates pour le moment.');
+    $('note').className = 'note';
     if (!gs.length) { z.appendChild(el('p', 'vide', 'Aucun prestataire présent à cette date.')); }
     gs.forEach(function (g) {
       var d = el('details', 'ent'); d.open = gs.length <= 12; var s = el('summary');
       s.appendChild(el('span', 'nom', g.entreprise)); s.appendChild(el('span', 'nb', g.personnes.length + (g.personnes.length > 1 ? ' personnes' : ' personne')));
       var o = el('span', 'outils'); var b = el('button', 'btn-s', '⬇ Excel'); b.type = 'button'; b.title = 'Extraire seulement cette entreprise'; b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); excel([g], 'presents_' + g.entreprise.replace(/[^A-Za-z0-9]+/g, '_') + '_' + D.date + '.xlsx'); }); o.appendChild(b); s.appendChild(o);
-      var sous = [g.contrat ? 'Contrat ' + g.contrat : '', g.intitule, g.debut || g.fin ? 'du ' + (fr(g.debut) || '…') + ' au ' + (fr(g.fin) || '…') : ''].filter(Boolean).join(' · '); if (sous) s.appendChild(el('span', 'sous', sous));
+      var sous = [g.contrat ? 'Contrat ' + g.contrat : ''].filter(Boolean).join(' · '); if (sous) s.appendChild(el('span', 'sous', sous));
       d.appendChild(s);
-      var t = el('table', 't'), h = el('thead'), hr = el('tr'); ['N°', 'Nom et prénom', 'Fonction', 'Structure', 'Base', 'Prise en charge le'].forEach(function (x, i) { var th = el('th', i === 3 ? 'col-struct' : '', x); hr.appendChild(th); }); h.appendChild(hr); t.appendChild(h);
-      var tb = el('tbody'); g.personnes.forEach(function (p, i) { var tr = el('tr'); tr.appendChild(el('td', 'n', String(i + 1))); var c = el('td'); c.appendChild(el('b', null, p.nom)); c.appendChild(document.createTextNode(' ' + p.prenom)); tr.appendChild(c); tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', 'col-struct', p.structure || '—')); tr.appendChild(el('td', null, p.base || '—')); tr.appendChild(el('td', null, fr(p.date_enreg) || '—')); tb.appendChild(tr); });
+      var t = el('table', 't'), h = el('thead'), hr = el('tr'); ['N°', 'Nom et prénom', 'Fonction', 'Base', 'Prise en charge', 'Fin de prise en charge'].forEach(function (x) { hr.appendChild(el('th', null, x)); }); h.appendChild(hr); t.appendChild(h);
+      var tb = el('tbody'); g.personnes.forEach(function (p, i) { var tr = el('tr'); tr.appendChild(el('td', 'n', String(i + 1))); var c = el('td'); c.appendChild(el('b', null, p.nom)); c.appendChild(document.createTextNode(' ' + p.prenom)); tr.appendChild(c); tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', null, p.base || '—')); tr.appendChild(el('td', null, fr(p.entree))); tr.appendChild(el('td', null, fr(p.sortie) + (p.sortie_defaut ? ' (28 j)' : ''))); tb.appendChild(tr); });
       t.appendChild(tb); d.appendChild(t); z.appendChild(d);
     });
     // feuille imprimable
     var fp = $('feuille-print');
     fp.innerHTML = '<table class="cadre"><thead><tr><td><div class="esp"></div></td></tr></thead><tfoot><tr><td><div class="esp"></div></td></tr></tfoot><tbody><tr><td>' + '<div class="tete"><img src="badges/logo-sonatrach.png" alt=""><div><h1>Prestataires présents sur site au ' + E(fr(D.date)) + '</h1><div>Direction Régionale Rhourde-Nouss · Division Infrastructure · ' + tot + ' personne(s), ' + gs.length + ' entreprise(s)</div></div></div>' +
-      gs.map(function (g) { return '<div class="e"><h2>' + E(g.entreprise) + ' — ' + g.personnes.length + (g.contrat ? ' · contrat ' + E(g.contrat) : '') + '</h2><table><thead><tr><th style="width:8mm">N°</th><th>Nom et prénom</th><th>Fonction</th><th>Base</th></tr></thead><tbody>' + g.personnes.map(function (p, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + E(p.nom) + '</b> ' + E(p.prenom) + '</td><td>' + E(p.fonction) + '</td><td>' + E(p.base) + '</td></tr>'; }).join('') + '</tbody></table></div>'; }).join('') +
-      '<div class="pied">Établi le ' + E(fr(iso())) + ' d\'après les Enquêtes administratives (date de prise en charge ≤ ' + E(fr(D.date)) + ', contrat en cours).</div>' + '</td></tr></tbody></table>';
+      gs.map(function (g) { return '<div class="e"><h2>' + E(g.entreprise) + ' — ' + g.personnes.length + (g.contrat ? ' · contrat ' + E(g.contrat) : '') + '</h2><table><thead><tr><th style="width:8mm">N°</th><th>Nom et prénom</th><th>Fonction</th><th>Base</th><th>Entrée</th><th>Fin</th></tr></thead><tbody>' + g.personnes.map(function (p, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + E(p.nom) + '</b> ' + E(p.prenom) + '</td><td>' + E(p.fonction) + '</td><td>' + E(p.base) + '</td><td>' + E(fr(p.entree)) + '</td><td>' + E(fr(p.sortie)) + '</td></tr>'; }).join('') + '</tbody></table></div>'; }).join('') +
+      '<div class="pied">Établi le ' + E(fr(iso())) + ' d\'après les prises en charge (' + ($('f-toutes').checked ? 'toutes les entrées jusqu\'au ' + E(fr(D.date)) + ', sorties non prises en compte' : 'entrée ≤ ' + E(fr(D.date)) + ' ≤ fin de prise en charge, 28 jours par défaut') + ').</div>' + '</td></tr></tbody></table>';
   }
   $('f-date').value = iso();
-  ['f-date', 'f-sans', 'f-ctr', 'f-du', 'f-au', 'f-base'].forEach(function (id) { $(id).addEventListener('change', function () { charger(false); }); });
+  ['f-date', 'f-toutes', 'f-du', 'f-au', 'f-base'].forEach(function (id) { $(id).addEventListener('change', function () { charger(false); }); });
   $('f-q').addEventListener('input', function () { if (D) dessiner(); });
   $('b-auj').addEventListener('click', function () { $('f-date').value = iso(); charger(false); });
   $('b-maj').addEventListener('click', function () { charger(true); });

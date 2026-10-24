@@ -133,8 +133,16 @@ var SEED_APPS = [
  ],
  [
   "badges",
+  "Fichier des habilitations",
+  "Extraction en vrac du fichier des Enquêtes administratives : choisissez les entreprises, la période de prise en charge et les colonnes à afficher, puis imprimez ou exportez en Excel.",
+  "🗃️",
+  "habilitations.html",
+  1
+ ],
+ [
+  "badges",
   "Prestataires présents sur site",
-  "Liste des prestataires présents sur site à une date choisie, par entreprise, d'après les Enquêtes administratives : page claire, impression en un clic et extraction Excel légère (toutes les entreprises ou une seule).",
+  "Qui est présent sur site à une date choisie, par entreprise, d'après les prises en charge (date d'entrée et fin de prise en charge, 28 jours par défaut) : page claire, impression en un clic et extraction Excel (toutes les entreprises ou une seule).",
   "🧑‍🏭",
   "presents.html",
   1

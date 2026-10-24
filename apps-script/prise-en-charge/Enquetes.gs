@@ -355,7 +355,8 @@ function injecterEnquetes_(formData) {
           if (col.prenomAr >= 0 && ar.prenomAr) sh.getRange(ligne, col.prenomAr + 1).setValue(ar.prenomAr);
           [['naissance', col.naiss], ['lieu', col.lieu], ['pere', col.pere], ['mere', col.mere], ['adresse', col.adresse], ['embauche', col.embauche], ['nin', col.nin], ['acte', col.acte], ['tel', col.tel]].forEach(function (c) { if (c[1] >= 0 && Badges.vide(p[c[0]])) sh.getRange(ligne, c[1] + 1).setNumberFormat('@').setValue(Badges.vide(p[c[0]])); }); // texte : une date saisie reste telle quelle
           if (cs >= 0 && Badges.vide(p.structure)) sh.getRange(ligne, cs + 1).setValue(Badges.vide(p.structure));
-          sh.getRange(ligne, cd + 1).setNumberFormat('dd/MM/yyyy').setValue(Utilities.formatDate(new Date(), 'Africa/Algiers', 'dd/MM/yyyy'));
+          var arr = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(formData.dateArrivee || '')), datePEC = arr ? arr[3] + '/' + arr[2] + '/' + arr[1] : Utilities.formatDate(new Date(), 'Africa/Algiers', 'dd/MM/yyyy');   // date d'entrée de la prise en charge (à défaut : aujourd'hui)
+          sh.getRange(ligne, cd + 1).setNumberFormat('dd/MM/yyyy').setValue(datePEC);
           if (cb >= 0) sh.getRange(ligne, cb + 1).setValue(baseDe);
           SpreadsheetApp.flush();
           if (Badges.vide(sh.getRange(ligne, col.fr + 1).getDisplayValue()) !== nomComplet) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : écriture non retenue (ligne ' + ligne + ' de « ' + cible + ' » protégée ?)'); return; }
@@ -398,18 +399,20 @@ function normalisationOnglets_(appliquer) {
 function apercuNormalisationOnglets() { normalisationOnglets_(false); }
 function normaliserOngletsEnquetes() { normalisationOnglets_(true); }
 
-/** Une ligne par personne et par demande, dans l'onglet « Journal_PEC » (créé au premier passage). */
+/** Une ligne par personne et par demande, dans l'onglet « Journal_PEC » (créé au premier passage) : source des séjours (arrivée, départ) de « Prestataires présents sur site ». */
+var JOURNAL_PEC_ENTETE_ = ['date', 'prestataire', 'base', 'documents', 'nom', 'prenom', 'fonction', 'vehicule', 'immatriculation', 'enquetes', 'arrivee', 'depart'];
 function journaliserPEC_(ss, formData, enq) {
   try {
     var sh = ss.getSheetByName('Journal_PEC');
-    if (!sh) { sh = ss.insertSheet('Journal_PEC'); sh.appendRow(['date', 'prestataire', 'base', 'documents', 'nom', 'prenom', 'fonction', 'vehicule', 'immatriculation', 'enquetes']); sh.setFrozenRows(1); }
+    if (!sh) { sh = ss.insertSheet('Journal_PEC'); sh.appendRow(JOURNAL_PEC_ENTETE_); sh.setFrozenRows(1); }
+    if (String(sh.getRange(1, 11).getValue()) !== 'arrivee') sh.getRange(1, 11, 1, 2).setValues([['arrivee', 'depart']]);   // anciens journaux : colonnes d'entrée et de sortie ajoutées à droite
     var date = Utilities.formatDate(new Date(), 'Africa/Algiers', 'yyyy-MM-dd HH:mm');
     var docs = [formData.genererPEC ? 'PEC' : '', formData.genererAuto ? 'Autorisation' : ''].filter(Boolean).join('+');
     var lignes = (formData.personnes || []).map(function (p) {
       var nc = enqNomComplet_(p.nom, p.prenom), etat = enq ? (enq.ajoutes.indexOf(nc) >= 0 ? 'ajoutée' : enq.existants.indexOf(nc) >= 0 ? 'déjà présente' : enq.sansOnglet.indexOf(nc) >= 0 ? 'sans onglet' : '') : '';
-      return [date, formData.prestataire || '', formData.base || '', docs, p.nom || '', p.prenom || '', p.fonction || '', p.typeVehicule || '', p.immatriculation || '', formData.injecterEnquetes ? etat : 'non demandé'];
+      return [date, formData.prestataire || '', formData.base || '', docs, p.nom || '', p.prenom || '', p.fonction || '', p.typeVehicule || '', p.immatriculation || '', formData.injecterEnquetes ? etat : 'non demandé', formData.dateArrivee || '', formData.dateDepart || ''];
     });
-    if (lignes.length) sh.getRange(sh.getLastRow() + 1, 1, lignes.length, 10).setValues(lignes);
+    if (lignes.length) sh.getRange(sh.getLastRow() + 1, 1, lignes.length, 12).setValues(lignes);
   } catch (e) { /* le journal ne doit jamais bloquer une génération */ }
 }
 
