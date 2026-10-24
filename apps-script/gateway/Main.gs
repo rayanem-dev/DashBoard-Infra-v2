@@ -133,6 +133,7 @@ function route_(req) {
     case 'pointage_effectif': { Auth.userFromToken(req.token); if ((acces_(Auth.userFromToken(req.token)).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' }); return { groupes: POINTAGE_EFFECTIF }; }   // effectif de la division : réservé aux personnes connectées ayant le module planning
     case 'annuaire_fiches': { Auth.userFromToken(req.token); return { groupes: ANNUAIRE_DATA.groupes, rows: ANNUAIRE_DATA.rows }; }   // fiches contact : réservées aux personnes connectées (le fichier n'est plus publié sur le site)
     case 'cpm_journal': return cpmJournalListe_(req);
+    case 'cpm_journal_supprimer': return cpmJournalSupprimer_(req);
     case 'cpm_instantane': return cpmInstantaneMaintenant_(req);
     case 'donnees_multi': return donneesMulti_(req);
     case 'rapport_diapos': return rapportDiaposInjecter_(req);
@@ -187,6 +188,16 @@ function route_(req) {
       if (String(req.email).toLowerCase() === String(a1.email).toLowerCase()) throw new Error('Vous ne pouvez pas modifier votre propre rôle');
       Store.maj('Utilisateurs', { email: req.email }, { role: Droits.roleCanon(req.role) });
       Store.journal('role', a1.email, req.email + ' -> ' + req.role); return {};
+    }
+    case 'admin_utilisateur_ajouter': {
+      // Nouveau compte (ex. chef d'équipe d'un prestataire, stagiaire) créé dans Gateway_DB ; les personnes de la division restent à inscrire aussi dans BDDORGA (organigramme, annuaire).
+      var a7 = admin_(req), em = String(req.email || '').trim().toLowerCase(), nm = String(req.nom || '').replace(/\s+/g, ' ').trim();
+      if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(em)) throw new Error('Adresse e-mail invalide');
+      if (!nm) throw new Error('Le nom est obligatoire');
+      var rl = Droits.roleCanon(req.role); var e7 = Droits.verifier(rl); if (e7) throw new Error(e7);
+      if (Store.utilisateur(em)) throw new Error('Un compte existe déjà avec cette adresse');
+      Store.maj('Utilisateurs', { email: em }, { uid: uidPour_(em), nom: nm.slice(0, 120), service: String(req.service || '').trim().slice(0, 120), fonction: String(req.fonction || '').trim().slice(0, 120), dependance: String(req.dependance || '').trim().slice(0, 120), role: rl, actif: 1, email_contact: em });
+      Store.journal('utilisateur_ajout', a7.email, em + ' (' + rl + ')'); return { email: em };
     }
     case 'admin_actif': {
       var a2 = admin_(req); cible_(req.email);

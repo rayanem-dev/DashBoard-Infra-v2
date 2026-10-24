@@ -16,7 +16,7 @@ var Droits = (function () {
 
   // ---- Rôles ----
   var ROLES = ['agent', 'conducteur', 'dessinateur', 'chef_atelier', 'chef_service', 'interim_chef_service', 'cadre_sup', 'chef_division',
-               'ordonnateur', 'cpm', 'secretariat', 'prestataire', 'guest'];
+               'ordonnateur', 'cpm', 'secretariat', 'stagiaire', 'prestataire', 'guest'];
   // Variantes de saisie courantes → rôle canonique (accents, majuscules, « _ » ou espace, fautes fréquentes).
   var ALIAS = {
     'secretaire': 'secretariat', 'secretariat': 'secretariat',
@@ -27,13 +27,14 @@ var Droits = (function () {
     'cadre sup': 'cadre_sup', 'cadre superieur': 'cadre_sup',
     'ordonateur': 'ordonnateur', 'ordonnateur': 'ordonnateur',
     'conducteur': 'conducteur', 'conducteur des travaux': 'conducteur', 'conducteur de travaux': 'conducteur',
-    'dessinateur': 'dessinateur', 'agent': 'agent', 'cpm': 'cpm',
+    'dessinateur': 'dessinateur', 'agent': 'agent', 'cpm': 'cpm', 'stagiaire': 'stagiaire',
     'prestataire': 'prestataire', 'invite': 'guest', 'guest': 'guest', 'visiteur': 'guest'
   };
   // Plafonds de sécurité : quoi qu'on configure, ces rôles ne dépassent jamais ce niveau ni n'ouvrent ces modules.
-  var PLAFOND = { guest: 1, prestataire: 2 };
+  var PLAFOND = { guest: 1, stagiaire: 1, prestataire: 2 };
   var INTERDITS = {
     guest: ['securite', 'rh', 'admin', 'planning', 'badges'],
+    stagiaire: ['securite', 'rh', 'admin', 'badges'],
     prestataire: ['securite', 'rh', 'admin']
   };
 
@@ -42,7 +43,7 @@ var Droits = (function () {
     agent: 'Agent', conducteur: 'Conducteur des travaux', dessinateur: 'Dessinateur', chef_atelier: 'Chef d\'atelier',
     chef_service: 'Chef de service', interim_chef_service: 'Chef de service (intérim)', cadre_sup: 'Cadre supérieur',
     chef_division: 'Chef de division', ordonnateur: 'Ordonnateur', cpm: 'Cellule Passation de marché',
-    secretariat: 'Secrétariat', prestataire: 'Prestataire', guest: 'Invité (lecture seule)'
+    secretariat: 'Secrétariat', stagiaire: 'Stagiaire', prestataire: 'Prestataire', guest: 'Invité (lecture seule)'
   };
   // Photographie des rôles d'origine, prise une fois pour toutes (configurer() modifie ROLES / PLAFOND / INTERDITS).
   var DEFAUT = ROLES.map(function (id) { return { id: id, libelle: LIBELLES[id] || id, niveau_max: PLAFOND[id] || 0, interdits: (INTERDITS[id] || []).slice() }; });

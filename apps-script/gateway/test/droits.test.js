@@ -134,7 +134,7 @@ test('rôles modifiables : un rôle créé par l\'administrateur fonctionne, ave
     assert.strictEqual(Droits.verifier('stagiaire', 2, 'pilotage'), 'Niveau maximum pour ce rôle : 1');
     assert.strictEqual(Droits.verifier('guest', 1, 'cpm'), 'Rôle inconnu'); // supprimé de la liste
   } finally { Droits.configurer([]); }
-  assert.strictEqual(Droits.ROLES.length, 13); // retour aux rôles d'origine
+  assert.strictEqual(Droits.ROLES.length, 14); // retour aux rôles d'origine
 });
 
 test('validerRole : création, doublon, niveau, module inconnu', () => {
@@ -150,6 +150,6 @@ test('validerRole : création, doublon, niveau, module inconnu', () => {
 
 test('rolesParDefaut reste celui d\'origine même après une configuration personnalisée', () => {
   Droits.configurer([{ id: 'secretariat' }, { id: 'stagiaire', niveau_max: 1 }]);
-  try { assert.strictEqual(Droits.rolesParDefaut().length, 13); assert.strictEqual(Droits.rolesParDefaut().find(r => r.id === 'guest').niveau_max, 1); }
+  try { assert.strictEqual(Droits.rolesParDefaut().length, 14); assert.strictEqual(Droits.rolesParDefaut().find(r => r.id === 'guest').niveau_max, 1); }
   finally { Droits.configurer([]); }
 });

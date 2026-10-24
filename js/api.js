@@ -81,7 +81,7 @@
     ]
   };
   var demoRoles = [
-    { id: 'agent', libelle: 'Agent', niveau_max: 0, interdits: [] }, { id: 'conducteur', libelle: 'Conducteur des travaux', niveau_max: 0, interdits: [] },
+    { id: 'stagiaire', libelle: 'Stagiaire', niveau_max: 1, interdits: ['securite', 'rh', 'admin', 'badges'] }, { id: 'agent', libelle: 'Agent', niveau_max: 0, interdits: [] }, { id: 'conducteur', libelle: 'Conducteur des travaux', niveau_max: 0, interdits: [] },
     { id: 'chef_service', libelle: 'Chef de service', niveau_max: 0, interdits: [] }, { id: 'chef_division', libelle: 'Chef de division', niveau_max: 0, interdits: [] },
     { id: 'secretariat', libelle: 'Secrétariat', niveau_max: 0, interdits: [] }, { id: 'cpm', libelle: 'Cellule Passation de marché', niveau_max: 0, interdits: [] },
     { id: 'prestataire', libelle: 'Prestataire', niveau_max: 2, interdits: ['securite', 'rh', 'admin'] },
@@ -304,8 +304,9 @@
           fiches_sans_bddorga: [{ nom: 'INCONNU Paul', employeur: 'SONATRACH', section: 'SECTION FROID' }],
           bddorga_sans_fiche: [{ nom: 'NOUVEAU Karim', service: 'Travaux Entretien', employeur: 'ACOSCO' }] };
       case 'cpm_instantane': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { base: false, evenements: 0, dossiers: 52 };
+      case 'cpm_journal_supprimer': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { supprimees: 1 };
       case 'cpm_journal': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        return { dernier_instantane: new Date().toISOString(), evenements: [
+        return { dernier_instantane: new Date().toISOString(), peut_supprimer: true, evenements: [
           { date: '2026-10-13', cle: 'a', n_dossier: 'N°39/SH-PROD/RNS/INFRA/2025', categorie: 'Dossier Appel Offre DAO', dossier: 'Travaux et prestations en génie civil', type: 'modifie', champ: 'commentaire', libelle: 'Commentaire', avant: '', apres: 'Réserves non suspensives levées le 16/09/2026' },
           { date: '2026-10-13', cle: 'a', n_dossier: 'N°39/SH-PROD/RNS/INFRA/2025', categorie: 'Dossier Appel Offre DAO', dossier: 'Travaux et prestations en génie civil', type: 'modifie', champ: 'statut', libelle: 'Statut', avant: 'Dossier en cours', apres: 'Attribué' },
           { date: '2026-10-13', cle: 'b', n_dossier: '', categorie: 'Gré à Gré Contrat d\'application', dossier: 'Nettoyage des bacs', type: 'nouveau', champ: '', libelle: '', avant: '', apres: 'Non démarré' },
@@ -323,6 +324,9 @@
           utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false }; }) };
       case 'admin_role': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas modifier votre propre rôle');
         cibleDemo(p.email).role = p.role; return {};
+      case 'admin_utilisateur_ajouter': { exigerAdmin(); var emd = String(p.email || '').trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emd)) throw erreur('Adresse e-mail invalide'); if (!String(p.nom || '').trim()) throw erreur('Le nom est obligatoire');
+        if (DEMO_USERS.some(function (u) { return u.email === emd; })) throw erreur('Un compte existe déjà avec cette adresse');
+        DEMO_USERS.push({ email: emd, nom: String(p.nom).trim(), service: p.service || '', dependance: p.dependance || '', role: p.role, actif: true }); return { email: emd }; }
       case 'admin_actif': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas désactiver votre propre compte');
         cibleDemo(p.email).actif = !!p.actif; return {};
       case 'admin_role_enregistrer': { exigerAdmin();

@@ -9,6 +9,7 @@
 // Droits par défaut (1 lecture, 2 saisie, 3 administration) — à ajuster dans la page « Privilèges » ou l'onglet DroitsRole.
 // « prestataire » et « guest » n'ont volontairement aucun droit par défaut : on les ouvre module par module.
 var DROITS_DEFAUT_ = [
+  ['stagiaire', 'planning', 1], ['stagiaire', 'simulation', 1],
   ['agent', 'planning', 1], ['agent', 'rapports', 1],
   ['conducteur', 'planning', 1], ['conducteur', 'rapports', 2], ['conducteur', 'pilotage', 1], ['conducteur', 'logistique', 2],
   ['dessinateur', 'planning', 1], ['dessinateur', 'rapports', 1], ['dessinateur', 'pilotage', 1],

@@ -121,6 +121,7 @@
   .journal-jour { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 14px 0 6px; }
   .journal-ligne { font-size: 13.5px; line-height: 1.5; padding: 5px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
   .journal-ligne b { font-weight: 700; }
+  .journal-suppr { margin-inline-start: 8px; border: 0; background: transparent; color: #B42318; cursor: pointer; font-size: 12px; font-weight: 800; padding: 0 5px; border-radius: 6px; opacity: .55; } .journal-suppr:hover { opacity: 1; background: #FDECEA; }
   .journal-etiq { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 1px 8px; border-radius: 999px; margin-right: 6px; background: #E5E7EB; color: #374151; }
   .journal-etiq.nouveau { background: #D4EDBC; color: #3F6B2E; } .journal-etiq.retire { background: #3D3D3D; color: #fff; } .journal-etiq.statut { background: #BFE1F6; color: #155479; }
 </style>
@@ -495,13 +496,25 @@ init();
   Api.call('cpm_journal').then(function (r) {
     var box = document.getElementById('journal'), liste = document.getElementById('journal-liste'); box.hidden = false;
     document.getElementById('journal-info').textContent = r.dernier_instantane ? 'Dernière lecture de la feuille : ' + new Date(r.dernier_instantane).toLocaleString('fr-FR') : 'Le journal démarre à la première lecture de la feuille (chaque nuit).';
-    if (!r.evenements.length) liste.appendChild(el('p', 'journal-info', 'Aucun changement enregistré pour le moment.')); else Synthese.listeSemaines(liste, r.evenements);
+    var sel = null;
+    function dessinerListe() {
+      liste.textContent = '';
+      if (!r.evenements.length) liste.appendChild(el('p', 'journal-info', 'Aucun changement enregistré pour le moment.'));
+      else Synthese.listeSemaines(liste, r.evenements, 0, false, r.peut_supprimer ? { supprimer: supprimer } : null);
+    }
+    function supprimer(e) {
+      if (!confirm('Retirer cette ligne du journal (et du rapport du samedi) ?\n\n' + Synthese.phrase(e) + '\n\nLe Suivi CPM n\'est pas modifié.')) return;
+      Api.call('cpm_journal_supprimer', { evenement: { date: e.date, cle: e.cle, type: e.type, champ: e.champ, avant: e.avant, apres: e.apres } }).then(function () {
+        r.evenements = r.evenements.filter(function (x) { return x !== e; }); dessinerListe(); if (sel) dessinerRapport(r.evenements, sel.value);
+      }).catch(function (x) { alert(x.message); });
+    }
+    dessinerListe();
     // Rapport hebdomadaire : semaines proposées = celles qui ont des changements + la dernière semaine terminée
     var rap = document.getElementById('rapport'); rap.hidden = false;
     var auj = new Date().toISOString().slice(0, 10), debuts = Synthese.semaines(r.evenements).map(function (w) { return w.debut; });
     var derniere = Synthese.debutSemaine(new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)); if (debuts.indexOf(derniere) === -1) debuts.push(derniere);
     debuts.sort().reverse();
-    var sel = document.getElementById('rapport-semaine');
+    sel = document.getElementById('rapport-semaine');
     debuts.forEach(function (d) { var o = document.createElement('option'); o.value = d; var f = new Date(d + 'T00:00:00Z'); f.setUTCDate(f.getUTCDate() + 6); o.textContent = 'Du ' + fr(d) + ' au ' + fr(f.toISOString().slice(0, 10)); sel.appendChild(o); });
     // semaine proposée par défaut : la dernière semaine terminée (samedi → vendredi écoulé)
     sel.value = debuts.indexOf(derniere) !== -1 ? derniere : debuts[0];

@@ -192,11 +192,30 @@ var Synthese = (function () {
       ul.appendChild(li);
     });
   }
-  function listeSemaines(zone, evenements, limite, compact) {
+  var JOURS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  function jourLong(iso) { var p = String(iso).slice(0, 10).split('-'); return JOURS[new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay()] + ' ' + frIso(iso); }
+  /** evenements d'une semaine → [{ jour, evenements }], jour le plus récent d'abord. */
+  function parJour(evenements) {
+    var par = {}, ordre = [];
+    evenements.forEach(function (e) { var d = String(e.date).slice(0, 10); if (!par[d]) { par[d] = { jour: d, evenements: [] }; ordre.push(d); } par[d].evenements.push(e); });
+    return ordre.sort().reverse().map(function (d) { return par[d]; });
+  }
+  /** options.supprimer(e) : si fournie, chaque ligne a un bouton ✕ pour la retirer du journal. */
+  function listeSemaines(zone, evenements, limite, compact, options) {
+    var sup = options && options.supprimer;
     semaines(evenements).slice(0, limite || 99).forEach(function (w) {
       zone.appendChild(el('h4', 'syn-semaine', 'Semaine du ' + frIso(w.debut) + ' au ' + frIso(w.fin)));
       if (compact) { var ul0 = el('ul', 'syn-puces'); listeCompacte(ul0, w.evenements); zone.appendChild(ul0); return; }
-      var ul = el('ul', 'syn-puces'); w.evenements.forEach(function (e) { ul.appendChild(avecGras(el('li'), phrase(e))); }); zone.appendChild(ul);
+      parJour(w.evenements).forEach(function (j) {
+        zone.appendChild(el('div', 'journal-jour', jourLong(j.jour) + ' · ' + j.evenements.length));
+        var ul = el('ul', 'syn-puces');
+        j.evenements.forEach(function (e) {
+          var li = avecGras(el('li'), phrase(e));
+          if (sup) { var b = el('button', 'journal-suppr', '✕'); b.type = 'button'; b.title = 'Retirer cette ligne du journal et du rapport du samedi'; b.setAttribute('aria-label', 'Retirer cette ligne du journal'); b.addEventListener('click', function () { sup(e); }); li.appendChild(b); }
+          ul.appendChild(li);
+        });
+        zone.appendChild(ul);
+      });
     });
   }
 
@@ -277,6 +296,6 @@ var Synthese = (function () {
     }).catch(function (e) { sub.textContent = 'Données indisponibles pour l\'instant' + (e && e.message ? ' — ' + e.message : ''); });
   }
 
-  return { groupeRapport: groupeRapport, ligneRapport: ligneRapport, rapportSemaine: rapportSemaine, htmlObs: htmlObs, texteObs: texteObs, debutSemaine: debutSemaine, semaines: semaines, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, monterModifs: monterModifs, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
+  return { groupeRapport: groupeRapport, ligneRapport: ligneRapport, rapportSemaine: rapportSemaine, htmlObs: htmlObs, texteObs: texteObs, debutSemaine: debutSemaine, semaines: semaines, parJour: parJour, phrase: phrase, listeSemaines: listeSemaines, monterJournal: monterJournal, monterModifs: monterModifs, parseCSV: parseCSV, cpm: cpm, chantiers: chantiers, cleStatut: cleStatut, monterCpm: monterCpm, monterChantiers: monterChantiers };
 })();
 if (typeof module !== 'undefined') module.exports = Synthese;

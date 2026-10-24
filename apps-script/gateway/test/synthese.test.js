@@ -64,3 +64,8 @@ test('rapport hebdomadaire : classement par type de dossier, texte O.B.S en gras
   assert.strictEqual(r.groupes.find(g => g.cle === 'autres').dossiers.length, 0); // le 09/10 est dans la semaine précédente
   assert.match(Synthese.htmlObs({ lignes: ['A <b>'] }), /A &lt;b&gt;/);
 });
+
+test('journal : détail par jour, jour le plus récent d\'abord', () => {
+  const ev = [{ date: '2026-10-22' }, { date: '2026-10-22' }, { date: '2026-10-19' }];
+  const j = Synthese.parJour(ev); assert.deepStrictEqual(j.map(x => x.jour + ':' + x.evenements.length), ['2026-10-22:2', '2026-10-19:1']);
+});

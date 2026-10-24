@@ -55,6 +55,19 @@
   </section>
   <section class="panneau" id="p-users" hidden>
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
+    <div style="margin:8px 0"><button class="btn-p" id="b-ajout" type="button">+ Ajouter un utilisateur</button> <span id="r-ajout" style="font-size:12.5px"></span></div>
+    <dialog id="dlg-ajout" style="border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <form method="dialog" id="f-ajout" novalidate style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
+        <h2 style="grid-column:1/-1;margin:0;font-size:17px">Ajouter un utilisateur</h2>
+        <div style="grid-column:1/-1"><label for="n-nom">Nom et prénom *</label><input id="n-nom" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120"></div>
+        <div style="grid-column:1/-1"><label for="n-email">Adresse e-mail *</label><input id="n-email" class="filtre" type="email" style="width:100%;box-sizing:border-box" maxlength="120"></div>
+        <div><label for="n-role">Rôle *</label><select id="n-role" class="filtre" style="width:100%"></select></div>
+        <div><label for="n-service">Service</label><input id="n-service" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120" placeholder="Ex. Travaux Entretien"></div>
+        <div><label for="n-dep">Dépendance / entreprise</label><input id="n-dep" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120" placeholder="SONATRACH ou nom du prestataire"></div>
+        <div><label for="n-fonction">Fonction</label><input id="n-fonction" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120"></div>
+        <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;align-items:center"><span id="n-err" style="color:#B42318;font-size:13px;margin-inline-end:auto" role="alert"></span><button class="btn-s" type="button" id="n-annuler">Annuler</button><button class="btn-p" type="submit" id="n-ok">Créer le compte</button></div>
+      </form>
+    </dialog>
     <div style="margin:8px 0;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
       <button class="btn-s" id="b-mdp0000" type="button" title="Donne le mot de passe 0000 aux comptes qui n'en ont encore aucun (jamais connectés) ; chacun le change à sa première connexion">🔑 Donner 0000 aux comptes sans mot de passe</button>
       <label style="font-size:12px;display:flex;gap:5px;align-items:center"><input type="checkbox" id="c-mdp-large"> inclure les comptes à large accès (secrétariat, chefs, sécurité)</label>
@@ -424,6 +437,18 @@
   });
   $('filtre').addEventListener('input', dessinerUsers); $('g-filtre').addEventListener('input', dessinerGrille);
   $('b-emails').addEventListener('click', controleEmails);
+  $('b-ajout').addEventListener('click', function () {
+    var s = $('n-role'); s.textContent = ''; etat.roles.forEach(function (r) { var o = el('option', null, r.libelle); o.value = r.id; s.appendChild(o); }); s.value = 'agent';
+    ['n-nom', 'n-email', 'n-service', 'n-dep', 'n-fonction'].forEach(function (i) { $(i).value = ''; }); $('n-err').textContent = '';
+    if ($('dlg-ajout').showModal) $('dlg-ajout').showModal(); else $('dlg-ajout').setAttribute('open', ''); $('n-nom').focus();
+  });
+  $('n-annuler').addEventListener('click', function () { if ($('dlg-ajout').close) $('dlg-ajout').close(); else $('dlg-ajout').removeAttribute('open'); });
+  $('f-ajout').addEventListener('submit', function (ev) {
+    ev.preventDefault(); $('n-ok').disabled = true;
+    Api.call('admin_utilisateur_ajouter', { nom: $('n-nom').value, email: $('n-email').value, role: $('n-role').value, service: $('n-service').value, dependance: $('n-dep').value, fonction: $('n-fonction').value })
+      .then(function (r) { if ($('dlg-ajout').close) $('dlg-ajout').close(); toast('Compte créé : ' + r.email + ' — vous pouvez maintenant l\'inviter par e-mail'); return recharger(); })
+      .catch(function (e) { $('n-err').textContent = e.message; }).then(function () { $('n-ok').disabled = false; });
+  });
   $('b-inviter-tous').addEventListener('click', function () {
     var f = $('filtre').value.toLowerCase();
     inviter(etat.utilisateurs.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '') + ' ' + (u.fonction || '')).toLowerCase().indexOf(f) !== -1; }), this);

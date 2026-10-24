@@ -212,7 +212,29 @@ function cpmJournalListe_(req) {
   if ((acces_(u).cpm || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
   var ev = cpmEvenementsDepuis_(cpmJoursAvant_(90)).reverse().slice(0, 300);
   var p = PropertiesService.getScriptProperties();
-  return { evenements: ev, dernier_instantane: p.getProperty('CPM_DERNIER_INSTANTANE') || '' };
+  return { evenements: ev, dernier_instantane: p.getProperty('CPM_DERNIER_INSTANTANE') || '', peut_supprimer: (acces_(u).cpm || 0) >= 2 };
+}
+/** Indices (0 = en-tête) des lignes du journal qui correspondent à un changement { date, cle, type, champ, avant, apres }. Pur : testé en Node. */
+function cpmLignesJournal_(valeurs, e) {
+  var res = [];
+  for (var i = 1; i < valeurs.length; i += 1) {
+    var r = valeurs[i];
+    if (String(r[0]) === String(e.date) && String(r[1]) === String(e.cle) && String(r[3]) === String(e.type) && String(r[4]) === String(e.champ || '') && String(r[6]) === String(e.avant || '') && String(r[7]) === String(e.apres || '')) res.push(i);
+  }
+  return res;
+}
+/** Retire du journal (donc aussi du rapport du samedi) un changement sans importance ou une erreur de saisie. Ne touche ni au Suivi CPM ni à l'état de comparaison. */
+function cpmJournalSupprimer_(req) {
+  var u = Auth.userFromToken(req.token);
+  if ((acces_(u).cpm || 0) < 2) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  var e = req.evenement || {}; if (!e.date || !e.cle || !e.type) throw new Error('Changement invalide');
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = cpmFeuille_('CpmJournal', CPM_ENTETES_JOURNAL_), idx = cpmLignesJournal_(sh.getDataRange().getValues(), e);
+    idx.reverse().forEach(function (i) { sh.deleteRow(i + 1); });
+    Store.journal('cpm_journal_suppr', u.email, e.date + ' ' + e.cle + ' ' + e.type + ' ' + (e.champ || ''));
+    return { supprimees: idx.length };
+  } finally { lock.releaseLock(); }
 }
 function cpmInstantaneMaintenant_(req) {
   var u = Auth.userFromToken(req.token);

@@ -23,6 +23,7 @@ class FauxSheet {
   getLastRow() { return this.v.length; }
   getLastColumn() { return Math.max(0, ...this.v.map(r => r.length)); }
   clearContents() { this.v = []; }
+  deleteRow(n) { this.v.splice(n - 1, 1); }
 }
 
 function monde(opts = {}) {
@@ -114,4 +115,20 @@ test('chaque événement porte le type du dossier (colonne B) et son N° de doss
   m.set([A2, B]); m.run('cpmInstantane_()');
   assert.strictEqual(m.feuilles.CpmJournal.v[0].length, 10);
   const l = m.feuilles.CpmJournal.v[1]; assert.strictEqual(l[8], 'Dossier Appel Offre DAO'); assert.strictEqual(l[9], 'D1');
+});
+
+test('journal : suppression d\'une ligne sans importance (niveau 2 requis), le reste et l\'état de comparaison sont intacts', () => {
+  const m = monde({ depart: [A, B] }); m.run('cpmInstantane_()');
+  const A2 = ligne({ 2: 'D1', 3: 'Réhabilitation réseau', 8: 'Contrat en exécution', 7: '10%' });
+  m.set([A2, B]); m.run('cpmInstantane_()');
+  const J = m.feuilles.CpmJournal.v; assert.strictEqual(J.length, 2);
+  const e = { date: J[1][0], cle: J[1][1], type: J[1][3], champ: J[1][4], avant: J[1][6], apres: J[1][7] };
+  m.ctx.req = { token: 'a', evenement: e };
+  assert.throws(() => m.run('cpmJournalSupprimer_(req)'), /Droits insuffisants/);
+  m.ctx.req = { token: 'b', evenement: e };
+  m.ctx.Store.journal = () => {};
+  assert.strictEqual(m.run('cpmJournalSupprimer_(req)').supprimees, 1);
+  assert.strictEqual(m.feuilles.CpmJournal.v.length, 1);
+  assert.strictEqual(m.feuilles.CpmEtat.v.length, 3);
+  assert.strictEqual(m.run('cpmJournalListe_({ token: "b" })').peut_supprimer, true);
 });
