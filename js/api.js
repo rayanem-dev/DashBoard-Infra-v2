@@ -88,6 +88,12 @@
     { id: 'prestataire', libelle: 'Prestataire', niveau_max: 2, interdits: ['securite', 'rh', 'admin'] },
     { id: 'guest', libelle: 'Invité (lecture seule)', niveau_max: 1, interdits: ['securite', 'rh', 'admin', 'planning', 'badges'] }
   ];
+  var demoVivier = [
+    { id: 'V1', nom: 'SARL Sahara Travaux', activite: 'Génie civil', telephone: '029 70 11 22', telephone2: '', email: 'contact@sahara-travaux.example', email2: '', fax: '029 70 11 23', adresse: 'Zone industrielle, Ouargla', commentaire: 'Références : bâtiments et VRD' },
+    { id: 'V2', nom: 'EURL Electro Sud', activite: 'Électricité', telephone: '0661 00 11 22', telephone2: '', email: 'direction@electrosud.example', email2: '', fax: '', adresse: 'Hassi Messaoud', commentaire: '' },
+    { id: 'V3', nom: 'ETS Location Dunes', activite: 'Location de matériel', telephone: '0770 22 33 44', telephone2: '0550 11 22 33', email: '', email2: '', fax: '', adresse: 'Touggourt', commentaire: 'Engins et camions' },
+    { id: 'V4', nom: 'Clim Froid Services', activite: 'Maintenance froid et climatisation', telephone: '029 74 55 66', telephone2: '', email: 'info@climfroid.example', email2: '', fax: '', adresse: 'Ouargla', commentaire: '' }
+  ];
   var demoApps = [
     { module: 'pilotage', titre: 'Avancement Chantiers', niveau_min: 1, roles: [] }, { module: 'pilotage', titre: 'Suivi Chantier', niveau_min: 1, roles: [] },
     { module: 'cpm', titre: 'Dossiers CPM — Détail', niveau_min: 1, roles: [] }, { module: 'planning', titre: 'Planning global', niveau_min: 2, roles: [] }
@@ -258,6 +264,13 @@
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'DURAND Marc', champ: 'Téléphone', valeur: '0550000001' }, { nom: 'LEROY Pierre Antoine', champ: 'Identifiant SONA', valeur: 'sona00004' }, { nom: 'LEROY Pierre Antoine', champ: 'Matricule', valeur: '10004D' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
       case 'video_formation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); throw erreur('Vidéo non disponible en démonstration'); }
+      case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true, lien_formulaire: 'https://docs.google.com/forms/d/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/viewform' }; }
+      case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
+        var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];
+        if (demoVivier.some(function (x) { return x !== iv && String(x.nom).toLowerCase() === String(fv.nom).trim().toLowerCase(); })) throw erreur('Cette entreprise existe déjà dans le vivier');
+        if (!iv) { iv = { id: 'V' + (demoVivier.length + 1) }; demoVivier.push(iv); } ['nom', 'activite', 'telephone', 'telephone2', 'email', 'email2', 'fax', 'adresse', 'commentaire'].forEach(function (k) { iv[k] = String(fv[k] || '').trim(); }); return { id: iv.id }; }
+      case 'vivier_supprimer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoVivier = demoVivier.filter(function (x) { return x.id !== p.id; }); return {}; }
+      case 'vivier_synchroniser': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ajoutees: 0 }; }
       case 'presents_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var bp = demoBdg(), dd = String(p.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10), gr0 = {}, ordre0 = [], ex0 = { sorti: 0, avant: 0, hors_plage: 0, autre_base: 0 }, bases0 = {};
         function plus0(d, n) { var x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
         bp.pers.forEach(function (x, i) { var entree = plus0('2026-10-05', -((i * 4) % 22)), defaut = i % 3 !== 0, sortie = defaut ? plus0(entree, 28) : plus0(entree, 10 + (i % 5)), base = i % 2 ? 'BASE DE VIE CENTRALE' : 'BASE ZINA'; bases0[base] = 1;
