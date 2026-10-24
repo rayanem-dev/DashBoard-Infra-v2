@@ -146,7 +146,7 @@ function route_(req) {
       return {
         roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
-        applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles) }; }),
+        applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles), rubrique: String(x.rubrique || '') }; }),
         utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
       };
     }
@@ -216,9 +216,20 @@ function route_(req) {
       Store.maj('Applications', { titre: req.titre }, { niveau_min: nm, roles: liste.join(',') });
       Store.journal('application', a5.email, req.titre + ' niveau>=' + nm + ' roles=' + (liste.join(',') || 'tous')); return {};
     }
+    case 'admin_rubrique': {
+      // Déplace une carte d'une catégorie d'affichage à une autre ; ne change aucun droit. rubrique vide = rangement automatique d'après le titre.
+      var a6 = admin_(req);
+      var ap6 = Store.table('Applications').filter(function (x) { return String(x.titre) === String(req.titre); })[0];
+      if (!ap6) throw new Error('Application inconnue');
+      var rb = String(req.rubrique || '');
+      if (rb && RUBRIQUES_IDS_.indexOf(rb) === -1) throw new Error('Catégorie inconnue');
+      Store.maj('Applications', { titre: req.titre }, { rubrique: rb });
+      Store.journal('rubrique', a6.email, req.titre + ' -> ' + (rb || 'automatique')); return {};
+    }
     default: throw new Error('Action inconnue');
   }
 }
+var RUBRIQUES_IDS_ = ['pilotage', 'marches', 'acces', 'personnel', 'logistique', 'admin', 'it'];
 
 function acces_(user) { return Droits.resolve(user, Store.table('DroitsRole'), Store.table('Exceptions')); }
 

@@ -125,7 +125,7 @@ var Droits = (function () {
             var liste = rolesDe(x.roles);
             return !liste.length || liste.indexOf(rc) !== -1;
           })
-          .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url }; });
+          .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || '') }; });
         return { id: m.id, titre: m.titre, icone: m.icone, niveau: niv, apps: apps };
       });
   }

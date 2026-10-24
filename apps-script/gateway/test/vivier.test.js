@@ -17,3 +17,11 @@ test('la page Vivier a ses deux onglets et le lien du formulaire', () => {
   const h = lire('vivier.html');
   assert.ok(/id="p-base"/.test(h) && /id="p-insc"/.test(h) && /forms\/d\/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY\/viewform/.test(h));
 });
+
+test('catégories : l\'action admin_rubrique n\'accepte que les familles du portail', () => {
+  const main = lire('apps-script', 'gateway', 'Main.gs');
+  const R = require(path.join(racine, 'js', 'rubriques.js'));
+  const ids = /RUBRIQUES_IDS_ = \[([^\]]*)\]/.exec(main)[1].split(',').map(s => s.trim().replace(/'/g, ''));
+  assert.deepStrictEqual(ids, R.definitions.map(d => d.id));
+  assert.ok(/case 'admin_rubrique'/.test(main) && /'rubrique'\]?/.test(lire('apps-script', 'gateway', 'Setup.gs')));
+});

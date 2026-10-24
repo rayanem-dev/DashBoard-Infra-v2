@@ -234,7 +234,7 @@ function preparerSimulation_() {
  * Ajoute, une fois par version de structure (propriété STRUCT_V), les colonnes manquantes de chaque onglet existant (ex. « reliquat » dans Rotations).
  * Idempotent, ne touche à aucune donnée. Appelée au premier passage du portail : plus besoin de lancer mettreAJourStructure.
  */
-var STRUCT_VERSION_ = '2';
+var STRUCT_VERSION_ = '3';
 function preparerStructure_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('STRUCT_V') === STRUCT_VERSION_) return;
@@ -278,7 +278,7 @@ function ajouterChantiersParDefaut() {
 var SCHEMA_ = {
   Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif', 'telephone', 'civilite', 'sona', 'date_integration', 'wifi_user', 'nin', 'sap', 'email_contact'],
   Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
-  Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min', 'roles'],
+  Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min', 'roles', 'rubrique'],
   Roles: ['id', 'libelle', 'niveau_max', 'interdits'],
   DroitsRole: ['role', 'module', 'niveau'],
   Exceptions: ['email', 'module', 'niveau'],

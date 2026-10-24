@@ -53,11 +53,11 @@ function profilDe_(email) { return profilsParEmail_()[String(email || '').toLowe
 /** Applications du catalogue, accordées ou non à l'utilisateur d'après son menu. */
 function profilAcces_(u) {
   var menu = Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), ok = {}, accessibles = [];
-  menu.forEach(function (m) { (m.apps || []).forEach(function (a) { ok[String(a.url)] = true; accessibles.push({ titre: a.titre, emoji: a.emoji || '', url: a.url, module: m.titre }); }); });
+  menu.forEach(function (m) { (m.apps || []).forEach(function (a) { ok[String(a.url)] = true; accessibles.push({ titre: a.titre, emoji: a.emoji || '', url: a.url, module: m.titre, rubrique: a.rubrique || '' }); }); });
   var vus = {}, non = [];
   Store.table('Applications').forEach(function (a) {
     var cle = String(a.url || a.titre); if (ok[cle] || vus[cle] || !a.titre) return; vus[cle] = true;
-    non.push({ titre: a.titre, emoji: a.emoji || '', url: String(a.url || ''), description: String(a.description || '').slice(0, 200), module: a.module });
+    non.push({ titre: a.titre, emoji: a.emoji || '', url: String(a.url || ''), description: String(a.description || '').slice(0, 200), module: a.module, rubrique: String(a.rubrique || '') });
   });
   return { accessibles: accessibles, non_accessibles: non };
 }
