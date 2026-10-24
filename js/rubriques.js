@@ -15,7 +15,7 @@
   ];
   // [expression sur le titre sans accents ni majuscules, rubrique] — la première qui correspond l'emporte
   var REGLES = [
-    [/prise.? en charge|autorisation d.acces|badge|enquete|bon de sortie|presents sur site/, 'acces'],
+    [/prise.? en charge|autorisation d.acces|badge|enquete|bon de sortie|presents sur site|habilitations/, 'acces'],
     [/statistiques sous|fiche d.evaluation|suivi cpm|dossiers cpm|passation des contrats|vivier/, 'marches'],
     [/rapport hebdomadaire|avancement chantiers|suivi chantier|taches journalieres|rapports journaliers|imputation/, 'pilotage'],
     [/organigramme|feuille de pointage|affectation du personnel|planning global|planning & rotations|simulation de planning|permanence|formation|visite medicale/, 'personnel'],

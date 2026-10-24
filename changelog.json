@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-133",
+    "date": "2026-10-24",
+    "title": "Version 5.70.0 — Présents sur site selon les prises en charge, et fichier des habilitations",
+    "changes": [
+      "Prestataires présents sur site : la présence se calcule maintenant d'après les prises en charge (date d'entrée et date de départ saisies). La fin de prise en charge est la date de départ, sinon 28 jours après l'entrée ; une prise en charge expirée n'est plus affichée. Case « Afficher toutes les entrées, sans tenir compte des sorties », filtres par période d'entrée et par base, colonnes « Prise en charge » et « Fin de prise en charge ».",
+      "Prises en charge : le journal enregistre l'arrivée et le départ de chaque personne, et la « Date de prise en charge » inscrite dans les Enquêtes est la date d'arrivée saisie (à défaut, celle du jour).",
+      "Nouvelle application « Fichier des habilitations » : extraction en vrac des Enquêtes avec choix des entreprises, de la période de prise en charge et des colonnes (cases à cocher), impression A4 paysage et Excel. Les colonnes personnelles (naissance, adresse, NIN…) demandent le droit de saisie des Badges."
+    ]
+  },
+  {
     "id": "2026-10-24-132",
     "date": "2026-10-24",
     "title": "Version 5.69.1 — Impression des présents sur site sans l'adresse du site",
