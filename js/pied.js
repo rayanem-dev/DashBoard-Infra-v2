@@ -71,8 +71,8 @@
     function monterAide() {
       if (document.querySelector('.aide-btn')) return;
       var b = document.createElement('button'); b.type = 'button'; b.className = 'aide-btn'; b.textContent = '?'; b.title = 'Aide'; b.setAttribute('aria-label', 'Aide'); b.setAttribute('data-i18n-non', '');
-      b.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9000;width:28px;height:28px;border-radius:50%;border:1px solid rgba(120,120,120,.45);background:rgba(255,255,255,.85);color:#6B7280;font:700 14px Inter,Arial,sans-serif;cursor:pointer;opacity:.55;padding:0;line-height:1';
-      b.onmouseenter = b.onfocus = function () { b.style.opacity = '1'; }; b.onmouseleave = b.onblur = function () { b.style.opacity = '.55'; };
+      b.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9000;width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:linear-gradient(135deg,#E85D04,#F48C06);color:#fff;font:800 16px Inter,Arial,sans-serif;cursor:pointer;opacity:1;padding:0;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.28);transition:transform .12s';   // aux couleurs du site (orange), plein : plus transparent
+      b.onmouseenter = b.onfocus = function () { b.style.transform = 'scale(1.1)'; }; b.onmouseleave = b.onblur = function () { b.style.transform = ''; };
       b.onclick = function () { window.AIDE_NOM = NOM || ''; chargerTout(window.Aide && window.AIDE ? [] : ['js/aide-data.js', 'js/aide.js'], function () { if (window.Aide) Aide.ouvrir(); }); };
       document.body.appendChild(b);
       var st = document.createElement('style'); st.textContent = '@media print{.aide-btn,.aide-dlg{display:none!important}}'; document.head.appendChild(st);
