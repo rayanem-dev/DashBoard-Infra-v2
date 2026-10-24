@@ -77,6 +77,9 @@ window.AIDE = {
     resume: 'Votre photo, vos informations et vos accès.',
     etapes: ['Cliquez sur « Changer la photo » : elle est recadrée et réduite avant l\'envoi, et visible dans tout le portail.', 'Les champs marqués 🔒 viennent de BDDORGA et ne se changent pas ici. Les autres (nom affiché, civilité, date d\'intégration, téléphone, identifiant Wi-Fi) se corrigent puis « Enregistrer » ; le matricule SAP et le NIN se complètent une seule fois (ensuite, le secrétariat les corrige).', 'L\'e-mail de contact (celui des codes de connexion) se change avec un code de confirmation envoyé à la nouvelle adresse.', '« Mes accès » liste les applications accordées et non accordées ; « Demander l\'accès » envoie votre demande au secrétariat par e-mail.'],
     astuces: ['Le mot de passe se change aussi depuis cette page.', 'Vos corrections sont gardées à part : la mise à jour depuis BDDORGA ne les efface pas.'] },
+  'video.html': { titre: 'Vidéos de formation', video: 'fiche-evaluation',
+    resume: 'Les vidéos de formation du portail : une page avec le lecteur, accessible par un simple lien.',
+    etapes: ['Ouvrez le lien reçu : la vidéo se lit directement.', 'Les mêmes vidéos sont dans l\'aide « ? » de chaque application concernée, sous le résumé.'] },
   'presents.html': { titre: 'Prestataires présents sur site', img: 'repas-emporter',
     resume: 'Qui est présent sur site à une date donnée, entreprise par entreprise, d\'après les prises en charge.',
     etapes: ['Choisissez la date (aujourd\'hui par défaut) : la liste montre les personnes dont la prise en charge est en cours ce jour-là (entrée ≤ date ≤ fin de prise en charge).', 'La fin de prise en charge est la date de départ saisie dans la prise en charge ; sans date de départ, c\'est 28 jours après l\'entrée. Une prise en charge expirée n\'est plus affichée.', 'Case « Afficher toutes les entrées, sans tenir compte des sorties » : toute personne entrée à cette date ou avant est affichée, même sortie. Vous pouvez aussi filtrer par période d\'entrée et par base.', '« 🖨 Imprimer » ouvre directement l\'impression ; « ⬇ Excel » télécharge un classeur (feuille Synthèse avec les tuiles, feuille Détail filtrable), pour toutes les entreprises ou pour une seule.'],
@@ -114,7 +117,7 @@ window.AIDE = {
     resume: 'Établit un bon de sortie de matériel (PDF) avec signataire et preneur.',
     etapes: ['Choisissez le signataire (« Je soussigné(e) ») : seules les personnes habilitées figurent dans la liste.', 'Choisissez le preneur (BDDORGA, Enquêtes, ou saisie libre).', 'Ajoutez les articles puis « Générer le bon ».', 'Envoyez-le par e-mail, imprimez-le ou supprimez-le depuis l\'historique.'],
     astuces: ['Le commentaire BDDORGA n\'est pas affiché.'] },
-  'Fiche d’évaluation': { titre: 'Fiche d\'évaluation', img: 'fiche',
+  'Fiche d’évaluation': { titre: 'Fiche d\'évaluation', img: 'fiche', video: 'fiche-evaluation',
     resume: 'Fiche mensuelle d\'évaluation d\'une entreprise : la cartouche se remplit depuis le Suivi CPM, le taux se calcule seul.',
     etapes: ['Choisissez le contrat : entrepreneur, montant, dates et délai sont repris du Suivi CPM.', 'Cliquez sur les cases (pourcentage par critère) : le taux global se met à jour.', '« Générer » crée le PDF et l\'archive ; l\'onglet des fiches permet de rouvrir, imprimer ou supprimer.'],
     astuces: ['Les réponses sont conservées avec le PDF pour pouvoir rouvrir une fiche.'] }
