@@ -31,17 +31,34 @@ function vivierValider_(c) {
   f.adresse = vivierTexte_(c.adresse, 250); f.commentaire = vivierTexte_(c.commentaire, 500);
   return f;
 }
-/** Pur : lignes de la feuille des réponses du formulaire (en-tête en 1re ligne) → fiches nouvelles, sans doublon avec `existantes` (noms). */
+/** Pur : « 0661 38 77 05 / / » ou « 0555 52 66 26 / 0531 15 62 9 » → { t1, t2 } (séparés par « / », restes de barres retirés ; un numéro incomplet est gardé tel quel). */
+function vivierTels_(brut, autre) {
+  var l = String(brut == null ? '' : brut).split('/').map(function (x) { return vivierTexte_(x, 40); }).filter(Boolean);
+  var t1 = l[0] || '', t2 = vivierTexte_(autre, 40) || l[1] || '';
+  return { t1: t1, t2: t2 };
+}
+var VIVIER_EMAIL_ = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+/**
+ * Pur : lignes de la feuille des réponses du formulaire → fiches nouvelles, sans doublon avec `existantes` (noms).
+ * La ligne d'en-tête est cherchée (la vraie feuille a un titre « Ajout Entreprise » au-dessus) ; seules les lignes en dessous sont lues.
+ * Nettoyage : « — » et « / » seuls = vide, « (?) » retiré des activités, plusieurs numéros dans une cellule séparés, adresse e-mail rangée dans « Adresse » déplacée vers E-mail.
+ */
 function vivierDepuisReponses_(lignes, existantes) {
   var vus = {}; (existantes || []).forEach(function (n) { vus[vivierCle_(n)] = true; });
+  var h = -1;
+  for (var i = 0; i < (lignes || []).length && h < 0; i += 1) { var b = String((lignes[i] || [])[1] == null ? '' : lignes[i][1]).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]+/g, ''); if (b.indexOf('nomdelentreprise') !== -1 || b === 'nom') h = i; }
+  if (h < 0) h = 0;
   var out = [];
-  (lignes || []).slice(1).forEach(function (l) {
+  (lignes || []).slice(h + 1).forEach(function (l) {
     var nom = vivierTexte_(l[1], 120), cle = vivierCle_(nom);
     if (!nom || !cle || vus[cle]) return;
     vus[cle] = true;
-    var email = vivierTexte_(l[5], 120).toLowerCase(), email2 = vivierTexte_(l[6], 120).toLowerCase();
-    var ok = function (e) { return /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(e) ? e : ''; };
-    out.push({ nom: nom, activite: vivierTexte_(l[2], 120), telephone: vivierTexte_(l[3], 40), telephone2: vivierTexte_(l[4], 40), email: ok(email), email2: ok(email2), fax: vivierTexte_(l[7], 40), adresse: vivierTexte_(l[8], 250), commentaire: vivierTexte_(l[9], 500) });
+    var tel = vivierTels_(l[3], l[4]);
+    var email = vivierTexte_(l[5], 120).toLowerCase(), email2 = vivierTexte_(l[6], 120).toLowerCase(), adresse = vivierTexte_(l[8], 250);
+    if (VIVIER_EMAIL_.test(adresse.toLowerCase())) { if (!email2 && adresse.toLowerCase() !== email) email2 = adresse.toLowerCase(); adresse = ''; }
+    var ok = function (e) { return VIVIER_EMAIL_.test(e) ? e : ''; };
+    var commentaire = vivierTexte_(String(l[9] == null ? '' : l[9]).replace(/^\s*\/\s*/, ''), 500);
+    out.push({ nom: nom, activite: vivierTexte_(String(l[2] == null ? '' : l[2]).replace(/\s*\(\?\)/g, ''), 120), telephone: tel.t1, telephone2: tel.t2, email: ok(email), email2: ok(email2), fax: vivierTexte_(l[7], 40), adresse: adresse, commentaire: commentaire });
   });
   return out;
 }
@@ -111,4 +128,4 @@ function vivierSupprimer_(req) {
   for (var k = 1; k < v.length; k += 1) if (String(v[k][h.indexOf('id')]) === id) { sh.deleteRow(k + 1); Store.journal('vivier_suppr', u.email, String(v[k][h.indexOf('nom')])); return {}; }
   throw new Error('Fiche introuvable');
 }
-if (typeof module !== 'undefined') module.exports = { vivierTexte_: vivierTexte_, vivierCle_: vivierCle_, vivierValider_: vivierValider_, vivierDepuisReponses_: vivierDepuisReponses_ };
+if (typeof module !== 'undefined') module.exports = { vivierTexte_: vivierTexte_, vivierCle_: vivierCle_, vivierValider_: vivierValider_, vivierDepuisReponses_: vivierDepuisReponses_, vivierTels_: vivierTels_ };
