@@ -140,6 +140,7 @@
     Api.call('vivier_supprimer', { id: e.id }).then(function () { dire('✓ Entreprise supprimée'); return charger(); }).catch(function (x) { dire(x.message, true); });
   }
   $('f-q').addEventListener('input', dessiner); $('f-act').addEventListener('change', dessiner);
+  var q0 = (/[?&]q=([^&]*)/.exec(location.search) || [])[1]; if (q0) { try { $('f-q').value = decodeURIComponent(q0); } catch (e) { /* ignoré */ } }
   charger();
 })();
 </script>
