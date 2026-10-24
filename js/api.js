@@ -256,7 +256,7 @@
         return { appliquer: true, ecrites: 3, echecs: [] };
       case 'presents_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var bp = demoBdg(), gr0 = {}, ordre0 = [], dd = String(p.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
         bp.pers.forEach(function (x, i) { var k = x.entreprise; if (!gr0[k]) { gr0[k] = { entreprise: k, contrat: x.contrat || '', intitule: '', debut: '', fin: '', personnes: [] }; ordre0.push(k); } gr0[k].personnes.push({ nom: x.nom, prenom: x.prenom, fonction: x.fonction, structure: x.structure || '', date_enreg: i % 3 === 0 ? '' : '2026-0' + (1 + (i % 9)) + '-15' }); });
-        var ent0 = ordre0.map(function (k) { var g = gr0[k]; g.personnes = g.personnes.filter(function (q) { return !q.date_enreg || q.date_enreg <= dd; }); return g; }).filter(function (g) { return g.personnes.length; });
+        var ent0 = ordre0.map(function (k) { var g = gr0[k]; g.personnes = g.personnes.filter(function (q) { var ok = !q.date_enreg || q.date_enreg <= dd; if (p.reg_du || p.reg_au) ok = ok && !!q.date_enreg && (!p.reg_du || q.date_enreg >= p.reg_du) && (!p.reg_au || q.date_enreg <= p.reg_au); return ok; }); return g; }).filter(function (g) { return g.personnes.length; });
         return { date: dd, entreprises: ent0, total: ent0.reduce(function (n, g) { return n + g.personnes.length; }, 0), exclus: { apres: 0, sans_date: 0, contrat: 0 }, avertissements: [], sans_date_total: 3 }; }
       case 'badges_photos_profils': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { photos: (p.personnes || []).map(function () { return ''; }) }; }
       case 'badges_donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');

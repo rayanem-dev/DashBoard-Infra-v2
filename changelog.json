@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-130",
+    "date": "2026-10-24",
+    "title": "Version 5.68.1 — Date de prise en charge et filtre par période",
+    "changes": [
+      "La date inscrite dans les Enquêtes s'appelle maintenant « Date de prise en charge » (nouveaux onglets ; les anciens en-têtes « Date d'enregistrement » restent reconnus).",
+      "Prestataires présents sur site : filtre « Prise en charge entre le … et le … » en plus de la date de présence ; colonne et exports renommés."
+    ]
+  },
+  {
     "id": "2026-10-24-129",
     "date": "2026-10-24",
     "title": "Version 5.68.0 — Prestataires présents sur site",

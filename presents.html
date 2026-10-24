@@ -57,8 +57,9 @@
   <div class="barre">
     <div><label for="f-date">Présents le</label><input type="date" id="f-date"></div>
     <div><button class="btn-s" id="b-auj" type="button">Aujourd'hui</button></div>
+    <div><label for="f-du">Prise en charge entre le</label><input type="date" id="f-du"></div><div><label for="f-au">et le</label><input type="date" id="f-au"></div>
     <div><label for="f-q">Rechercher</label><input type="search" id="f-q" placeholder="Entreprise ou personne…" autocomplete="off"></div>
-    <div class="cases"><label class="case"><input type="checkbox" id="f-sans" checked> Compter les personnes sans date d'enregistrement</label><label class="case"><input type="checkbox" id="f-ctr" checked> Contrat en cours à cette date</label></div>
+    <div class="cases"><label class="case"><input type="checkbox" id="f-sans" checked> Compter les personnes sans date de prise en charge</label><label class="case"><input type="checkbox" id="f-ctr" checked> Contrat en cours à cette date</label></div>
     <div style="margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-csv" type="button">⬇ Excel (toutes les entreprises)</button><button class="btn-s" id="b-maj" type="button" title="Relire les Enquêtes maintenant">↻ Actualiser</button></div>
   </div>
   <div class="tuiles"><div class="tuile"><b id="n-ent">–</b><span>entreprises</span></div><div class="tuile"><b id="n-pers">–</b><span>personnes présentes</span></div></div>
@@ -81,7 +82,7 @@
 
   function charger(force) {
     var n = ++charge; $('note').textContent = 'Chargement des Enquêtes…'; $('note').className = 'note';
-    Api.call('presents_donnees', { date: $('f-date').value || iso(), sans_date: $('f-sans').checked, contrat_valide: $('f-ctr').checked, force: !!force }).then(function (r) { if (n !== charge) return; D = r; dessiner(); })
+    Api.call('presents_donnees', { date: $('f-date').value || iso(), sans_date: $('f-sans').checked, contrat_valide: $('f-ctr').checked, reg_du: $('f-du').value, reg_au: $('f-au').value, force: !!force }).then(function (r) { if (n !== charge) return; D = r; dessiner(); })
       .catch(function (e) { if (n !== charge) return; $('note').textContent = 'Lecture impossible : ' + e.message; $('note').className = 'note alerte'; });
   }
   function filtrees() {
@@ -94,7 +95,7 @@
     }).filter(Boolean);
   }
   function csv(groupes, nom) {
-    var l = [['Entreprise', 'Contrat', 'Nom', 'Prénom', 'Fonction', 'Structure', 'Date d\'enregistrement', 'Présent le']];
+    var l = [['Entreprise', 'Contrat', 'Nom', 'Prénom', 'Fonction', 'Structure', 'Date de prise en charge', 'Présent le']];
     groupes.forEach(function (g) { g.personnes.forEach(function (p) { l.push([g.entreprise, g.contrat, p.nom, p.prenom, p.fonction, p.structure, fr(p.date_enreg), fr(D.date)]); }); });
     var txt = '﻿' + l.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';'); }).join('\r\n');
     var a = el('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'text/csv;charset=utf-8' })); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
@@ -104,10 +105,11 @@
     var tot = gs.reduce(function (n, g) { return n + g.personnes.length; }, 0);
     $('n-ent').textContent = gs.length; $('n-pers').textContent = tot;
     var x = D.exclus || {}, notes = [];
-    if (x.apres) notes.push(x.apres + ' enregistrée(s) après le ' + fr(D.date));
+    if (x.apres) notes.push(x.apres + ' prise(s) en charge après le ' + fr(D.date));
+    if (x.hors_plage) notes.push(x.hors_plage + ' hors de la période de prise en charge choisie');
     if (x.contrat) notes.push(x.contrat + ' dont le contrat n\'est pas en cours');
-    if (x.sans_date) notes.push(x.sans_date + ' sans date d\'enregistrement');
-    var n = el('span'); $('note').textContent = 'Présents le ' + fr(D.date) + ' d\'après les Enquêtes administratives' + (notes.length ? ' · non comptées : ' + notes.join(', ') : '') + (D.sans_date_total && $('f-sans').checked ? ' · ' + D.sans_date_total + ' personne(s) sans date d\'enregistrement comptées (inscrites avant que la date soit tenue)' : '') + '.' + ((D.avertissements || []).length ? ' ⚠ ' + D.avertissements.join(' ') : '');
+    if (x.sans_date) notes.push(x.sans_date + ' sans date de prise en charge');
+    var n = el('span'); $('note').textContent = 'Présents le ' + fr(D.date) + ' d\'après les Enquêtes administratives' + (notes.length ? ' · non comptées : ' + notes.join(', ') : '') + (D.sans_date_total && $('f-sans').checked ? ' · ' + D.sans_date_total + ' personne(s) sans date de prise en charge comptées (inscrites avant que la date soit tenue)' : '') + '.' + ((D.avertissements || []).length ? ' ⚠ ' + D.avertissements.join(' ') : '');
     $('note').className = 'note' + ((D.avertissements || []).length ? ' alerte' : '');
     if (!gs.length) { z.appendChild(el('p', 'vide', 'Aucun prestataire présent à cette date.')); }
     gs.forEach(function (g) {
@@ -116,7 +118,7 @@
       var o = el('span', 'outils'); var b = el('button', 'btn-s', '⬇ Excel'); b.type = 'button'; b.title = 'Extraire seulement cette entreprise'; b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); csv([g], 'presents_' + g.entreprise.replace(/[^A-Za-z0-9]+/g, '_') + '_' + D.date + '.csv'); }); o.appendChild(b); s.appendChild(o);
       var sous = [g.contrat ? 'Contrat ' + g.contrat : '', g.intitule, g.debut || g.fin ? 'du ' + (fr(g.debut) || '…') + ' au ' + (fr(g.fin) || '…') : ''].filter(Boolean).join(' · '); if (sous) s.appendChild(el('span', 'sous', sous));
       d.appendChild(s);
-      var t = el('table', 't'), h = el('thead'), hr = el('tr'); ['N°', 'Nom et prénom', 'Fonction', 'Structure', 'Enregistré le'].forEach(function (x, i) { var th = el('th', i === 3 ? 'col-struct' : '', x); hr.appendChild(th); }); h.appendChild(hr); t.appendChild(h);
+      var t = el('table', 't'), h = el('thead'), hr = el('tr'); ['N°', 'Nom et prénom', 'Fonction', 'Structure', 'Prise en charge le'].forEach(function (x, i) { var th = el('th', i === 3 ? 'col-struct' : '', x); hr.appendChild(th); }); h.appendChild(hr); t.appendChild(h);
       var tb = el('tbody'); g.personnes.forEach(function (p, i) { var tr = el('tr'); tr.appendChild(el('td', 'n', String(i + 1))); var c = el('td'); c.appendChild(el('b', null, p.nom)); c.appendChild(document.createTextNode(' ' + p.prenom)); tr.appendChild(c); tr.appendChild(el('td', null, p.fonction || '—')); tr.appendChild(el('td', 'col-struct', p.structure || '—')); tr.appendChild(el('td', null, fr(p.date_enreg) || '—')); tb.appendChild(tr); });
       t.appendChild(tb); d.appendChild(t); z.appendChild(d);
     });
@@ -124,10 +126,10 @@
     var fp = $('feuille-print');
     fp.innerHTML = '<div class="tete"><img src="badges/logo-sonatrach.png" alt=""><div><h1>Prestataires présents sur site au ' + E(fr(D.date)) + '</h1><div>Direction Régionale Rhourde-Nouss · Division Infrastructure · ' + tot + ' personne(s), ' + gs.length + ' entreprise(s)</div></div></div>' +
       gs.map(function (g) { return '<div class="e"><h2>' + E(g.entreprise) + ' — ' + g.personnes.length + (g.contrat ? ' · contrat ' + E(g.contrat) : '') + '</h2><table><thead><tr><th style="width:8mm">N°</th><th>Nom et prénom</th><th>Fonction</th></tr></thead><tbody>' + g.personnes.map(function (p, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + E(p.nom) + '</b> ' + E(p.prenom) + '</td><td>' + E(p.fonction) + '</td></tr>'; }).join('') + '</tbody></table></div>'; }).join('') +
-      '<div class="pied">Établi le ' + E(fr(iso())) + ' d\'après les Enquêtes administratives (date d\'enregistrement ≤ ' + E(fr(D.date)) + ', contrat en cours).</div>';
+      '<div class="pied">Établi le ' + E(fr(iso())) + ' d\'après les Enquêtes administratives (date de prise en charge ≤ ' + E(fr(D.date)) + ', contrat en cours).</div>';
   }
   $('f-date').value = iso();
-  ['f-date', 'f-sans', 'f-ctr'].forEach(function (id) { $(id).addEventListener('change', function () { charger(false); }); });
+  ['f-date', 'f-sans', 'f-ctr', 'f-du', 'f-au'].forEach(function (id) { $(id).addEventListener('change', function () { charger(false); }); });
   $('f-q').addEventListener('input', function () { if (D) dessiner(); });
   $('b-auj').addEventListener('click', function () { $('f-date').value = iso(); charger(false); });
   $('b-maj').addEventListener('click', function () { charger(true); });
