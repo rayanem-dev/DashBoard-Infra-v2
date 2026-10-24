@@ -25,6 +25,8 @@
   .svc > summary::-webkit-details-marker { display: none; }
   .svc > summary small { font-weight: 700; color: var(--text-muted); font-size: 12px; }
   .svc .corps { padding: 6px 8px 10px; }
+  .sous-bloc { margin: 8px 0 2px; border-top: 1px dashed var(--border); padding-top: 4px; } .sous-bloc.prest { background: #F1F5F9; border-radius: 10px; border-top: 0; padding: 4px 8px 6px; }
+  .sous-titre { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 4px 0; }
   .membre { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 8px; border-radius: 9px; font-size: 13px; }
   .membre:hover { background: var(--tint-orange); }
   .membre .n { font-weight: 700; } .membre .f { grid-column: 1; color: var(--text-muted); font-size: 12px; }
@@ -134,7 +136,15 @@
     var det = el(racine ? 'div' : 'details', racine ? 'racine' : 'svc'); det.dataset.t = norm(s.nom);
     var titre = el(racine ? 'h2' : 'summary'); titre.appendChild(el('span', null, (racine ? '🏛️ ' : '') + s.nom)); titre.appendChild(el('small', null, s.membres.length + ' pers.'));
     if (racine) { titre.style.cssText = 'display:flex;justify-content:space-between;font-size:16px;margin:0 0 6px'; }
-    det.appendChild(titre); var c = el('div', 'corps'); s.membres.forEach(function (m) { c.appendChild(membre(m)); }); det.appendChild(c);
+    det.appendChild(titre); var c = el('div', 'corps');
+    // division : d'abord les personnes sans section, puis chaque section (Froid, Électricité…) ; les prestataires sont des entités extérieures : un bloc par entreprise avec son (ses) chef(s) d'équipe
+    var div = s.membres.filter(function (m) { return !m.prestataire; }), pres = s.membres.filter(function (m) { return m.prestataire; }), secs = {}, ordreS = [];
+    div.filter(function (m) { return !m.section; }).forEach(function (m) { c.appendChild(membre(m)); });
+    div.filter(function (m) { return m.section; }).forEach(function (m) { if (!secs[m.section]) { secs[m.section] = []; ordreS.push(m.section); } secs[m.section].push(m); });
+    ordreS.sort().forEach(function (k) { var g = el('div', 'sous-bloc'); g.appendChild(el('div', 'sous-titre', 'Section ' + k + ' (' + secs[k].length + ')')); secs[k].forEach(function (m) { g.appendChild(membre(m)); }); c.appendChild(g); });
+    var ents = {}, ordreE = []; pres.forEach(function (m) { var k = m.dependance || 'Prestataire'; if (!ents[k]) { ents[k] = []; ordreE.push(k); } ents[k].push(m); });
+    ordreE.sort().forEach(function (k) { var g = el('div', 'sous-bloc prest'); g.appendChild(el('div', 'sous-titre', '🏗️ Prestataire — ' + k + (ents[k][0].section ? ' · ' + ents[k][0].section : ''))); ents[k].forEach(function (m) { g.appendChild(membre(m)); }); c.appendChild(g); });
+    det.appendChild(c);
     if (!racine) det.open = true; return det;
   }
   function dessiner() {

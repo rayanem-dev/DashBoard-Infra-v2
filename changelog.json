@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-145",
+    "date": "2026-10-24",
+    "title": "Version 5.78.0 — Prestataires limités à leurs contrats ; sections et prestataires dans l'organigramme",
+    "changes": [
+      "Prestataire : dans Privilèges, chaque compte prestataire a un champ « Entreprises (ses contrats) » (une ou plusieurs). Dans Badges, il ne voit, ne crée et n'imprime que les badges de ces entreprises ; sans entreprise attribuée, il ne voit rien. La règle est appliquée par le serveur.",
+      "Un prestataire ne voit dans son menu que les applications qui appliquent cette règle (Badges pour l'instant) ; toutes les autres actions lui sont refusées, même si un droit de module lui a été donné. « Prise en charge et autorisation d'accès » (application séparée) reste à relier.",
+      "Organigramme : sections d'un service (Froid, Électricité, Hydraulique…) saisies dans Privilèges, et prestataires affichés comme des blocs extérieurs, un par entreprise, avec leur chef d'équipe, sous le service qui les suit."
+    ]
+  },
+  {
     "id": "2026-10-24-144",
     "date": "2026-10-24",
     "title": "Version 5.77.0 — Ajouter un utilisateur, rôle Stagiaire, journal CPM par jour",
