@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-146",
+    "date": "2026-10-24",
+    "title": "Version 5.78.1 — Vivier : reprise de l'ancienne feuille corrigée",
+    "changes": [
+      "Vérifié sur la vraie feuille : le titre « Ajout Entreprise » et la ligne d'en-tête n'étaient pas ignorés et seraient devenus des entreprises. Corrigé. Les numéros multiples dans une cellule (« 0555 52 66 26 / 0531 15 62 9 ») sont séparés, les « / » et « — » inutiles retirés, une adresse e-mail rangée dans « Adresse » est déplacée vers E-mail, « (?) » est retiré des activités."
+    ]
+  },
+  {
     "id": "2026-10-24-145",
     "date": "2026-10-24",
     "title": "Version 5.78.0 — Prestataires limités à leurs contrats ; sections et prestataires dans l'organigramme",
