@@ -27,7 +27,12 @@
     else {
       in_.appendChild(el('h2', null, d.titre)); in_.appendChild(el('p', 'aide-res', d.resume));
       if (d.img) { var im = el('img', 'aide-img'); im.alt = 'Capture : ' + d.titre; im.loading = 'lazy'; im.src = BASE + 'img/aide/' + d.img + '.jpg'; im.onerror = function () { im.remove(); }; in_.appendChild(im); }
-      if (d.video) { var v = el('video', 'aide-img'); v.controls = true; v.preload = 'metadata'; v.setAttribute('playsinline', ''); v.poster = BASE + 'img/aide/videos/' + d.video + '.jpg'; v.src = BASE + 'img/aide/videos/' + d.video + '.mp4'; v.setAttribute('aria-label', 'Vidéo de formation : ' + d.titre); in_.appendChild(v); var lv = el('a', 'aide-res', '↗ Lien direct vers cette vidéo'); lv.href = BASE + 'video.html?v=' + encodeURIComponent(d.video); lv.target = '_blank'; lv.rel = 'noopener'; lv.style.cssText = 'font-size:12px'; in_.appendChild(lv); }
+      if (d.video) {   // vidéo privée : lue depuis la passerelle après connexion (dans le portail) ; depuis une application externe, lien vers la page vidéo du portail
+        var lv = el('a', 'aide-res', '▶ Voir la vidéo de formation (connexion au portail)'); lv.href = BASE + 'video.html?v=' + encodeURIComponent(d.video); lv.target = '_blank'; lv.rel = 'noopener'; lv.style.cssText = 'font-size:13px;font-weight:700;display:inline-block;margin:6px 0';
+        if (window.Api && Api.token && Api.token() && !window.AIDE_NOM) { var v = el('video', 'aide-img'); v.controls = true; v.preload = 'metadata'; v.setAttribute('playsinline', ''); v.hidden = true; in_.appendChild(v); in_.appendChild(lv);
+          Api.call('video_formation', { id: d.video }).then(function (r) { var o = atob(r.mp4), u = new Uint8Array(o.length); for (var q = 0; q < o.length; q += 1) u[q] = o.charCodeAt(q); v.src = URL.createObjectURL(new Blob([u], { type: 'video/mp4' })); if (r.poster) v.poster = 'data:image/jpeg;base64,' + r.poster; v.hidden = false; lv.textContent = '↗ Ouvrir la vidéo dans une page'; }).catch(function () { /* le lien reste proposé */ }); }
+        else in_.appendChild(lv);
+      }
       if (d.etapes && d.etapes.length) { in_.appendChild(el('h3', null, 'Pas à pas')); var ol = el('ol'); d.etapes.forEach(function (t) { ol.appendChild(el('li', null, t)); }); in_.appendChild(ol); }
       if (d.astuces && d.astuces.length) { in_.appendChild(el('h3', null, 'À savoir')); var ul = el('ul'); d.astuces.forEach(function (t) { ul.appendChild(el('li', null, t)); }); in_.appendChild(ul); }
     }

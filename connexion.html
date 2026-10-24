@@ -112,10 +112,14 @@
     choisi = ''; $('selection').hidden = true; $('q').hidden = false; document.querySelector('label[for="q"]').hidden = false; $('q').value = ''; $('q').focus(); $('mdp').value = '';
   });
 
-  function entrer(r) { Api.setToken(r.token); Api.setRemember(r.remember || ''); location.href = 'portail.html'; }
+  function entrer(r) {
+    Api.setToken(r.token); Api.setRemember(r.remember || '');
+    var retour = ''; try { retour = sessionStorage.getItem('infra_retour') || ''; sessionStorage.removeItem('infra_retour'); } catch (e) { /* rien */ }
+    location.href = /^video\.html(\?v=[a-z0-9-]+)?$/.test(retour) ? retour : 'portail.html';   // retour seulement vers la page vidéo demandée (jamais vers une adresse extérieure)
+  }
 
   // Déjà « connecté » sur cet appareil : on rouvre la session sans rien demander.
-  if (Api.token()) location.replace('portail.html');
+  if (Api.token()) { var rt0 = ''; try { rt0 = sessionStorage.getItem('infra_retour') || ''; sessionStorage.removeItem('infra_retour'); } catch (e) { /* rien */ } location.replace(/^video\.html(\?v=[a-z0-9-]+)?$/.test(rt0) ? rt0 : 'portail.html'); }
   else if (Api.remember()) Api.reprendre().then(function (ok) { if (ok) location.replace('portail.html'); });
 
   $('f-login').addEventListener('submit', function (e) {
