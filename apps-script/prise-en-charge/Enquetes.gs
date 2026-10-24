@@ -118,10 +118,10 @@ function enqColonne_(sh, lignes, h, regex, titre) {
   sh.getRange(h + 1, n + 1).setValue(titre);
   return n;
 }
-/** Colonne « date d'enregistrement » : repérée par son en-tête (« تاريخ التسجيل » / « Date d'enregistrement ») ; -1 si absente (elle est alors créée à droite du tableau). */
+/** Colonne « date d'enregistrement » : repérée par son en-tête (« تاريخ التسجيل » / « Date de prise en charge » / « Date d'enregistrement » pour les anciens onglets) ; -1 si absente (elle est alors créée à droite du tableau). */
 function enqColDate_(lignes, col) {
   var entete = lignes[col.h] || [];
-  for (var c = 0; c < entete.length; c += 1) { var t = Badges.norm(entete[c]).replace(/ /g, ''); if (/تاريخالتسجيل|dateenregistrement|dateinscription/.test(t)) return c; }
+  for (var c = 0; c < entete.length; c += 1) { var t = Badges.norm(entete[c]).replace(/ /g, ''); if (/تاريخالتسجيل|dateenregistrement|dateinscription|datedepriseencharge|datepriseencharge/.test(t)) return c; }
   return -1;
 }
 /** Prochain numéro d'agent : le plus grand numéro déjà présent + 1. */
@@ -335,7 +335,7 @@ function injecterEnquetes_(formData) {
           if (!col || col.fr < 0) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : colonne « بالفرنسية » introuvable dans « ' + cible + ' »'); return; }
           var i = enqLigneLibre_(lignes, col), ligne = i + 1, colNum = enqColNumero_(lignes, col);
           if (ligne > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), ligne - sh.getMaxRows()); // jamais d'écriture hors de la grille
-          var cd = enqColonne_(sh, lignes, col.h, /تاريخالتسجيل|dateenregistrement|dateinscription/, 'تاريخ التسجيل — Date d\'enregistrement');
+          var cd = enqColonne_(sh, lignes, col.h, /تاريخالتسجيل|dateenregistrement|dateinscription|datedepriseencharge|datepriseencharge/, 'تاريخ التسجيل — Date de prise en charge');
           var cs = Badges.vide(p.structure) ? enqColonne_(sh, lignes, col.h, /^الهيكل|structure/i, 'الهيكل — Structure') : (col.structure >= 0 ? col.structure : -1);
           if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
           sh.getRange(ligne, col.fr + 1).setValue(nomComplet);

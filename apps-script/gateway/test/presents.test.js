@@ -22,10 +22,16 @@ test('présents à une date : date d\'enregistrement, contrat en cours, tri par 
   const r = presentsCalculer_(G, '2026-10-07');
   assert.deepStrictEqual(r.entreprises.map(e => e.entreprise), ['B SPA', 'C']);
   assert.deepStrictEqual(r.entreprises[0].personnes.map(p => p.nom), ['ABD', 'ZED']);   // LATE enregistré après la date : absent
-  assert.deepStrictEqual(r.exclus, { apres: 1, sans_date: 0, contrat: 1 }); assert.strictEqual(r.total, 3);
+  assert.deepStrictEqual(r.exclus, { apres: 1, sans_date: 0, contrat: 1, hors_plage: 0 }); assert.strictEqual(r.total, 3);
   const a = presentsCalculer_(G, '2025-06-01'); assert.deepStrictEqual(a.entreprises.map(e => e.entreprise), ['A SARL', 'C'].filter(x => x !== 'C'), 'contrat 2026 pas commencé, et C enregistré en 2026');
 });
 test('options : sans date exclus ; contrat non contrôlé', () => {
   const r = presentsCalculer_(G, '2026-10-07', { sansDate: false }); assert.deepStrictEqual(r.entreprises[0].personnes.map(p => p.nom), ['ZED']); assert.strictEqual(r.exclus.sans_date, 1);
   const s = presentsCalculer_(G, '2026-10-07', { contratValide: false }); assert.ok(s.entreprises.some(e => e.entreprise === 'A SARL'));
+});
+
+test('filtre par date de prise en charge : bornes incluses, les personnes sans date sont écartées', () => {
+  const r = presentsCalculer_(G, '2026-12-01', { regDu: '2026-03-10', regAu: '2026-03-10' });
+  assert.deepStrictEqual(r.entreprises.map(e => e.personnes.map(p => p.nom)), [['ZED']]); assert.strictEqual(r.exclus.hors_plage, 3);
+  const a = presentsCalculer_(G, '2026-12-01', { regDu: '2026-03-11' }); assert.deepStrictEqual(a.entreprises.map(e => e.personnes.map(p => p.nom)), [['LATE']]);
 });
