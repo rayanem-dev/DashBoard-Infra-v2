@@ -214,6 +214,7 @@ function preparerVisibilite_() {
 function preparerSimulation_() {
   var props = PropertiesService.getScriptProperties();
   if (typeof preparerVisibilite_ === 'function' && props.getProperty('SIMU_PRET') === '1') preparerVisibilite_();
+  if (typeof fusionnerVivier_ === 'function' && props.getProperty('SIMU_PRET') === '1') fusionnerVivier_();
   if (props.getProperty('SIMU_PRET') === '1') return;
   var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
   try {

@@ -230,17 +230,9 @@ var SEED_APPS = [
  [
   "cpm",
   "Vivier des Entreprises",
-  "Base de données des prestataires, sous-traitants et partenaires avec critères de qualification et évaluation.",
+  "Base des prestataires, sous-traitants et partenaires, et inscription d'une nouvelle entreprise : consultez la base et envoyez le formulaire d'inscription en un clic (lien et message à copier).",
   "🏢",
-  "https://docs.google.com/spreadsheets/d/1olPzVux6UclQVytVphOIFFvIxCEbhfgUJieqwipls7g/edit?gid=1473964080#gid=1473964080",
-  1
- ],
- [
-  "cpm",
-  "Inscription au Vivier des Entreprises",
-  "Formulaire à transmettre aux entreprises et prestataires souhaitant intégrer le vivier — collecte de leurs informations pour qualification.",
-  "📝",
-  "https://docs.google.com/forms/d/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/viewform?edit_requested=true",
+  "vivier.html",
   1
  ],
  [
@@ -424,4 +416,29 @@ function rangerCartes() {
   }
   CacheService.getScriptCache().remove('TBL_Applications');
   Logger.log(n + ' carte(s) rangée(s) dans Administration.');
+}
+
+
+/**
+ * Fusionne, une seule fois, les deux anciennes cartes « Vivier des Entreprises » (Google Sheet) et « Inscription au Vivier des Entreprises » (Google Form)
+ * en une seule carte vers vivier.html. Ne touche à aucune autre ligne ni au contenu de la feuille ou du formulaire.
+ */
+function fusionnerVivier_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('VIVIER_V1') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues();
+    var garde = 0, suppr = [];
+    for (var i = 1; i < v.length; i += 1) {
+      var url = String(v[i][4]), titre = String(v[i][1]);
+      if (url === 'vivier.html') { garde = garde || i + 1; continue; }
+      if (/1olPzVux6UclQVytVphOIFFvIxCEbhfgUJieqwipls7g/.test(url) || /1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/.test(url) || /^(Inscription au )?Vivier des Entreprises$/.test(titre)) {
+        if (!garde && /^Vivier des Entreprises$/.test(titre)) { garde = i + 1; sh.getRange(i + 1, 3).setValue("Base des prestataires, sous-traitants et partenaires, et inscription d'une nouvelle entreprise : consultez la base et envoyez le formulaire d'inscription en un clic (lien et message à copier)."); sh.getRange(i + 1, 5).setValue('vivier.html'); }
+        else suppr.push(i + 1);
+      }
+    }
+    suppr.reverse().forEach(function (l) { sh.deleteRow(l); });
+    props.setProperty('VIVIER_V1', '1');
+    ['TBL_Applications'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+  } catch (e) { /* on réessaiera à la requête suivante */ }
 }

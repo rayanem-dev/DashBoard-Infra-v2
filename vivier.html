@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vivier des Entreprises – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .vv { max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; }
+  .onglets { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .onglet { padding: 9px 18px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .onglet[aria-selected="true"] { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; border-color: transparent; }
+  .carte { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 16px 18px; margin-bottom: 14px; }
+  .carte h2 { margin: 0 0 6px; font-size: 16px; } .carte p { margin: 0 0 12px; font-size: 13.5px; color: var(--text-muted); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn-p { padding: 9px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn-s { padding: 9px 16px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .cadre { width: 100%; height: 70vh; min-height: 420px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+  textarea.msg { width: 100%; box-sizing: border-box; min-height: 150px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); }
+  .ok { font-size: 12.5px; color: #15803D; font-weight: 600; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🏢</div>
+    <div class="logo-text"><h1>Vivier des Entreprises</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="vv">
+  <div class="onglets" role="tablist">
+    <button class="onglet" role="tab" id="o-base" aria-selected="true" aria-controls="p-base" type="button">🏢 Base du vivier</button>
+    <button class="onglet" role="tab" id="o-insc" aria-selected="false" aria-controls="p-insc" type="button">📝 Inscription d'une entreprise</button>
+  </div>
+
+  <section id="p-base" role="tabpanel">
+    <div class="carte">
+      <h2>Base des prestataires, sous-traitants et partenaires</h2>
+      <p>Les entreprises déjà inscrites (activité, téléphone, e-mail, adresse, commentaire). Les fiches se corrigent directement dans la feuille Google.</p>
+      <div class="actions">
+        <a class="btn-p" id="l-base" target="_blank" rel="noopener">Ouvrir la base dans Google Sheets ↗</a>
+        <button class="btn-s" id="b-cadre" type="button">Afficher ici</button>
+      </div>
+    </div>
+    <iframe class="cadre" id="cadre" title="Base du vivier" hidden></iframe>
+  </section>
+
+  <section id="p-insc" role="tabpanel" hidden>
+    <div class="carte">
+      <h2>Faire inscrire une entreprise</h2>
+      <p>Envoyez le formulaire à l'entreprise ou au prestataire qui souhaite intégrer le vivier : ses réponses arrivent dans la base. Rien n'est envoyé automatiquement.</p>
+      <div class="actions">
+        <a class="btn-p" id="l-form" target="_blank" rel="noopener">Ouvrir le formulaire ↗</a>
+        <button class="btn-s" id="b-lien" type="button">Copier le lien</button>
+        <button class="btn-s" id="b-msg" type="button">Copier le message à envoyer</button>
+        <span class="ok" id="ok" role="status"></span>
+      </div>
+    </div>
+    <div class="carte">
+      <h2>Message prêt à envoyer</h2>
+      <textarea class="msg" id="msg" readonly aria-label="Message à envoyer à l'entreprise"></textarea>
+    </div>
+  </section>
+</main>
+<script>
+(function () {
+  var BASE = 'https://docs.google.com/spreadsheets/d/1olPzVux6UclQVytVphOIFFvIxCEbhfgUJieqwipls7g/edit?gid=1473964080#gid=1473964080';
+  var FORM = 'https://docs.google.com/forms/d/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/viewform';
+  var MSG = 'Bonjour,\n\nDans le cadre de la mise à jour du vivier des entreprises de la Division Infrastructure (Sonatrach – RNS), nous vous invitons à renseigner vos coordonnées et votre domaine d\'activité via le formulaire suivant :\n\n' + FORM + '\n\nMerci de le remplir dans les meilleurs délais.\n\nCordialement,\nDivision Infrastructure – RNS';
+  var $ = function (i) { return document.getElementById(i); };
+  $('l-base').href = BASE; $('l-form').href = FORM; $('msg').value = MSG;
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function onglet(nom) {
+    [['base', 'p-base'], ['insc', 'p-insc']].forEach(function (p) {
+      var actif = p[0] === nom; $('o-' + p[0]).setAttribute('aria-selected', actif ? 'true' : 'false'); $(p[1]).hidden = !actif;
+    });
+    try { location.hash = nom; } catch (e) { /* rien */ }
+  }
+  $('o-base').onclick = function () { onglet('base'); }; $('o-insc').onclick = function () { onglet('insc'); };
+  if (location.hash === '#insc') onglet('insc');
+  $('b-cadre').onclick = function () { var c = $('cadre'); c.src = BASE.replace('/edit?', '/edit?rm=minimal&'); c.hidden = false; $('b-cadre').hidden = true; };
+  function copier(txt, libelle) {
+    function fait() { $('ok').textContent = '✓ ' + libelle + ' copié'; setTimeout(function () { $('ok').textContent = ''; }, 2500); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(fait, function () { $('msg').select(); });
+    else { $('msg').select(); try { document.execCommand('copy'); fait(); } catch (e) { /* sélection manuelle */ } }
+  }
+  $('b-lien').onclick = function () { copier(FORM, 'Lien'); };
+  $('b-msg').onclick = function () { copier(MSG, 'Message'); };
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

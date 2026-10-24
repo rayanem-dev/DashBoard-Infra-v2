@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-140",
+    "date": "2026-10-24",
+    "title": "Version 5.73.0 — Vivier des Entreprises : une seule application",
+    "changes": [
+      "« Vivier des Entreprises » et « Inscription au Vivier des Entreprises » sont fusionnées en une seule application, avec deux onglets : la base des entreprises et l'inscription d'une nouvelle entreprise.",
+      "Inscription : lien du formulaire et message prêt à envoyer à copier en un clic (rien n'est envoyé automatiquement). La feuille et le formulaire Google ne sont pas modifiés."
+    ]
+  },
+  {
     "id": "2026-10-24-139",
     "date": "2026-10-24",
     "title": "Version 5.72.2 — Bouton d'aide plus visible",
