@@ -59,9 +59,7 @@
     <div><label for="f-act">Activité</label><select id="f-act"><option value="">Toutes</option></select></div>
     <div id="z-mod" hidden style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-p" id="b-add" type="button">+ Ajouter une entreprise</button>
-      <button class="btn-s" id="b-sync" type="button" title="Ajoute à la base les nouvelles réponses du formulaire destiné aux entreprises extérieures">↻ Réponses du formulaire</button>
     </div>
-    <div><button class="btn-s" id="b-lien" type="button" title="Lien du formulaire à envoyer à une entreprise qui veut s'inscrire (rien n'est envoyé automatiquement)">🔗 Lien d'inscription</button></div>
     <span id="ok" class="ok" role="status"></span>
   </div>
   <div class="tuiles"><div class="tuile"><b id="n-tot">0</b><span id="n-lib">entreprises</span></div><div class="tuile"><b id="n-act">0</b><span>activités</span></div></div>
@@ -87,7 +85,7 @@
 <script>
 (function () {
   var $ = function (i) { return document.getElementById(i); };
-  var etat = { l: [], peut: false, lien: '' }, edition = null;
+  var etat = { l: [], peut: false }, edition = null;
   var CH = ['nom', 'activite', 'telephone', 'telephone2', 'email', 'email2', 'fax', 'adresse', 'commentaire'];
   if (window.Api && Api.demo) $('demo').hidden = false;
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
@@ -95,7 +93,7 @@
   function dire(t, mauvais) { var o = $('ok'); o.textContent = t; o.style.color = mauvais ? '#B42318' : ''; clearTimeout(dire.t); dire.t = setTimeout(function () { o.textContent = ''; }, 3500); }
   function charger() {
     return Api.call('vivier_liste').then(function (r) {
-      etat.l = r.entreprises || []; etat.peut = !!r.peut_modifier; etat.lien = r.lien_formulaire || '';
+      etat.l = r.entreprises || []; etat.peut = !!r.peut_modifier; if (r.avertissement) dire(r.avertissement, true);
       $('z-mod').hidden = !etat.peut; $('z-mod').style.display = etat.peut ? 'flex' : 'none';
       var acts = {}; etat.l.forEach(function (e) { if (e.activite) acts[e.activite] = 1; });
       var sel = $('f-act'), cur = sel.value; sel.textContent = ''; var o0 = el('option', null, 'Toutes'); o0.value = ''; sel.appendChild(o0);
@@ -141,16 +139,6 @@
     if (!confirm('Supprimer « ' + e.nom + ' » du vivier ?')) return;
     Api.call('vivier_supprimer', { id: e.id }).then(function () { dire('✓ Entreprise supprimée'); return charger(); }).catch(function (x) { dire(x.message, true); });
   }
-  $('b-sync').onclick = function () {
-    $('b-sync').disabled = true;
-    Api.call('vivier_synchroniser').then(function (r) { dire(r.ajoutees ? '✓ ' + r.ajoutees + ' nouvelle(s) entreprise(s) ajoutée(s)' : 'Rien de nouveau dans le formulaire'); return charger(); })
-      .catch(function (e) { dire(e.message, true); }).then(function () { $('b-sync').disabled = false; });
-  };
-  $('b-lien').onclick = function () {
-    var txt = 'Bonjour,\n\nDans le cadre de la mise à jour du vivier des entreprises de la Division Infrastructure (Sonatrach – RNS), nous vous invitons à renseigner vos coordonnées et votre domaine d\'activité via le formulaire suivant :\n\n' + etat.lien + '\n\nMerci de le remplir dans les meilleurs délais.\n\nCordialement,\nDivision Infrastructure – RNS';
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { dire('✓ Message avec le lien copié : collez-le dans un e-mail ou un WhatsApp'); }, function () { prompt('Copiez ce message :', txt); });
-    else prompt('Copiez ce message :', txt);
-  };
   $('f-q').addEventListener('input', dessiner); $('f-act').addEventListener('change', dessiner);
   charger();
 })();

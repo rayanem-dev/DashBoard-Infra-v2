@@ -140,14 +140,6 @@ var SEED_APPS = [
   1
  ],
  [
-  "badges",
-  "Prestataires présents sur site",
-  "Qui est présent sur site à une date choisie, par entreprise, d'après les prises en charge (date d'entrée et fin de prise en charge, 28 jours par défaut) : page claire, impression en un clic et extraction Excel (toutes les entreprises ou une seule).",
-  "🧑‍🏭",
-  "presents.html",
-  1
- ],
- [
   "logistique",
   "Prise en charge hôtel",
   "Demande de prise en charge à l'hôtel (ex. Hôtel PLAZA à Boumerdes) pour un agent en mission : identité, ordre de mission, dates, nuitées calculées automatiquement, objet et imputation ; impression en un clic et historique.",
@@ -230,7 +222,7 @@ var SEED_APPS = [
  [
   "cpm",
   "Vivier des Entreprises",
-  "Vivier des prestataires, sous-traitants et partenaires : recherche par activité, ajout, correction et suppression d'une entreprise directement dans le portail, et lien d'inscription à envoyer aux entreprises extérieures.",
+  "Vivier des prestataires, sous-traitants et partenaires : recherche par activité, ajout, correction et suppression d'une entreprise directement dans le portail.",
   "🏢",
   "vivier.html",
   1
@@ -305,14 +297,6 @@ var SEED_APPS = [
   "Gestion et traçabilité des courriers en attente de traitement, suivi des réponses et archivage des échanges officiels.",
   "📬",
   "https://docs.google.com/spreadsheets/d/1t9-Rks2tOPYAvwKBKM65mAOsSo5lzsSVyp4HrFayPc8/edit?usp=sharing",
-  1
- ],
- [
-  "admin",
-  "Enquêtes Administratives / التحقيقات الادارية",
-  "Suivi et archivage des enquêtes administratives internes pour assurer la conformité réglementaire et la traçabilité.",
-  "🔍",
-  "https://docs.google.com/spreadsheets/d/1wkbd3-ct19GifHZriKFLIRCPqUBiLjU0/edit?usp=sharing&ouid=114100570299093678332&rtpof=true&sd=true",
   1
  ],
  [
@@ -433,12 +417,32 @@ function fusionnerVivier_() {
       var url = String(v[i][4]), titre = String(v[i][1]);
       if (url === 'vivier.html') { garde = garde || i + 1; continue; }
       if (/1olPzVux6UclQVytVphOIFFvIxCEbhfgUJieqwipls7g/.test(url) || /1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/.test(url) || /^(Inscription au )?Vivier des Entreprises$/.test(titre)) {
-        if (!garde && /^Vivier des Entreprises$/.test(titre)) { garde = i + 1; sh.getRange(i + 1, 3).setValue("Vivier des prestataires, sous-traitants et partenaires : recherche par activité, ajout, correction et suppression d'une entreprise directement dans le portail, et lien d'inscription à envoyer aux entreprises extérieures."); sh.getRange(i + 1, 5).setValue('vivier.html'); }
+        if (!garde && /^Vivier des Entreprises$/.test(titre)) { garde = i + 1; sh.getRange(i + 1, 3).setValue("Vivier des prestataires, sous-traitants et partenaires : recherche par activité, ajout, correction et suppression d'une entreprise directement dans le portail."); sh.getRange(i + 1, 5).setValue('vivier.html'); }
         else suppr.push(i + 1);
       }
     }
     suppr.reverse().forEach(function (l) { sh.deleteRow(l); });
     props.setProperty('VIVIER_V1', '1');
     ['TBL_Applications'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+
+/**
+ * Retire, une seule fois, les cartes « Prestataires présents sur site » (page supprimée, remplacée par le Fichier des habilitations)
+ * et « Enquêtes Administratives » (lien direct vers la feuille Google : le fichier s'ouvre désormais depuis le Fichier des habilitations, réservé aux chefs et au secrétariat).
+ */
+function retirerCartesEnquetes_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('ENQ_CARTES_V1') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), suppr = [];
+    for (var i = 1; i < v.length; i += 1) {
+      var url = String(v[i][4]), titre = String(v[i][1]);
+      if (url === 'presents.html' || /^Enquêtes Administratives/.test(titre)) suppr.push(i + 1);
+    }
+    suppr.reverse().forEach(function (l) { sh.deleteRow(l); });
+    props.setProperty('ENQ_CARTES_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }

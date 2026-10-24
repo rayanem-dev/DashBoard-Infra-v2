@@ -109,13 +109,11 @@ function route_(req) {
     case 'badges_fiche_maj': return badgesFicheMaj_(req);
     case 'badges_photo_archiver': return badgesPhotoArchiver_(req);
     case 'badges_photos_profils': return badgesPhotosProfils_(req);
-    case 'presents_donnees': return presentsDonnees_(req);
     case 'video_formation': return videoFormation_(req);
     case 'habilitations_donnees': return habilitationsDonnees_(req);
     case 'vivier_liste': return vivierListe_(req);
     case 'vivier_enregistrer': return vivierEnregistrer_(req);
     case 'vivier_supprimer': return vivierSupprimer_(req);
-    case 'vivier_synchroniser': return vivierSynchroniser_(req);
     case 'badges_personnes_sauver': return badgesPersonnesSauver_(req);
     case 'badges_entreprises_sauver': return badgesEntreprisesSauver_(req);
     case 'badges_numeroter': return badgesNumeroter_(req);

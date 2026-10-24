@@ -2,11 +2,10 @@
  * Vivier des entreprises : base des prestataires, sous-traitants et partenaires, avec ajout / correction / suppression dans le portail
  * (remplace l'ancien couple « feuille Google + formulaire Google »). Données : onglet « Vivier » de Gateway_DB, créé au premier usage.
  * Droits : module « cpm » — niveau 1 lecture, niveau 2 ajout / correction / suppression / synchronisation.
- * « Synchroniser » ajoute à la base les nouvelles réponses du formulaire Google destiné aux entreprises extérieures (jamais de suppression, jamais d'écriture dans la feuille Google).
+ * À la première ouverture, la base reprend les entreprises de l'ancienne feuille Google (lecture seule).
  */
 var VIVIER_COLONNES_ = ['id', 'nom', 'activite', 'telephone', 'telephone2', 'email', 'email2', 'fax', 'adresse', 'commentaire', 'source', 'cree_par', 'cree_le', 'maj_par', 'maj_le'];
 var VIVIER_CHAMPS_ = ['nom', 'activite', 'telephone', 'telephone2', 'email', 'email2', 'fax', 'adresse', 'commentaire'];
-var VIVIER_FORMULAIRE_ = 'https://docs.google.com/forms/d/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/viewform';
 var VIVIER_ANCIENNE_FEUILLE_ = '1olPzVux6UclQVytVphOIFFvIxCEbhfgUJieqwipls7g';
 var VIVIER_ONGLET_REPONSES_ = 'Réponses au formulaire 3';
 
@@ -68,11 +67,29 @@ function vivierAjouter_(sh, f, source, email) {
   sh.appendRow(VIVIER_COLONNES_.map(function (c) { return o[c] === undefined ? '' : o[c]; }));
   return id;
 }
+/** Première ouverture : si la base du portail est vide, on y reprend les entreprises de l'ancienne feuille Google (une seule fois, lecture seule de cette feuille). */
+function vivierReprendreAncienne_(u) {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('VIVIER_REPRIS') === '1') return '';
+  var lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    if (props.getProperty('VIVIER_REPRIS') === '1') return '';
+    var sh = vivierFeuille_();
+    if (vivierLire_().length) { props.setProperty('VIVIER_REPRIS', '1'); return ''; }
+    var lignes;
+    try { lignes = SpreadsheetApp.openById(VIVIER_ANCIENNE_FEUILLE_).getSheetByName(VIVIER_ONGLET_REPONSES_).getDataRange().getDisplayValues(); }
+    catch (e) { return 'L\'ancienne base Google n\'a pas pu être lue (accès refusé pour la passerelle). Ajoutez les entreprises avec « + Ajouter une entreprise ».'; }
+    var fiches = vivierDepuisReponses_(lignes, []);
+    fiches.forEach(function (f) { vivierAjouter_(sh, f, 'ancienne base', u.email); });
+    Store.journal('vivier_reprise', u.email, fiches.length + ' entreprise(s)');
+    props.setProperty('VIVIER_REPRIS', '1'); return '';
+  } finally { lock.releaseLock(); }
+}
 function vivierListe_(req) {
-  var u = vivierDroit_(req, 1), niveau = acces_(u).cpm || 0;
+  var u = vivierDroit_(req, 1), niveau = acces_(u).cpm || 0, avertissement = vivierReprendreAncienne_(u);
   var l = vivierLire_().map(function (r) { var o = { id: r.id }; VIVIER_CHAMPS_.forEach(function (k) { o[k] = r[k]; }); o.maj_le = r.maj_le; return o; });
   l.sort(function (a, b) { return vivierCle_(a.nom) < vivierCle_(b.nom) ? -1 : 1; });
-  return { entreprises: l, niveau: niveau, peut_modifier: niveau >= 2, lien_formulaire: VIVIER_FORMULAIRE_ };
+  return { entreprises: l, niveau: niveau, peut_modifier: niveau >= 2, avertissement: avertissement };
 }
 function vivierEnregistrer_(req) {
   var u = vivierDroit_(req, 2), f = vivierValider_(req.fiche || {}), sh = vivierFeuille_(), lock = LockService.getScriptLock();
@@ -93,17 +110,5 @@ function vivierSupprimer_(req) {
   var u = vivierDroit_(req, 2), sh = vivierFeuille_(), v = sh.getDataRange().getValues(), h = v[0].map(String), id = String(req.id || '');
   for (var k = 1; k < v.length; k += 1) if (String(v[k][h.indexOf('id')]) === id) { sh.deleteRow(k + 1); Store.journal('vivier_suppr', u.email, String(v[k][h.indexOf('nom')])); return {}; }
   throw new Error('Fiche introuvable');
-}
-/** Ajoute les réponses du formulaire Google pas encore dans la base (lecture seule de la feuille Google). */
-function vivierSynchroniser_(req) {
-  var u = vivierDroit_(req, 2), sh = vivierFeuille_(), lignes;
-  try { lignes = SpreadsheetApp.openById(VIVIER_ANCIENNE_FEUILLE_).getSheetByName(VIVIER_ONGLET_REPONSES_).getDataRange().getDisplayValues(); }
-  catch (e) { throw new Error('Impossible de lire les réponses du formulaire (accès à la feuille Google non autorisé pour la passerelle)'); }
-  var lock = LockService.getScriptLock(); lock.waitLock(20000);
-  try {
-    var nouvelles = vivierDepuisReponses_(lignes, vivierLire_().map(function (r) { return r.nom; }));
-    nouvelles.forEach(function (f) { vivierAjouter_(sh, f, 'formulaire', u.email); });
-    Store.journal('vivier_sync', u.email, nouvelles.length + ' ajoutée(s)'); return { ajoutees: nouvelles.length };
-  } finally { lock.releaseLock(); }
 }
 if (typeof module !== 'undefined') module.exports = { vivierTexte_: vivierTexte_, vivierCle_: vivierCle_, vivierValider_: vivierValider_, vivierDepuisReponses_: vivierDepuisReponses_ };

@@ -15,7 +15,7 @@ test('le catalogue n\'a plus qu\'une carte Vivier, vers vivier.html', () => {
 });
 test('la page Vivier est une vraie application (liste, ajout, modification, suppression) et non plus de simples liens', () => {
   const h = lire('vivier.html');
-  ['vivier_liste', 'vivier_enregistrer', 'vivier_supprimer', 'vivier_synchroniser'].forEach(a => assert.ok(h.includes(a), a));
+  ['vivier_liste', 'vivier_enregistrer', 'vivier_supprimer'].forEach(a => assert.ok(h.includes(a), a));
   assert.ok(!/docs\.google\.com\/spreadsheets/.test(h));
 });
 test('vivier : validation et déduplication', () => {

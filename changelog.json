@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-143",
+    "date": "2026-10-24",
+    "title": "Version 5.76.0 — Présents sur site et Enquêtes regroupés dans le Fichier des habilitations",
+    "changes": [
+      "La page « Prestataires présents sur site » est supprimée (doublon du Fichier des habilitations).",
+      "La carte « Enquêtes Administratives » (lien direct vers la feuille Google) est retirée : le fichier s'ouvre depuis le Fichier des habilitations par le bouton « Fichier Enquêtes (base de données) », visible seulement du chef de division, des chefs de service (et intérim) et du secrétariat. Les autres voient uniquement la page.",
+      "Vivier des Entreprises simplifié : plus de lien ni de bouton de synchronisation ; la base reprend toute seule les entreprises de l'ancienne feuille Google à la première ouverture, puis tout se fait dans la page (ajouter, modifier, supprimer)."
+    ]
+  },
+  {
     "id": "2026-10-24-142",
     "date": "2026-10-24",
     "title": "Version 5.75.0 — Vivier des Entreprises : application complète ; fiche d'évaluation fiabilisée",
