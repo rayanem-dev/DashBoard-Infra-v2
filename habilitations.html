@@ -68,7 +68,7 @@
     <div style="margin-top:8px;display:flex;gap:6px"><button class="btn-s" id="c-ess" type="button">Essentiel</button><button class="btn-s" id="c-tout" type="button">Toutes</button><button class="btn-s" id="c-rien" type="button">Aucune</button></div>
   </div>
   <div class="tuiles"><div class="tuile"><b id="n-pers">–</b><span>personnes</span></div><div class="tuile"><b id="n-ent">–</b><span>entreprises</span></div><div class="tuile"><b id="n-col">–</b><span>colonnes</span></div>
-    <div style="margin-inline-start:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-xl" type="button">⬇ Excel</button><button class="btn-s" id="b-maj" type="button">↻ Actualiser</button></div></div>
+    <div style="margin-inline-start:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-xl" type="button">⬇ Excel</button><a class="btn-s" id="b-fichier" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none">📂 Ouvrir le fichier des Enquêtes</a><button class="btn-s" id="b-maj" type="button">↻ Actualiser</button></div></div>
   <p class="note" id="note"></p>
   <div class="tab"><table class="t" id="t"></table></div>
   </div>
@@ -98,6 +98,8 @@
       D = r; D.entreprises.forEach(function (e) { if (!(e in ents)) ents[e] = true; });
       var presents = {}; D.colonnes.forEach(function (c) { presents[c.id] = 1; if (!(c.id in cols)) cols[c.id] = ESSENTIEL.indexOf(c.id) !== -1; });
       Object.keys(cols).forEach(function (k) { if (!presents[k]) delete cols[k]; });
+      ['b-xl', 'v-xl', 'v-xl-tout'].forEach(function (id) { $(id).style.display = D.peut_exporter ? '' : 'none'; });   // Excel : chefs de service, chef de division, secrétariat
+      var lf = $('b-fichier'); if (D.peut_exporter && D.fichier_url) { lf.href = D.fichier_url; lf.style.display = ''; } else lf.style.display = 'none';
       menus(); dessiner();
     }).catch(function (e) { $('note').textContent = 'Lecture impossible : ' + e.message; });
   }

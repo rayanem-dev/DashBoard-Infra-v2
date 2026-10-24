@@ -84,7 +84,7 @@
 
   function charger(force) {
     var n = ++charge; $('note').textContent = 'Chargement des Enquêtes…'; $('note').className = 'note';
-    Api.call('presents_donnees', { date: $('f-date').value || iso(), toutes: $('f-toutes').checked, reg_du: $('f-du').value, reg_au: $('f-au').value, base: $('f-base').value, force: !!force }).then(function (r) { if (n !== charge) return; D = r; dessiner(); })
+    Api.call('presents_donnees', { date: $('f-date').value || iso(), toutes: $('f-toutes').checked, reg_du: $('f-du').value, reg_au: $('f-au').value, base: $('f-base').value, force: !!force }).then(function (r) { if (n !== charge) return; D = r; $('b-csv').style.display = r.peut_exporter ? '' : 'none'; dessiner(); })
       .catch(function (e) { if (n !== charge) return; $('note').textContent = 'Lecture impossible : ' + e.message; $('note').className = 'note alerte'; });
   }
   function filtrees() {
@@ -138,7 +138,7 @@
     gs.forEach(function (g) {
       var d = el('details', 'ent'); d.open = gs.length <= 12; var s = el('summary');
       s.appendChild(el('span', 'nom', g.entreprise)); s.appendChild(el('span', 'nb', g.personnes.length + (g.personnes.length > 1 ? ' personnes' : ' personne')));
-      var o = el('span', 'outils'); var b = el('button', 'btn-s', '⬇ Excel'); b.type = 'button'; b.title = 'Extraire seulement cette entreprise'; b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); excel([g], 'presents_' + g.entreprise.replace(/[^A-Za-z0-9]+/g, '_') + '_' + D.date + '.xlsx'); }); o.appendChild(b); s.appendChild(o);
+      var o = el('span', 'outils'); var b = el('button', 'btn-s', '⬇ Excel'); b.type = 'button'; b.style.display = D.peut_exporter ? '' : 'none'; b.title = 'Extraire seulement cette entreprise'; b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); excel([g], 'presents_' + g.entreprise.replace(/[^A-Za-z0-9]+/g, '_') + '_' + D.date + '.xlsx'); }); o.appendChild(b); s.appendChild(o);
       var sous = [g.contrat ? 'Contrat ' + g.contrat : ''].filter(Boolean).join(' · '); if (sous) s.appendChild(el('span', 'sous', sous));
       d.appendChild(s);
       var t = el('table', 't'), h = el('thead'), hr = el('tr'); ['N°', 'Nom et prénom', 'Fonction', 'Base', 'Prise en charge', 'Fin de prise en charge'].forEach(function (x) { hr.appendChild(el('th', null, x)); }); h.appendChild(hr); t.appendChild(h);
