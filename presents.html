@@ -35,12 +35,13 @@
   .vide { text-align: center; color: var(--text-muted); padding: 40px 10px; }
   #feuille-print { display: none; }
   @media print {
-    @page { size: A4 portrait; margin: 14mm; }
+    @page { size: A4 portrait; margin: 0; }   /* marge de page à 0 : le navigateur n'imprime plus l'adresse du site ni la date en bas ; les marges sont recréées dans la feuille */
     html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body > *:not(main) { display: none !important; } .pr > *:not(#feuille-print) { display: none !important; } .pr { padding: 0; max-width: none; }
-    #feuille-print { display: block; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
+    #feuille-print { display: block; width: 100%; box-sizing: border-box; padding: 0 14mm; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
     #feuille-print .tete { display: flex; align-items: center; gap: 10px; border-bottom: 2.5px solid #F0A030; padding-bottom: 6px; margin-bottom: 10px; } #feuille-print .tete img { height: 16mm; } #feuille-print h1 { font-size: 15pt; margin: 0; } #feuille-print .tete div { font-size: 9pt; }
     #feuille-print .e { break-inside: avoid; margin-bottom: 9px; } #feuille-print .e h2 { font-size: 11pt; margin: 0 0 3px; background: #f2f2f2; padding: 3px 6px; } #feuille-print table { width: 100%; border-collapse: collapse; } #feuille-print td, #feuille-print th { border: 1px solid #555; padding: 2px 6px; font-size: 9.5pt; text-align: left; } #feuille-print th { background: #fafafa; }
+    #feuille-print table.cadre { width: 100%; border: 0; border-collapse: collapse; } #feuille-print table.cadre > thead > tr > td, #feuille-print table.cadre > tfoot > tr > td, #feuille-print table.cadre > tbody > tr > td { border: 0; padding: 0; } #feuille-print .esp { height: 14mm; }
     #feuille-print .pied { margin-top: 10px; font-size: 8.5pt; color: #444; }
   }
   @media (max-width: 640px) { .ent .outils { flex-basis: 100%; margin: 0; } table.t td, table.t th { padding: 6px 10px; } .col-struct { display: none; } }
@@ -147,9 +148,9 @@
     });
     // feuille imprimable
     var fp = $('feuille-print');
-    fp.innerHTML = '<div class="tete"><img src="badges/logo-sonatrach.png" alt=""><div><h1>Prestataires présents sur site au ' + E(fr(D.date)) + '</h1><div>Direction Régionale Rhourde-Nouss · Division Infrastructure · ' + tot + ' personne(s), ' + gs.length + ' entreprise(s)</div></div></div>' +
+    fp.innerHTML = '<table class="cadre"><thead><tr><td><div class="esp"></div></td></tr></thead><tfoot><tr><td><div class="esp"></div></td></tr></tfoot><tbody><tr><td>' + '<div class="tete"><img src="badges/logo-sonatrach.png" alt=""><div><h1>Prestataires présents sur site au ' + E(fr(D.date)) + '</h1><div>Direction Régionale Rhourde-Nouss · Division Infrastructure · ' + tot + ' personne(s), ' + gs.length + ' entreprise(s)</div></div></div>' +
       gs.map(function (g) { return '<div class="e"><h2>' + E(g.entreprise) + ' — ' + g.personnes.length + (g.contrat ? ' · contrat ' + E(g.contrat) : '') + '</h2><table><thead><tr><th style="width:8mm">N°</th><th>Nom et prénom</th><th>Fonction</th><th>Base</th></tr></thead><tbody>' + g.personnes.map(function (p, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + E(p.nom) + '</b> ' + E(p.prenom) + '</td><td>' + E(p.fonction) + '</td><td>' + E(p.base) + '</td></tr>'; }).join('') + '</tbody></table></div>'; }).join('') +
-      '<div class="pied">Établi le ' + E(fr(iso())) + ' d\'après les Enquêtes administratives (date de prise en charge ≤ ' + E(fr(D.date)) + ', contrat en cours).</div>';
+      '<div class="pied">Établi le ' + E(fr(iso())) + ' d\'après les Enquêtes administratives (date de prise en charge ≤ ' + E(fr(D.date)) + ', contrat en cours).</div>' + '</td></tr></tbody></table>';
   }
   $('f-date').value = iso();
   ['f-date', 'f-sans', 'f-ctr', 'f-du', 'f-au', 'f-base'].forEach(function (id) { $(id).addEventListener('change', function () { charger(false); }); });
