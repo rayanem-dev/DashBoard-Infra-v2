@@ -25,6 +25,6 @@ function habilitationsDonnees_(req) {
     onglets.push({ onglet: sh.getName(), entreprise: a.entreprise, nb: a.personnes.length });
     a.personnes.forEach(function (p) { var r = habLigne_(lignes, p.ligne - 1, col, cd, cb, a, p), o = {}; ok.forEach(function (c) { o[c.id] = r[c.id] || ''; }); rows.push(o); ents[a.entreprise] = true; });
   });
-  return { colonnes: ok.map(function (c) { return { id: c.id, libelle: c.l, sensible: !!c.sensible }; }), lignes: rows, entreprises: Object.keys(ents).sort(), onglets: onglets, niveau: niveau };
+  return { colonnes: ok.map(function (c) { return { id: c.id, libelle: c.l, sensible: !!c.sensible }; }), lignes: rows, entreprises: Object.keys(ents).sort(), onglets: onglets, niveau: niveau, peut_exporter: exportAutorise_(u), fichier_url: exportAutorise_(u) ? enqClasseur_().getUrl() : '' };
 }
 if (typeof module !== 'undefined') module.exports = { habColonnesVisibles_: habColonnesVisibles_ };

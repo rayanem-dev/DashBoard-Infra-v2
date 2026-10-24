@@ -69,9 +69,11 @@ function presentsLireJournal_() {
   var c = { date: ix('date', 0), prestataire: ix('prestataire', 1), base: ix('base', 2), documents: ix('documents', 3), nom: ix('nom', 4), prenom: ix('prenom', 5), fonction: ix('fonction', 6), arrivee: ix('arrivee', 10), depart: ix('depart', 11) };
   return v.slice(1).map(function (r) { var o = {}; Object.keys(c).forEach(function (k) { o[k] = r[c[k]]; }); return o; });
 }
+/** Excel et accès au fichier des Enquêtes : chef de division, chefs de service (et intérim), secrétariat. Les autres consultent la page seulement. */
+function exportAutorise_(u) { return ['chef_division', 'chef_service', 'interim_chef_service', 'secretariat'].indexOf(Droits.roleCanon(u.role)) !== -1; }
 /** Action « presents_donnees » : { date, toutes, base, reg_du, reg_au } → présents à la date (droit Badges, lecture). */
 function presentsDonnees_(req) {
-  badgesDroit_(req, 1);
+  var u = badgesDroit_(req, 1);
   var date = presentsDate_(req.date) || Dates.today();
   var cache = CacheService.getScriptCache(), cle = 'PRESENTS_SEJOURS', vu = cache.get(cle), sejours = null;
   if (vu && !req.force) { try { sejours = JSON.parse(vu); } catch (e) { sejours = null; } }
@@ -81,7 +83,7 @@ function presentsDonnees_(req) {
   }
   var r = presentsCalculer_(sejours, date, { toutes: req.toutes === true, base: req.base, regDu: req.reg_du, regAu: req.reg_au });
   var bases = {}; sejours.forEach(function (s) { if (s.base) bases[s.base] = true; });
-  r.date = date; r.bases = Object.keys(bases).sort(); r.nb_sejours = sejours.length; r.duree_defaut = PRESENTS_DUREE_DEFAUT_;
+  r.peut_exporter = exportAutorise_(u); r.date = date; r.bases = Object.keys(bases).sort(); r.nb_sejours = sejours.length; r.duree_defaut = PRESENTS_DUREE_DEFAUT_;
   return r;
 }
 if (typeof module !== 'undefined') module.exports = { presentsCalculer_: presentsCalculer_, presentsSejours_: presentsSejours_, presentsDate_: presentsDate_ };
