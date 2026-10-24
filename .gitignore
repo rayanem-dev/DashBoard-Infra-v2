@@ -8,3 +8,8 @@ apps-script/prise-en-charge/BadgesMoteur.gs
 
 # vidéos de formation générées par le workflow de déploiement (source privée : data/videos)
 apps-script/gateway/VideosFormation*.gs
+
+# moteur de la prise en charge généré par le workflow (source : apps-script/prise-en-charge/Code.js et LecturePEC.gs)
+apps-script/gateway/PecMoteur.gs
+apps-script/gateway/PecLecture.gs
+apps-script/gateway/EnquetesPartage.gs

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-148",
+    "date": "2026-10-24",
+    "title": "Version 5.80.0 — Prise en charge et autorisation d'accès dans le portail",
+    "changes": [
+      "La prise en charge s'ouvre maintenant dans le portail, derrière la connexion (plus de lien public). Mêmes écrans, même moteur de génération des PDF (code repris à l'identique dans la passerelle).",
+      "Un prestataire ne voit que les contrats de ses entreprises, ne génère que pour elles et ne voit que les documents qu'il a générés ; les actions d'administration lui sont refusées.",
+      "L'ancienne application reste disponible pour le secrétariat (« ancienne version ») le temps de vérifier. Activation en une fois des autorisations Docs et Drive de la passerelle : voir docs/PRISE-EN-CHARGE-PASSERELLE.md."
+    ]
+  },
+  {
     "id": "2026-10-24-147",
     "date": "2026-10-24",
     "title": "Version 5.79.0 — Accueil plus léger",

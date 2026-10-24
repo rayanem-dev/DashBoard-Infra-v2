@@ -16,8 +16,17 @@ var SEED_APPS = [
   "Prises en Charge + Autorisation d'Accès",
   "Application unifiée et intelligente regroupant la création, la vérification et le suivi des prises en charge ainsi que des autorisations d'accès. Des fragments d'intelligence artificielle ont été utilisés pour automatiser la saisie et accélérer le traitement des dossiers.",
   "🧾🪪",
-  "https://script.google.com/macros/s/AKfycbyda46CXhmCrzE9MOvR7ARj77gsrS8BHgiekhInVJrgNwQi1rO2Tc9XnPktopvLEsX4/exec",
+  "prise-en-charge.html",
   1
+ ],
+ [
+  "logistique",
+  "Prises en Charge (ancienne version)",
+  "Ancienne application, gardée le temps de vérifier la nouvelle (prise en charge dans le portail). À retirer ensuite.",
+  "🧾",
+  "https://script.google.com/macros/s/AKfycbyda46CXhmCrzE9MOvR7ARj77gsrS8BHgiekhInVJrgNwQi1rO2Tc9XnPktopvLEsX4/exec",
+  3,
+  "secretariat"
  ],
  [
   "logistique",
@@ -443,6 +452,25 @@ function retirerCartesEnquetes_() {
     }
     suppr.reverse().forEach(function (l) { sh.deleteRow(l); });
     props.setProperty('ENQ_CARTES_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+
+/**
+ * Une seule fois : la carte « Prises en Charge + Autorisation d'Accès » ouvre désormais la page du portail (prise-en-charge.html, derrière la connexion)
+ * au lieu de l'ancienne application ouverte à toute personne ayant le lien ; l'ancienne reste en carte « ancienne version », réservée au secrétariat.
+ */
+function migrerPriseEnCharge_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('PEC_PORTAIL_V1') === '1' || props.getProperty('PEC_PORTAIL_PRET') !== '1') return;   // tant que les autorisations Docs / Drive ne sont pas accordées (autoriserPriseEnCharge), la carte garde l'ancienne application
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iU = h.indexOf('url'), iT = h.indexOf('titre');
+    var ancien = '';
+    for (var i = 1; i < v.length; i += 1) {
+      if (/^Prises en Charge \+ Autorisation/.test(String(v[i][iT])) && /script\.google\.com\/macros/.test(String(v[i][iU]))) { ancien = String(v[i][iU]); sh.getRange(i + 1, iU + 1).setValue('prise-en-charge.html'); break; }
+    }
+    props.setProperty('PEC_PORTAIL_V1', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }

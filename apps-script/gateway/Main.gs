@@ -116,6 +116,7 @@ function route_(req) {
     case 'badges_photos_profils': return badgesPhotosProfils_(req);
     case 'video_formation': return videoFormation_(req);
     case 'habilitations_donnees': return habilitationsDonnees_(req);
+    case 'pec': return pecAppeler_(req);
     case 'vivier_liste': return vivierListe_(req);
     case 'vivier_enregistrer': return vivierEnregistrer_(req);
     case 'vivier_supprimer': return vivierSupprimer_(req);
@@ -216,7 +217,7 @@ function route_(req) {
       var a9 = admin_(req); cible_(req.email); var sec = String(req.section || '').replace(/\s+/g, ' ').trim().slice(0, 60);
       Store.maj('Utilisateurs', { email: req.email }, { section: sec }); Store.journal('section', a9.email, req.email + ' -> ' + (sec || 'aucune')); return {};
     }
-    case 'admin_portee_choix': { admin_(req); return { entreprises: badgesCharger_().entreprises.map(function (e) { return e.nom; }).sort() }; }
+    case 'admin_portee_choix': { admin_(req); var noms9 = {}; badgesCharger_().entreprises.forEach(function (e) { noms9[e.nom] = 1; }); pecEntreprisesConfig_().forEach(function (n) { noms9[n] = 1; }); return { entreprises: Object.keys(noms9).sort() }; }
     case 'admin_actif': {
       var a2 = admin_(req); cible_(req.email);
       if (String(req.email).toLowerCase() === String(a2.email).toLowerCase()) throw new Error('Vous ne pouvez pas désactiver votre propre compte');
@@ -260,7 +261,7 @@ function route_(req) {
     default: throw new Error('Action inconnue');
   }
 }
-var ACTIONS_PRESTATAIRE_ = /^(changer_mdp|me|menu|profil_moi|profil_enregistrer|profil_maj|profil_photo|photos_mini|acces_demander|profil_correction|email_contact_\w+|badges_donnees|badges_numeroter|badges_personnes_sauver|badges_entreprises_sauver|badges_enquetes_saisir)$/;
+var ACTIONS_PRESTATAIRE_ = /^(changer_mdp|me|menu|profil_moi|profil_enregistrer|profil_maj|profil_photo|photos_mini|acces_demander|profil_correction|email_contact_\w+|badges_donnees|badges_numeroter|badges_personnes_sauver|badges_entreprises_sauver|badges_enquetes_saisir|pec)$/;
 var RUBRIQUES_IDS_ = ['pilotage', 'marches', 'acces', 'personnel', 'logistique', 'admin', 'it'];
 
 function acces_(user) { return Droits.resolve(user, Store.table('DroitsRole'), Store.table('Exceptions')); }

@@ -5,7 +5,7 @@ name: Déployer la passerelle
 on:
   push:
     branches: [claude/exciting-ritchie-u1o1dl, main]
-    paths: ['apps-script/gateway/**', 'js/simulation.js', 'data/annuaire-data.js', 'data/pointage-effectif.js', 'badges/badges.js', 'apps-script/prise-en-charge/Enquetes.gs', 'data/videos/**', 'outils/generer-videos-gateway.js', '.github/workflows/deploy-gateway.yml']
+    paths: ['apps-script/gateway/**', 'js/simulation.js', 'data/annuaire-data.js', 'data/pointage-effectif.js', 'badges/badges.js', 'apps-script/prise-en-charge/Enquetes.gs', 'apps-script/prise-en-charge/Code.js', 'apps-script/prise-en-charge/LecturePEC.gs', 'outils/generer-pec-gateway.js', 'data/videos/**', 'outils/generer-videos-gateway.js', '.github/workflows/deploy-gateway.yml']
   workflow_dispatch:
 
 concurrency:
@@ -35,6 +35,22 @@ jobs:
 
       - name: "Copier l'injection dans les Enquêtes (partagée avec Prises en charge)"
         run: cp apps-script/prise-en-charge/Enquetes.gs apps-script/gateway/EnquetesPartage.gs
+
+      - name: "Copier la lecture des demandes (partagée avec Prises en charge)"
+        run: cp apps-script/prise-en-charge/LecturePEC.gs apps-script/gateway/PecLecture.gs
+
+      - name: "Générer le moteur de la prise en charge (source : apps-script/prise-en-charge/Code.js)"
+        run: node outils/generer-pec-gateway.js apps-script/prise-en-charge/Code.js apps-script/gateway/PecMoteur.gs
+
+      - name: "Autorisations Google de la prise en charge (Docs, Drive) : seulement quand la variable GATEWAY_SCOPES_PEC vaut 1"
+        if: ${{ vars.GATEWAY_SCOPES_PEC == '1' }}
+        run: |
+          node -e '
+            const fs = require("fs"), f = "apps-script/gateway/appsscript.json", m = JSON.parse(fs.readFileSync(f, "utf8"));
+            ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/drive"].forEach(s => { if (m.oauthScopes.indexOf(s) < 0) m.oauthScopes.push(s); });
+            m.dependencies = m.dependencies || {}; m.dependencies.enabledAdvancedServices = [{ userSymbol: "Drive", serviceId: "drive", version: "v3" }];
+            fs.writeFileSync(f, JSON.stringify(m, null, 2)); console.log("Autorisations ajoutées :", m.oauthScopes.join(", "));
+          '
 
       - name: "Générer les vidéos de formation servies après connexion (sources privées : data/videos)"
         run: node outils/generer-videos-gateway.js data/videos apps-script/gateway
