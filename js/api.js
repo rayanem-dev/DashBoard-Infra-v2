@@ -5,6 +5,9 @@
   var demoState = { token: null, user: null };
   var DEMO_USERS = [
     { uid: 'u1', nom: 'BENALI Karim', service: 'Division Infrastructures', role: 'chef_division', email: 'k.benali@exemple.dz' },
+    { uid: 'u90', nom: 'HAMDI Yacine', service: 'Service Électromécanique', section: 'Froid', fonction: 'Chef d\'atelier froid', role: 'chef_atelier', email: 'y.hamdi@exemple.dz' },
+    { uid: 'u91', nom: 'RAHMANI Nadir', service: 'Service Électromécanique', section: 'Électricité', fonction: 'Chef d\'atelier électricité', role: 'chef_atelier', email: 'n.rahmani@exemple.dz' },
+    { uid: 'u92', nom: 'MILOUDI Kouider', service: 'Service Électromécanique', section: 'Électricité', fonction: 'Chef d\'équipe', role: 'prestataire', dependance: 'GLOBI CORP', email: 'k.miloudi@exemple.dz' },
     { uid: 'u2', nom: 'MEZIANE Sofia', service: 'Service Construction', role: 'conducteur', email: 's.meziane@exemple.dz', dependance: 'ACOSCO' },
     { uid: 'u3', nom: 'TAHRI Yacine', service: 'Cellule Passation de marché', role: 'cpm', email: 'y.tahri@exemple.dz' },
     { uid: 'u4', nom: 'KHELIFI Amine', service: 'Service Construction', role: 'conducteur', email: 'a.khelifi@exemple.dz', fonction: 'Conducteur des travaux', dependance: 'GTP' },
@@ -321,13 +324,14 @@
       case 'admin_etat': exigerAdmin();
         return { roles: demoRoles.map(function (r) { var n = DEMO_USERS.filter(function (u) { return u.role === r.id; }).length; return Object.assign({ nb_utilisateurs: n }, r); }),
           applications: demoApps, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
-          utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false, portee: x.portee || '' }; }) };
+          utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false, portee: x.portee || '', section: x.section || '' }; }) };
       case 'admin_role': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas modifier votre propre rôle');
         cibleDemo(p.email).role = p.role; return {};
       case 'admin_utilisateur_ajouter': { exigerAdmin(); var emd = String(p.email || '').trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emd)) throw erreur('Adresse e-mail invalide'); if (!String(p.nom || '').trim()) throw erreur('Le nom est obligatoire');
         if (DEMO_USERS.some(function (u) { return u.email === emd; })) throw erreur('Un compte existe déjà avec cette adresse');
-        DEMO_USERS.push({ email: emd, nom: String(p.nom).trim(), service: p.service || '', dependance: p.dependance || '', role: p.role, actif: true }); return { email: emd }; }
+        DEMO_USERS.push({ email: emd, nom: String(p.nom).trim(), service: p.service || '', dependance: p.dependance || '', section: p.section || '', role: p.role, actif: true }); return { email: emd }; }
       case 'admin_portee': { exigerAdmin(); cibleDemo(p.email).portee = (Array.isArray(p.entreprises) ? p.entreprises.join(' ; ') : String(p.entreprises || '')); return {}; }
+      case 'admin_section': { exigerAdmin(); cibleDemo(p.email).section = String(p.section || '').trim(); return {}; }
       case 'admin_portee_choix': exigerAdmin(); return { entreprises: ['ATLAS SAHARIENNE', 'ETB ZATOUT ABDENACER', 'GLOBI CORP OUARGLA', 'SARL ATIA ET FRERES'] };
       case 'admin_actif': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas désactiver votre propre compte');
         cibleDemo(p.email).actif = !!p.actif; return {};
@@ -411,7 +415,7 @@
       case 'organigramme': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var gr = {}, ordre = [];
         DEMO_USERS.forEach(function (x) { var sv = demoService(x); if (!gr[sv]) { gr[sv] = { nom: sv, racine: false, membres: [] }; ordre.push(sv); }
           var chef = x.role === 'chef_division'; if (chef) gr[sv].racine = true;
-          gr[sv].membres.push({ uid: x.uid, nom: x.nom, fonction: x.fonction || (chef ? 'Chef de division' : ''), dependance: x.dependance || '', role: x.role, chef: chef, telephone: '0555 00 00 0' + x.uid.slice(1) }); });
+          gr[sv].membres.push({ uid: x.uid, nom: x.nom, fonction: x.fonction || (chef ? 'Chef de division' : ''), dependance: x.dependance || '', section: x.section || '', prestataire: x.role === 'prestataire', role: x.role, chef: chef, telephone: '0555 00 00 0' + String(x.uid || 'u0').slice(1) }); });
         var sv2 = ordre.map(function (k) { return gr[k]; }).sort(function (a, b) { return (b.racine ? 1 : 0) - (a.racine ? 1 : 0) || (a.nom < b.nom ? -1 : 1); });
         return { services: sv2, total: DEMO_USERS.length }; }
       case 'visavis_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var vl = demoVav();

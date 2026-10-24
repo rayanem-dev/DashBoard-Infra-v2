@@ -20,7 +20,7 @@ function organigramme_(req) {
     if (!groupes[cle]) { groupes[cle] = { nom: nomService, racine: false, membres: [] }; ordre.push(cle); }
     var role = Droits.roleCanon(x.role), rang = RANG_ORGA_[role] === undefined ? 9 : RANG_ORGA_[role];
     if (role === 'chef_division') groupes[cle].racine = true;
-    groupes[cle].membres.push({ uid: String(x.uid || ''), nom: Annuaire.nomAffichable(x.nom, x.email), fonction: x.fonction || '', dependance: x.dependance || '', role: role, chef: rang <= 2, rang: rang, telephone: String((profils[String(x.email || '').toLowerCase()] || {}).telephone || '').trim() || x.telephone || '' });
+    groupes[cle].membres.push({ uid: String(x.uid || ''), nom: Annuaire.nomAffichable(x.nom, x.email), fonction: x.fonction || '', dependance: x.dependance || '', section: String(x.section || '').trim(), prestataire: role === 'prestataire', role: role, chef: rang <= 2, rang: rang, telephone: String((profils[String(x.email || '').toLowerCase()] || {}).telephone || '').trim() || x.telephone || '' });
   });
   var services = ordre.map(function (k) { return groupes[k]; });
   services.forEach(function (s) { s.membres.sort(function (a, b) { return a.rang - b.rang || (a.nom < b.nom ? -1 : 1); }); s.membres.forEach(function (m) { delete m.rang; }); });

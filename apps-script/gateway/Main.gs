@@ -155,7 +155,7 @@ function route_(req) {
         roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles), rubrique: String(x.rubrique || '') }; }),
-        utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0', portee: String(u.portee || '') }; })
+        utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0', portee: String(u.portee || ''), section: String(u.section || '') }; })
       };
     }
     case 'rapports_chantiers_admin': return rapportsChantiersAdmin_(req);
@@ -201,7 +201,7 @@ function route_(req) {
       if (!nm) throw new Error('Le nom est obligatoire');
       var rl = Droits.roleCanon(req.role); var e7 = Droits.verifier(rl); if (e7) throw new Error(e7);
       if (Store.utilisateur(em)) throw new Error('Un compte existe déjà avec cette adresse');
-      Store.maj('Utilisateurs', { email: em }, { uid: uidPour_(em), nom: nm.slice(0, 120), service: String(req.service || '').trim().slice(0, 120), fonction: String(req.fonction || '').trim().slice(0, 120), dependance: String(req.dependance || '').trim().slice(0, 120), role: rl, actif: 1, email_contact: em });
+      Store.maj('Utilisateurs', { email: em }, { uid: uidPour_(em), nom: nm.slice(0, 120), service: String(req.service || '').trim().slice(0, 120), fonction: String(req.fonction || '').trim().slice(0, 120), dependance: String(req.dependance || '').trim().slice(0, 120), section: String(req.section || '').trim().slice(0, 60), role: rl, actif: 1, email_contact: em });
       Store.journal('utilisateur_ajout', a7.email, em + ' (' + rl + ')'); return { email: em };
     }
     case 'admin_portee': {
@@ -210,6 +210,11 @@ function route_(req) {
       var liste8 = (Array.isArray(req.entreprises) ? req.entreprises : String(req.entreprises || '').split(/[;\n]+/)).map(function (x) { return String(x).replace(/\s+/g, ' ').trim(); }).filter(Boolean).slice(0, 30);
       Store.maj('Utilisateurs', { email: req.email }, { portee: liste8.join(' ; ') });
       Store.journal('portee', a8.email, req.email + ' -> ' + (liste8.join(' ; ') || 'aucune')); return {};
+    }
+    case 'admin_section': {
+      // Section d'un service (ex. Froid / Électricité pour l'Électromécanique, Hydraulique) : simple regroupement d'affichage dans l'organigramme, aucun droit.
+      var a9 = admin_(req); cible_(req.email); var sec = String(req.section || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+      Store.maj('Utilisateurs', { email: req.email }, { section: sec }); Store.journal('section', a9.email, req.email + ' -> ' + (sec || 'aucune')); return {};
     }
     case 'admin_portee_choix': { admin_(req); return { entreprises: badgesCharger_().entreprises.map(function (e) { return e.nom; }).sort() }; }
     case 'admin_actif': {
