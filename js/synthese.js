@@ -142,8 +142,10 @@ var Synthese = (function () {
     return (url ? fetch(url).then(function (r) { if (!r.ok) throw new Error('lecture impossible'); return r.text(); }) : Donnees.csv('cpm')).then(function (txt) {
       var s = cpm(parseCSV(txt), new Date()), grille = el('div', 'syn-grille'), barre = el('div', 'syn-barre');
       grille.appendChild(tuile(s.total, 'Total dossiers', '', 'linear-gradient(135deg,#1A1A2E,#16213E)', '#fff'));
-      ORDRE.forEach(function (k) { if (!s.comptes[k]) return; var st = STATUTS[k]; grille.appendChild(tuile(s.comptes[k], st.label, pct(s.comptes[k], s.total), st.bg, st.text));
-        var seg = el('div', 'syn-seg'); seg.style.width = (s.total ? s.comptes[k] / s.total * 100 : 0) + '%'; seg.style.background = st.bg; barre.appendChild(seg); });
+      // quatre chiffres seulement (total, en cours, en exécution, à l'échéance) ; la barre garde la répartition complète, le détail est dans « Détail »
+      ORDRE.forEach(function (k) { if (!s.comptes[k]) return; var st = STATUTS[k];
+        if (k === 'encours' || k === 'execution') grille.appendChild(tuile(s.comptes[k], st.label, pct(s.comptes[k], s.total), st.bg, st.text));
+        var seg = el('div', 'syn-seg'); seg.style.width = (s.total ? s.comptes[k] / s.total * 100 : 0) + '%'; seg.style.background = st.bg; seg.title = st.label + ' : ' + s.comptes[k]; barre.appendChild(seg); });
       if (s.echeanceProche > 0) { var a = el('a', 'syn-tuile syn-echeance'); a.href = 'Dossiers_CPM.html?echeance=1'; a.style.background = '#FFF3E0'; a.appendChild(el('div', 'syn-num', '⏳ ' + s.echeanceProche)); a.appendChild(el('div', 'syn-lib', 'Arrive à échéance')); grille.appendChild(a); }
       sub.textContent = s.total + ' dossier' + (s.total > 1 ? 's' : '') + ' suivi' + (s.total > 1 ? 's' : '') + ' · données en direct'; zone.appendChild(grille); zone.appendChild(barre);
     }).catch(function () { sub.textContent = 'Données indisponibles pour l\'instant'; });
@@ -158,6 +160,7 @@ var Synthese = (function () {
       var s = chantiers(res.globalResults), grille = el('div', 'syn-grille syn-quatre'), barre = el('div', 'syn-barre');
       grille.appendChild(tuile(s.total, 'Chantiers suivis', '', 'linear-gradient(135deg,#1A1A2E,#16213E)', '#fff'));
       [['Bien avancé', s.bien, '#DCFCE7', '#15803D'], ['En cours', s.encours, '#DBEAFE', '#1E40AF'], ['Démarrage', s.demarrage, '#FFF3E0', '#9A5B0F']].forEach(function (x) {
+        if (x[0] === 'Démarrage' && !x[1]) return;   // une tuile à zéro n'apporte rien
         grille.appendChild(tuile(x[1], x[0], pct(x[1], s.total), x[2], x[3])); var seg = el('div', 'syn-seg'); seg.style.width = (s.total ? x[1] / s.total * 100 : 0) + '%'; seg.style.background = x[3]; barre.appendChild(seg); });
       sub.textContent = s.total + ' prestation' + (s.total > 1 ? 's' : '') + ' suivie' + (s.total > 1 ? 's' : '') + ' — Travaux Entretien + Électromécanique'; zone.appendChild(grille); zone.appendChild(barre);
     }).catch(function () { sub.textContent = 'Données indisponibles pour l\'instant'; });
@@ -282,9 +285,10 @@ var Synthese = (function () {
       liens.insertBefore(b, liens.firstChild);
     }
     return Api.call('cpm_journal').then(function (r) {
-      sub.textContent = 'Semaines du samedi au vendredi';
+      sub.textContent = 'Les cinq derniers changements';
       var corps = el('div', 'syn-journal');
-      if (!r.evenements.length) corps.appendChild(el('p', 'syn-sous', 'Aucun changement enregistré pour le moment.')); else listeSemaines(corps, r.evenements, 4, true);
+      var recents = r.evenements.filter(function (e) { return e.champ !== 'etape'; }).slice(0, 5);   // les cinq derniers changements, sans zone qui défile
+      if (!recents.length) corps.appendChild(el('p', 'syn-sous', 'Aucun changement enregistré pour le moment.')); else listeSemaines(corps, recents, 2, true);
       zone.appendChild(corps);
       // Mise à jour automatique : si le dernier instantané a plus de 6 h (ou n'existe pas), on relit le suivi une fois par chargement de page
       var age = Date.now() - Date.parse(r.dernier_instantane || '');

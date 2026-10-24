@@ -15,7 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="css/charte.css?v=5.4.3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap">
+<link rel="stylesheet" href="css/charte.css?v=5.4.4">
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
@@ -73,6 +74,10 @@
   <section class="syntheses" id="syntheses"><div class="syn syn-alerte-modifs" id="syn-modifs" hidden></div><div class="syn" id="syn-chantiers" hidden></div><div class="syn" id="syn-cpm" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
   <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
   <div id="modules"></div>
+  <section id="entreprises-zone" class="annuaire-zone" hidden>
+    <h3>🏢 Entreprises du vivier</h3>
+    <div id="entreprises-liste" class="ent-liste"></div>
+  </section>
   <section id="annuaire-zone" class="annuaire-zone" hidden>
     <h3 id="annuaire-titre">📞 Annuaire</h3>
     <div id="annuaire-liste"></div>
@@ -191,6 +196,17 @@
   var modulesFiltre = '', verrouContenu = false, aDesApps = false;
   function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache || modulesFiltre === '__annuaire'; $('syntheses').hidden = cache; if (cache) $('annuaire-zone').hidden = true; $('outils').hidden = cache || !aDesApps; $('barre-haut').hidden = cache || !aDesApps; }
+  // Entreprises du Vivier trouvées par la recherche (seulement si la personne a l'application Vivier ; liste lue une fois, à la première frappe)
+  var vivier = null, vivierEssai = false;
+  function aVivier() { return Array.prototype.some.call(document.querySelectorAll('#modules .app'), function (c) { return /vivier/.test(c.dataset.t || ''); }); }
+  function entreprisesTrouvees(q, modeAnnuaire) {
+    var z = $('entreprises-zone'), l = $('entreprises-liste'); l.textContent = '';
+    if (verrouContenu || modeAnnuaire || modulesFiltre || q.length < 3 || !aVivier()) { z.hidden = true; return 0; }
+    if (vivier === null) { if (!vivierEssai) { vivierEssai = true; Api.call('vivier_liste').then(function (r) { vivier = r.entreprises || []; filtrer(); }).catch(function () { vivier = []; }); } z.hidden = true; return 0; }
+    var t = vivier.filter(function (e) { return norme([e.nom, e.activite, e.telephone, e.email, e.adresse].join(' ')).indexOf(q) !== -1; }).slice(0, 8);
+    t.forEach(function (e) { var a = document.createElement('a'); a.className = 'ent-res'; a.href = 'vivier.html?q=' + encodeURIComponent(e.nom); a.appendChild(el('b', null, e.nom)); a.appendChild(el('span', null, [e.activite, e.telephone].filter(Boolean).join(' · '))); l.appendChild(a); });
+    z.hidden = !t.length; return t.length;
+  }
   function filtrer() {
     var brut = $('recherche').value, q = norme(brut).trim(), vus = 0, zoneA = $('annuaire-zone'), liste = $('annuaire-liste');
     var modeAnnuaire = modulesFiltre === '__annuaire';
@@ -206,6 +222,7 @@
     else if (modeAnnuaire) { nb = Annuaire.lister(liste, brut); zoneA.hidden = false; $('annuaire-titre').textContent = '📞 Annuaire — ' + nb + ' contact(s)'; }
     else if (q.length >= 2 && !modulesFiltre) { liste.textContent = ''; var g = document.createElement('div'); g.className = 'contacts'; nb = Annuaire.rechercher(g, brut, 24); liste.appendChild(g); zoneA.hidden = !nb; $('annuaire-titre').textContent = '📞 Annuaire — ' + nb + ' contact(s)' + (nb > 24 ? ' (24 affichés : précisez la recherche)' : ''); }
     else zoneA.hidden = true;
+    var ne = entreprisesTrouvees(q, modeAnnuaire); nb += ne;
     $('aucun-resultat').hidden = !(q || modulesFiltre) || vus > 0 || nb > 0 || modeAnnuaire;
   }
   function outilsAccueil(menu) {

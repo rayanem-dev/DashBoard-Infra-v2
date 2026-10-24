@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-10-24-147",
+    "date": "2026-10-24",
+    "title": "Version 5.79.0 — Accueil plus léger",
+    "changes": [
+      "Barre d'identité plus fine : avatar réduit, profil et raccourcis sur une seule ligne.",
+      "Suivi CPM : quatre chiffres (total, en cours, en exécution, à l'échéance) au lieu de neuf tuiles ; la barre garde la répartition complète. Avancement chantiers : tuile « Démarrage » seulement s'il y en a.",
+      "Journal du CPM sur l'accueil : les cinq derniers changements, sans zone qui défile ; « Tout voir » ouvre le journal complet par jour.",
+      "Recherche : trouve aussi les entreprises du Vivier (nom, activité, téléphone, e-mail) pour qui a l'application.",
+      "Emoji : un seul jeu (Noto Color Emoji) pour que les icônes aient le même style partout."
+    ]
+  },
+  {
     "id": "2026-10-24-146",
     "date": "2026-10-24",
     "title": "Version 5.78.1 — Vivier : reprise de l'ancienne feuille corrigée",
