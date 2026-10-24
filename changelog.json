@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-126",
+    "date": "2026-10-24",
+    "title": "Version 5.66.0 — Carte personnelle réduite, corrections de fiche",
+    "changes": [
+      "Accueil : la carte personnelle est réduite au nécessaire (« Bonjour Redha 👋 », « Mon profil » et les raccourcis planning à côté, jauge de rotation) ; ancienneté, employeur et rôle sont dans « Mon profil ».",
+      "Mon profil : un bouton « Demander une correction » sous chaque champ qui vient de BDDORGA (fonction, service, employeur, matricule, SONA, SAP, NIN) envoie la demande au secrétariat ; elle apparaît dans Privilèges › Demandes."
+    ]
+  },
+  {
     "id": "2026-10-24-125",
     "date": "2026-10-24",
     "title": "Version 5.65.0 — Photos partout et accès classés comme le menu",
