@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-134",
+    "date": "2026-10-24",
+    "title": "Version 5.70.1 — Fiche d'évaluation : « Envoyer au service »",
+    "changes": [
+      "Fiche d'évaluation : un bouton « ✉️ Envoyer au service » (sur la fiche générée et dans l'archive) ouvre une petite fenêtre pour choisir le service (Chef de division, Construction, Travaux Entretien, Électromécanique, CPM) et envoie le PDF à sa boîte e-mail, après confirmation. Rien ne part tout seul."
+    ]
+  },
+  {
     "id": "2026-10-24-133",
     "date": "2026-10-24",
     "title": "Version 5.70.0 — Présents sur site selon les prises en charge, et fichier des habilitations",
