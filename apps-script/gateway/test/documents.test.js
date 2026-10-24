@@ -14,7 +14,7 @@ test('chaque modèle se génère, vide ou prérempli, sans « undefined »', () 
   D.modeles.forEach(m => {
     [{}, D.valeursInitiales(m, user, '2026-10-19')].forEach(v => {
       const h = D.rendre(m, v);
-      assert.ok(h.includes('class="doc"') && h.includes('logo-sonatrach'), m.id);
+      assert.ok(/class="doc( odm)?"/.test(h) && (h.includes('logo-sonatrach') || (m.entete === 'odm' && h.includes('odm-logo'))), m.id);   // l'ordre de mission a sa propre mise en page (logo grand format)
       assert.ok(!/undefined|\[object|NaN/.test(h), m.id + ' : ' + (h.match(/.{20}(undefined|\[object|NaN).{20}/) || [''])[0]);
     });
   });
