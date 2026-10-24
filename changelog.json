@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-132",
+    "date": "2026-10-24",
+    "title": "Version 5.69.1 — Impression des présents sur site sans l'adresse du site",
+    "changes": [
+      "Prestataires présents sur site : l'impression PDF n'affiche plus l'adresse du site ni la date en bas de page ; les marges sont gardées sur chaque page."
+    ]
+  },
+  {
     "id": "2026-10-24-131",
     "date": "2026-10-24",
     "title": "Version 5.69.0 — La base d'hébergement est inscrite dans les Enquêtes",
