@@ -42,7 +42,8 @@
         { titre: 'Avancement Chantiers', description: 'Vue d\'ensemble de l\'avancement des chantiers.', emoji: '📊', url: 'Avancement_des_Chantiers.html' },
         { titre: 'Suivi Chantier', description: 'Détail du suivi par chantier.', emoji: '🗂️', url: 'Suivi_Chantier.html' } ] },
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
-        { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] },
+        { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
+        { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' } ] },
       { id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 2, apps: [
         { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
       { id: 'simulation', titre: 'Simulation de planning', icone: '🧪', niveau: 3, apps: [
@@ -76,7 +77,8 @@
     ],
     cpm: [
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
-        { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' } ] }
+        { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
+        { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' } ] }
     ]
   };
   var demoRoles = [
