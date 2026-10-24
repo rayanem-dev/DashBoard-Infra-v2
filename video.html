@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vidéo de formation – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script>
+<style>
+  .vd { max-width: 960px; margin: 0 auto; padding: 16px 16px 40px; text-align: center; }
+  .vd video { width: 100%; border-radius: 14px; box-shadow: var(--shadow-card); background: #000; }
+  .vd h2 { margin: 6px 0 4px; } .vd p { color: var(--text-muted); margin: 0 0 14px; }
+  .btn-p { display: inline-block; padding: 11px 22px; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font-weight: 700; text-decoration: none; margin: 14px 6px 0; }
+  .btn-s2 { display: inline-block; padding: 10px 20px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font-weight: 700; text-decoration: none; margin: 14px 6px 0; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">▶</div>
+    <div class="logo-text"><h1>Vidéo de formation</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">Portail</a></div>
+</div></header>
+<main class="vd">
+  <h2 id="t"></h2><p id="d"></p>
+  <video id="v" controls preload="metadata" playsinline></video>
+  <div><a class="btn-p" id="b-ouvrir" href="portail.html">Ouvrir le portail</a><a class="btn-s2" id="b-tel" href="#" download>⬇ Télécharger la vidéo</a></div>
+</main>
+<script>
+(function () {
+  var VIDEOS = { 'fiche-evaluation': { titre: 'Fiche d\'évaluation : comment l\'utiliser', desc: 'Choisir le contrat, cocher les critères, générer la fiche PDF, l\'imprimer ou l\'envoyer (1 min 37).' } };
+  var k = new URLSearchParams(location.search).get('v') || 'fiche-evaluation', d = VIDEOS[k] || VIDEOS['fiche-evaluation'], id = VIDEOS[k] ? k : 'fiche-evaluation';
+  document.getElementById('t').textContent = d.titre; document.getElementById('d').textContent = d.desc;
+  var v = document.getElementById('v'); v.poster = 'img/aide/videos/' + id + '.jpg'; v.src = 'img/aide/videos/' + id + '.mp4';
+  document.getElementById('b-tel').href = 'img/aide/videos/' + id + '.mp4';
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

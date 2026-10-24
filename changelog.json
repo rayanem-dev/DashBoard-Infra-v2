@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-24-137",
+    "date": "2026-10-24",
+    "title": "Version 5.72.0 — Vidéo de formation dans l'aide",
+    "changes": [
+      "L'aide « ? » de la Fiche d'évaluation contient maintenant la vidéo de formation (1 min 37) sous le résumé, avec un lien direct.",
+      "Nouvelle page « Vidéo de formation » (video.html?v=fiche-evaluation) : lecteur plein écran, bouton pour ouvrir le portail et pour télécharger la vidéo ; elle s'ouvre sans connexion, pratique pour un lien dans un e-mail."
+    ]
+  },
+  {
     "id": "2026-10-24-136",
     "date": "2026-10-24",
     "title": "Version 5.71.1 — Excel réservé aux chefs et au secrétariat",

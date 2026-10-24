@@ -27,6 +27,7 @@
     else {
       in_.appendChild(el('h2', null, d.titre)); in_.appendChild(el('p', 'aide-res', d.resume));
       if (d.img) { var im = el('img', 'aide-img'); im.alt = 'Capture : ' + d.titre; im.loading = 'lazy'; im.src = BASE + 'img/aide/' + d.img + '.jpg'; im.onerror = function () { im.remove(); }; in_.appendChild(im); }
+      if (d.video) { var v = el('video', 'aide-img'); v.controls = true; v.preload = 'metadata'; v.setAttribute('playsinline', ''); v.poster = BASE + 'img/aide/videos/' + d.video + '.jpg'; v.src = BASE + 'img/aide/videos/' + d.video + '.mp4'; v.setAttribute('aria-label', 'Vidéo de formation : ' + d.titre); in_.appendChild(v); var lv = el('a', 'aide-res', '↗ Lien direct vers cette vidéo'); lv.href = BASE + 'video.html?v=' + encodeURIComponent(d.video); lv.target = '_blank'; lv.rel = 'noopener'; lv.style.cssText = 'font-size:12px'; in_.appendChild(lv); }
       if (d.etapes && d.etapes.length) { in_.appendChild(el('h3', null, 'Pas à pas')); var ol = el('ol'); d.etapes.forEach(function (t) { ol.appendChild(el('li', null, t)); }); in_.appendChild(ol); }
       if (d.astuces && d.astuces.length) { in_.appendChild(el('h3', null, 'À savoir')); var ul = el('ul'); d.astuces.forEach(function (t) { ul.appendChild(el('li', null, t)); }); in_.appendChild(ul); }
     }
