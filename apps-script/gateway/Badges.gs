@@ -126,6 +126,13 @@ function badgesCharger_() {
 function badgesHistorique_() {
   return badgesLignes_(cpmFeuille_('BadgesHistorique', BADGES_ENT_H_).getDataRange().getValues(), BADGES_ENT_H_).map(function (h) { h.n = Number(h.n); h.annee = Number(h.annee); return h; });
 }
+/** Entreprises d'un compte prestataire (liste de noms) ; null = aucune restriction (tout autre rôle). Pur : testé en Node. */
+function badgesPortee_(u) {
+  if (!u || Droits.roleCanon(u.role) !== 'prestataire') return null;
+  return String(u.portee || '').split(/[;\n]+/).map(function (x) { return Badges.norm(x); }).filter(Boolean);
+}
+function badgesDansPortee_(portee, entreprise) { return portee === null || portee.indexOf(Badges.norm(entreprise)) !== -1; }
+function badgesExigerPortee_(portee, entreprise) { if (!badgesDansPortee_(portee, entreprise)) throw Object.assign(new Error('Cette entreprise ne fait pas partie de vos contrats'), { code: 'DROITS' }); }
 function badgesDroit_(req, min) {
   var u = Auth.userFromToken(req.token);
   if ((acces_(u).badges || 0) < min) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
@@ -159,8 +166,12 @@ function badgesFonctions_(index) {
 function badgesDonnees_(req) {
   var u = badgesDroit_(req, 1);
   if (req.force) CacheService.getScriptCache().remove('BADGES_SRC'); // « Actualiser les sources » : relire tout de suite les Enquêtes et le suivi CPM
-  var f = badgesCharger_();
-  return { personnes: f.personnes, entreprises: f.entreprises, historique: badgesHistorique_(), utilisateur: u.nom || u.email, avertissements: f.avertissements, niveau: acces_(u).badges || 0 };
+  var f = badgesCharger_(), portee = badgesPortee_(u);
+  if (portee) { // prestataire : seulement ses entreprises
+    f.personnes = f.personnes.filter(function (p) { return badgesDansPortee_(portee, p.entreprise); });
+    f.entreprises = f.entreprises.filter(function (e) { return badgesDansPortee_(portee, e.nom); });
+  }
+  return { personnes: f.personnes, entreprises: f.entreprises, historique: badgesHistorique_().filter(function (h) { return badgesDansPortee_(portee, h.entreprise); }), portee: portee ? true : false, utilisateur: u.nom || u.email, avertissements: f.avertissements, niveau: acces_(u).badges || 0 };
 }
 /**
  * Saisie d'entreprises hors suivi CPM (ex. chef DSP sécurité) : les personnes sont ajoutées aux Enquêtes administratives (onglet « ENTREPRISE · contrat »).
@@ -185,6 +196,7 @@ function badgesEnquetesVerifier_(req) {
 }
 function badgesEnquetesSaisir_(req) {
   var u = badgesDroit_(req, 2), f = badgesSaisieCharge_(req);
+  badgesExigerPortee_(badgesPortee_(u), f.entreprise);
   if (!f.personnes.length) throw new Error('Aucune personne à ajouter.');
   var r = injecterEnquetes_(f);
   CacheService.getScriptCache().remove('BADGES_SRC');
@@ -251,7 +263,12 @@ function badgesPhotoArchiver_(req) {
 }
 function badgesVider_(s) { return Badges.vide(s).slice(0, 200); }
 function badgesPersonnesSauver_(req) {
-  badgesDroit_(req, 2);
+  var up = badgesDroit_(req, 2), portee = badgesPortee_(up);
+  if (portee) {
+    var connus = {}; badgesCharger_().personnes.forEach(function (p) { connus[p.id] = p.entreprise; });
+    (req.personnes || []).forEach(function (p) { if (p) { badgesExigerPortee_(portee, p.entreprise); if (p.id && connus[p.id] !== undefined) badgesExigerPortee_(portee, connus[p.id]); } });
+    (req.supprimer || []).forEach(function (id) { if (connus[id] === undefined || !badgesDansPortee_(portee, connus[id])) throw Object.assign(new Error('Cette personne ne fait pas partie de vos contrats'), { code: 'DROITS' }); });
+  }
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var sh = cpmFeuille_('BadgesPersonnes', BADGES_ENT_P_), rows = sh.getDataRange().getValues(), pos = {};
@@ -265,7 +282,12 @@ function badgesPersonnesSauver_(req) {
   } finally { lock.releaseLock(); }
 }
 function badgesEntreprisesSauver_(req) {
-  badgesDroit_(req, 2);
+  var ue = badgesDroit_(req, 2), portee = badgesPortee_(ue);
+  if (portee) {
+    (req.entreprises || []).forEach(function (e) { if (e) badgesExigerPortee_(portee, e.nom); });
+    (req.supprimer || []).forEach(function (n) { badgesExigerPortee_(portee, n); });
+    (req.alias || []).forEach(function (a) { if (a) { badgesExigerPortee_(portee, a.de); badgesExigerPortee_(portee, a.vers); } });
+  }
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var sh = cpmFeuille_('BadgesEntreprises', BADGES_ENT_E_), rows = sh.getDataRange().getValues(), pos = {};
@@ -285,8 +307,9 @@ function badgesEntreprisesSauver_(req) {
 }
 /** Attribue les numéros (même personne + même entreprise = même numéro dans l'année) et enregistre CHAQUE impression dans l'historique. */
 function badgesNumeroter_(req) {
-  var u = badgesDroit_(req, 2), cfg = badgesCfg_(req.cfg), annee = Number(req.annee) || new Date().getFullYear();
+  var u = badgesDroit_(req, 2), cfg = badgesCfg_(req.cfg), portee = badgesPortee_(u), annee = Number(req.annee) || new Date().getFullYear();
   var items = (req.items || []).slice(0, 500).map(function (p) { return { nom: badgesVider_(p.nom), prenom: badgesVider_(p.prenom), fonction: badgesVider_(p.fonction), entreprise: badgesVider_(p.entreprise), contrat: badgesVider_(p.contrat), structure: badgesVider_(p.structure), n: p.n && req.reimpression ? Number(p.n) : undefined, id: p.id, nomAr: badgesVider_(p.nomAr), prenomAr: badgesVider_(p.prenomAr) }; });
+  items.forEach(function (it) { badgesExigerPortee_(portee, it.entreprise); });
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var sh = cpmFeuille_('BadgesHistorique', BADGES_ENT_H_), hist = badgesHistorique_(), r = badgesAttribuerEtNoter_(hist, items, annee, cfg, u.nom || u.email, Utilities.formatDate(new Date(), 'Africa/Algiers', 'yyyy-MM-dd'));

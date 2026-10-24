@@ -34,6 +34,11 @@ function route_(req) {
   chargerRoles_();
   // Mode support : pas de changement de mot de passe, d'e-mail de contact ni d'administration au nom du compte emprunté
   if (req.token && /^(admin_|changer_mdp$|email_contact_)/.test(String(req.action)) && Auth.estUsurpation(req.token)) throw new Error('Action interdite en mode support : revenez à votre compte.');
+  if (req.token && !/^(liste|demanderCode|login|activer|reprendre|logout)$/.test(String(req.action))) {
+    // Prestataire : uniquement ses données (menu, profil, mot de passe, Badges limités à ses entreprises) ; tout le reste est refusé quels que soient ses droits de module.
+    var up = null; try { up = Auth.userFromToken(req.token); } catch (e0) { up = null; }
+    if (up && Droits.roleCanon(up.role) === 'prestataire' && !ACTIONS_PRESTATAIRE_.test(String(req.action))) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  }
   switch (req.action) {
     case 'liste':        return Auth.liste(req.q);
     case 'demanderCode': return Auth.demanderCode(req.ident);
@@ -150,7 +155,7 @@ function route_(req) {
         roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles), rubrique: String(x.rubrique || '') }; }),
-        utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0' }; })
+        utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0', portee: String(u.portee || '') }; })
       };
     }
     case 'rapports_chantiers_admin': return rapportsChantiersAdmin_(req);
@@ -199,6 +204,14 @@ function route_(req) {
       Store.maj('Utilisateurs', { email: em }, { uid: uidPour_(em), nom: nm.slice(0, 120), service: String(req.service || '').trim().slice(0, 120), fonction: String(req.fonction || '').trim().slice(0, 120), dependance: String(req.dependance || '').trim().slice(0, 120), role: rl, actif: 1, email_contact: em });
       Store.journal('utilisateur_ajout', a7.email, em + ' (' + rl + ')'); return { email: em };
     }
+    case 'admin_portee': {
+      // Entreprises d'un compte prestataire : il ne verra et ne créera que ce qui les concerne (Badges, et toute application qui lui sera ouverte)
+      var a8 = admin_(req); cible_(req.email);
+      var liste8 = (Array.isArray(req.entreprises) ? req.entreprises : String(req.entreprises || '').split(/[;\n]+/)).map(function (x) { return String(x).replace(/\s+/g, ' ').trim(); }).filter(Boolean).slice(0, 30);
+      Store.maj('Utilisateurs', { email: req.email }, { portee: liste8.join(' ; ') });
+      Store.journal('portee', a8.email, req.email + ' -> ' + (liste8.join(' ; ') || 'aucune')); return {};
+    }
+    case 'admin_portee_choix': { admin_(req); return { entreprises: badgesCharger_().entreprises.map(function (e) { return e.nom; }).sort() }; }
     case 'admin_actif': {
       var a2 = admin_(req); cible_(req.email);
       if (String(req.email).toLowerCase() === String(a2.email).toLowerCase()) throw new Error('Vous ne pouvez pas désactiver votre propre compte');
@@ -242,6 +255,7 @@ function route_(req) {
     default: throw new Error('Action inconnue');
   }
 }
+var ACTIONS_PRESTATAIRE_ = /^(changer_mdp|me|menu|profil_moi|profil_enregistrer|profil_maj|profil_photo|photos_mini|acces_demander|profil_correction|email_contact_\w+|badges_donnees|badges_numeroter|badges_personnes_sauver|badges_entreprises_sauver|badges_enquetes_saisir)$/;
 var RUBRIQUES_IDS_ = ['pilotage', 'marches', 'acces', 'personnel', 'logistique', 'admin', 'it'];
 
 function acces_(user) { return Droits.resolve(user, Store.table('DroitsRole'), Store.table('Exceptions')); }

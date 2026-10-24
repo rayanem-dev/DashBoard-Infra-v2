@@ -321,12 +321,14 @@
       case 'admin_etat': exigerAdmin();
         return { roles: demoRoles.map(function (r) { var n = DEMO_USERS.filter(function (u) { return u.role === r.id; }).length; return Object.assign({ nb_utilisateurs: n }, r); }),
           applications: demoApps, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
-          utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false }; }) };
+          utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false, portee: x.portee || '' }; }) };
       case 'admin_role': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas modifier votre propre rôle');
         cibleDemo(p.email).role = p.role; return {};
       case 'admin_utilisateur_ajouter': { exigerAdmin(); var emd = String(p.email || '').trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emd)) throw erreur('Adresse e-mail invalide'); if (!String(p.nom || '').trim()) throw erreur('Le nom est obligatoire');
         if (DEMO_USERS.some(function (u) { return u.email === emd; })) throw erreur('Un compte existe déjà avec cette adresse');
         DEMO_USERS.push({ email: emd, nom: String(p.nom).trim(), service: p.service || '', dependance: p.dependance || '', role: p.role, actif: true }); return { email: emd }; }
+      case 'admin_portee': { exigerAdmin(); cibleDemo(p.email).portee = (Array.isArray(p.entreprises) ? p.entreprises.join(' ; ') : String(p.entreprises || '')); return {}; }
+      case 'admin_portee_choix': exigerAdmin(); return { entreprises: ['ATLAS SAHARIENNE', 'ETB ZATOUT ABDENACER', 'GLOBI CORP OUARGLA', 'SARL ATIA ET FRERES'] };
       case 'admin_actif': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas désactiver votre propre compte');
         cibleDemo(p.email).actif = !!p.actif; return {};
       case 'admin_role_enregistrer': { exigerAdmin();

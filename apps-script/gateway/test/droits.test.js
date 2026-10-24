@@ -114,7 +114,8 @@ test('menu : application limitée à certains rôles', () => {
     { module: 'logistique', titre: 'Chefs', url: 'c', niveau_min: 1, roles: 'chef_service;chef_division' },
   ];
   const titres = r => Droits.menu({ logistique: 1 }, cat, apps, r)[0].apps.map(x => x.titre);
-  assert.deepStrictEqual(titres('prestataire'), ['Pour tous', 'Prestataires']);
+  assert.deepStrictEqual(titres('prestataire'), [], 'un prestataire ne voit que les applications qui limitent ses données (badges.html)');
+  assert.deepStrictEqual(Droits.menu({ logistique: 1 }, cat, [{ module: 'logistique', titre: 'Badges', url: 'badges.html', niveau_min: 1, roles: '' }, apps[0]], 'prestataire')[0].apps.map(x => x.titre), ['Badges']);
   assert.deepStrictEqual(titres('secretariat'), ['Pour tous', 'Prestataires']);
   assert.deepStrictEqual(titres('Chef_Service'), ['Pour tous', 'Chefs']);
   assert.deepStrictEqual(titres('guest'), ['Pour tous']);

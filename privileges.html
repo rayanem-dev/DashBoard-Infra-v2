@@ -144,11 +144,28 @@
   function nomDe(email) { var u = etat.utilisateurs.filter(function (x) { return x.email === email; })[0]; return u ? u.nom : email; }
   function exceptionsDe(email) { return etat.exceptions.filter(function (x) { return String(x.email).toLowerCase() === String(email).toLowerCase(); }); }
 
+  /** Entreprises d'un compte prestataire : il ne voit et ne crée que ce qui les concerne (Badges…). */
+  var choixEntreprises = null;
+  function zonePortee(u) {
+    var z = el('div'); z.style.cssText = 'margin-top:6px;font-size:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center';
+    z.appendChild(el('span', null, 'Entreprises (ses contrats) :'));
+    var inp = document.createElement('input'); inp.type = 'text'; inp.value = u.portee || ''; inp.placeholder = 'aucune : il ne voit rien'; inp.style.cssText = 'flex:1;min-width:180px;padding:4px 8px;border:1.5px solid var(--border);border-radius:8px;font:inherit;font-size:12px';
+    inp.setAttribute('aria-label', 'Entreprises de ' + u.nom); z.appendChild(inp);
+    var sel = document.createElement('select'); sel.style.cssText = 'font:inherit;font-size:12px;max-width:170px'; var o0 = el('option', null, '+ choisir…'); o0.value = ''; sel.appendChild(o0);
+    function remplir() { (choixEntreprises || []).forEach(function (n) { var o = el('option', null, n); o.value = n; sel.appendChild(o); }); }
+    if (choixEntreprises) remplir(); else Api.call('admin_portee_choix').then(function (r) { choixEntreprises = r.entreprises || []; remplir(); }).catch(function () { choixEntreprises = []; });
+    sel.addEventListener('change', function () { if (!sel.value) return; var l = inp.value.split(';').map(function (x) { return x.trim(); }).filter(Boolean); if (l.indexOf(sel.value) === -1) l.push(sel.value); inp.value = l.join(' ; '); sel.value = ''; });
+    z.appendChild(sel);
+    var b = el('button', 'btn-s', 'Enregistrer'); b.type = 'button'; b.addEventListener('click', function () { agir('admin_portee', { email: u.email, entreprises: inp.value }, 'Entreprises du prestataire enregistrées'); }); z.appendChild(b);
+    return z;
+  }
   function dessinerUsers() {
     var f = $('filtre').value.toLowerCase(); var b = $('b-users'); b.textContent = '';
     etat.utilisateurs.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '') + ' ' + (u.fonction || '')).toLowerCase().indexOf(f) !== -1; }).forEach(function (u) {
       var tr = el('tr', u.actif ? '' : 'inactif');
-      var tdn = el('td', null, u.nom); var pe = Employeur.pastille(u.dependance); if (pe) tdn.appendChild(pe); tr.appendChild(tdn); tr.appendChild(el('td', null, u.service || ''));
+      var tdn = el('td', null, u.nom); var pe = Employeur.pastille(u.dependance); if (pe) tdn.appendChild(pe);
+      if (u.role === 'prestataire') tdn.appendChild(zonePortee(u));
+      tr.appendChild(tdn); tr.appendChild(el('td', null, u.service || ''));
       var td = el('td'); td.appendChild(select([['', '— aucun —']].concat(etat.roles.map(function (r) { return [r.id, r.libelle]; })), u.role || '', function (v, s) {
         if (!v) { s.value = u.role || ''; return; }
         agir('admin_role', { email: u.email, role: v }, 'Rôle mis à jour');

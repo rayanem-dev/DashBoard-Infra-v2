@@ -30,6 +30,8 @@ var Droits = (function () {
     'dessinateur': 'dessinateur', 'agent': 'agent', 'cpm': 'cpm', 'stagiaire': 'stagiaire',
     'prestataire': 'prestataire', 'invite': 'guest', 'guest': 'guest', 'visiteur': 'guest'
   };
+  // Un prestataire ne voit que les applications qui limitent leurs données à ses entreprises / contrats (règle appliquée côté serveur).
+  var APPS_PRESTATAIRE = ['badges.html'];
   // Plafonds de sécurité : quoi qu'on configure, ces rôles ne dépassent jamais ce niveau ni n'ouvrent ces modules.
   var PLAFOND = { guest: 1, stagiaire: 1, prestataire: 2 };
   var INTERDITS = {
@@ -126,6 +128,7 @@ var Droits = (function () {
             var liste = rolesDe(x.roles);
             return !liste.length || liste.indexOf(rc) !== -1;
           })
+          .filter(function (x) { return rc !== 'prestataire' || APPS_PRESTATAIRE.indexOf(String(x.url)) !== -1; })
           .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || '') }; });
         return { id: m.id, titre: m.titre, icone: m.icone, niveau: niv, apps: apps };
       });
