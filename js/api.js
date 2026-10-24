@@ -255,6 +255,7 @@
       case 'contacts_completer': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'DURAND Marc', champ: 'Téléphone', valeur: '0550000001' }, { nom: 'LEROY Pierre Antoine', champ: 'Identifiant SONA', valeur: 'sona00004' }, { nom: 'LEROY Pierre Antoine', champ: 'Matricule', valeur: '10004D' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
+      case 'video_formation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); throw erreur('Vidéo non disponible en démonstration'); }
       case 'presents_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var bp = demoBdg(), dd = String(p.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10), gr0 = {}, ordre0 = [], ex0 = { sorti: 0, avant: 0, hors_plage: 0, autre_base: 0 }, bases0 = {};
         function plus0(d, n) { var x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
         bp.pers.forEach(function (x, i) { var entree = plus0('2026-10-05', -((i * 4) % 22)), defaut = i % 3 !== 0, sortie = defaut ? plus0(entree, 28) : plus0(entree, 10 + (i % 5)), base = i % 2 ? 'BASE DE VIE CENTRALE' : 'BASE ZINA'; bases0[base] = 1;

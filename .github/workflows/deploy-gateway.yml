@@ -36,6 +36,9 @@ jobs:
       - name: "Copier l'injection dans les Enquêtes (partagée avec Prises en charge)"
         run: cp apps-script/prise-en-charge/Enquetes.gs apps-script/gateway/EnquetesPartage.gs
 
+      - name: "Générer les vidéos de formation servies après connexion (sources privées : data/videos)"
+        run: node outils/generer-videos-gateway.js data/videos apps-script/gateway
+
       - name: Tests
         run: node --test apps-script/gateway/test/*.test.js
 

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-138",
+    "date": "2026-10-24",
+    "title": "Version 5.72.1 — Vidéo de formation privée",
+    "changes": [
+      "La vidéo de formation n'est plus publiée sur le site : elle est servie par la passerelle, après connexion. La page vidéo demande de se connecter puis revient à la vidéo ; dans l'aide « ? » du portail, le lecteur s'affiche seulement une fois connecté (depuis l'application Fiche d'évaluation, un lien ouvre la page vidéo du portail)."
+    ]
+  },
+  {
     "id": "2026-10-24-137",
     "date": "2026-10-24",
     "title": "Version 5.72.0 — Vidéo de formation dans l'aide",

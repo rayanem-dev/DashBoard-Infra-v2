@@ -5,3 +5,6 @@ apps-script/gateway/AnnuaireContacts.gs
 # copie générée par le workflow de déploiement (source : badges/badges.js)
 apps-script/gateway/BadgesMoteur.gs
 apps-script/prise-en-charge/BadgesMoteur.gs
+
+# vidéos de formation générées par le workflow de déploiement (source privée : data/videos)
+apps-script/gateway/VideosFormation*.gs

@@ -31,16 +31,24 @@
 </div></header>
 <main class="vd">
   <h2 id="t"></h2><p id="d"></p>
-  <video id="v" controls preload="metadata" playsinline></video>
-  <div><a class="btn-p" id="b-ouvrir" href="portail.html">Ouvrir le portail</a><a class="btn-s2" id="b-tel" href="#" download>⬇ Télécharger la vidéo</a></div>
+  <video id="v" controls preload="metadata" playsinline hidden></video>
+  <p id="m" class="msg">Chargement de la vidéo…</p>
+  <div><a class="btn-p" id="b-ouvrir" href="portail.html">Ouvrir le portail</a><a class="btn-s2" id="b-tel" href="#" download="video.mp4" hidden>⬇ Télécharger la vidéo</a></div>
 </main>
 <script>
 (function () {
+  // La vidéo n'est plus publiée sur le site : elle est servie par la passerelle après connexion. Sans session, on passe par la connexion puis on revient ici.
   var VIDEOS = { 'fiche-evaluation': { titre: 'Fiche d\'évaluation : comment l\'utiliser', desc: 'Choisir le contrat, cocher les critères, générer la fiche PDF, l\'imprimer ou l\'envoyer (1 min 37).' } };
-  var k = new URLSearchParams(location.search).get('v') || 'fiche-evaluation', d = VIDEOS[k] || VIDEOS['fiche-evaluation'], id = VIDEOS[k] ? k : 'fiche-evaluation';
+  var k = new URLSearchParams(location.search).get('v') || 'fiche-evaluation', id = VIDEOS[k] ? k : 'fiche-evaluation', d = VIDEOS[id];
   document.getElementById('t').textContent = d.titre; document.getElementById('d').textContent = d.desc;
-  var v = document.getElementById('v'); v.poster = 'img/aide/videos/' + id + '.jpg'; v.src = 'img/aide/videos/' + id + '.mp4';
-  document.getElementById('b-tel').href = 'img/aide/videos/' + id + '.mp4';
+  if (!window.Api || !Api.token()) { try { sessionStorage.setItem('infra_retour', location.pathname.split('/').pop() + location.search); } catch (e) { /* rien */ } location.replace('connexion.html'); return; }
+  var m = document.getElementById('m');
+  Api.call('video_formation', { id: id }).then(function (r) {
+    var oct = atob(r.mp4), u = new Uint8Array(oct.length); for (var i = 0; i < oct.length; i += 1) u[i] = oct.charCodeAt(i);
+    var url = URL.createObjectURL(new Blob([u], { type: 'video/mp4' })), v = document.getElementById('v');
+    if (r.poster) v.poster = 'data:image/jpeg;base64,' + r.poster; v.src = url; v.hidden = false; m.hidden = true;
+    var a = document.getElementById('b-tel'); a.href = url; a.download = id + '.mp4'; a.hidden = false;
+  }).catch(function (e) { m.textContent = (e && e.code === 'SESSION') ? 'Session expirée : reconnectez-vous.' : 'Vidéo indisponible pour le moment (' + (e && e.message ? e.message : 'erreur') + ').'; });
 })();
 </script>
 <script src="js/pied.js"></script>
