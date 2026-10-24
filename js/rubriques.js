@@ -5,13 +5,13 @@
  */
 (function (racine) {
   var DEFS = [
-    { id: 'pilotage', titre: 'Pilotage & chantiers', icone: '📈' },
-    { id: 'marches', titre: 'Marchés & entreprises', icone: '📑' },
-    { id: 'acces', titre: 'Accès site & sûreté', icone: '🚧' },
+    { id: 'pilotage', titre: 'Chantiers', icone: '📈' },
+    { id: 'marches', titre: 'Marchés', icone: '📑' },
+    { id: 'acces', titre: 'Accès site', icone: '🚧' },
     { id: 'personnel', titre: 'Personnel', icone: '👥' },
-    { id: 'logistique', titre: 'Logistique & moyens généraux', icone: '🚛' },
-    { id: 'admin', titre: 'Administration & secrétariat', icone: '📨' },
-    { id: 'it', titre: 'Informatique & accès', icone: '💻' }
+    { id: 'logistique', titre: 'Logistique', icone: '🚛' },
+    { id: 'admin', titre: 'Admin', icone: '📨' },
+    { id: 'it', titre: 'Informatique', icone: '💻' }
   ];
   // [expression sur le titre sans accents ni majuscules, rubrique] — la première qui correspond l'emporte
   var REGLES = [
