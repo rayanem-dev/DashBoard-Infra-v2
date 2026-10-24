@@ -52,3 +52,12 @@ test('envoi au secrétariat : seulement une fiche du dossier d\'archive, par e-m
   assert.strictEqual(envoyes.length, 1); assert.strictEqual(envoyes[0].to, C.EMAIL_SECRETARIAT); assert.deepStrictEqual(envoyes[0].attachments, ['PDF']);
   assert.strictEqual(C.envoyerFicheAuSecretariat('ailleurs').success, false); assert.strictEqual(envoyes.length, 1);
 });
+
+test('services : cinq boîtes e-mail, recherche par identifiant, liste sans adresses', () => {
+  const C = require('../Code.js');
+  assert.strictEqual(C.SERVICES_MAIL.length, 5);
+  assert.strictEqual(C.serviceMail_('construction').email, 'INFRA_CONSTR.RNS@Sonatrach.dz');
+  assert.strictEqual(C.serviceMail_('cpm').email, 'RNS.CPM_INFRA@Sonatrach.dz');
+  assert.strictEqual(C.serviceMail_('inconnu'), null);
+  assert.ok(!JSON.stringify(C.listeServices()).includes('@'), 'les adresses ne sortent pas vers l\'écran');
+});

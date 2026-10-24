@@ -170,6 +170,7 @@
         $('liens').innerHTML = '<a href="' + r.pdfUrl + '" target="_blank" rel="noopener">📄 Ouvrir le PDF</a><a href="' + r.downloadUrl + '" target="_blank" rel="noopener">⬇️ Télécharger</a><span style="color:var(--doux)">' + r.fileName + ' — ' + tauxFr(r.taux) + '</span>';
         const bimp = el('button', 'sec petit', '🖨 Imprimer'); bimp.type = 'button'; bimp.style.marginLeft = '10px'; bimp.addEventListener('click', () => imprimerDirect(r.fileId, bimp)); $('liens').appendChild(bimp);
         const bsec = el('button', 'sec petit', '✉️ Envoyer au secrétariat'); bsec.type = 'button'; bsec.style.marginLeft = '10px'; bsec.addEventListener('click', () => envoyerSec(r.fileId, r.fileName, bsec)); $('liens').appendChild(bsec);
+        const bsv = el('button', 'sec petit', '✉️ Envoyer au service'); bsv.type = 'button'; bsv.style.marginLeft = '10px'; bsv.addEventListener('click', () => envoyerService(r.fileId, r.fileName, bsv)); $('liens').appendChild(bsv);
         dire('✅ Fiche générée et archivée (taux : ' + tauxFr(r.taux) + '). Elle est dans l’onglet Archive.'); $('resultat').scrollIntoView({ behavior: 'smooth' });
       })
       .withFailureHandler(e => { b.disabled = false; b.textContent = '📄 Générer la fiche (PDF)'; dire('❌ ' + e.message, true); })
@@ -191,8 +192,9 @@
       const bm = el('button', 'sec petit', 'Modifier'); bm.addEventListener('click', () => rouvrir(x));
       const bim = el('button', 'sec petit', '🖨 Imprimer'); bim.title = 'Impression en un clic'; bim.addEventListener('click', () => imprimerDirect(x.id, bim));
       const bse = el('button', 'sec petit', '✉️ Secrétariat'); bse.title = 'Envoyer cette fiche par e-mail au secrétariat'; bse.addEventListener('click', () => envoyerSec(x.id, x.nom, bse));
+      const bsv = el('button', 'sec petit', '✉️ Service'); bsv.title = 'Envoyer cette fiche par e-mail à un service'; bsv.addEventListener('click', () => envoyerService(x.id, x.nom, bsv));
       const bs = el('button', 'danger petit', 'Supprimer'); bs.style.marginLeft = '6px'; bs.addEventListener('click', () => supprimer(x));
-      a.appendChild(l1); a.appendChild(l2); a.appendChild(bm); bim.style.marginLeft = '6px'; a.appendChild(bim); bse.style.marginLeft = '6px'; a.appendChild(bse); a.appendChild(bs); tr.appendChild(a); z.appendChild(tr);
+      a.appendChild(l1); a.appendChild(l2); a.appendChild(bm); bim.style.marginLeft = '6px'; a.appendChild(bim); bse.style.marginLeft = '6px'; a.appendChild(bse); bsv.style.marginLeft = '6px'; a.appendChild(bsv); a.appendChild(bs); tr.appendChild(a); z.appendChild(tr);
     });
   }
   /** Impression en un clic : la fenêtre d'impression du navigateur s'ouvre directement (imprimante par défaut). Repli : le PDF s'ouvre dans un onglet. */
@@ -209,6 +211,32 @@
         cadre.src = url; document.body.appendChild(cadre); setTimeout(() => { cadre.remove(); URL.revokeObjectURL(url); }, 180000);
       } catch (e) { dire('❌ Impression impossible : ' + e.message, true); }
     }).withFailureHandler(e => { btn.disabled = false; btn.textContent = txt; dire('❌ ' + e.message, true); }).lireFichierPourImpression(id);
+  }
+  // Envoi par e-mail à un service : le service se choisit dans une petite fenêtre, puis confirmation ; rien ne part tout seul
+  let servicesMail = null;
+  function choisirService(nom, cb) {
+    const ouvrir = (liste) => {
+      const dlg = document.createElement('dialog'); dlg.style.cssText = 'border:0;border-radius:14px;padding:18px;width:min(420px,94vw)';
+      const h = document.createElement('h3'); h.textContent = 'Envoyer la fiche à un service'; h.style.margin = '0 0 8px'; dlg.appendChild(h);
+      const p = document.createElement('p'); p.textContent = '« ' + nom + ' »'; p.style.cssText = 'font-size:13px;color:#555;margin:0 0 10px;word-break:break-word'; dlg.appendChild(p);
+      const sel = document.createElement('select'); sel.style.cssText = 'width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font:inherit'; liste.forEach(x => { const o = document.createElement('option'); o.value = x.id; o.textContent = x.nom; sel.appendChild(o); });
+      try { const d = localStorage.getItem('fiche_dernier_service'); if (d) sel.value = d; } catch (e) { /* pas de mémoire locale */ }
+      dlg.appendChild(sel);
+      const bt = document.createElement('div'); bt.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px';
+      const ann = document.createElement('button'); ann.className = 'sec petit'; ann.type = 'button'; ann.textContent = 'Annuler'; ann.onclick = () => dlg.close();
+      const ok = document.createElement('button'); ok.className = 'petit'; ok.type = 'button'; ok.textContent = 'Envoyer'; ok.onclick = () => { try { localStorage.setItem('fiche_dernier_service', sel.value); } catch (e) { /* rien */ } const id = sel.value, lib = sel.options[sel.selectedIndex].textContent; dlg.close(); cb(id, lib); };
+      bt.appendChild(ann); bt.appendChild(ok); dlg.appendChild(bt); dlg.addEventListener('close', () => dlg.remove()); document.body.appendChild(dlg); dlg.showModal();
+    };
+    if (servicesMail) return ouvrir(servicesMail);
+    google.script.run.withSuccessHandler(r => { if (!r.success) { dire('❌ ' + (r.error || 'Liste des services indisponible'), true); return; } servicesMail = r.services; ouvrir(servicesMail); }).withFailureHandler(e => dire('❌ ' + e.message, true)).listeServices();
+  }
+  function envoyerService(id, nom, bouton) {
+    choisirService(nom, (sid, lib) => {
+      if (!confirm('Envoyer la fiche « ' + nom + ' » par e-mail à : ' + lib + ' ?')) return;
+      const t = bouton.textContent; bouton.disabled = true; bouton.textContent = '⏳ Envoi…';
+      google.script.run.withSuccessHandler(r => { bouton.disabled = false; bouton.textContent = t; if (r.success) dire('✅ Fiche envoyée : ' + r.service + '.'); else dire('❌ ' + r.error + ' (si l’autorisation d’e-mail est demandée : exécuter « autoriserEnvoiMail » une fois dans Apps Script)', true); })
+        .withFailureHandler(e => { bouton.disabled = false; bouton.textContent = t; dire('❌ ' + e.message, true); }).envoyerFicheAuService(id, sid);
+    });
   }
   // Envoi par e-mail au secrétariat : seulement au clic, après confirmation
   function envoyerSec(id, nom, bouton) {
