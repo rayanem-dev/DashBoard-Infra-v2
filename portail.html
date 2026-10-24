@@ -40,13 +40,13 @@
         <h2 id="nom-agent">Chargement…</h2>
         <p class="agent-poste" id="agent-poste"></p>
         <div class="agent-badges" id="agent-badges"></div>
-        <a class="lien-profil" id="lien-profil" href="profil.html">👤 Mon profil</a>
+        <div class="agent-liens"><a class="lien-profil" id="lien-profil" href="profil.html">👤 Mon profil</a>
+        <nav class="raccourcis" id="raccourcis" aria-label="Raccourcis planning" hidden></nav></div>
       </div>
     </div>
       <div class="agent-infos" id="fiche"></div>
     </div>
       <div class="jauge-bloc" id="statut" hidden>
-        <nav class="raccourcis" id="raccourcis" aria-label="Raccourcis planning" hidden></nav>
         <div class="jauge" id="jauge" role="img" aria-label="Rotation"><div class="j-centre"><b id="j-reste">–</b><small id="j-lib">jours</small></div></div>
         <div class="jauge-texte">
           <span class="etat-pill" id="j-etat"></span>
@@ -124,9 +124,9 @@
   function dessinerFiche(u) {
     $('qui').textContent = u.nom;
     // « Bonjour Rayane 👋 » : le nom affiché choisi dans le profil, sinon le prénom (le nom de BDDORGA s'écrit NOM Prénom)
-    var pre = (u.nom_affiche && u.nom_affiche !== u.nom) ? u.nom_affiche : (String(u.nom || '').trim().split(/\s+/).slice(1).join(' ') || u.nom);
+    var pre = (u.nom_affiche && u.nom_affiche !== u.nom) ? u.nom_affiche : (String(u.nom || '').trim().split(/\s+/)[1] || u.nom);   // prénom usuel : le premier prénom
     $('salut').textContent = ['Bonjour', u.civilite, pre].filter(Boolean).join(' ') + ' 👋';
-    $('nom-agent').textContent = (u.nom_affiche && u.nom_affiche !== u.nom) ? u.nom_affiche + ' · ' + u.nom : u.nom;
+    $('nom-agent').textContent = u.nom;
         var av = $('avatar'); av.textContent = initiales(u.nom); var st = Employeur.style(u.dependance);
     av.style.background = st ? st.fond : ''; av.style.color = st ? st.texte : ''; if (st) av.style.boxShadow = '0 0 0 3px ' + st.texte + '33';
     var bd = $('agent-badges'); bd.textContent = '';
@@ -143,7 +143,7 @@
     // 4 lignes de 2 colonnes (carte basse) : l'ancienneté va sous le nom, le Wi-Fi remplace le téléphone quand il manque
     var champs = [['Fonction', u.fonction], ['Service', u.service], ajouter('matricule', 'Matricule', u.matricule, true), ajouter('sap', 'Matricule SAP', u.sap, true), ajouter('nin', 'NIN', u.nin_masque, true),
       ['Identifiant SONA', u.sona], ['E-mail', u.email_contact || u.email], u.telephone ? ['Téléphone', u.telephone] : ['Wi-Fi', u.wifi_user]].filter(function (c) { return c && (c[1] || c[1] === null); });
-    $('agent-poste').textContent = integ ? 'Intégré le ' + integ : '';
+    $('agent-poste').textContent = '';   // ancienneté, employeur et rôle : dans « Mon profil »
     var lp = $('lien-profil'); lp.textContent = manque.length ? '👤 Mon profil · ⚠ ' + manque.length + ' information' + (manque.length > 1 ? 's' : '') + ' à compléter' : '👤 Mon profil'; lp.classList.toggle('a-faire', !!manque.length);
     var fiche = $('fiche'); fiche.textContent = '';
     champs.forEach(function (c) {

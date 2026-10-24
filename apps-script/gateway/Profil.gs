@@ -98,14 +98,8 @@ function photosMini_(req) {
   return { photos: out };
 }
 
-/** « Demander l'accès » : enregistre la demande et écrit au secrétariat (cette action n'est lancée que par le clic de l'agent). */
-function accesDemander_(req) {
-  var u = Auth.userFromToken(req.token); profilsPrets_();
-  var titre = String(req.titre || '').trim(), motif = String(req.motif || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-  var acc = profilAcces_(u);
-  if (!acc.non_accessibles.some(function (a) { return a.titre === titre; })) throw new Error('Cette application est déjà accessible ou n\'existe pas.');
-  var deja = Store.table('DemandesAcces').some(function (r) { return String(r.email).toLowerCase() === String(u.email).toLowerCase() && r.titre === titre && String(r.statut) === 'en_attente'; });
-  if (deja) throw new Error('Vous avez déjà une demande en attente pour cette application.');
+/** Enregistre une demande adressée au secrétariat (accès ou correction de fiche) et lui écrit ; appelée seulement au clic de l'agent. Renvoie { numero, emails }. */
+function demandeSecretariat_(u, titre, motif) {
   var numero = 'ACC-' + Dates.today().slice(0, 4) + '-' + ('000' + (Store.table('DemandesAcces').length + 1)).slice(-4);
   Store.maj('DemandesAcces', { numero: numero }, { email: String(u.email).toLowerCase(), titre: titre, motif: motif, statut: 'en_attente', cree_le: new Date().toISOString(), traite_par: '', traite_le: '' });
   var dest = []; Store.table('Utilisateurs').forEach(function (x) { if (String(x.actif) !== '0' && Droits.roleCanon(x.role) === 'secretariat' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x.email || ''))) dest.push(String(x.email).toLowerCase()); });
@@ -113,6 +107,28 @@ function accesDemander_(req) {
   if (dest.length) { try { Mail.envoyerDemandeAcces(dest, { numero: numero, agent: Annuaire.nomAffichable(u.nom, u.email), service: u.service || '', role: u.role || '', titre: titre, motif: motif }); envoye = dest.length; } catch (e) { Store.journal('acces_demande_mail_echec', u.email, String(e.message || e)); } }
   Store.journal('acces_demande', u.email, numero + ' ' + titre);
   return { numero: numero, emails: envoye };
+}
+/** « Demander l'accès » à une application. */
+function accesDemander_(req) {
+  var u = Auth.userFromToken(req.token); profilsPrets_();
+  var titre = String(req.titre || '').trim(), motif = String(req.motif || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  var acc = profilAcces_(u);
+  if (!acc.non_accessibles.some(function (a) { return a.titre === titre; })) throw new Error('Cette application est déjà accessible ou n\'existe pas.');
+  var deja = Store.table('DemandesAcces').some(function (r) { return String(r.email).toLowerCase() === String(u.email).toLowerCase() && r.titre === titre && String(r.statut) === 'en_attente'; });
+  if (deja) throw new Error('Vous avez déjà une demande en attente pour cette application.');
+  return demandeSecretariat_(u, titre, motif);
+}
+var PROFIL_CORRIGEABLES_ = { fonction: 'Fonction', service: 'Service', dependance: 'Employeur', matricule: 'Matricule', sona: 'Identifiant SONA', nom: 'Nom officiel', sap: 'Matricule SAP', nin: 'NIN' };
+/** « Demander une correction » d'un champ qui vient de BDDORGA : la demande arrive au secrétariat (qui corrige dans BDDORGA). */
+function profilCorrection_(req) {
+  var u = Auth.userFromToken(req.token); profilsPrets_();
+  var champ = String(req.champ || ''), lib = PROFIL_CORRIGEABLES_[champ], valeur = String(req.valeur || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (!lib) throw new Error('Ce champ ne se corrige pas par une demande.');
+  if (!valeur) throw new Error('Indiquez la valeur correcte.');
+  var titre = 'Correction de fiche : ' + lib + ' → ' + valeur;
+  var deja = Store.table('DemandesAcces').some(function (r) { return String(r.email).toLowerCase() === String(u.email).toLowerCase() && r.titre === titre && String(r.statut) === 'en_attente'; });
+  if (deja) throw new Error('Cette demande de correction est déjà en attente.');
+  return demandeSecretariat_(u, titre, String(req.motif || '').replace(/\s+/g, ' ').trim().slice(0, 300));
 }
 function accesDemandes_(req) {
   var u = Auth.userFromToken(req.token); profilsPrets_();

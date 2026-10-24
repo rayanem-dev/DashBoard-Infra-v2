@@ -58,9 +58,9 @@ var Mail = (function () {
   /** Demande d'accès à une application : au secrétariat (envoyée seulement au clic de l'agent sur « Demander l'accès »). */
   function envoyerDemandeAcces(dest, d) {
     if (!dest.length) return;
-    MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: '[Accès] Demande d\'accès : ' + d.titre + ' — ' + d.agent,
-      htmlBody: '<p><b>Demande d\'accès</b> n° ' + esc(d.numero) + '</p><p>Agent : <b>' + esc(d.agent) + '</b> (' + esc(d.service) + ')<br>Application : <b>' + esc(d.titre) + '</b>' + (d.motif ? '<br>Motif : ' + esc(d.motif) : '') +
-        '</p><p>À traiter dans le portail : Privilèges → « Demandes d\'accès ».</p><p>— Tableau de bord Division Infrastructure</p>' });
+    MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: '[Portail] ' + d.titre + ' — ' + d.agent,
+      htmlBody: '<p><b>Demande de l\'agent</b> n° ' + esc(d.numero) + '</p><p>Agent : <b>' + esc(d.agent) + '</b> (' + esc(d.service) + ')<br>Objet : <b>' + esc(d.titre) + '</b>' + (d.motif ? '<br>Motif : ' + esc(d.motif) : '') +
+        '</p><p>À traiter dans le portail : Privilèges → « Demandes d\'accès » (un accès s\'accorde dans la grille ; une correction de fiche se fait dans BDDORGA).</p><p>— Tableau de bord Division Infrastructure</p>' });
   }
   /** Changement d'affectation : à l'intéressé, à l'auteur, au chef de division et au secrétariat. */
   function envoyerAffectation(dest, a) {

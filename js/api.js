@@ -371,6 +371,10 @@
         if (lst.some(function (x) { return x.email === demoState.user.email && x.titre === p.titre && x.statut === 'en_attente'; })) throw erreur('Vous avez déjà une demande en attente pour cette application.');
         var no = 'ACC-DEMO-' + (lst.length + 1); lst.push({ numero: no, email: demoState.user.email, agent: demoState.user.nom, titre: p.titre, motif: p.motif || '', statut: 'en_attente', cree_le: new Date().toISOString() });
         try { localStorage.setItem('infra_v2_demo_acces', JSON.stringify(lst)); } catch (e) {} return { numero: no, emails: 0 }; }
+      case 'profil_correction': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); if (!String(p.valeur || '').trim()) throw erreur('Indiquez la valeur correcte.');
+        var l4 = []; try { l4 = JSON.parse(localStorage.getItem('infra_v2_demo_acces') || '[]'); } catch (e) { l4 = []; }
+        var n4 = 'ACC-DEMO-' + (l4.length + 1); l4.push({ numero: n4, email: demoState.user.email, agent: demoState.user.nom, titre: 'Correction de fiche : ' + p.champ + ' → ' + p.valeur, motif: p.motif || '', statut: 'en_attente', cree_le: new Date().toISOString() });
+        try { localStorage.setItem('infra_v2_demo_acces', JSON.stringify(l4)); } catch (e) {} return { numero: n4, emails: 0 }; }
       case 'acces_demandes': { exigerAdmin(); var l2 = []; try { l2 = JSON.parse(localStorage.getItem('infra_v2_demo_acces') || '[]'); } catch (e) { l2 = []; } return { demandes: l2.slice().reverse() }; }
       case 'acces_traiter': { exigerAdmin(); var l3 = []; try { l3 = JSON.parse(localStorage.getItem('infra_v2_demo_acces') || '[]'); } catch (e) { l3 = []; }
         l3.forEach(function (x) { if (x.numero === p.numero) { x.statut = p.statut === 'refusee' ? 'refusee' : 'accordee'; x.traite_par = demoState.user.email; } });

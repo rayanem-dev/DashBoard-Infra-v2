@@ -114,6 +114,10 @@
     var w = el('div'), l = el('label', null, (mode === 'fixe' ? '🔒 ' : '') + lib); if (extra) l.appendChild(el('span', 'cad', ' ' + extra)); w.appendChild(l);
     var i = el('input'); i.id = 'c-' + id; i.value = val || ''; i.autocomplete = 'off';
     if (mode === 'fixe') i.readOnly = true; else EDIT[id] = { mode: mode, el: i };
+    var CORR = { fonction: 1, service: 1, dependance: 1, matricule: 1, sona: 1, sap: 1, nin: 1 };
+    if (mode === 'fixe' && CORR[id]) { var bc = el('button', 'btn-s', '✎ Demander une correction'); bc.type = 'button'; bc.style.cssText = 'margin-top:5px;font-size:11px;padding:3px 8px'; bc.addEventListener('click', function () {
+      var v = prompt('Valeur correcte pour « ' + lib + ' » :'); if (v === null || !v.trim()) return; var mo = prompt('Précision pour le secrétariat (facultatif) :') || '';
+      Api.call('profil_correction', { champ: id, valeur: v, motif: mo }).then(function (r) { msg('m-enreg', 'Demande ' + r.numero + ' envoyée au secrétariat (il corrige dans BDDORGA).', true); }).catch(function (e) { msg('m-enreg', e.message); }); }); w.appendChild(i); w.appendChild(bc); return w; }
     if (id === 'date_integration') i.type = 'date';
     w.appendChild(i); return w;
   }

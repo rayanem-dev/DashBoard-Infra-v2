@@ -657,3 +657,17 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 @media (max-width: 900px) { .agent .agent-corps { grid-template-columns: 1fr; } .agent .jauge-bloc { flex-direction: row; } }
 @media (max-width: 480px) { .agent .agent-gauche .agent-salut { font-size: 19px; } .agent .jauge-bloc { flex-direction: column; text-align: center; } .agent .jauge-bloc .jauge-texte { align-items: center; } .agent .mes-apps-grille { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); } }
 #quitter, #qui { display: none; }   /* l'avatar en haut à droite porte « Se déconnecter » et le nom */
+
+/* ===== Carte personnelle réduite au strict nécessaire (5.66.0) : Bonjour + Mon profil + jauge ; le détail est dans « Mon profil » ===== */
+.agent .agent-corps { padding: 8px 12px; gap: 10px; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr); }
+.agent .agent-gauche, .agent .jauge-bloc { padding: 8px 12px; }
+.agent .agent-gauche .avatar { width: 46px; height: 46px; font-size: 16px; }
+.agent .agent-gauche .agent-salut { font-size: 18px; line-height: 1.15; overflow-wrap: anywhere; }
+.agent .agent-gauche .agent-id h2, .agent .agent-gauche .agent-poste, .agent .agent-gauche .agent-badges { display: none; }
+.agent-liens { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.agent-liens .lien-profil { margin-top: 0; }
+.agent-liens .raccourcis { position: static; display: inline-flex; margin: 0; gap: 6px; }
+.agent .jauge-bloc, .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding: 8px 12px 24px; gap: 12px; }
+.agent .jauge-bloc .etat-pill { margin-right: 0; }
+.agent .mes-apps { padding: 8px 12px; }
+@media (max-width: 900px) { .agent .agent-corps { grid-template-columns: 1fr; } }

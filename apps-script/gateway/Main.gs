@@ -69,6 +69,7 @@ function route_(req) {
     case 'profil_photo': return profilPhoto_(req);
     case 'photos_mini': return photosMini_(req);
     case 'acces_demander': return accesDemander_(req);
+    case 'profil_correction': return profilCorrection_(req);
     case 'acces_demandes': return accesDemandes_(req);
     case 'acces_traiter': return accesTraiter_(req);
     case 'situation': return situationDe_(Auth.userFromToken(req.token));
