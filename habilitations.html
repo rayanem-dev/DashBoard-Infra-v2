@@ -28,6 +28,8 @@
   .tuiles { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; } .tuile { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-card); padding: 8px 18px; min-width: 120px; } .tuile b { display: block; font-size: 24px; color: var(--orange-main); line-height: 1.1; } .tuile span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
   .note { font-size: 12.5px; color: var(--text-muted); margin: 0 0 10px; }
   .tab { overflow: auto; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); } table.t { width: 100%; border-collapse: collapse; font-size: 13px; } table.t th { position: sticky; top: 0; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #fff; background: var(--orange-main); padding: 8px 10px; white-space: nowrap; } table.t td { padding: 6px 10px; border-top: 1px solid var(--border); vertical-align: top; } table.t tr:nth-child(even) td { background: var(--surface-2, #FAFAF7); }
+  .onglets { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); margin-bottom: 12px; } .onglets button { border: 0; background: var(--surface); padding: 9px 18px; font: inherit; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; } .onglets button + button { border-inline-start: 1.5px solid var(--border); } .onglets button.actif { background: var(--orange-main); color: #fff; }
+  .vue-titre { font-weight: 700; margin: 4px 0; text-align: center; } .vue-tab { overflow: auto; background: #fff; color: #000; border-radius: 14px; box-shadow: var(--shadow-card); padding: 10px; } .vue-tab table { border-collapse: collapse; width: 100%; font-size: 12.5px; } .vue-tab th, .vue-tab td { border: 1px solid #555; padding: 4px 6px; text-align: start; vertical-align: top; } .vue-tab th { background: #F0A030; color: #000; font-weight: 700; } .vue-tab td[dir=rtl] { text-align: right; }
   #feuille-print { display: none; }
   @media print {
     @page { size: A4 landscape; margin: 0; }
@@ -49,6 +51,8 @@
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 <main class="pr">
+  <div class="onglets no-print" role="tablist"><button type="button" class="actif" id="o-ext">Extraction (colonnes au choix)</button><button type="button" id="o-vue">Vue par entreprise (format du fichier)</button></div>
+  <div id="p-ext">
   <div class="bloc">
     <h2>1 · Quelles personnes ?</h2>
     <div class="ligne">
@@ -67,6 +71,13 @@
     <div style="margin-inline-start:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-xl" type="button">⬇ Excel</button><button class="btn-s" id="b-maj" type="button">↻ Actualiser</button></div></div>
   <p class="note" id="note"></p>
   <div class="tab"><table class="t" id="t"></table></div>
+  </div>
+  <div id="p-vue" hidden>
+    <div class="bloc"><div class="ligne"><div><label class="l" for="v-ent">Entreprise (onglet du fichier)</label><select id="v-ent" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:14px;background:var(--surface);color:var(--text-dark);min-width:260px"></select></div>
+      <div style="margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap"><button class="btn-p" id="v-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="v-xl" type="button">⬇ Excel (cette entreprise)</button><button class="btn-s" id="v-xl-tout" type="button">⬇ Excel (toutes, un onglet chacune)</button></div></div>
+      <p class="note" id="v-note" style="margin:8px 0 0"></p></div>
+    <div class="vue-tab" id="v-tab"></div>
+  </div>
   <div id="feuille-print"></div>
 </main>
 <div class="toast" id="toast" role="status"></div>
@@ -130,6 +141,37 @@
     var b = XlsxMini.blob({ feuilles: [{ nom: 'Habilitations', largeurs: lg, fusions: ['A1:' + XlsxMini.col(Math.max(cs.length - 1, 1)) + '1', 'A2:' + XlsxMini.col(Math.max(cs.length - 1, 1)) + '2'], figer: 4, filtre: 'A4:' + XlsxMini.col(cs.length - 1) + (haut.length), lignes: haut }] });
     var a = el('a'); a.href = URL.createObjectURL(b); a.download = 'habilitations_' + iso() + '.xlsx'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
+  // ---------- vue par entreprise : la feuille de l'entreprise telle qu'elle est dans le fichier des Enquêtes ----------
+  var VUE = null, enChargement = 0;
+  function trimGrille(l) { var m = 0; l.forEach(function (r) { for (var c = r.length - 1; c >= 0; c -= 1) if (String(r[c] || '').trim()) { m = Math.max(m, c + 1); break; } }); return l.map(function (r) { return r.slice(0, m); }); }
+  function indexEntete(l) { for (var i = 0; i < Math.min(l.length, 15); i += 1) if ((l[i] || []).some(function (c) { return String(c || '').indexOf('بالفرنسية') >= 0 || String(c || '').replace(/\s/g, '').indexOf('بالفرنسية') >= 0; })) return i; return 3; }
+  function celluleDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? fr(v) : v; }
+  function dessinerVue() {
+    var z = $('v-tab'); z.textContent = ''; if (!VUE) return;
+    var l = trimGrille(VUE.lignes), h = indexEntete(l); $('v-note').textContent = (l.length - h - 1) + ' personne(s) · feuille « ' + VUE.onglet + ' » du fichier des Enquêtes administratives, telle qu\'elle est.';
+    for (var i = 0; i < h; i += 1) { var t = (l[i] || []).filter(function (c) { return String(c || '').trim(); }).join('   '); if (t) { var d = el('div', 'vue-titre', t); d.dir = 'auto'; z.appendChild(d); } }
+    var tb = el('table'), th = el('thead'), tr = el('tr'); (l[h] || []).forEach(function (c) { var x = el('th', null, c); x.dir = 'auto'; tr.appendChild(x); }); th.appendChild(tr); tb.appendChild(th);
+    var bd = el('tbody'); l.slice(h + 1).forEach(function (r) { var q = el('tr'); (l[h] || []).forEach(function (_, c) { var x = el('td', null, celluleDate(r[c] || '')); x.dir = 'auto'; q.appendChild(x); }); bd.appendChild(q); }); tb.appendChild(bd); z.appendChild(tb);
+    $('feuille-print').innerHTML = '<table class="cadre"><thead><tr><td><div class="esp"></div></td></tr></thead><tfoot><tr><td><div class="esp"></div></td></tr></tfoot><tbody><tr><td>' + z.innerHTML.replace('<table>', '<table class="d">') + '</td></tr></tbody></table>';
+  }
+  function chargerVue(onglet) { var n = ++enChargement; $('v-note').textContent = 'Lecture de la feuille…'; Api.call('badges_enquetes_export', { onglet: onglet }).then(function (r) { if (n !== enChargement) return; VUE = r; dessinerVue(); }).catch(function (e) { $('v-note').textContent = 'Lecture impossible : ' + e.message; }); }
+  function montrer(vue) { $('p-ext').hidden = vue; $('p-vue').hidden = !vue; $('o-ext').classList.toggle('actif', !vue); $('o-vue').classList.toggle('actif', vue); if (!vue && D) dessiner(); if (vue && D) { var s = $('v-ent'); if (!s.options.length) { D.onglets.slice().sort(function (a, b) { return a.entreprise.localeCompare(b.entreprise, 'fr'); }).forEach(function (o) { s.appendChild(new Option(o.entreprise + (o.onglet !== o.entreprise ? ' · ' + o.onglet.replace(o.entreprise, '').replace(/^[\s·]+/, '') : '') + ' (' + o.nb + ')', o.onglet)); }); s.addEventListener('change', function () { chargerVue(s.value); }); } if (D.niveau < 2) { $('v-note').textContent = 'Cette vue reprend la feuille complète du fichier (données personnelles comprises) : elle demande le droit de saisie des Badges.'; $('v-tab').textContent = ''; return; } if (s.value && !VUE) chargerVue(s.value); else if (VUE) dessinerVue(); } }
+  $('o-ext').addEventListener('click', function () { montrer(false); }); $('o-vue').addEventListener('click', function () { montrer(true); });
+  function blobFeuille(lignes, onglet) {
+    var l = trimGrille(lignes), h = indexEntete(l), larg = l[h].length, lg = [];
+    for (var c = 0; c < larg; c += 1) { var m = 8; l.forEach(function (r) { m = Math.max(m, Math.min(42, String(r[c] || '').length + 3)); }); lg.push(m); }
+    var rows = l.map(function (r, i) { if (i < h) { var t = r.filter(function (x) { return String(x || '').trim(); }).join('   '); return { cellules: t ? [{ v: t, s: i === 0 ? 'titre' : 'sous' }] : [], hauteur: i === 0 ? 28 : null }; } return { cellules: (l[h]).map(function (_, c) { return { v: i === h ? r[c] : celluleDate(r[c] || ''), s: i === h ? 'entete' : 'texte' }; }), hauteur: i === h ? 24 : null }; });
+    var fus = []; for (var i = 0; i < h; i += 1) if (rows[i].cellules.length) fus.push('A' + (i + 1) + ':' + XlsxMini.col(Math.max(larg - 1, 1)) + (i + 1));
+    return { nom: onglet, largeurs: lg, fusions: fus, figer: h + 1, filtre: 'A' + (h + 1) + ':' + XlsxMini.col(larg - 1) + l.length, lignes: rows };
+  }
+  function telecharger(b, nom) { var a = el('a'); a.href = URL.createObjectURL(b); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  $('v-imp').addEventListener('click', function () { if (VUE) window.print(); });
+  $('v-xl').addEventListener('click', function () { if (VUE) telecharger(XlsxMini.blob({ feuilles: [blobFeuille(VUE.lignes, VUE.onglet)] }), 'habilitations_' + String(VUE.onglet).replace(/[^A-Za-z0-9]+/g, '_') + '_' + iso() + '.xlsx'); });
+  $('v-xl-tout').addEventListener('click', function () {
+    var bt = $('v-xl-tout'), liste = D.onglets.slice(), fe = [], t = bt.textContent; bt.disabled = true;
+    (function suite(i) { if (i >= liste.length) { bt.disabled = false; bt.textContent = t; telecharger(XlsxMini.blob({ feuilles: fe }), 'habilitations_toutes_' + iso() + '.xlsx'); return; } bt.textContent = '⏳ ' + (i + 1) + ' / ' + liste.length + '…';
+      Api.call('badges_enquetes_export', { onglet: liste[i].onglet }).then(function (r) { var nom = String(liste[i].onglet).replace(/[\[\]*?:\/\\]/g, ' ').slice(0, 31), pris = fe.some(function (f) { return f.nom === nom; }); fe.push(blobFeuille(r.lignes, pris ? nom.slice(0, 28) + ' ' + (i + 1) : nom)); suite(i + 1); }).catch(function (e) { bt.disabled = false; bt.textContent = t; $('v-note').textContent = 'Export interrompu : ' + e.message; }); })(0);
+  });
   $('f-q').addEventListener('input', function () { if (D) dessiner(); }); ['f-du', 'f-au'].forEach(function (i) { $(i).addEventListener('change', function () { if (D) dessiner(); }); });
   $('e-tout').addEventListener('click', function () { D.entreprises.forEach(function (e) { ents[e] = true; }); menus(); dessiner(); }); $('e-rien').addEventListener('click', function () { D.entreprises.forEach(function (e) { ents[e] = false; }); menus(); dessiner(); });
   $('c-ess').addEventListener('click', function () { Object.keys(cols).forEach(function (k) { cols[k] = ESSENTIEL.indexOf(k) !== -1; }); menus(); dessiner(); });

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-24-135",
+    "date": "2026-10-24",
+    "title": "Version 5.71.0 — Habilitations : vue par entreprise au format du fichier",
+    "changes": [
+      "Fichier des habilitations : un onglet « Vue par entreprise (format du fichier) » affiche la feuille de l'entreprise telle qu'elle est dans le fichier des Enquêtes (titre en arabe, wilaya, en-têtes, une ligne par personne). Impression en un clic, Excel de l'entreprise, ou Excel de toutes les entreprises (un onglet chacune). Réservé au droit de saisie des Badges (la feuille contient les données personnelles)."
+    ]
+  },
+  {
     "id": "2026-10-24-134",
     "date": "2026-10-24",
     "title": "Version 5.70.1 — Fiche d'évaluation : « Envoyer au service »",
