@@ -63,7 +63,6 @@
         { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
       { id: 'badges', titre: 'Badges prestataires', icone: '🪪', niveau: 3, apps: [
         { titre: 'Badges prestataires', description: 'Prépare et imprime les badges (recto-verso), numérotation automatique et historique.', emoji: '🪪', url: 'badges.html' },
-        { titre: 'Prestataires présents sur site', description: 'Qui est présent sur site à une date choisie, par entreprise, avec impression et extraction Excel.', emoji: '🧑‍🏭', url: 'presents.html' },
         { titre: 'Fichier des habilitations', description: 'Extraction en vrac du fichier des Enquêtes, avec choix des colonnes à imprimer ou exporter.', emoji: '🗃️', url: 'habilitations.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
         { titre: 'Contrôle de l\'annuaire', description: 'Compare les fiches contact avec BDDORGA.', emoji: '🔎', url: 'divergences.html' },
@@ -264,20 +263,12 @@
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'DURAND Marc', champ: 'Téléphone', valeur: '0550000001' }, { nom: 'LEROY Pierre Antoine', champ: 'Identifiant SONA', valeur: 'sona00004' }, { nom: 'LEROY Pierre Antoine', champ: 'Matricule', valeur: '10004D' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
       case 'video_formation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); throw erreur('Vidéo non disponible en démonstration'); }
-      case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true, lien_formulaire: 'https://docs.google.com/forms/d/1l-6f3oqFmToPe7MFd78wq6gxfcrw2rZNrNntVR1k2FY/viewform' }; }
+      case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];
         if (demoVivier.some(function (x) { return x !== iv && String(x.nom).toLowerCase() === String(fv.nom).trim().toLowerCase(); })) throw erreur('Cette entreprise existe déjà dans le vivier');
         if (!iv) { iv = { id: 'V' + (demoVivier.length + 1) }; demoVivier.push(iv); } ['nom', 'activite', 'telephone', 'telephone2', 'email', 'email2', 'fax', 'adresse', 'commentaire'].forEach(function (k) { iv[k] = String(fv[k] || '').trim(); }); return { id: iv.id }; }
       case 'vivier_supprimer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoVivier = demoVivier.filter(function (x) { return x.id !== p.id; }); return {}; }
-      case 'vivier_synchroniser': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ajoutees: 0 }; }
-      case 'presents_donnees': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var bp = demoBdg(), dd = String(p.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10), gr0 = {}, ordre0 = [], ex0 = { sorti: 0, avant: 0, hors_plage: 0, autre_base: 0 }, bases0 = {};
-        function plus0(d, n) { var x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
-        bp.pers.forEach(function (x, i) { var entree = plus0('2026-10-05', -((i * 4) % 22)), defaut = i % 3 !== 0, sortie = defaut ? plus0(entree, 28) : plus0(entree, 10 + (i % 5)), base = i % 2 ? 'BASE DE VIE CENTRALE' : 'BASE ZINA'; bases0[base] = 1;
-          if (entree > dd) { ex0.avant += 1; return; } if (!p.toutes && sortie < dd) { ex0.sorti += 1; return; } if ((p.reg_du && entree < p.reg_du) || (p.reg_au && entree > p.reg_au)) { ex0.hors_plage += 1; return; } if (p.base && base !== p.base) { ex0.autre_base += 1; return; }
-          var k = x.entreprise; if (!gr0[k]) { gr0[k] = { entreprise: k, contrat: x.contrat || '', personnes: [] }; ordre0.push(k); } gr0[k].personnes.push({ nom: x.nom, prenom: x.prenom, fonction: x.fonction, base: base, entree: entree, sortie: sortie, sortie_defaut: defaut }); });
-        var ent0 = ordre0.map(function (k) { return gr0[k]; });
-        return { date: dd, entreprises: ent0, total: ent0.reduce(function (n, g) { return n + g.personnes.length; }, 0), exclus: ex0, bases: Object.keys(bases0).sort(), nb_sejours: bp.pers.length, duree_defaut: 28, peut_exporter: ['chef_division', 'chef_service', 'secretariat'].indexOf(demoState.user.role) !== -1 }; }
       case 'badges_enquetes_export': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var be = demoBdg(), ent1 = String(p.onglet || ''), ps = be.pers.filter(function (x) { return x.entreprise === ent1; });
         var tete = ['الرقم', 'الاسم و اللقب بالفرنسية', 'اللقب', 'الإسم', 'الوظيفة', 'تاريخ الازدياد', 'مكان الازدياد', 'الأب', 'الأم', 'العنوان', 'رقم التعريف الوطني', 'رقم الهاتف', 'تاريخ التسجيل — Date de prise en charge', 'القاعدة — Base d\'hébergement'], v0 = function () { return ['', '', '', '', '', '', '', '', '', '', '', '', '', '']; }, l1 = v0(), l3 = v0(); l1[0] = 'القائمة الإسمية لأعوان شركة ' + ent1.toUpperCase(); l3[0] = 'ولاية   إليزي';
         return { onglet: ent1, lignes: [l1, v0(), l3, tete].concat(ps.map(function (x, i) { return [String(i + 1), x.nom + ' ' + x.prenom, '', '', x.fonction, '1990-01-0' + (1 + (i % 9)), 'Alger', '', '', 'Hassi Messaoud', '1099000000000000' + (10 + i), '0550 00 00 ' + (10 + i), '1' + (i % 9) + '/0' + (1 + (i % 9)) + '/2026', i % 2 ? 'BASE DE VIE CENTRALE' : 'BASE ZINA']; })) }; }
