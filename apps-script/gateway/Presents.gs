@@ -28,11 +28,11 @@ function presentsFinContrat_(echeance, ods, duree) {
 }
 /**
  * groupes : [{ entreprise, contrat, intitule, debut, fin, personnes: [{ nom, prenom, fonction, structure, date_enreg }] }] ; date : « aaaa-mm-jj » ;
- * options : { sansDate (défaut true), contratValide (défaut true), regDu, regAu : filtre sur la date de prise en charge (une personne sans date est alors écartée) }. Renvoie { entreprises: [...], total, exclus: { apres, sans_date_exclus, contrat } }.
+ * options : { sansDate (défaut true), contratValide (défaut true), base (une seule base), regDu, regAu : filtre sur la date de prise en charge (une personne sans date est alors écartée) }. Renvoie { entreprises: [...], total, exclus: { apres, sans_date_exclus, contrat } }.
  */
 function presentsCalculer_(groupes, date, options) {
   var o = options || {}, sansDate = o.sansDate !== false, contratValide = o.contratValide !== false, du = presentsDate_(o.regDu), au = presentsDate_(o.regAu), plage = !!(du || au);
-  var exclus = { apres: 0, sans_date: 0, contrat: 0, hors_plage: 0 }, out = [], total = 0;
+  var exclus = { apres: 0, sans_date: 0, contrat: 0, hors_plage: 0, autre_base: 0 }, out = [], total = 0;
   groupes.forEach(function (g) {
     var contratEnCours = !contratValide || ((!g.debut || g.debut <= date) && (!g.fin || date <= g.fin));
     var gardes = [];
@@ -40,8 +40,9 @@ function presentsCalculer_(groupes, date, options) {
       var reg = presentsDate_(p.date_enreg);
       if (!contratEnCours) { exclus.contrat += 1; return; }
       if (reg ? reg > date : !sansDate) { if (reg) exclus.apres += 1; else exclus.sans_date += 1; return; }
+      if (o.base && String(p.base || '') !== String(o.base)) { exclus.autre_base += 1; return; }   // filtre par base d'hébergement
       if (plage && (!reg || (du && reg < du) || (au && reg > au))) { exclus.hors_plage += 1; return; }   // filtre par date de prise en charge
-      gardes.push({ nom: p.nom, prenom: p.prenom, fonction: p.fonction || '', structure: p.structure || '', date_enreg: reg });
+      gardes.push({ nom: p.nom, prenom: p.prenom, fonction: p.fonction || '', structure: p.structure || '', date_enreg: reg, base: p.base || '' });
     });
     if (!gardes.length) return;
     gardes.sort(function (a, b) { return (a.nom + ' ' + a.prenom) < (b.nom + ' ' + b.prenom) ? -1 : 1; });
@@ -67,13 +68,13 @@ function presentsLireGroupes_() {
   ss.getSheets().forEach(function (sh) {
     var lignes = sh.getDataRange().getDisplayValues(), a = Badges.analyserEnquetes(lignes, sh.getName());
     if (a.erreur || !a.personnes.length) return;
-    var col = Badges.colonnesEnquetes(lignes), cd = col ? enqColDate_(lignes, col) : -1;
+    var col = Badges.colonnesEnquetes(lignes), cd = col ? enqColDate_(lignes, col) : -1, cb = col ? enqColBase_(lignes, col) : -1;
     var nom = badgesAppariement_(a.entreprise, cpmNoms) || badgesAppariement_(a.onglet, cpmNoms) || a.entreprise;
     var ent = entCpm.filter(function (e) { return Badges.norm(e.nom) === Badges.norm(nom); })[0] || { contrats: [] };
     var contrat = badgesContratOnglet_(a.onglet, ent.contrats); if (!contrat && ent.contrats.length === 1) contrat = ent.contrats[0].numero;
     var c = contrats[Badges.norm(contrat).replace(/ /g, '')] || {};
     groupes.push({ entreprise: nom, contrat: contrat, intitule: c.intitule || '', debut: c.debut || '', fin: c.fin || '',
-      personnes: a.personnes.map(function (p) { return { nom: p.nom, prenom: p.prenom, fonction: p.fonction, structure: p.structure, date_enreg: cd >= 0 ? (lignes[p.ligne - 1] || [])[cd] : '' }; }) });
+      personnes: a.personnes.map(function (p) { return { nom: p.nom, prenom: p.prenom, fonction: p.fonction, structure: p.structure, date_enreg: cd >= 0 ? (lignes[p.ligne - 1] || [])[cd] : '', base: cb >= 0 ? Badges.vide((lignes[p.ligne - 1] || [])[cb]) : '' }; }) });
   });
   return { groupes: groupes, avertissements: avert };
 }
@@ -84,7 +85,8 @@ function presentsDonnees_(req) {
   var cache = CacheService.getScriptCache(), cle = 'PRESENTS_SRC', vu = cache.get(cle), src = null;
   if (vu && !req.force) { try { src = JSON.parse(vu); } catch (e) { src = null; } }
   if (!src) { src = presentsLireGroupes_(); try { var t = JSON.stringify(src); if (t.length < 95000) cache.put(cle, t, 300); } catch (e) { /* trop gros : pas de cache */ } }
-  var r = presentsCalculer_(src.groupes, date, { sansDate: req.sans_date !== false, contratValide: req.contrat_valide !== false, regDu: req.reg_du, regAu: req.reg_au });
+  var r = presentsCalculer_(src.groupes, date, { sansDate: req.sans_date !== false, contratValide: req.contrat_valide !== false, regDu: req.reg_du, regAu: req.reg_au, base: req.base });
+  var bases = {}; src.groupes.forEach(function (g) { g.personnes.forEach(function (p) { if (p.base) bases[p.base] = true; }); }); r.bases = Object.keys(bases).sort();
   r.date = date; r.avertissements = src.avertissements; r.sans_date_total = src.groupes.reduce(function (n, g) { return n + g.personnes.filter(function (p) { return !presentsDate_(p.date_enreg); }).length; }, 0);
   return r;
 }

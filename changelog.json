@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-24-131",
+    "date": "2026-10-24",
+    "title": "Version 5.69.0 — La base d'hébergement est inscrite dans les Enquêtes",
+    "changes": [
+      "Prises en charge : à l'injection dans les Enquêtes, la base désignée (ex. BASE DE VIE CENTRALE) est écrite dans une colonne « Base d'hébergement » (créée au besoin), à côté de la date de prise en charge.",
+      "Prestataires présents sur site : colonne « Base » dans la liste, l'impression et l'export Excel, et filtre « Base » pour savoir qui était hébergé où.",
+      "L'export « Excel » est un vrai classeur .xlsx soigné : feuille « Synthèse » (titre, tuiles entreprises / personnes présentes comme à l'écran, une ligne par entreprise avec contrat, période et bases) et feuille « Détail » (une ligne par personne, filtrable, première ligne figée). Pour toutes les entreprises ou une seule."
+    ]
+  },
+  {
     "id": "2026-10-24-130",
     "date": "2026-10-24",
     "title": "Version 5.68.1 — Date de prise en charge et filtre par période",

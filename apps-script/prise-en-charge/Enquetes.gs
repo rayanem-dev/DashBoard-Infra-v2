@@ -118,6 +118,13 @@ function enqColonne_(sh, lignes, h, regex, titre) {
   sh.getRange(h + 1, n + 1).setValue(titre);
   return n;
 }
+/** Colonne « Base d'hébergement » (« القاعدة » / « Base de vie ») : -1 si absente. Écrite à chaque injection faite avec une base, pour savoir où la personne a été hébergée. */
+var ENQ_RE_BASE_ = /basedhebergement|basedevie|^القاعدة|\|القاعدة/;
+function enqColBase_(lignes, col) {
+  var entete = lignes[col.h] || [];
+  for (var c = 0; c < entete.length; c += 1) { if (ENQ_RE_BASE_.test(Badges.norm(entete[c]).replace(/ /g, '') + '|' + String(entete[c] == null ? '' : entete[c]).replace(/\s+/g, ''))) return c; }
+  return -1;
+}
 /** Colonne « date d'enregistrement » : repérée par son en-tête (« تاريخ التسجيل » / « Date de prise en charge » / « Date d'enregistrement » pour les anciens onglets) ; -1 si absente (elle est alors créée à droite du tableau). */
 function enqColDate_(lignes, col) {
   var entete = lignes[col.h] || [];
@@ -336,6 +343,7 @@ function injecterEnquetes_(formData) {
           var i = enqLigneLibre_(lignes, col), ligne = i + 1, colNum = enqColNumero_(lignes, col);
           if (ligne > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), ligne - sh.getMaxRows()); // jamais d'écriture hors de la grille
           var cd = enqColonne_(sh, lignes, col.h, /تاريخالتسجيل|dateenregistrement|dateinscription|datedepriseencharge|datepriseencharge/, 'تاريخ التسجيل — Date de prise en charge');
+          var baseDe = Badges.vide(formData.base), cb = baseDe ? enqColonne_(sh, lignes, col.h, ENQ_RE_BASE_, 'القاعدة — Base d\'hébergement') : -1;   // la base désignée dans la prise en charge est gardée dans les Enquêtes
           var cs = Badges.vide(p.structure) ? enqColonne_(sh, lignes, col.h, /^الهيكل|structure/i, 'الهيكل — Structure') : (col.structure >= 0 ? col.structure : -1);
           if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
           sh.getRange(ligne, col.fr + 1).setValue(nomComplet);
@@ -348,6 +356,7 @@ function injecterEnquetes_(formData) {
           [['naissance', col.naiss], ['lieu', col.lieu], ['pere', col.pere], ['mere', col.mere], ['adresse', col.adresse], ['embauche', col.embauche], ['nin', col.nin], ['acte', col.acte], ['tel', col.tel]].forEach(function (c) { if (c[1] >= 0 && Badges.vide(p[c[0]])) sh.getRange(ligne, c[1] + 1).setNumberFormat('@').setValue(Badges.vide(p[c[0]])); }); // texte : une date saisie reste telle quelle
           if (cs >= 0 && Badges.vide(p.structure)) sh.getRange(ligne, cs + 1).setValue(Badges.vide(p.structure));
           sh.getRange(ligne, cd + 1).setNumberFormat('dd/MM/yyyy').setValue(Utilities.formatDate(new Date(), 'Africa/Algiers', 'dd/MM/yyyy'));
+          if (cb >= 0) sh.getRange(ligne, cb + 1).setValue(baseDe);
           SpreadsheetApp.flush();
           if (Badges.vide(sh.getRange(ligne, col.fr + 1).getDisplayValue()) !== nomComplet) { r.sansOnglet.push(nomComplet); r.details.push(nomComplet + ' : écriture non retenue (ligne ' + ligne + ' de « ' + cible + ' » protégée ?)'); return; }
           r.details.push(nomComplet + ' → « ' + cible + ' », ligne ' + ligne);
