@@ -671,3 +671,14 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent .jauge-bloc .etat-pill { margin-right: 0; }
 .agent .mes-apps { padding: 8px 12px; }
 @media (max-width: 900px) { .agent .agent-corps { grid-template-columns: 1fr; } }
+
+/* Accueil agent : jauge réduite et texte limité à l'essentiel (état, barre, reliquat) ; la longue phrase de rotation est masquée */
+.agent .jauge { width: 46px; height: 46px; }
+.agent .jauge::before { inset: 5px; }
+.agent .jauge .j-centre b { font-size: 15px; letter-spacing: -.5px; }
+.agent .jauge .j-centre small { display: none; }
+.agent .jauge-texte #phrase { display: none; }
+.agent .jauge-bloc { gap: 10px; padding-top: 8px; padding-bottom: 22px; }
+.agent .jauge-texte { gap: 3px; }
+.agent .jauge-barre { height: 4px; }
+.agent .jauge-texte .jauge-dates { font-size: 11.5px; }

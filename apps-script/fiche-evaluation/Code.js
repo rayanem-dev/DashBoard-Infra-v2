@@ -9,7 +9,7 @@ const SUIVI_CPM_TAB = 'suivi';
 const DOSSIER_FICHES = 'Fiches d’évaluation';   // dossier Drive (créé à la première fiche) : un PDF par fiche, ses réponses dans la description du fichier
 
 // Colonnes du Suivi CPM (indices 0 = A), les mêmes que la passerelle
-const CPM_COL = { intitule: 3, statut: 8, attribue_a: 12, n_contrat: 13, montant: 14, date_signature: 15, date_ods: 16, duree: 17, unite: 35 };
+const CPM_COL = { intitule: 3, statut: 8, attribue_a: 12, n_contrat: 13, montant: 14, date_signature: 15, date_ods: 16, duree: 17, echeance: 18, unite: 35 };
 
 /** Boîtes e-mail des services (« Envoyer au service ») : choix fait à l'écran, e-mail jamais automatique. À modifier ici si une adresse change. */
 const SERVICES_MAIL = [
@@ -104,9 +104,9 @@ function contratsDepuis_(lignes) {
     const brut = v(r, 'n_contrat'), cle = brut || (v(r, 'attribue_a') + '|' + v(r, 'intitule')); if (!cle || vus[cle]) return; vus[cle] = 1;
     const ods = v(r, 'date_ods'), montant = montantFr_(v(r, 'montant')), delai = delaiFr_(v(r, 'duree'), v(r, 'unite'));
     // champs vides dans le Suivi CPM (à compléter là-bas, la fiche reste modifiable à la main)
-    const manques = []; if (!brut) manques.push('n° de contrat'); if (!v(r, 'attribue_a')) manques.push('entrepreneur'); if (!montant) manques.push('montant'); if (!ods) manques.push('date ODS'); if (!delai) manques.push('durée');
+    const manques = []; if (!brut) manques.push('n° de contrat'); if (!v(r, 'attribue_a')) manques.push('entrepreneur'); if (!montant) manques.push('montant'); if (!ods) manques.push('date ODS'); if (!delai) manques.push('durée'); if (!v(r, 'echeance')) manques.push('échéance (mise en service)');
     out.push({ contrat: numeroLong_(brut), numeroCpm: brut, entrepreneur: v(r, 'attribue_a'), montant: montant,
-      dateOds: ods, dateVigueur: ods, dateService: ods, delai: delai, projet: v(r, 'intitule'), manques: manques });
+      dateOds: ods, dateVigueur: ods, dateService: v(r, 'echeance'), delai: delai, projet: v(r, 'intitule'), manques: manques });
   });
   return out.sort((a, b) => a.entrepreneur.localeCompare(b.entrepreneur, 'fr') || a.contrat.localeCompare(b.contrat));
 }
@@ -126,7 +126,7 @@ function dateFr_(t) { const v = propre_(t); return /^\d{4}-\d{2}-\d{2}$/.test(v)
  */
 function ficheHtml_(data, logoBase64) {
   const c = (data && data.cartouche) || {}, notes = (data && data.notes) || {}, taux = tauxGlobal_(notes);
-  const ligne = (lib, val) => '<tr><td class="l"><span style="display:inline-block;width:38%">' + lib + '</span>' + lib + ' ' + esc_(val) + '</td></tr>';
+  const ligne = (lib, val) => '<tr><td class="l">' + lib + ' ' + esc_(val) + '</td></tr>';
   const cases = id => POURCENTS.map(p => '<td class="x">' + (Number(notes[id]) === p ? 'X' : '&nbsp;') + '</td>').join('');
   // Jamais de ligne coupée entre deux pages : saut de page explicite AVANT la section IV (le tableau reprend alors avec son en-tête)
   const enTete = () => '<tr><td rowspan="2" style="width:5%;text-align:center"><b>N°</b></td><td rowspan="2" style="width:33%;text-align:center"><b>Désignation</b></td><td colspan="10" style="text-align:center"><b>Indice de satisfaction Projet</b></td></tr>' +

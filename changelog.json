@@ -6,6 +6,8 @@
     "changes": [
       "La page « Prestataires présents sur site » est supprimée (doublon du Fichier des habilitations).",
       "La carte « Enquêtes Administratives » (lien direct vers la feuille Google) est retirée : le fichier s'ouvre depuis le Fichier des habilitations par le bouton « Fichier Enquêtes (base de données) », visible seulement du chef de division, des chefs de service (et intérim) et du secrétariat. Les autres voient uniquement la page.",
+      "Fiche d'évaluation : le texte du cartouche ne se répète plus ; la date de mise en service reprend l'échéance du Suivi CPM (fin des travaux).",
+      "Accueil : jauge de rotation réduite et texte limité à l'essentiel (état, barre de progression, reliquat).",
       "Vivier des Entreprises simplifié : plus de lien ni de bouton de synchronisation ; la base reprend toute seule les entreprises de l'ancienne feuille Google à la première ouverture, puis tout se fait dans la page (ajouter, modifier, supprimer)."
     ]
   },
