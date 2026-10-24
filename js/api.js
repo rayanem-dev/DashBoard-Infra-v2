@@ -59,6 +59,7 @@
         { titre: 'Autorisation GAZ-OIL', description: 'Autorisation d\'approvisionnement en GAZ-OIL (fûts de 200 L), imprimable en un clic.', emoji: '⛽', url: 'autorisation-gazoil.html' },
         { titre: 'Ordre de travail', description: 'Ordre de travail de la division, imprimable en un clic, avec historique.', emoji: '🛠', url: 'ordre-travail.html' },
         { titre: 'Prise en charge hôtel', description: 'Demande de prise en charge à l\'hôtel pour un agent en mission, imprimable en un clic, avec historique.', emoji: '🏨', url: 'hotel-prise-en-charge.html' },
+        { titre: 'Prises en Charge + Autorisation d\'Accès', description: 'Prises en charge et autorisations d\'accès des prestataires.', emoji: '🧾', url: 'prise-en-charge.html' },
         { titre: 'Repas à emporter', description: 'Prise en charge repas à emporter prête à imprimer, avec historique.', emoji: '🥡', url: 'repas-emporter.html' } ] },
       { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
@@ -266,6 +267,14 @@
         if (p.appliquer !== true) return { appliquer: false, plan: [{ nom: 'DURAND Marc', champ: 'Téléphone', valeur: '0550000001' }, { nom: 'LEROY Pierre Antoine', champ: 'Identifiant SONA', valeur: 'sona00004' }, { nom: 'LEROY Pierre Antoine', champ: 'Matricule', valeur: '10004D' }] };
         return { appliquer: true, ecrites: 3, echecs: [] };
       case 'video_formation': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); throw erreur('Vidéo non disponible en démonstration'); }
+      case 'pec': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fnp = p.fn, ap = p.args || [];
+        if (fnp === 'obtenirOptionsFormulaire') return { prestataires: ['53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement', '30.INFRA.24 - GLOBI CORP OUARGLA - Maintenance électrique'], servicesParPrestataire: { '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement': 'Service Travaux Entretien' }, basesParPrestataire: {}, emputations: ['Service Électromécanique', 'Service Construction', 'Service Travaux Entretien'], bases: ['BASE DE VIE CENTRALE', 'BASE ANNEXE I LAVALIN'] };
+        if (fnp === 'rechercherPersonnes') return { ok: true, personnes: [] };
+        if (fnp === 'listerFichiersGeneres') return { success: true, fichiers: [] };
+        if (fnp === 'historiquePEC') return { ok: true, demandes: [] };
+        if (fnp === 'verifierEnquetes') return { ok: true, deja: [] };
+        if (fnp === 'soumettreFormulairePEC') return { success: true, message: 'Démonstration : aucun document généré.', liens: [] };
+        return { success: true, message: 'Démonstration' }; }
       case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];

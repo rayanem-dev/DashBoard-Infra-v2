@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prise en charge et autorisation d'accès – Division Infrastructure RNS</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<script>
+// Pont vers la passerelle : le formulaire d'origine appelle google.script.run.xxx(...) ; ici chaque appel passe par la connexion du portail (action « pec »).
+window.google = { script: { run: (function () {
+  function chaine(ok, ko) {
+    return new Proxy({}, { get: function (_, nom) {
+      if (nom === 'withSuccessHandler') return function (f) { return chaine(f, ko); };
+      if (nom === 'withFailureHandler') return function (f) { return chaine(ok, f); };
+      return function () {
+        var args = Array.prototype.slice.call(arguments);
+        Api.call('pec', { fn: String(nom), args: args }).then(function (r) { if (ok) ok(r); }, function (e) { if (ko) ko(e); else if (window.console) console.error(e); });
+      };
+    } });
+  }
+  return chaine(null, null);
+})() } };
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  :root {
+    --orange-main: #E85D04; --orange-light: #F48C06; --gray-dark: #1A1A2E; --gray-mid: #2D2D44;
+    --gray-light: #F8F9FA; --white: #FFFFFF; --text-dark: #1C1C1C; --text-muted: #6B7280;
+    --border: #E5E7EB; --green: #16A34A; --blue: #2563EB; --red: #DC2626; --teal: #0D9488; --gray-btn: #4B5563;
+    --shadow-card: 0 4px 20px rgba(232,93,4,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 32px rgba(232,93,4,0.22), 0 2px 8px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #F5F5F0; color: var(--text-dark); min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+  .header-inner { max-width: 1000px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .logo-circle { width: 52px; height: 52px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: white; box-shadow: 0 4px 14px rgba(232,93,4,0.5); flex-shrink: 0; }
+  .logo-text h1 { font-size: 18px; font-weight: 700; color: white; }
+  .logo-text p { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 14px 20px 60px; }
+  main > .section-title:first-child { margin-top: 0; }
+  .aide-btn { display: none !important; }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--gray-dark); text-transform: uppercase; letter-spacing: 0.6px; margin: 32px 0 14px; }
+  .section-title:first-child { margin-top: 0; }
+
+  /* Barre d'actions — boutons colorés */
+  .actions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .action-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    border: none; border-radius: 16px; padding: 18px 10px; cursor: pointer; color: white; font-family: inherit;
+    font-size: 12.5px; font-weight: 700; text-align: center; box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s, transform 0.15s; line-height: 1.3;
+  }
+  .action-btn:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .action-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .action-btn .icon { font-size: 24px; }
+  .btn-actualiser { background: linear-gradient(135deg, var(--blue), #3B82F6); }
+  .btn-effacer { background: linear-gradient(135deg, var(--red), #EF4444); }
+  .btn-charger { background: linear-gradient(135deg, var(--green), #22C55E); }
+  .btn-generer { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); }
+  .btn-imprimer { background: linear-gradient(135deg, var(--gray-btn), #6B7280); }
+  .btn-dossier { background: linear-gradient(135deg, var(--teal), #14B8A6); }
+
+  /* Carte formulaire */
+  /* Fichiers à imprimer : même présentation que Dotation */
+  #historique { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; padding: 2px; }
+  #historique .placeholder { font-size: 13px; color: var(--text-muted); font-style: italic; }
+  .histo-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; flex-wrap: wrap; }
+  .histo-tag { font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; flex-shrink: 0; background: #FFE8D6; color: var(--orange-main); }
+  .histo-tag.autorisation { background: #DBEAFE; color: var(--blue); } .histo-tag.macaron { background: #DCFCE7; color: var(--green); } .histo-tag.pdf { background: #F3F4F6; color: var(--gray-btn); }
+  .histo-info { flex: 1; min-width: 140px; } .histo-nom { font-size: 13px; font-weight: 600; color: var(--text-dark); overflow-wrap: anywhere; } .histo-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .histo-links { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+  .histo-links a, .histo-links button.mail, .histo-links button.impr { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
+  .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.impr { background: linear-gradient(135deg, #16A34A, #22C55E); color: #fff; } .histo-links button:disabled { opacity: .5; cursor: wait; }
+  .titre-fichiers { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 14px; } .titre-fichiers .section-title { margin: 0; }
+  .btn-tout-suppr { background: #FEE2E2; color: var(--red); border: 1.5px solid #FECACA; border-radius: 9px; padding: 7px 12px; font: 700 12px 'Inter', sans-serif; cursor: pointer; } .btn-tout-suppr:hover { background: #FCA5A5; } .btn-tout-suppr:disabled { opacity: .5; cursor: wait; }
+  .btn-suppr-item { background: #FEE2E2; color: var(--red); border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+  .icones { display: flex; gap: 8px; margin-left: auto; } .icone { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12); font-size: 18px; cursor: pointer; line-height: 1; }
+  .icone:hover { background: rgba(255,255,255,.24); border-color: var(--orange-light); } .icone:disabled { opacity: .5; cursor: wait; }
+  .logo-text h1 { font-size: 18px; } @media (max-width: 560px) { .logo-text h1 { font-size: 14px; } .header-inner { padding: 10px 14px; gap: 10px; } }
+  .form-card { background: var(--white); border-radius: 20px; padding: 24px 26px; box-shadow: var(--shadow-card); border: 1px solid var(--border); }
+  label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 13px; color: var(--gray-dark); }
+  label:first-of-type { margin-top: 0; }
+  select, input[type=text], input[type=date] {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px;
+    font-family: inherit; background: var(--gray-light); transition: border-color 0.15s;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--orange-main); }
+  .ligne-check { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .ligne-check input { width: 18px; height: 18px; accent-color: var(--orange-main); }
+  .ligne-check label { margin: 0; font-weight: 600; }
+
+  /* Rangées compactes : deux champs côte à côte */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .form-row .field label { margin: 0 0 6px; }
+  .form-row .field { display: flex; flex-direction: column; }
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; gap: 0; } }
+
+  fieldset { border: 1.5px solid var(--border); border-radius: 14px; margin-top: 18px; padding: 4px 14px 14px; }
+  legend { font-weight: 700; color: var(--orange-main); padding: 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; border-radius: 10px; overflow: hidden; }
+  th, td { border: 1px solid var(--border); padding: 6px; font-size: 12px; }
+  th { background: var(--gray-light); color: var(--gray-dark); font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.3px; }
+  td input { border: none; width: 100%; padding: 6px; font-size: 12.5px; background: transparent; }
+  td input:focus { outline: 1.5px solid var(--orange-main); border-radius: 4px; }
+
+  /* Bouton hero (générer) */
+  .hero-btn {
+    display: flex; align-items: center; gap: 18px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light));
+    border: none; border-radius: 20px; padding: 22px 26px; width: 100%; cursor: pointer; margin-top: 24px;
+    box-shadow: var(--shadow-card); transition: box-shadow 0.2s, transform 0.15s; font-family: inherit;
+  }
+  .hero-btn:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .hero-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .hero-btn .icon { font-size: 30px; }
+  .hero-btn .txt { text-align: left; }
+  .hero-btn h2 { color: white; font-size: 17px; font-weight: 800; }
+  .hero-btn p { color: rgba(255,255,255,0.85); font-size: 12.5px; margin-top: 2px; }
+  .hero-btn .arrow { margin-left: auto; color: white; font-size: 22px; }
+
+  /* Zones de résultat / toast */
+  #toast, #resultat { margin-top: 16px; padding: 14px 16px; border-radius: 12px; display: none; font-size: 13.5px; font-weight: 600; }
+  #toast.ok, #resultat.ok { background: #E6F4EA; color: #137333; display: block; }
+  #toast.err, #resultat.err { background: #FCE8E6; color: #C5221F; display: block; }
+  #resultat a { display: block; color: var(--orange-main); margin-top: 6px; font-weight: 700; text-decoration: none; }
+  #resultat a:hover { text-decoration: underline; }
+
+  .spinner { display: none; margin: 14px auto; border: 4px solid #eee; border-top: 4px solid var(--orange-main); border-radius: 50%; width: 26px; height: 26px; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modale d'upload PDF */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.show { display: flex; }
+  .modal { background: white; border-radius: 18px; padding: 26px; max-width: 420px; width: 100%; text-align: center; box-shadow: var(--shadow-hover); }
+  .modal h3 { color: var(--gray-dark); margin-bottom: 14px; }
+  .dropzone { border: 2px dashed var(--green); border-radius: 12px; padding: 26px 16px; background: #F0FDF4; }
+  .btn-select-file { background: var(--green); color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: inline-block; font-weight: 700; font-size: 13px; }
+  .btn-fermer { margin-top: 16px; background: none; border: none; color: var(--text-muted); font-weight: 600; cursor: pointer; font-size: 13px; }
+
+  /* Modale générique (confirmation / alerte de résultat) */
+  .modal-icon { font-size: 42px; margin-bottom: 8px; }
+  .modal-boutons { margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
+  .modal-btn { background: var(--orange-main); color: white; border: none; padding: 11px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13.5px; font-family: inherit; transition: background 0.15s; }
+  .modal-btn:hover { background: var(--orange-light); }
+  .modal-btn-secondary { background: var(--gray-light); color: var(--text-dark); border: 1.5px solid var(--border); padding: 11px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13.5px; font-family: inherit; }
+  .modal-btn-secondary:hover { background: #EFEFEF; }
+  .modal-btn-danger { background: var(--red); }
+  .modal-btn-danger:hover { background: #EF4444; }
+  #modaleMessage a { display: block; color: var(--orange-main); font-weight: 700; text-decoration: none; margin-top: 6px; }
+  #modaleMessage a:hover { text-decoration: underline; }
+
+  /* Liste de fichiers PDF (résultats de génération / impression) */
+  .pdf-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; text-align: left; }
+  .pdf-item { display: flex; align-items: center; gap: 10px; background: var(--gray-light); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; transition: background 0.15s; }
+  .pdf-item:hover { background: #FFF3E8; }
+  .pdf-badge { background: var(--red); color: white; font-size: 10px; font-weight: 800; padding: 4px 7px; border-radius: 6px; letter-spacing: 0.3px; flex-shrink: 0; }
+  .pdf-item a { color: var(--gray-dark) !important; font-weight: 600 !important; font-size: 12.5px; text-decoration: none !important; word-break: break-word; margin-top: 0 !important; }
+  .pdf-item a:hover { color: var(--orange-main) !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-circle">PEC</div>
+    <div class="logo-text">
+      <h1>Prise en charge et autorisation d'accès</h1>
+      <p>Gestion prestataires</p>
+    </div>
+      <div class="icones" aria-label="Actions">
+      <a class="icone" href="portail.html" title="Retour au portail" aria-label="Retour au portail" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">🏠</a>
+      <button type="button" class="icone" id="btnCharger" onclick="ouvrirModalePDF()" title="Charger une demande PDF" aria-label="Charger une demande PDF">📤</button>
+      <button type="button" class="icone" id="btnEffacer" onclick="viderFormulaire()" title="Vider les champs pour une autre prise en charge" aria-label="Vider les champs">🧹</button>
+      <button type="button" class="icone" id="btnHisto" title="Historique des demandes déjà créées" aria-label="Historique des demandes">🕘</button>
+      <button type="button" class="icone" id="btnAide" onclick="ouvrirAide()" title="Aide" aria-label="Aide">❓</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="toast"></div>
+
+  <div id="histo" class="form-card" style="display:none;margin-bottom:14px">
+    <b>🕘 Historique des demandes déjà créées</b> <span id="histoNb" style="font-weight:400;color:#6B7280"></span>
+    <div id="histoListe" style="margin-top:10px;max-height:260px;overflow:auto;font-size:13px"></div>
+  </div>
+
+  <div class="form-card">
+
+    <label>Prestataire</label>
+    <input type="text" id="prestataire" list="listePrestataires" placeholder="Tapez pour chercher, ou ouvrez la liste ▾" autocomplete="off">
+    <datalist id="listePrestataires"></datalist>
+    <div style="margin:-4px 0 10px"><button type="button" id="btnOrg" class="btn-s" style="font-size:12px">➕ Organisme hors Suivi CPM</button>
+      <div id="formOrg" hidden style="margin-top:8px;padding:10px;border:1.5px dashed #bbb;border-radius:10px">
+        <p style="margin:0 0 6px;font-size:12px;color:#666">Un organisme qui n'est pas dans le Suivi CPM (ex. une division Sonatrach). Il est enregistré à part : le Suivi CPM n'est pas touché.</p>
+        <input type="text" id="orgNom" placeholder="Organisme (ex. SONATRACH | Division Laboratoires)" autocomplete="off" style="width:100%;margin-bottom:6px">
+        <input type="text" id="orgDetail" placeholder="Détail (ex. Direction Laboratoires &amp; Carothèque centrale)" autocomplete="off" style="width:100%;margin-bottom:6px">
+        <button type="button" id="orgOk" class="btn-s">Ajouter et choisir</button> <button type="button" id="orgAnn" class="btn-s">Annuler</button> <span id="orgMsg" style="font-size:12px"></span>
+      </div></div>
+
+    <div class="form-row" id="rowEmpBase">
+      <div class="field">
+        <label>Émputation</label>
+        <select id="emputation"></select>
+      </div>
+      <div class="field">
+        <label>Base</label>
+        <select id="base"></select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Date d'arrivée</label>
+        <input type="date" id="dateArrivee">
+      </div>
+      <div class="field">
+        <label>Date de départ <span style="font-weight:400;color:var(--text-muted);font-size:10.5px;text-transform:none;letter-spacing:0;">(auto : +28j)</span></label>
+        <input type="date" id="dateDepart">
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>Documents à générer</legend>
+      <div class="ligne-check" style="flex-wrap:wrap;">
+        <input type="checkbox" id="genererPEC" checked>
+        <label>Prise en charge</label>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">⚠️ Maximum 8 personnes</span>
+      </div>
+      <div id="sousOptionsPEC" style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:8px 0 12px 28px;">
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="hebergement" checked>
+          <label>Hébergement</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="margin:0;font-size:12.5px;font-weight:700;color:var(--gray-dark);">N° chambre</label>
+          <input type="text" id="numeroChambre" style="max-width:90px;padding:6px 8px;font-size:13px;">
+        </div>
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="restauration" checked>
+          <label>Restauration</label>
+        </div>
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="remplacement">
+          <label>Remplacement</label>
+        </div>
+        <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="fonctionObs">
+          <label>Fonction dans Observations</label>
+        </div>
+      </div>
+      <div class="ligne-check">
+        <input type="checkbox" id="genererAuto">
+        <label>Autorisation d'accès</label>
+      </div>
+      <div class="ligne-check" id="ligneValable2Mois" style="display:none;">
+        <input type="checkbox" id="valable2Mois">
+        <label>Valable 2 mois</label>
+      </div>
+      <div class="ligne-check">
+        <input type="checkbox" id="injecterEnquetes" checked>
+        <label>Injecter dans les Enquêtes administratives</label>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">seules les personnes absentes des Enquêtes sont ajoutées</span>
+      </div>
+    </fieldset>
+
+    <label style="margin-top:20px;">Personnes / Véhicules</label>
+    <table>
+      <thead>
+        <tr><th>Nom</th><th>Prénom</th><th>Fonction</th><th>Type véhicule</th><th>Immatriculation</th></tr>
+      </thead>
+      <tbody id="corpsTableau"></tbody>
+    </table>
+  </div>
+
+  <button class="hero-btn" id="btnEnvoyer" onclick="envoyer()">
+    <span class="icon">✅</span>
+    <div class="txt">
+      <h2>Générer les documents</h2>
+      <p>Prise en charge et/ou autorisation d'accès selon les cases cochées</p>
+    </div>
+    <span class="arrow">→</span>
+  </button>
+  <div class="spinner" id="spinner"></div>
+  <div id="resultat"></div>
+
+  <div class="titre-fichiers"><div class="section-title" id="titreFichiers">Fichiers à imprimer</div><button type="button" class="btn-tout-suppr" id="btnToutSupprimer" onclick="supprimerTout()" hidden>🗑 Tout supprimer</button></div>
+  <div class="form-card" id="cartefichiers"><div id="historique"></div></div>
+</main>
+
+<!-- Modale upload PDF -->
+<div class="overlay" id="overlayPdf">
+  <div class="modal">
+    <h3>Charger la demande PDF du prestataire</h3>
+    <div class="dropzone">
+      <label class="btn-select-file" for="pdfFile">Choisir le PDF</label>
+      <input type="file" id="pdfFile" accept="application/pdf" style="display:none" onchange="traiterFichierPdf(this)">
+      <div id="pdfFileName" style="margin-top:10px;font-size:12px;color:var(--text-muted);"></div>
+    </div>
+    <div class="spinner" id="spinnerPdf"></div>
+    <div id="statusPdf" style="margin-top:12px;font-weight:600;font-size:13px;"></div>
+    <button class="btn-fermer" onclick="fermerModalePDF()">Fermer</button>
+  </div>
+</div>
+
+<!-- Modale générique : confirmation avant action, ou message de résultat après -->
+<div class="overlay" id="overlayModale">
+  <div class="modal">
+    <div class="modal-icon" id="modaleIcone">✅</div>
+    <h3 id="modaleTitre">Titre</h3>
+    <p id="modaleMessage" style="margin-top:8px;color:var(--text-muted);font-size:13.5px;line-height:1.5;"></p>
+    <div class="modal-boutons" id="modaleBoutons"></div>
+  </div>
+</div>
+
+<script>
+  // Construit les 12 lignes du tableau
+  const corps = document.getElementById('corpsTableau');
+  for (let i = 0; i < 12; i++) {
+    corps.innerHTML += `<tr>
+      <td><input data-champ="nom"></td>
+      <td><input data-champ="prenom"></td>
+      <td><input data-champ="fonction" placeholder="auto"></td>
+      <td><input data-champ="typeVehicule"></td>
+      <td><input data-champ="immatriculation"></td>
+    </tr>`;
+  }
+
+  // ---- Détection de la personne pendant la saisie : recherche dans les Enquêtes administratives ----
+  const sugg = document.createElement('div');
+  sugg.style.cssText = 'position:absolute;z-index:50;background:#fff;border:1.5px solid var(--orange-main);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:240px;overflow:auto;display:none;min-width:320px;font-size:12.5px';
+  document.body.appendChild(sugg);
+  let minuteurRecherche = null, derniereRecherche = '';
+  function fermerSugg() { sugg.style.display = 'none'; sugg.innerHTML = ''; }
+  function ligneDe(el) { return el.closest('tr'); }
+  function proposer(input, personnes) {
+    sugg.innerHTML = '';
+    if (!personnes.length) { fermerSugg(); return; }
+    personnes.forEach(function(p) {
+      const d = document.createElement('div');
+      d.style.cssText = 'padding:7px 11px;cursor:pointer;border-bottom:1px solid #eee';
+      d.innerHTML = '<b>' + p.nom.replace(/</g, '&lt;') + ' ' + p.prenom.replace(/</g, '&lt;') + '</b> <span style="color:#6b7280">— ' + (p.fonction || 'fonction non renseignée').replace(/</g, '&lt;') + ' · ' + (p.entreprise || '').replace(/</g, '&lt;') + '</span>';
+      d.onmousedown = function(ev) {
+        ev.preventDefault();
+        const tr = ligneDe(input);
+        tr.querySelector('[data-champ=nom]').value = p.nom;
+        tr.querySelector('[data-champ=prenom]').value = p.prenom;
+        if (p.fonction) tr.querySelector('[data-champ=fonction]').value = p.fonction;
+        tr.dataset.connu = '1';
+        marquer(tr);
+        fermerSugg();
+      };
+      sugg.appendChild(d);
+    });
+    const r = input.getBoundingClientRect();
+    sugg.style.left = (r.left + window.scrollX) + 'px';
+    sugg.style.top = (r.bottom + window.scrollY + 2) + 'px';
+    sugg.style.display = 'block';
+  }
+  function marquer(tr) {
+    const nom = tr.querySelector('[data-champ=nom]').value.trim();
+    tr.querySelector('[data-champ=nom]').style.background = tr.dataset.connu ? '#ECFDF5' : '';
+    tr.querySelector('[data-champ=nom]').title = tr.dataset.connu ? 'Trouvée dans les Enquêtes administratives' : (nom ? 'Pas encore dans les Enquêtes : sera ajoutée si la case est cochée' : '');
+  }
+  corps.addEventListener('input', function(ev) {
+    const input = ev.target;
+    if (!input.matches('[data-champ=nom],[data-champ=prenom]')) return;
+    const tr = ligneDe(input); delete tr.dataset.connu; marquer(tr);
+    const texte = (tr.querySelector('[data-champ=nom]').value + ' ' + tr.querySelector('[data-champ=prenom]').value).trim();
+    clearTimeout(minuteurRecherche);
+    if (texte.replace(/\s+/g, '').length < 3) { fermerSugg(); return; }
+    minuteurRecherche = setTimeout(function() {
+      derniereRecherche = texte;
+      google.script.run.withSuccessHandler(function(r) {
+        if (texte !== derniereRecherche || !r || !r.ok) { if (r && !r.ok) fermerSugg(); return; }
+        proposer(input, r.personnes);
+      }).rechercherPersonnes(texte);
+    }, 300);
+  });
+  corps.addEventListener('focusout', function() { setTimeout(fermerSugg, 150); });
+
+  // Autorisation d'accès seule : émputation, base et options de la prise en charge ne servent à rien, on les masque
+  function majChampsSelonDocuments() {
+    const pec = document.getElementById('genererPEC').checked, seuleAuto = !pec && document.getElementById('genererAuto').checked;
+    document.getElementById('rowEmpBase').style.display = seuleAuto ? 'none' : '';
+    document.getElementById('sousOptionsPEC').style.display = pec ? 'flex' : 'none';
+  }
+  document.getElementById('genererAuto').addEventListener('change', majChampsSelonDocuments);
+  document.getElementById('genererPEC').addEventListener('change', majChampsSelonDocuments);
+  document.getElementById('genererAuto').addEventListener('change', function() {
+    document.getElementById('ligneValable2Mois').style.display = this.checked ? 'flex' : 'none';
+  });
+
+  document.getElementById('genererPEC').addEventListener('change', function() {
+  });
+
+  // Date de départ = date d'arrivée + 28 jours par défaut, recalculée à chaque changement —
+  // SAUF pour une "Visite sur site" (durée généralement courte et limitée) : dans ce cas
+  // on laisse l'utilisateur saisir librement, sans écraser sa saisie.
+  document.getElementById('dateArrivee').addEventListener('change', function() {
+    if (!this.value) return;
+    const v0 = document.getElementById('prestataire').value.trim(), estVisiteSurSite = v0.startsWith('Visite sur site') || v0.startsWith('ORGANISME - ');
+    if (estVisiteSurSite) return;
+    const d = new Date(this.value + 'T00:00:00');
+    d.setDate(d.getDate() + 28);
+    document.getElementById('dateDepart').value = d.toISOString().split('T')[0];
+  });
+
+  let servicesParPrestataire = {}, basesParPrestataire = {};
+  /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
+  function appliquerService() {
+    const emp = servicesParPrestataire[document.getElementById('prestataire').value];
+    const bh = basesParPrestataire[document.getElementById('prestataire').value], sb = document.getElementById('base');
+    if (bh && Array.from(sb.options).some(o => o.value === bh || o.text === bh)) sb.value = bh;   // dernière base désignée pour cette entreprise
+    if (!emp) return;
+    const sel = document.getElementById('emputation'); if (Array.from(sel.options).some(o => o.value === emp || o.text === emp)) sel.value = emp;
+  }
+  function remplirDropdowns(opts) {
+    servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire;
+    basesParPrestataire = opts.basesParPrestataire || basesParPrestataire;
+    const dlPrest = document.getElementById('listePrestataires');
+    dlPrest.innerHTML = '';
+    opts.prestataires.forEach(p => { const o = document.createElement('option'); o.value = p; dlPrest.appendChild(o); });
+
+    const sEmp = document.getElementById('emputation');
+    sEmp.innerHTML = '';
+    opts.emputations.forEach(e => sEmp.innerHTML += `<option>${e}</option>`);
+
+    const sBase = document.getElementById('base');
+    sBase.innerHTML = '';
+    opts.bases.forEach(b => sBase.innerHTML += `<option>${b}</option>`);
+  }
+
+  // Organisme hors Suivi CPM : ajouté à part (onglet « Organismes »), puis choisi tout seul
+  document.getElementById('btnOrg').addEventListener('click', function () { const f = document.getElementById('formOrg'); f.hidden = !f.hidden; if (!f.hidden) document.getElementById('orgNom').focus(); });
+  document.getElementById('orgAnn').addEventListener('click', function () { document.getElementById('formOrg').hidden = true; });
+  document.getElementById('orgOk').addEventListener('click', function () {
+    const nom = document.getElementById('orgNom').value, detail = document.getElementById('orgDetail').value, msg = document.getElementById('orgMsg');
+    if (!nom.trim()) { msg.textContent = 'Indiquez le nom de l\'organisme.'; return; }
+    msg.textContent = 'Enregistrement…';
+    google.script.run.withFailureHandler(e => { msg.textContent = (e && e.message) || 'Échec'; }).withSuccessHandler(function (option) {
+      google.script.run.withSuccessHandler(function (opts) { remplirDropdowns(opts); document.getElementById('prestataire').value = option; appliquerService(); document.getElementById('formOrg').hidden = true; msg.textContent = ''; document.getElementById('orgNom').value = ''; document.getElementById('orgDetail').value = ''; }).obtenirOptionsFormulaire();
+    }).ajouterOrganisme(nom, detail, document.getElementById('emputation').value, document.getElementById('base').value);
+  });
+
+  google.script.run.withSuccessHandler(remplirDropdowns).obtenirOptionsFormulaire();
+  // À chaque ouverture, la liste des prestataires est resynchronisée avec le Suivi CPM (sans bruit : la saisie en cours n'est pas touchée)
+  google.script.run.withSuccessHandler(function(res) { if (res && res.success && res.options) remplirDropdowns(res.options); }).withFailureHandler(function() {}).actualiserPrestatairesWeb();
+
+  function afficherToast(res) {
+    const div = document.getElementById('toast');
+    div.className = res.success ? 'ok' : 'err';
+    div.innerText = res.message;
+    div.style.display = 'block';
+    setTimeout(() => { div.style.display = 'none'; }, 6000);
+  }
+
+  // Construit une liste soignée de fichiers PDF (badge + nom cliquable)
+  function construirePdfListe(items) {
+    return '<div class="pdf-list">' + items.map(it =>
+      `<div class="pdf-item"><span class="pdf-badge">PDF</span><a href="${it.url}" target="_blank" rel="noopener">${it.nom}</a></div>`
+    ).join('') + '</div>';
+  }
+
+  function bloquerBoutons(bloque) {
+    ['btnEffacer','btnCharger'].forEach(id => {
+      const b = document.getElementById(id); if (b) b.disabled = bloque;
+    });
+  }
+
+  /* ---- Modale générique : confirmation avant action / résultat après ---- */
+  function fermerModaleGenerique() {
+    document.getElementById('overlayModale').classList.remove('show');
+  }
+
+  function afficherAlerteModale(titre, message, type) {
+    type = type || 'ok'; // 'ok' | 'err' | 'warn'
+    const icones = { ok: '✅', err: '❌', warn: '⚠️' };
+    const couleurs = { ok: '#16A34A', err: '#DC2626', warn: '#E85D04' };
+    document.getElementById('modaleIcone').innerText = icones[type];
+    document.getElementById('modaleIcone').style.color = couleurs[type];
+    document.getElementById('modaleTitre').innerText = titre;
+    document.getElementById('modaleMessage').innerHTML = message;
+    document.getElementById('modaleBoutons').innerHTML = '<button class="modal-btn" onclick="fermerModaleGenerique()">OK</button>';
+    document.getElementById('overlayModale').classList.add('show');
+  }
+
+  function afficherConfirmationModale(titre, message, onConfirm) {
+    document.getElementById('modaleIcone').innerText = '⚠️';
+    document.getElementById('modaleIcone').style.color = '#E85D04';
+    document.getElementById('modaleTitre').innerText = titre;
+    document.getElementById('modaleMessage').innerHTML = message;
+    document.getElementById('modaleBoutons').innerHTML =
+      '<button class="modal-btn-secondary" onclick="fermerModaleGenerique()">Annuler</button>' +
+      '<button class="modal-btn modal-btn-danger" id="btnConfirmerModale">Confirmer</button>';
+    document.getElementById('overlayModale').classList.add('show');
+    document.getElementById('btnConfirmerModale').onclick = function() {
+      fermerModaleGenerique();
+      onConfirm();
+    };
+  }
+
+  // Recherche du prestataire : sans accents ni majuscules, tous les mots tapés doivent figurer. À la sortie du champ,
+  // un seul prestataire correspondant est choisi tout seul ; une saisie qui ne correspond à rien est refusée à l'envoi.
+  function cleContrat(c) { const g = String(c || '').match(/\d+/g); if (!g || g.length < 2) return ''; let an = g[g.length - 1]; if (an.length === 4) an = an.slice(2); return String(Number(g[0])) + '-' + an; }
+  function normPrest(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+  function correspondancesPrest(q) {
+    const mots = normPrest(q).split(' ').filter(Boolean);
+    return Array.from(document.getElementById('listePrestataires').options).map(o => o.value).filter(v => { const n = normPrest(v); return mots.every(m => n.indexOf(m) !== -1); });
+  }
+  document.getElementById('prestataire').addEventListener('input', appliquerService);
+  document.getElementById('prestataire').addEventListener('change', function() {
+    const liste = Array.from(document.getElementById('listePrestataires').options).map(o => o.value);
+    if (!this.value.trim() || liste.indexOf(this.value) !== -1) { appliquerService(); return; }
+    const c = correspondancesPrest(this.value);
+    if (c.length === 1) { this.value = c[0]; appliquerService(); }
+  });
+
+  function actualiserPrestataires() {
+    bloquerBoutons(true);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        bloquerBoutons(false);
+        if (res.success && res.options) remplirDropdowns(res.options);
+        afficherAlerteModale(res.success ? "Liste actualisée" : "Erreur", res.message, res.success ? 'ok' : 'err');
+      })
+      .withFailureHandler(function(err) { bloquerBoutons(false); afficherAlerteModale("Erreur", err.message, 'err'); })
+      .actualiserPrestatairesWeb();
+  }
+
+  /** « Effacer » : vide les champs saisis pour préparer une autre prise en charge (aucun fichier n'est supprimé). */
+  function viderFormulaire() {
+    const carte = document.getElementById('prestataire').closest('.form-card'); // la carte de saisie (la 1re .form-card est l'historique, masqué)
+    carte.querySelectorAll('tr[data-connu]').forEach(function(tr) { delete tr.dataset.connu; });
+    carte.querySelectorAll('input, select, textarea').forEach(function(e) {
+      if (e.type === 'checkbox' || e.type === 'radio') e.checked = e.defaultChecked;
+      else if (e.tagName === 'SELECT') e.selectedIndex = 0;
+      else e.value = '';
+    });
+    corps.querySelectorAll('tr').forEach(marquer);
+    majChampsSelonDocuments();
+    const res = document.getElementById('resultat'); res.innerHTML = ''; res.className = '';
+    const toast = document.getElementById('toast'); toast.style.display = 'none'; toast.innerHTML = '';
+    afficherToast({ success: true, message: 'Champs vidés : vous pouvez saisir une autre prise en charge.' });
+  }
+
+  // Fichiers générés, toujours affichés en bas (même présentation que Dotation) : ouvrir le PDF pour l'imprimer, l'envoyer par e-mail au secrétariat, ou le supprimer
+  function echapper(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function chargerFichiers() {
+    const div = document.getElementById('historique'); div.innerHTML = '<div class="placeholder">Chargement…</div>';
+    google.script.run.withSuccessHandler(function(res) {
+      if (!res.success) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(res.error) + '</div>'; return; }
+      document.getElementById('btnToutSupprimer').hidden = !res.fichiers.length;
+      if (!res.fichiers.length) { div.innerHTML = '<div class="placeholder">Aucun document généré pour le moment.</div>'; return; }
+      div.innerHTML = '';
+      res.fichiers.forEach(function(f) {
+        const row = document.createElement('div'); row.className = 'histo-item';
+        row.innerHTML = '<span class="histo-tag ' + echapper(f.type.toLowerCase()) + '">' + echapper(f.type) + '</span>' +
+          '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
+          '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">📄 Ouvrir</a>' +
+          '<button type="button" class="impr" data-id="' + echapper(f.id) + '">🖨️ Imprimer</button>' +
+          '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button></div>' +
+          '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>';
+        row.querySelector('button.impr').onclick = function() { imprimerDirect(this, f.id); };
+        row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
+        row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
+        div.appendChild(row);
+      });
+    }).withFailureHandler(function(err) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(err.message) + '</div>'; }).listerFichiersGeneres();
+  }
+  /** Impression en un clic : le PDF est chargé puis la fenêtre d'impression du navigateur s'ouvre directement (imprimante par défaut déjà choisie : il ne reste qu'à valider). */
+  function imprimerDirect(btn, id) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Préparation…';
+    google.script.run.withSuccessHandler(function(res) {
+      btn.disabled = false; btn.textContent = txt;
+      if (!res.success) { afficherAlerteModale('Erreur', String(res.error || 'Impression impossible'), 'err'); return; }
+      try {
+        const bin = atob(res.base64), octets = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+        const cadre = document.createElement('iframe');
+        cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+        cadre.onload = function() {
+          try { cadre.contentWindow.focus(); cadre.contentWindow.print(); }
+          catch (e) { window.open(url, '_blank'); }   // repli : le PDF s'ouvre dans un onglet (Ctrl+P)
+        };
+        cadre.src = url; document.body.appendChild(cadre);
+        setTimeout(function() { cadre.remove(); URL.revokeObjectURL(url); }, 180000);
+      } catch (e) { afficherAlerteModale('Erreur', 'Impression impossible : ' + e.message, 'err'); }
+    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).lireFichierPourImpression(id);
+  }
+  function supprimerTout() {
+    afficherConfirmationModale('Tout supprimer ?', 'Tous les fichiers générés (prises en charge, autorisations, macarons : PDF et documents) seront mis à la corbeille.', function() {
+      const b = document.getElementById('btnToutSupprimer'); b.disabled = true;
+      google.script.run.withSuccessHandler(function(res) { b.disabled = false; afficherAlerteModale(res.success ? 'Suppression terminée' : 'Erreur', res.message, res.success ? 'ok' : 'err'); chargerFichiers(); })
+        .withFailureHandler(function(err) { b.disabled = false; afficherAlerteModale('Erreur', err.message, 'err'); }).effacerToutWeb();
+    });
+  }
+  function ouvrirAide() { const b = document.querySelector('.aide-btn'); if (b) b.click(); }
+  function envoyerParMail(btn, id) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Envoi…';
+    google.script.run.withSuccessHandler(function(res) {
+      btn.disabled = false; btn.textContent = txt;
+      afficherAlerteModale(res.success ? 'E-mail envoyé' : 'Erreur', res.success ? '✅ Document envoyé à sec.infra.rns@gmail.com !' : String(res.error || 'Envoi impossible'), res.success ? 'ok' : 'err');
+    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).envoyerFichierParMail(id);
+  }
+  function supprimerFichier(btn, id) {
+    afficherConfirmationModale('Supprimer ce document ?', 'Le PDF sera mis à la corbeille.', function() {
+      btn.disabled = true;
+      google.script.run.withSuccessHandler(function(res) { if (!res.success) afficherAlerteModale('Erreur', res.error, 'err'); chargerFichiers(); })
+        .withFailureHandler(function(err) { afficherAlerteModale('Erreur', err.message, 'err'); chargerFichiers(); }).supprimerFichierGenere(id);
+    });
+  }
+
+  function ouvrirModalePDF() {
+    document.getElementById('overlayPdf').classList.add('show');
+    document.getElementById('statusPdf').innerText = '';
+    document.getElementById('pdfFileName').innerText = '';
+  }
+  function fermerModalePDF() {
+    document.getElementById('overlayPdf').classList.remove('show');
+  }
+
+  function traiterFichierPdf(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('pdfFileName').innerText = file.name;
+    document.getElementById('statusPdf').innerText = "Analyse et OCR du PDF en cours...";
+    document.getElementById('statusPdf').style.color = "#0b57d0";
+    document.getElementById('spinnerPdf').style.display = "block";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = e.target.result.split(',')[1];
+      google.script.run
+        .withSuccessHandler(function(res) {
+          document.getElementById('spinnerPdf').style.display = "none";
+          if (!res.success) {
+            document.getElementById('statusPdf').innerText = res.message + (res.apercuTexte ? " Texte lu par l'OCR : " + res.apercuTexte : '');
+            document.getElementById('statusPdf').style.color = "#c5221f";
+            return;
+          }
+          // Remplit le tableau du formulaire avec les personnes extraites
+          const lignes = corps.querySelectorAll('tr');
+          res.personnes.forEach((p, i) => {
+            if (!lignes[i]) return;
+            lignes[i].querySelector('[data-champ="nom"]').value = p.nom || '';
+            lignes[i].querySelector('[data-champ="prenom"]').value = p.prenom || '';
+            if (p.fonction) lignes[i].querySelector('[data-champ="fonction"]').value = p.fonction;
+          });
+          // Contrat cité dans le document : le prestataire correspondant est choisi tout seul (puis service et base)
+          if (res.contrat) {
+            const cc = cleContrat(res.contrat), ch = Array.from(document.getElementById('listePrestataires').options).map(o => o.value).filter(v => cleContrat(v.split(' - ')[0]) === cc);
+            if (cc && ch.length === 1) { document.getElementById('prestataire').value = ch[0]; appliquerService(); }
+          }
+          // Remplit la date si détectée et champ vide
+          const champDate = document.getElementById('dateArrivee');
+          if (res.dateDetectee && !champDate.value) {
+            const parts = res.dateDetectee.split('/');
+            if (parts.length === 3) champDate.value = parts[2] + '-' + parts[1] + '-' + parts[0];
+          }
+          document.getElementById('statusPdf').innerText = res.personnes.length + " personne(s) extraite(s) et ajoutée(s) au tableau !" + (res.apercuTexte ? " Vérifie : peu de personnes trouvées. Texte lu par l'OCR : " + res.apercuTexte : "");
+          document.getElementById('statusPdf').style.color = "#137333";
+          setTimeout(fermerModalePDF, res.apercuTexte ? 60000 : 1800);
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('spinnerPdf').style.display = "none";
+          document.getElementById('statusPdf').innerText = "Erreur : " + err.message;
+          document.getElementById('statusPdf').style.color = "#c5221f";
+        })
+        .traiterPDFUploadPECWeb(data, file.name);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // NOM en majuscules, Prénom avec sa majuscule : la saisie est corrigée à la sortie du champ (et ce qui est injecté est identique)
+  function majNom(t) { return String(t || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('fr'); }
+  function capPrenom(t) {
+    return String(t || '').trim().replace(/\s+/g, ' ').split(' ').map(m => m.replace(/[^\s\-'’]+/g, w => ((w === w.toLowerCase() || w === w.toUpperCase()) && /[A-Za-zÀ-ÿ]/.test(w)) ? w.charAt(0).toLocaleUpperCase('fr') + w.slice(1).toLocaleLowerCase('fr') : w)).join(' ');
+  }
+  document.addEventListener('focusout', e => {
+    const c = e.target && e.target.dataset ? e.target.dataset.champ : '';
+    if (c === 'nom') e.target.value = majNom(e.target.value); else if (c === 'prenom') e.target.value = capPrenom(e.target.value);
+  });
+
+  function envoyer() {
+    const personnes = [];
+    corps.querySelectorAll('tr').forEach(tr => {
+      const p = {};
+      tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
+      if (p.nom) p.nom = majNom(p.nom); if (p.prenom) p.prenom = capPrenom(p.prenom);
+      if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
+    });
+
+    // Garde-fou : le modèle de Prise en charge n'accepte que 6 personnes max
+    if (document.getElementById('genererPEC').checked) {
+      const nbPersonnes = personnes.filter(p => p.nom || p.prenom).length;
+      if (nbPersonnes > 8) {
+        afficherResultat({
+          success: false,
+          message: "Tu as saisi " + nbPersonnes + " personne(s), mais la Prise en charge accepte 8 personnes maximum. Décoche 'Prise en charge' pour ne générer que l'Autorisation d'accès, ou réduis la liste."
+        });
+        return;
+      }
+      if (!document.getElementById('hebergement').checked && !document.getElementById('restauration').checked) {
+        afficherResultat({
+          success: false,
+          message: "Coche au moins 'Hébergement' ou 'Restauration' pour la Prise en charge."
+        });
+        return;
+      }
+    }
+
+    const listePrest = Array.from(document.getElementById('listePrestataires').options).map(o => o.value);
+    if (listePrest.indexOf(document.getElementById('prestataire').value) === -1) {
+      afficherResultat({ success: false, message: "Choisis un prestataire de la liste : tape quelques lettres puis sélectionne-le (ou utilise « Actualiser Prestataires » s'il manque)." });
+      return;
+    }
+
+    const data = {
+      prestataire: document.getElementById('prestataire').value,
+      emputation: document.getElementById('genererPEC').checked ? document.getElementById('emputation').value : '',
+      base: document.getElementById('genererPEC').checked ? document.getElementById('base').value : '',
+      remplacement: document.getElementById('remplacement').checked,
+      numeroChambre: document.getElementById('numeroChambre').value,
+      dateArrivee: document.getElementById('dateArrivee').value,
+      dateDepart: document.getElementById('dateDepart').value,
+      genererPEC: document.getElementById('genererPEC').checked,
+      hebergement: document.getElementById('hebergement').checked,
+      restauration: document.getElementById('restauration').checked,
+      genererAuto: document.getElementById('genererAuto').checked,
+      valable2Mois: document.getElementById('valable2Mois').checked,
+      injecterEnquetes: document.getElementById('injecterEnquetes').checked,
+      fonctionObservation: document.getElementById('fonctionObs').checked,
+      personnes: personnes
+    };
+
+    document.getElementById('btnEnvoyer').disabled = true;
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('resultat').style.display = 'none';
+
+    if (!data.injecterEnquetes) { envoyerPEC(data); return; }
+    // avant de générer : les personnes déjà enregistrées dans les Enquêtes (chez ce prestataire ou un autre) sont signalées
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.deja || !r.deja.length) { envoyerPEC(data); return; }
+        demanderDoublons(r.deja, function(ignorer) { data.ignorerEnquetes = ignorer ? r.deja.map(function(d) { return d.nomComplet; }) : []; envoyerPEC(data); });
+      })
+      .withFailureHandler(function() { envoyerPEC(data); })
+      .verifierEnquetes(data);
+  }
+
+  function envoyerPEC(data) {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.success && data.genererPEC && data.base) {   // la base désignée devient celle par défaut de l'entreprise (sans attendre le rechargement)
+          const cle = p => normPrest(String(p || '').split(' - ')[1] || p);
+          Array.from(document.getElementById('listePrestataires').options).forEach(o => { if (cle(o.value) === cle(data.prestataire)) basesParPrestataire[o.value] = data.base; });
+        }
+        afficherResultat(res);
+      })
+      .withFailureHandler(function(err) { afficherResultat({ success: false, message: err.message }); })
+      .soumettreFormulairePEC(data);
+  }
+
+  function demanderDoublons(deja, suite) {
+    const fond = document.createElement('div');
+    fond.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    const boite = document.createElement('div');
+    boite.style.cssText = 'background:#fff;border-radius:14px;max-width:520px;width:100%;padding:22px;font-family:inherit;box-shadow:0 10px 40px rgba(0,0,0,.3)';
+    const echap = function(t) { return String(t).replace(/[&<>]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
+    boite.innerHTML = '<h3 style="margin:0 0 8px">Déjà enregistré dans les Enquêtes</h3><p style="margin:0 0 10px;color:#555">Ces agents figurent déjà avec un prestataire :</p><ul style="margin:0 0 14px;padding-left:20px">' +
+      deja.map(function(d) { return '<li><b>' + echap(d.nomComplet) + '</b> — « ' + echap(d.onglet) + ' »' + (d.date ? ' (enregistré le ' + echap(d.date) + ')' : '') + '</li>'; }).join('') +
+      '</ul><div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button type="button" id="dbIgnorer" style="padding:10px 16px;border-radius:8px;border:1px solid #bbb;background:#fff;cursor:pointer">Ignorer (ne pas les ajouter)</button><button type="button" id="dbOk" style="padding:10px 16px;border-radius:8px;border:0;background:#e8610a;color:#fff;font-weight:700;cursor:pointer">OK, générer et ajouter quand même</button></div>';
+    fond.appendChild(boite); document.body.appendChild(fond);
+    boite.querySelector('#dbOk').onclick = function() { fond.remove(); suite(false); };
+    boite.querySelector('#dbIgnorer').onclick = function() { fond.remove(); suite(true); };
+  }
+
+  // Historique des demandes déjà créées (journal enregistré à chaque génération), affiché en haut
+  function chargerHistorique() {
+    const z = document.getElementById('histoListe'), nb = document.getElementById('histoNb');
+    const echap = function(t) { return String(t == null ? '' : t).replace(/[&<>]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
+    google.script.run.withSuccessHandler(function(r) {
+      if (!r || !r.ok) { z.textContent = 'Historique indisponible' + (r && r.message ? ' — ' + r.message : '') + '.'; nb.textContent = ''; return; }
+      if (!r.demandes.length) { z.textContent = 'Aucune demande enregistrée pour le moment.'; nb.textContent = ''; return; }
+      nb.textContent = '(' + r.demandes.length + ' dernière' + (r.demandes.length > 1 ? 's' : '') + ')';
+      // pour chaque demande : « contrat - entreprise » en titre, puis directement les agents saisis (nom, prénom, matricule du véhicule, véhicule)
+      z.innerHTML = r.demandes.map(function(d) {
+        const titre = String(d.prestataire).split(' - ').slice(0, 2).join(' - ');
+        const lignes = d.personnes.map(function(p) {
+          return '<tr><td style="padding:2px 8px 2px 0;font-weight:700">' + echap(p.nom) + '</td><td style="padding:2px 8px">' + echap(p.prenom) + '</td><td style="padding:2px 8px;font-variant-numeric:tabular-nums">' + echap(p.immatriculation) + '</td><td style="padding:2px 0 2px 8px;color:#6B7280">' + echap(p.vehicule) + '</td></tr>';
+        }).join('');
+        return '<div style="padding:8px 0;border-bottom:1px solid #E5E7EB"><b>' + echap(titre) + '</b> <span style="color:#6B7280">— ' + echap(d.date) + (d.base ? ' · ' + echap(d.base) : '') + (d.documents ? ' · ' + echap(d.documents) : '') + '</span>' +
+          '<table style="margin-top:3px;font-size:12.5px;border-collapse:collapse"><tbody>' + lignes + '</tbody></table></div>';
+      }).join('');
+    }).withFailureHandler(function(e) { z.textContent = 'Historique indisponible : ' + e.message; }).historiquePEC(20);
+  }
+
+  document.getElementById('btnHisto').addEventListener('click', function() {
+    const bloc = document.getElementById('histo'), ouvert = bloc.style.display !== 'none';
+    bloc.style.display = ouvert ? 'none' : 'block'; this.title = ouvert ? 'Historique des demandes déjà créées' : 'Masquer l\'historique';
+    if (!ouvert) { document.getElementById('histoListe').textContent = 'Chargement…'; chargerHistorique(); }
+  });
+
+  setTimeout(function() { chargerFichiers(); }, 0);
+
+  function afficherResultat(res) {
+    document.getElementById('btnEnvoyer').disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    const div = document.getElementById('resultat');
+    div.className = res.success ? 'ok' : 'err';
+    let contenu = String(res.message || '').replace(/\n/g, '<br>');
+    if (res.success && res.liens) {
+      contenu += construirePdfListe(res.liens);
+    }
+    div.innerHTML = contenu;
+    afficherAlerteModale(res.success ? "Génération terminée" : "Erreur", contenu, res.success ? 'ok' : 'err');
+    if (res.success) { chargerFichiers(); if (document.getElementById('histo').style.display !== 'none') chargerHistorique(); }
+  }
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
