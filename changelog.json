@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-25-153",
+    "date": "2026-10-25",
+    "title": "Version 5.82.2 — Réservation : bouton « Retour au portail » dégagé",
+    "changes": [
+      "Sur la page de réservation, le bouton « Retour au portail » ne passe plus sous la pastille du profil."
+    ]
+  },
+  {
     "id": "2026-10-25-152",
     "date": "2026-10-25",
     "title": "Version 5.82.1 — Réservation : trajet libre appris au fil des demandes",
