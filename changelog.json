@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-158",
+    "date": "2026-10-25",
+    "title": "Version 5.86.0 — Compteur de rotation dans l'en-tête",
+    "changes": [
+      "Le compteur de jours (rond) passe en haut, dans l'en-tête, à côté de la date. Un clic ouvre le détail : état, barre de progression, reliquat, « Modifier ma rotation », Sijil, et les raccourcis (Mon planning, Planning des équipes, Simulation) selon vos droits. Échap ou un clic ailleurs le referme.",
+      "La fiche d'accueil ne garde que l'identité (bonjour, Mon profil) : le haut de la page est libéré, « Mes applications » remonte."
+    ]
+  },
+  {
     "id": "2026-10-25-157",
     "date": "2026-10-25",
     "title": "Version 5.85.0 — Rapports journaliers : jour même, consolidé enregistré",

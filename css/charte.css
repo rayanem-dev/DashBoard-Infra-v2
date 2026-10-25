@@ -695,3 +695,25 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent .jauge-bloc, .agent .jauge-bloc:has(.raccourcis:not([hidden])) { padding: 6px 12px 18px; }
 .syn-journal { max-height: none; overflow: visible; }
 .mes-app-ico, .app .em, .onglets-modules button, .syn-titre .em { font-family: 'Noto Color Emoji', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+
+/* Compteur de rotation dans l'en-tête : rond de 40 px ; un clic ouvre le détail (état, barre, reliquat, raccourcis, Sijil) */
+.jauge-hd { position: relative; flex: none; }
+.jauge-hd[hidden] { display: none; }
+.jauge-btn { background: none; border: 0; padding: 0; cursor: pointer; border-radius: 50%; display: block; }
+.jauge-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.jauge-hd .jauge { width: 42px; height: 42px; display: grid; place-items: center; background-color: transparent; }
+.jauge-hd .jauge::before { inset: 5px; }
+.jauge-hd .jauge .j-centre b { font-size: 14px; letter-spacing: -.5px; }
+.jauge-hd .jauge .j-centre small { display: none; }
+.jauge-pop { position: absolute; top: calc(100% + 10px); right: 0; width: min(360px, 92vw); z-index: 80; background: var(--surface); color: var(--text-dark); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 14px 40px rgba(0,0,0,.28); padding: 14px 16px 12px; text-align: left; font-size: 13px; font-weight: 400; }
+.jauge-pop[hidden] { display: none; }
+.jauge-pop .jauge-texte { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.jauge-pop .jauge-texte p { margin: 0; font-size: 12.5px; line-height: 1.4; }
+.jauge-pop .jauge-barre { width: 100%; }
+.jauge-pop .raccourcis { position: static; display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--border); }
+.jauge-pop .raccourci { width: auto; height: auto; padding: 6px 10px; display: inline-flex; gap: 6px; align-items: center; font-size: 14px; border-radius: 10px; color: var(--text-dark); }
+.jauge-pop .raccourci span { position: static; opacity: 1; background: none; color: inherit; font-size: 12px; font-weight: 600; padding: 0; pointer-events: auto; }
+.jauge-pop .par-sijil { position: static; display: flex; justify-content: flex-end; margin-top: 10px; }
+/* la fiche n'a plus que l'identité : une seule colonne */
+.agent .agent-corps { grid-template-columns: minmax(0, 1fr); }
+.jauge-pop .jauge-texte #phrase { display: block; -webkit-line-clamp: unset; overflow: visible; }
