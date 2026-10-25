@@ -2,10 +2,10 @@
   {
     "id": "2026-10-25-162",
     "date": "2026-10-25",
-    "title": "Version 5.87.3 — Supprimer un consolidé",
+    "title": "Version 5.87.4 — Consolidé : on écrase, on ne supprime pas",
     "changes": [
-      "Chaque rapport consolidé enregistré a un bouton « 🗑 Supprimer » (avec confirmation) : il retire le consolidé du jour, doublons compris ; les rapports journaliers ne sont pas touchés et un nouveau consolidé peut être généré.",
-      "S'il existe deux lignes pour une même date, la liste n'en montre plus qu'une (la plus récente)."
+      "Pas de bouton Supprimer : un rapport consolidé se régénère et écrase l'ancienne version (le numéro de version augmente), ce qui garde toujours la trace.",
+      "Si un doublon existait pour un même jour, la prochaine génération l'absorbe : une seule ligne par date."
     ]
   },
   {

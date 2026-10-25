@@ -153,7 +153,6 @@ function route_(req) {
     case 'rapports_synthese': return rapportsSynthese_(req);
     case 'rapports_consolide_generer': return rapportsConsolideGenerer_(req);
     case 'rapports_consolide_lire': return rapportsConsolideLire_(req);
-    case 'rapports_consolide_supprimer': return rapportsConsolideSupprimer_(req);
     case 'rapports_consolides_liste': return rapportsConsolidesListe_(req);
     case 'admin_etat': {
       admin_(req);
@@ -583,7 +582,12 @@ function rapportsConsolideGenerer_(req) {
     var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_), ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
     var version = ex ? (Number(ex.version) || 1) + 1 : 1, maintenant = new Date().toISOString();
     var ligne = [date, version, Annuaire.nomAffichable(u.nom, u.email), maintenant, s.chantiers.length, nbR, p[0], p[1], p[2], p[3]];
-    var cible = sh.getRange(ex ? ex.ligne : sh.getLastRow() + 1, 1, 1, ligne.length); cible.setNumberFormat('@'); cible.setValues([ligne]);   // texte brut : la date reste « AAAA-MM-JJ »
+    var ligneCible = ex ? ex.ligne : sh.getLastRow() + 1;
+    if (ex) {   // un doublon créé par erreur pour ce jour est absorbé : une seule ligne par date, écrasée à chaque génération
+      consolidesLignes_().filter(function (o) { return o.date === date && o.ligne !== ex.ligne; }).map(function (o) { return o.ligne; }).sort(function (x, y) { return y - x; })
+        .forEach(function (n) { sh.deleteRow(n); if (n < ligneCible) ligneCible -= 1; });
+    }
+    var cible = sh.getRange(ligneCible, 1, 1, ligne.length); cible.setNumberFormat('@'); cible.setValues([ligne]);   // texte brut : la date reste « AAAA-MM-JJ »
     Store.journal(ex ? 'consolide_regenere' : 'consolide_cree', u.email, date + ' v' + version);
     return { consolide: consolideDe_({ date: date, version: version, genere_par: ligne[2], genere_le: maintenant, nb_chantiers: ligne[4], nb_rapports: nbR, p1: p[0], p2: p[1], p3: p[2], p4: p[3] }), remplace: !!ex };
   } finally { lock.releaseLock(); }
@@ -593,20 +597,6 @@ function rapportsConsolideLire_(req) {
   var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
   var ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
   return { consolide: ex ? consolideDe_(ex) : null };
-}
-/** Supprime le rapport consolidé d'un jour (toutes ses lignes, doublons compris) ; les rapports journaliers ne sont pas touchés. */
-function rapportsConsolideSupprimer_(req) {
-  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
-  var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
-  var lock = LockService.getScriptLock(); lock.waitLock(30000);
-  try {
-    var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_);
-    var lignes = consolidesLignes_().filter(function (o) { return o.date === date; }).map(function (o) { return o.ligne; }).sort(function (a, b) { return b - a; });
-    if (!lignes.length) throw new Error('Aucun consolidé pour cette date');
-    lignes.forEach(function (n) { sh.deleteRow(n); });
-    Store.journal('consolide_supprime', u.email, date + ' (' + lignes.length + ' ligne(s))');
-    return { supprimes: lignes.length };
-  } finally { lock.releaseLock(); }
 }
 function rapportsConsolidesListe_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
