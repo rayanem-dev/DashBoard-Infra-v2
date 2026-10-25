@@ -104,7 +104,7 @@
     var chs = DEMO_CHANTIERS.map(function (c, i) { var rs = i === 2 ? [] : [{ id: 'r' + i, date: date, chantier: c.id, auteur_nom: i === 0 ? 'MEZIANE Sofia' : 'BENALI Karim', auteur_email: 'x@y.dz', effectif: 12 + i * 3, avancement: 40 + i * 10, lignes: [{ zone: 'Base de vie', texte: 'Coulage de la dalle du bloc B', avancement: 40 + i * 10 }, { zone: 'VRD', texte: 'Nivellement', avancement: 20, routine: false }], travaux: '', difficultes: i === 0 ? 'Retard de livraison du béton' : '', commentaire: '' }]; return { id: c.id, nom: c.nom, service: c.service, rapports: rs, effectif: rs.reduce(function (n, r) { return n + r.effectif; }, 0), avancement: rs.length ? rs[0].avancement : null }; });
     return { date: date, chantiers: chs, manquants: chs.filter(function (c) { return !c.rapports.length; }).length };
   }
-  var demoConsolides = {};
+  var demoConsolides = {}, demoAuto = { actif: false, heure: 20, groupes: { secretariat: true, chef_service: false, chef_division: true }, dernier: '' };
   var DEMO_CHANTIERS = [{ id: 'c1', nom: 'Rénovation 400 chambres base vie', service: 'Construction', contrat: '84.INFRA.26' }, { id: 'c2', nom: 'Réseau routier El Merfeg Gaz', service: 'Construction', contrat: '47.INFRA.26' }, { id: 'c3', nom: 'Maintenance électrique infrastructures', service: 'Électromécanique', contrat: '30.INFRA.24' }];
   var demoApps = [
     { module: 'pilotage', titre: 'Avancement Chantiers', niveau_min: 1, roles: [] }, { module: 'pilotage', titre: 'Suivi Chantier', niveau_min: 1, roles: [] },
@@ -288,6 +288,9 @@
       case 'rapports_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { niveau: 3, rapports: [] }; }
       case 'rapports_synthese': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return demoSynthese(p.date); }
       case 'rapports_consolide_generer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var sy = demoSynthese(p.date); var ex = demoConsolides[p.date]; var cc = { date: p.date, version: ex ? ex.version + 1 : 1, genere_par: demoState.user.nom, genere_le: new Date().toISOString(), nb_chantiers: sy.chantiers.length, nb_rapports: sy.chantiers.filter(function (c) { return c.rapports.length; }).length, donnees: sy }; demoConsolides[p.date] = cc; return { consolide: cc, remplace: !!ex }; }
+      case 'rapports_consolide_envoyer': { exigerAdmin(); var gg = p.groupes || {}; return { destinataires: (gg.secretariat ? 1 : 0) + (gg.chef_service ? 3 : 0) + (gg.chef_division ? 1 : 0), version: 1 }; }
+      case 'rapports_conso_auto_lire': { exigerAdmin(); return demoAuto; }
+      case 'rapports_conso_auto_maj': { exigerAdmin(); demoAuto = { actif: !!p.actif, heure: p.heure, groupes: p.groupes || {}, dernier: '' }; return demoAuto; }
       case 'rapports_consolide_lire': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { consolide: demoConsolides[p.date] || null }; }
       case 'rapports_consolides_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { consolides: Object.keys(demoConsolides).sort().reverse().map(function (d) { var c = demoConsolides[d]; return { date: d, version: c.version, genere_par: c.genere_par, genere_le: c.genere_le, nb_chantiers: c.nb_chantiers, nb_rapports: c.nb_rapports }; }) }; }
       case 'rapports_chantiers_admin': { exigerAdmin(); return { chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service, contrat: c.contrat, actif: 1, source: 'cpm' }; }) }; }

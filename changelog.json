@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-25-163",
+    "date": "2026-10-25",
+    "title": "Version 5.88.0 — Envoi du consolidé par e-mail",
+    "changes": [
+      "Synthèse du jour : bouton « ✉ Envoyer maintenant » pour envoyer le consolidé enregistré aux groupes cochés : Secrétariat, Chefs de service, Chef de division (comptes actifs avec e-mail).",
+      "Option « Envoi automatique chaque jour à … h » (désactivée par défaut, 20 h proposé, heure réglable de 0 à 23) : à l'heure réglée le consolidé du jour est régénéré (il écrase l'ancien) puis envoyé, une seule fois par jour ; sans rapport ce jour-là, rien n'est envoyé.",
+      "Aucun e-mail ne part sans clic ou sans cette case cochée."
+    ]
+  },
+  {
     "id": "2026-10-25-162",
     "date": "2026-10-25",
     "title": "Version 5.87.4 — Consolidé : on écrase, on ne supprime pas",
