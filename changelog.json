@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-164",
+    "date": "2026-10-25",
+    "title": "Version 5.89.0 — Trois jauges par chantier",
+    "changes": [
+      "Avancement des chantiers : tous les chantiers ont la même carte, avec trois jauges : « Délai d'exécution » (calculé automatiquement depuis le Suivi CPM), « Consommation du marché » (fiche branchée) et « Avancement chantier » (dernier rapport journalier). L'avancement global du chantier est la moyenne des jauges connues ; services et jauge globale en découlent.",
+      "Suivi chantier : tout ce qui était en pause (fiches Construction, plans de situation) est retiré ; la liste suit les chantiers d'Affectation chantier, par service. Pour le niveau 3, « ＋ Brancher la fiche » enregistre le lien de la fiche de chaque chantier, un par un."
+    ]
+  },
+  {
     "id": "2026-10-25-163",
     "date": "2026-10-25",
     "title": "Version 5.88.0 — Envoi du consolidé par e-mail",

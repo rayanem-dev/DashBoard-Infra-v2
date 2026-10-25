@@ -299,71 +299,12 @@ async function loadElectrique(chantier) {
 // ─────────────────────────────────────────────
 // Chargement — type "boq"
 // ─────────────────────────────────────────────
-async function loadChantierBOQ(chantier) {
-  const rows = await fetchCSV(chantier.csvUrl);
-  const header = rows[0].map(h => h.trim());
-  const idx = {
-    designation: header.indexOf('Designation'), unite: header.indexOf('Unite'),
-    qtePrevue: header.indexOf('Qte_Prevue'), montantPrevu: header.indexOf('Montant_Prevu'),
-    qteRealisee: header.indexOf('Qte_Realisee'), montantRealise: header.indexOf('Montant_Realise'),
-  };
-  const lignes = rows.slice(1).map(r => {
-    const montantPrevu = parseNumberFR(r[idx.montantPrevu]);
-    const montantRealise = parseNumberFR(r[idx.montantRealise]);
-    return {
-      designation: (r[idx.designation] || '').trim(), unite: (r[idx.unite] || '').trim(),
-      qtePrevue: parseNumberFR(r[idx.qtePrevue]), montantPrevu,
-      qteRealisee: parseNumberFR(r[idx.qteRealisee]), montantRealise,
-      pct: montantPrevu > 0 ? Math.min(100, (montantRealise / montantPrevu) * 100) : 0,
-    };
-  }).filter(l => l.designation && l.montantPrevu > 0);
-
-  const totalPrevu = lignes.reduce((s, l) => s + l.montantPrevu, 0);
-  const totalRealise = lignes.reduce((s, l) => s + l.montantRealise, 0);
-  return { nom: chantier.nom, type: 'boq', service: chantier.service || '', lignes, totalPrevu, totalRealise, pct: totalPrevu > 0 ? (totalRealise / totalPrevu) * 100 : 0 };
-}
-
 // ─────────────────────────────────────────────
 // Chargement — type "journal" (suivi quotidien en volumes)
 // ─────────────────────────────────────────────
-async function loadChantierJournal(chantier) {
-  const rows = await fetchCSV(chantier.csvUrl);
-  const header = rows[0].map(h => h.trim());
-  const idx = {
-    date: header.indexOf('Date'), pfRealise: header.indexOf('PF_Realise'), pfPrevu: header.indexOf('PF_Prevu'),
-    pfTaux: header.indexOf('PF_Taux'), talusRealise: header.indexOf('Talus_Realise'), talusPrevu: header.indexOf('Talus_Prevu'),
-    talusTaux: header.indexOf('Talus_Taux'), totalRealise: header.indexOf('Total_Realise'),
-    totalPrevu: header.indexOf('Total_Prevu'), tauxGlobal: header.indexOf('Taux_Global'),
-  };
-  const r = rows[1];
-  return {
-    nom: chantier.nom, type: 'journal', date: (r[idx.date] || '').trim(),
-    pfRealise: parseNumberFR(r[idx.pfRealise]), pfPrevu: parseNumberFR(r[idx.pfPrevu]), pfTaux: parseNumberFR(r[idx.pfTaux]),
-    talusRealise: parseNumberFR(r[idx.talusRealise]), talusPrevu: parseNumberFR(r[idx.talusPrevu]), talusTaux: parseNumberFR(r[idx.talusTaux]),
-    totalRealise: parseNumberFR(r[idx.totalRealise]), totalPrevu: parseNumberFR(r[idx.totalPrevu]), pct: parseNumberFR(r[idx.tauxGlobal]),
-  };
-}
-
 // ─────────────────────────────────────────────
 // Chargement — type "portfolio" (plusieurs chantiers dans 1 csv)
 // ─────────────────────────────────────────────
-async function loadPortfolio(chantier) {
-  const rows = await fetchCSV(chantier.csvUrl);
-  const header = rows[0].map(h => h.trim());
-  const idx = { nom: header.indexOf('Nom'), montantPrevu: header.indexOf('Montant_Prevu'), montantRealise: header.indexOf('Montant_Realise') };
-  return rows.slice(1).map(r => {
-    const totalPrevu = parseNumberFR(r[idx.montantPrevu]);
-    const totalRealise = parseNumberFR(r[idx.montantRealise]);
-    return {
-      nom: (r[idx.nom] || '').trim(), type: 'boq',
-      lignes: [{ designation: 'Ensemble des travaux', unite: 'FF', qtePrevue: 1, montantPrevu: totalPrevu,
-                 qteRealisee: totalPrevu > 0 ? totalRealise / totalPrevu : 0, montantRealise: totalRealise,
-                 pct: totalPrevu > 0 ? Math.min(100, (totalRealise / totalPrevu) * 100) : 0 }],
-      totalPrevu, totalRealise, pct: totalPrevu > 0 ? (totalRealise / totalPrevu) * 100 : 0,
-    };
-  }).filter(c => c.nom && c.totalPrevu > 0);
-}
-
 // ─────────────────────────────────────────────
 // Utilitaire commun : repère une cellule par son libellé (insensible aux accents/casse)
 // ─────────────────────────────────────────────
@@ -471,46 +412,6 @@ async function loadItemized(chantier) {
 // Chargement — type "workforce" (suivi main d'œuvre / matériel en jours,
 // pas de % financier — ex. pointage Génie Civil)
 // ─────────────────────────────────────────────
-async function loadWorkforce(chantier) {
-  const rows = await fetchCSV(chantier.csvUrl);
-  // ── Tableau 1 : Effectifs et jours de présence par mois ──
-  const hdr1Idx = rows.findIndex(r => (r[0] || '').trim() === 'Mois');
-  const total1Idx = rows.findIndex(r => (r[0] || '').trim().toUpperCase().startsWith('TOTAL'));
-  const totalRow = total1Idx >= 0 ? rows[total1Idx] : null;
-  const nbMois = hdr1Idx >= 0 && total1Idx >= 0 ? (total1Idx - hdr1Idx - 1) : 8;
-  const totalPresence = totalRow ? parseNumberFR(totalRow[6]) : 0;
-  const totalRepos = totalRow ? parseNumberFR(totalRow[7]) : 0;
-  const effectifTotalCumule = totalRow ? parseNumberFR(totalRow[3]) : 0;
-  const effectifMoyen = nbMois > 0 ? effectifTotalCumule / nbMois : 0;
-
-  const parMois = [];
-  if (hdr1Idx >= 0 && total1Idx > hdr1Idx) {
-    for (let i = hdr1Idx + 1; i < total1Idx; i++) {
-      const r = rows[i];
-      if (!r || !r[0]) continue;
-      parMois.push({
-        mois: r[0].trim(), effectif: parseNumberFR(r[3]),
-        presence: parseNumberFR(r[6]), repos: parseNumberFR(r[7]),
-      });
-    }
-  }
-
-  // ── Tableau 2 : Suivi matériel — jours d'utilisation par mois ──
-  const hdr2Idx = rows.findIndex(r => (r[0] || '').trim() === 'Engin');
-  const materielRow = rows.filter(r => (r[0] || '').trim().toUpperCase() === 'TOTAL').pop();
-  const totalMateriel = materielRow ? parseNumberFR(materielRow[materielRow.length - 1]) : 0;
-  const materielParMois = [];
-  if (hdr2Idx >= 0 && materielRow) {
-    const moisLabels = rows[hdr2Idx].slice(1, -1); // exclut 'Engin' et 'Total annuel'
-    moisLabels.forEach((label, idx) => {
-      materielParMois.push({ mois: (label || '').trim(), jours: parseNumberFR(materielRow[idx + 1]) });
-    });
-  }
-
-  return { nom: chantier.nom, type: 'workforce', service: chantier.service || '',
-    totalPresence, totalRepos, effectifMoyen, totalMateriel, parMois, materielParMois };
-}
-
 function renderGaugeH(pct, opts) {
   opts = opts || {};
   const big = opts.big !== false;
@@ -523,110 +424,6 @@ function renderGaugeH(pct, opts) {
     </div>`;
 }
 
-function renderChantierCardBOQ(data, i) {
-  const lines = data.lignes.map(l => `
-    <div class="line-item">
-      <div class="li-top"><span class="li-name">${escapeHtml(l.designation)}</span><span class="li-pct">${l.pct.toFixed(0)}%</span></div>
-      <div class="line-bar-bg"><div class="line-bar-fill" style="width:${l.pct}%"></div></div>
-      <div class="li-nums">${l.qteRealisee.toLocaleString('fr-FR')} / ${l.qtePrevue.toLocaleString('fr-FR')} ${l.unite} — ${formatDA(l.montantRealise)} / ${formatDA(l.montantPrevu)}</div>
-    </div>`).join('');
-  return `<div class="chantier-card" id="card-${i}" onclick="toggleCard(${i})">
-      <div class="chantier-head"><h3>${data.nom} <span class="badge-unit">Bordereau (DA)</span> ${statusBadge(data.pct)}</h3>
-        <div style="display:flex;align-items:center;gap:10px"><span class="chantier-pct">${data.pct.toFixed(0)}%</span><span class="chevron">▾</span></div></div>
-      <div class="chantier-bar-bg"><div class="chantier-bar-fill" style="width:${data.pct}%"></div></div>
-      <div class="chantier-meta"><span>Prévu : ${formatDA(data.totalPrevu)}</span><span>Réalisé : ${formatDA(data.totalRealise)}</span><span>${data.lignes.length} poste${data.lignes.length>1?'s':''} suivi${data.lignes.length>1?'s':''}</span></div>
-      <div class="lines-wrap">${lines}</div></div>`;
-}
-
-function renderChantierCardKPI(data, i) {
-  const lines = data.lignes.map(l => `
-    <div class="line-item">
-      <div class="li-top"><span class="li-name">${escapeHtml(l.designation)}</span><span class="li-pct">${l.pct.toFixed(0)}%</span></div>
-      <div class="line-bar-bg"><div class="line-bar-fill" style="width:${l.pct}%"></div></div>
-      <div class="li-nums">${formatDA(l.montantRealise)} / ${formatDA(l.montantPrevu)}</div>
-    </div>`).join('');
-  const postesInfo = data.lignes.length > 0
-    ? `<span>${data.lignes.length} poste${data.lignes.length > 1 ? 's' : ''} suivi${data.lignes.length > 1 ? 's' : ''}</span>`
-    : `<span>Avancement calculé directement depuis le tableau de bord source</span>`;
-  return `<div class="chantier-card" id="card-${i}" onclick="toggleCard(${i})">
-      <div class="chantier-head"><h3>${data.nom} <span class="badge-unit" style="background:#EEF2FF;color:#4338CA;">${escapeHtml(data.service || "")}</span> ${statusBadge(data.pct)}</h3>
-        <div style="display:flex;align-items:center;gap:10px"><span class="chantier-pct">${data.pct.toFixed(0)}%</span><span class="chevron">▾</span></div></div>
-      <div class="chantier-bar-bg"><div class="chantier-bar-fill" style="width:${data.pct}%"></div></div>
-      <div class="chantier-meta"><span>Prévu : ${formatDA(data.totalPrevu)}</span><span>Réalisé : ${formatDA(data.totalRealise)}</span>${postesInfo}</div>
-      <div class="lines-wrap">${lines}</div></div>`;
-}
-
-function renderChantierCardElectrique(data, i) {
-  return `<div class="chantier-card" id="card-${i}">
-      <div class="chantier-head"><h3>${data.nom} <span class="badge-unit" style="background:#FEF3C7;color:#92400E;">Fournitures — stock</span> ${statusBadge(data.pctGlobal)}</h3>
-        <span class="chantier-pct">${data.pctGlobal.toFixed(1)}%</span></div>
-      <div class="chantier-bar-bg"><div class="chantier-bar-fill" style="width:${data.pctGlobal}%"></div></div>
-      <div class="triple-gauge-wrap">
-        <div class="tg-item">
-          <div class="tg-label">⏳ Délai d'exécution</div>
-          ${renderGaugeH(data.pctDelai !== null ? data.pctDelai : 0, { big: false, color: 'linear-gradient(90deg,#6366F1,#818CF8)' })}
-          <div class="tg-sub">${data.pctDelai !== null ? data.pctDelai.toFixed(1) + '% du délai contractuel consommé' : escapeHtml(data.delaiMotif || 'Délai non calculable')}</div>
-        </div>
-        <div class="tg-item">
-          <div class="tg-label">📦 Consommation du marché</div>
-          ${renderGaugeH(data.pctConso, { big: false })}
-          <div class="tg-sub">${data.pctConso.toFixed(1)}% du montant contractuel consommé</div>
-        </div>
-      </div>
-      <div class="chantier-meta"><span>Montant contrat : ${formatDA(data.montantTotal)}</span><span>Consommé : ${formatDA(data.montantLivre)}</span></div>
-    </div>`;
-}
-
-function renderChantierCardJournal(data, i) {
-  const sub = `
-    <div class="sub-metric"><div class="sm-top"><span class="sm-name">Plate-forme</span><span class="sm-pct">${data.pfTaux.toFixed(0)}%</span></div>
-      <div class="line-bar-bg"><div class="line-bar-fill" style="width:${data.pfTaux}%;background:var(--teal)"></div></div>
-      <div class="sm-nums">${formatM3(data.pfRealise)} / ${formatM3(data.pfPrevu)}</div></div>
-    <div class="sub-metric"><div class="sm-top"><span class="sm-name">Talus</span><span class="sm-pct">${data.talusTaux.toFixed(0)}%</span></div>
-      <div class="line-bar-bg"><div class="line-bar-fill" style="width:${data.talusTaux}%;background:var(--teal)"></div></div>
-      <div class="sm-nums">${formatM3(data.talusRealise)} / ${formatM3(data.talusPrevu)}</div></div>`;
-  return `<div class="chantier-card" id="card-${i}" onclick="toggleCard(${i})">
-      <div class="chantier-head"><h3>${data.nom} <span class="badge-unit">Journal (m³)</span> ${statusBadge(data.pct)}</h3>
-        <div style="display:flex;align-items:center;gap:10px"><span class="chantier-pct">${data.pct.toFixed(0)}%</span><span class="chevron">▾</span></div></div>
-      <div class="chantier-bar-bg"><div class="chantier-bar-fill" style="width:${data.pct}%"></div></div>
-      <div class="chantier-meta"><span>Réalisé total : ${formatM3(data.totalRealise)} / ${formatM3(data.totalPrevu)}</span><span>Dernière saisie : ${data.date || '—'}</span></div>
-      <div class="lines-wrap">${sub}</div></div>`;
-}
-
-function renderChantierCardWorkforce(data, i) {
-  const rowsPresence = (data.parMois || []).map(m => `
-    <tr><td>${escapeHtml(m.mois)}</td><td>${m.effectif}</td><td>${m.presence.toLocaleString('fr-FR')}</td><td>${m.repos.toLocaleString('fr-FR')}</td></tr>`).join('');
-  const rowsMateriel = (data.materielParMois || []).map(m => `
-    <tr><td>${escapeHtml(m.mois)}</td><td>${m.jours.toLocaleString('fr-FR')}</td></tr>`).join('');
-  const tableStyle = 'width:100%;border-collapse:collapse;font-size:12px;';
-  const thStyle = 'text-align:left;padding:6px 8px;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border);';
-  const tdStyle = 'padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-dark);';
-  const detail = `
-    <div style="margin-top:16px;">
-      <div style="font-size:12px;font-weight:700;color:var(--gray-dark);margin-bottom:8px;">Détail mensuel — effectifs & présence</div>
-      <table style="${tableStyle}"><thead><tr>
-        <th style="${thStyle}">Mois</th><th style="${thStyle}">Effectif</th><th style="${thStyle}">Jours présence</th><th style="${thStyle}">Jours repos</th>
-      </tr></thead><tbody>${rowsPresence.replace(/<td>/g, `<td style="${tdStyle}">`)}</tbody></table>
-    </div>
-    <div style="margin-top:16px;">
-      <div style="font-size:12px;font-weight:700;color:var(--gray-dark);margin-bottom:8px;">Détail mensuel — matériel (jours d'utilisation, tous engins)</div>
-      <table style="${tableStyle}"><thead><tr>
-        <th style="${thStyle}">Mois</th><th style="${thStyle}">Jours matériel</th>
-      </tr></thead><tbody>${rowsMateriel.replace(/<td>/g, `<td style="${tdStyle}">`)}</tbody></table>
-    </div>`;
-  return `<div class="chantier-card" id="card-${i}" onclick="toggleCard(${i})">
-      <div class="chantier-head"><h3>${data.nom} <span class="badge-unit" style="background:#F0FDF4;color:#15803D;">Suivi main d'œuvre — jours</span></h3>
-        <span class="chevron">▾</span></div>
-      <div class="chantier-meta" style="margin-top:12px;gap:22px;">
-        <span>Effectif moyen : <b>${data.effectifMoyen.toFixed(0)}</b></span>
-        <span>Jours présence cumulés : <b>${data.totalPresence.toLocaleString('fr-FR')}</b></span>
-        <span>Jours repos cumulés : <b>${data.totalRepos.toLocaleString('fr-FR')}</b></span>
-        <span>Jours matériel cumulés : <b>${data.totalMateriel.toLocaleString('fr-FR')}</b></span>
-      </div>
-      <div class="lines-wrap">${detail}</div>
-    </div>`;
-}
-
 // ─────────────────────────────────────────────
 // computeStats() — calcule toutes les données (chantiers + CPM), sans toucher au DOM.
 // Isolé de init() exprès : index.html peut charger ce fichier et appeler cette
@@ -634,16 +431,25 @@ function renderChantierCardWorkforce(data, i) {
 // de vérité), sans dupliquer la liste des chantiers ni la logique de calcul.
 // ─────────────────────────────────────────────
 function chargerFiche(tr) {
-  if (tr.type === 'journal') return loadChantierJournal(tr);
   if (tr.type === 'multiwell') return loadMultiwell(tr);
   if (tr.type === 'itemized') return loadItemized(tr);
-  if (tr.type === 'electrique') return loadElectrique(tr);
-  return loadChantierBOQ(tr);
+  return loadElectrique(tr);
 }
-// Carte « rapports journaliers » : avancement déclaré par le dernier rapport, délai consommé du contrat (Suivi CPM).
-function chantierDyn(c) {
-  return { type: 'dyn', nom: c.nom, service: c.service || 'Sans service', contrat: c.contrat, entreprise: c.entreprise, pct: c.avancement, delai: c.delai_pct, joursRestants: c.jours_restants,
-    echeance: c.echeance, montant: c.montant, dernier: c.dernier, rapports7j: c.rapports_7j };
+const arr = v => typeof v === 'number' && isFinite(v) ? v : null;
+// Un chantier = trois jauges : Délai d'exécution (Suivi CPM, calculé), Consommation du marché (fiche branchée depuis Suivi chantier),
+// Avancement chantier (dernier rapport journalier). L'avancement global est la moyenne des jauges connues ; sans consommation ni rapport, il reste inconnu.
+function chantierUnifie(c, fiche) {
+  const delai = arr(c.delai_pct);
+  let conso = null, consoTxt = '', lignes = [];
+  if (fiche) {
+    if (fiche.type === 'electrique') { conso = arr(fiche.pctConso); consoTxt = `Montant contrat : ${formatDA(fiche.montantTotal)} · consommé : ${formatDA(fiche.montantLivre)}`; }
+    else { conso = arr(fiche.pct); consoTxt = `Prévu : ${formatDA(fiche.totalPrevu)} · réalisé : ${formatDA(fiche.totalRealise)}`; lignes = fiche.lignes || []; }
+  }
+  const avanc = arr(c.avancement);
+  const connues = [delai, conso, avanc].filter(v => v !== null);
+  const pct = (conso !== null || avanc !== null) ? connues.reduce((s, v) => s + v, 0) / connues.length : null;
+  return { type: 'chantier', nom: c.nom, service: c.service || 'Sans service', contrat: c.contrat, entreprise: c.entreprise, pct, delai, conso, consoTxt, avanc,
+    joursRestants: c.jours_restants, echeance: c.echeance, montant: c.montant, dernier: c.dernier, rapports7j: c.rapports_7j, lignesFiche: lignes, fiche: !!fiche, totalPrevu: fiche && fiche.type !== 'electrique' ? fiche.totalPrevu : null, totalRealise: fiche && fiche.type !== 'electrique' ? fiche.totalRealise : null };
 }
 async function computeStats() {
   const t = await Api.call('chantiers_tableau');
@@ -651,42 +457,51 @@ async function computeStats() {
   const failed = [];
   const results = await Promise.all(liste.map(async c => {
     const k = suiviDe(c);
-    if (!TRACKERS[k]) return chantierDyn(c);
+    if (!TRACKERS[k]) return chantierUnifie(c, null);
     const tr = Object.assign({}, TRACKERS[k], { service: c.service || 'Sans service', nom: c.nom, nContrat: c.contrat });
-    try { return Object.assign(await chargerFiche(tr), { contrat: c.contrat, entreprise: c.entreprise }); }
-    catch (e) { failed.push({ nom: c.nom, error: e && e.message ? e.message : String(e) }); return chantierDyn(c); }
+    try { return chantierUnifie(c, await chargerFiche(tr)); }
+    catch (e) { failed.push({ nom: c.nom, error: e && e.message ? e.message : String(e) }); return chantierUnifie(c, null); }
   }));
-  // Avancement connu = fiche suiveuse ou au moins un rapport journalier ; un chantier sans rapport n'entre pas dans les moyennes.
-  const globalResults = results.filter(r => typeof r.pct === 'number');
+  const globalResults = results.filter(r => r.pct !== null);
   const moyenne = l => l.length ? l.reduce((s, r) => s + r.pct, 0) / l.length : 0;
-  const globalPct = moyenne(globalResults);
-  const kpiResults = results.filter(r => r.type === 'boq');
-  return { results, globalResults, globalPct, kpiResults, moyenne, failed };
+  return { results, globalResults, globalPct: moyenne(globalResults), moyenne, failed };
 }
 
 function toggleCard(i) { document.getElementById('card-' + i).classList.toggle('open'); }
 
 function frDate(iso) { const p = String(iso || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
-function renderChantierCardDyn(d, i) {
-  const known = typeof d.pct === 'number', pct = known ? d.pct : 0;
-  const dr = d.dernier;
-  const lignes = dr ? dr.lignes.map(l => `
+function jaugeBloc(titre, pct, couleur, texte) {
+  return `<div class="tg-item"><div class="tg-label">${titre}</div>${renderGaugeH(pct === null ? 0 : pct, { big: false, color: pct === null ? '#E5E7EB' : couleur })}<div class="tg-sub">${texte}</div></div>`;
+}
+function renderChantierCard(d, i) {
+  const known = d.pct !== null, pct = known ? d.pct : 0, dr = d.dernier;
+  const lignesRap = dr ? dr.lignes.map(l => `
     <div class="line-item">
       <div class="li-top"><span class="li-name">${l.routine ? '🔁 ' : ''}${escapeHtml(l.zone ? l.zone + ' — ' : '')}${escapeHtml(l.texte)}</span><span class="li-pct">${l.avancement != null ? l.avancement.toFixed(0) + '%' : ''}</span></div>
       ${l.avancement != null ? `<div class="line-bar-bg"><div class="line-bar-fill" style="width:${Math.min(100, l.avancement)}%"></div></div>` : ''}
     </div>`).join('') + (dr.difficultes ? `<div class="line-item"><div class="li-top"><span class="li-name">⚠️ ${escapeHtml(dr.difficultes)}</span></div></div>` : '') : '';
-  const delai = d.delai != null ? `<div class="tg-item" style="margin-top:12px"><div class="tg-label">⏳ Délai du contrat</div>${renderGaugeH(d.delai, { big: false, color: 'linear-gradient(90deg,#6366F1,#818CF8)' })}
-      <div class="tg-sub">${d.delai}% du délai consommé${d.joursRestants != null ? ' — ' + (d.joursRestants >= 0 ? d.joursRestants + ' jour(s) restant(s)' : 'échu depuis ' + (-d.joursRestants) + ' jour(s)') : ''}</div></div>` : '';
-  const meta = [d.contrat ? 'Contrat ' + escapeHtml(d.contrat) : '', d.entreprise ? escapeHtml(d.entreprise) : '', d.echeance ? 'Échéance ' + frDate(d.echeance) : '',
-    dr ? 'Dernier rapport ' + frDate(dr.date) + (dr.auteur ? ' (' + escapeHtml(dr.auteur) + ')' : '') + ' · ' + dr.effectif + ' personne(s)' : 'Aucun rapport journalier', d.rapports7j + ' rapport(s) sur 7 jours']
-    .filter(Boolean).map(x => `<span>${x}</span>`).join('');
-  return `<div class="chantier-card" id="card-${i}"${lignes ? ` onclick="toggleCard(${i})"` : ''}>
-      <div class="chantier-head"><h3>${escapeHtml(d.nom)} <span class="badge-unit">Rapports journaliers</span> ${known ? statusBadge(pct) : ''}</h3>
-        <div style="display:flex;align-items:center;gap:10px"><span class="chantier-pct">${known ? pct.toFixed(0) + '%' : '—'}</span>${lignes ? '<span class="chevron">▾</span>' : ''}</div></div>
+  const lignesFiche = d.lignesFiche.map(l => `
+    <div class="line-item">
+      <div class="li-top"><span class="li-name">${escapeHtml(l.designation)}</span><span class="li-pct">${l.pct.toFixed(0)}%</span></div>
+      <div class="line-bar-bg"><div class="line-bar-fill" style="width:${l.pct}%"></div></div>
+      <div class="li-nums">${formatDA(l.montantRealise)} / ${formatDA(l.montantPrevu)}</div>
+    </div>`).join('');
+  const detail = (lignesFiche ? '<div class="sub-metric"><div class="sm-name">Postes de la fiche</div></div>' + lignesFiche : '') + (lignesRap ? '<div class="sub-metric"><div class="sm-name">Dernier rapport journalier</div></div>' + lignesRap : '');
+  const jaugeDelai = jaugeBloc('⏳ Délai d\'exécution', d.delai, 'linear-gradient(90deg,#6366F1,#818CF8)',
+    d.delai !== null ? `${d.delai}% du délai contractuel consommé${d.joursRestants != null ? ' — ' + (d.joursRestants >= 0 ? d.joursRestants + ' jour(s) restant(s)' : 'échu depuis ' + (-d.joursRestants) + ' jour(s)') : ''}` : 'Dates ODS / échéance absentes du Suivi CPM');
+  const jaugeConso = jaugeBloc('📦 Consommation du marché', d.conso, 'linear-gradient(90deg,var(--orange-main),var(--orange-light))',
+    d.conso !== null ? `${d.conso.toFixed(1)}% du montant contractuel consommé` : 'Fiche non branchée — à brancher depuis « Suivi chantier »');
+  const jaugeAv = jaugeBloc('📝 Avancement chantier', d.avanc, 'linear-gradient(90deg,#0D9488,#2DD4BF)',
+    d.avanc !== null ? `${d.avanc.toFixed(1)}% d'après le rapport du ${frDate(dr.date)}` : 'Aucun rapport journalier');
+  const meta = [d.contrat ? 'Contrat ' + escapeHtml(d.contrat) : '', d.entreprise ? escapeHtml(d.entreprise) : '', d.echeance ? 'Échéance ' + frDate(d.echeance) : '', d.consoTxt,
+    dr ? 'Dernier rapport ' + frDate(dr.date) + (dr.auteur ? ' (' + escapeHtml(dr.auteur) + ')' : '') + ' · ' + dr.effectif + ' personne(s)' : '', d.rapports7j + ' rapport(s) sur 7 jours'].filter(Boolean).map(x => `<span>${x}</span>`).join('');
+  return `<div class="chantier-card" id="card-${i}"${detail ? ` onclick="toggleCard(${i})"` : ''}>
+      <div class="chantier-head"><h3>${escapeHtml(d.nom)} ${known ? statusBadge(pct) : ''}</h3>
+        <div style="display:flex;align-items:center;gap:10px"><span class="chantier-pct">${known ? pct.toFixed(1) + '%' : '—'}</span>${detail ? '<span class="chevron">▾</span>' : ''}</div></div>
       <div class="chantier-bar-bg"><div class="chantier-bar-fill" style="width:${pct}%"></div></div>
-      ${delai}
+      <div class="triple-gauge-wrap">${jaugeDelai}${jaugeConso}${jaugeAv}</div>
       <div class="chantier-meta">${meta}</div>
-      ${lignes ? `<div class="lines-wrap">${lignes}</div>` : ''}</div>`;
+      ${detail ? `<div class="lines-wrap">${detail}</div>` : ''}</div>`;
 }
 
 const SERVICES_CONNUS = ['Construction', 'Travaux Entretien', 'Électromécanique'];
@@ -695,17 +510,16 @@ const ICONES_SERVICE = { 'Construction': '🏗️', 'Travaux Entretien': '🚧',
 async function init() {
   const content = document.getElementById('content');
   try {
-    const { results, globalResults, globalPct, kpiResults, moyenne, failed } = await computeStats();
+    const { results, globalResults, globalPct, moyenne, failed } = await computeStats();
     if (!results.length) {
       content.className = 'error-box';
       content.innerHTML = 'Aucun chantier pour l\'instant. Ouvrez « Affectation chantier » puis « Synchroniser avec le Suivi CPM » : un chantier est créé pour chaque contrat en exécution.';
       return;
     }
-
     let html = `<div class="section-title">Vue globale</div>`;
-    if (kpiResults.length > 0) {
-      const totalPrevu = kpiResults.reduce((s, r) => s + r.totalPrevu, 0);
-      const totalRealise = kpiResults.reduce((s, r) => s + r.totalRealise, 0);
+    const avecFiche = results.filter(r => r.totalPrevu !== null);
+    if (avecFiche.length > 0) {
+      const totalPrevu = avecFiche.reduce((s, r) => s + r.totalPrevu, 0), totalRealise = avecFiche.reduce((s, r) => s + r.totalRealise, 0);
       html += `<div class="section-title" style="margin-top:0"><span class="unit-tag">Chantiers suivis par fiche — DA</span></div>
         <div class="stats-row">
           <div class="stat-card"><div class="lbl">Budget contractuel</div><div class="val">${formatDA(totalPrevu)}</div></div>
@@ -713,20 +527,18 @@ async function init() {
           <div class="stat-card rar"><div class="lbl">Reste à réaliser</div><div class="val">${formatDA(totalPrevu-totalRealise)}</div></div>
         </div>`;
     }
-
-    // Services : ceux d'Affectation chantier, dans l'ordre habituel puis les autres.
     const vus = [...new Set(results.map(r => r.service))];
     const services = SERVICES_CONNUS.filter(x => vus.includes(x)).concat(vus.filter(x => !SERVICES_CONNUS.includes(x)));
     html += `<div class="global-card">
         <div class="global-info">
           <h3>Projets & Prestations — Division Infra</h3>
           ${renderGaugeH(globalPct, { big: true })}
-          <div class="sub">${globalResults.length} chantier${globalResults.length > 1 ? 's' : ''} avec avancement connu sur ${results.length} en cours (fiche suiveuse ou rapport journalier) — un chantier sans rapport n'entre pas dans la moyenne</div>
+          <div class="sub">${globalResults.length} chantier${globalResults.length > 1 ? 's' : ''} avec avancement connu sur ${results.length} — avancement global = moyenne du délai d'exécution, de la consommation du marché et de l'avancement des rapports journaliers (un chantier sans consommation ni rapport n'entre pas dans la moyenne)</div>
         </div>
       </div>
       <div class="section-title">Avancement global par service</div>
       <div class="service-grid">${services.map(sv => {
-        const du = results.filter(r => r.service === sv), connus = du.filter(r => typeof r.pct === 'number'), m = moyenne(connus);
+        const du = results.filter(r => r.service === sv), connus = du.filter(r => r.pct !== null), m = moyenne(connus);
         return connus.length ? `<div class="service-card">
           <h4>${ICONES_SERVICE[sv] || '📁'} ${escapeHtml(sv)} <span class="svc-badge active">${du.length} chantier${du.length > 1 ? 's' : ''}</span></h4>
           ${renderGaugeH(m, { big: false })}
@@ -734,25 +546,19 @@ async function init() {
           <div class="svc-note">${connus.length} chantier${connus.length > 1 ? 's' : ''} avec avancement connu</div></div>` : `<div class="service-card disabled">
           <h4>${ICONES_SERVICE[sv] || '📁'} ${escapeHtml(sv)} <span class="svc-badge empty">${du.length} chantier${du.length > 1 ? 's' : ''}</span></h4>
           ${renderGaugeH(0, { big: false, color: '#D1D5DB' })}
-          <div class="svc-note">Aucun rapport journalier reçu pour l'instant.</div></div>`;
+          <div class="svc-note">Ni fiche branchée ni rapport journalier pour l'instant.</div></div>`;
       }).join('')}
       </div>`;
-
     services.forEach(sv => {
       html += `<div class="section-title">Détail par chantier — ${escapeHtml(sv)}</div>`;
-      html += results.filter(r => r.service === sv).map(r => {
-        const i = results.indexOf(r);
-        return r.type === 'dyn' ? renderChantierCardDyn(r, i) : r.type === 'electrique' ? renderChantierCardElectrique(r, i) : renderChantierCardKPI(r, i);
-      }).join('');
+      html += results.filter(r => r.service === sv).map(r => renderChantierCard(r, results.indexOf(r))).join('');
     });
-
     if (failed.length > 0) {
-      html += `<div class="section-title">⚠️ Fiches non chargées (le chantier est affiché d'après ses rapports journaliers)</div>
+      html += `<div class="section-title">⚠️ Fiches non chargées (jauge de consommation indisponible)</div>
         <div class="error-box" style="text-align:left;background:#FEF2F2;border-radius:14px;border:1px solid #FECACA;padding:16px 20px;">
           ${failed.map(f => `<div style="margin-bottom:8px;"><b>${escapeHtml(f.nom)}</b> — <span style="font-size:12px">${escapeHtml(f.error)}</span></div>`).join('')}
         </div>`;
     }
-
     content.className = '';
     content.innerHTML = html;
   } catch (e) {

@@ -59,22 +59,12 @@
   .missing-card { opacity: 0.5; cursor: default; }
   .missing-card:hover { transform: none; box-shadow: var(--shadow-card); }
 
-  .disabled-card { opacity: 0.45; cursor: not-allowed; filter: grayscale(70%); position: relative; }
-  .disabled-card:hover { transform: none; box-shadow: var(--shadow-card); }
-  .disabled-card .pause-badge {
-    position: absolute; top: 8px; right: 10px; font-size: 9px; font-weight: 800;
-    background: #4B5563; color: white; padding: 2px 7px; border-radius: 20px; letter-spacing: 0.3px;
-  }
-  .construction-note {
-    background: #F3F4F6; border: 1px dashed #9CA3AF; border-radius: 14px; padding: 12px 18px;
-    font-size: 12px; color: #4B5563; margin-bottom: 16px;
-  }
 
   .note-box { background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 14px; padding: 14px 18px; font-size: 12.5px; color: #9A3412; margin-top: 24px; }
-  .archives { margin-top: 28px; }
-  .archives > summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-muted); padding: 10px 0; }
   .link-card .badge-fiche { position: absolute; top: 8px; right: 10px; font-size: 9px; font-weight: 800; background: #E5E7EB; color: #4B5563; padding: 2px 7px; border-radius: 20px; }
   .link-card { position: relative; }
+  .carte-fiche { display: flex; flex-direction: column; gap: 4px; }
+  .btn-lien { align-self: flex-start; background: none; border: 0; color: var(--orange-main); font-size: 11px; font-weight: 700; cursor: pointer; padding: 0 4px; }
 </style>
 <link rel="stylesheet" href="css/entete.css">
 </head>
@@ -99,68 +89,6 @@
 
   <div id="chantiers"><p class="note-box" style="margin-top:0">Chargement des chantiers…</p></div>
 
-  <details class="archives">
-    <summary>Archives — fiches du Service Construction (en pause) et plans de situation</summary>
-  <div class="section-title">Service Construction — en pause ⏸️</div>
-  <div class="link-grid">
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1x7r94U66Ec7t7jBzyzcuHCS1JCrYlPinYRvpFA5gQ3s/edit?usp=sharing">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">🧱</span>
-      <div class="txt"><h3>Génie Civil (ETBE ZATOUT)</h3><p>Pointage MO/Matériel — synthèse annuelle</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1Sdf3uEgTlTerY4PQA_52ioysN6CxKOxio9EMPcqvOXw/edit?usp=drive_link">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">📋</span>
-      <div class="txt"><h3>Bassin CPF (tab de suivi)</h3><p>Suivi journalier — Plate-forme/Talus</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1pRtFlpkw3UK9B_RBR1jynRZ8tPYiYnErEvRUJjopSSQ/edit?usp=drive_link">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">📋</span>
-      <div class="txt"><h3>Les Abris</h3><p>Fiche suiveuse indépendante</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1jyq7txHbS-XfbOc8N-4AwOyv8JRl6nuzEmIgbwAiYDU/edit?usp=drive_link">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">📋</span>
-      <div class="txt"><h3>Stades</h3><p>Fiche suiveuse indépendante</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1noMG3iFyvLAPc0pWgoaLgeNbpMKTolv6iju-DUXjiVI/edit?usp=drive_link">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">📋</span>
-      <div class="txt"><h3>MCM</h3><p>Fiche suiveuse indépendante (Suivi_MCM000 — 3 lots)</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1NecYq1Deeler7RSuCbhWNjzAKJ3UkVgjjoDuCJ3yQHo/edit?usp=drive_link">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">📋</span>
-      <div class="txt"><h3>Mosquée</h3><p>Fiche suiveuse indépendante</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1kmCfSQoqz-aZcYGS3dfiD3H8_bdUWV9DNbK9t2tzcFU/edit?usp=drive_link">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">📋</span>
-      <div class="txt"><h3>Piscine</h3><p>Fiche suiveuse indépendante</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1zIPfQNy0w5FBv8NY1jyokNwPRjBayc0ZT0Ub2lHEuHg/edit?usp=drive_link">
-      <span class="pause-badge">Pause</span>
-      <span class="icon">📋</span>
-      <div class="txt"><h3>Studio (cadre)</h3><p>Fiche suiveuse indépendante</p></div>
-    </div>
-  </div>
-
-  <div class="section-title">Plans de situation — par projet (Service Construction, en pause)</div>
-  <div class="link-grid">
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1-_CaqptG2mr7WVz14tgCvmnBkHq2Gd0umj9DEnMDLuE/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>ATIA</h3><p>Plan de situation</p></div></div>
-    <div class="link-card missing-card">
-      <span class="icon">🗺️</span>
-      <div class="txt"><h3>ENCC</h3><p>Lien manquant</p></div>
-    </div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1MWvURLJGH_46Z9mAnGdm04XxonQrg_7dWU9uC8JqCv0/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>GCB (Bassin CPF)</h3><p>Plan de situation</p></div></div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1qBNcBUUZ0eBneDCJEcWWwvoVK2nnGGQtaEAoLofDvXE/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>MCM</h3><p>Plan de situation</p></div></div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1G2SQinHacAvDAqNuzFbLPo-F3phL_mCMB5li3YDMMFc/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>Mosquée</h3><p>Plan de situation</p></div></div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/10iZZKgDi5lKoZjuNf8M6cdMfaqraWIOsEDTgWfRkduk/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>Piscine</h3><p>Plan de situation</p></div></div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/14IdNPWy2ymCIcI7TKE28gIRujQvuxYPpIxaBNRcwxWA/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>Stades</h3><p>Plan de situation</p></div></div>
-    <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1-_CaqptG2mr7WVz14tgCvmnBkHq2Gd0umj9DEnMDLuE/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>Studio (cadre)</h3><p>Plan de situation</p></div></div>
-  </div>
-
-  </details>
 
   <div class="section-title">Dossier projet complet (Drive)</div>
   <a class="link-card folder-card" href="https://drive.google.com/drive/folders/11sN8BUB8lFGHhsZoGHnGV5jbkNcrMope?usp=sharing" target="_blank" rel="noopener" style="max-width:340px">
@@ -169,7 +97,7 @@
   </a>
 
   <div class="note-box">
-    ⚠️ Cette page ne contient que les liens pour l'instant (accès rapide à un seul endroit). Le résumé d'avancement global et détaillé par chantier, avec les pourcentages, est sur la page <strong>"📊 Avancement Chantiers"</strong> (en haut à droite) — on continue à l'enrichir ensemble.
+    ℹ️ Les chantiers viennent d'« Affectation chantier » (un par contrat en exécution du Suivi CPM). Branchez ici la fiche de chaque chantier : sa jauge « Consommation du marché » apparaît ensuite dans <strong>« 📊 Avancement »</strong>.
   </div>
 </main>
 
@@ -194,9 +122,21 @@ var ICONES = { 'Construction': ['🏗️', 'Service Construction'], 'Travaux Ent
     var t = el('div', 'txt'); t.appendChild(el('h3', null, c.nom));
     var info = [c.contrat ? 'Contrat ' + c.contrat : '', c.entreprise || '', c.avancement != null ? 'avancement ' + Math.round(c.avancement) + ' % (rapport du ' + fr(c.dernier && c.dernier.date) + ')' : 'aucun rapport journalier',
       c.echeance ? 'échéance ' + fr(c.echeance) : '', lien ? '' : 'lien de la fiche à saisir dans Affectation chantier'].filter(Boolean).join(' · ');
-    t.appendChild(el('p', null, info)); a.appendChild(t); return a;
+    t.appendChild(el('p', null, info)); a.appendChild(t);
+    if (admin) {   // brancher la fiche chantier par chantier : lien saisi ici, jauge « Consommation du marché » dans Avancement
+      var w = el('div', 'carte-fiche'), b = el('button', 'btn-lien', lien ? '✎ Changer le lien de la fiche' : '＋ Brancher la fiche');
+      b.type = 'button'; b.onclick = function (ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        var v = prompt('Lien de la fiche de suivi de « ' + c.nom + ' » (https://… ; vide pour retirer) :', c.fiche || '');
+        if (v === null) return;
+        Api.call('rapports_chantier_maj', { id: c.id, fiche: v.trim() }).then(function () { charger(); }).catch(function (e) { alert(e.message); });
+      };
+      w.appendChild(a); w.appendChild(b); return w;
+    }
+    return a;
   }
-  Api.call('chantiers_tableau').then(function (r) {
+  var admin = false;
+  function charger() { return Api.call('chantiers_tableau').then(function (r) {
     zone.textContent = '';
     var liste = r.chantiers || [];
     if (!liste.length) { zone.appendChild(el('p', 'note-box', 'Aucun chantier pour l\'instant : ouvrez « Affectation chantier » puis « Synchroniser avec le Suivi CPM ».')); return; }
@@ -208,7 +148,8 @@ var ICONES = { 'Construction': ['🏗️', 'Service Construction'], 'Travaux Ent
       liste.filter(function (c) { return (c.service || 'Sans service') === s; }).forEach(function (c) { g.appendChild(carte(c)); });
       zone.appendChild(g);
     });
-  }).catch(function (e) { zone.textContent = ''; zone.appendChild(el('p', 'note-box', 'Impossible de charger les chantiers : ' + e.message)); });
+  }).catch(function (e) { zone.textContent = ''; zone.appendChild(el('p', 'note-box', 'Impossible de charger les chantiers : ' + e.message)); }); }
+  Api.call('rapports_chantiers_admin').then(function () { admin = true; }).catch(function () { /* lecture seule */ }).then(charger);
 })();
 </script>
 <script src="js/pied.js"></script>
