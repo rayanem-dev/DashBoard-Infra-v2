@@ -285,7 +285,12 @@
         if (fnp === 'soumettreFormulairePEC') return { success: true, message: 'Démonstration : aucun document généré.', liens: [] };
         return { success: true, message: 'Démonstration' }; }
       case 'rapports_chantiers': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service }; }) }; }
-      case 'rapports_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { niveau: 3, rapports: [] }; }
+      case 'rapports_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var hier = new Date(); hier.setDate(hier.getDate() - 1); var cor = null; try { cor = JSON.parse(sessionStorage.getItem('infra_v2_demo_corr') || 'null'); } catch (e) { cor = null; }
+        var rp = { id: 'demo-hier', date: hier.toISOString().slice(0, 10), chantier: 'forage_rns', auteur_email: 'a.khelifi@exemple.dz', auteur_nom: 'KHELIFI Amine', service: 'Travaux Entretien', effectif: 14, travaux: '', lignes: [{ zone: 'Puits P2', texte: 'Foration à 85 m', avancement: 420 / 10 * 2, routine: false }], difficultes: '', commentaire: '', avancement: 84, visa_par: '', visa_note: '', le_mien: false, peut_viser: false, peut_corriger: true, corrige_par: '', corrige_le: '' };
+        if (cor) { rp.effectif = cor.effectif; rp.avancement = cor.avancement === '' ? '' : Number(cor.avancement); rp.lignes = cor.lignes; rp.difficultes = cor.difficultes; rp.commentaire = cor.commentaire; rp.corrige_par = 'BENALI Karim'; rp.corrige_le = new Date().toISOString(); }
+        return { niveau: 3, rapports: [rp] }; }
+      case 'rapport_corriger': { exigerAdmin(); sessionStorage.setItem('infra_v2_demo_corr', JSON.stringify({ effectif: p.effectif, avancement: p.avancement, lignes: p.lignes || [], difficultes: p.difficultes, commentaire: p.commentaire })); return { id: p.id }; }
       case 'rapports_synthese': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return demoSynthese(p.date); }
       case 'rapports_consolide_generer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var sy = demoSynthese(p.date); var ex = demoConsolides[p.date]; var cc = { date: p.date, version: ex ? ex.version + 1 : 1, genere_par: demoState.user.nom, genere_le: new Date().toISOString(), nb_chantiers: sy.chantiers.length, nb_rapports: sy.chantiers.filter(function (c) { return c.rapports.length; }).length, donnees: sy }; demoConsolides[p.date] = cc; return { consolide: cc, remplace: !!ex }; }
       case 'rapports_consolide_envoyer': { exigerAdmin(); var gg = p.groupes || {}; return { destinataires: (gg.secretariat ? 1 : 0) + (gg.chef_service ? 3 : 0) + (gg.chef_division ? 1 : 0), version: 1 }; }
