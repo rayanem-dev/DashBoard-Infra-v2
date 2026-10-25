@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-25-165",
+    "date": "2026-10-25",
+    "title": "Version 5.89.1 — Avancement allégé",
+    "changes": [
+      "Les trois cartes de montants (budget, cumul réalisé, reste à réaliser) sont retirées de la page Avancement des chantiers."
+    ]
+  },
+  {
     "id": "2026-10-25-164",
     "date": "2026-10-25",
     "title": "Version 5.89.0 — Trois jauges par chantier",
