@@ -156,3 +156,11 @@ test('consolideMail : échappe le texte et signale les chantiers sans rapport', 
   const m = Rapports.consolideMail(s, 2);
   assert.match(m.sujet, /samedi 24\/10\/2026/); assert.match(m.html, /Chantier &lt;A&gt;/); assert.match(m.html, /Sans rapport :<\/b> Chantier B/); assert.match(m.html, /version 2/);
 });
+
+test('chantiersVisibles : projets d\'autres services ouverts à l\'agent (chantiers_sup)', () => {
+  const ch = [{ id: 'a', service: 'Construction' }, { id: 'b', service: 'Électromécanique' }, { id: 'c', service: 'Travaux Entretien' }];
+  const u = { service: 'Service Construction', chantiers_sup: 'c ; X' };
+  assert.deepStrictEqual(Rapports.chantiersVisibles(ch, u, 2).map(c => c.id), ['a', 'c']);
+  assert.deepStrictEqual(Rapports.idsSup({ chantiers_sup: ' B ;c, d' }), ['b', 'c', 'd']);
+  assert.deepStrictEqual(Rapports.idsSup({}), []);
+});

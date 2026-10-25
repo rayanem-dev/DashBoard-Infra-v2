@@ -55,7 +55,7 @@ function affChanger_(req) {
   Store.maj('Affectations', { id: id }, { date: new Date().toISOString(), email: c.email, ancien: ancien, nouveau: nouveau, par: u.email, motif: motif, date_effet: /^\d{4}-\d{2}-\d{2}$/.test(String(req.date_effet || '')) ? String(req.date_effet) : '' });
   Store.journal('affectation', u.email, c.email + ' : ' + ancien + ' → ' + nouveau);
   var emails = 0;
-  try {
+  if (req.envoyer_mail !== false) try {   // e-mail facultatif (case de la page ; envoyé par défaut)
     var dest = {}; function aj(e) { e = String(e || '').trim().toLowerCase(); if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) dest[e] = true; }
     aj(c.email); aj(u.email);
     Store.table('Utilisateurs').forEach(function (x) { var r = Droits.roleCanon(x.role); if (String(x.actif) !== '0' && (r === 'chef_division' || r === 'secretariat')) aj(x.email); });
@@ -73,4 +73,28 @@ function affHistorique_(req) {
     .sort(function (a, b) { return String(a.date) < String(b.date) ? 1 : -1; }).slice(0, 100);
   return { historique: l.map(function (r) { var c = Store.utilisateur(r.email) || {}, p = Store.utilisateur(r.par) || {};
     return { id: String(r.id), date: String(r.date), nom: Annuaire.nomAffichable(c.nom, r.email), ancien: String(r.ancien || ''), nouveau: String(r.nouveau || ''), par: Annuaire.nomAffichable(p.nom, r.par), motif: String(r.motif || ''), date_effet: String(r.date_effet || '') }; }) };
+}
+
+/** Projets (chantiers) d'autres services ouverts à une personne pour saisir ses rapports : son service d'affectation ne change pas. */
+function affChantiersSupLire_(req) {
+  var u = Auth.userFromToken(req.token);
+  if (affNiveau_(u) < 2) throw affDroits_();
+  assurerColonnes_('Utilisateurs', ['chantiers_sup']);
+  var c = Store.parUid(req.uid);
+  if (!c || String(c.actif) === '0') throw new Error('Personne inconnue');
+  if (!affDansPortee_(u, c)) throw affDroits_();
+  return { service: affNorm_(c.service), sup: Rapports.idsSup(c), chantiers: chantiersActifs_().filter(function (x) { return String(x.contrat || '').trim(); }).map(function (x) { return { id: x.id, nom: x.nom, service: x.service }; }) };
+}
+function affChantiersSupMaj_(req) {
+  var u = Auth.userFromToken(req.token);
+  if (affNiveau_(u) < 2) throw affDroits_();
+  assurerColonnes_('Utilisateurs', ['chantiers_sup']);
+  var c = Store.parUid(req.uid);
+  if (!c || String(c.actif) === '0') throw new Error('Personne inconnue');
+  if (!affDansPortee_(u, c)) throw affDroits_();
+  var valides = {}; chantiersActifs_().forEach(function (x) { valides[x.id] = true; });
+  var ids = (Array.isArray(req.ids) ? req.ids : []).map(function (x) { return String(x).toLowerCase(); }).filter(function (x, i, t) { return valides[x] && t.indexOf(x) === i; });
+  Store.maj('Utilisateurs', { email: c.email }, { chantiers_sup: ids.join(' ; ') });
+  Store.journal('chantiers_sup', u.email, c.email + ' → ' + (ids.join(' ; ') || 'aucun'));
+  return { sup: ids };
 }

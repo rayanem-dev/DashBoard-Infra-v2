@@ -87,6 +87,8 @@ function route_(req) {
     case 'aff_personnes': return affPersonnes_(req);
     case 'aff_changer': return affChanger_(req);
     case 'aff_historique': return affHistorique_(req);
+    case 'aff_chantiers_sup': return affChantiersSupLire_(req);
+    case 'aff_chantiers_sup_maj': return affChantiersSupMaj_(req);
     case 'simu_agents': return simuAgents_(req);
     case 'simu_donnees': return simuDonnees_(req);
     case 'simu_valider': return simuValider_(req);
@@ -462,21 +464,29 @@ function rapportsLus_() {
 }
 function rapportsChantiers_(req) {
   var u = Auth.userFromToken(req.token), niv = niveauRapports_(u, 1);
+  assurerColonnes_('Utilisateurs', ['chantiers_sup']); u = Auth.userFromToken(req.token);
   return { chantiers: Rapports.chantiersVisibles(chantiersActifs_(), u, niv), niveau: niv };
 }
 function rapportEnregistrer_(req) {
   var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 2);
+  assurerColonnes_('Utilisateurs', ['chantiers_sup']); u = Auth.userFromToken(req.token);
   var ids = Rapports.chantiersVisibles(chantiersActifs_(), u, niv).map(function (c) { return c.id; }); // seulement les chantiers de son service
   var v = Rapports.valider(req, Dates.today(), niv, ids); if (v.erreur) throw new Error(v.erreur);
   var r = v.rapport; var id = Rapports.cle(r.date, r.chantier, u.email);
   var maintenant = new Date().toISOString();
   var existe = Store.table('Rapports').some(function (x) { return String(x.id) === id; });
-  var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service || '', effectif: r.effectif, travaux: r.travaux, lignes: JSON.stringify(r.lignes || []),
+  var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: Annuaire.nomAffichable(u.nom, u.email), service: serviceDuRapport_(u, r.chantier), effectif: r.effectif, travaux: r.travaux, lignes: JSON.stringify(r.lignes || []),
                   difficultes: r.difficultes, commentaire: r.commentaire, avancement: r.avancement, modifie_le: maintenant };
   if (!existe) valeurs.cree_le = maintenant;
   Store.maj('Rapports', { id: id }, valeurs);
   Store.journal(existe ? 'rapport_modifie' : 'rapport_cree', u.email, id);
   return { id: id, modifie: existe };
+}
+/** Service rattaché au rapport : celui de l'auteur ; pour un projet d'un autre service ouvert à l'agent (Affectation du personnel), celui du chantier, pour que son chef de service le voie et le vise. */
+function serviceDuRapport_(u, chantierId) {
+  if (Rapports.idsSup(u).indexOf(String(chantierId).toLowerCase()) < 0) return u.service || '';
+  var c = chantiersTous_().filter(function (x) { return x.id === String(chantierId).toLowerCase(); })[0];
+  return (c && c.service) || u.service || '';
 }
 function rapportsListe_(req) {
   var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 1);

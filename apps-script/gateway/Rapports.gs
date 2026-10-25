@@ -64,10 +64,12 @@ var Rapports = (function () {
     return t;
   }
   function servicePareil(a, b) { var x = cleService(a), y = cleService(b); return !!x && x === y; }
+  function idsSup(user) { return String((user && user.chantiers_sup) || '').split(/[;,\s]+/).map(norm).filter(Boolean); }
   /** Chantiers que l'utilisateur peut rapporter : niveau 3 = tous ; sinon ceux de son service (et ceux dont le service n'est pas encore défini). */
   function chantiersVisibles(chantiers, user, niveau) {
     if (niveau >= 3) return chantiers;
-    return chantiers.filter(function (c) { return !cleService(c.service) || servicePareil(c.service, user.service); });
+    var sup = idsSup(user);   // projets d'autres services ouverts à cet agent (Affectation du personnel)
+    return chantiers.filter(function (c) { return !cleService(c.service) || servicePareil(c.service, user.service) || sup.indexOf(norm(c.id)) >= 0; });
   }
   function slugContrat(n) { return String(n == null ? '' : n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
   /**
@@ -221,7 +223,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

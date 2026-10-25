@@ -472,6 +472,9 @@
         sessionStorage.setItem('infra_v2_demo_vav', JSON.stringify(vm)); return { enregistres: 1 }; }
       case 'aff_personnes': exigerAdmin();
         return { niveau: 3, moi: demoState.user.uid, services: demoServices(), personnes: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: demoService(x), fonction: x.fonction || '', dependance: x.dependance || '' }; }) };
+      case 'aff_chantiers_sup': { exigerAdmin(); var cs = JSON.parse(sessionStorage.getItem('infra_v2_demo_sup') || '{}'); var ps = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0]; if (!ps) throw erreur('Personne inconnue');
+        return { service: demoService(ps), sup: cs[p.uid] || [], chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service }; }) }; }
+      case 'aff_chantiers_sup_maj': { exigerAdmin(); var cs2 = JSON.parse(sessionStorage.getItem('infra_v2_demo_sup') || '{}'); cs2[p.uid] = p.ids || []; sessionStorage.setItem('infra_v2_demo_sup', JSON.stringify(cs2)); return { sup: cs2[p.uid] }; }
       case 'aff_changer': { exigerAdmin(); var ca = DEMO_USERS.filter(function (x) { return x.uid === p.uid; })[0]; if (!ca) throw erreur('Personne inconnue');
         var nsv = String(p.service || '').replace(/\s+/g, ' ').trim(), asv = demoService(ca);
         if (nsv.length < 2) throw erreur('Service : de 2 à 60 caractères'); if (nsv.toLowerCase() === asv.toLowerCase()) throw erreur('Cette personne est déjà dans ce service');
@@ -479,7 +482,7 @@
         if (ex) nsv = ex; else if (!p.creer) throw erreur('Ce service n\'existe pas encore : confirmez sa création');
         var ov = demoAff(); ov.services[ca.uid] = nsv; var idA = 'AFF-' + new Date().getFullYear() + '-' + ('000' + (ov.hist.length + 1)).slice(-4);
         ov.hist.unshift({ id: idA, date: new Date().toISOString(), nom: ca.nom, ancien: asv, nouveau: nsv, par: demoState.user.nom, motif: String(p.motif || ''), date_effet: p.date_effet || '' }); saveAff(ov);
-        return { id: idA, ancien: asv, nouveau: nsv, emails: 4 }; }
+        return { id: idA, ancien: asv, nouveau: nsv, emails: p.envoyer_mail === false ? 0 : 4 }; }
       case 'aff_historique': exigerAdmin(); return { historique: demoAff().hist };
       case 'simu_agents': exigerAdmin();
         return { niveau: 3, moi: demoState.user.uid, agents: DEMO_USERS.map(function (x) { return { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', configuree: !!demoRots()[x.email], vis_travail: (demoVav()[x.uid] || {}).vis_travail || '', vis_chambre: (demoVav()[x.uid] || {}).vis_chambre || '' }; }) };

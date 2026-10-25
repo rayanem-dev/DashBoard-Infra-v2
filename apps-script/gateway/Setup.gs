@@ -280,7 +280,7 @@ function ajouterChantiersParDefaut() {
 }
 
 var SCHEMA_ = {
-  Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif', 'telephone', 'civilite', 'sona', 'date_integration', 'wifi_user', 'nin', 'sap', 'email_contact', 'portee', 'section'],
+  Utilisateurs: ['uid', 'email', 'matricule', 'nom', 'service', 'fonction', 'dependance', 'role', 'actif', 'telephone', 'civilite', 'sona', 'date_integration', 'wifi_user', 'nin', 'sap', 'email_contact', 'portee', 'section', 'chantiers_sup'],
   Modules: ['id', 'titre', 'icone', 'ordre', 'actif'],
   Applications: ['module', 'titre', 'description', 'emoji', 'url', 'niveau_min', 'roles', 'rubrique'],
   Roles: ['id', 'libelle', 'niveau_max', 'interdits'],
