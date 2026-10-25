@@ -21,6 +21,11 @@
   table.gacces th.r span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 12px; display: inline-block; text-transform: none; letter-spacing: 0; font-weight: 700; color: var(--text, #1F2937); }
   table.gacces th.gapp { position: sticky; top: 0; left: 0; z-index: 4; background: var(--surface, #fff); text-align: left; min-width: 260px; vertical-align: bottom; }
   table.gacces td.gapp { position: sticky; left: 0; background: var(--surface, #fff); z-index: 1; min-width: 260px; font-weight: 700; font-size: 13px; }
+  #dlg-ajout label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 3px; }
+  #dlg-ajout input, #dlg-ajout select { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); width: 100%; box-sizing: border-box; }
+  #dlg-ajout .filtre { margin: 0; } #dlg-ajout form { gap: 8px 12px !important; }
+  #dlg-ajout .btn-p { padding: 9px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; width: auto; }
+  #dlg-ajout form { background: var(--surface); color: var(--text-dark); border-radius: 16px; } #dlg-ajout::backdrop { background: rgba(0,0,0,.45); }
   table.gacces select.cat { margin-top: 3px; max-width: 240px; font: inherit; font-size: 11.5px; font-weight: 500; padding: 2px 4px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text-muted); }
   table.gacces td.gapp small { font-weight: 800; background: var(--tint-orange, #FFF1E6); color: var(--orange-main, #E85D04); border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
   table.gacces tr.mod td { background: var(--tint-orange, #FFF1E6); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; position: static; }
@@ -64,7 +69,7 @@
         <div style="grid-column:1/-1"><label for="n-email">Adresse e-mail *</label><input id="n-email" class="filtre" type="email" style="width:100%;box-sizing:border-box" maxlength="120"></div>
         <div><label for="n-role">Rôle *</label><select id="n-role" class="filtre" style="width:100%"></select></div>
         <div><label for="n-service">Service</label><input id="n-service" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120" placeholder="Ex. Travaux Entretien"></div>
-        <div><label for="n-dep">Dépendance / entreprise</label><input id="n-dep" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120" placeholder="SONATRACH ou nom du prestataire"></div>
+        <div><label for="n-dep">Dépendance / entreprise</label><input id="n-dep" class="filtre" list="l-ent" style="width:100%;box-sizing:border-box" maxlength="120" placeholder="SONATRACH ou un prestataire" autocomplete="off"><datalist id="l-ent"></datalist></div>
         <div><label for="n-section">Section (facultatif)</label><input id="n-section" class="filtre" list="l-sections" style="width:100%;box-sizing:border-box" maxlength="60" placeholder="Froid, Électricité, Hydraulique…"></div>
         <div><label for="n-fonction">Fonction</label><input id="n-fonction" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120"></div>
         <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;align-items:center"><span id="n-err" style="color:#B42318;font-size:13px;margin-inline-end:auto" role="alert"></span><button class="btn-s" type="button" id="n-annuler">Annuler</button><button class="btn-p" type="submit" id="n-ok">Créer le compte</button></div>
@@ -462,8 +467,13 @@
   $('b-ajout').addEventListener('click', function () {
     var s = $('n-role'); s.textContent = ''; etat.roles.forEach(function (r) { var o = el('option', null, r.libelle); o.value = r.id; s.appendChild(o); }); s.value = 'agent';
     ['n-nom', 'n-email', 'n-service', 'n-dep', 'n-fonction', 'n-section'].forEach(function (i) { $(i).value = ''; }); $('n-err').textContent = '';
+    $('n-dep').value = 'SONATRACH';
+    // entreprises proposées : SONATRACH, puis tous les prestataires connus (Badges et Config de la prise en charge) ; on peut aussi en saisir une nouvelle
+    function liste() { var dl = $('l-ent'); dl.textContent = ''; ['SONATRACH'].concat(choixEntreprises || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; dl.appendChild(o); }); }
+    liste(); if (!choixEntreprises) Api.call('admin_portee_choix').then(function (r) { choixEntreprises = r.entreprises || []; liste(); }).catch(function () { choixEntreprises = []; });
     if ($('dlg-ajout').showModal) $('dlg-ajout').showModal(); else $('dlg-ajout').setAttribute('open', ''); $('n-nom').focus();
   });
+  $('n-role').addEventListener('change', function () { if ($('n-role').value === 'prestataire' && $('n-dep').value.toUpperCase() === 'SONATRACH') { $('n-dep').value = ''; $('n-dep').focus(); } else if ($('n-role').value !== 'prestataire' && !$('n-dep').value) $('n-dep').value = 'SONATRACH'; });
   $('n-annuler').addEventListener('click', function () { if ($('dlg-ajout').close) $('dlg-ajout').close(); else $('dlg-ajout').removeAttribute('open'); });
   $('f-ajout').addEventListener('submit', function (ev) {
     ev.preventDefault(); $('n-ok').disabled = true;

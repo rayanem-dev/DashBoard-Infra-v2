@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-25-150",
+    "date": "2026-10-25",
+    "title": "Version 5.81.0 — Rapport journalier consolidé, affectation chantier, ajout d'utilisateur par entreprise",
+    "changes": [
+      "Rapports journaliers > Synthèse du jour : bouton « 📄 Rapport consolidé » : un seul document A4 avec tous les chantiers du jour (par service, travaux, difficultés, visas), la liste des chantiers sans rapport, « Établi par » pour chaque rapport et « Consolidé par » en pied, impression en un clic.",
+      "Saisir mon rapport : « Rapport établi par … » (nom, fonction, service) affiché en haut ; le journal indique « Établi par ».",
+      "L'onglet « Chantiers » devient l'application « Affectation chantier », rangée avec Avancement et Suivi Chantier (lien dans leur barre du haut).",
+      "Ajouter un utilisateur : le champ « Dépendance / entreprise » propose SONATRACH puis tous les prestataires connus ; pour un prestataire, l'entreprise choisie devient automatiquement la limite de son compte."
+    ]
+  },
+  {
     "id": "2026-10-25-149",
     "date": "2026-10-25",
     "title": "Version 5.80.1 — Prise en charge : entreprise centrée, ancienne version retirée",

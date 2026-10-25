@@ -64,7 +64,8 @@
       { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
-        { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' } ] },
+        { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' },
+        { titre: 'Affectation chantier', description: 'Service de chaque chantier et synchronisation avec le Suivi CPM.', emoji: '🔀', url: 'affectation-chantier.html' } ] },
       { id: 'badges', titre: 'Badges prestataires', icone: '🪪', niveau: 3, apps: [
         { titre: 'Badges prestataires', description: 'Prépare et imprime les badges (recto-verso), numérotation automatique et historique.', emoji: '🪪', url: 'badges.html' },
         { titre: 'Fichier des habilitations', description: 'Extraction en vrac du fichier des Enquêtes, avec choix des colonnes à imprimer ou exporter.', emoji: '🗃️', url: 'habilitations.html' } ] },
@@ -97,6 +98,7 @@
     { id: 'V3', nom: 'ETS Location Dunes', activite: 'Location de matériel', telephone: '0770 22 33 44', telephone2: '0550 11 22 33', email: '', email2: '', fax: '', adresse: 'Touggourt', commentaire: 'Engins et camions' },
     { id: 'V4', nom: 'Clim Froid Services', activite: 'Maintenance froid et climatisation', telephone: '029 74 55 66', telephone2: '', email: 'info@climfroid.example', email2: '', fax: '', adresse: 'Ouargla', commentaire: '' }
   ];
+  var DEMO_CHANTIERS = [{ id: 'c1', nom: 'Rénovation 400 chambres base vie', service: 'Construction', contrat: '84.INFRA.26' }, { id: 'c2', nom: 'Réseau routier El Merfeg Gaz', service: 'Construction', contrat: '47.INFRA.26' }, { id: 'c3', nom: 'Maintenance électrique infrastructures', service: 'Électromécanique', contrat: '30.INFRA.24' }];
   var demoApps = [
     { module: 'pilotage', titre: 'Avancement Chantiers', niveau_min: 1, roles: [] }, { module: 'pilotage', titre: 'Suivi Chantier', niveau_min: 1, roles: [] },
     { module: 'cpm', titre: 'Dossiers CPM — Détail', niveau_min: 1, roles: [] }, { module: 'planning', titre: 'Planning global', niveau_min: 2, roles: [] }
@@ -275,6 +277,14 @@
         if (fnp === 'verifierEnquetes') return { ok: true, deja: [] };
         if (fnp === 'soumettreFormulairePEC') return { success: true, message: 'Démonstration : aucun document généré.', liens: [] };
         return { success: true, message: 'Démonstration' }; }
+      case 'rapports_chantiers': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service }; }) }; }
+      case 'rapports_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { niveau: 3, rapports: [] }; }
+      case 'rapports_synthese': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var chs = DEMO_CHANTIERS.map(function (c, i) { var rs = i === 2 ? [] : [{ id: 'r' + i, date: p.date, chantier: c.id, auteur_nom: i === 0 ? 'MEZIANE Sofia' : 'BENALI Karim', auteur_email: 'x@y.dz', effectif: 12 + i * 3, avancement: 40 + i * 10, lignes: [{ zone: 'Base de vie', texte: 'Coulage de la dalle du bloc B', avancement: 40 + i * 10 }, { zone: 'VRD', texte: 'Nivellement', avancement: 20, routine: false }], travaux: '', difficultes: i === 0 ? 'Retard de livraison du béton' : '', commentaire: '' }]; return { id: c.id, nom: c.nom, service: c.service, rapports: rs, effectif: rs.reduce(function (n, r) { return n + r.effectif; }, 0), avancement: rs.length ? rs[0].avancement : null }; });
+        return { date: p.date, chantiers: chs, manquants: chs.filter(function (c) { return !c.rapports.length; }).length }; }
+      case 'rapports_chantiers_admin': { exigerAdmin(); return { chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service, contrat: c.contrat, actif: 1, source: 'cpm' }; }) }; }
+      case 'rapports_chantier_maj': { exigerAdmin(); return {}; }
+      case 'rapports_chantiers_sync': { exigerAdmin(); return { ajoutes: 0, renommes: 0, desactives: 0, reactives: 0, routines: 0 }; }
       case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];
