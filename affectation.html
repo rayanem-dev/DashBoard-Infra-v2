@@ -56,6 +56,12 @@
       <div class="res" id="res"></div>
       <div class="choisi" id="choisi" hidden></div>
     </div>
+    <div class="bloc" id="b-sup" hidden>
+      <h2>Projets ouverts à son rapport (en plus de son service)</h2>
+      <p class="aide" style="margin:0 0 8px">Son service d'affectation ne change pas : cochez seulement les projets d'autres services sur lesquels il doit aussi saisir son rapport journalier.</p>
+      <div id="sup-liste" class="res" style="max-height:260px;overflow:auto"></div>
+      <div style="margin-top:12px"><button class="btn-s" id="b-sup-enr" type="button">Enregistrer les projets</button></div>
+    </div>
     <div class="bloc" id="b-ou" hidden>
       <h2>2 · Dans quel service ?</h2>
       <div class="gf">
@@ -65,8 +71,9 @@
         <div style="grid-column: 1 / -1"><label for="motif">Motif (facultatif)</label><input type="text" id="motif" maxlength="120" placeholder="ex. Réorganisation de la division"></div>
       </div>
       <p class="aide" id="aide" style="margin:10px 0 0"></p>
+      <label style="display:flex;gap:8px;align-items:center;margin:12px 0 0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" id="envoyer-mail" checked style="width:auto;min-width:0"> Envoyer un e-mail de changement (l'intéressé, le chef de division et le secrétariat)</label>
       <div style="margin-top:12px"><button class="btn-p" id="valider" type="button" disabled>✔ Enregistrer l'affectation</button></div>
-      <p class="aide" style="margin:10px 0 0">Le service est modifié <b>dans l'Organigramme (BDDORGA)</b> puis dans le portail ; si l'écriture dans BDDORGA échoue, rien n'est modifié. L'intéressé, le chef de division et le secrétariat reçoivent un e-mail, et l'opération est conservée dans l'historique. Les droits du planning par service suivent le nouveau service.</p>
+      <p class="aide" style="margin:10px 0 0">Le service est modifié <b>dans l'Organigramme (BDDORGA)</b> puis dans le portail ; si l'écriture dans BDDORGA échoue, rien n'est modifié. Si la case est cochée, l'intéressé, le chef de division et le secrétariat reçoivent un e-mail ; l'opération est conservée dans l'historique. Les droits du planning par service suivent le nouveau service.</p>
     </div>
   </section>
 
@@ -110,8 +117,30 @@
     var s = $('service'); s.textContent = ''; s.appendChild(new Option('Choisissez un service…', ''));
     D.services.forEach(function (x) { if (x.toLowerCase() !== (p.service || '').toLowerCase()) s.appendChild(new Option(x, x)); });
     s.appendChild(new Option('➕ Autre service (nouveau)…', '__autre')); $('z-autre').hidden = true; $('autre').value = '';
-    $('b-ou').hidden = false; maj();
+    $('b-ou').hidden = false; maj(); chargerSup(p);
   }
+  // ----- Projets d'autres services ouverts à son rapport
+  function chargerSup(p) {
+    var z = $('sup-liste'); $('b-sup').hidden = false; z.textContent = 'Chargement…';
+    Api.call('aff_chantiers_sup', { uid: p.uid }).then(function (r) {
+      if (!choisi || choisi.uid !== p.uid) return; z.textContent = '';
+      if (!r.chantiers.length) { z.appendChild(el('div', 'aide', 'Aucun projet (contrat en exécution) pour l\'instant.')).style.padding = '10px 12px'; return; }
+      r.chantiers.forEach(function (c) {
+        var propre = (c.service || '').toLowerCase() === (r.service || '').toLowerCase() && !!r.service;
+        var l = el('label'); l.style.cssText = 'display:flex;gap:8px;align-items:center;padding:6px 10px;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;margin:0';
+        var cb = el('input'); cb.type = 'checkbox'; cb.value = c.id; cb.style.cssText = 'width:auto;min-width:0'; cb.checked = propre || r.sup.indexOf(c.id) >= 0; cb.disabled = propre;
+        l.appendChild(cb); l.appendChild(document.createTextNode(c.nom)); l.appendChild(el('small', null, ' · ' + (c.service || 'sans service') + (propre ? ' (son service)' : ''))).style.cssText = 'font-weight:400;color:#6B7280';
+        z.appendChild(l);
+      });
+    }).catch(function (e) { z.textContent = ''; toast(e.message, true); });
+  }
+  $('b-sup-enr').addEventListener('click', function () {
+    if (!choisi) return;
+    var ids = [].slice.call(document.querySelectorAll('#sup-liste input:checked:not(:disabled)')).map(function (c) { return c.value; });
+    var b = $('b-sup-enr'); b.disabled = true;
+    Api.call('aff_chantiers_sup_maj', { uid: choisi.uid, ids: ids }).then(function () { toast('Projets enregistrés pour ' + choisi.nom + ' (' + ids.length + ')'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+  });
+
   function cible() { return $('service').value === '__autre' ? $('autre').value.replace(/\s+/g, ' ').trim() : $('service').value; }
   function maj() {
     $('z-autre').hidden = $('service').value !== '__autre';
@@ -123,10 +152,10 @@
     var nouveau = $('service').value === '__autre';
     if (nouveau && !confirm('Le service « ' + cible() + ' » n\'existe pas encore. Le créer ?')) return;
     var btn = $('valider'); btn.disabled = true;
-    Api.call('aff_changer', { uid: choisi.uid, service: cible(), creer: nouveau, motif: $('motif').value, date_effet: $('date-effet').value }).then(function (r) {
+    Api.call('aff_changer', { uid: choisi.uid, service: cible(), creer: nouveau, envoyer_mail: $('envoyer-mail').checked, motif: $('motif').value, date_effet: $('date-effet').value }).then(function (r) {
       var s = $('succes'); s.hidden = false; s.textContent = ''; s.appendChild(el('b', null, 'Affectation ' + r.id + ' enregistrée : '));
       s.appendChild(document.createTextNode(choisi.nom + ' — « ' + (r.ancien || '—') + ' » → « ' + r.nouveau + ' » dans BDDORGA et dans le portail. ' + (r.emails ? 'E-mail envoyé à ' + r.emails + ' personne(s).' : '')));
-      choisi = null; $('choisi').hidden = true; $('b-ou').hidden = true; $('motif').value = ''; $('date-effet').value = ''; $('q').value = '';
+      choisi = null; $('choisi').hidden = true; $('b-ou').hidden = true; $('b-sup').hidden = true; $('motif').value = ''; $('date-effet').value = ''; $('q').value = '';
       window.scrollTo({ top: 0, behavior: 'smooth' }); return charger().then(historique);
     }).catch(function (e) { toast(e.message, true); btn.disabled = false; });
   }

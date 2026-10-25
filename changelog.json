@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-168",
+    "date": "2026-10-25",
+    "title": "Version 5.90.0 — Projets de plusieurs services, e-mail d'affectation facultatif",
+    "changes": [
+      "Affectation du personnel : une personne garde son service d'affectation mais peut recevoir l'accès à des projets d'autres services (bloc « Projets ouverts à son rapport ») ; elle les voit alors dans Rapports journaliers et peut y saisir. Son rapport est rattaché au service du projet, pour que le chef de ce service le voie et le vise.",
+      "L'e-mail de changement d'affectation devient facultatif : case « Envoyer un e-mail » cochée par défaut."
+    ]
+  },
+  {
     "id": "2026-10-25-167",
     "date": "2026-10-25",
     "title": "Version 5.89.3 — Vis-à-vis de chambre : classement par conflit",
