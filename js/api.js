@@ -99,6 +99,7 @@
     { id: 'V3', nom: 'ETS Location Dunes', activite: 'Location de matériel', telephone: '0770 22 33 44', telephone2: '0550 11 22 33', email: '', email2: '', fax: '', adresse: 'Touggourt', commentaire: 'Engins et camions' },
     { id: 'V4', nom: 'Clim Froid Services', activite: 'Maintenance froid et climatisation', telephone: '029 74 55 66', telephone2: '', email: 'info@climfroid.example', email2: '', fax: '', adresse: 'Ouargla', commentaire: '' }
   ];
+  var demoTrajets = { 'ALGER → RNS': { n: 0, jours: {}, dernier: '' }, 'RNS → ALGER': { n: 0, jours: {}, dernier: '' } };
   var DEMO_CHANTIERS = [{ id: 'c1', nom: 'Rénovation 400 chambres base vie', service: 'Construction', contrat: '84.INFRA.26' }, { id: 'c2', nom: 'Réseau routier El Merfeg Gaz', service: 'Construction', contrat: '47.INFRA.26' }, { id: 'c3', nom: 'Maintenance électrique infrastructures', service: 'Électromécanique', contrat: '30.INFRA.24' }];
   var demoApps = [
     { module: 'pilotage', titre: 'Avancement Chantiers', niveau_min: 1, roles: [] }, { module: 'pilotage', titre: 'Suivi Chantier', niveau_min: 1, roles: [] },
@@ -286,8 +287,9 @@
       case 'rapports_chantiers_admin': { exigerAdmin(); return { chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service, contrat: c.contrat, actif: 1, source: 'cpm' }; }) }; }
       case 'rapports_chantier_maj': { exigerAdmin(); return {}; }
       case 'rapports_chantiers_sync': { exigerAdmin(); return { ajoutes: 0, renommes: 0, desactives: 0, reactives: 0, routines: 0 }; }
-      case 'reservation_orga': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { personnes: DEMO_USERS.map(function (u) { return { nom: u.nom, fonction: u.fonction || '', societe: u.dependance || 'SONATRACH', service: u.service || '' }; }), destinataire: 'Sec-INFRA.RNS@Sonatrach.dz', mention: 'Rattaché à la division Infra' }; }
-      case 'reservation_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ok: true, count: ((p.demande || {}).personnes || []).length, to: 'Sec-INFRA.RNS@Sonatrach.dz (démonstration : rien n\'est envoyé)' }; }
+      case 'reservation_orga': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { personnes: DEMO_USERS.map(function (u) { return { nom: u.nom, fonction: u.fonction || '', societe: u.dependance || 'SONATRACH', service: u.service || '' }; }), trajets_table: demoTrajets, destinataire: 'Sec-INFRA.RNS@Sonatrach.dz', mention: 'Rattaché à la division Infra' }; }
+      case 'reservation_trajet_supprimer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); delete demoTrajets[p.trajet]; return { trajets_table: demoTrajets }; }
+      case 'reservation_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var dm = p.demande || {}, tj = String(dm.depart || '').trim().toUpperCase() + ' → ' + String(dm.destination || '').trim().toUpperCase(); var jd = new Date(String(dm.date) + 'T00:00:00Z').getUTCDay(); var te = demoTrajets[tj] || (demoTrajets[tj] = { n: 0, jours: {}, dernier: '' }); te.n += 1; te.jours[jd] = (te.jours[jd] || 0) + 1; return { ok: true, count: ((p.demande || {}).personnes || []).length, to: 'Sec-INFRA.RNS@Sonatrach.dz (démonstration : rien n\'est envoyé)' }; }
       case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];

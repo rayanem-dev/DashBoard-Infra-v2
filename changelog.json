@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-152",
+    "date": "2026-10-25",
+    "title": "Version 5.82.1 — Réservation : trajet libre appris au fil des demandes",
+    "changes": [
+      "Le trajet n'est plus limité à ALGER ⇄ RNS : saisissez un départ et une destination (ex. LAGHOUAT → RNS), ⇄ inverse le sens.",
+      "Chaque trajet envoyé est appris avec son jour de la semaine ; il est proposé ensuite en un clic, ceux déjà demandés ce jour-là d'abord (ex. le dimanche : LAGHOUAT → RNS, GHARDAIA → RNS…). ✕ retire un trajet de la liste."
+    ]
+  },
+  {
     "id": "2026-10-25-151",
     "date": "2026-10-25",
     "title": "Version 5.82.0 — Demande de réservation de vol dans le portail",
