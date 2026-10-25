@@ -178,6 +178,19 @@ var Rapports = (function () {
     });
   }
 
+  /** Correction d'un rapport passé : chef de division et secrétariat (tous les rapports), chefs de service (rapports de leur service). role = rôle canonique. */
+  function peutCorriger(user, role, r) {
+    if (role === 'chef_division' || role === 'secretariat') return true;
+    if (role === 'chef_service' || role === 'interim_chef_service') return !!norm(user.service) && servicePareil(r.service, user.service);
+    return false;
+  }
+  /** Mêmes contrôles qu'une saisie, mais sans la règle « jour même » : la date et le chantier du rapport d'origine sont conservés. */
+  function corriger(req, existant) {
+    var v = valider({ date: existant.date, chantier: existant.chantier, effectif: req.effectif, avancement: req.avancement, travaux: req.travaux, lignes: req.lignes, difficultes: req.difficultes, commentaire: req.commentaire },
+      existant.date, 3, [norm(existant.chantier)]);
+    return v;
+  }
+
   function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
   function dateLongue(iso) { var p = String(iso).split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); return JOURS[d.getUTCDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0]; }
@@ -223,7 +236,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

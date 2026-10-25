@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-169",
+    "date": "2026-10-25",
+    "title": "Version 5.91.0 — Corriger un rapport journalier",
+    "changes": [
+      "Journal des rapports : bouton « ✎ Corriger » pour le chef de division, le secrétariat (tous les rapports) et les chefs de service (rapports de leur service), même pour un jour passé : effectif, avancement global, ouvrages et pourcentages, difficultés, commentaire. L'auteur, la date et le chantier ne changent pas.",
+      "La correction est tracée (« Corrigé par … le … » sur le rapport, et dans le journal du portail). Le consolidé du jour, s'il existe, se régénère d'un clic pour reprendre la correction."
+    ]
+  },
+  {
     "id": "2026-10-25-168",
     "date": "2026-10-25",
     "title": "Version 5.90.0 — Projets de plusieurs services, e-mail d'affectation facultatif",

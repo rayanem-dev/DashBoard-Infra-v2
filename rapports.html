@@ -205,7 +205,12 @@
     if (r.lignes && r.lignes.length && /\S/.test(r.travaux) && r.travaux.indexOf('• ') !== 0) f.appendChild(ligne('Précisions', r.travaux));
     if (r.difficultes) f.appendChild(ligne('Difficultés', r.difficultes));
     if (r.commentaire) f.appendChild(ligne('Commentaire', r.commentaire));
+    if (r.corrige_par) f.appendChild(el('div', 'aide', '✎ Corrigé par ' + r.corrige_par + (r.corrige_le ? ' le ' + new Date(r.corrige_le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')));
     if (r.visa_par) f.appendChild(el('div', 'visa', 'Vu par ' + r.visa_par + (r.visa_note ? ' — ' + r.visa_note : '')));
+    if (r.peut_corriger) {
+      var bc = el('button', 'btn-s', '✎ Corriger'); bc.type = 'button'; bc.style.cssText = 'margin-top:10px;margin-right:8px'; bc.title = 'Corriger ce rapport (chef de division, secrétariat, chef de service)';
+      bc.addEventListener('click', function () { corriger(r); }); f.appendChild(bc);
+    }
     if (r.peut_viser) {
       var b = el('button', 'btn-s', r.visa_par ? 'Modifier le visa' : 'Viser'); b.type = 'button'; b.style.marginTop = '10px';
       b.addEventListener('click', function () {
@@ -215,6 +220,45 @@
       f.appendChild(b);
     }
     return f;
+  }
+  // ----- Correction d'un rapport (chef de division, secrétariat, chef de service de son service) : l'auteur, la date et le chantier restent ; la correction est tracée
+  function corriger(r) {
+    var d = document.createElement('dialog'); d.style.cssText = 'margin:auto;width:min(720px,94vw);max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)';
+    var ls = (r.lignes || []).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, routine: !!l.routine }; });
+    d.appendChild(el('h3', null, 'Corriger le rapport du ' + Rotation.frDate(r.date))).style.margin = '0 0 4px';
+    d.appendChild(el('p', 'aide', nomChantier(r.chantier) + ' · établi par ' + (r.auteur_nom || r.auteur_email) + ' — l\'auteur, la date et le chantier ne changent pas.')).style.margin = '0 0 12px';
+    function champ(lib, input) { var w = el('div'); w.style.marginBottom = '10px'; var l = el('label', null, lib); input.style.width = '100%'; w.appendChild(l); w.appendChild(input); d.appendChild(w); return input; }
+    var ef = champ('Effectif présent', el('input')); ef.type = 'number'; ef.min = 0; ef.value = r.effectif;
+    var av = champ('Avancement global (%) — laissez vide pour retenir le plus avancé des ouvrages', el('input')); av.type = 'number'; av.min = 0; av.max = 100; av.step = 0.1; av.value = r.avancement === '' || r.avancement == null ? '' : r.avancement;
+    var zl = el('div'); var lt = el('label', null, 'Ouvrages / zones'); d.appendChild(lt); d.appendChild(zl);
+    function dessin() {
+      zl.textContent = '';
+      ls.forEach(function (l, i) {
+        var ln = el('div'); ln.style.cssText = 'display:grid;grid-template-columns:minmax(100px,1fr) 2fr 80px auto;gap:6px;margin-bottom:6px';
+        var a = el('input'); a.value = l.zone || ''; a.placeholder = 'Ouvrage / zone'; a.oninput = function () { l.zone = a.value; };
+        var b = el('input'); b.value = l.texte || ''; b.placeholder = 'Ce qui a été fait'; b.oninput = function () { l.texte = b.value; };
+        var c = el('input'); c.type = 'number'; c.min = 0; c.max = 100; c.step = 0.1; c.placeholder = '%'; c.value = l.avancement === '' || l.avancement == null ? '' : l.avancement; c.oninput = function () { l.avancement = c.value; };
+        var x = el('button', 'btn-s', '✕'); x.type = 'button'; x.onclick = function () { ls.splice(i, 1); dessin(); };
+        ln.appendChild(a); ln.appendChild(b); ln.appendChild(c); ln.appendChild(x); zl.appendChild(ln);
+      });
+    }
+    dessin();
+    var ajout = el('button', 'btn-s', '+ Ajouter un ouvrage'); ajout.type = 'button'; ajout.style.marginBottom = '10px'; ajout.onclick = function () { ls.push({ zone: '', texte: '', avancement: '' }); dessin(); }; d.appendChild(ajout);
+    var tr = champ('Précisions (texte libre)', el('textarea')); tr.rows = 2; tr.value = /\S/.test(r.travaux || '') && (r.travaux || '').indexOf('• ') !== 0 ? r.travaux : '';
+    var df = champ('Difficultés', el('textarea')); df.rows = 2; df.value = r.difficultes || '';
+    var cm = champ('Commentaire', el('textarea')); cm.rows = 2; cm.value = r.commentaire || '';
+    var er = el('p'); er.style.cssText = 'color:#B42318;font-weight:700;margin:6px 0 0'; d.appendChild(er);
+    var bar = el('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:8px';
+    var an = el('button', 'btn-s', 'Annuler'); an.type = 'button'; an.onclick = function () { d.close(); d.remove(); };
+    var ok = el('button', 'btn-p', 'Enregistrer la correction'); ok.type = 'button';
+    ok.onclick = function () {
+      er.textContent = ''; ok.disabled = true;
+      Api.call('rapport_corriger', { id: r.id, effectif: ef.value, avancement: av.value, travaux: tr.value, difficultes: df.value, commentaire: cm.value,
+        lignes: ls.filter(function (l) { return (l.zone || '').trim() || (l.texte || '').trim() || (l.avancement !== '' && l.avancement != null); }) })
+        .then(function () { d.close(); d.remove(); toast('Rapport corrigé — pensez à régénérer le consolidé du ' + Rotation.frDate(r.date) + ' s\'il existe'); return journal(); })
+        .catch(function (e) { er.textContent = e.message; }).then(function () { ok.disabled = false; });
+    };
+    bar.appendChild(an); bar.appendChild(ok); d.appendChild(bar); document.body.appendChild(d); d.showModal();
   }
   function journal() {
     return Api.call('rapports_liste', { du: $('du').value, au: $('au').value, chantier: $('f-chantier').value }).then(function (r) {

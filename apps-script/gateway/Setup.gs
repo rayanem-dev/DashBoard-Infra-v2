@@ -288,7 +288,7 @@ var SCHEMA_ = {
   Exceptions: ['email', 'module', 'niveau'],
   Rotations: ['email', 'statut', 'depuis', 'jours_travail', 'jours_repos', 'maj_par', 'maj_le', 'reliquat'],
   Chantiers: ['id', 'nom', 'service', 'actif', 'contrat', 'entreprise', 'source', 'fiche', 'suivi'],
-  Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le', 'lignes'],
+  Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le', 'lignes', 'corrige_par', 'corrige_le'],
   Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire', 'reliquat', 'reliquat_net'],
   Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
   VisAVis: ['uid', 'vis_travail', 'vis_chambre', 'maj_par', 'maj_le'],

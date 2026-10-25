@@ -151,6 +151,7 @@ function route_(req) {
     case 'rapports_chantiers': return rapportsChantiers_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
+    case 'rapport_corriger': return rapportCorriger_(req);
     case 'rapport_viser': return rapportViser_(req);
     case 'rapports_synthese': return rapportsSynthese_(req);
     case 'rapports_consolide_generer': return rapportsConsolideGenerer_(req);
@@ -454,12 +455,12 @@ function chantiersTous_() {
 function chantiersActifs_() { return chantiersTous_().filter(function (c) { return c.actif; }); }
 function lignesLues_(v) { if (Array.isArray(v)) return v; try { var l = JSON.parse(String(v || '[]')); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
 function rapportsLus_() {
-  assurerColonnes_('Rapports', ['lignes']);
+  assurerColonnes_('Rapports', ['lignes', 'corrige_par', 'corrige_le']);
   return Store.table('Rapports').map(function (r) {
     return { id: String(r.id), date: jour_(r.date), chantier: String(r.chantier).toLowerCase(), auteur_email: String(r.auteur_email), auteur_nom: r.auteur_nom, service: r.service,
       effectif: Number(r.effectif) || 0, travaux: String(r.travaux || ''), lignes: lignesLues_(r.lignes), difficultes: String(r.difficultes || ''), commentaire: String(r.commentaire || ''),
       avancement: r.avancement === '' || r.avancement == null ? '' : Number(r.avancement),
-      visa_par: String(r.visa_par || ''), visa_note: String(r.visa_note || ''), visa_le: String(r.visa_le || '') };
+      visa_par: String(r.visa_par || ''), visa_note: String(r.visa_note || ''), visa_le: String(r.visa_le || ''), corrige_par: String(r.corrige_par || ''), corrige_le: String(r.corrige_le || '') };
   });
 }
 function rapportsChantiers_(req) {
@@ -494,8 +495,21 @@ function rapportsListe_(req) {
   var du = Dates.isDate(req.du) ? req.du : Dates.addDays(auj, -6);
   var au = Dates.isDate(req.au) ? req.au : auj;
   var liste = Rapports.filtrer(rapportsLus_(), u, niv, { du: du, au: au, chantier: req.chantier || '', auteur: niv >= 2 ? (req.auteur || '') : '' });
-  var out = liste.slice(0, 300).map(function (r) { r.peut_viser = Rapports.peutViser(u, niv, r); r.le_mien = String(r.auteur_email).toLowerCase() === String(u.email).toLowerCase(); return r; });
+  var out = liste.slice(0, 300).map(function (r) { r.peut_viser = Rapports.peutViser(u, niv, r); r.peut_corriger = Rapports.peutCorriger(u, Droits.roleCanon(u.role), r); r.le_mien = String(r.auteur_email).toLowerCase() === String(u.email).toLowerCase(); return r; });
   return { du: du, au: au, niveau: niv, rapports: out, tronque: liste.length > 300 };
+}
+/** Corrige un rapport d'un jour passé (chef de division, secrétariat, chef de service de son service) ; l'auteur, la date et le chantier restent, la correction est tracée. */
+function rapportCorriger_(req) {
+  var u = Auth.userFromToken(req.token);
+  var r = rapportsLus_().filter(function (x) { return x.id === String(req.id); })[0];
+  if (!r) throw new Error('Rapport introuvable');
+  if (!Rapports.peutCorriger(u, Droits.roleCanon(u.role), r)) throw Object.assign(new Error('Vous ne pouvez pas corriger ce rapport'), { code: 'DROITS' });
+  var v = Rapports.corriger(req, r); if (v.erreur) throw new Error(v.erreur);
+  var x = v.rapport, maintenant = new Date().toISOString();
+  Store.maj('Rapports', { id: r.id }, { effectif: x.effectif, travaux: x.travaux, lignes: JSON.stringify(x.lignes || []), difficultes: x.difficultes, commentaire: x.commentaire, avancement: x.avancement,
+    modifie_le: maintenant, corrige_par: Annuaire.nomAffichable(u.nom, u.email), corrige_le: maintenant });
+  Store.journal('rapport_corrige', u.email, r.id + ' (avancement ' + (r.avancement === '' ? '—' : r.avancement) + ' → ' + (x.avancement === '' ? '—' : x.avancement) + ')');
+  return { id: r.id };
 }
 function rapportViser_(req) {
   var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 2);
