@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-25-156",
+    "date": "2026-10-25",
+    "title": "Version 5.84.0 — Les pages Chantiers regroupées en onglets",
+    "changes": [
+      "Comme pour Planning / Organigramme, une barre d'onglets relie les pages des chantiers : Avancement, Suivi Chantier, Rapports journaliers et Affectation chantier (chaque onglet n'apparaît que si vous avez cette application). Les boutons du haut de page sont retirés ; Suivi CPM et Retour au portail restent."
+    ]
+  },
+  {
     "id": "2026-10-25-155",
     "date": "2026-10-25",
     "title": "Version 5.83.1 — Prise en charge : base par défaut retirée du haut ; Affectation chantier limitée aux contrats",

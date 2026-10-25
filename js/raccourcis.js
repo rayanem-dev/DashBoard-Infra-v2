@@ -1,10 +1,16 @@
 /**
- * Raccourcis entre les pages liées (Planning, Simulation, Organigramme, Vis-à-vis, Affectations) : une barre sous l'en-tête, pour passer de l'une à l'autre
+ * Raccourcis entre les pages liées, par famille — Planning (Planning, Simulation, Demandes, Organigramme, Vis-à-vis, Affectations) et Chantiers (Avancement, Suivi Chantier, Rapports journaliers, Affectation chantier) : une barre sous l'en-tête, pour passer de l'une à l'autre
  * sans repasser par le portail. Chaque raccourci n'apparaît que si la page est dans le menu de l'utilisateur (droits). Nécessite js/api.js.
  * Dans la page : <script src="js/raccourcis.js"></script> (après api.js).
  */
 (function () {
-  var LIENS = [
+  var CHANTIERS = [
+    { f: 'avancement_des_chantiers.html', href: 'Avancement_des_Chantiers.html', t: '📊 Avancement' },
+    { f: 'suivi_chantier.html', href: 'Suivi_Chantier.html', t: '🗂️ Suivi Chantier' },
+    { f: 'rapports.html', href: 'rapports.html', t: '📝 Rapports journaliers' },
+    { f: 'affectation-chantier.html', href: 'affectation-chantier.html', t: '🔀 Affectation chantier' }
+  ];
+  var PLANNING = [
     { f: 'planning.html', href: 'planning.html', t: '🗓️ Planning' },
     { f: 'simulation.html', href: 'simulation.html', t: '🔮 Simulation', sans: '#demandes' },
     { f: 'simulation.html', href: 'simulation.html#demandes', t: '📋 Demandes', hash: '#demandes', badge: true },
@@ -13,6 +19,7 @@
     { f: 'affectation.html', href: 'affectation.html', t: '🔀 Affectations' }
   ];
   var page = (location.pathname.split('/').pop() || '').toLowerCase(), CLE = 'gm_pages';
+  var LIENS = [CHANTIERS, PLANNING].filter(function (g) { return g.some(function (l) { return l.f === page; }); })[0] || [];   // la famille de la page courante
   function fichier(u) { return String(u || '').split(/[?#]/)[0].split('/').pop().toLowerCase(); }
   function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
   function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE) || 'null'); return o && Date.now() - o.t < 600000 ? o.f : null; } catch (e) { return null; } }
