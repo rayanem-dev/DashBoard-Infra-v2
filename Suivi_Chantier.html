@@ -79,7 +79,7 @@
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">SC</div>
     <div class="logo-text"><h1>Suivi Chantier</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
-  <div class="bandeau-droite"><a class="btn-ghost" href="Avancement_des_Chantiers.html">📊 Avancement Chantiers</a><a class="btn-ghost" id="lien-aff" href="affectation-chantier.html" hidden>🔀 Affectation chantier</a><a class="btn-ghost" href="Dossiers_CPM.html">📋 Suivi CPM</a><a class="btn-ghost" href="portail.html">← Retour au portail</a></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="Dossiers_CPM.html">📋 Suivi CPM</a><a class="btn-ghost" href="portail.html">← Retour au portail</a></div>
 </div></header>
 
 <main>
@@ -208,9 +208,6 @@
 </main>
 
 <script src="js/pied.js"></script>
-<script>
-// Lien « Affectation chantier » : affiché seulement pour qui a cette application (liste des pages autorisées mémorisée par garde.js)
-(function () { function ok() { try { var o = JSON.parse(sessionStorage.getItem('gm_pages') || 'null'); return !!(o && o.f && o.f.indexOf('affectation-chantier.html') !== -1); } catch (e) { return false; } } function maj() { var a = document.getElementById('lien-aff'); if (a) a.hidden = !ok(); } maj(); setTimeout(maj, 1200); setTimeout(maj, 3500); })();
-</script>
+<script src="js/raccourcis.js"></script>
 </body>
 </html>
