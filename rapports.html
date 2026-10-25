@@ -53,7 +53,7 @@
       <p class="aide" id="etabli" style="margin:0 0 4px">Rapport établi par : <b id="etabli-nom">…</b> <span id="etabli-qual"></span></p>
       <div class="deux">
         <div class="champ"><label for="chantier">Chantier</label><select id="chantier"></select></div>
-        <div class="champ"><label for="date">Date</label><input type="date" id="date"></div>
+        <div class="champ"><label for="date">Date <span class="aide" style="font-weight:400">(jour même seulement)</span></label><input type="date" id="date"></div>
       </div>
       <div class="deux">
         <div class="champ"><label for="effectif">Effectif présent</label><input type="number" id="effectif" min="0" max="1000" step="1" inputmode="numeric"></div>
@@ -83,8 +83,11 @@
   </section>
 
   <section class="panneau" id="p-synth" hidden>
-    <div class="barre"><label class="aide" for="s-date" style="margin:0">Jour</label><input type="date" id="s-date" style="min-width:160px"><span id="s-resume" class="aide"></span><button class="btn-p" id="b-conso" type="button" style="margin-inline-start:auto" title="Un seul rapport journalier avec tous les chantiers, prêt à imprimer">📄 Rapport consolidé</button></div>
+    <div class="barre"><label class="aide" for="s-date" style="margin:0">Jour</label><input type="date" id="s-date" style="min-width:160px"><span id="s-resume" class="aide"></span></div>
+    <div class="barre" style="gap:8px"><button class="btn-p" id="b-gen" type="button" title="Enregistre le rapport consolidé du jour à partir des rapports de chantier (remplace la version précédente)">📄 Générer le consolidé du jour</button><button class="btn-s" id="b-conso" type="button" disabled title="Imprime la version enregistrée">🖨 Imprimer le consolidé</button><span id="conso-etat" class="aide"></span></div>
     <div class="grille-synthese" id="synth"></div>
+    <h3 style="margin:22px 0 8px;font-size:15px">Rapports consolidés enregistrés</h3>
+    <div id="conso-liste"></div>
   </section>
 
 </main>
@@ -157,7 +160,7 @@
       $('deja').textContent = mesRapports.some(function (x) { return x.date === d && x.chantier === c && x.le_mien; }) ? 'Un rapport existe déjà pour ce chantier et ce jour : vous le modifiez.' : '';
     });
   }
-  $('date').max = auj; $('date').value = auj;
+  $('date').min = auj; $('date').max = auj; $('date').value = auj; $('date').readOnly = true; $('date').title = 'Un rapport s\'établit et se modifie le jour même seulement';
   $('chantier').addEventListener('change', prerempli); $('date').addEventListener('change', prerempli);
 
   $('f').addEventListener('submit', function (e) {
@@ -225,11 +228,11 @@
       });
     }).catch(function (e) { toast(e.message, true); });
   }
-  $('s-date').addEventListener('change', synthese);
+  $('s-date').addEventListener('change', function () { synthese(); etatConsolide(); });
 
   // Rapport journalier CONSOLIDÉ : tous les chantiers d'un jour dans un seul document (impression en un clic)
   function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function consolide(s) {
+  function consolide(s, meta) {
     var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'], p = s.date.split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
     var dateLongue = JOURS[d.getUTCDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0];
     var avec = s.chantiers.filter(function (c) { return c.rapports.length; }), sans = s.chantiers.filter(function (c) { return !c.rapports.length; });
@@ -256,18 +259,48 @@
       });
     });
     if (sans.length) h += '<h2>Chantiers sans rapport ce jour</h2><p class="sans">' + sans.map(function (c) { return esc(c.nom); }).join(' · ') + '</p>';
-    var maintenant = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-    h += '<div class="pied-c"><p>Consolidé par <b>' + esc(moi.nom) + '</b>' + (moi.qual ? ' (' + esc(moi.qual) + ')' : '') + ' le ' + esc(maintenant) + '</p>' +
+    var quand = meta && meta.genere_le ? new Date(meta.genere_le).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+    h += '<div class="pied-c"><p>Consolidé par <b>' + esc(meta ? meta.genere_par : moi.nom) + '</b> le ' + esc(quand) + (meta ? ' · version ' + esc(meta.version) : '') + ' — un seul rapport consolidé par jour : le régénérer remplace la version précédente.</p>' +
       '<div class="sig"><span>Le Chef de Service</span><span>Le Chef de Division Infrastructures</span></div></div>';
     return h;
   }
-  $('b-conso').addEventListener('click', function () {
-    var b = $('b-conso'); b.disabled = true;
-    (derniereSynthese && derniereSynthese.date === $('s-date').value ? Promise.resolve() : synthese()).then(function () {
-      var f = $('feuille-conso'); f.innerHTML = '<table class="cadre"><thead><tr><td><div class="esp"></div></td></tr></thead><tfoot><tr><td><div class="esp"></div></td></tr></tfoot><tbody><tr><td>' + consolide(derniereSynthese) + '</td></tr></tbody></table>';
-      document.body.classList.add('imprime-conso'); window.print();
-    }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+  // ----- Consolidé enregistré : un seul par jour ; « Générer » l'enregistre (ou le remplace) à partir des rapports du jour, « Imprimer » ouvre la version enregistrée
+  var consolideDuJour = null;
+  function fr(iso) { var p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  function imprimer(c) {
+    var f = $('feuille-conso'); f.innerHTML = '<table class="cadre"><thead><tr><td><div class="esp"></div></td></tr></thead><tfoot><tr><td><div class="esp"></div></td></tr></tfoot><tbody><tr><td>' + consolide(c.donnees, c) + '</td></tr></tbody></table>';
+    document.body.classList.add('imprime-conso'); window.print();
+  }
+  function etatConsolide() {
+    var j = $('s-date').value, z = $('conso-etat');
+    return Api.call('rapports_consolide_lire', { date: j }).then(function (r) {
+      consolideDuJour = r.consolide;
+      z.textContent = consolideDuJour ? 'Consolidé du ' + fr(j) + ' enregistré : version ' + consolideDuJour.version + ', généré par ' + consolideDuJour.genere_par + ' le ' + new Date(consolideDuJour.genere_le).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) + ' (' + consolideDuJour.nb_rapports + ' rapport(s)).' : 'Aucun consolidé enregistré pour le ' + fr(j) + '.';
+      $('b-gen').textContent = consolideDuJour ? '🔄 Régénérer le consolidé (remplace l\'ancien)' : '📄 Générer le consolidé du jour';
+      $('b-conso').disabled = !consolideDuJour;
+    }).catch(function (e) { z.textContent = ''; });
+  }
+  function listeConsolides() {
+    return Api.call('rapports_consolides_liste').then(function (r) {
+      var z = $('conso-liste'); z.textContent = '';
+      if (!r.consolides.length) { z.appendChild(el('p', 'aide', 'Aucun consolidé enregistré pour le moment.')); return; }
+      r.consolides.forEach(function (c) {
+        var l = el('div', 'bloc'); l.style.cssText = 'display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+        var t = el('span', null, fr(c.date) + ' · version ' + c.version + ' · ' + c.nb_rapports + ' rapport(s) · ' + c.genere_par); t.style.flex = '1'; l.appendChild(t);
+        var b1 = el('button', 'btn-s', '🖨 Imprimer'); b1.type = 'button'; b1.onclick = function () { Api.call('rapports_consolide_lire', { date: c.date }).then(function (x) { if (x.consolide) imprimer(x.consolide); }).catch(function (e) { toast(e.message, true); }); };
+        var b2 = el('button', 'btn-s', 'Voir les rapports du jour'); b2.type = 'button'; b2.onclick = function () { $('s-date').value = c.date; synthese(); etatConsolide(); window.scrollTo(0, 0); };
+        l.appendChild(b1); l.appendChild(b2); z.appendChild(l);
+      });
+    }).catch(function () { /* liste indisponible */ });
+  }
+  $('b-gen').addEventListener('click', function () {
+    var b = $('b-gen'), j = $('s-date').value;
+    if (consolideDuJour && !confirm('Un consolidé existe déjà pour le ' + fr(j) + ' (version ' + consolideDuJour.version + '). Le régénérer le remplace. Continuer ?')) return;
+    b.disabled = true;
+    Api.call('rapports_consolide_generer', { date: j }).then(function (r) { toast(r.remplace ? 'Consolidé régénéré (version ' + r.consolide.version + ')' : 'Consolidé enregistré'); return Promise.all([etatConsolide(), listeConsolides()]); })
+      .catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
   });
+  $('b-conso').addEventListener('click', function () { if (consolideDuJour) imprimer(consolideDuJour); });
   window.addEventListener('afterprint', function () { document.body.classList.remove('imprime-conso'); });
 
   // ----- Onglets
@@ -275,7 +308,7 @@
     b.addEventListener('click', function () {
       document.querySelectorAll('.onglet').forEach(function (x) { x.classList.toggle('actif', x === b); });
       ['p-saisie', 'p-journal', 'p-synth'].forEach(function (id) { $(id).hidden = id !== b.dataset.p; });
-      if (b.dataset.p === 'p-journal') journal(); if (b.dataset.p === 'p-synth') synthese();
+      if (b.dataset.p === 'p-journal') journal(); if (b.dataset.p === 'p-synth') { synthese(); etatConsolide(); listeConsolides(); }
     });
   });
 

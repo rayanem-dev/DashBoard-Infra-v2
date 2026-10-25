@@ -19,8 +19,7 @@ var Rapports = (function () {
     var date = String(r.date || '');
     if (!Dates.isDate(date)) return { erreur: 'Date invalide' };
     if (date > aujourdhui) return { erreur: 'La date ne peut pas être dans le futur' };
-    var limite = niveau >= 3 ? 60 : 7;
-    if (Dates.diffDays(date, aujourdhui) > limite) return { erreur: 'Rapport trop ancien (' + limite + ' jours maximum)' };
+    if (date !== aujourdhui) return { erreur: 'Un rapport ne peut être établi ou modifié que le jour même (les jours passés restent consultables)' };
     var chantier = norm(r.chantier);
     if (idsChantiers.indexOf(chantier) === -1) return { erreur: 'Chantier inconnu' };
     var eff = Number(r.effectif);

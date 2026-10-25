@@ -16,8 +16,8 @@ test('rapport valide : champs nettoyés, avancement arrondi, chantier normalisé
 test('refus : date future, trop ancienne, chantier inconnu, effectif, travaux, avancement', () => {
   const err = (patch, niv = 2) => Rapports.valider({ ...ok, ...patch }, AUJ, niv, IDS).erreur;
   assert.match(err({ date: '2026-10-14' }), /futur/);
-  assert.match(err({ date: '2026-10-05' }), /7 jours/);
-  assert.strictEqual(err({ date: '2026-10-05' }, 3), undefined); // niveau 3 : 60 jours
+  assert.match(err({ date: '2026-10-12' }), /jour même/);        // la veille : refusé
+  assert.match(err({ date: '2026-10-05' }, 3), /jour même/);     // même pour le niveau 3
   assert.match(err({ date: '2026-02-30' }), /Date invalide/);
   assert.match(err({ chantier: 'xxx' }), /Chantier inconnu/);
   assert.match(err({ effectif: '' }), /Effectif/); assert.match(err({ effectif: '-1' }), /Effectif/); assert.match(err({ effectif: '2.5' }), /Effectif/);

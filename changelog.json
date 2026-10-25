@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-25-157",
+    "date": "2026-10-25",
+    "title": "Version 5.85.0 — Rapports journaliers : jour même, consolidé enregistré",
+    "changes": [
+      "Un rapport de chantier ne peut être établi ou modifié que le jour même (contrôlé par le serveur) ; les jours passés restent consultables dans le Journal.",
+      "Synthèse du jour : « Générer le consolidé du jour » enregistre le rapport consolidé. Il n'y en a qu'un par jour : le régénérer, quand un rapport a changé, remplace l'ancienne version (numéro de version, auteur et heure conservés).",
+      "« Imprimer le consolidé » imprime la version enregistrée ; la liste « Rapports consolidés enregistrés » permet de les rouvrir ou de les imprimer à tout moment, et de revoir les rapports de chantier du jour correspondant."
+    ]
+  },
+  {
     "id": "2026-10-25-156",
     "date": "2026-10-25",
     "title": "Version 5.84.0 — Les pages Chantiers regroupées en onglets",

@@ -151,6 +151,9 @@ function route_(req) {
     case 'rapports_liste': return rapportsListe_(req);
     case 'rapport_viser': return rapportViser_(req);
     case 'rapports_synthese': return rapportsSynthese_(req);
+    case 'rapports_consolide_generer': return rapportsConsolideGenerer_(req);
+    case 'rapports_consolide_lire': return rapportsConsolideLire_(req);
+    case 'rapports_consolides_liste': return rapportsConsolidesListe_(req);
     case 'admin_etat': {
       admin_(req);
       var us = Store.table('Utilisateurs'); var nb = {};
@@ -527,6 +530,55 @@ function rapportsSynthese_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
   var auj = Dates.today(); var date = Dates.isDate(req.date) ? req.date : auj;
   return Rapports.synthese(chantiersActifs_(), rapportsLus_(), date);
+}
+
+/**
+ * Rapport journalier CONSOLIDÉ : un seul par jour, enregistré (onglet « RapportsConsolides ») à partir de la synthèse du jour (niveau 3).
+ * Le régénérer écrase la version précédente (la version s'incrémente) ; il reste consultable à tout moment, comme les rapports de chantier.
+ */
+var CONSOLIDES_ENTETES_ = ['date', 'version', 'genere_par', 'genere_le', 'nb_chantiers', 'nb_rapports', 'p1', 'p2', 'p3', 'p4'];
+var CONSOLIDE_MORCEAU_ = 45000;
+function consolidesLignes_() {
+  var v = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_).getDataRange().getValues(), h = v[0].map(String), out = [];
+  for (var i = 1; i < v.length; i += 1) { if (!v[i][0]) continue; var o = { ligne: i + 1 }; h.forEach(function (c, k) { o[c] = v[i][k]; }); out.push(o); }
+  return out;
+}
+function consolideDe_(o) {
+  var texte = [o.p1, o.p2, o.p3, o.p4].map(function (x) { return String(x || ''); }).join('');
+  var donnees = null; try { donnees = JSON.parse(texte); } catch (e) { donnees = null; }
+  return { date: String(o.date), version: Number(o.version) || 1, genere_par: String(o.genere_par), genere_le: String(o.genere_le), nb_chantiers: Number(o.nb_chantiers) || 0, nb_rapports: Number(o.nb_rapports) || 0, donnees: donnees };
+}
+function rapportsConsolideGenerer_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var auj = Dates.today(), date = Dates.isDate(req.date) ? req.date : auj;
+  if (date > auj) throw new Error('La date ne peut pas être dans le futur');
+  var s = Rapports.synthese(chantiersActifs_(), rapportsLus_(), date);
+  var nbR = s.chantiers.reduce(function (n, c) { return n + c.rapports.length; }, 0);
+  if (!nbR) throw new Error('Aucun rapport de chantier ce jour-là : rien à consolider.');
+  var texte = JSON.stringify(s);
+  if (texte.length > CONSOLIDE_MORCEAU_ * 4) throw new Error('Rapport consolidé trop volumineux pour être enregistré.');
+  var p = ['', '', '', '']; for (var k = 0; k < 4; k += 1) p[k] = texte.slice(k * CONSOLIDE_MORCEAU_, (k + 1) * CONSOLIDE_MORCEAU_);
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_), ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; })[0];
+    var version = ex ? (Number(ex.version) || 1) + 1 : 1, maintenant = new Date().toISOString();
+    var ligne = [date, version, Annuaire.nomAffichable(u.nom, u.email), maintenant, s.chantiers.length, nbR, p[0], p[1], p[2], p[3]];
+    if (ex) sh.getRange(ex.ligne, 1, 1, ligne.length).setValues([ligne]); else sh.appendRow(ligne);
+    Store.journal(ex ? 'consolide_regenere' : 'consolide_cree', u.email, date + ' v' + version);
+    return { consolide: consolideDe_({ date: date, version: version, genere_par: ligne[2], genere_le: maintenant, nb_chantiers: ligne[4], nb_rapports: nbR, p1: p[0], p2: p[1], p3: p[2], p4: p[3] }), remplace: !!ex };
+  } finally { lock.releaseLock(); }
+}
+function rapportsConsolideLire_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
+  var ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; })[0];
+  return { consolide: ex ? consolideDe_(ex) : null };
+}
+function rapportsConsolidesListe_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var l = consolidesLignes_().map(function (o) { return { date: String(o.date), version: Number(o.version) || 1, genere_par: String(o.genere_par), genere_le: String(o.genere_le), nb_chantiers: Number(o.nb_chantiers) || 0, nb_rapports: Number(o.nb_rapports) || 0 }; });
+  l.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+  return { consolides: l.slice(0, 90) };
 }
 
 /**
