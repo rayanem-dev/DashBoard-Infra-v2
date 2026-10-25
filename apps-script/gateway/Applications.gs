@@ -21,15 +21,6 @@ var SEED_APPS = [
  ],
  [
   "logistique",
-  "Prises en Charge (ancienne version)",
-  "Ancienne application, gardée le temps de vérifier la nouvelle (prise en charge dans le portail). À retirer ensuite.",
-  "🧾",
-  "https://script.google.com/macros/s/AKfycbyda46CXhmCrzE9MOvR7ARj77gsrS8BHgiekhInVJrgNwQi1rO2Tc9XnPktopvLEsX4/exec",
-  3,
-  "secretariat"
- ],
- [
-  "logistique",
   "Affectation Véhicule – Division Infra",
   "Suivi des véhicules de service, affectations au personnel et gestion des plannings de disponibilité.",
   "🚗",
@@ -471,6 +462,20 @@ function migrerPriseEnCharge_() {
       if (/^Prises en Charge \+ Autorisation/.test(String(v[i][iT])) && /script\.google\.com\/macros/.test(String(v[i][iU]))) { ancien = String(v[i][iU]); sh.getRange(i + 1, iU + 1).setValue('prise-en-charge.html'); break; }
     }
     props.setProperty('PEC_PORTAIL_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+
+/** Une seule fois : retire du catalogue la carte « Prises en Charge (ancienne version) » (l'ancienne application web n'existe plus). */
+function retirerAnciennePec_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('PEC_ANCIENNE_RETIREE') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iU = h.indexOf('url'), iT = h.indexOf('titre'), suppr = [];
+    for (var i = 1; i < v.length; i += 1) if (/^Prises en Charge \(ancienne version\)/.test(String(v[i][iT])) || (/script\.google\.com\/macros/.test(String(v[i][iU])) && /^Prises en Charge/.test(String(v[i][iT])))) suppr.push(i + 1);
+    suppr.reverse().forEach(function (l) { sh.deleteRow(l); });
+    props.setProperty('PEC_ANCIENNE_RETIREE', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }

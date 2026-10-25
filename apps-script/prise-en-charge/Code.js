@@ -312,12 +312,7 @@ function genererTout() {
 /******************************
  *  WEB APP — sert le formulaire qui masque le Sheet
  ******************************/
-function doGet(e) {
-  return HtmlService.createHtmlOutputFromFile("Formulaire")
-    .setTitle("Demande de Prise en Charge")
-    .addMetaTag("viewport", "width=device-width, initial-scale=1")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
+// L'ancienne page web (doGet / Formulaire.html) est retirée : la prise en charge s'utilise dans le portail (page prise-en-charge.html, via la passerelle).
 
 const ORGANISMES_TAB = "Organismes";
 /** Organismes hors Suivi CPM : [{ option, nom, detail, emputation, base }] (onglet « Organismes » : Organisme | Détail | Émputation | Base). */
@@ -926,6 +921,21 @@ function genererPEC(ss, silencieux, options) {
     }
   } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
 
+  // Code (colonne 6) : entreprise, n° de contrat et intitulé centrés, sans retrait ; un nom d'entreprise long passe en plus petit pour tenir dans la case
+  try {
+    if (dataRow.getNumCells() > 5) {
+      const codeCell = dataRow.getCell(5);
+      codeCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+      for (let i = 0; i < codeCell.getNumChildren(); i++) {
+        const enfant = codeCell.getChild(i);
+        if (enfant.getType() !== DocumentApp.ElementType.PARAGRAPH) continue;
+        const p = enfant.asParagraph();
+        p.setAlignment(DocumentApp.HorizontalAlignment.CENTER).setIndentStart(0).setIndentFirstLine(0).setIndentEnd(0);
+        if (entreprise.length > 20 && p.getText().indexOf(entreprise) !== -1) p.editAsText().setFontSize(entreprise.length > 28 ? 7 : 8);
+      }
+    }
+  } catch (e) { /* la mise en forme ne doit jamais bloquer la génération */ }
+
   // Noms alignés à gauche dans leur case (centrés verticalement)
   try {
     nomCell.setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
@@ -1079,7 +1089,7 @@ function largeursColonnes_(actuelles, nbCaracteres) {
   const total = w.reduce((a, b) => a + b, 0), besoin = Math.min(nbCaracteres * 6.4 + 14, total * 0.46);
   let manque = besoin - w[0];
   if (manque <= 0) return w;
-  const minimums = { 3: 40, 1: 58, 2: 58, 4: 66, 6: 84, 5: 96 };
+  const minimums = { 3: 40, 1: 58, 2: 58, 4: 66, 6: 84, 5: 124 };   // la case « Code » (entreprise, n° de contrat, intitulé) garde assez de place pour un nom d'entreprise long
   [3, 1, 2, 4, 6, 5].forEach(function (c) {
     if (c >= n || manque <= 0) return;
     const prise = Math.min(manque, Math.max(0, w[c] - minimums[c]));

@@ -49,3 +49,10 @@ test('type des fichiers générés d\'après leur nom', () => {
   assert.strictEqual(typeFichier_('PEC_ENCC_20-10-2026.pdf'), 'PEC'); assert.strictEqual(typeFichier_('Autorisation_X_1.pdf'), 'AUTORISATION');
   assert.strictEqual(typeFichier_('Macaron_X_1.pdf'), 'MACARON'); assert.strictEqual(typeFichier_('autre.pdf'), 'PDF');
 });
+
+test('largeurs : la case « Code » garde assez de place pour une entreprise au nom long', () => {
+  const act = [150, 70, 70, 60, 80, 150, 130];   // total 710
+  const r = largeursColonnes_(act, 60);          // nom très long : toute la place possible est prise ailleurs
+  assert.ok(r[5] >= 124, 'case Code : ' + r[5]);
+  assert.strictEqual(r.reduce((a, b) => a + b, 0), act.reduce((a, b) => a + b, 0));
+});
