@@ -153,6 +153,7 @@ function route_(req) {
     case 'rapports_synthese': return rapportsSynthese_(req);
     case 'rapports_consolide_generer': return rapportsConsolideGenerer_(req);
     case 'rapports_consolide_lire': return rapportsConsolideLire_(req);
+    case 'rapports_consolide_supprimer': return rapportsConsolideSupprimer_(req);
     case 'rapports_consolides_liste': return rapportsConsolidesListe_(req);
     case 'admin_etat': {
       admin_(req);
@@ -560,7 +561,7 @@ function consolidesLignes_() {
   for (var i = 1; i < v.length; i += 1) { if (!v[i][0]) continue; var o = { ligne: i + 1 }; h.forEach(function (c, k) { o[c] = v[i][k]; });
     o.date = jour_(o.date); if (o.genere_le instanceof Date) o.genere_le = o.genere_le.toISOString();   // Sheets a pu convertir le texte en date : on le remet en AAAA-MM-JJ
     if (o.date) out.push(o); }
-  return out;
+  return out;   // une date peut avoir plusieurs lignes si un doublon a été créé par erreur : supprimer et lister gardent la dernière
 }
 function consolideDe_(o) {
   var texte = [o.p1, o.p2, o.p3, o.p4].map(function (x) { return String(x || ''); }).join('');
@@ -579,7 +580,7 @@ function rapportsConsolideGenerer_(req) {
   var p = ['', '', '', '']; for (var k = 0; k < 4; k += 1) p[k] = texte.slice(k * CONSOLIDE_MORCEAU_, (k + 1) * CONSOLIDE_MORCEAU_);
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
-    var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_), ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; })[0];
+    var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_), ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
     var version = ex ? (Number(ex.version) || 1) + 1 : 1, maintenant = new Date().toISOString();
     var ligne = [date, version, Annuaire.nomAffichable(u.nom, u.email), maintenant, s.chantiers.length, nbR, p[0], p[1], p[2], p[3]];
     var cible = sh.getRange(ex ? ex.ligne : sh.getLastRow() + 1, 1, 1, ligne.length); cible.setNumberFormat('@'); cible.setValues([ligne]);   // texte brut : la date reste « AAAA-MM-JJ »
@@ -590,12 +591,27 @@ function rapportsConsolideGenerer_(req) {
 function rapportsConsolideLire_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
   var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
-  var ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; })[0];
+  var ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
   return { consolide: ex ? consolideDe_(ex) : null };
+}
+/** Supprime le rapport consolidé d'un jour (toutes ses lignes, doublons compris) ; les rapports journaliers ne sont pas touchés. */
+function rapportsConsolideSupprimer_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_);
+    var lignes = consolidesLignes_().filter(function (o) { return o.date === date; }).map(function (o) { return o.ligne; }).sort(function (a, b) { return b - a; });
+    if (!lignes.length) throw new Error('Aucun consolidé pour cette date');
+    lignes.forEach(function (n) { sh.deleteRow(n); });
+    Store.journal('consolide_supprime', u.email, date + ' (' + lignes.length + ' ligne(s))');
+    return { supprimes: lignes.length };
+  } finally { lock.releaseLock(); }
 }
 function rapportsConsolidesListe_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
-  var l = consolidesLignes_().map(function (o) { return { date: String(o.date), version: Number(o.version) || 1, genere_par: String(o.genere_par), genere_le: String(o.genere_le), nb_chantiers: Number(o.nb_chantiers) || 0, nb_rapports: Number(o.nb_rapports) || 0 }; });
+  var vus = {};
+  var l = consolidesLignes_().filter(function (o) { var d = o.date; vus[d] = o; return true; }).filter(function (o) { return vus[o.date] === o; }).map(function (o) { return { date: String(o.date), version: Number(o.version) || 1, genere_par: String(o.genere_par), genere_le: String(o.genere_le), nb_chantiers: Number(o.nb_chantiers) || 0, nb_rapports: Number(o.nb_rapports) || 0 }; });
   l.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
   return { consolides: l.slice(0, 90) };
 }
