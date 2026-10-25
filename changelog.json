@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-25-170",
+    "date": "2026-10-25",
+    "title": "Version 5.91.1 — Correction des rapports : tous les services",
+    "changes": [
+      "Les chefs de service (comme le chef de division et le secrétariat) voient et peuvent corriger les rapports de tous les services. Le visa garde sa portée habituelle."
+    ]
+  },
+  {
     "id": "2026-10-25-169",
     "date": "2026-10-25",
     "title": "Version 5.91.0 — Corriger un rapport journalier",
