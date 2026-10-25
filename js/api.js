@@ -202,9 +202,9 @@
   // Rapports de démonstration (la validation réelle est celle de Rapports.gs, côté passerelle).
   var CLE_RAP = 'infra_v2_demo_rapports';
   var DEMO_CHANTIERS = [
-    { id: 'forage_rns', nom: 'Forage RNS — 3 puits d\'eau', service: 'Travaux Entretien', actif: 1 },
-    { id: 'terrassement_rns', nom: 'Terrassement RNS (36 mois)', service: 'Travaux Entretien', actif: 1 },
-    { id: 'maintenance_electrique', nom: 'Maintenance des installations électriques', service: 'Électromécanique', actif: 1 }
+    { id: 'forage_rns', nom: 'Forage RNS — 3 puits d\'eau', service: 'Travaux Entretien', actif: 1, contrat: '72.INFRA.25' },
+    { id: 'terrassement_rns', nom: 'Terrassement RNS (36 mois)', service: 'Travaux Entretien', actif: 1, contrat: '53.INFRA.25' },
+    { id: 'maintenance_electrique', nom: 'Maintenance des installations électriques', service: 'Électromécanique', actif: 1, contrat: '30.INFRA.24' }
   ];
   var NIV_RAP = { chef_division: 3, conducteur: 2, cpm: 1 };
   function demoRapports() {
@@ -292,6 +292,17 @@
       case 'rapports_consolides_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { consolides: Object.keys(demoConsolides).sort().reverse().map(function (d) { var c = demoConsolides[d]; return { date: d, version: c.version, genere_par: c.genere_par, genere_le: c.genere_le, nb_chantiers: c.nb_chantiers, nb_rapports: c.nb_rapports }; }) }; }
       case 'rapports_chantiers_admin': { exigerAdmin(); return { chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service, contrat: c.contrat, actif: 1, source: 'cpm' }; }) }; }
       case 'rapports_chantier_maj': { exigerAdmin(); return {}; }
+      case 'chantiers_tableau': {
+        if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var dl = function (n) { var x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+        var dr = { date: dl(-1), auteur: 'BENALI Karim', effectif: 14, difficultes: '', lignes: [{ zone: 'Puits P2', texte: 'Foration à 85 m', avancement: 70, routine: false }, { zone: 'Puits P3', texte: 'Installation du chantier', avancement: 15, routine: false }] };
+        return { auj: dl(0), chantiers: [
+          { id: '72-infra-25', nom: 'Forage RNS — 3 puits d\'eau', contrat: '72.INFRA.25', entreprise: 'ENTP', service: 'Travaux Entretien', fiche: '', suivi: 'forage', montant: '95 000 000', ods: dl(-200), echeance: dl(160), delai_pct: 55, jours_restants: 160, avancement: 42.5, dernier: dr, rapports_7j: 5 },
+          { id: '53-infra-25', nom: 'Terrassement RNS (36 mois)', contrat: '53.INFRA.25', entreprise: 'SARL TERRA', service: 'Travaux Entretien', fiche: '', suivi: 'terrassement', montant: '210 000 000', ods: dl(-400), echeance: dl(680), delai_pct: 37, jours_restants: 680, avancement: null, dernier: null, rapports_7j: 0 },
+          { id: '30-infra-24', nom: 'Maintenance des installations électriques', contrat: '30.INFRA.24', entreprise: 'ELEC DZ', service: 'Électromécanique', fiche: '', suivi: 'electricite', montant: '60 000 000', ods: dl(-300), echeance: dl(65), delai_pct: 82, jours_restants: 65, avancement: 78, dernier: { date: dl(-2), auteur: 'MEZIANE Sofia', effectif: 9, difficultes: 'Pièces en attente', lignes: [{ zone: 'Poste HT', texte: 'Contrôle des protections', avancement: 78, routine: false }] }, rapports_7j: 3 },
+          { id: '84-infra-26', nom: 'Rénovation 400 chambres base vie', contrat: '84.INFRA.26', entreprise: 'GCB', service: 'Construction', fiche: 'https://docs.google.com/spreadsheets/d/exemple', suivi: '', montant: '480 000 000', ods: dl(-60), echeance: dl(300), delai_pct: 17, jours_restants: 300, avancement: 20, dernier: { date: dl(0), auteur: 'BENALI Karim', effectif: 32, difficultes: 'Retard de livraison du béton', lignes: [{ zone: 'Bloc B', texte: 'Coulage de la dalle', avancement: 20, routine: false }] }, rapports_7j: 6 }
+        ] };
+      }
       case 'rapports_chantiers_sync': { exigerAdmin(); return { ajoutes: 0, renommes: 0, desactives: 0, reactives: 0, routines: 0 }; }
       case 'reservation_orga': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { personnes: DEMO_USERS.map(function (u) { return { nom: u.nom, fonction: u.fonction || '', societe: u.dependance || 'SONATRACH', service: u.service || '' }; }), trajets_table: demoTrajets, destinataire: 'Sec-INFRA.RNS@Sonatrach.dz', mention: 'Rattaché à la division Infra' }; }
       case 'reservation_trajet_supprimer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); delete demoTrajets[p.trajet]; return { trajets_table: demoTrajets }; }

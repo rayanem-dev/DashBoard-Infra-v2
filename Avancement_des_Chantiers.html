@@ -95,12 +95,6 @@
   .badge-late { background: #FEE2E2; color: var(--red); }
   .badge-start { background: #FEF3C7; color: #B45309; }
   .badge-unit { background: var(--gray-light); color: var(--text-muted); font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
-  .prevision-service-block { margin-top: 18px; }
-  .prevision-service-block h4 { font-size: 12.5px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
-  .prevision-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-  .prevision-card { background: var(--gray-light); border: 1px dashed var(--border); border-radius: 14px; padding: 14px 16px; opacity: 0.75; }
-  .prevision-card .pv-nom { font-size: 13px; font-weight: 700; color: var(--text-dark); }
-  .prevision-card .pv-meta { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
 </style>
 <link rel="stylesheet" href="css/entete.css">
 </head>
@@ -115,60 +109,18 @@
 </main>
 <script>
 // ─────────────────────────────────────────────
-// CONFIGURATION DES CHANTIERS
-// type "boq"       = bordereau de prix (1 ligne ou plus), montants DA
-// type "journal"   = suivi quotidien par volumes (m3)
-// type "portfolio" = plusieurs chantiers résumés dans UN SEUL csv (colonnes: Nom, Montant_Prevu, Montant_Realise)
-// Laisse csvUrl vide ("") pour un chantier pas encore branché : il sera simplement ignoré.
+// CHANTIERS : dynamiques. La liste vient de « Affectation chantier » (un chantier par contrat en exécution du Suivi CPM,
+// avec son service) ; l'avancement vient des rapports journaliers ou, si le chantier a une fiche suiveuse, de cette fiche.
+// TRACKERS = les fiches suiveuses connues (choix « Suivi » dans Affectation chantier).
 // ─────────────────────────────────────────────
-const CHANTIERS = [
-  // ── SERVICE CONSTRUCTION — EN PAUSE ─────────────────────────
-  // Conservés ici pour réactivation ultérieure. csvUrl vidé volontairement
-  // (donc ignoré par le chargement et exclu de tous les calculs) tant que
-  // le service est en pause. URL d'origine gardée en commentaire.
-  { nom: "Les Abris", type: "boq", service: "Construction", actif: false,
-    csvUrl: "" },
-
-  { nom: "Bassin CPF — Physique (Plate-forme/Talus)", type: "journal", service: "Construction", actif: false,
-    csvUrl: "" },
-
-  { nom: "Bassin CPF — Financier (GCB)", type: "boq", service: "Construction", actif: false,
-    csvUrl: "" },
-
-  { nom: "Routes & ATIA (portefeuille)", type: "portfolio", service: "Construction", actif: false,
-    csvUrl: "" },
-
-  { nom: "MCM", type: "boq", service: "Construction", actif: false, csvUrl: "" },
-  { nom: "Mosquée", type: "boq", service: "Construction", actif: false, csvUrl: "" },
-  { nom: "Piscines", type: "boq", service: "Construction", actif: false, csvUrl: "" },
-  { nom: "Studio", type: "boq", service: "Construction", actif: false, csvUrl: "" },
-  { nom: "Stades", type: "boq", service: "Construction", actif: false, csvUrl: "" },
-
-  // ── Service Génie Civil (rattaché à Construction) — EN PAUSE ──
-  { nom: "Prestation Génie Civil", type: "workforce", service: "Construction", actif: false,
-    csvUrl: "" },
-
-  // ── SERVICE TRAVAUX ENTRETIEN — ACTIF ──────────────────────
-  // Forage RNS et Terrassement RNS sont des exemples-types de fiches suiveuses.
-  // À chaque nouvelle fiche reçue pour ce service, l'ajouter ici (même structure) —
-  // les calculs (stats + gauge) se refont automatiquement.
-  // type "multiwell" = lit directement l'onglet "Tableau de Bord Global" source
-  // et en extrait le tableau SYNTHÈSE MULTI-PUITS (un poste par puits, avec son propre %)
-  { nom: "Forage RNS — 3 puits d'eau", type: "multiwell", service: "Travaux Entretien", actif: true,
-    csvUrl: "forage" },
-
-  // type "itemized" = lit directement l'onglet "Tableau de Bord" source et en extrait
-  // le tableau de cumul par item contractuel (un poste par ligne BPU, avec son propre %)
-  { nom: "Terrassement RNS (36 mois)", type: "itemized", service: "Travaux Entretien", actif: true,
-    csvUrl: "terrassement" },
-
-  // ── SERVICE ÉLECTROMÉCANIQUE — ACTIF (liens à venir) ────────
-  // Ajouter ici les fiches suiveuses au fur et à mesure qu'elles arrivent.
-  { nom: "Maintenance des Installations Électriques", type: "electrique", service: "Électromécanique", actif: true,
-    nContrat: "30.INFRA.24",
-    csvUrl: "electricite" },
-  { nom: "Travaux de maintenance des installations de froid et climatisation", type: "boq", service: "Électromécanique", actif: true, csvUrl: "" },
-];
+const TRACKERS = {
+  forage: { nom: "Forage RNS — 3 puits d'eau", type: "multiwell", csvUrl: "forage" },
+  terrassement: { nom: "Terrassement RNS (36 mois)", type: "itemized", csvUrl: "terrassement" },
+  electricite: { nom: "Maintenance des Installations Électriques", type: "electrique", csvUrl: "electricite" }
+};
+// Tant que le choix « Suivi » n'est pas fait dans Affectation chantier, ces trois contrats gardent leur fiche d'origine.
+const SUIVI_DEFAUT = { '30.INFRA.24': 'electricite', '53.INFRA.25': 'terrassement', '72.INFRA.25': 'forage' };
+function suiviDe(c) { return c.suivi || SUIVI_DEFAUT[String(c.contrat || '').toUpperCase()] || ''; }
 
 // ─────────────────────────────────────────────
 // Utilitaires
@@ -270,64 +222,6 @@ function mapServiceCPM(raw) {
   if (s.includes('entretien')) return 'Travaux Entretien';
   if (s.includes('construction')) return 'Construction';
   return 'Autre';
-}
-
-// Renvoie les dossiers CPM en "Contrat en exécution" qui n'ont pas encore de
-// fiche suiveuse branchée (csvUrl) dans CHANTIERS, groupés par service.
-async function loadCPMEnPrevision() {
-  const rows = await fetchCSV(CPM_CSV_URL);
-
-  // Repère la ligne d'en-têtes dynamiquement (même logique que Dossiers_CPM.html)
-  // pour ne pas dépendre d'un nombre fixe de lignes de titre dans le sheet.
-  let headerIdx = rows.findIndex(r => r.some(cell => normalizeTxt(cell) === 'statut'));
-  if (headerIdx === -1) headerIdx = 1;
-  const data = rows.slice(headerIdx + 1);
-
-  // Dossiers déjà suivis avec un vrai lien -> déjà affichés normalement ailleurs
-  // sur la page, on les exclut du recensement pour ne pas les dupliquer.
-  const nomsDejaBranches = new Set(
-    CHANTIERS.filter(c => c.csvUrl && c.csvUrl.trim() !== '').map(c => normalizeNom(c.nom))
-  );
-
-  const vus = new Set();
-  const resultat = [];
-  data.forEach(r => {
-    const intitule = (r[COL_CPM.INTITULE] || '').trim();
-    const statut = r[COL_CPM.STATUT] || '';
-    if (!intitule || !normalizeTxt(statut).includes('execution')) return;
-
-    const key = normalizeNom(intitule);
-    if (nomsDejaBranches.has(key) || vus.has(key)) return;
-    vus.add(key);
-
-    resultat.push({
-      nom: intitule,
-      service: mapServiceCPM(r[COL_CPM.SERVICE]),
-      nature: (r[COL_CPM.NATURE] || '').trim()
-    });
-  });
-  return resultat;
-}
-
-function renderPrevisionSection(enPrevision) {
-  if (!enPrevision || enPrevision.length === 0) return '';
-  const icone = { Construction: '🏗️', 'Travaux Entretien': '🚧', 'Électromécanique': '🔧', Autre: '📁' };
-  let html = `<div class="section-title">📋 Contrats en exécution à activer <span class="unit-tag">recensement automatique CPM</span></div>`;
-  SERVICES_ORDRE.forEach(svc => {
-    const items = enPrevision.filter(p => p.service === svc);
-    if (items.length === 0) return;
-    html += `<div class="prevision-service-block">
-      <h4>${icone[svc] || '📁'} Service ${escapeHtml(svc)} — ${items.length} en attente de branchement</h4>
-      <div class="prevision-grid">
-        ${items.map(p => `
-          <div class="prevision-card">
-            <div class="pv-nom">${escapeHtml(p.nom)}</div>
-            <div class="pv-meta">${p.nature ? escapeHtml(p.nature) + ' · ' : ''}Fiche suiveuse non branchée</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-  });
-  return html;
 }
 
 // ─────────────────────────────────────────────
@@ -655,7 +549,7 @@ function renderChantierCardKPI(data, i) {
     ? `<span>${data.lignes.length} poste${data.lignes.length > 1 ? 's' : ''} suivi${data.lignes.length > 1 ? 's' : ''}</span>`
     : `<span>Avancement calculé directement depuis le tableau de bord source</span>`;
   return `<div class="chantier-card" id="card-${i}" onclick="toggleCard(${i})">
-      <div class="chantier-head"><h3>${data.nom} <span class="badge-unit" style="background:#EEF2FF;color:#4338CA;">Service Travaux Entretien</span> ${statusBadge(data.pct)}</h3>
+      <div class="chantier-head"><h3>${data.nom} <span class="badge-unit" style="background:#EEF2FF;color:#4338CA;">${escapeHtml(data.service || "")}</span> ${statusBadge(data.pct)}</h3>
         <div style="display:flex;align-items:center;gap:10px"><span class="chantier-pct">${data.pct.toFixed(0)}%</span><span class="chevron">▾</span></div></div>
       <div class="chantier-bar-bg"><div class="chantier-bar-fill" style="width:${data.pct}%"></div></div>
       <div class="chantier-meta"><span>Prévu : ${formatDA(data.totalPrevu)}</span><span>Réalisé : ${formatDA(data.totalRealise)}</span>${postesInfo}</div>
@@ -739,80 +633,80 @@ function renderChantierCardWorkforce(data, i) {
 // fonction directement pour récupérer exactement les mêmes chiffres (même source
 // de vérité), sans dupliquer la liste des chantiers ni la logique de calcul.
 // ─────────────────────────────────────────────
+function chargerFiche(tr) {
+  if (tr.type === 'journal') return loadChantierJournal(tr);
+  if (tr.type === 'multiwell') return loadMultiwell(tr);
+  if (tr.type === 'itemized') return loadItemized(tr);
+  if (tr.type === 'electrique') return loadElectrique(tr);
+  return loadChantierBOQ(tr);
+}
+// Carte « rapports journaliers » : avancement déclaré par le dernier rapport, délai consommé du contrat (Suivi CPM).
+function chantierDyn(c) {
+  return { type: 'dyn', nom: c.nom, service: c.service || 'Sans service', contrat: c.contrat, entreprise: c.entreprise, pct: c.avancement, delai: c.delai_pct, joursRestants: c.jours_restants,
+    echeance: c.echeance, montant: c.montant, dernier: c.dernier, rapports7j: c.rapports_7j };
+}
 async function computeStats() {
-  const active = CHANTIERS.filter(c => c.actif !== false && c.csvUrl && c.csvUrl.trim() !== '');
-  const [settled, cpmSettled] = await Promise.all([
-    Promise.allSettled(active.map(c => {
-      if (c.type === 'journal') return loadChantierJournal(c);
-      if (c.type === 'portfolio') return loadPortfolio(c);
-      if (c.type === 'multiwell') return loadMultiwell(c);
-      if (c.type === 'itemized') return loadItemized(c);
-      if (c.type === 'workforce') return loadWorkforce(c);
-      if (c.type === 'electrique') return loadElectrique(c);
-      return loadChantierBOQ(c);
-    })),
-    // Le recensement CPM ne doit jamais bloquer le reste : en cas d'échec on renvoie juste 0 résultat.
-    loadCPMEnPrevision().catch(() => [])
-  ]);
-  const cpmEnPrevision = cpmSettled;
-
+  const t = await Api.call('chantiers_tableau');
+  const liste = t.chantiers || [];
   const failed = [];
-  const loaded = settled.map((s, i) => {
-    if (s.status === 'fulfilled') return s.value;
-    failed.push({ nom: active[i].nom, error: s.reason && s.reason.message ? s.reason.message : String(s.reason) });
-    return null;
-  }).filter(v => v !== null);
-  // "portfolio" renvoie un tableau de chantiers : on aplatit tout en une seule liste
-  const results = loaded.flat();
-
-  const boqResults = results.filter(r => r.type === 'boq' && r.service !== 'Travaux Entretien');
-  const journalResults = results.filter(r => r.type === 'journal');
-  const kpiResults = results.filter(r => r.service === 'Travaux Entretien');
-  const workforceResults = results.filter(r => r.type === 'workforce');
-  const electriqueResults = results.filter(r => r.type === 'electrique');
-  // Avancement global : services actifs (Travaux Entretien + Électromécanique) — le Service
-  // Construction (boq/journal/portfolio + Génie Civil) est exclu tant qu'il est en pause.
-  const globalResults = results.filter(r => r.service === 'Travaux Entretien' || r.service === 'Électromécanique');
-  const globalPct = globalResults.length > 0 ? globalResults.reduce((s, r) => s + r.pct, 0) / globalResults.length : 0;
-  const electroPct = electriqueResults.length > 0 ? electriqueResults.reduce((s, r) => s + r.pct, 0) / electriqueResults.length : 0;
-  const kpiPct = kpiResults.length > 0 ? kpiResults.reduce((s, r) => s + r.pct, 0) / kpiResults.length : 0;
-
-  return { results, boqResults, journalResults, kpiResults, workforceResults, electriqueResults, globalResults, globalPct, electroPct, kpiPct, cpmEnPrevision, failed };
+  const results = await Promise.all(liste.map(async c => {
+    const k = suiviDe(c);
+    if (!TRACKERS[k]) return chantierDyn(c);
+    const tr = Object.assign({}, TRACKERS[k], { service: c.service || 'Sans service', nom: c.nom, nContrat: c.contrat });
+    try { return Object.assign(await chargerFiche(tr), { contrat: c.contrat, entreprise: c.entreprise }); }
+    catch (e) { failed.push({ nom: c.nom, error: e && e.message ? e.message : String(e) }); return chantierDyn(c); }
+  }));
+  // Avancement connu = fiche suiveuse ou au moins un rapport journalier ; un chantier sans rapport n'entre pas dans les moyennes.
+  const globalResults = results.filter(r => typeof r.pct === 'number');
+  const moyenne = l => l.length ? l.reduce((s, r) => s + r.pct, 0) / l.length : 0;
+  const globalPct = moyenne(globalResults);
+  const kpiResults = results.filter(r => r.type === 'boq');
+  return { results, globalResults, globalPct, kpiResults, moyenne, failed };
 }
 
 function toggleCard(i) { document.getElementById('card-' + i).classList.toggle('open'); }
 
+function frDate(iso) { const p = String(iso || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
+function renderChantierCardDyn(d, i) {
+  const known = typeof d.pct === 'number', pct = known ? d.pct : 0;
+  const dr = d.dernier;
+  const lignes = dr ? dr.lignes.map(l => `
+    <div class="line-item">
+      <div class="li-top"><span class="li-name">${l.routine ? '🔁 ' : ''}${escapeHtml(l.zone ? l.zone + ' — ' : '')}${escapeHtml(l.texte)}</span><span class="li-pct">${l.avancement != null ? l.avancement.toFixed(0) + '%' : ''}</span></div>
+      ${l.avancement != null ? `<div class="line-bar-bg"><div class="line-bar-fill" style="width:${Math.min(100, l.avancement)}%"></div></div>` : ''}
+    </div>`).join('') + (dr.difficultes ? `<div class="line-item"><div class="li-top"><span class="li-name">⚠️ ${escapeHtml(dr.difficultes)}</span></div></div>` : '') : '';
+  const delai = d.delai != null ? `<div class="tg-item" style="margin-top:12px"><div class="tg-label">⏳ Délai du contrat</div>${renderGaugeH(d.delai, { big: false, color: 'linear-gradient(90deg,#6366F1,#818CF8)' })}
+      <div class="tg-sub">${d.delai}% du délai consommé${d.joursRestants != null ? ' — ' + (d.joursRestants >= 0 ? d.joursRestants + ' jour(s) restant(s)' : 'échu depuis ' + (-d.joursRestants) + ' jour(s)') : ''}</div></div>` : '';
+  const meta = [d.contrat ? 'Contrat ' + escapeHtml(d.contrat) : '', d.entreprise ? escapeHtml(d.entreprise) : '', d.echeance ? 'Échéance ' + frDate(d.echeance) : '',
+    dr ? 'Dernier rapport ' + frDate(dr.date) + (dr.auteur ? ' (' + escapeHtml(dr.auteur) + ')' : '') + ' · ' + dr.effectif + ' personne(s)' : 'Aucun rapport journalier', d.rapports7j + ' rapport(s) sur 7 jours']
+    .filter(Boolean).map(x => `<span>${x}</span>`).join('');
+  return `<div class="chantier-card" id="card-${i}"${lignes ? ` onclick="toggleCard(${i})"` : ''}>
+      <div class="chantier-head"><h3>${escapeHtml(d.nom)} <span class="badge-unit">Rapports journaliers</span> ${known ? statusBadge(pct) : ''}</h3>
+        <div style="display:flex;align-items:center;gap:10px"><span class="chantier-pct">${known ? pct.toFixed(0) + '%' : '—'}</span>${lignes ? '<span class="chevron">▾</span>' : ''}</div></div>
+      <div class="chantier-bar-bg"><div class="chantier-bar-fill" style="width:${pct}%"></div></div>
+      ${delai}
+      <div class="chantier-meta">${meta}</div>
+      ${lignes ? `<div class="lines-wrap">${lignes}</div>` : ''}</div>`;
+}
+
+const SERVICES_CONNUS = ['Construction', 'Travaux Entretien', 'Électromécanique'];
+const ICONES_SERVICE = { 'Construction': '🏗️', 'Travaux Entretien': '🚧', 'Électromécanique': '🔧' };
+
 async function init() {
   const content = document.getElementById('content');
   try {
-    const { results, boqResults, journalResults, kpiResults, workforceResults, electriqueResults, globalResults, globalPct, electroPct, kpiPct, cpmEnPrevision, failed } = await computeStats();
+    const { results, globalResults, globalPct, kpiResults, moyenne, failed } = await computeStats();
+    if (!results.length) {
+      content.className = 'error-box';
+      content.innerHTML = 'Aucun chantier pour l\'instant. Ouvrez « Affectation chantier » puis « Synchroniser avec le Suivi CPM » : un chantier est créé pour chaque contrat en exécution.';
+      return;
+    }
 
     let html = `<div class="section-title">Vue globale</div>`;
-
-    if (boqResults.length > 0) {
-      const totalPrevu = boqResults.reduce((s, r) => s + r.totalPrevu, 0);
-      const totalRealise = boqResults.reduce((s, r) => s + r.totalRealise, 0);
-      html += `<div class="section-title" style="margin-top:0"><span class="unit-tag">Chantiers en bordereau — DA</span></div>
-        <div class="stats-row">
-          <div class="stat-card"><div class="lbl">Montant prévu</div><div class="val">${formatDA(totalPrevu)}</div></div>
-          <div class="stat-card realise"><div class="lbl">Montant réalisé</div><div class="val">${formatDA(totalRealise)}</div></div>
-          <div class="stat-card rar"><div class="lbl">Reste à réaliser</div><div class="val">${formatDA(totalPrevu-totalRealise)}</div></div>
-        </div>`;
-    }
-    if (journalResults.length > 0) {
-      const totalPrevu = journalResults.reduce((s, r) => s + r.totalPrevu, 0);
-      const totalRealise = journalResults.reduce((s, r) => s + r.totalRealise, 0);
-      html += `<div class="section-title"><span class="unit-tag">Chantiers en volumes — m³</span></div>
-        <div class="stats-row">
-          <div class="stat-card"><div class="lbl">Volume prévu</div><div class="val">${formatM3(totalPrevu)}</div></div>
-          <div class="stat-card realise"><div class="lbl">Volume réalisé</div><div class="val">${formatM3(totalRealise)}</div></div>
-          <div class="stat-card rar"><div class="lbl">Reste à réaliser</div><div class="val">${formatM3(totalPrevu-totalRealise)}</div></div>
-        </div>`;
-    }
     if (kpiResults.length > 0) {
       const totalPrevu = kpiResults.reduce((s, r) => s + r.totalPrevu, 0);
       const totalRealise = kpiResults.reduce((s, r) => s + r.totalRealise, 0);
-      html += `<div class="section-title"><span class="unit-tag">Service Travaux Entretien — DZD</span></div>
+      html += `<div class="section-title" style="margin-top:0"><span class="unit-tag">Chantiers suivis par fiche — DA</span></div>
         <div class="stats-row">
           <div class="stat-card"><div class="lbl">Budget contractuel</div><div class="val">${formatDA(totalPrevu)}</div></div>
           <div class="stat-card realise"><div class="lbl">Cumul réalisé</div><div class="val">${formatDA(totalRealise)}</div></div>
@@ -820,63 +714,42 @@ async function init() {
         </div>`;
     }
 
+    // Services : ceux d'Affectation chantier, dans l'ordre habituel puis les autres.
+    const vus = [...new Set(results.map(r => r.service))];
+    const services = SERVICES_CONNUS.filter(x => vus.includes(x)).concat(vus.filter(x => !SERVICES_CONNUS.includes(x)));
     html += `<div class="global-card">
         <div class="global-info">
           <h3>Projets & Prestations — Division Infra</h3>
           ${renderGaugeH(globalPct, { big: true })}
-          <div class="sub">${globalResults.length} prestation${globalResults.length > 1 ? 's' : ''} suivie${globalResults.length > 1 ? 's' : ''} — Travaux Entretien + Électromécanique (Service Construction en pause, exclu de ce calcul)</div>
+          <div class="sub">${globalResults.length} chantier${globalResults.length > 1 ? 's' : ''} avec avancement connu sur ${results.length} en cours (fiche suiveuse ou rapport journalier) — un chantier sans rapport n'entre pas dans la moyenne</div>
         </div>
       </div>
       <div class="section-title">Avancement global par service</div>
-      <div class="service-grid">
-        <div class="service-card disabled">
-          <h4>🏗️ Service Construction <span class="svc-badge pause">En pause</span></h4>
+      <div class="service-grid">${services.map(sv => {
+        const du = results.filter(r => r.service === sv), connus = du.filter(r => typeof r.pct === 'number'), m = moyenne(connus);
+        return connus.length ? `<div class="service-card">
+          <h4>${ICONES_SERVICE[sv] || '📁'} ${escapeHtml(sv)} <span class="svc-badge active">${du.length} chantier${du.length > 1 ? 's' : ''}</span></h4>
+          ${renderGaugeH(m, { big: false })}
+          <div class="svc-pct">${m.toFixed(1)}%</div>
+          <div class="svc-note">${connus.length} chantier${connus.length > 1 ? 's' : ''} avec avancement connu</div></div>` : `<div class="service-card disabled">
+          <h4>${ICONES_SERVICE[sv] || '📁'} ${escapeHtml(sv)} <span class="svc-badge empty">${du.length} chantier${du.length > 1 ? 's' : ''}</span></h4>
           ${renderGaugeH(0, { big: false, color: '#D1D5DB' })}
-          <div class="svc-note">Chantiers gelés temporairement — données conservées dans le fichier, exclues du calcul global. Reprise ultérieure.</div>
-        </div>
-        <div class="service-card">
-          <h4>🚧 Service Travaux Entretien <span class="svc-badge active">Actif</span></h4>
-          ${renderGaugeH(kpiPct, { big: false })}
-          <div class="svc-pct">${kpiPct.toFixed(1)}%</div>
-          <div class="svc-note">${kpiResults.length} prestation${kpiResults.length > 1 ? 's' : ''} suivie${kpiResults.length > 1 ? 's' : ''}</div>
-        </div>
-        ${electriqueResults.length > 0 ? `
-        <div class="service-card">
-          <h4>🔧 Service Électromécanique <span class="svc-badge active">Actif</span></h4>
-          ${renderGaugeH(electroPct, { big: false })}
-          <div class="svc-pct">${electroPct.toFixed(1)}%</div>
-          <div class="svc-note">${electriqueResults.length} prestation${electriqueResults.length > 1 ? 's' : ''} suivie${electriqueResults.length > 1 ? 's' : ''}</div>
-        </div>` : `
-        <div class="service-card disabled">
-          <h4>🔧 Service Électromécanique <span class="svc-badge empty">À venir</span></h4>
-          ${renderGaugeH(0, { big: false, color: '#D1D5DB' })}
-          <div class="svc-note">Aucune fiche suiveuse renseignée pour l'instant — ajoutée dès réception.</div>
-        </div>`}
+          <div class="svc-note">Aucun rapport journalier reçu pour l'instant.</div></div>`;
+      }).join('')}
       </div>`;
 
-    html += renderPrevisionSection(cpmEnPrevision);
-
-    const infraResults = results.filter(r => (r.type === 'boq' || r.type === 'journal') && r.service !== 'Travaux Entretien');
-    if (infraResults.length > 0 || workforceResults.length > 0) {
-      html += `<div class="section-title">Détail par chantier — Service Génie Civil</div>`;
-      html += infraResults.map((r, i) => r.type === 'journal' ? renderChantierCardJournal(r, results.indexOf(r)) : renderChantierCardBOQ(r, results.indexOf(r))).join('');
-      html += workforceResults.map(r => renderChantierCardWorkforce(r, results.indexOf(r))).join('');
-    }
-
-    if (kpiResults.length > 0) {
-      html += `<div class="section-title">Détail par chantier — Service Travaux Entretien</div>`;
-      html += kpiResults.map(r => renderChantierCardKPI(r, results.indexOf(r))).join('');
-    }
-
-    if (electriqueResults.length > 0) {
-      html += `<div class="section-title">Détail par chantier — Service Électromécanique</div>`;
-      html += electriqueResults.map(r => renderChantierCardElectrique(r, results.indexOf(r))).join('');
-    }
+    services.forEach(sv => {
+      html += `<div class="section-title">Détail par chantier — ${escapeHtml(sv)}</div>`;
+      html += results.filter(r => r.service === sv).map(r => {
+        const i = results.indexOf(r);
+        return r.type === 'dyn' ? renderChantierCardDyn(r, i) : r.type === 'electrique' ? renderChantierCardElectrique(r, i) : renderChantierCardKPI(r, i);
+      }).join('');
+    });
 
     if (failed.length > 0) {
-      html += `<div class="section-title">⚠️ Chantiers non chargés</div>
+      html += `<div class="section-title">⚠️ Fiches non chargées (le chantier est affiché d'après ses rapports journaliers)</div>
         <div class="error-box" style="text-align:left;background:#FEF2F2;border-radius:14px;border:1px solid #FECACA;padding:16px 20px;">
-          ${failed.map(f => `<div style="margin-bottom:8px;"><b>${f.nom}</b> — <span style="font-size:12px">${f.error}</span></div>`).join('')}
+          ${failed.map(f => `<div style="margin-bottom:8px;"><b>${escapeHtml(f.nom)}</b> — <span style="font-size:12px">${escapeHtml(f.error)}</span></div>`).join('')}
         </div>`;
     }
 
@@ -884,7 +757,7 @@ async function init() {
     content.innerHTML = html;
   } catch (e) {
     content.className = 'error-box';
-    content.innerHTML = "Impossible de charger les données. Vérifie ta connexion internet ou que les liens Google Sheets sont bien publiés.<br><br><small>" + escapeHtml(e.message) + "</small>";
+    content.innerHTML = "Impossible de charger les chantiers.<br><br><small>" + escapeHtml(e.message) + "</small>";
   }
 }
 init();

@@ -71,6 +71,10 @@
   }
 
   .note-box { background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 14px; padding: 14px 18px; font-size: 12.5px; color: #9A3412; margin-top: 24px; }
+  .archives { margin-top: 28px; }
+  .archives > summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-muted); padding: 10px 0; }
+  .link-card .badge-fiche { position: absolute; top: 8px; right: 10px; font-size: 9px; font-weight: 800; background: #E5E7EB; color: #4B5563; padding: 2px 7px; border-radius: 20px; }
+  .link-card { position: relative; }
 </style>
 <link rel="stylesheet" href="css/entete.css">
 </head>
@@ -93,50 +97,10 @@
     <span class="arrow">→</span>
   </a>
 
-  <div class="construction-note">
-    ⏸️ Le <strong>Service Construction</strong> est actuellement mis en pause — on se concentre sur les autres services. Les fiches restent listées ci-dessous (grisées) pour mémoire, mais ne sont pas accessibles pour l'instant.
-  </div>
+  <div id="chantiers"><p class="note-box" style="margin-top:0">Chargement des chantiers…</p></div>
 
-  <div class="section-title">Service Travaux Entretien</div>
-  <div class="link-grid">
-    <div class="link-card disabled-card" title="Lien conservé, en attente — dis-le-moi quand tu veux l'activer">
-      <span class="pause-badge">À venir</span>
-      <span class="icon">💧</span>
-      <div class="txt"><h3>Prestation de Maintenance des Installations Hydrauliques</h3><p>Lien à venir</p></div>
-    </div>
-    <div class="link-card disabled-card" title="Lien conservé, en attente — dis-le-moi quand tu veux l'activer">
-      <span class="pause-badge">À venir</span>
-      <span class="icon">🏖️</span>
-      <div class="txt"><h3>Travaux de Dessablage Mécanique</h3><p>Lien à venir</p></div>
-    </div>
-    <div class="link-card disabled-card" title="Lien conservé, en attente — dis-le-moi quand tu veux l'activer">
-      <span class="pause-badge">À venir</span>
-      <span class="icon">🧹</span>
-      <div class="txt"><h3>Travaux de Dessablage Manuel</h3><p>Lien à venir</p></div>
-    </div>
-    <a class="link-card" href="https://docs.google.com/spreadsheets/d/1gD_aQEw7YUU2DBGMrJchqUGvuFuEeyn8EG9XHf7gxkw/edit?usp=drive_link" target="_blank" rel="noopener">
-      <span class="icon">💧</span>
-      <div class="txt"><h3>Forage RNS (3 puits)</h3><p>Tableau de bord exécutif — 61,8% réalisé</p></div>
-    </a>
-    <a class="link-card" href="https://docs.google.com/spreadsheets/d/1_bL3vv2dtYJWmvs0ZqZqq2agACVEZdAr14UP2unoUhM/edit?usp=drive_link" target="_blank" rel="noopener">
-      <span class="icon">🚜</span>
-      <div class="txt"><h3>Terrassement RNS (36 mois)</h3><p>Suivi global du contrat — 1,2% réalisé</p></div>
-    </a>
-  </div>
-
-  <div class="section-title">Service Électromécanique</div>
-  <div class="link-grid">
-    <a class="link-card" href="https://docs.google.com/spreadsheets/d/1Pk0n5UNT8yf5A7yZNe8rwHyevn7XHsB4/edit?gid=627222972#gid=627222972" target="_blank" rel="noopener">
-      <span class="icon">⚡</span>
-      <div class="txt"><h3>Prestation de Travaux de maintenance des installations électriques</h3><p>Tableau de bord — 23,5% consommé</p></div>
-    </a>
-    <div class="link-card disabled-card" title="Lien conservé, en attente — dis-le-moi quand tu veux l'activer">
-      <span class="pause-badge">À venir</span>
-      <span class="icon">❄️</span>
-      <div class="txt"><h3>Travaux de maintenance des installations de froid et climatisation</h3><p>Lien à venir</p></div>
-    </div>
-  </div>
-
+  <details class="archives">
+    <summary>Archives — fiches du Service Construction (en pause) et plans de situation</summary>
   <div class="section-title">Service Construction — en pause ⏸️</div>
   <div class="link-grid">
     <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1x7r94U66Ec7t7jBzyzcuHCS1JCrYlPinYRvpFA5gQ3s/edit?usp=sharing">
@@ -196,6 +160,8 @@
     <div class="link-card disabled-card" data-href="https://docs.google.com/spreadsheets/d/1-_CaqptG2mr7WVz14tgCvmnBkHq2Gd0umj9DEnMDLuE/edit?usp=drive_link"><span class="pause-badge">Pause</span><span class="icon">🗺️</span><div class="txt"><h3>Studio (cadre)</h3><p>Plan de situation</p></div></div>
   </div>
 
+  </details>
+
   <div class="section-title">Dossier projet complet (Drive)</div>
   <a class="link-card folder-card" href="https://drive.google.com/drive/folders/11sN8BUB8lFGHhsZoGHnGV5jbkNcrMope?usp=sharing" target="_blank" rel="noopener" style="max-width:340px">
     <span class="icon">📁</span>
@@ -207,6 +173,44 @@
   </div>
 </main>
 
+<script>
+// Les cartes viennent d'« Affectation chantier » (un chantier par contrat en exécution du Suivi CPM, classé par service).
+// Fiches d'origine, tant que le lien n'est pas saisi dans Affectation chantier :
+var FICHES_DEFAUT = {
+  '72.INFRA.25': 'https://docs.google.com/spreadsheets/d/1gD_aQEw7YUU2DBGMrJchqUGvuFuEeyn8EG9XHf7gxkw/edit?usp=drive_link',
+  '53.INFRA.25': 'https://docs.google.com/spreadsheets/d/1_bL3vv2dtYJWmvs0ZqZqq2agACVEZdAr14UP2unoUhM/edit?usp=drive_link',
+  '30.INFRA.24': 'https://docs.google.com/spreadsheets/d/1Pk0n5UNT8yf5A7yZNe8rwHyevn7XHsB4/edit?gid=627222972#gid=627222972'
+};
+var ICONES = { 'Construction': ['🏗️', 'Service Construction'], 'Travaux Entretien': ['🚧', 'Service Travaux Entretien'], 'Électromécanique': ['🔧', 'Service Électromécanique'] };
+(function () {
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function fr(iso) { var p = String(iso || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
+  var zone = document.getElementById('chantiers');
+  function carte(c) {
+    var lien = c.fiche || FICHES_DEFAUT[String(c.contrat || '').toUpperCase()] || '';
+    var a = el(lien ? 'a' : 'div', 'link-card' + (lien ? '' : ' missing-card'));
+    if (lien) { a.href = lien; a.target = '_blank'; a.rel = 'noopener'; } else a.appendChild(el('span', 'badge-fiche', 'Sans fiche'));
+    a.appendChild(el('span', 'icon', (ICONES[c.service] || ['📋'])[0]));
+    var t = el('div', 'txt'); t.appendChild(el('h3', null, c.nom));
+    var info = [c.contrat ? 'Contrat ' + c.contrat : '', c.entreprise || '', c.avancement != null ? 'avancement ' + Math.round(c.avancement) + ' % (rapport du ' + fr(c.dernier && c.dernier.date) + ')' : 'aucun rapport journalier',
+      c.echeance ? 'échéance ' + fr(c.echeance) : '', lien ? '' : 'lien de la fiche à saisir dans Affectation chantier'].filter(Boolean).join(' · ');
+    t.appendChild(el('p', null, info)); a.appendChild(t); return a;
+  }
+  Api.call('chantiers_tableau').then(function (r) {
+    zone.textContent = '';
+    var liste = r.chantiers || [];
+    if (!liste.length) { zone.appendChild(el('p', 'note-box', 'Aucun chantier pour l\'instant : ouvrez « Affectation chantier » puis « Synchroniser avec le Suivi CPM ».')); return; }
+    var vus = []; liste.forEach(function (c) { var s = c.service || 'Sans service'; if (vus.indexOf(s) < 0) vus.push(s); });
+    var ordre = Object.keys(ICONES).filter(function (s) { return vus.indexOf(s) >= 0; }).concat(vus.filter(function (s) { return !ICONES[s]; }));
+    ordre.forEach(function (s) {
+      zone.appendChild(el('div', 'section-title', (ICONES[s] ? ICONES[s][1] : s)));
+      var g = el('div', 'link-grid');
+      liste.filter(function (c) { return (c.service || 'Sans service') === s; }).forEach(function (c) { g.appendChild(carte(c)); });
+      zone.appendChild(g);
+    });
+  }).catch(function (e) { zone.textContent = ''; zone.appendChild(el('p', 'note-box', 'Impossible de charger les chantiers : ' + e.message)); });
+})();
+</script>
 <script src="js/pied.js"></script>
 <script src="js/raccourcis.js"></script>
 </body>
