@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-160",
+    "date": "2026-10-25",
+    "title": "Version 5.87.1 — Accueil allégé",
+    "changes": [
+      "Le bandeau « Bonjour … / Mon profil » est retiré de l'accueil : « Mes applications » monte en haut. Le profil s'ouvre par la pastille en haut à droite.",
+      "La boule des jours est rapprochée de la pastille du profil."
+    ]
+  },
+  {
     "id": "2026-10-25-159",
     "date": "2026-10-25",
     "title": "Version 5.87.0 — Avancement et Suivi chantier recréés depuis Affectation chantier",
