@@ -424,17 +424,19 @@
     var cand = agents.filter(function (x) { return x.configuree && x.uid !== A.uid && x.uid !== S.C.uid && ((norm(x.dependance || '') === entite) === memeEntite); }).map(function (x) {
       var l = ligneDeUid(x.uid); if (!l || !l.grille) return null;
       return { ag: x, ligne: l, c: conflitsRotation(eA.mod, l.grille, eA.m, null, A, A, optsCh()), prise: prises[x.uid] };
-    }).filter(Boolean).sort(function (p, q) { return (p.prise ? 1 : 0) - (q.prise ? 1 : 0) || p.c.jours - q.c.jours || (p.ag.nom < q.ag.nom ? -1 : 1); }).slice(0, 5);
+    }).filter(Boolean).sort(function (p, q) { return p.c.jours - q.c.jours || (p.prise ? 1 : 0) - (q.prise ? 1 : 0) || (p.ag.nom < q.ag.nom ? -1 : 1); }).slice(0, 5);   // le moins en conflit d'abord ; à conflit égal, les agents libres avant ceux déjà pris
     var bloc = el('div'); bloc.style.cssText = 'margin-top:6px;padding:8px 10px;border:1px dashed #D1D5DB;border-radius:10px;font-size:12.5px';
     bloc.appendChild(el('div', null, memeEntite ? 'Autres vis-à-vis de chambre possibles (même entité : ' + (actuel.dependance || 'SONATRACH') + ')' : 'Autres vis-à-vis de chambre possibles (hors ' + (actuel.dependance || 'SONATRACH') + ')')).style.fontWeight = '800';
     if (!cand.length) { bloc.appendChild(el('div', null, memeEntite ? 'Aucun autre agent de cette entité avec un planning renseigné.' : 'Aucun agent d\'une autre entité avec un planning renseigné.')); zone.appendChild(bloc); return; }
+    var vt = agents.filter(function (a) { return a.uid === A.uid; })[0];
     cand.forEach(function (x) {
       var r = el('div'); r.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px';
-      var t = el('span', null, (bonVis(x.c) ? '✔ ' : '✖ ') + x.ag.nom + (x.ag.service ? ' · ' + x.ag.service : '') + ' — ' + (bonVis(x.c) ? (x.c.jours ? 'presque parfait : ' + x.c.jours + ' j de conflit' : 'aucun conflit') : 'conflit de ' + x.c.jours + ' j') + (x.prise ? ' (déjà vis-à-vis de chambre de ' + x.prise.nom + ')' : ''));
+      var t = el('span', null, (bonVis(x.c) ? '✔ ' : '✖ ') + x.ag.nom + (x.ag.service ? ' · ' + x.ag.service : '') + ' — ' + (bonVis(x.c) ? (x.c.jours ? 'presque parfait : ' + x.c.jours + ' j de conflit' : 'aucun conflit') : 'conflit de ' + x.c.jours + ' j') + (vt && vt.vis_travail === x.ag.uid ? ' · vis-à-vis de travail' : '') + (x.prise ? ' (déjà vis-à-vis de chambre de ' + x.prise.nom + ')' : ''));
       t.style.cssText = 'font-weight:700;color:' + (bonVis(x.c) ? '#166534' : '#B42318'); r.appendChild(t);
       var u = el('button', 'btn-s', 'Utiliser'); u.type = 'button'; u.addEventListener('click', function () { donnees(x.ag.uid).then(function (d) { S.C = { ligne: x.ligne, uid: x.ag.uid, data: d }; majTout(); }).catch(function (e) { toast(e.message, true); }); });
       var en = el('button', 'btn-s', 'Enregistrer comme vis-à-vis de chambre'); en.type = 'button';
       en.addEventListener('click', function () {
+        if (x.prise && !confirm(x.ag.nom + ' est déjà vis-à-vis de chambre de ' + x.prise.nom + '. L\'enregistrer comme vis-à-vis de chambre de ' + A.ligne.nom + ' aussi ?')) return;
         var moi = agents.filter(function (a) { return a.uid === A.uid; })[0] || {};
         Api.call('visavis_enregistrer', { uid: A.uid, vis_travail: moi.vis_travail || '', vis_chambre: x.ag.uid }).then(function () { moi.vis_chambre = x.ag.uid; if (!x.ag.vis_chambre) x.ag.vis_chambre = A.uid; toast('Vis-à-vis de chambre de ' + A.ligne.nom + ' : ' + x.ag.nom + ' (enregistré).'); u.click(); }).catch(function (e) { toast(e.message, true); });
       });

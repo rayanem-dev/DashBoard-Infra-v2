@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-167",
+    "date": "2026-10-25",
+    "title": "Version 5.89.3 — Vis-à-vis de chambre : classement par conflit",
+    "changes": [
+      "Simulation : les propositions de vis-à-vis de chambre sont classées d'abord par jours de conflit ; un agent déjà vis-à-vis de chambre de quelqu'un n'est plus relégué en fin de liste (il reste signalé). Le vis-à-vis de travail de l'agent est indiqué.",
+      "Enregistrer comme vis-à-vis de chambre un agent déjà pris demande confirmation."
+    ]
+  },
+  {
     "id": "2026-10-25-166",
     "date": "2026-10-25",
     "title": "Version 5.89.2 — Vis-à-vis de chambre : autres entités",
