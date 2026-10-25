@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap">
-<link rel="stylesheet" href="css/charte.css?v=5.4.4">
+<link rel="stylesheet" href="css/charte.css?v=5.4.5">
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
@@ -25,6 +25,22 @@
   <div class="barre-haut" id="barre-haut" hidden>
     <input type="search" id="recherche" placeholder="Rechercher…" aria-label="Rechercher une application ou un contact" title="Rechercher une application ou un contact" autocomplete="off">
     <span class="date-badge" id="date-badge"></span>
+  </div>
+  <div class="jauge-hd" id="statut" hidden>
+    <button type="button" class="jauge-btn" id="jauge-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="jauge-pop" title="Ma rotation : cliquer pour le détail">
+      <span class="jauge" id="jauge" role="img" aria-label="Rotation"><span class="j-centre"><b id="j-reste">–</b><small id="j-lib">jours</small></span></span>
+    </button>
+    <div class="jauge-pop" id="jauge-pop" role="dialog" aria-label="Détail de ma rotation" hidden>
+      <div class="jauge-texte">
+        <span class="etat-pill" id="j-etat"></span>
+        <p id="phrase"></p>
+        <div class="jauge-barre" id="j-barre" aria-hidden="true"><i id="j-barre-i"></i></div>
+        <p class="jauge-dates" id="j-dates"></p>
+        <button class="btn-s" id="b-rot" type="button"></button>
+      </div>
+      <nav class="raccourcis" id="raccourcis" aria-label="Raccourcis planning" hidden></nav>
+      <a class="par-sijil" id="sijil" href="https://rayanem-dev.github.io/pointage-app/" target="_blank" rel="noopener" title="Sijil — gestion des pointages et des rotations"><img src="img/sijil-symbole.png" alt="" width="14" height="14"><span>Propulsé par <b>Sijil</b></span></a>
+    </div>
   </div>
   <div class="bandeau-droite"><span id="zone-installer"></span><span id="qui"></span><button class="btn-ghost" id="quitter" type="button">Se déconnecter</button></div>
 </div></header>
@@ -41,23 +57,11 @@
         <h2 id="nom-agent">Chargement…</h2>
         <p class="agent-poste" id="agent-poste"></p>
         <div class="agent-badges" id="agent-badges"></div>
-        <div class="agent-liens"><a class="lien-profil" id="lien-profil" href="profil.html">👤 Mon profil</a>
-        <nav class="raccourcis" id="raccourcis" aria-label="Raccourcis planning" hidden></nav></div>
+        <div class="agent-liens"><a class="lien-profil" id="lien-profil" href="profil.html">👤 Mon profil</a></div>
       </div>
     </div>
       <div class="agent-infos" id="fiche"></div>
     </div>
-      <div class="jauge-bloc" id="statut" hidden>
-        <div class="jauge" id="jauge" role="img" aria-label="Rotation"><div class="j-centre"><b id="j-reste">–</b><small id="j-lib">jours</small></div></div>
-        <div class="jauge-texte">
-          <span class="etat-pill" id="j-etat"></span>
-          <p id="phrase"></p>
-          <div class="jauge-barre" id="j-barre" aria-hidden="true"><i id="j-barre-i"></i></div>
-          <p class="jauge-dates" id="j-dates"></p>
-          <button class="btn-s" id="b-rot" type="button"></button>
-        </div>
-        <a class="par-sijil" id="sijil" href="https://rayanem-dev.github.io/pointage-app/" target="_blank" rel="noopener" title="Sijil — gestion des pointages et des rotations"><img src="img/sijil-symbole.png" alt="" width="14" height="14"><span>Propulsé par <b>Sijil</b></span></a>
-      </div>
       <aside class="mes-apps" id="mes-apps" aria-label="Mes applications" hidden>
         <h3>Mes applications <small id="mes-apps-n"></small></h3>
         <div class="mes-apps-grille" id="mes-apps-grille"></div>
@@ -238,6 +242,15 @@
     if (a('Dossiers_CPM.html')) { Synthese.monterCpm($('syn-cpm')); Synthese.monterJournal($('syn-journal')); }
   }
   $('recherche').addEventListener('input', filtrer);
+  // Compteur de rotation en haut : un clic ouvre le détail (état, barre, reliquat, modifier ma rotation, raccourcis, Sijil)
+  (function () {
+    var bt = $('jauge-btn'), pop = $('jauge-pop');
+    function ouvrir(o) { pop.hidden = !o; bt.setAttribute('aria-expanded', o ? 'true' : 'false'); }
+    bt.addEventListener('click', function (e) { e.stopPropagation(); ouvrir(pop.hidden); });
+    document.addEventListener('click', function (e) { if (!pop.hidden && !pop.contains(e.target) && e.target !== bt) ouvrir(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !pop.hidden) { ouvrir(false); bt.focus(); } });
+    pop.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('a.raccourci')) ouvrir(false); });
+  })();
   // Fiches du personnel : lues depuis BDDORGA (complétées par les fiches du site) ; on rafraîchit la recherche une fois chargées
   Annuaire.charger().then(function () { filtrer(); });
 
