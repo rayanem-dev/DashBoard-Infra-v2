@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-25-166",
+    "date": "2026-10-25",
+    "title": "Version 5.89.2 — Vis-à-vis de chambre : autres entités",
+    "changes": [
+      "Simulation : sous « Autres vis-à-vis de chambre possibles (même entité : GTP) », un second bloc « (hors GTP) » propose les agents des autres entités, du moins au plus en conflit, avec « Utiliser » et « Enregistrer comme vis-à-vis de chambre »."
+    ]
+  },
+  {
     "id": "2026-10-25-165",
     "date": "2026-10-25",
     "title": "Version 5.89.1 — Avancement allégé",
