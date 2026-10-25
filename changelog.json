@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-10-25-154",
+    "date": "2026-10-25",
+    "title": "Version 5.83.0 — Prise en charge : une base par personne, plus de limite à 8, dates des macarons et autorisations",
+    "changes": [
+      "Chaque personne a sa « Base de vie » dans le tableau (par défaut la base choisie en haut). Les prises en charge sont regroupées par base : deux personnes à la base de vie centrale et deux à BJSP donnent deux fichiers distincts.",
+      "Plus de limite de 8 personnes : au-delà de 8 dans une même base, une prise en charge supplémentaire est créée automatiquement (fichiers nommés par base et par partie). Le tableau peut s'allonger (+ Ajouter 4 lignes, jusqu'à 60).",
+      "Prise en charge seule : les colonnes Type véhicule et Immatriculation disparaissent. Autorisation seule : la colonne et la case Base disparaissent. Les deux cochées : tout s'affiche.",
+      "Macaron : date de fin = toujours l'échéance du contrat dans le Suivi CPM (fin après prolongation si renseignée). Autorisation : toujours la fin du mois en cours, ou du mois suivant si « Valable 2 mois » ; la date de départ de la prise en charge ne les modifie plus (sauf visite sur site, sans contrat).",
+      "Les Enquêtes administratives et le journal enregistrent la base de chaque personne."
+    ]
+  },
+  {
     "id": "2026-10-25-153",
     "date": "2026-10-25",
     "title": "Version 5.82.2 — Réservation : bouton « Retour au portail » dégagé",

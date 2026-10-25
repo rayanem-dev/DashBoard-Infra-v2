@@ -417,11 +417,13 @@ function soumettreFormulairePEC(formData) {
     if (formData.emputation) { sheet.getRange("C3").setValue(formData.emputation); sheet.getRange("D3").setValue(EMPUTATIONS[formData.emputation] || ""); }
     else { sheet.getRange("C3:D3").clearContent(); }
 
-    // C4
-    // La liste de validation de C4 a pu être posée avec d'anciennes bases : on la remet à jour avant d'écrire
+    const PERSONNES_PAR_PEC = 8, PERSONNES_PAR_AUTORISATION = 12;
+    const toutes = (formData.personnes || []).filter(p => p);
+    const avecNom = toutes.filter(p => String(p.nom || "").trim());
+    const avecVehicule = toutes.filter(p => String(p.immatriculation || "").trim());
+
+    // C4 : la liste de validation a pu être posée avec d'anciennes bases ; on la remet à jour (la base de chaque prise en charge est écrite plus bas, une par groupe)
     sheet.getRange("C4").setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(BASES, true).setAllowInvalid(false).build());
-    if (formData.base) sheet.getRange("C4").setValue(formData.base); else sheet.getRange("C4").clearContent();
-    if (formData.base && formData.genererPEC) retenirBaseEntreprise_(formData.prestataire, formData.base);   // la base désignée devient celle par défaut de cette entreprise
 
     // D5 Remplacement
     sheet.getRange("D5").setValue(!!formData.remplacement);
@@ -461,34 +463,46 @@ function soumettreFormulairePEC(formData) {
       throw new Error("Coche au moins 'Hébergement' ou 'Restauration' pour la Prise en charge.");
     }
 
-    // Tableau des personnes/véhicules — on vide C10:F21 puis on réécrit
-    sheet.getRange("C10:F21").clearContent();
-    const lignes = (formData.personnes || []).slice(0, 12).map(p => [
-      p.nom || "", p.prenom || "", p.typeVehicule || "", p.immatriculation || ""
-    ]);
-    if (lignes.length > 0) {
-      sheet.getRange(10, 3, lignes.length, 4).setValues(lignes);
-    }
-    SpreadsheetApp.flush();
+    // Prise en charge : une par base de vie (chaque personne a sa base, à défaut celle du formulaire), 8 personnes au plus par document (capacité du modèle)
+    const groupesPEC = formData.genererPEC ? repartirParBase_(avecNom, formData.base, PERSONNES_PAR_PEC) : [];
+    groupesPEC.forEach(g => { if (BASES.indexOf(g.base) === -1) throw new Error(g.base ? "Base inconnue : « " + g.base + " »." : "Choisis la base de vie de chaque personne (ou une base par défaut)."); });
+    if (formData.genererPEC && !groupesPEC.length) throw new Error("Aucune personne renseignée pour la Prise en charge.");
+    if (groupesPEC.length) retenirBaseEntreprise_(formData.prestataire, groupesPEC[0].base);   // la base désignée devient celle par défaut de cette entreprise
 
-    // Génération (mode silencieux : pas de ui.alert, on récupère les liens)
+    // Autorisations / macarons : 12 véhicules au plus par lot (lignes du classeur) ; plusieurs lots si besoin
+    const lotsAuto = formData.genererAuto ? repartirParBase_(avecVehicule, "", PERSONNES_PAR_AUTORISATION) : [];
+    if (formData.genererAuto && !lotsAuto.length) throw new Error("Aucun véhicule renseigné pour l'Autorisation d'accès (type et immatriculation).");
+
+    // Écriture d'un lot de personnes dans le tableau du classeur (C10:F21) puis génération (mode silencieux : pas de ui.alert, on récupère les liens)
+    const ecrireTableau = (liste) => {
+      sheet.getRange("C10:F21").clearContent();
+      const lignes = liste.map(p => [p.nom || "", p.prenom || "", p.typeVehicule || "", p.immatriculation || ""]);
+      if (lignes.length > 0) sheet.getRange(10, 3, lignes.length, 4).setValues(lignes);
+      SpreadsheetApp.flush();
+    };
     let liens = [];
 
-    if (formData.genererPEC) {
+    groupesPEC.forEach(g => {
+      sheet.getRange("C4").setValue(g.base);
+      ecrireTableau(g.personnes);
       // Fonction(s) des personnes, écrite(s) sous la base dans la case « Observations » (case à cocher, facultatif)
       const fonctions = [];
-      (formData.personnes || []).forEach(p => { const f = (p.fonction || "").toString().trim(); if (p.nom && f && fonctions.indexOf(f) === -1) fonctions.push(f); });
-      const resultatPEC = genererPEC(ss, true, { observation: formData.fonctionObservation ? fonctions.join(" / ") : "" });
-      if (resultatPEC && resultatPEC.url) liens.push({ nom: "Prise en charge (PDF)", url: resultatPEC.url });
-    }
+      g.personnes.forEach(p => { const f = (p.fonction || "").toString().trim(); if (p.nom && f && fonctions.indexOf(f) === -1) fonctions.push(f); });
+      const suffixe = groupesPEC.length > 1 ? "_" + safeName(g.base) + (g.parties > 1 ? "_" + g.partie : "") : "";
+      const resultatPEC = genererPEC(ss, true, { observation: formData.fonctionObservation ? fonctions.join(" / ") : "", suffixe: suffixe });
+      const etiquette = groupesPEC.length > 1 ? " — " + g.base + (g.parties > 1 ? " (" + g.partie + "/" + g.parties + ")" : "") : "";
+      if (resultatPEC && resultatPEC.url) liens.push({ nom: "Prise en charge" + etiquette + " (PDF)", url: resultatPEC.url });
+    });
 
-    if (formData.genererAuto) {
+    lotsAuto.forEach((g, k) => {
+      ecrireTableau(g.personnes);
       const resultatAuto = genererAutorisations(ss, true);
+      const etiquette = lotsAuto.length > 1 ? " (" + (k + 1) + "/" + lotsAuto.length + ")" : "";
       if (resultatAuto) {
-        if (resultatAuto.autoUrl) liens.push({ nom: "Autorisation(s) d'accès (PDF)", url: resultatAuto.autoUrl });
-        if (resultatAuto.macaronUrl) liens.push({ nom: "Macaron(s) (PDF)", url: resultatAuto.macaronUrl });
+        if (resultatAuto.autoUrl) liens.push({ nom: "Autorisation(s) d'accès" + etiquette + " (PDF)", url: resultatAuto.autoUrl });
+        if (resultatAuto.macaronUrl) liens.push({ nom: "Macaron(s)" + etiquette + " (PDF)", url: resultatAuto.macaronUrl });
       }
-    }
+    });
 
     // Enquêtes administratives : on ajoute seulement les personnes absentes de toutes les Enquêtes (jamais de doublon) ; ne bloque jamais la génération
     let message = "Génération terminée avec succès.";
@@ -793,7 +807,7 @@ function genererPEC(ss, silencieux, options) {
   let pdfFolder = outputFolder.getFoldersByName("pdf").hasNext() ? outputFolder.getFoldersByName("pdf").next() : outputFolder.createFolder("pdf");
   let docFolder = outputFolder.getFoldersByName("doc").hasNext() ? outputFolder.getFoldersByName("doc").next() : outputFolder.createFolder("doc");
 
-  const nomFichier = "PEC_" + safeName(entreprise) + "_" + safeName(jour);
+  const nomFichier = "PEC_" + safeName(entreprise) + "_" + safeName(jour) + ((options && options.suffixe) || "");
   const copie = DriveApp.getFileById(TEMPLATE_PEC_ID).makeCopy(nomFichier, docFolder);
   const doc = DocumentApp.openById(copie.getId());
   const body = doc.getBody();
@@ -1097,6 +1111,17 @@ function largeursColonnes_(actuelles, nbCaracteres) {
   });
   return w;
 }
+/**
+ * Répartit des personnes en documents : une base de vie par groupe (base de la personne, à défaut baseDefaut), `taille` personnes au plus par document.
+ * Retourne [{ base, personnes, partie, parties }] dans l'ordre d'apparition des bases. Pur : testé en Node.
+ */
+function repartirParBase_(personnes, baseDefaut, taille) {
+  const ordre = [], par = {};
+  (personnes || []).forEach(p => { const b = String((p && p.base) || baseDefaut || "").trim(); if (!par[b]) { par[b] = []; ordre.push(b); } par[b].push(p); });
+  const out = [];
+  ordre.forEach(b => { const l = par[b], n = Math.ceil(l.length / taille); for (let i = 0; i < n; i++) out.push({ base: b, personnes: l.slice(i * taille, (i + 1) * taille), partie: i + 1, parties: n }); });
+  return out;
+}
 /** Date (objet Date, « jj/mm/aaaa » ou « aaaa-mm-jj ») → Date locale à minuit, ou null. */
 function dateLue_(v) {
   if (v instanceof Date) return isNaN(v) ? null : new Date(v.getFullYear(), v.getMonth(), v.getDate());
@@ -1124,13 +1149,15 @@ function departManuel_(arrivee, depart) {
 }
 /**
  * Fin de l'autorisation et du macaron :
- *  - date de départ choisie par l'agent (ou visite sur site) → les DEUX suivent cette date ;
- *  - sinon : autorisation mensuelle (fin du mois courant, ou du mois suivant si « valable 2 mois »), macaron TOUJOURS jusqu'à la fin du contrat (Suivi CPM),
- *    même dépassée ; seule une fin de contrat introuvable le fait suivre l'autorisation.
+ *  - autorisation : TOUJOURS fin du mois en cours (fin du mois suivant si « valable 2 mois »), quelle que soit la date de départ de la prise en charge ;
+ *  - macaron : TOUJOURS l'échéance du contrat (Suivi CPM), même dépassée ; seule une échéance introuvable le fait suivre l'autorisation ;
+ *  - visite sur site (aucun contrat) : la date de départ choisie vaut pour les deux.
  */
 function datesFin_(o) {
   const t = dateLue_(o.aujourdhui), depart = dateLue_(o.depart);
-  if ((o.visite || o.departManuel) && depart) return { autorisation: depart, macaron: depart, source: "date choisie" };
+  // Visite sur site (aucun contrat) : la date de départ choisie vaut pour les deux
+  if (o.visite && depart) return { autorisation: depart, macaron: depart, source: "date choisie" };
+  // Autorisation : toujours fin du mois en cours (fin du mois suivant si « valable 2 mois ») ; macaron : toujours l'échéance du contrat (Suivi CPM)
   const mois = new Date(t.getFullYear(), t.getMonth() + (o.deuxMois ? 2 : 1), 0);
   const fc = dateLue_(o.finContrat);
   return { autorisation: mois, macaron: fc || mois, source: fc ? "fin de contrat" : "mois" };
@@ -1141,8 +1168,12 @@ function lireFinContratCpm_(numContrat) {
   if (!cle || /^visite sur site/i.test(cle)) return null;
   try {
     const sh = SpreadsheetApp.openById(SUIVI_CPM_ID).getSheetByName(SUIVI_CPM_TAB);
-    const v = sh.getRange(3, 1, Math.max(sh.getLastRow() - 2, 1), 18).getValues();
-    for (let i = 0; i < v.length; i++) if (String(v[i][13]).trim() === cle) return finContrat_(v[i][16], v[i][17]);
+    const v = sh.getRange(3, 1, Math.max(sh.getLastRow() - 2, 1), 44).getValues();
+    // Échéance du contrat dans le Suivi CPM : « Fin après prolongation 2 / 1 » si renseignées (colonnes AR / AQ), sinon « Échéance » (colonne S) ; à défaut ODS + durée
+    for (let i = 0; i < v.length; i++) if (String(v[i][13]).trim() === cle) {
+      for (const c of [43, 42, 18]) { const d = dateLue_(v[i][c]); if (d) return d; }
+      return finContrat_(v[i][16], v[i][17]);
+    }
   } catch (e) { /* Suivi CPM illisible : on retombe sur la règle mensuelle */ }
   return null;
 }
@@ -1590,4 +1621,4 @@ function supprimerFichierGenere(fileId) {
 /** À lancer UNE FOIS dans l'éditeur Apps Script (▶ Exécuter) pour autoriser l'envoi d'e-mails par l'application. */
 function autoriserEnvoiMail() { Logger.log("Quota d'e-mails restant aujourd'hui : " + MailApp.getRemainingDailyQuota()); }
 
-if (typeof module !== 'undefined') module.exports = { typeFichier_, dateLue_, finContrat_, departManuel_, datesFin_, nomAvecTiret_, largeursColonnes_ };
+if (typeof module !== 'undefined') module.exports = { repartirParBase_, typeFichier_, dateLue_, finContrat_, departManuel_, datesFin_, nomAvecTiret_, largeursColonnes_ };

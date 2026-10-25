@@ -211,7 +211,7 @@ window.google = { script: { run: (function () {
         <select id="emputation"></select>
       </div>
       <div class="field">
-        <label>Base</label>
+        <label>Base <span style="font-weight:400;color:var(--text-muted);font-size:10.5px;text-transform:none;letter-spacing:0;">(par défaut, modifiable pour chaque personne)</span></label>
         <select id="base"></select>
       </div>
     </div>
@@ -232,7 +232,7 @@ window.google = { script: { run: (function () {
       <div class="ligne-check" style="flex-wrap:wrap;">
         <input type="checkbox" id="genererPEC" checked>
         <label>Prise en charge</label>
-        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">⚠️ Maximum 8 personnes</span>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">un fichier par base de vie, 8 personnes au plus par fichier</span>
       </div>
       <div id="sousOptionsPEC" style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:8px 0 12px 28px;">
         <div class="ligne-check" style="margin-top:0;">
@@ -274,10 +274,11 @@ window.google = { script: { run: (function () {
     <label style="margin-top:20px;">Personnes / Véhicules</label>
     <table>
       <thead>
-        <tr><th>Nom</th><th>Prénom</th><th>Fonction</th><th>Type véhicule</th><th>Immatriculation</th></tr>
+        <tr><th>Nom</th><th>Prénom</th><th>Fonction</th><th class="col-base">Base de vie</th><th class="col-veh">Type véhicule</th><th class="col-veh">Immatriculation</th></tr>
       </thead>
       <tbody id="corpsTableau"></tbody>
     </table>
+    <div style="margin-top:8px;"><button type="button" class="btn-s" id="btnPlusLignes">+ Ajouter 4 lignes</button> <span style="font-size:11.5px;color:var(--text-muted);">Plus de 8 personnes, ou plusieurs bases : un fichier par base (et par tranche de 8).</span></div>
   </div>
 
   <button class="hero-btn" id="btnEnvoyer" onclick="envoyer()">
@@ -323,15 +324,32 @@ window.google = { script: { run: (function () {
 <script>
   // Construit les 12 lignes du tableau
   const corps = document.getElementById('corpsTableau');
-  for (let i = 0; i < 12; i++) {
-    corps.innerHTML += `<tr>
-      <td><input data-champ="nom"></td>
+  let basesListe = [];       // bases de vie proposées (venues du serveur)
+  const MAX_LIGNES = 60;
+  function optionsBase(sel, valeur) {
+    sel.innerHTML = ''; basesListe.forEach(b => { const o = document.createElement('option'); o.value = b; o.textContent = b; sel.appendChild(o); });
+    if (valeur && basesListe.indexOf(valeur) !== -1) sel.value = valeur;
+  }
+  function ajouterLigne() {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><input data-champ="nom"></td>
       <td><input data-champ="prenom"></td>
       <td><input data-champ="fonction" placeholder="auto"></td>
-      <td><input data-champ="typeVehicule"></td>
-      <td><input data-champ="immatriculation"></td>
-    </tr>`;
+      <td class="col-base"><select data-champ="base" aria-label="Base de vie"></select></td>
+      <td class="col-veh"><input data-champ="typeVehicule"></td>
+      <td class="col-veh"><input data-champ="immatriculation"></td>`;
+    const sel = tr.querySelector('select'); optionsBase(sel, document.getElementById('base').value);
+    sel.addEventListener('change', () => { sel.dataset.manuel = '1'; });   // une base choisie à la main n'est plus écrasée par la base par défaut
+    corps.appendChild(tr);
   }
+  for (let i = 0; i < 12; i++) ajouterLigne();
+  document.getElementById('btnPlusLignes').addEventListener('click', () => { for (let i = 0; i < 4 && corps.querySelectorAll('tr').length < MAX_LIGNES; i++) ajouterLigne(); majChampsSelonDocuments(); });
+  /** La base par défaut change : les lignes dont la base n'a pas été choisie à la main la suivent. */
+  function appliquerBaseDefaut(toutes) {
+    const b = document.getElementById('base').value;
+    corps.querySelectorAll('select[data-champ=base]').forEach(s => { if (toutes) delete s.dataset.manuel; if (!s.dataset.manuel && basesListe.indexOf(b) !== -1) s.value = b; });
+  }
+  document.getElementById('base').addEventListener('change', () => appliquerBaseDefaut(false));
 
   // ---- Détection de la personne pendant la saisie : recherche dans les Enquêtes administratives ----
   const sugg = document.createElement('div');
@@ -391,8 +409,13 @@ window.google = { script: { run: (function () {
     const pec = document.getElementById('genererPEC').checked, seuleAuto = !pec && document.getElementById('genererAuto').checked;
     document.getElementById('rowEmpBase').style.display = seuleAuto ? 'none' : '';
     document.getElementById('sousOptionsPEC').style.display = pec ? 'flex' : 'none';
+    // colonnes du tableau selon les documents : prise en charge seule → ni véhicule ni immatriculation ; autorisation seule → pas de base de vie
+    const auto = document.getElementById('genererAuto').checked;
+    document.querySelectorAll('.col-veh').forEach(e => { e.style.display = (auto || !pec) ? '' : 'none'; });
+    document.querySelectorAll('.col-base').forEach(e => { e.style.display = seuleAuto ? 'none' : ''; });
   }
   document.getElementById('genererAuto').addEventListener('change', majChampsSelonDocuments);
+  majChampsSelonDocuments();
   document.getElementById('genererPEC').addEventListener('change', majChampsSelonDocuments);
   document.getElementById('genererAuto').addEventListener('change', function() {
     document.getElementById('ligneValable2Mois').style.display = this.checked ? 'flex' : 'none';
@@ -436,6 +459,9 @@ window.google = { script: { run: (function () {
     const sBase = document.getElementById('base');
     sBase.innerHTML = '';
     opts.bases.forEach(b => sBase.innerHTML += `<option>${b}</option>`);
+    basesListe = opts.bases.slice();
+    corps.querySelectorAll('select[data-champ=base]').forEach(s => { const v = s.value; optionsBase(s, v); if (!s.value || basesListe.indexOf(s.value) === -1) s.value = sBase.value; });
+    appliquerBaseDefaut(false);
   }
 
   // Organisme hors Suivi CPM : ajouté à part (onglet « Organismes »), puis choisi tout seul
@@ -545,6 +571,7 @@ window.google = { script: { run: (function () {
       else e.value = '';
     });
     corps.querySelectorAll('tr').forEach(marquer);
+    appliquerBaseDefaut(true);
     majChampsSelonDocuments();
     const res = document.getElementById('resultat'); res.innerHTML = ''; res.className = '';
     const toast = document.getElementById('toast'); toast.style.display = 'none'; toast.innerHTML = '';
@@ -695,20 +722,13 @@ window.google = { script: { run: (function () {
     corps.querySelectorAll('tr').forEach(tr => {
       const p = {};
       tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
+      const sb = tr.querySelector('select[data-champ=base]'); p.base = (document.getElementById('genererPEC').checked && sb) ? sb.value : '';
       if (p.nom) p.nom = majNom(p.nom); if (p.prenom) p.prenom = capPrenom(p.prenom);
       if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
     });
 
-    // Garde-fou : le modèle de Prise en charge n'accepte que 6 personnes max
+    // Plus de 8 personnes ou plusieurs bases : le serveur crée une prise en charge par base et par tranche de 8
     if (document.getElementById('genererPEC').checked) {
-      const nbPersonnes = personnes.filter(p => p.nom || p.prenom).length;
-      if (nbPersonnes > 8) {
-        afficherResultat({
-          success: false,
-          message: "Tu as saisi " + nbPersonnes + " personne(s), mais la Prise en charge accepte 8 personnes maximum. Décoche 'Prise en charge' pour ne générer que l'Autorisation d'accès, ou réduis la liste."
-        });
-        return;
-      }
       if (!document.getElementById('hebergement').checked && !document.getElementById('restauration').checked) {
         afficherResultat({
           success: false,

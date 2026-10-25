@@ -343,7 +343,7 @@ function injecterEnquetes_(formData) {
           var i = enqLigneLibre_(lignes, col), ligne = i + 1, colNum = enqColNumero_(lignes, col);
           if (ligne > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), ligne - sh.getMaxRows()); // jamais d'écriture hors de la grille
           var cd = enqColonne_(sh, lignes, col.h, /تاريخالتسجيل|dateenregistrement|dateinscription|datedepriseencharge|datepriseencharge/, 'تاريخ التسجيل — Date de prise en charge');
-          var baseDe = Badges.vide(formData.base), cb = baseDe ? enqColonne_(sh, lignes, col.h, ENQ_RE_BASE_, 'القاعدة — Base d\'hébergement') : -1;   // la base désignée dans la prise en charge est gardée dans les Enquêtes
+          var baseDe = Badges.vide(p.base) || Badges.vide(formData.base), cb = baseDe ? enqColonne_(sh, lignes, col.h, ENQ_RE_BASE_, 'القاعدة — Base d\'hébergement') : -1;   // la base désignée dans la prise en charge est gardée dans les Enquêtes
           var cs = Badges.vide(p.structure) ? enqColonne_(sh, lignes, col.h, /^الهيكل|structure/i, 'الهيكل — Structure') : (col.structure >= 0 ? col.structure : -1);
           if (i >= lignes.length && lignes.length > 1) sh.getRange(lignes.length, 1, 1, sh.getLastColumn()).copyTo(sh.getRange(ligne, 1, 1, sh.getLastColumn()), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
           sh.getRange(ligne, col.fr + 1).setValue(nomComplet);
@@ -410,7 +410,7 @@ function journaliserPEC_(ss, formData, enq) {
     var docs = [formData.genererPEC ? 'PEC' : '', formData.genererAuto ? 'Autorisation' : ''].filter(Boolean).join('+');
     var lignes = (formData.personnes || []).map(function (p) {
       var nc = enqNomComplet_(p.nom, p.prenom), etat = enq ? (enq.ajoutes.indexOf(nc) >= 0 ? 'ajoutée' : enq.existants.indexOf(nc) >= 0 ? 'déjà présente' : enq.sansOnglet.indexOf(nc) >= 0 ? 'sans onglet' : '') : '';
-      return [date, formData.prestataire || '', formData.base || '', docs, p.nom || '', p.prenom || '', p.fonction || '', p.typeVehicule || '', p.immatriculation || '', formData.injecterEnquetes ? etat : 'non demandé', formData.dateArrivee || '', formData.dateDepart || ''];
+      return [date, formData.prestataire || '', p.base || formData.base || '', docs, p.nom || '', p.prenom || '', p.fonction || '', p.typeVehicule || '', p.immatriculation || '', formData.injecterEnquetes ? etat : 'non demandé', formData.dateArrivee || '', formData.dateDepart || ''];
     });
     if (lignes.length) sh.getRange(sh.getLastRow() + 1, 1, lignes.length, 12).setValues(lignes);
   } catch (e) { /* le journal ne doit jamais bloquer une génération */ }

@@ -1,6 +1,6 @@
 // Fin de l'autorisation et du macaron : date choisie → les deux la suivent ; sinon autorisation mensuelle et macaron jusqu'à la fin du contrat.
 const test = require('node:test'), assert = require('node:assert');
-const { dateLue_, finContrat_, departManuel_, datesFin_ } = require('../Code.js');
+const { dateLue_, finContrat_, departManuel_, datesFin_, repartirParBase_ } = require('../Code.js');
 const jj = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
 test('fin de contrat : ODS + durée en mois ou en jours, moins un jour', () => {
@@ -14,9 +14,9 @@ test('départ manuel : seulement si différent de l\'arrivée + 28 jours', () =>
   assert.strictEqual(departManuel_('2026-10-27', '2026-10-30'), true);
   assert.strictEqual(departManuel_('2026-10-27', ''), false);
 });
-test('date choisie (3 jours) : autorisation et macaron suivent cette date', () => {
+test('date de départ choisie : elle ne change ni l\'autorisation (fin de mois) ni le macaron (échéance du contrat)', () => {
   const r = datesFin_({ aujourdhui: '2026-10-27', depart: '2026-10-30', departManuel: true, finContrat: '2027-02-28' });
-  assert.strictEqual(jj(r.autorisation), '2026-10-30'); assert.strictEqual(jj(r.macaron), '2026-10-30');
+  assert.strictEqual(jj(r.autorisation), '2026-10-31'); assert.strictEqual(jj(r.macaron), '2027-02-28');
 });
 test('date non touchée : autorisation fin de mois, macaron fin de contrat', () => {
   const r = datesFin_({ aujourdhui: '2026-10-27', depart: '2026-11-24', departManuel: false, finContrat: '2027-02-28' });
@@ -55,4 +55,14 @@ test('largeurs : la case « Code » garde assez de place pour une entreprise au 
   const r = largeursColonnes_(act, 60);          // nom très long : toute la place possible est prise ailleurs
   assert.ok(r[5] >= 124, 'case Code : ' + r[5]);
   assert.strictEqual(r.reduce((a, b) => a + b, 0), act.reduce((a, b) => a + b, 0));
+});
+
+test('répartition : une prise en charge par base de vie, 8 personnes au plus par document', () => {
+  const p = (n, base) => ({ nom: 'N' + n, base });
+  const r = repartirParBase_([p(1, 'BASE DE VIE CENTRALE'), p(2, 'ANNEXE II BJSP'), p(3, 'BASE DE VIE CENTRALE'), p(4, 'ANNEXE II BJSP')], '', 8);
+  assert.deepStrictEqual(r.map(g => g.base + ':' + g.personnes.length), ['BASE DE VIE CENTRALE:2', 'ANNEXE II BJSP:2']);
+  const dix = Array.from({ length: 10 }, (_, i) => p(i, ''));
+  const g = repartirParBase_(dix, 'BASE DE VIE CENTRALE', 8);
+  assert.deepStrictEqual(g.map(x => x.personnes.length + '/' + x.partie + '/' + x.parties), ['8/1/2', '2/2/2']);
+  assert.strictEqual(repartirParBase_([], 'X', 8).length, 0);
 });
