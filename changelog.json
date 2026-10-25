@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-25-161",
+    "date": "2026-10-25",
+    "title": "Version 5.87.2 — Rapport consolidé : date corrigée",
+    "changes": [
+      "Les rapports consolidés enregistrés affichaient « undefined/undefined/Sat Oct 24 » et « Date invalide » à l'ouverture : Sheets avait converti la date en vraie date. Elle est maintenant relue au format AAAA-MM-JJ et écrite en texte brut ; les consolidés déjà enregistrés se lisent correctement sans rien refaire."
+    ]
+  },
+  {
     "id": "2026-10-25-160",
     "date": "2026-10-25",
     "title": "Version 5.87.1 — Accueil allégé",

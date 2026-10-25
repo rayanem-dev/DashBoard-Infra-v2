@@ -557,7 +557,9 @@ var CONSOLIDES_ENTETES_ = ['date', 'version', 'genere_par', 'genere_le', 'nb_cha
 var CONSOLIDE_MORCEAU_ = 45000;
 function consolidesLignes_() {
   var v = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_).getDataRange().getValues(), h = v[0].map(String), out = [];
-  for (var i = 1; i < v.length; i += 1) { if (!v[i][0]) continue; var o = { ligne: i + 1 }; h.forEach(function (c, k) { o[c] = v[i][k]; }); out.push(o); }
+  for (var i = 1; i < v.length; i += 1) { if (!v[i][0]) continue; var o = { ligne: i + 1 }; h.forEach(function (c, k) { o[c] = v[i][k]; });
+    o.date = jour_(o.date); if (o.genere_le instanceof Date) o.genere_le = o.genere_le.toISOString();   // Sheets a pu convertir le texte en date : on le remet en AAAA-MM-JJ
+    if (o.date) out.push(o); }
   return out;
 }
 function consolideDe_(o) {
@@ -580,7 +582,7 @@ function rapportsConsolideGenerer_(req) {
     var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_), ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; })[0];
     var version = ex ? (Number(ex.version) || 1) + 1 : 1, maintenant = new Date().toISOString();
     var ligne = [date, version, Annuaire.nomAffichable(u.nom, u.email), maintenant, s.chantiers.length, nbR, p[0], p[1], p[2], p[3]];
-    if (ex) sh.getRange(ex.ligne, 1, 1, ligne.length).setValues([ligne]); else sh.appendRow(ligne);
+    var cible = sh.getRange(ex ? ex.ligne : sh.getLastRow() + 1, 1, 1, ligne.length); cible.setNumberFormat('@'); cible.setValues([ligne]);   // texte brut : la date reste « AAAA-MM-JJ »
     Store.journal(ex ? 'consolide_regenere' : 'consolide_cree', u.email, date + ' v' + version);
     return { consolide: consolideDe_({ date: date, version: version, genere_par: ligne[2], genere_le: maintenant, nb_chantiers: ligne[4], nb_rapports: nbR, p1: p[0], p2: p[1], p3: p[2], p4: p[3] }), remplace: !!ex };
   } finally { lock.releaseLock(); }
