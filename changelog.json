@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-149",
+    "date": "2026-10-25",
+    "title": "Version 5.80.1 — Prise en charge : entreprise centrée, ancienne version retirée",
+    "changes": [
+      "Le PDF de prise en charge : la case « Code » (entreprise, n° de contrat, intitulé) est centrée, garde assez de largeur, et un nom d'entreprise long passe en plus petit au lieu d'être coupé.",
+      "L'ancienne application de prise en charge (page web ouverte par lien) est supprimée, ainsi que sa carte « ancienne version » : tout passe par le portail."
+    ]
+  },
+  {
     "id": "2026-10-24-148",
     "date": "2026-10-24",
     "title": "Version 5.80.0 — Prise en charge et autorisation d'accès dans le portail",
