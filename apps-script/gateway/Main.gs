@@ -119,6 +119,7 @@ function route_(req) {
     case 'pec': return pecAppeler_(req);
     case 'reservation_orga': return reservationOrga_(req);
     case 'reservation_envoyer': return reservationEnvoyer_(req);
+    case 'reservation_trajet_supprimer': return reservationTrajetSupprimer_(req);
     case 'vivier_liste': return vivierListe_(req);
     case 'vivier_enregistrer': return vivierEnregistrer_(req);
     case 'vivier_supprimer': return vivierSupprimer_(req);

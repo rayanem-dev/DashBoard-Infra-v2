@@ -37,6 +37,11 @@
   .seg button{flex:1;border:0;background:#fff;padding:8px 6px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer;min-height:38px}
   .seg button+button{border-left:1px solid var(--line)}
   .seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+  .trajet{display:flex;align-items:stretch;gap:4px} .trajet input{text-transform:uppercase;min-width:0}
+  .trajet button{width:38px;border:1px solid var(--line);background:#fff;border-radius:var(--r);cursor:pointer;color:var(--navy);font-size:16px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-8px 0 16px;font-size:12px;color:var(--muted)}
+  .chip{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:3px 4px 3px 10px;font-size:12.5px;color:var(--navy);cursor:pointer}
+  .chip.jour{border-color:var(--orange);background:#fff6ee} .chip button{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 6px;font-size:12px} .chip button:hover{color:var(--err)}
   .stepper{display:flex;align-items:stretch}
   .stepper button{width:40px;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer;color:var(--navy)}
   .stepper button:first-child{border-radius:var(--r) 0 0 var(--r)}
@@ -93,11 +98,13 @@
 
     <div class="top">
       <div>
-        <span class="lbl" id="l-trajet">Trajet</span>
-        <div class="seg" role="group" aria-labelledby="l-trajet">
-          <button type="button" data-trajet="ALGER → RNS" aria-pressed="true">ALGER → RNS</button>
-          <button type="button" data-trajet="RNS → ALGER" aria-pressed="false">RNS → ALGER</button>
+        <span class="lbl" id="l-trajet">Trajet (départ → destination)</span>
+        <div class="trajet" role="group" aria-labelledby="l-trajet">
+          <input id="depart" list="lieux" placeholder="Départ" autocomplete="off" maxlength="40" aria-label="Départ">
+          <button type="button" id="inverser" title="Inverser départ et destination" aria-label="Inverser départ et destination">⇄</button>
+          <input id="destination" list="lieux" placeholder="Destination" autocomplete="off" maxlength="40" aria-label="Destination">
         </div>
+        <datalist id="lieux"></datalist>
       </div>
       <div>
         <label for="date">Date du vol</label>
@@ -114,6 +121,7 @@
       </div>
     </div>
 
+    <div class="chips" id="chips" aria-label="Trajets habituels"></div>
     <div class="persons" id="persons"></div>
     <datalist id="orga-list"></datalist>
 
@@ -145,7 +153,9 @@
   const pad = n => (n<10?'0':'')+n;
   const $ = id => document.getElementById(id);
 
-  let trajet = 'ALGER → RNS';
+  let trajetsTable = {};     // trajets appris côté serveur : { 'LAGHOUAT → RNS': { n, jours: {0..6: n}, dernier } }
+  const nettoie = s => String(s||'').replace(/\s+/g,' ').trim().toUpperCase();
+  const trajetCourant = () => { const a = nettoie($('depart').value), b = nettoie($('destination').value); return (a && b) ? a + ' → ' + b : (a || b ? (a || '…') + ' → ' + (b || '…') : '(trajet)'); };
   let orgaMap = new Map();
   const rows = [];          // { el, refs, filled }
 
@@ -233,6 +243,7 @@
     const di = dateInfo($('date').value);
     $('jour').textContent = di ? di.jour : '';
     const ps = collect();
+    const trajet = trajetCourant();
     $('p-subj').textContent = 'Reservation ' + trajet;
     $('p-meta').textContent = 'À : ' + DEST;
     const intro = ps.length>1 ? 'Nous vous demandons de bien vouloir réserver '+ps.length+' places sur le vol suivant :'
@@ -252,15 +263,17 @@
   function envoyer(){
     setMsg('');
     if (!$('date').value) return setMsg('Choisissez la date du vol.', 'err');
+    if (!nettoie($('depart').value) || !nettoie($('destination').value)) { $('depart').focus(); return setMsg('Indiquez le départ et la destination.', 'err'); }
+    if (nettoie($('depart').value) === nettoie($('destination').value)) return setMsg('Le départ et la destination sont identiques.', 'err');
     const ps = collect();
     const vide = ps.findIndex(p => !p.nom);
     if (vide >= 0){ rows[vide].refs.nom.focus(); return setMsg('Renseignez le nom de la personne n° '+(vide+1)+'.', 'err'); }
 
     const b = $('send'); b.disabled = true; b.textContent = 'Envoi en cours…';
-    Api.call('reservation_envoyer', { demande: { date: $('date').value, trajet: trajet, personnes: ps } })
+    Api.call('reservation_envoyer', { demande: { date: $('date').value, depart: $('depart').value, destination: $('destination').value, personnes: ps } })
       .then(res => {
         b.textContent = 'Demande envoyée'; b.classList.add('done');
-        $('reset').hidden = false;
+        $('reset').hidden = false; Api.call('reservation_orga').then(r => { trajetsTable = r.trajets_table || trajetsTable; dessinerChips(); }).catch(() => {});
         setMsg('Mail envoyé à ' + res.to + ' (' + res.count + ' personne' + (res.count>1?'s':'') + ').', 'ok');
       })
       .catch(err => {
@@ -273,17 +286,36 @@
     rows.splice(0).forEach(r => r.el.remove());
     const b=$('send'); b.disabled=false; b.classList.remove('done'); b.textContent='Envoyer la demande';
     $('reset').hidden = true; setMsg('');
+    $('depart').value = ''; $('destination').value = '';
     setCount(1);
   }
 
   /* ---------- init ---------- */
-  document.querySelectorAll('.seg button').forEach(btn => btn.addEventListener('click', () => {
-    trajet = btn.dataset.trajet;
-    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x===btn)));
-    refresh();
-  }));
+  /* trajets habituels : ceux déjà utilisés le même jour de la semaine d'abord ; un clic remplit départ et destination */
+  function jourDeLaSemaine(){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec($('date').value||''); return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay() : -1; }
+  function dessinerChips(){
+    const z = $('chips'); z.textContent = ''; const j = jourDeLaSemaine();
+    const liste = Object.keys(trajetsTable).map(k => ({ k, n: trajetsTable[k].n||0, cj: (trajetsTable[k].jours||{})[j]||0 }))
+      .sort((a,b) => (b.cj-a.cj) || (b.n-a.n) || (a.k<b.k?-1:1));
+    if (!liste.length) return;
+    const t = document.createElement('span'); t.textContent = (j>=0 ? JOURS[j] + ' : ' : 'Trajets habituels : '); z.appendChild(t);
+    liste.slice(0, 12).forEach(x => {
+      const c = document.createElement('span'); c.className = 'chip' + (x.cj ? ' jour' : ''); c.title = x.cj ? 'Déjà demandé ce jour-là (' + x.cj + ' fois)' : 'Trajet déjà utilisé';
+      c.appendChild(document.createTextNode(x.k));
+      const del = document.createElement('button'); del.type = 'button'; del.textContent = '✕'; del.title = 'Retirer ce trajet de la liste'; del.setAttribute('aria-label', 'Retirer le trajet ' + x.k);
+      del.addEventListener('click', ev => { ev.stopPropagation(); if (!confirm('Retirer le trajet « ' + x.k + ' » de la liste ?')) return;
+        Api.call('reservation_trajet_supprimer', { trajet: x.k }).then(r => { trajetsTable = r.trajets_table || {}; dessinerChips(); }).catch(e => setMsg(e.message, 'err')); });
+      c.appendChild(del);
+      c.addEventListener('click', () => { const p = x.k.split(' → '); $('depart').value = p[0]; $('destination').value = p[1] || ''; refresh(); });
+      z.appendChild(c);
+    });
+    const lieux = {}; Object.keys(trajetsTable).forEach(k => k.split(' → ').forEach(l => { lieux[l] = 1; }));
+    const dl = $('lieux'); dl.textContent = ''; Object.keys(lieux).sort().forEach(l => { const o = document.createElement('option'); o.value = l; dl.appendChild(o); });
+  }
+  $('depart').addEventListener('input', refresh); $('destination').addEventListener('input', refresh);
+  $('inverser').addEventListener('click', () => { const a = $('depart').value; $('depart').value = $('destination').value; $('destination').value = a; refresh(); });
   $('date').value = today();
-  $('date').addEventListener('input', refresh);
+  $('date').addEventListener('input', () => { refresh(); dessinerChips(); });
   $('nb').addEventListener('input', () => setCount(parseInt($('nb').value,10)));
   $('moins').addEventListener('click', () => setCount(rows.length-1));
   $('plus').addEventListener('click', () => setCount(rows.length+1));
@@ -297,6 +329,7 @@
     Api.call('reservation_orga')
       .then(r => {
         const list = r.personnes || []; if (r.destinataire) DEST = r.destinataire;
+        trajetsTable = r.trajets_table || {}; dessinerChips();
         const dl = $('orga-list'); const frag = document.createDocumentFragment();
         list.forEach(p => {
           orgaMap.set(norm(p.nom), p);

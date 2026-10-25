@@ -1,6 +1,7 @@
 /**
  * Demande de réservation de vol (ALGER ⇄ RNS) : le nombre de personnes crée les lignes, le nom se choisit dans l'organigramme (comptes issus de BDDORGA),
  * la fonction et la société se remplissent seules ; hors SONATRACH, la mention « Rattaché à la division Infra » est ajoutée.
+ * Le trajet est libre (départ → destination) ; chaque trajet envoyé est appris (avec le jour de la semaine) et proposé ensuite, ceux du jour d'abord.
  * Le bouton « Envoyer » envoie le mail au secrétariat (destinataire : propriété de script RESERVATION_DEST, sinon l'adresse du secrétariat Infra) ; jamais d'envoi automatique.
  * Droits : module « logistique », niveau 1. Les comptes prestataires n'y ont pas accès.
  */
@@ -40,7 +41,7 @@ function resaMail_(d) {
   if (!ps.length) throw new Error('Ajoutez au moins une personne.');
   if (ps.length !== tous.length) throw new Error('Un nom est vide : complétez ou réduisez le nombre de personnes.');
   if (ps.length > 30) throw new Error('30 personnes au plus par demande.');
-  var trajet = d.trajet === 'RNS → ALGER' ? 'RNS → ALGER' : 'ALGER → RNS', dateTxt = resaDateTexte_(d.date);
+  var trajet = (d.depart || d.destination) ? resaTrajet_(d.depart, d.destination) : (function (p) { return resaTrajet_(p[0], p[1] || ''); })(String(d.trajet || '').split('→')), dateTxt = resaDateTexte_(d.date);
   var intro = ps.length > 1 ? 'Nous vous demandons de bien vouloir réserver ' + ps.length + ' places sur le vol suivant :' : 'Nous vous demandons de bien vouloir réserver une place sur le vol suivant :';
   var profit = 'au profit ' + resaProfit_(ps), lignes = ps.map(resaLigne_);
   var html = '<div style="font-family:Calibri,Arial,sans-serif;font-size:14px;color:#000"><p>Bonjour ,</p><p>' + resaEsc_(intro) + '</p>' +
@@ -48,8 +49,39 @@ function resaMail_(d) {
     '<ul>' + lignes.map(function (l) { return '<li><b>' + resaEsc_(l.nom) + '</b>' + (l.reste ? '&nbsp;&nbsp;' + resaEsc_(l.reste).replace(/  /g, '&nbsp;&nbsp;') : '') + '</li>'; }).join('') + '</ul>' +
     '<p>Salutations .</p><br><div style="font-size:12px"><b>' + RESERVATION_SIGNATURE_.map(resaEsc_).join('<br>') + '</b></div></div>';
   var texte = 'Bonjour ,\n\n' + intro + '\n\n' + trajet + ' le ' + dateTxt + ', ' + profit + ' :\n' + lignes.map(function (l) { return ' - ' + l.nom + (l.reste ? '  ' + l.reste : ''); }).join('\n') + '\n\nSalutations .\n\n' + RESERVATION_SIGNATURE_.join('\n');
-  return { sujet: 'Reservation ' + trajet, texte: texte, html: html, nb: ps.length };
+  return { sujet: 'Reservation ' + trajet, trajet: trajet, texte: texte, html: html, nb: ps.length };
 }
+
+/** Pur : « laghouat » + « rns » → « LAGHOUAT → RNS » (majuscules, espaces nettoyés) ; lève une erreur si un lieu manque, est trop long ou si départ = destination. */
+function resaTrajet_(depart, destination) {
+  var net = function (s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').replace(/[→⇄>\-]+$/, '').trim().toUpperCase(); };
+  var a = net(depart), b = net(destination);
+  if (!a || !b) throw new Error('Indiquez le départ et la destination.');
+  if (a.length > 40 || b.length > 40) throw new Error('Nom de lieu trop long (40 caractères au plus).');
+  if (resaNorm_(a) === resaNorm_(b)) throw new Error('Le départ et la destination sont identiques.');
+  return a + ' → ' + b;
+}
+/** Pur : { trajet: { n, jours: { 0..6: n }, dernier } } + un trajet effectué le jour ISO → nouvelle table (le jour 0 = dimanche). */
+function resaApprendre_(table, trajet, iso) {
+  var t = {}; Object.keys(table || {}).forEach(function (k) { t[k] = table[k]; });
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')), jour = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() : -1;
+  var e = t[trajet] || { n: 0, jours: {}, dernier: '' };
+  var j = {}; Object.keys(e.jours || {}).forEach(function (k) { j[k] = e.jours[k]; });
+  if (jour >= 0) j[jour] = (j[jour] || 0) + 1;
+  t[trajet] = { n: (e.n || 0) + 1, jours: j, dernier: String(iso || '') };
+  return t;
+}
+/** Pur : trajets connus, ceux du jour de la semaine demandé d'abord (les plus fréquents ce jour-là), puis les autres par fréquence. */
+function resaTrajetsTries_(table, jour) {
+  return Object.keys(table || {}).map(function (k) { var e = table[k]; return { trajet: k, n: e.n || 0, ceJour: (e.jours && e.jours[jour]) || 0 }; })
+    .sort(function (a, b) { return (b.ceJour - a.ceJour) || (b.n - a.n) || (a.trajet < b.trajet ? -1 : 1); });
+}
+var RESERVATION_TRAJETS_DEFAUT_ = { 'ALGER → RNS': { n: 0, jours: {}, dernier: '' }, 'RNS → ALGER': { n: 0, jours: {}, dernier: '' } };
+function resaTrajetsLire_() {
+  try { var o = JSON.parse(PropertiesService.getScriptProperties().getProperty('RESERVATION_TRAJETS') || 'null'); if (o && typeof o === 'object' && Object.keys(o).length) return o; } catch (e) { /* illisible : on repart des trajets d'origine */ }
+  return RESERVATION_TRAJETS_DEFAUT_;
+}
+function resaTrajetsEcrire_(t) { PropertiesService.getScriptProperties().setProperty('RESERVATION_TRAJETS', JSON.stringify(t)); }
 
 function resaDroit_(req) {
   var u = Auth.userFromToken(req.token);
@@ -63,12 +95,21 @@ function reservationOrga_(req) {
     return { nom: Annuaire.nomAffichable(x.nom, x.email), fonction: String(x.fonction || ''), societe: String(x.dependance || 'SONATRACH') || 'SONATRACH', service: String(x.service || '') };
   });
   l.sort(function (a, b) { return a.nom < b.nom ? -1 : a.nom > b.nom ? 1 : 0; });
-  return { personnes: l, destinataire: PropertiesService.getScriptProperties().getProperty('RESERVATION_DEST') || RESERVATION_DEST_DEFAUT_, mention: RESERVATION_MENTION_ };
+  return { personnes: l, trajets_table: resaTrajetsLire_(), destinataire: PropertiesService.getScriptProperties().getProperty('RESERVATION_DEST') || RESERVATION_DEST_DEFAUT_, mention: RESERVATION_MENTION_ };
 }
 function reservationEnvoyer_(req) {
   var u = resaDroit_(req), m = resaMail_(req.demande), dest = PropertiesService.getScriptProperties().getProperty('RESERVATION_DEST') || RESERVATION_DEST_DEFAUT_;
   MailApp.sendEmail({ to: dest, subject: m.sujet, body: m.texte, htmlBody: m.html, replyTo: u.email, name: 'Division Infrastructure RNS' });
+  try { var lock = LockService.getScriptLock(); lock.waitLock(10000); try { resaTrajetsEcrire_(resaApprendre_(resaTrajetsLire_(), m.trajet, String(req.demande.date))); } finally { lock.releaseLock(); } } catch (e) { /* le trajet sera appris la prochaine fois */ }
   Store.journal('reservation', u.email, m.sujet + ' · ' + m.nb + ' pers. · ' + String(req.demande.date));
   return { ok: true, count: m.nb, to: dest };
 }
-if (typeof module !== 'undefined') module.exports = { resaMail_: resaMail_, resaLigne_: resaLigne_, resaDateTexte_: resaDateTexte_ };
+/** Retire un trajet appris par erreur (niveau 2 sur Logistique) ; les deux trajets d'origine reviennent s'il ne reste rien. */
+function reservationTrajetSupprimer_(req) {
+  var u = Auth.userFromToken(req.token);
+  if ((acces_(u).logistique || 0) < 2) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  var t = resaTrajetsLire_(), cle = String(req.trajet || ''), n = {}; Object.keys(t).forEach(function (k) { if (k !== cle) n[k] = t[k]; });
+  resaTrajetsEcrire_(n); Store.journal('reservation_trajet_suppr', u.email, cle);
+  return { trajets_table: resaTrajetsLire_() };
+}
+if (typeof module !== 'undefined') module.exports = { resaTrajet_: resaTrajet_, resaApprendre_: resaApprendre_, resaTrajetsTries_: resaTrajetsTries_, resaMail_: resaMail_, resaLigne_: resaLigne_, resaDateTexte_: resaDateTexte_ };
