@@ -721,3 +721,11 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 /* 5.87.1 : le bandeau « Bonjour / Mon profil » de l'accueil est retiré (le profil s'ouvre par la pastille en haut) ; la boule des jours se range contre la pastille. */
 .agent-gauche { display: none !important; }
 .jauge-hd { margin-left: auto; margin-right: -4px; }
+
+/* 5.91.3 : sur téléphone, le détail de la rotation s'ouvre sur toute la largeur sous l'en-tête (il débordait à gauche) */
+@media (max-width: 700px) {
+  .bandeau { position: relative; }
+  .jauge-hd { position: static; }
+  .jauge-pop { position: absolute; top: 100%; left: 12px; right: 12px; width: auto; margin-top: -4px; max-height: 70vh; overflow-y: auto; }
+  .jauge-pop .raccourci { flex: 1 1 calc(50% - 6px); justify-content: center; }
+}

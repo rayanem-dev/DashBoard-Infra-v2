@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-172",
+    "date": "2026-10-25",
+    "title": "Version 5.91.3 — Accueil : avancement à jour, détail des jours sur téléphone",
+    "changes": [
+      "Carte « Avancement chantiers » de l'accueil : compte tous les chantiers en exécution (tous services), avec l'avancement moyen et une tuile « Sans avancement » pour ceux qui n'ont encore ni rapport ni fiche.",
+      "Téléphone : le détail de la rotation (clic sur la boule des jours) s'ouvre sur toute la largeur sous l'en-tête au lieu de déborder à gauche ; les raccourcis se rangent sur deux colonnes."
+    ]
+  },
+  {
     "id": "2026-10-25-171",
     "date": "2026-10-25",
     "title": "Version 5.91.2 — Voir les destinataires du consolidé",

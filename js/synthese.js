@@ -157,12 +157,12 @@ var Synthese = (function () {
       var m = html.match(/<script>([\s\S]*?)<\/script>/); if (!m) throw new Error('script introuvable');
       var code = m[1].replace(/\ninit\(\);\s*$/, ''); return new Function(code + '\nreturn computeStats;')()();
     }).then(function (res) {
-      var s = chantiers(res.globalResults), grille = el('div', 'syn-grille syn-quatre'), barre = el('div', 'syn-barre');
-      grille.appendChild(tuile(s.total, 'Chantiers suivis', '', 'linear-gradient(135deg,#1A1A2E,#16213E)', '#fff'));
-      [['Bien avancé', s.bien, '#DCFCE7', '#15803D'], ['En cours', s.encours, '#DBEAFE', '#1E40AF'], ['Démarrage', s.demarrage, '#FFF3E0', '#9A5B0F']].forEach(function (x) {
-        if (x[0] === 'Démarrage' && !x[1]) return;   // une tuile à zéro n'apporte rien
-        grille.appendChild(tuile(x[1], x[0], pct(x[1], s.total), x[2], x[3])); var seg = el('div', 'syn-seg'); seg.style.width = (s.total ? x[1] / s.total * 100 : 0) + '%'; seg.style.background = x[3]; barre.appendChild(seg); });
-      sub.textContent = s.total + ' prestation' + (s.total > 1 ? 's' : '') + ' suivie' + (s.total > 1 ? 's' : '') + ' — Travaux Entretien + Électromécanique'; zone.appendChild(grille); zone.appendChild(barre);
+      var s = chantiers(res.globalResults), total = res.results.length, sans = total - s.total, grille = el('div', 'syn-grille syn-quatre'), barre = el('div', 'syn-barre');
+      grille.appendChild(tuile(total, 'Chantiers en exécution', '', 'linear-gradient(135deg,#1A1A2E,#16213E)', '#fff'));
+      [['Bien avancé', s.bien, '#DCFCE7', '#15803D'], ['En cours', s.encours, '#DBEAFE', '#1E40AF'], ['Démarrage', s.demarrage, '#FFF3E0', '#9A5B0F'], ['Sans avancement', sans, '#F3F4F6', '#6B7280']].forEach(function (x) {
+        if ((x[0] === 'Démarrage' || x[0] === 'Sans avancement') && !x[1]) return;   // une tuile à zéro n'apporte rien
+        grille.appendChild(tuile(x[1], x[0], pct(x[1], total), x[2], x[3])); var seg = el('div', 'syn-seg'); seg.style.width = (total ? x[1] / total * 100 : 0) + '%'; seg.style.background = x[3]; barre.appendChild(seg); });
+      sub.textContent = total + ' chantier' + (total > 1 ? 's' : '') + ' (tous services) — avancement moyen ' + Math.round(res.globalPct) + ' %' + (sans ? ' · ' + sans + ' sans rapport ni fiche' : ''); zone.appendChild(grille); zone.appendChild(barre);
     }).catch(function () { sub.textContent = 'Données indisponibles pour l\'instant'; });
   }
 
