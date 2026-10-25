@@ -132,6 +132,14 @@ var SEED_APPS = [
   1
  ],
  [
+  "rapports",
+  "Affectation chantier",
+  "Indiquez le service de chaque chantier (les conducteurs ne voient que ceux de leur service), activez ou désactivez un chantier et synchronisez la liste avec les contrats en exécution du Suivi CPM.",
+  "🔀",
+  "affectation-chantier.html",
+  3
+ ],
+ [
   "badges",
   "Fichier des habilitations",
   "Extraction en vrac du fichier des Enquêtes administratives : choisissez les entreprises, la période de prise en charge et les colonnes à afficher, puis imprimez ou exportez en Excel.",

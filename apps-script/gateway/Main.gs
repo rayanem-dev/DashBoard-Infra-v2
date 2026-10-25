@@ -201,8 +201,10 @@ function route_(req) {
       if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(em)) throw new Error('Adresse e-mail invalide');
       if (!nm) throw new Error('Le nom est obligatoire');
       var rl = Droits.roleCanon(req.role); var e7 = Droits.verifier(rl); if (e7) throw new Error(e7);
+      var dep = String(req.dependance || '').replace(/\s+/g, ' ').trim();
+      if (rl === 'prestataire' && !dep) throw new Error('Choisissez l\'entreprise du prestataire (champ « Dépendance / entreprise »)');
       if (Store.utilisateur(em)) throw new Error('Un compte existe déjà avec cette adresse');
-      Store.maj('Utilisateurs', { email: em }, { uid: uidPour_(em), nom: nm.slice(0, 120), service: String(req.service || '').trim().slice(0, 120), fonction: String(req.fonction || '').trim().slice(0, 120), dependance: String(req.dependance || '').trim().slice(0, 120), section: String(req.section || '').trim().slice(0, 60), role: rl, actif: 1, email_contact: em });
+      Store.maj('Utilisateurs', { email: em }, { uid: uidPour_(em), nom: nm.slice(0, 120), service: String(req.service || '').trim().slice(0, 120), fonction: String(req.fonction || '').trim().slice(0, 120), dependance: dep.slice(0, 120), portee: rl === 'prestataire' ? dep.slice(0, 120) : '', section: String(req.section || '').trim().slice(0, 60), role: rl, actif: 1, email_contact: em });
       Store.journal('utilisateur_ajout', a7.email, em + ' (' + rl + ')'); return { email: em };
     }
     case 'admin_portee': {

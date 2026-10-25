@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Affectation chantier – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🔀</div>
+    <div class="logo-text"><h1>Affectation chantier</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="Avancement_des_Chantiers.html">📊 Avancement Chantiers</a><a class="btn-ghost" href="Suivi_Chantier.html">🗂️ Suivi Chantier</a><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+
+<main class="portail">
+  <section class="panneau" id="p-chantiers">
+    <div class="barre"><button class="btn-s" id="b-sync" type="button" title="Lit le Suivi CPM (sans rien y écrire) : un chantier par contrat « en exécution »">↻ Synchroniser avec le Suivi CPM</button><span id="c-resume" class="aide"></span></div>
+    <p class="aide">Un chantier par contrat en exécution. Indiquez le <b>service</b> de chacun : les conducteurs ne voient que les chantiers de leur service (un chantier sans service est visible de tous).</p>
+    <div id="c-liste"></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (Api.demo) $('demo').hidden = false;
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  // ----- Chantiers (niveau 3) : service de chacun, activation, synchronisation avec le Suivi CPM (lecture seule)
+  var SERVICES = ['Construction', 'Électromécanique', 'Travaux Entretien'];
+  function chantiersAdmin() {
+    return Api.call('rapports_chantiers_admin').then(function (r) {
+      var z = $('c-liste'); z.textContent = '';
+      var sans = r.chantiers.filter(function (c) { return !c.service && c.actif; }).length;
+      $('c-resume').textContent = r.chantiers.filter(function (c) { return c.actif; }).length + ' chantier(s) actif(s)' + (sans ? ' · ' + sans + ' sans service' : '');
+      var t = el('table', 'tab'); t.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
+      var th = el('tr'); ['Chantier', 'Contrat', 'Service', 'Actif'].forEach(function (x) { var c = el('th', null, x); c.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:2px solid var(--border,#ddd)'; th.appendChild(c); }); t.appendChild(th);
+      r.chantiers.sort(function (a, b) { return (b.actif - a.actif) || String(a.nom).localeCompare(String(b.nom), 'fr'); }).forEach(function (c) {
+        var tr = el('tr'); if (!c.actif) tr.style.opacity = '.55';
+        var cell = function (n) { var td = el('td'); td.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border,#eee)'; if (n != null) td.textContent = n; return td; };
+        tr.appendChild(cell(c.nom)); tr.appendChild(cell(c.contrat || (c.source === 'manuel' ? 'routine' : '')));
+        var ts = cell(); var sel = el('select'); [''].concat(SERVICES).forEach(function (sv) { var o = el('option', null, sv || '— à définir —'); o.value = sv; sel.appendChild(o); });
+        if (c.service && SERVICES.indexOf(c.service) < 0) { var o = el('option', null, c.service); o.value = c.service; sel.appendChild(o); } sel.value = c.service || '';
+        sel.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, service: sel.value }).then(function () { toast('Service enregistré'); }).catch(function (e) { toast(e.message, true); }); };
+        ts.appendChild(sel); tr.appendChild(ts);
+        var ta = cell(); var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!c.actif; cb.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, actif: cb.checked }).then(function () { toast(cb.checked ? 'Chantier activé' : 'Chantier désactivé'); tr.style.opacity = cb.checked ? '' : '.55'; }).catch(function (e) { toast(e.message, true); }); };
+        ta.appendChild(cb); tr.appendChild(ta); t.appendChild(tr);
+      });
+      z.appendChild(t);
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  $('b-sync').addEventListener('click', function () {
+    var b = $('b-sync'); b.disabled = true;
+    Api.call('rapports_chantiers_sync').then(function (r) { toast(r.ajoutes + ' ajouté(s), ' + r.renommes + ' renommé(s), ' + r.desactives + ' désactivé(s), ' + r.reactives + ' réactivé(s)' + (r.routines ? ', ' + r.routines + ' chantier(s) de routine' : '')); return chantiersAdmin(); })
+      .catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+  });
+
+  chantiersAdmin();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
