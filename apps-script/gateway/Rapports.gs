@@ -178,11 +178,9 @@ var Rapports = (function () {
     });
   }
 
-  /** Correction d'un rapport passé : chef de division et secrétariat (tous les rapports), chefs de service (rapports de leur service). role = rôle canonique. */
-  function peutCorriger(user, role, r) {
-    if (role === 'chef_division' || role === 'secretariat') return true;
-    if (role === 'chef_service' || role === 'interim_chef_service') return !!norm(user.service) && servicePareil(r.service, user.service);
-    return false;
+  /** Correction d'un rapport passé : chef de division, secrétariat et chefs de service, pour TOUS les services. role = rôle canonique. */
+  function peutCorriger(user, role) {
+    return ['chef_division', 'secretariat', 'chef_service', 'interim_chef_service'].indexOf(role) >= 0;
   }
   /** Mêmes contrôles qu'une saisie, mais sans la règle « jour même » : la date et le chantier du rapport d'origine sont conservés. */
   function corriger(req, existant) {

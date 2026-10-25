@@ -494,8 +494,9 @@ function rapportsListe_(req) {
   var auj = Dates.today();
   var du = Dates.isDate(req.du) ? req.du : Dates.addDays(auj, -6);
   var au = Dates.isDate(req.au) ? req.au : auj;
-  var liste = Rapports.filtrer(rapportsLus_(), u, niv, { du: du, au: au, chantier: req.chantier || '', auteur: niv >= 2 ? (req.auteur || '') : '' });
-  var out = liste.slice(0, 300).map(function (r) { r.peut_viser = Rapports.peutViser(u, niv, r); r.peut_corriger = Rapports.peutCorriger(u, Droits.roleCanon(u.role), r); r.le_mien = String(r.auteur_email).toLowerCase() === String(u.email).toLowerCase(); return r; });
+  var voitTout = Rapports.peutCorriger(u, Droits.roleCanon(u.role));   // chef de division, secrétariat, chefs de service : tous les rapports (pour les corriger) ; le visa reste limité à la portée habituelle
+  var liste = Rapports.filtrer(rapportsLus_(), u, voitTout ? 3 : niv, { du: du, au: au, chantier: req.chantier || '', auteur: niv >= 2 || voitTout ? (req.auteur || '') : '' });
+  var out = liste.slice(0, 300).map(function (r) { r.peut_viser = Rapports.peutViser(u, niv, r); r.peut_corriger = voitTout; r.le_mien = String(r.auteur_email).toLowerCase() === String(u.email).toLowerCase(); return r; });
   return { du: du, au: au, niveau: niv, rapports: out, tronque: liste.length > 300 };
 }
 /** Corrige un rapport d'un jour passé (chef de division, secrétariat, chef de service de son service) ; l'auteur, la date et le chantier restent, la correction est tracée. */
@@ -503,7 +504,7 @@ function rapportCorriger_(req) {
   var u = Auth.userFromToken(req.token);
   var r = rapportsLus_().filter(function (x) { return x.id === String(req.id); })[0];
   if (!r) throw new Error('Rapport introuvable');
-  if (!Rapports.peutCorriger(u, Droits.roleCanon(u.role), r)) throw Object.assign(new Error('Vous ne pouvez pas corriger ce rapport'), { code: 'DROITS' });
+  if (!Rapports.peutCorriger(u, Droits.roleCanon(u.role))) throw Object.assign(new Error('Vous ne pouvez pas corriger ce rapport'), { code: 'DROITS' });
   var v = Rapports.corriger(req, r); if (v.erreur) throw new Error(v.erreur);
   var x = v.rapport, maintenant = new Date().toISOString();
   Store.maj('Rapports', { id: r.id }, { effectif: x.effectif, travaux: x.travaux, lignes: JSON.stringify(x.lignes || []), difficultes: x.difficultes, commentaire: x.commentaire, avancement: x.avancement,

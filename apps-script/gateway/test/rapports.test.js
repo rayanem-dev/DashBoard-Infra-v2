@@ -169,8 +169,8 @@ test('correction d\'un rapport passé : rôles autorisés et validation sans rè
   const r = { id: 'x', date: '2026-10-24', chantier: 'forage_rns', service: 'Service Travaux Entretien' };
   assert.strictEqual(Rapports.peutCorriger({ service: 'Direction' }, 'chef_division', r), true);
   assert.strictEqual(Rapports.peutCorriger({ service: 'Direction' }, 'secretariat', r), true);
-  assert.strictEqual(Rapports.peutCorriger({ service: 'Travaux Entretien' }, 'chef_service', r), true);
-  assert.strictEqual(Rapports.peutCorriger({ service: 'Électromécanique' }, 'chef_service', r), false);
+  assert.strictEqual(Rapports.peutCorriger({ service: 'Électromécanique' }, 'chef_service', r), true);   // tous les services
+  assert.strictEqual(Rapports.peutCorriger({ service: 'Travaux Entretien' }, 'interim_chef_service', r), true);
   assert.strictEqual(Rapports.peutCorriger({ service: 'Travaux Entretien' }, 'conducteur', r), false);
   const v = Rapports.corriger({ effectif: '12', avancement: '48', travaux: 'Forage P2', lignes: [] }, r);
   assert.strictEqual(v.erreur, undefined); assert.strictEqual(v.rapport.date, '2026-10-24'); assert.strictEqual(v.rapport.avancement, 48); assert.strictEqual(v.rapport.chantier, 'forage_rns');
