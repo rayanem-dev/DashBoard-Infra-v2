@@ -115,3 +115,26 @@ test('ligne de travaux de routine (prestation) : repérée, texte préfixé', ()
   assert.deepStrictEqual(r.rapport.lignes, [{ zone: 'Climatiseurs', texte: 'Réparation sur sites', avancement: '', routine: true }, { zone: 'GC', texte: 'Dépose', avancement: 5 }]);
   assert.match(r.rapport.travaux, /\[Routine\] Climatiseurs/);
 });
+
+test('tableau : un élément par chantier actif avec contrat, délai écoulé et dernier rapport', () => {
+  const enr = { ordre: ['a', 'b'], dossiers: {
+    a: { statut: 'En exécution', n_contrat: '72.INFRA.25', intitule: 'Forage RNS', attribue_a: 'ENTP', montant: '1 000', date_ods: '01/01/2026', duree_contrat: '', echeance: '31/12/2026' },
+    b: { statut: 'Clôturé', n_contrat: '99.X', intitule: 'Vieux', date_ods: '', echeance: '' } } };
+  const chantiers = [
+    { id: '72-infra-25', nom: 'x', service: 'Travaux Entretien', actif: 1, contrat: '72.INFRA.25', entreprise: '', fiche: 'https://f', suivi: 'forage' },
+    { id: 'routine-entretien', nom: 'Routine', service: 'Travaux Entretien', actif: 1, contrat: '' },
+    { id: '99-x', nom: 'Vieux', service: '', actif: 0, contrat: '99.X' },
+    { id: '11-z', nom: 'Sans CPM', service: '', actif: 1, contrat: '11.Z' }];
+  const rap = [
+    { chantier: '72-infra-25', date: '2026-10-12', auteur_nom: 'A', effectif: 5, avancement: 30, lignes: [], difficultes: '' },
+    { chantier: '72-infra-25', date: '2026-10-13', auteur_nom: 'B', effectif: 7, avancement: '', difficultes: 'pluie', lignes: [{ zone: 'P1', texte: 'foration', avancement: 40 }, { zone: 'P2', texte: 'tubage', avancement: 60 }] }];
+  const t = Rapports.tableau(chantiers, enr, rap, '2026-10-13');
+  assert.deepStrictEqual(t.map(x => x.id), ['72-infra-25', '11-z']);
+  const f = t[0];
+  assert.strictEqual(f.nom, 'Forage RNS'); assert.strictEqual(f.entreprise, 'ENTP'); assert.strictEqual(f.fiche, 'https://f');
+  assert.strictEqual(f.delai_pct, Math.round((Date.UTC(2026, 9, 13) - Date.UTC(2026, 0, 1)) / (Date.UTC(2026, 11, 31) - Date.UTC(2026, 0, 1)) * 100));
+  assert.strictEqual(f.avancement, 50);                       // moyenne des lignes du dernier jour
+  assert.strictEqual(f.dernier.date, '2026-10-13'); assert.strictEqual(f.dernier.effectif, 7); assert.strictEqual(f.dernier.lignes.length, 2);
+  assert.strictEqual(f.rapports_7j, 2);
+  assert.strictEqual(t[1].avancement, null); assert.strictEqual(t[1].dernier, null); assert.strictEqual(t[1].delai_pct, null);
+});

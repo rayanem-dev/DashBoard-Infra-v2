@@ -129,7 +129,54 @@ var Rapports = (function () {
     return { date: date, chantiers: out, manquants: out.filter(function (c) { return !c.rapports.length; }).length };
   }
 
-  return { valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  function dateFr(s) {
+    var t = String(s || '').trim(), m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t), iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+    var y, mo, d; if (m) { d = +m[1]; mo = +m[2]; y = +m[3]; } else if (iso) { y = +iso[1]; mo = +iso[2]; d = +iso[3]; } else return null;
+    if (y < 1990 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    return Date.UTC(y, mo - 1, d);
+  }
+  function isoDe(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  /**
+   * Tableau des chantiers (pages Avancement et Suivi chantier) : un élément par chantier ACTIF qui a un contrat (Affectation chantier),
+   * avec les données du Suivi CPM (lecture seule : montant, ODS, échéance, part du délai écoulée) et ce que disent les rapports journaliers
+   * (dernier rapport, avancement déclaré, effectif, rapports des 7 derniers jours). Le service vient de l'Affectation chantier.
+   * enr = cpmEnregistrements_ ; auj = 'AAAA-MM-JJ'.
+   */
+  function tableau(chantiers, enr, rapports, auj) {
+    var parContrat = {};
+    ((enr && enr.ordre) || []).forEach(function (cle) {
+      var d = enr.dossiers[cle]; if (!d || sans(d.statut).indexOf('execution') < 0) return;
+      var id = slugContrat(d.n_contrat); if (id && !parContrat[id]) parContrat[id] = d;
+    });
+    var aujMs = dateFr(auj), il7 = aujMs == null ? null : isoDe(aujMs - 6 * 864e5);
+    return chantiers.filter(function (c) { return String(c.actif) !== '0' && String(c.contrat || '').trim(); }).map(function (c) {
+      var d = parContrat[c.id] || null, ods = d ? dateFr(d.date_ods) : null, ech = d ? dateFr(d.echeance) : null;
+      var duree = d ? parseFloat(String(d.duree_contrat).replace(',', '.')) || null : null;
+      if (ech == null && ods != null && duree) { var x = new Date(ods); x.setUTCMonth(x.getUTCMonth() + Math.round(duree)); ech = x.getTime(); }
+      var delai = null, restants = null;
+      if (ods != null && ech != null && aujMs != null && ech > ods) {
+        delai = Math.max(0, Math.min(100, Math.round(((aujMs - ods) / (ech - ods)) * 100)));
+        restants = Math.round((ech - aujMs) / 864e5);
+      }
+      var rs = rapports.filter(function (r) { return norm(r.chantier) === norm(c.id); }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+      var dern = rs[0] || null, avancement = null, lignes = [];
+      if (dern) {
+        var memeJour = rs.filter(function (r) { return r.date === dern.date; });
+        var avs = memeJour.map(function (r) { return r.avancement; }).filter(function (a) { return a !== '' && a != null; });
+        avancement = avs.length ? Math.max.apply(null, avs) : null;
+        memeJour.forEach(function (r) { (r.lignes || []).forEach(function (l) { if (l && (l.zone || l.texte)) lignes.push({ zone: l.zone || '', texte: l.texte || '', avancement: l.avancement === '' || l.avancement == null ? null : Number(l.avancement), routine: !!l.routine }); }); });
+        if (avancement == null) { var la = lignes.map(function (l) { return l.avancement; }).filter(function (a) { return a != null; }); if (la.length) avancement = Math.round(la.reduce(function (s, a) { return s + a; }, 0) / la.length * 10) / 10; }
+      }
+      return {
+        id: c.id, nom: d && d.intitule ? d.intitule : c.nom, contrat: c.contrat, entreprise: c.entreprise || (d ? d.attribue_a : ''), service: c.service || '',
+        fiche: c.fiche || '', suivi: c.suivi || '', montant: d ? d.montant : '', ods: ods == null ? '' : isoDe(ods), echeance: ech == null ? '' : isoDe(ech), delai_pct: delai, jours_restants: restants,
+        avancement: avancement, dernier: dern ? { date: dern.date, auteur: dern.auteur_nom || '', effectif: dern.effectif, difficultes: dern.difficultes || '', lignes: lignes.slice(0, 30) } : null,
+        rapports_7j: il7 == null ? 0 : rs.filter(function (r) { return r.date >= il7 && r.date <= auj; }).length
+      };
+    });
+  }
+
+  return { tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

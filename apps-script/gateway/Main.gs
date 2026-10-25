@@ -167,6 +167,7 @@ function route_(req) {
     }
     case 'rapports_chantiers_admin': return rapportsChantiersAdmin_(req);
     case 'rapports_chantier_maj': return rapportsChantierMaj_(req);
+    case 'chantiers_tableau': return chantiersTableau_(req);
     case 'rapports_chantiers_sync': return rapportsChantiersSync_(req);
     case 'admin_inviter': {
       // Invitation par e-mail : lien, première connexion et applications accordées. { emails: [...] } ou { email }
@@ -441,9 +442,9 @@ function assurerColonnes_(nom, colonnes) {
   props.setProperty(cle, '1');
 }
 function chantiersTous_() {
-  assurerColonnes_('Chantiers', ['contrat', 'entreprise', 'source']);
+  assurerColonnes_('Chantiers', ['contrat', 'entreprise', 'source', 'fiche', 'suivi']);
   return Store.table('Chantiers').filter(function (c) { return c.id; })
-    .map(function (c) { return { id: String(c.id).toLowerCase(), nom: c.nom, service: c.service || '', actif: String(c.actif) === '0' ? 0 : 1, contrat: c.contrat || '', entreprise: c.entreprise || '', source: c.source || '' }; });
+    .map(function (c) { return { id: String(c.id).toLowerCase(), nom: c.nom, service: c.service || '', actif: String(c.actif) === '0' ? 0 : 1, contrat: c.contrat || '', entreprise: c.entreprise || '', source: c.source || '', fiche: c.fiche || '', suivi: c.suivi || '' }; });
 }
 function chantiersActifs_() { return chantiersTous_().filter(function (c) { return c.actif; }); }
 function lignesLues_(v) { if (Array.isArray(v)) return v; try { var l = JSON.parse(String(v || '[]')); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
@@ -505,6 +506,15 @@ function rapportsChantierMaj_(req) {
   var v = {};
   if (req.service !== undefined) v.service = Rapports.nettoyer(req.service, 60);
   if (req.actif !== undefined) v.actif = req.actif ? 1 : 0;
+  if (req.fiche !== undefined) {
+    var f = Rapports.nettoyer(req.fiche, 500);
+    if (f && !/^https:\/\//i.test(f)) throw new Error('Le lien de la fiche doit commencer par https://');
+    v.fiche = f;
+  }
+  if (req.suivi !== undefined) {
+    if (['', 'forage', 'terrassement', 'electricite'].indexOf(String(req.suivi)) < 0) throw new Error('Suivi inconnu');
+    v.suivi = String(req.suivi);
+  }
   if (!Object.keys(v).length) return {};
   Store.maj('Chantiers', { id: id }, v); Store.journal('chantier_maj', u.email, id + ' ' + JSON.stringify(v));
   return {};
@@ -525,6 +535,13 @@ function rapportsChantiersSync_(req) {
     Store.journal('chantiers_sync', u.email, plan.ajouter.length + ' ajoutés, ' + plan.maj.length + ' renommés, ' + plan.desactiver.length + ' désactivés, ' + plan.reactiver.length + ' réactivés, ' + routines + ' routine(s)');
     return { ajoutes: plan.ajouter.length, renommes: plan.maj.length, desactives: plan.desactiver.length, reactives: plan.reactiver.length, routines: routines, total: chantiersTous_().filter(function (c) { return c.actif; }).length };
   } finally { lock.releaseLock(); }
+}
+/** Pages Avancement et Suivi chantier : un élément par chantier actif ayant un contrat (voir Rapports.tableau). Lecture : pilotage ou module rapports. */
+function chantiersTableau_(req) {
+  var u = Auth.userFromToken(req.token);
+  var a = acces_(u);
+  if ((a.pilotage || 0) < 1 && (a.rapports || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+  return { auj: Dates.today(), chantiers: Rapports.tableau(chantiersActifs_(), cpmEnregistrements_(lignesSource_('cpm')), rapportsLus_(), Dates.today()) };
 }
 function rapportsSynthese_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);

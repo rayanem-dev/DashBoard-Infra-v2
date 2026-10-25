@@ -48,7 +48,7 @@
       var sans = r.chantiers.filter(function (c) { return !c.service && c.actif; }).length;
       $('c-resume').textContent = r.chantiers.filter(function (c) { return c.actif; }).length + ' contrat(s) en exécution' + (sans ? ' · ' + sans + ' sans service' : '');
       var t = el('table', 'tab'); t.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
-      var th = el('tr'); ['Chantier', 'Contrat', 'Service', 'Actif'].forEach(function (x) { var c = el('th', null, x); c.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:2px solid var(--border,#ddd)'; th.appendChild(c); }); t.appendChild(th);
+      var th = el('tr'); ['Chantier', 'Contrat', 'Service', 'Suivi', 'Fiche de suivi (lien)', 'Actif'].forEach(function (x) { var c = el('th', null, x); c.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:2px solid var(--border,#ddd)'; th.appendChild(c); }); t.appendChild(th);
       r.chantiers.sort(function (a, b) { return (b.actif - a.actif) || String(a.nom).localeCompare(String(b.nom), 'fr'); }).forEach(function (c) {
         var tr = el('tr'); if (!c.actif) tr.style.opacity = '.55';
         var cell = function (n) { var td = el('td'); td.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border,#eee)'; if (n != null) td.textContent = n; return td; };
@@ -57,6 +57,13 @@
         if (c.service && SERVICES.indexOf(c.service) < 0) { var o = el('option', null, c.service); o.value = c.service; sel.appendChild(o); } sel.value = c.service || '';
         sel.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, service: sel.value }).then(function () { toast('Service enregistré'); }).catch(function (e) { toast(e.message, true); }); };
         ts.appendChild(sel); tr.appendChild(ts);
+        var tv = cell(), sv = el('select'); [['', 'Rapports journaliers'], ['forage', 'Fiche Forage RNS'], ['terrassement', 'Fiche Terrassement RNS'], ['electricite', 'Fiche Électricité']].forEach(function (x) { var o = el('option', null, x[1]); o.value = x[0]; sv.appendChild(o); });
+        sv.value = c.suivi || ''; sv.title = 'D\'où vient l\'avancement affiché dans « Avancement des chantiers »';
+        sv.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, suivi: sv.value }).then(function () { toast('Suivi enregistré'); }).catch(function (e) { toast(e.message, true); }); };
+        tv.appendChild(sv); tr.appendChild(tv);
+        var tf = cell(), fi = el('input'); fi.type = 'url'; fi.placeholder = 'https://…'; fi.value = c.fiche || ''; fi.style.cssText = 'width:200px;max-width:100%';
+        fi.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, fiche: fi.value.trim() }).then(function () { toast('Lien enregistré'); }).catch(function (e) { toast(e.message, true); }); };
+        tf.appendChild(fi); tr.appendChild(tf);
         var ta = cell(); var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!c.actif; cb.onchange = function () { Api.call('rapports_chantier_maj', { id: c.id, actif: cb.checked }).then(function () { toast(cb.checked ? 'Chantier activé' : 'Chantier désactivé'); tr.style.opacity = cb.checked ? '' : '.55'; }).catch(function (e) { toast(e.message, true); }); };
         ta.appendChild(cb); tr.appendChild(ta); t.appendChild(tr);
       });

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-25-159",
+    "date": "2026-10-25",
+    "title": "Version 5.87.0 — Avancement et Suivi chantier recréés depuis Affectation chantier",
+    "changes": [
+      "Avancement des chantiers : une carte par chantier (un contrat en exécution), classée par service d'après Affectation chantier. L'avancement est celui du dernier rapport journalier, la barre « Délai du contrat » vient du Suivi CPM (ODS, échéance). Les jauges par service et la jauge globale sont calculées sur ces chantiers ; un chantier sans rapport n'entre pas dans la moyenne.",
+      "Les fiches suiveuses (Forage, Terrassement, Électricité) restent lues pour leurs contrats ; le choix se fait dans Affectation chantier (nouvelles colonnes « Suivi » et « Fiche de suivi »). La section « en prévision » et le Service Construction figé sont supprimés.",
+      "Suivi chantier : les cartes sont générées de la même façon, par service, avec le lien de la fiche saisi dans Affectation chantier ; les anciennes fiches du Service Construction et les plans sont rangés dans « Archives »."
+    ]
+  },
+  {
     "id": "2026-10-25-158",
     "date": "2026-10-25",
     "title": "Version 5.86.0 — Compteur de rotation dans l'en-tête",
