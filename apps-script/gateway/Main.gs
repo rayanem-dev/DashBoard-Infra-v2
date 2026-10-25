@@ -153,6 +153,9 @@ function route_(req) {
     case 'rapports_synthese': return rapportsSynthese_(req);
     case 'rapports_consolide_generer': return rapportsConsolideGenerer_(req);
     case 'rapports_consolide_lire': return rapportsConsolideLire_(req);
+    case 'rapports_consolide_envoyer': return rapportsConsolideEnvoyer_(req);
+    case 'rapports_conso_auto_lire': return consoAutoLire_(req);
+    case 'rapports_conso_auto_maj': return consoAutoMaj_(req);
     case 'rapports_consolides_liste': return rapportsConsolidesListe_(req);
     case 'admin_etat': {
       admin_(req);
@@ -571,6 +574,10 @@ function rapportsConsolideGenerer_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
   var auj = Dates.today(), date = Dates.isDate(req.date) ? req.date : auj;
   if (date > auj) throw new Error('La date ne peut pas être dans le futur');
+  return consolideGenererCore_(date, Annuaire.nomAffichable(u.nom, u.email), u.email);
+}
+/** Enregistre (ou écrase) le consolidé d'un jour. Utilisée par le bouton et par l'envoi automatique du soir. */
+function consolideGenererCore_(date, parNom, parEmail) {
   var s = Rapports.synthese(chantiersActifs_(), rapportsLus_(), date);
   var nbR = s.chantiers.reduce(function (n, c) { return n + c.rapports.length; }, 0);
   if (!nbR) throw new Error('Aucun rapport de chantier ce jour-là : rien à consolider.');
@@ -581,16 +588,62 @@ function rapportsConsolideGenerer_(req) {
   try {
     var sh = cpmFeuille_('RapportsConsolides', CONSOLIDES_ENTETES_), ex = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
     var version = ex ? (Number(ex.version) || 1) + 1 : 1, maintenant = new Date().toISOString();
-    var ligne = [date, version, Annuaire.nomAffichable(u.nom, u.email), maintenant, s.chantiers.length, nbR, p[0], p[1], p[2], p[3]];
+    var ligne = [date, version, parNom, maintenant, s.chantiers.length, nbR, p[0], p[1], p[2], p[3]];
     var ligneCible = ex ? ex.ligne : sh.getLastRow() + 1;
     if (ex) {   // un doublon créé par erreur pour ce jour est absorbé : une seule ligne par date, écrasée à chaque génération
       consolidesLignes_().filter(function (o) { return o.date === date && o.ligne !== ex.ligne; }).map(function (o) { return o.ligne; }).sort(function (x, y) { return y - x; })
         .forEach(function (n) { sh.deleteRow(n); if (n < ligneCible) ligneCible -= 1; });
     }
     var cible = sh.getRange(ligneCible, 1, 1, ligne.length); cible.setNumberFormat('@'); cible.setValues([ligne]);   // texte brut : la date reste « AAAA-MM-JJ »
-    Store.journal(ex ? 'consolide_regenere' : 'consolide_cree', u.email, date + ' v' + version);
+    Store.journal(ex ? 'consolide_regenere' : 'consolide_cree', parEmail, date + ' v' + version);
     return { consolide: consolideDe_({ date: date, version: version, genere_par: ligne[2], genere_le: maintenant, nb_chantiers: ligne[4], nb_rapports: nbR, p1: p[0], p2: p[1], p3: p[2], p4: p[3] }), remplace: !!ex };
   } finally { lock.releaseLock(); }
+}
+var CONSOLIDE_GROUPES_ = ['secretariat', 'chef_service', 'chef_division'];
+function groupesNettoyes_(g) { var o = {}; CONSOLIDE_GROUPES_.forEach(function (k) { o[k] = !!(g && (g[k] === true || g[k] === 'true' || g[k] === 1)); }); return o; }
+/** Envoie par e-mail le consolidé enregistré d'un jour aux groupes choisis. Jamais appelée sans clic, ni sans l'option automatique cochée. */
+function consolideEnvoyerCore_(date, groupes, parEmail) {
+  var c = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
+  var cons = c ? consolideDe_(c) : null;
+  if (!cons || !cons.donnees) throw new Error('Aucun consolidé enregistré pour le ' + date + ' : générez-le d\'abord.');
+  var dest = Rapports.destinataires(Store.table('Utilisateurs'), groupes);
+  if (!dest.length) throw new Error('Aucun destinataire : aucun compte actif avec e-mail dans les groupes choisis.');
+  var m = Rapports.consolideMail(cons.donnees, cons.version);
+  MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html });
+  Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)');
+  return { destinataires: dest.length, version: cons.version };
+}
+function rapportsConsolideEnvoyer_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
+  return consolideEnvoyerCore_(date, groupesNettoyes_(req.groupes), u.email);
+}
+// ----- Envoi automatique du soir (option cochée dans Rapports journaliers ; désactivée par défaut)
+function consoAutoConfig_() {
+  var c = {}; try { c = JSON.parse(PropertiesService.getScriptProperties().getProperty('CONSO_AUTO') || '{}'); } catch (e) { c = {}; }
+  var h = Number(c.heure); return { actif: !!c.actif, heure: h >= 0 && h <= 23 && Math.floor(h) === h ? h : 20, groupes: groupesNettoyes_(c.groupes), dernier: String(c.dernier || '') };
+}
+function consoAutoLire_(req) { var u = Auth.userFromToken(req.token); niveauRapports_(u, 3); return consoAutoConfig_(); }
+function consoAutoMaj_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var h = Number(req.heure); if (!(h >= 0 && h <= 23) || Math.floor(h) !== h) throw new Error('Heure : nombre entier de 0 à 23');
+  var c = { actif: !!req.actif, heure: h, groupes: groupesNettoyes_(req.groupes), dernier: consoAutoConfig_().dernier };
+  if (c.actif && !CONSOLIDE_GROUPES_.some(function (k) { return c.groupes[k]; })) throw new Error('Cochez au moins un destinataire pour l\'envoi automatique.');
+  PropertiesService.getScriptProperties().setProperty('CONSO_AUTO', JSON.stringify(c));
+  var presente = ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === 'consoAutoTick'; });
+  if (c.actif && !presente.length) ScriptApp.newTrigger('consoAutoTick').timeBased().everyHours(1).create();
+  if (!c.actif) presente.forEach(function (t) { ScriptApp.deleteTrigger(t); });
+  Store.journal('consolide_auto_maj', u.email, (c.actif ? 'activé à ' + c.heure + ' h' : 'désactivé'));
+  return consoAutoConfig_();
+}
+/** Déclencheur horaire : à partir de l'heure réglée, une seule fois par jour, génère (écrase) le consolidé du jour et l'envoie. Sans rapport ce jour-là, rien n'est envoyé. */
+function consoAutoTick() {
+  var c = consoAutoConfig_(); if (!c.actif) return;
+  var auj = Dates.today(), heure = Number(Utilities.formatDate(new Date(), 'Africa/Algiers', 'H'));
+  if (heure < c.heure || c.dernier === auj) return;
+  var r; try { r = consolideGenererCore_(auj, 'Envoi automatique', ''); } catch (e) { Logger.log('Envoi auto : ' + e.message); return; }
+  try { consolideEnvoyerCore_(auj, c.groupes, 'auto'); } catch (e2) { Store.journal('consolide_auto_echec', 'auto', e2.message); return; }
+  c.dernier = auj; PropertiesService.getScriptProperties().setProperty('CONSO_AUTO', JSON.stringify(c));
 }
 function rapportsConsolideLire_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);

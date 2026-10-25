@@ -86,6 +86,21 @@
     <div class="barre"><label class="aide" for="s-date" style="margin:0">Jour</label><input type="date" id="s-date" style="min-width:160px"><span id="s-resume" class="aide"></span></div>
     <div class="barre" style="gap:8px"><button class="btn-p" id="b-gen" type="button" title="Enregistre le rapport consolidé du jour à partir des rapports de chantier (remplace la version précédente)">📄 Générer le consolidé du jour</button><button class="btn-s" id="b-conso" type="button" disabled title="Imprime la version enregistrée">🖨 Imprimer le consolidé</button><span id="conso-etat" class="aide"></span></div>
     <div class="grille-synthese" id="synth"></div>
+    <div class="bloc" id="envoi" hidden style="margin-top:16px">
+      <b>✉ Envoyer le consolidé</b>
+      <div class="barre" style="gap:14px;margin:8px 0">
+        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="secretariat" style="width:auto;min-width:0"> Secrétariat</label>
+        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_service" style="width:auto;min-width:0"> Chefs de service</label>
+        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_division" style="width:auto;min-width:0"> Chef de division</label>
+        <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux groupes cochés">✉ Envoyer maintenant</button>
+      </div>
+      <div class="barre" style="gap:8px">
+        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" id="auto-actif" style="width:auto;min-width:0"> Envoi automatique chaque jour à</label>
+        <input type="number" id="auto-heure" min="0" max="23" step="1" value="20" style="width:70px;min-width:0" aria-label="Heure d'envoi"> h
+        <button class="btn-s" id="b-auto" type="button">Enregistrer</button>
+      </div>
+      <p class="aide" id="auto-etat" style="margin:6px 0 0">Désactivé par défaut. Quand il est coché, le consolidé du jour est régénéré (il écrase l'ancien) puis envoyé aux groupes cochés ci-dessus, une fois par jour, à l'heure réglée ; sans rapport ce jour-là, rien n'est envoyé.</p>
+    </div>
     <h3 style="margin:22px 0 8px;font-size:15px">Rapports consolidés enregistrés</h3>
     <div id="conso-liste"></div>
   </section>
@@ -293,6 +308,25 @@
       });
     }).catch(function () { /* liste indisponible */ });
   }
+  // ----- Envoi du consolidé par e-mail (au clic) et envoi automatique du soir (option)
+  function groupesCoches() { var g = {}; document.querySelectorAll('#envoi input[data-g]').forEach(function (c) { g[c.getAttribute('data-g')] = c.checked; }); return g; }
+  function etatAuto(c) {
+    $('auto-actif').checked = !!c.actif; $('auto-heure').value = c.heure;
+    document.querySelectorAll('#envoi input[data-g]').forEach(function (x) { x.checked = !!c.groupes[x.getAttribute('data-g')]; });
+    $('auto-etat').textContent = c.actif ? 'Envoi automatique actif : chaque jour à partir de ' + c.heure + ' h' + (c.dernier ? ' (dernier envoi : ' + fr(c.dernier) + ')' : '') + '. Décochez puis « Enregistrer » pour l\'arrêter.' : 'Envoi automatique désactivé. Quand il est coché, le consolidé du jour est régénéré (il écrase l\'ancien) puis envoyé aux groupes cochés, une fois par jour, à l\'heure réglée ; sans rapport ce jour-là, rien n\'est envoyé.';
+  }
+  $('b-envoyer').addEventListener('click', function () {
+    var j = $('s-date').value, g = groupesCoches();
+    if (!g.secretariat && !g.chef_service && !g.chef_division) { toast('Cochez au moins un destinataire', true); return; }
+    if (!consolideDuJour) { toast('Générez d\'abord le consolidé du ' + fr(j), true); return; }
+    if (!confirm('Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux groupes cochés ?')) return;
+    var b = $('b-envoyer'); b.disabled = true;
+    Api.call('rapports_consolide_envoyer', { date: j, groupes: g }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+  });
+  $('b-auto').addEventListener('click', function () {
+    var b = $('b-auto'); b.disabled = true;
+    Api.call('rapports_conso_auto_maj', { actif: $('auto-actif').checked, heure: Number($('auto-heure').value), groupes: groupesCoches() }).then(function (c) { etatAuto(c); toast(c.actif ? 'Envoi automatique enregistré' : 'Envoi automatique désactivé'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+  });
   $('b-gen').addEventListener('click', function () {
     var b = $('b-gen'), j = $('s-date').value;
     if (consolideDuJour && !confirm('Un consolidé existe déjà pour le ' + fr(j) + ' (version ' + consolideDuJour.version + '). Le régénérer le remplace. Continuer ?')) return;
@@ -322,7 +356,7 @@
   }).then(function (r) {
     niveau = r.niveau; mesRapports = r.rapports; prerempli();
     if (niveau < 2) { $('o-saisie').hidden = true; $('p-saisie').hidden = true; document.querySelector('[data-p=p-journal]').click(); }
-    if (niveau >= 3) { $('o-synth').hidden = false; }
+    if (niveau >= 3) { $('o-synth').hidden = false; $('envoi').hidden = false; Api.call('rapports_conso_auto_lire').then(etatAuto).catch(function () { /* indisponible */ }); }
   }).catch(function (e) {
     if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
     if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : le module « Rapports journaliers » n\'est pas activé pour votre compte.'; return; }

@@ -138,3 +138,21 @@ test('tableau : un élément par chantier actif avec contrat, délai écoulé et
   assert.strictEqual(f.rapports_7j, 2);
   assert.strictEqual(t[1].avancement, null); assert.strictEqual(t[1].dernier, null); assert.strictEqual(t[1].delai_pct, null);
 });
+
+test('destinataires : groupes cochés, comptes actifs avec e-mail, sans doublon', () => {
+  const us = [
+    { email: 'a@x.dz', role: 'secretariat', actif: 1 }, { email: 'b@x.dz', role: 'chef_service', actif: 1 }, { email: 'c@x.dz', role: 'interim_chef_service', actif: 1 },
+    { email: 'd@x.dz', role: 'chef_division', actif: 1 }, { email: 'e@x.dz', role: 'chef_service', actif: 0 }, { email: 'A@x.dz', role: 'chef_division', actif: 1, email_contact: 'a@x.dz' }, { email: 'f@x.dz', role: 'agent', actif: 1 }];
+  assert.deepStrictEqual(Rapports.destinataires(us, { secretariat: true }), ['a@x.dz']);
+  assert.deepStrictEqual(Rapports.destinataires(us, { chef_service: true }), ['b@x.dz', 'c@x.dz']);
+  assert.deepStrictEqual(Rapports.destinataires(us, { secretariat: true, chef_division: true }), ['a@x.dz', 'd@x.dz']);
+  assert.deepStrictEqual(Rapports.destinataires(us, {}), []);
+});
+
+test('consolideMail : échappe le texte et signale les chantiers sans rapport', () => {
+  const s = { date: '2026-10-24', chantiers: [
+    { id: 'a', nom: 'Chantier <A>', service: 'Construction', effectif: 5, avancement: 40, rapports: [{ auteur_nom: 'X', lignes: [{ zone: 'Z', texte: 'dalle', avancement: 40 }], difficultes: 'pluie' }] },
+    { id: 'b', nom: 'Chantier B', service: '', effectif: 0, avancement: null, rapports: [] }] };
+  const m = Rapports.consolideMail(s, 2);
+  assert.match(m.sujet, /samedi 24\/10\/2026/); assert.match(m.html, /Chantier &lt;A&gt;/); assert.match(m.html, /Sans rapport :<\/b> Chantier B/); assert.match(m.html, /version 2/);
+});

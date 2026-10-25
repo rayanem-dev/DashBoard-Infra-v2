@@ -176,7 +176,52 @@ var Rapports = (function () {
     });
   }
 
-  return { tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  function dateLongue(iso) { var p = String(iso).split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); return JOURS[d.getUTCDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0]; }
+  /** Rapport consolidé (résultat de synthese) → { sujet, html } pour l'e-mail (styles en ligne). */
+  function consolideMail(s, version) {
+    var avec = s.chantiers.filter(function (c) { return c.rapports.length; }), sans = s.chantiers.filter(function (c) { return !c.rapports.length; });
+    var eff = avec.reduce(function (n, c) { return n + (Number(c.effectif) || 0); }, 0);
+    var h = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;max-width:720px"><h2 style="margin:0 0 4px;color:#1A1A2E">Rapport journalier consolidé des chantiers</h2>' +
+      '<p style="margin:0 0 12px;color:#555">' + esc(dateLongue(s.date)) + (version ? ' · version ' + version : '') + ' — Division Infrastructure RNS</p>' +
+      '<p style="margin:0 0 14px"><b>' + s.chantiers.length + '</b> chantier(s) suivi(s) · <b>' + avec.length + '</b> avec rapport · <b>' + sans.length + '</b> sans rapport · effectif présent : <b>' + eff + '</b></p>';
+    var parService = {}, ordre = [];
+    avec.forEach(function (c) { var k = c.service || 'Sans service'; if (!parService[k]) { parService[k] = []; ordre.push(k); } parService[k].push(c); });
+    ordre.forEach(function (k) {
+      h += '<h3 style="margin:18px 0 6px;font-size:15px;color:#B94E00;border-bottom:2px solid #F48C06">' + esc(k) + '</h3>';
+      parService[k].forEach(function (c) {
+        h += '<div style="margin:0 0 12px;padding:8px 12px;border:1px solid #ddd;border-radius:8px"><b>' + esc(c.nom) + '</b><div style="color:#555;font-size:12px">Effectif : ' + c.effectif + (c.avancement != null ? ' · Avancement : ' + c.avancement + ' %' : '') + '</div>';
+        c.rapports.forEach(function (r) {
+          h += '<div style="margin-top:6px;font-size:13px"><span style="color:#555">Établi par ' + esc(r.auteur_nom || r.auteur_email) + '</span>';
+          if (r.lignes && r.lignes.length) h += '<ul style="margin:4px 0;padding-left:18px">' + r.lignes.map(function (l) { return '<li>' + (l.routine ? '<i>[Routine]</i> ' : '') + (l.zone ? '<b>' + esc(l.zone) + '</b> : ' : '') + esc(l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + esc(l.avancement) + ' %' : '') + '</li>'; }).join('') + '</ul>';
+          else if (r.travaux) h += '<p style="margin:4px 0">' + esc(r.travaux) + '</p>';
+          if (r.difficultes) h += '<p style="margin:4px 0;color:#B91C1C"><b>Difficultés :</b> ' + esc(r.difficultes) + '</p>';
+          h += '</div>';
+        });
+        h += '</div>';
+      });
+    });
+    if (sans.length) h += '<p style="color:#B91C1C"><b>Sans rapport :</b> ' + sans.map(function (c) { return esc(c.nom); }).join(' · ') + '</p>';
+    h += '<p style="color:#888;font-size:12px;margin-top:18px">Envoyé depuis le Portail Infra — rapports journaliers.</p></div>';
+    return { sujet: 'Rapport journalier consolidé — ' + dateLongue(s.date), html: h };
+  }
+  /** Adresses des destinataires : groupes = { secretariat, chef_service, chef_division } (booléens) ; seuls les comptes actifs avec e-mail. */
+  function destinataires(utilisateurs, groupes) {
+    var roles = [];
+    if (groupes && groupes.secretariat) roles.push('secretariat');
+    if (groupes && groupes.chef_service) roles.push('chef_service', 'interim_chef_service');
+    if (groupes && groupes.chef_division) roles.push('chef_division');
+    var vus = {}, out = [];
+    (utilisateurs || []).forEach(function (u) {
+      var m = norm(u.email_contact || u.email);
+      if (roles.indexOf(norm(u.role)) < 0 || String(u.actif) === '0' || u.actif === false || !m || vus[m]) return;
+      vus[m] = 1; out.push(m);
+    });
+    return out;
+  }
+
+  return { consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;
