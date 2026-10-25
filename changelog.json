@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-25-171",
+    "date": "2026-10-25",
+    "title": "Version 5.91.2 — Voir les destinataires du consolidé",
+    "changes": [
+      "Synthèse du jour : bouton « 👁 Voir les destinataires » : affiche nom, adresse, rôle et service de chacun des destinataires des groupes cochés, avant tout envoi (rien n'est envoyé)."
+    ]
+  },
+  {
     "id": "2026-10-25-170",
     "date": "2026-10-25",
     "title": "Version 5.91.1 — Correction des rapports : tous les services",

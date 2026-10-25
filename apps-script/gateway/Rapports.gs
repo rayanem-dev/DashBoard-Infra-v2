@@ -225,16 +225,24 @@ var Rapports = (function () {
     if (groupes && groupes.secretariat) roles.push('secretariat');
     if (groupes && groupes.chef_service) roles.push('chef_service', 'interim_chef_service');
     if (groupes && groupes.chef_division) roles.push('chef_division');
+    return destinatairesDetail(utilisateurs, groupes).map(function (d) { return d.email; });
+  }
+  /** Même liste, avec le nom et le rôle de chacun : [{ nom, email, role }]. */
+  function destinatairesDetail(utilisateurs, groupes) {
+    var roles = [];
+    if (groupes && groupes.secretariat) roles.push('secretariat');
+    if (groupes && groupes.chef_service) roles.push('chef_service', 'interim_chef_service');
+    if (groupes && groupes.chef_division) roles.push('chef_division');
     var vus = {}, out = [];
     (utilisateurs || []).forEach(function (u) {
       var m = norm(u.email_contact || u.email);
       if (roles.indexOf(norm(u.role)) < 0 || String(u.actif) === '0' || u.actif === false || !m || vus[m]) return;
-      vus[m] = 1; out.push(m);
+      vus[m] = 1; out.push({ nom: String(u.nom || ''), email: m, role: norm(u.role), service: String(u.service || '') });
     });
     return out;
   }
 
-  return { peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

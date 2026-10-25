@@ -176,3 +176,8 @@ test('correction d\'un rapport passé : rôles autorisés et validation sans rè
   assert.strictEqual(v.erreur, undefined); assert.strictEqual(v.rapport.date, '2026-10-24'); assert.strictEqual(v.rapport.avancement, 48); assert.strictEqual(v.rapport.chantier, 'forage_rns');
   assert.match(Rapports.corriger({ effectif: '12', avancement: '148', travaux: 'Forage P2' }, r).erreur, /entre 0 et 100/);
 });
+
+test('destinatairesDetail : nom, e-mail, rôle', () => {
+  const d = Rapports.destinatairesDetail([{ nom: 'A B', email: 'a@x.dz', role: 'secretariat', actif: 1, service: 'Direction' }, { nom: 'C', email: 'c@x.dz', role: 'agent', actif: 1 }], { secretariat: true });
+  assert.deepStrictEqual(d, [{ nom: 'A B', email: 'a@x.dz', role: 'secretariat', service: 'Direction' }]);
+});

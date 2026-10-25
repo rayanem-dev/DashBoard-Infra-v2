@@ -157,6 +157,7 @@ function route_(req) {
     case 'rapports_consolide_generer': return rapportsConsolideGenerer_(req);
     case 'rapports_consolide_lire': return rapportsConsolideLire_(req);
     case 'rapports_consolide_envoyer': return rapportsConsolideEnvoyer_(req);
+    case 'rapports_conso_destinataires': return consoDestinataires_(req);
     case 'rapports_conso_auto_lire': return consoAutoLire_(req);
     case 'rapports_conso_auto_maj': return consoAutoMaj_(req);
     case 'rapports_consolides_liste': return rapportsConsolidesListe_(req);
@@ -637,6 +638,12 @@ function consolideEnvoyerCore_(date, groupes, parEmail) {
   MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html });
   Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)');
   return { destinataires: dest.length, version: cons.version };
+}
+/** Qui recevrait le consolidé avec les groupes cochés (aperçu, rien n'est envoyé). */
+function consoDestinataires_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var l = Rapports.destinatairesDetail(Store.table('Utilisateurs'), groupesNettoyes_(req.groupes)).map(function (d) { return { nom: Annuaire.nomAffichable(d.nom, d.email), email: d.email, role: ({ secretariat: 'Secrétariat', chef_service: 'Chef de service', interim_chef_service: 'Chef de service (intérim)', chef_division: 'Chef de division' })[d.role] || d.role, service: d.service }; });
+  return { destinataires: l };
 }
 function rapportsConsolideEnvoyer_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
