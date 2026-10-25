@@ -27,7 +27,7 @@
 <main class="portail">
   <section class="panneau" id="p-chantiers">
     <div class="barre"><button class="btn-s" id="b-sync" type="button" title="Lit le Suivi CPM (sans rien y écrire) : un chantier par contrat « en exécution »">↻ Synchroniser avec le Suivi CPM</button><span id="c-resume" class="aide"></span></div>
-    <p class="aide">Un chantier par contrat en exécution. Indiquez le <b>service</b> de chacun : les conducteurs ne voient que les chantiers de leur service (un chantier sans service est visible de tous).</p>
+    <p class="aide">La page se limite aux contrats : un chantier par contrat en exécution. Indiquez le <b>service</b> de chacun : les conducteurs ne voient que les chantiers de leur service (un chantier sans service est visible de tous).</p>
     <div id="c-liste"></div>
   </section>
 </main>
@@ -43,9 +43,10 @@
   var SERVICES = ['Construction', 'Électromécanique', 'Travaux Entretien'];
   function chantiersAdmin() {
     return Api.call('rapports_chantiers_admin').then(function (r) {
+      r.chantiers = r.chantiers.filter(function (c) { return String(c.contrat || '').trim(); });   // la page se limite aux chantiers qui ont un contrat (Suivi CPM) ; les chantiers de routine et sans contrat ne sont plus listés
       var z = $('c-liste'); z.textContent = '';
       var sans = r.chantiers.filter(function (c) { return !c.service && c.actif; }).length;
-      $('c-resume').textContent = r.chantiers.filter(function (c) { return c.actif; }).length + ' chantier(s) actif(s)' + (sans ? ' · ' + sans + ' sans service' : '');
+      $('c-resume').textContent = r.chantiers.filter(function (c) { return c.actif; }).length + ' contrat(s) en exécution' + (sans ? ' · ' + sans + ' sans service' : '');
       var t = el('table', 'tab'); t.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
       var th = el('tr'); ['Chantier', 'Contrat', 'Service', 'Actif'].forEach(function (x) { var c = el('th', null, x); c.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:2px solid var(--border,#ddd)'; th.appendChild(c); }); t.appendChild(th);
       r.chantiers.sort(function (a, b) { return (b.actif - a.actif) || String(a.nom).localeCompare(String(b.nom), 'fr'); }).forEach(function (c) {

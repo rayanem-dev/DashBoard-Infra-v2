@@ -210,9 +210,8 @@ window.google = { script: { run: (function () {
         <label>Émputation</label>
         <select id="emputation"></select>
       </div>
-      <div class="field">
-        <label>Base <span style="font-weight:400;color:var(--text-muted);font-size:10.5px;text-transform:none;letter-spacing:0;">(par défaut, modifiable pour chaque personne)</span></label>
-        <select id="base"></select>
+      <div class="field" style="display:none">
+        <select id="base" aria-hidden="true" tabindex="-1"></select>   <!-- base par défaut des lignes (mémoire de l'entreprise) : la base se choisit maintenant dans chaque ligne du tableau -->
       </div>
     </div>
 
@@ -339,7 +338,10 @@ window.google = { script: { run: (function () {
       <td class="col-veh"><input data-champ="typeVehicule"></td>
       <td class="col-veh"><input data-champ="immatriculation"></td>`;
     const sel = tr.querySelector('select'); optionsBase(sel, document.getElementById('base').value);
-    sel.addEventListener('change', () => { sel.dataset.manuel = '1'; });   // une base choisie à la main n'est plus écrasée par la base par défaut
+    sel.addEventListener('change', () => {
+      sel.dataset.manuel = '1';   // une base choisie à la main n'est plus écrasée par la base par défaut
+      if (corps.querySelector('select[data-champ=base]') === sel) { document.getElementById('base').value = sel.value; delete sel.dataset.manuel; appliquerBaseDefaut(false); }   // la 1re ligne donne la base aux suivantes
+    });
     corps.appendChild(tr);
   }
   for (let i = 0; i < 12; i++) ajouterLigne();

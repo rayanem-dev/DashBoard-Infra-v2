@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-155",
+    "date": "2026-10-25",
+    "title": "Version 5.83.1 — Prise en charge : base par défaut retirée du haut ; Affectation chantier limitée aux contrats",
+    "changes": [
+      "Prise en charge : le champ « Base » du haut disparaît (la base se choisit dans chaque ligne ; la 1re ligne donne la base aux suivantes tant qu'elles n'ont pas été réglées à la main).",
+      "Affectation chantier : la page se limite aux contrats (un chantier par contrat en exécution du Suivi CPM) ; les chantiers de routine et sans contrat ne sont plus listés."
+    ]
+  },
+  {
     "id": "2026-10-25-154",
     "date": "2026-10-25",
     "title": "Version 5.83.0 — Prise en charge : une base par personne, plus de limite à 8, dates des macarons et autorisations",

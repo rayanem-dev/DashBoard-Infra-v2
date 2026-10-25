@@ -86,7 +86,7 @@ window.AIDE = {
     astuces: ['Un clic sur un numéro ou une adresse e-mail lance l\'appel ou le message.', 'Une entreprise déjà présente (même nom, à la casse et aux accents près) ne peut pas être ajoutée deux fois.'] },
   'affectation-chantier.html': { titre: 'Affectation chantier', img: 'repas-emporter',
     resume: 'Choisir le service de chaque chantier, activer ou désactiver un chantier, et synchroniser la liste avec les contrats en exécution du Suivi CPM.',
-    etapes: ['« ↻ Synchroniser avec le Suivi CPM » crée un chantier par contrat en exécution (le Suivi CPM n\'est jamais modifié).', 'Indiquez le service de chaque chantier : les conducteurs ne voient que les chantiers de leur service ; un chantier sans service est visible de tous.', 'Décochez « Actif » pour retirer un chantier terminé des rapports journaliers.'],
+    etapes: ['La page se limite aux contrats : « ↻ Synchroniser avec le Suivi CPM » crée un chantier par contrat en exécution (le Suivi CPM n\'est jamais modifié) ; les chantiers de routine et sans contrat ne sont pas listés.', 'Indiquez le service de chaque chantier : les conducteurs ne voient que les chantiers de leur service ; un chantier sans service est visible de tous.', 'Décochez « Actif » pour retirer un chantier terminé des rapports journaliers.'],
     astuces: ['Ces réglages alimentent la page Rapports journaliers (saisie, journal et rapport consolidé).'] },
   'reservation.html': { titre: 'Demande de réservation', img: 'repas-emporter',
     resume: 'Demander au secrétariat la réservation de places d\'avion ALGER → RNS ou RNS → ALGER.',
