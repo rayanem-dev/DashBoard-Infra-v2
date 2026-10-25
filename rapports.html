@@ -289,7 +289,9 @@
         var t = el('span', null, fr(c.date) + ' · version ' + c.version + ' · ' + c.nb_rapports + ' rapport(s) · ' + c.genere_par); t.style.flex = '1'; l.appendChild(t);
         var b1 = el('button', 'btn-s', '🖨 Imprimer'); b1.type = 'button'; b1.onclick = function () { Api.call('rapports_consolide_lire', { date: c.date }).then(function (x) { if (x.consolide) imprimer(x.consolide); }).catch(function (e) { toast(e.message, true); }); };
         var b2 = el('button', 'btn-s', 'Voir les rapports du jour'); b2.type = 'button'; b2.onclick = function () { $('s-date').value = c.date; synthese(); etatConsolide(); window.scrollTo(0, 0); };
-        l.appendChild(b1); l.appendChild(b2); z.appendChild(l);
+        var b3 = el('button', 'btn-s', '🗑 Supprimer'); b3.type = 'button'; b3.title = 'Supprime ce consolidé (les rapports journaliers ne sont pas touchés)';
+        b3.onclick = function () { if (!confirm('Supprimer le consolidé du ' + fr(c.date) + ' ? Les rapports journaliers restent ; vous pourrez en générer un nouveau.')) return; Api.call('rapports_consolide_supprimer', { date: c.date }).then(function () { toast('Consolidé supprimé'); listeConsolides(); etatConsolide(); }).catch(function (e) { toast(e.message, true); }); };
+        l.appendChild(b1); l.appendChild(b2); l.appendChild(b3); z.appendChild(l);
       });
     }).catch(function () { /* liste indisponible */ });
   }
