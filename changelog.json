@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-25-151",
+    "date": "2026-10-25",
+    "title": "Version 5.82.0 — Demande de réservation de vol dans le portail",
+    "changes": [
+      "Nouvelle application « Demande de réservation » (catégorie Logistique) : trajet ALGER → RNS ou RNS → ALGER, date, nombre de personnes qui crée les lignes ; le nom se choisit dans l'organigramme (fonction et société remplies seules, mention « Rattaché à la division Infra » hors SONATRACH, modifiable) ; aperçu du mail en direct.",
+      "Le bouton « Envoyer la demande » adresse le mail au secrétariat Infra (adresse modifiable par la propriété de script RESERVATION_DEST) ; jamais d'envoi avant le clic. Réservée au personnel (pas aux prestataires)."
+    ]
+  },
+  {
     "id": "2026-10-25-150",
     "date": "2026-10-25",
     "title": "Version 5.81.0 — Rapport journalier consolidé, affectation chantier, ajout d'utilisateur par entreprise",
