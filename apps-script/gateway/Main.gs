@@ -117,6 +117,8 @@ function route_(req) {
     case 'video_formation': return videoFormation_(req);
     case 'habilitations_donnees': return habilitationsDonnees_(req);
     case 'pec': return pecAppeler_(req);
+    case 'reservation_orga': return reservationOrga_(req);
+    case 'reservation_envoyer': return reservationEnvoyer_(req);
     case 'vivier_liste': return vivierListe_(req);
     case 'vivier_enregistrer': return vivierEnregistrer_(req);
     case 'vivier_supprimer': return vivierSupprimer_(req);

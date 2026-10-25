@@ -21,6 +21,14 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Demande de réservation",
+  "Réservation de places d'avion ALGER ⇄ RNS : le nombre de personnes crée les lignes, le nom se choisit dans l'organigramme (fonction et société se remplissent seules, mention « Rattaché à la division Infra » hors SONATRACH) et le bouton Envoyer adresse la demande au secrétariat.",
+  "✈️",
+  "reservation.html",
+  1
+ ],
+ [
+  "logistique",
   "Affectation Véhicule – Division Infra",
   "Suivi des véhicules de service, affectations au personnel et gestion des plannings de disponibilité.",
   "🚗",

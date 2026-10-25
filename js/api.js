@@ -60,6 +60,7 @@
         { titre: 'Ordre de travail', description: 'Ordre de travail de la division, imprimable en un clic, avec historique.', emoji: '🛠', url: 'ordre-travail.html' },
         { titre: 'Prise en charge hôtel', description: 'Demande de prise en charge à l\'hôtel pour un agent en mission, imprimable en un clic, avec historique.', emoji: '🏨', url: 'hotel-prise-en-charge.html' },
         { titre: 'Prises en Charge + Autorisation d\'Accès', description: 'Prises en charge et autorisations d\'accès des prestataires.', emoji: '🧾', url: 'prise-en-charge.html' },
+        { titre: 'Demande de réservation', description: 'Réservation de places d\'avion ALGER ⇄ RNS, envoyée au secrétariat.', emoji: '✈️', url: 'reservation.html' },
         { titre: 'Repas à emporter', description: 'Prise en charge repas à emporter prête à imprimer, avec historique.', emoji: '🥡', url: 'repas-emporter.html' } ] },
       { id: 'affectation', titre: 'Affectation (Organigramme)', icone: '🔀', niveau: 3, apps: [
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
@@ -285,6 +286,8 @@
       case 'rapports_chantiers_admin': { exigerAdmin(); return { chantiers: DEMO_CHANTIERS.map(function (c) { return { id: c.id, nom: c.nom, service: c.service, contrat: c.contrat, actif: 1, source: 'cpm' }; }) }; }
       case 'rapports_chantier_maj': { exigerAdmin(); return {}; }
       case 'rapports_chantiers_sync': { exigerAdmin(); return { ajoutes: 0, renommes: 0, desactives: 0, reactives: 0, routines: 0 }; }
+      case 'reservation_orga': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { personnes: DEMO_USERS.map(function (u) { return { nom: u.nom, fonction: u.fonction || '', societe: u.dependance || 'SONATRACH', service: u.service || '' }; }), destinataire: 'Sec-INFRA.RNS@Sonatrach.dz', mention: 'Rattaché à la division Infra' }; }
+      case 'reservation_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ok: true, count: ((p.demande || {}).personnes || []).length, to: 'Sec-INFRA.RNS@Sonatrach.dz (démonstration : rien n\'est envoyé)' }; }
       case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];

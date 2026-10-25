@@ -19,7 +19,7 @@
     [/statistiques sous|fiche d.evaluation|suivi cpm|dossiers cpm|passation des contrats|vivier/, 'marches'],
     [/rapport hebdomadaire|avancement chantiers|suivi chantier|taches journalieres|rapports journaliers|imputation|affectation chantier/, 'pilotage'],
     [/organigramme|feuille de pointage|affectation du personnel|planning global|planning & rotations|simulation de planning|permanence|formation|visite medicale/, 'personnel'],
-    [/veste en cuir|dotation|repas a emporter|prise en charge hotel|ordre de travail|gaz.?oil|vehicule|requete transport|stock|inventaire|radio|commande de pieces/, 'logistique'],
+    [/veste en cuir|dotation|repas a emporter|reservation|prise en charge hotel|ordre de travail|gaz.?oil|vehicule|requete transport|stock|inventaire|radio|commande de pieces/, 'logistique'],
     [/instances courriers|consignes|ordres de mission|documents administratifs|renommage/, 'admin'],
     [/annuaire|privileges|helpdesk|quarantaine/, 'it']
   ];

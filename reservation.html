@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demande de réservation – Division Infrastructure RNS</title>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eceff3; --panel:#ffffff; --ink:#16212e; --muted:#5b6776; --line:#d3dae2;
+    --navy:#14283f; --orange:#e9721b; --orange-d:#c85d0f; --ok:#1c7a46; --err:#b3261e;
+    --r:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  header{background:var(--navy);color:#fff;padding:16px 24px;border-bottom:4px solid var(--orange)}
+  header h1{margin:0;font-size:19px;font-weight:600;letter-spacing:.1px}
+  header p{margin:2px 0 0;color:#b9c6d6;font-size:13px}
+  main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;max-width:1180px;margin:20px auto;padding:0 16px;align-items:start}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  h2{margin:0 0 12px;font-size:15px;font-weight:600}
+  label,.lbl{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:4px}
+  input,select{font:inherit;color:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:#fff;min-height:38px}
+  input:focus,select:focus,button:focus-visible{outline:2px solid var(--orange);outline-offset:1px;border-color:var(--orange)}
+  .top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px}
+  @media(max-width:620px){.top{grid-template-columns:1fr}}
+  .seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .seg button{flex:1;border:0;background:#fff;padding:8px 6px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer;min-height:38px}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+  .stepper{display:flex;align-items:stretch}
+  .stepper button{width:40px;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer;color:var(--navy)}
+  .stepper button:first-child{border-radius:var(--r) 0 0 var(--r)}
+  .stepper button:last-child{border-radius:0 var(--r) var(--r) 0}
+  .stepper input{border-radius:0;text-align:center;border-left:0;border-right:0;font-weight:600}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;min-height:16px}
+  .persons{display:flex;flex-direction:column;gap:10px}
+  .row{display:grid;grid-template-columns:28px 78px minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,.9fr) auto;gap:8px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:var(--r);background:#f8fafb}
+  .row .n{font-weight:600;color:var(--orange-d);padding-top:9px}
+  .row .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);padding-top:9px;white-space:nowrap;margin:0}
+  .row .chk input{width:auto;min-height:0}
+  .row .sub{grid-column:3 / 7;font-size:12px;color:var(--muted);margin-top:-2px}
+  .row .sub.warn{color:var(--orange-d)}
+  @media(max-width:720px){
+    .row{grid-template-columns:28px 1fr}
+    .row>*:not(.n){grid-column:2}
+    .row .sub{grid-column:2}
+  }
+  .actions{display:flex;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap}
+  .send{background:var(--orange);color:#fff;border:0;border-radius:var(--r);padding:11px 22px;font:inherit;font-weight:600;cursor:pointer;min-height:44px}
+  .send:hover:not(:disabled){background:var(--orange-d)}
+  .send:disabled{opacity:.6;cursor:default}
+  .send.done{background:var(--ok)}
+  .link{background:none;border:0;color:var(--navy);text-decoration:underline;font:inherit;cursor:pointer;padding:4px}
+  .msg{font-size:13px}
+  .msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+  .status{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .status.err{color:var(--err)}
+
+  /* aperçu du mail */
+  .mail{position:sticky;top:16px}
+  .mailhead{border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
+  .mailhead .subj{font-size:17px;font-weight:500;margin:0 0 6px}
+  .mailhead .meta{font-size:12.5px;color:var(--muted)}
+  .mailbody{font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:14.5px}
+  .mailbody p{margin:0 0 12px}
+  .mailbody ul{margin:0 0 12px;padding-left:22px}
+  .mailbody li{margin-bottom:4px}
+  .sig{font-size:12px;font-weight:700;margin-top:18px}
+</style>
+</head>
+<body>
+<header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+  <div><h1>Demande de réservation de vol</h1>
+  <p>Division Infrastructure · Rhourde Nouss</p></div>
+  <a href="portail.html" style="color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 14px;font-size:13px">← Retour au portail</a>
+</header>
+<div id="demo" style="display:none;background:#FFF3E0;color:#9A5B0F;text-align:center;padding:6px;font-size:13px;font-weight:600">MODE DÉMO — aucun e-mail n'est envoyé</div>
+
+<main>
+  <section aria-labelledby="h-form">
+    <h2 id="h-form">Détails de la demande</h2>
+    <div class="status" id="status">Chargement de l’organigramme…</div>
+
+    <div class="top">
+      <div>
+        <span class="lbl" id="l-trajet">Trajet</span>
+        <div class="seg" role="group" aria-labelledby="l-trajet">
+          <button type="button" data-trajet="ALGER → RNS" aria-pressed="true">ALGER → RNS</button>
+          <button type="button" data-trajet="RNS → ALGER" aria-pressed="false">RNS → ALGER</button>
+        </div>
+      </div>
+      <div>
+        <label for="date">Date du vol</label>
+        <input type="date" id="date">
+        <div class="hint" id="jour"></div>
+      </div>
+      <div>
+        <label for="nb">Nombre de personnes</label>
+        <div class="stepper">
+          <button type="button" id="moins" aria-label="Retirer une personne">−</button>
+          <input type="number" id="nb" min="1" max="30" value="1" inputmode="numeric">
+          <button type="button" id="plus" aria-label="Ajouter une personne">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="persons" id="persons"></div>
+    <datalist id="orga-list"></datalist>
+
+    <div class="actions">
+      <button type="button" class="send" id="send">Envoyer la demande</button>
+      <button type="button" class="link" id="reset" hidden>Nouvelle demande</button>
+      <span class="msg" id="msg" role="status" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section class="mail" aria-labelledby="h-prev">
+    <h2 id="h-prev">Aperçu du mail</h2>
+    <div class="mailhead">
+      <p class="subj" id="p-subj"></p>
+      <div class="meta" id="p-meta"></div>
+    </div>
+    <div class="mailbody" id="p-body"></div>
+  </section>
+</main>
+
+<script>
+  const MENTION = 'Rattaché à la division Infra';
+  let DEST = 'Sec-INFRA.RNS@Sonatrach.dz';   // remplacé par le destinataire configuré côté serveur
+  const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+
+  const norm = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  const isSonatrach = s => norm(s).includes('sonatrach');
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const pad = n => (n<10?'0':'')+n;
+  const $ = id => document.getElementById(id);
+
+  let trajet = 'ALGER → RNS';
+  let orgaMap = new Map();
+  const rows = [];          // { el, refs, filled }
+
+  /* ---------- date ---------- */
+  function today(){ const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function dateInfo(iso){
+    const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); if(!m) return null;
+    const d=new Date(+m[1],+m[2]-1,+m[3]);
+    return { jour:JOURS[d.getDay()], txt:pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear() };
+  }
+
+  /* ---------- lignes de personnes ---------- */
+  function addRow(){
+    const i = rows.length;
+    const el = document.createElement('div');
+    el.className = 'row';
+    el.innerHTML =
+      '<div class="n">'+(i+1)+'</div>'+
+      '<div><label class="lbl">Civilité</label><select class="civ" aria-label="Civilité"><option>M.</option><option>Mme</option></select></div>'+
+      '<div><label class="lbl">Nom</label><input class="nom" list="orga-list" autocomplete="off" placeholder="Nom et prénom"></div>'+
+      '<div><label class="lbl">Fonction</label><input class="fonction"></div>'+
+      '<div><label class="lbl">Société</label><input class="societe"></div>'+
+      '<label class="chk"><input type="checkbox" class="rattache"> Rattaché Infra</label>'+
+      '<div class="sub"></div>';
+    const refs = {
+      civ: el.querySelector('.civ'), nom: el.querySelector('.nom'), fonction: el.querySelector('.fonction'),
+      societe: el.querySelector('.societe'), rattache: el.querySelector('.rattache'), sub: el.querySelector('.sub')
+    };
+    const row = { el, refs, filled:false };
+    refs.nom.addEventListener('input', () => onNom(row));
+    refs.nom.addEventListener('change', () => onNom(row));
+    refs.societe.addEventListener('input', () => { refs.rattache.checked = !isSonatrach(refs.societe.value); refresh(); });
+    [refs.civ, refs.fonction, refs.rattache].forEach(x => x.addEventListener('input', refresh));
+    rows.push(row);
+    $('persons').appendChild(el);
+  }
+
+  function onNom(row){
+    const r = row.refs, hit = orgaMap.get(norm(r.nom.value));
+    if (hit){
+      r.fonction.value = hit.fonction;
+      r.societe.value = hit.societe;
+      r.rattache.checked = !isSonatrach(hit.societe);
+      r.sub.textContent = hit.service ? hit.service : '';
+      r.sub.className = 'sub';
+      row.filled = true;
+    } else {
+      if (row.filled){ r.fonction.value=''; r.societe.value=''; row.filled=false; }
+      r.rattache.checked = true;
+      r.sub.textContent = r.nom.value.trim() ? 'Nom absent de l’organigramme : complétez la fonction et la société.' : '';
+      r.sub.className = 'sub warn';
+    }
+    refresh();
+  }
+
+  function setCount(n){
+    n = Math.max(1, Math.min(30, n|0 || 1));
+    while (rows.length < n) addRow();
+    while (rows.length > n){ rows.pop().el.remove(); }
+    $('nb').value = n;
+    refresh();
+  }
+
+  /* ---------- données & aperçu ---------- */
+  function collect(){
+    return rows.map(r => ({
+      civ: r.refs.civ.value, nom: r.refs.nom.value.trim(), fonction: r.refs.fonction.value.trim(),
+      societe: r.refs.societe.value.trim(), rattache: r.refs.rattache.checked
+    }));
+  }
+  function profit(ps){
+    const n=ps.length, m=ps.every(p=>p.civ==='M.'), f=ps.every(p=>p.civ==='Mme');
+    if (m) return n>1?'de Messieurs':'de Monsieur';
+    if (f) return n>1?'de Mesdames':'de Madame';
+    return 'des personnes suivantes';
+  }
+  function ligne(p){
+    const parts=[];
+    if (p.fonction) parts.push(p.fonction);
+    if (p.societe && !isSonatrach(p.societe)) parts.push(p.societe);
+    if (p.rattache) parts.push(MENTION);
+    return parts.join('  ');
+  }
+  function refresh(){
+    const di = dateInfo($('date').value);
+    $('jour').textContent = di ? di.jour : '';
+    const ps = collect();
+    $('p-subj').textContent = 'Reservation ' + trajet;
+    $('p-meta').textContent = 'À : ' + DEST;
+    const intro = ps.length>1 ? 'Nous vous demandons de bien vouloir réserver '+ps.length+' places sur le vol suivant :'
+                              : 'Nous vous demandons de bien vouloir réserver une place sur le vol suivant :';
+    const quand = di ? '<b>'+esc(di.jour+' '+di.txt)+',</b>' : '<b>(date)</b>,';
+    $('p-body').innerHTML =
+      '<p>Bonjour ,</p><p>'+esc(intro)+'</p>'+
+      '<p><b>'+esc(trajet)+'</b> le '+quand+' au profit '+esc(profit(ps))+' :</p>'+
+      '<ul>'+ps.map(p => '<li><b>'+esc(p.nom||'(nom)')+'</b>'+(ligne(p)?'&nbsp;&nbsp;'+esc(ligne(p)).replace(/  /g,'&nbsp;&nbsp;'):'')+'</li>').join('')+'</ul>'+
+      '<p>Salutations .</p>'+
+      '<div class="sig">SECRETARIAT DIVISON INFRASTRUCTURE<br>SONATRACH – DP – RHOURDE-NOUSS<br>'+DEST+'<br>FO : 7743/5843</div>';
+  }
+
+  /* ---------- envoi ---------- */
+  function setMsg(t, cls){ const m=$('msg'); m.textContent=t||''; m.className='msg '+(cls||''); }
+
+  function envoyer(){
+    setMsg('');
+    if (!$('date').value) return setMsg('Choisissez la date du vol.', 'err');
+    const ps = collect();
+    const vide = ps.findIndex(p => !p.nom);
+    if (vide >= 0){ rows[vide].refs.nom.focus(); return setMsg('Renseignez le nom de la personne n° '+(vide+1)+'.', 'err'); }
+
+    const b = $('send'); b.disabled = true; b.textContent = 'Envoi en cours…';
+    Api.call('reservation_envoyer', { demande: { date: $('date').value, trajet: trajet, personnes: ps } })
+      .then(res => {
+        b.textContent = 'Demande envoyée'; b.classList.add('done');
+        $('reset').hidden = false;
+        setMsg('Mail envoyé à ' + res.to + ' (' + res.count + ' personne' + (res.count>1?'s':'') + ').', 'ok');
+      })
+      .catch(err => {
+        b.disabled = false; b.textContent = 'Envoyer la demande';
+        setMsg('Échec de l’envoi : ' + (err && err.message ? err.message : err), 'err');
+      });
+  }
+
+  function nouvelle(){
+    rows.splice(0).forEach(r => r.el.remove());
+    const b=$('send'); b.disabled=false; b.classList.remove('done'); b.textContent='Envoyer la demande';
+    $('reset').hidden = true; setMsg('');
+    setCount(1);
+  }
+
+  /* ---------- init ---------- */
+  document.querySelectorAll('.seg button').forEach(btn => btn.addEventListener('click', () => {
+    trajet = btn.dataset.trajet;
+    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x===btn)));
+    refresh();
+  }));
+  $('date').value = today();
+  $('date').addEventListener('input', refresh);
+  $('nb').addEventListener('input', () => setCount(parseInt($('nb').value,10)));
+  $('moins').addEventListener('click', () => setCount(rows.length-1));
+  $('plus').addEventListener('click', () => setCount(rows.length+1));
+  $('send').addEventListener('click', envoyer);
+  $('reset').addEventListener('click', nouvelle);
+  if (window.Api && Api.demo) $('demo').style.display = 'block';
+  setCount(1);
+
+  function chargerOrga(){
+    const st = $('status');
+    Api.call('reservation_orga')
+      .then(r => {
+        const list = r.personnes || []; if (r.destinataire) DEST = r.destinataire;
+        const dl = $('orga-list'); const frag = document.createDocumentFragment();
+        list.forEach(p => {
+          orgaMap.set(norm(p.nom), p);
+          const o = document.createElement('option'); o.value = p.nom; if (p.service) o.label = p.service;
+          frag.appendChild(o);
+        });
+        dl.appendChild(frag);
+        st.textContent = 'Organigramme chargé : ' + list.length + ' personnes. Tapez un nom pour remplir la fonction et la société.';
+        rows.forEach(onNom); refresh();
+      })
+      .catch(err => {
+        st.className = 'status err';
+        st.textContent = 'Organigramme indisponible (' + (err && err.message ? err.message : err) + '). Vous pouvez saisir les noms à la main.';
+      });
+  }
+  chargerOrga();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
