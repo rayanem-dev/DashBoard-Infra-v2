@@ -2,9 +2,10 @@
   {
     "id": "2026-10-26-197",
     "date": "2026-10-26",
-    "title": "Version 6.2.4 — Consolidé : envoyé au secrétariat seulement",
+    "title": "Version 6.2.4 — Consolidé : bloc d'envoi réservé au secrétariat",
     "changes": [
-      "Envoyer le consolidé (bouton et envoi automatique du soir) : le seul destinataire est le groupe Secrétariat (Sec-INFRA.RNS, sec.infra.rns, rayanem) ; les groupes chefs de service et chef de division sont retirés du réglage."
+      "Le bloc « ✉ Envoyer le consolidé » (envoi manuel, envoi automatique du soir, aperçu des destinataires) n'est visible et utilisable que par le rôle secrétariat ; le chef de division et les autres ne le voient plus.",
+      "Les destinataires restent ceux convenus : les 4 boîtes de service (groupe Chefs de service), Chef Division INFRA - RNS, et le secrétariat (Sec-INFRA.RNS, sec.infra.rns, rayanem)."
     ]
   },
   {
