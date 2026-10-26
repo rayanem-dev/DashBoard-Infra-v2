@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-175",
+    "date": "2026-10-26",
+    "title": "Version 5.93.0 — Corriger l'e-mail d'un compte",
+    "changes": [
+      "Privilèges et utilisateurs : sous chaque nom, l'adresse e-mail s'affiche avec un bouton « ✎ E-mail » pour la corriger en cas d'erreur de saisie. L'adresse est remplacée dans BDDORGA (si c'est la source) et partout dans le portail : droits, rotation, rapports, affectations, profil, mot de passe. Le journal garde l'historique de l'ancienne adresse.",
+      "La nouvelle adresse doit être valide et libre ; on ne peut pas changer sa propre adresse (un autre administrateur le fait)."
+    ]
+  },
+  {
     "id": "2026-10-26-174",
     "date": "2026-10-26",
     "title": "Version 5.92.1 — Avancement du chantier : moyenne automatique",

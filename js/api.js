@@ -381,6 +381,9 @@
         if (DEMO_USERS.some(function (u) { return u.email === emd; })) throw erreur('Un compte existe déjà avec cette adresse');
         DEMO_USERS.push({ email: emd, nom: String(p.nom).trim(), service: p.service || '', dependance: p.dependance || '', section: p.section || '', role: p.role, actif: true }); return { email: emd }; }
       case 'admin_portee': { exigerAdmin(); cibleDemo(p.email).portee = (Array.isArray(p.entreprises) ? p.entreprises.join(' ; ') : String(p.entreprises || '')); return {}; }
+      case 'admin_email_changer': { exigerAdmin(); var cd = cibleDemo(p.email), nv = String(p.nouveau || '').trim().toLowerCase();
+        if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(nv)) throw erreur('Adresse e-mail invalide'); if (DEMO_USERS.some(function (x) { return x.email.toLowerCase() === nv; })) throw erreur('Cette adresse est déjà utilisée par un autre compte');
+        if (cd.email === demoState.user.email) throw erreur('Vous ne pouvez pas changer votre propre adresse ici : demandez à un autre administrateur'); cd.email = nv; return { cellules: 3, email: nv }; }
       case 'admin_section': { exigerAdmin(); cibleDemo(p.email).section = String(p.section || '').trim(); return {}; }
       case 'admin_portee_choix': exigerAdmin(); return { entreprises: ['ATLAS SAHARIENNE', 'ETB ZATOUT ABDENACER', 'GLOBI CORP OUARGLA', 'SARL ATIA ET FRERES'] };
       case 'admin_actif': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas désactiver votre propre compte');

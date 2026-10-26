@@ -137,6 +137,17 @@ function route_(req) {
     case 'admin_mdp_defaut': return connexionsMdpDefautTous_(req);
     case 'admin_emails': return emailsControle_(req);
     case 'admin_email_contact': return emailContactAdmin_(req);
+    case 'admin_email_changer': {
+      var a10 = admin_(req), ancien = String(req.email || '').trim().toLowerCase(), nouveau = String(req.nouveau || '').trim().toLowerCase();
+      if (!Courriel.valide(nouveau)) throw new Error('Adresse e-mail invalide');
+      if (!Store.utilisateur(ancien)) throw new Error('Compte inconnu');
+      if (nouveau === ancien) throw new Error('C\'est déjà cette adresse');
+      if (Store.utilisateur(nouveau)) throw new Error('Cette adresse est déjà utilisée par un autre compte');
+      if (ancien === String(a10.email).toLowerCase()) throw new Error('Vous ne pouvez pas changer votre propre adresse ici : demandez à un autre administrateur');
+      var lock10 = LockService.getScriptLock(); lock10.waitLock(30000);
+      try { var n10 = Store.renommerEmail(ancien, nouveau); Store.journal('email_change', a10.email, ancien + ' → ' + nouveau + ' (' + n10 + ' cellule(s))'); return { cellules: n10, email: nouveau }; }
+      finally { lock10.releaseLock(); }
+    }
     case 'email_contact_demander': { var ue = Auth.userFromToken(req.token); if (typeof preparerStructure_ === 'function') preparerStructure_(); return Auth.demanderEmailContact(ue, req.adresse); }
     case 'email_contact_confirmer': { var uc = Auth.userFromToken(req.token); if (typeof preparerStructure_ === 'function') preparerStructure_(); return Auth.confirmerEmailContact(uc, req.code); }
     case 'admin_test_mail': return connexionsTestMail_(req);

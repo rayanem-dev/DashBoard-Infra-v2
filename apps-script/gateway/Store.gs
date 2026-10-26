@@ -79,6 +79,27 @@ var Store = (function () {
     for (var i = 0; i < 500; i += 1) { var t = trouver_(sh, cles); if (!t.ligne) break; sh.deleteRow(t.ligne); }
     invalider_(nom);
   }
+  /** Change l'adresse de connexion d'un compte partout où elle sert de clé : BDDORGA d'abord (s'il est la source), puis les onglets de la passerelle et le classeur des identifiants. */
+  function renommerEmail(ancien, nouveau) {
+    ancien = String(ancien).toLowerCase(); nouveau = String(nouveau).trim().toLowerCase();
+    if (sourceUtilisateurs_() === 'bddorga') {
+      var props = PropertiesService.getScriptProperties(), id = props.getProperty('ORGA_ID') || ORGA_ID_DEFAUT;
+      var sh = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
+      var plan = UBD.planEcriture(sh.getDataRange().getValues(), ancien, { email: nouveau }, {});
+      if (plan.erreur) throw new Error('BDDORGA : ' + plan.erreur + ' (rien n\'a été modifié)');
+      plan.ecritures.forEach(function (e) { var cell = sh.getRange(plan.ligne, e.col); cell.setNumberFormat('@'); cell.setValue(e.valeur); });
+    }
+    var total = 0;
+    Courriel.REFERENCES.forEach(function (ref) {
+      var f = feuille_(ref[0]); if (!f || f.getLastRow() < 2) return;
+      var rg = f.getDataRange(), r = Courriel.remplacer(rg.getValues(), ref[1], ancien, nouveau);
+      r.cellules.forEach(function (c) { f.getRange(c[0], c[1]).setValue(nouveau); }); total += r.n;
+      invalider_(ref[0]);
+    });
+    var sec = SpreadsheetApp.openById(prop_('SECRETS_ID')).getSheetByName('Identifiants');
+    if (sec && sec.getLastRow() > 1) { var rs = sec.getDataRange(), q = Courriel.remplacer(rs.getValues(), ['email'], ancien, nouveau); q.cellules.forEach(function (c) { sec.getRange(c[0], c[1]).setValue(nouveau); }); total += q.n; }
+    return total;
+  }
   function parUid(uid) {
     uid = String(uid || '');
     if (!uid) return null;
@@ -89,5 +110,5 @@ var Store = (function () {
   function journal(action, email, detail) {
     try { db_().getSheetByName('Journal').appendRow([new Date(), action, email, detail || '']); } catch (e) { Logger.log('Journal : ' + e.message); }
   }
-  return { table: table, utilisateur: utilisateur, parUid: parUid, maj: maj, supprimer: supprimer, supprimerTout: supprimerTout, journal: journal };
+  return { renommerEmail: renommerEmail, table: table, utilisateur: utilisateur, parUid: parUid, maj: maj, supprimer: supprimer, supprimerTout: supprimerTout, journal: journal };
 })();
