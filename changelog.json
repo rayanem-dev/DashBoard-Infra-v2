@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-192",
+    "date": "2026-10-26",
+    "title": "Version 6.1.4 — Renommage : ouvrir un dossier et renommer sur place",
+    "changes": [
+      "Renommage des documents : le bouton « 📂 Ouvrir un dossier » lit les fichiers directement dans leur dossier ; « Remplacer le nom » et « Renommer tous » les renomment ensuite sur place, sans rechoisir le dossier, ni copie quand le navigateur le permet (Chrome / Edge)."
+    ]
+  },
+  {
     "id": "2026-10-26-191",
     "date": "2026-10-26",
     "title": "Version 6.1.3 — Véhicules : tableau unique « SUIVI VH »",
