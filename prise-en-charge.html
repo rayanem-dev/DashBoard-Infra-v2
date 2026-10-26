@@ -438,17 +438,17 @@ window.google = { script: { run: (function () {
     document.getElementById('dateDepart').value = d.toISOString().split('T')[0];
   });
 
-  let servicesParPrestataire = {}, basesParPrestataire = {};
+  let servicesParPrestataire = {}, basesParPrestataire = {}, imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
     const emp = servicesParPrestataire[document.getElementById('prestataire').value];
     const bh = basesParPrestataire[document.getElementById('prestataire').value], sb = document.getElementById('base');
     if (bh && Array.from(sb.options).some(o => o.value === bh || o.text === bh)) sb.value = bh;   // dernière base désignée pour cette entreprise
     if (!emp) return;
-    const sel = document.getElementById('emputation'); if (Array.from(sel.options).some(o => o.value === emp || o.text === emp)) sel.value = emp;
+    const sel = document.getElementById('emputation'); if (Array.from(sel.options).some(o => o.value === emp || o.text === emp)) { sel.value = emp; if (imputationFixe) sel.disabled = true; }   // prestataire : imputation = service du contrat, pas de choix
   }
   function remplirDropdowns(opts) {
-    servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire;
+    servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire; imputationFixe = !!opts.imputation_fixe;
     basesParPrestataire = opts.basesParPrestataire || basesParPrestataire;
     const dlPrest = document.getElementById('listePrestataires');
     dlPrest.innerHTML = '';
