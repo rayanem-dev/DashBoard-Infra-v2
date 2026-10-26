@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-186",
+    "date": "2026-10-26",
+    "title": "Version 6.0.0 — Barre latérale rabattable",
+    "changes": [
+      "Nouveau : une barre latérale rabattable sur toutes les pages du site, avec toutes vos applications rangées par catégories (Chantiers, Marchés, Accès site, Personnel, Logistique, Admin, Informatique), une recherche, et la page en cours surlignée. Elle s'ouvre ou se réduit en colonne d'icônes (le choix est mémorisé) ; elle est réduite par défaut sur les pages larges (accueil, planning, simulation, organigramme…).",
+      "Sur téléphone, un bouton ☰ en haut à gauche ouvre le menu en tiroir ; Échap ou un toucher à côté le referme. Rien ne change dans vos droits : la barre ne liste que les applications déjà autorisées. Elle n'apparaît ni à l'impression ni sur la page de connexion."
+    ]
+  },
+  {
     "id": "2026-10-26-185",
     "date": "2026-10-26",
     "title": "Version 5.98.1 — Statistique sous-traitants : lignes en double corrigées",
