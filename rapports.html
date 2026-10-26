@@ -44,12 +44,12 @@
 
 <dialog id="dlg-hc" style="margin:auto;border:0;border-radius:16px;padding:20px;width:min(520px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
   <h3 style="margin:0 0 4px">Ouvrir un chantier hors contrat</h3>
-  <p class="aide" style="margin:0 0 10px">Pour les travaux <b>avant</b> le contrat (préparation) ou <b>après</b> (levée des réserves). Le chantier s'ouvre tout de suite et se ferme seul à la date de fin (6 mois par défaut).</p>
+  <p class="aide" style="margin:0 0 10px">Pour les travaux <b>avant</b> le contrat (préparation) ou <b>après</b> (levée des réserves). Les contrats du Suivi CPM (hors exécution et infructueux) sont proposés. Le chantier s'ouvre tout de suite et se ferme seul à la date de fin (6 mois par défaut).</p>
   <div class="champ"><label for="hc-phase">Phase</label><select id="hc-phase"><option value="preparation">Préparation (avant le contrat)</option><option value="reserves">Levée des réserves (après le contrat)</option></select></div>
   <div class="champ"><label for="hc-id">Chantier</label><select id="hc-id"></select></div>
-  <div id="hc-neuf"><div class="champ"><label for="hc-nom">Nom du chantier</label><input id="hc-nom" maxlength="120"></div>
-    <div class="deux"><div class="champ"><label for="hc-service">Service</label><select id="hc-service"><option>Construction</option><option>Électromécanique</option><option>Travaux Entretien</option></select></div>
+  <div id="hc-neuf"><div class="deux"><div class="champ"><label for="hc-nom">Nom du chantier</label><input id="hc-nom" maxlength="120"></div>
     <div class="champ"><label for="hc-contrat">Contrat N° (facultatif)</label><input id="hc-contrat" maxlength="60"></div></div></div>
+  <div class="champ"><label for="hc-service">Service</label><select id="hc-service"><option>Construction</option><option>Électromécanique</option><option>Travaux Entretien</option></select></div>
   <div class="champ"><label for="hc-jusqu">Ouvert jusqu'au</label><input type="date" id="hc-jusqu"></div>
   <p id="hc-err" style="color:#B42318;font-weight:700;margin:8px 0 0"></p>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn-s" type="button" id="hc-annuler">Annuler</button><button class="btn-p" type="button" id="hc-ok">Ouvrir le chantier</button></div>
@@ -424,16 +424,17 @@
   });
 
   function remplirChantiers(r) {
-    chantiers = r.chantiers; fermes = r.fermes || [];
+    chantiers = r.chantiers; fermes = r.hors_contrat || [];
     [$('chantier'), $('f-chantier')].forEach(function (s) { var cur = s.value; s.textContent = ''; chantiers.forEach(function (c) { var o = el('option', null, c.nom); o.value = c.id; s.appendChild(o); }); if (cur) s.value = cur; });
     $('b-hc').hidden = !r.peut_ouvrir;
   }
   var fermes = [];
   function dateDans(mois) { var d = new Date(); d.setMonth(d.getMonth() + mois); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
-  function majHc() { $('hc-neuf').hidden = !!$('hc-id').value; }
+  function majHc() { var o = $('hc-id').selectedOptions[0]; $('hc-neuf').hidden = !!$('hc-id').value; if ($('hc-id').value && o && o.dataset.phase) $('hc-phase').value = o.dataset.phase; }
   $('b-hc').onclick = function () {
     var sel = $('hc-id'); sel.textContent = ''; var n = el('option', null, '➕ Nouveau chantier hors contrat'); n.value = ''; sel.appendChild(n);
-    fermes.forEach(function (c) { var o = el('option', null, 'Rouvrir : ' + c.nom); o.value = c.id; sel.appendChild(o); });
+    fermes.forEach(function (c) { var o = el('option', null, (c.statut ? c.statut + ' · ' : '') + (c.contrat ? c.contrat + ' · ' : '') + c.nom); o.value = c.id; o.dataset.phase = c.phase || 'preparation'; sel.appendChild(o); });
+    $('hc-phase').value = 'preparation';
     $('hc-nom').value = ''; $('hc-contrat').value = ''; $('hc-jusqu').value = dateDans(6); $('hc-err').textContent = ''; majHc(); $('dlg-hc').showModal();
   };
   $('hc-id').onchange = majHc; $('hc-annuler').onclick = function () { $('dlg-hc').close(); };
