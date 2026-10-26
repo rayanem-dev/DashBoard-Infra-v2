@@ -72,7 +72,7 @@
   }
   $('b-sync').addEventListener('click', function () {
     var b = $('b-sync'); b.disabled = true;
-    Api.call('rapports_chantiers_sync').then(function (r) { toast(r.ajoutes + ' ajouté(s), ' + r.renommes + ' renommé(s), ' + r.desactives + ' désactivé(s), ' + r.reactives + ' réactivé(s)' + (r.routines ? ', ' + r.routines + ' chantier(s) de routine' : '')); return chantiersAdmin(); })
+    Api.call('rapports_chantiers_sync').then(function (r) { toast(r.ajoutes + ' ajouté(s), ' + r.renommes + ' renommé(s), ' + r.desactives + ' en levée des réserves, ' + r.reactives + ' réactivé(s)' + (r.routines ? ', ' + r.routines + ' chantier(s) de routine' : '')); return chantiersAdmin(); })
       .catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
   });
 

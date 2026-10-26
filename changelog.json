@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-26-193",
+    "date": "2026-10-26",
+    "title": "Version 6.2.0 — Rapports journaliers : chantiers hors contrat",
+    "changes": [
+      "Nouveau « ＋ Chantier hors contrat » dans la saisie du rapport (chef de division, secrétariat, chefs de service, sans validation) : ouvre un chantier en Préparation (avant le contrat) ou en Levée des réserves (après), ou rouvre un contrat terminé.",
+      "Le chantier reste ouvert jusqu'à la date choisie (6 mois par défaut) puis se ferme tout seul ; un chef de service n'ouvre que pour son service.",
+      "Un contrat qui sort de l'exécution dans le Suivi CPM passe maintenant en levée des réserves pendant 6 mois au lieu d'être désactivé tout de suite ; s'il revient en exécution il redevient normal.",
+      "Les chantiers hors contrat portent leur phase dans le nom, ne comptent pas comme « rapport manquant » dans la synthèse et n'apparaissent pas dans les jauges d'avancement."
+    ]
+  },
+  {
     "id": "2026-10-26-192",
     "date": "2026-10-26",
     "title": "Version 6.1.4 — Renommage : ouvrir un dossier et renommer sur place",
