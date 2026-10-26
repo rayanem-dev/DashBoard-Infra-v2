@@ -60,8 +60,8 @@
   /** Ordre de mission : mise en page de l'original (logo grand format, titre à droite sous un trait orange, pied de page avec l'adresse de la Direction Régionale). */
   function enteteOdm(v) {
     return '<div class="odm-tete"><div class="odm-g"><img class="odm-logo" src="img/odm-logo.jpeg" alt="Sonatrach"><div class="odm-ent"><b>Activité Exploration - Production</b><br><b>Division Production</b><br><b>Direction Régionale Rhourde Nouss</b><br>' +
-      '<b>N° </b><span class="odm-sou">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><b>' + E(v.ref || 'SH/E&P/PROD/RNS-INFRA/' + (String(v.date || '').slice(0, 4) || '')) + '</b></div></div>' +
-      '<div class="odm-d"><h2>ORDRE DE MISSION</h2><div class="odm-trait"></div><div class="odm-date"><b>Rhourde Nouss :</b> ' + (/^\d{4}-\d{2}-\d{2}$/.test(String(v.date || '')) ? frDate(v.date) : pts(10)) + '</div></div></div>';
+      (v._sansNum ? (v._division ? '<b>' + E(v._division) + '</b>' : '') : '<b>N° </b><span class="odm-sou">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><b>' + E(v.ref || 'SH/E&P/PROD/RNS-INFRA/' + (String(v.date || '').slice(0, 4) || '')) + '</b>') + '</div></div>' +
+      '<div class="odm-d"><h2' + (v._titre ? ' class="long"' : '') + '>' + E(v._titre || 'ORDRE DE MISSION') + '</h2><div class="odm-trait"></div><div class="odm-date"><b>Rhourde Nouss :</b> ' + (/^\d{4}-\d{2}-\d{2}$/.test(String(v.date || '')) ? frDate(v.date) : pts(10)) + '</div></div></div>';
   }
   var PIED_ODM = '<div class="odm-pied"><div class="odm-trait2"></div><div class="odm-adr">Direction Régionale Rhourde-Nouss - BP 27 Hassi Messaoud – Ouargla Algérie</div>' +
     '<div class="odm-contacts"><span>☎ Tél. : 029 74 01 48</span><span>⎙ Fax : 029 74 01 40</span><span>⊕ www.sonatrach.dz</span><span>✉ Secrétariat.RNS@sonatrach.dz</span></div></div>';
@@ -92,6 +92,39 @@
         ligne('TRAJET A EFFECTUER :', V(v, 'trajet')) + ligne('ACCOMPAGNE :', V(v, 'accompagne', 6)) + ligne('MOYEN TRANSPORT :', V(v, 'transport')) + '</table>' +
         '<div class="odm-sign"><b>' + E(v.signataire || 'Le Chef de Division Infrastructures') + '</b></div>' + PIED_ODM;
     });
+
+  /** Requête de transport de personnel (modèle de la Division Infrastructures) : mise en page de l'original, personnes choisies dans BDDORGA (nom, téléphone). */
+  modele('transport', 'autres', 'Requête de transport de personnel', 'Demande à la Division Appro/Transport un véhicule pour des agents (date, heure, parcours, personnes de BDDORGA avec leur téléphone, imputation analytique).',
+    [L.date, { k: 'demandeur', l: 'Formulée par Monsieur', def: 'user.nom', pers: { nom: 'demandeur' } }, { k: 'division', l: 'Division', def: 'INFRASTRUCTURES' },
+      { k: 'vehicule', l: 'Type de véhicule demandé', t: 'select', opts: ['Véhicule', 'Bus', 'Minibus', 'Pick-up', 'Camion', 'Autre'], def: 'Véhicule' },
+      { k: 'pour_le', l: 'Pour le', t: 'date' }, { k: 'heure', l: 'à (heure, ex. 05:00)' }, { k: 'retour', l: 'Date de retour', t: 'date' },
+      { k: 'objet', l: 'Objet de la mission' }, { k: 'parcours', l: 'Parcours', def: 'RNS – OUARGLA – RNS' },
+      { k: 'imputation', l: 'Imputation analytique (11 chiffres)', def: '43000451000' },
+      { k: 'personnes', l: 'Personnes à transporter (le nombre se calcule seul)', t: 'repeat', colonnes: [{ k: 'nom', l: 'Nom et prénom', pers: { tel: 'tel' } }, { k: 'tel', l: 'Téléphone' }] },
+      { k: 'signataire', l: 'Signataire', def: 'Le Chef De Division Infrastructures' }], 'odm',
+    function (v) {
+      var pers = (v.personnes || []).filter(function (p) { return p && String(p.nom || '').trim(); });
+      var nb = pers.length ? ('0' + pers.length).slice(-2) : '', hh = /^(\d{1,2})[:hH](\d{2})$/.exec(String(v.heure || '').trim());
+      var heure = hh ? ('0' + hh[1]).slice(-2) + 'H' + hh[2] : String(v.heure || '');
+      var imp = String(v.imputation || '').replace(/\D/g, '').slice(0, 11), cases = '';
+      for (var i = 0; i < 11; i += 1) cases += '<td>' + (imp.charAt(i) || '&nbsp;') + '</td>';
+      var l = function (a, b) { return '<div class="rt-l">' + a + ' ' + b + '</div>'; };
+      return '<div class="rt-corps">' +
+        '<div class="rt-l"><b>Formulée par Monsieur :</b> ' + V(v, 'demandeur') + '<span class="rt-d"><b>Division :</b> ' + V(v, 'division', 10) + '</span></div>' +
+        '<div class="rt-l"><b>Type de véhicule demandé :</b> ' + V(v, 'vehicule', 10) + '<span class="rt-d"><b>Pour le</b> ' + V(v, 'pour_le', 10) + ' <b>à :</b> ' + (heure ? '<span class="val">' + E(heure) + '</span>' : pts(6)) + '</span></div>' +
+        l('<b>Date de Retour :</b>', V(v, 'retour', 10)) +
+        '<div class="rt-l"><b>Nombre de personnes à transporter :</b> <span class="rt-n">' + (nb || '&nbsp;&nbsp;') + '</span></div>' +
+        l('<b>Objet de la mission :</b>', V(v, 'objet', 24)) + l('<b>Parcours :</b>', V(v, 'parcours', 20)) +
+        '<div class="rt-l"><b>Imputation analytique :</b> <table class="rt-imp"><tr>' + cases + '</tr></table></div>' +
+        '<table class="rt-res"><tr><th>RESERVE A LA DIVISION APPRO/TRANSPORT</th></tr><tr><td><p><u><b>Observations :</b></u></p><p><u><b>Mise à disposition véhicule :</b></u></p>' +
+        '<p>Type_______________________Matricule____________________N°SH – DP ______________</p><p>Chauffeur : _____________________________________________</p>' +
+        '<p>Début de mission le : _______________________________à : _______________heures</p><p>Fin de mission le : ________________________________à : _______________heures</p>' +
+        '<p>Parcours effectué : ______________________________________________________</p><p>Nombre de jours :____________________ Kilométrage effectué : ______________</p></td></tr></table>' +
+        '<table class="rt-liste"><tr><td><b>' + (String(v.parcours || '').trim() ? E(v.parcours) : pts(18)) + '</b></td></tr>' +
+        (pers.length ? pers.map(function (p) { return '<tr><td><b>' + E(p.nom) + '</b>' + (String(p.tel || '').trim() ? '&nbsp;&nbsp;&nbsp;&nbsp;<b>' + E(p.tel) + '</b>' : '') + '</td></tr>'; }).join('') : '<tr><td>' + pts(26) + '</td></tr>') + '</table>' +
+        '<div class="odm-sign"><b><u>' + E(v.signataire || 'Le Chef De Division Infrastructures') + '</u></b></div></div>' + PIED_ODM;
+    });
+  M[M.length - 1].opts = { _titre: 'REQUETE DE TRANSPORT DE PERSONNEL', _sansNum: true, _division: 'Division Infrastructures' };
 
   modele('demande-mission', 'missions', 'Demande de mission', 'Demande au Directeur Régional d\'autoriser une mission de travail.',
     [L.date, L.division, L.agent, L.matricule, L.fonction, { k: 'objet', l: 'Objet détaillé de la mission', t: 'textarea' }, { k: 'depart', l: 'Date de départ', t: 'date' },
@@ -378,10 +411,13 @@
     '.doc.odm{position:relative;min-height:263mm}.odm-tete{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.odm-logo{width:22mm;height:auto;display:block}.odm-ent{font-size:9.5pt;line-height:1.45;margin-top:1mm}.odm-sou{display:inline-block;width:14mm;border-bottom:1px solid #000}' +
     '.odm-d{flex:1;max-width:58%;text-align:center;margin-top:8mm;align-self:flex-start}.odm-d h2{font-size:15pt;margin:0 0 4mm;text-transform:none}.odm-trait{height:2.2mm;background:#F0A030;margin:0 -15mm 0 0}.odm-date{text-align:right;font-size:9.5pt;margin-top:6mm;padding-right:2mm}' +
     '.odm-num{font-size:9.5pt;margin:12mm 0 14mm 5mm}.odm-t{border:1px solid #000;width:100%;margin:0}.odm-t th{width:31%;text-align:left;background:none;border:0;border-right:1px solid #000;border-bottom:1px solid #000;padding:3.4mm 2mm;font-size:9.5pt;vertical-align:middle;height:11mm}.odm-t td{border:0;border-bottom:1px solid #000;padding:3.4mm 3mm;font-size:9.5pt;vertical-align:middle}.odm-t tr:last-child th,.odm-t tr:last-child td{border-bottom:0}.odm-t .val{font-weight:400}' +
+    '.odm-d h2.long{font-size:11pt}.rt-corps{margin-top:3mm;font-size:9.5pt}.rt-l{margin:1.8mm 0}.rt-d{margin-left:12mm}.rt-n{display:inline-block;min-width:11mm;border:1px solid #000;padding:1mm 2mm;font-weight:700;text-align:center}.rt-imp{display:inline-table;border-collapse:collapse;vertical-align:middle;margin-left:3mm}.rt-imp td{border:1px solid #000;width:6.4mm;height:7mm;text-align:center;font-weight:700;padding:0}' +
+    '.rt-res{border:1px solid #000;border-collapse:collapse;width:100%;margin:5mm 0 4mm}.rt-res th{background:#d9d9d9;border-bottom:1px solid #000;font-size:9.5pt;padding:1mm}.rt-res td{padding:1mm 2mm}.rt-res p{margin:2mm 0;font-size:9pt;white-space:nowrap;overflow:hidden}.rt-liste{border:1px solid #000;border-collapse:collapse;width:64%;margin:2mm 0 4mm}.rt-liste td{border:1px solid #000;padding:1.5mm 2mm;font-size:9.5pt}' +
+
     '.odm-sign{font-size:9.5pt;margin:6mm 0 0 5mm}.odm-pied{position:absolute;left:-15mm;right:-15mm;bottom:-8mm;text-align:center;font-size:7pt;color:#666}.odm-trait2{height:2mm;background:#F0A030;width:55%;margin-bottom:9mm}.odm-adr{margin-bottom:3mm}.odm-contacts{display:flex;justify-content:center;gap:9mm;flex-wrap:wrap}';
   /** HTML complet d'un document (fragment à insérer dans la page ou dans une fenêtre d'impression). */
   function rendre(m, v, logo) {
-    var h = '<div class="doc' + (m.entete === 'odm' ? ' odm' : '') + '">' + entete(m.entete, v || {}) + m.html(v || {}) + '</div>';
+    var h = '<div class="doc' + (m.entete === 'odm' ? ' odm' : '') + '">' + entete(m.entete, Object.assign({}, v || {}, m.opts || {})) + m.html(v || {}) + '</div>';
     return h.replace('@LOGO@', E(logo || 'badges/logo-sonatrach.png'));
   }
   function trouver(id) { return M.filter(function (m) { return m.id === id; })[0] || null; }
