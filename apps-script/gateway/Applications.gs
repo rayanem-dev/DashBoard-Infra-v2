@@ -77,10 +77,10 @@ var SEED_APPS = [
  ],
  [
   "logistique",
-  "Générateur Requête Transport",
-  "Application de génération des requêtes de transport pour la division Infrastructure.",
+  "Requête de transport de personnel",
+  "Requête de transport de personnel de la division Infrastructure : les personnes se choisissent dans BDDORGA (nom et téléphone repris), le nombre se calcule seul ; document prêt à imprimer en un clic.",
   "🚚",
-  "https://script.google.com/macros/s/AKfycbzdT9ccbrUmHZfTHCdFC09ZFG-KX3TR95qvpe5fyuIjE_tSMe-1hVEQDKknD629KHoU/exec",
+  "documents.html#transport",
   1
  ],
  [
@@ -492,6 +492,24 @@ function retirerAnciennePec_() {
     for (var i = 1; i < v.length; i += 1) if (/^Prises en Charge \(ancienne version\)/.test(String(v[i][iT])) || (/script\.google\.com\/macros/.test(String(v[i][iU])) && /^Prises en Charge/.test(String(v[i][iT])))) suppr.push(i + 1);
     suppr.reverse().forEach(function (l) { sh.deleteRow(l); });
     props.setProperty('PEC_ANCIENNE_RETIREE', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+
+/** Une seule fois : la carte « Générateur Requête Transport » (ancienne application externe) ouvre désormais le modèle « Requête de transport de personnel » du portail (documents.html#transport). */
+function migrerRequeteTransport_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('TRANSPORT_PORTAIL_V1') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iD = h.indexOf('description'), iU = h.indexOf('url');
+    for (var i = 1; i < v.length; i += 1) {
+      if (/^Générateur Requête Transport/.test(String(v[i][iT]))) {
+        sh.getRange(i + 1, iT + 1).setValue('Requête de transport de personnel'); sh.getRange(i + 1, iU + 1).setValue('documents.html#transport');
+        sh.getRange(i + 1, iD + 1).setValue(SEED_APPS.filter(function (r) { return r[1] === 'Requête de transport de personnel'; })[0][2]); break;
+      }
+    }
+    props.setProperty('TRANSPORT_PORTAIL_V1', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }

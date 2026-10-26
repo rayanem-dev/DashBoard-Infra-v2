@@ -5,8 +5,8 @@ const D = require('../../../js/documents-modeles.js');
 const user = { nom: 'HADJADJ <b>Lamine</b>', matricule: '90856S', fonction: 'CHEF DIVISION INFRA', service: 'INFRASTRUCTURE', date_integration: '2005-03-01' };
 
 test('25 modèles, identifiants uniques, catégories connues', () => {
-  assert.strictEqual(D.modeles.length, 28);
-  assert.strictEqual(new Set(D.modeles.map(m => m.id)).size, 28);
+  assert.strictEqual(D.modeles.length, 29);
+  assert.strictEqual(new Set(D.modeles.map(m => m.id)).size, 29);
   const cats = D.categories.map(c => c.id);
   D.modeles.forEach(m => assert.ok(cats.includes(m.categorie), m.id));
 });

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-177",
+    "date": "2026-10-26",
+    "title": "Version 5.95.0 — Requête de transport de personnel",
+    "changes": [
+      "Nouvelle application « Requête de transport de personnel » (rubrique Logistique) : la mise en page de la requête de la Division Infrastructures (en-tête Sonatrach, véhicule demandé, date et heure, retour, objet, parcours, imputation analytique en 11 cases, cadre réservé à la Division Appro/Transport, liste des personnes avec téléphone). Les personnes se choisissent dans BDDORGA (nom et téléphone repris) et le nombre se calcule seul. Imprimable en un clic.",
+      "Elle remplace l'ancien « Générateur Requête Transport » (application externe)."
+    ]
+  },
+  {
     "id": "2026-10-26-176",
     "date": "2026-10-26",
     "title": "Version 5.94.0 — Modifier tous les champs d'un compte, ou le supprimer",
