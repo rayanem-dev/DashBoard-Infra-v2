@@ -171,6 +171,9 @@
     etat.utilisateurs.filter(function (u) { return !f || (u.nom + ' ' + (u.service || '') + ' ' + (u.fonction || '')).toLowerCase().indexOf(f) !== -1; }).forEach(function (u) {
       var tr = el('tr', u.actif ? '' : 'inactif');
       var tdn = el('td', null, u.nom); var pe = Employeur.pastille(u.dependance); if (pe) tdn.appendChild(pe);
+      var tm0 = el('div'); tm0.style.cssText = 'font-size:11.5px;color:var(--muted,#6B7280);margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+      tm0.appendChild(el('span', null, u.email)); var be = el('button', 'btn-s', '✎ E-mail'); be.type = 'button'; be.title = 'Corriger l\'adresse e-mail de connexion de ' + u.nom + ' (erreur de saisie)'; be.style.cssText = 'padding:1px 8px;font-size:11px';
+      be.addEventListener('click', function () { changerEmail(u); }); tm0.appendChild(be); tdn.appendChild(tm0);
       if (u.role === 'prestataire') tdn.appendChild(zonePortee(u));
       tr.appendChild(tdn);
       var tds = el('td', null, u.service || ''), sec = document.createElement('input'); sec.type = 'text'; sec.value = u.section || ''; sec.placeholder = 'section (Froid, Électricité…)'; sec.setAttribute('list', 'l-sections'); sec.setAttribute('aria-label', 'Section de ' + u.nom);
@@ -373,6 +376,13 @@
     etat.modules.forEach(function (m) { var o = el('option', null, m.titre); o.value = m.id; sm.appendChild(o); });
   }
 
+  // ---- Corriger l'adresse e-mail de connexion (saisie par erreur) ----
+  function changerEmail(u) {
+    var v = window.prompt('Adresse e-mail actuelle de ' + u.nom + ' : ' + u.email + '\n\nNouvelle adresse :', u.email); if (v === null) return;
+    v = v.trim().toLowerCase(); if (!v || v === u.email.toLowerCase()) return;
+    if (!window.confirm('Remplacer ' + u.email + ' par ' + v + ' pour ' + u.nom + ' ?\n\nSes droits, rotation, rapports et mot de passe sont conservés. Il devra se connecter avec la nouvelle adresse ; sa session actuelle sera fermée.')) return;
+    Api.call('admin_email_changer', { email: u.email, nouveau: v }).then(function (r) { toast('Adresse changée : ' + r.email); return recharger(); }).catch(function (e) { toast(e.message, true); });
+  }
   // ---- Mot de passe défini par l'administrateur ----
   function definirMdp(u) {
     var saisi = window.prompt('Nouveau mot de passe PROVISOIRE pour ' + u.nom + '\n(4 caractères minimum ; laissez vide pour en générer un). La personne devra en choisir un autre à sa prochaine connexion.', '');
