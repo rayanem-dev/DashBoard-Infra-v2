@@ -71,7 +71,8 @@
         { titre: 'Affectation chantier', description: 'Service de chaque chantier et synchronisation avec le Suivi CPM.', emoji: '🔀', url: 'affectation-chantier.html' } ] },
       { id: 'badges', titre: 'Badges prestataires', icone: '🪪', niveau: 3, apps: [
         { titre: 'Badges prestataires', description: 'Prépare et imprime les badges (recto-verso), numérotation automatique et historique.', emoji: '🪪', url: 'badges.html' },
-        { titre: 'Fichier des habilitations', description: 'Extraction en vrac du fichier des Enquêtes, avec choix des colonnes à imprimer ou exporter.', emoji: '🗃️', url: 'habilitations.html' } ] },
+        { titre: 'Fichier des habilitations', description: 'Extraction en vrac du fichier des Enquêtes, avec choix des colonnes à imprimer ou exporter.', emoji: '🗃️', url: 'habilitations.html' },
+        { titre: 'Statistique sous-traitants', description: 'Agents pris en charge et heures par sous-traitant et par mois, rendu PDF.', emoji: '📊', url: 'stats-soustraitants.html' } ] },
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
         { titre: 'Contrôle de l\'annuaire', description: 'Compare les fiches contact avec BDDORGA.', emoji: '🔎', url: 'divergences.html' },
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' } ] }
@@ -248,6 +249,16 @@
         return { groupes: ['Postes internes (4 chiffres)', 'Équipe Division Infrastructure — Collaborateurs & Bureaux › 🗒️ SECRÉTARIAT', 'Prestataires › MAINTENANCE'], rows: [
           [0, 'Réception', '📞 1000', 'Standard', ''], [0, 'Sûreté interne', '📞 1111', 'Poste de garde', ''],
           [1, 'DEMO Secrétaire', '📞 0555 00 00 00 | ✉️ secretariat@exemple.dz', 'SECRÉTAIRE', 'SONATRACH'], [2, 'Entreprise Atlas (démo)', '📞 0555 11 11 11', 'Maintenance', 'PRESTATAIRE']] };
+      case 'stats_st_lire': case 'stats_st_recalculer': case 'stats_st_maj': case 'stats_st_supprimer': case 'stats_st_ajouter': { exigerAdmin();
+        var cle = 'infra_v2_demo_stats', st; try { st = JSON.parse(sessionStorage.getItem(cle) || '{}'); } catch (e) { st = {}; }
+        var mois = p.mois || (p.id && (st.l || []).filter(function (x) { return x.id === p.id; })[0] || {}).mois || new Date().toISOString().slice(0, 7);
+        st.l = st.l || [];
+        if (!st.l.some(function (x) { return x.mois === mois; }) && action !== 'stats_st_ajouter') [['SARL GLOBI CORP ALGERIA', 10], ['ETS MEHDA AMOR', 6], ['ETPH MESSAI ESSMAIL (Hydraulique)', 11], ['ETB ZAATOUT ABDENACER (dessablage manuel)', 32], ['ACOSCO', 6], ['ENCC', 11]].forEach(function (x, i) { st.l.push({ id: 'd' + mois + i, mois: mois, prestataire: x[0], effectif: x[1], heures: x[1] * 360, observation: '', origine: 'auto', modifie: false }); });
+        if (action === 'stats_st_maj') { var l1 = st.l.filter(function (x) { return x.id === p.id; })[0]; if (l1) { Object.keys(p.champs || {}).forEach(function (k) { l1[k] = (k === 'effectif' || k === 'heures') ? Number(p.champs[k]) : p.champs[k]; }); l1.modifie = true; } }
+        if (action === 'stats_st_supprimer') st.l = st.l.filter(function (x) { return x.id !== p.id; });
+        if (action === 'stats_st_ajouter') st.l.push({ id: 'm' + Date.now(), mois: mois, prestataire: p.prestataire, effectif: Number(p.effectif) || 0, heures: (Number(p.effectif) || 0) * 360, observation: '', origine: 'manuel', modifie: true });
+        try { sessionStorage.setItem(cle, JSON.stringify(st)); } catch (e) { /* rien */ }
+        return { mois: mois, lignes: st.l.filter(function (x) { return x.mois === mois; }), heures_par_agent: 360, mois_saisis: [mois], resume: { ajoutees: 0, mises_a_jour: 0 } }; }
       case 'transport_telephone': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ecrit: true, tel: String(p.tel || '').replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1 ') }; }
       case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { remplace: ['DURAND Marc', 'MARTIN Hugo', 'BERNARD Louis'], personnes: [

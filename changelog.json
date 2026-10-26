@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-26-184",
+    "date": "2026-10-26",
+    "title": "Version 5.98.0 — Statistique sous-traitants",
+    "changes": [
+      "Nouvelle application « Statistique sous-traitants » (onglet des Enquêtes, à côté du Fichier des habilitations) : pour chaque mois, le nombre d'agents pris en charge et les heures travaillées par sous-traitant, calculés automatiquement depuis le journal des prises en charge (une personne n'est comptée qu'une fois par prestataire ; heures = effectif × 360 h, comme dans le fichier Excel d'avril 2026).",
+      "Les lignes se modifient et se suppriment ; « Recalculer » met à jour les chiffres sans toucher aux lignes modifiées ou supprimées ; « + Ajouter une ligne » pour un sous-traitant absent. Rendu PDF A4 prêt à imprimer (en-tête Sonatrach, tableau, total, signatures).",
+      "Réservée au chef de division, au secrétariat et aux chefs de service (même accès que le Fichier des habilitations)."
+    ]
+  },
+  {
     "id": "2026-10-26-183",
     "date": "2026-10-26",
     "title": "Version 5.97.1 — Requête de transport : impression sur une seule page",
