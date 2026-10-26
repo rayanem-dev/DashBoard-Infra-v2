@@ -423,6 +423,18 @@
   }
   function trouver(id) { return M.filter(function (m) { return m.id === id; })[0] || null; }
 
-  var API = { categories: CATEGORIES, modeles: M, trouver: trouver, valeursInitiales: valeursInitiales, rendre: rendre, css: CSS, frDate: frDate, echapper: E };
+  /** Imputations analytiques de la Division Infrastructures (11 chiffres) : la division et ses trois services. */
+  var IMPUTATIONS = [{ code: '43000450000', libelle: 'Division Infrastructures' }, { code: '43000451000', libelle: 'Service Électromécanique' }, { code: '43000452000', libelle: 'Service Travaux Entretien' }, { code: '43000453000', libelle: 'Service Construction' }];
+  /** Imputation d'une personne d'après son service ; null si le service est inconnu (la page propose alors les quatre choix). */
+  function imputationDe(service) {
+    var t = String(service || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    if (!t) return null;
+    if (/electrom/.test(t)) return IMPUTATIONS[1];
+    if (/entretien/.test(t)) return IMPUTATIONS[2];
+    if (/construction|genie civil/.test(t)) return IMPUTATIONS[3];
+    if (/division|infrastructure|cpm|passation|secretariat|cellule/.test(t)) return IMPUTATIONS[0];
+    return null;
+  }
+  var API = { IMPUTATIONS: IMPUTATIONS, imputationDe: imputationDe, categories: CATEGORIES, modeles: M, trouver: trouver, valeursInitiales: valeursInitiales, rendre: rendre, css: CSS, frDate: frDate, echapper: E };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.Documents = API;
 })(typeof window !== 'undefined' ? window : this);

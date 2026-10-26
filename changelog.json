@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-26-182",
+    "date": "2026-10-26",
+    "title": "Version 5.97.0 — Requête de transport : imputation détectée, intéressé et téléphone automatiques",
+    "changes": [
+      "Imputation analytique : détectée d'après le service de l'intéressé (Division 43000450000, Électromécanique 43000451000, Travaux Entretien 43000452000, Construction 43000453000) ; si elle n'est pas détectée, les quatre choix sont proposés.",
+      "L'intéressé est ajouté automatiquement à la liste des personnes avec son téléphone (BDDORGA), comme dans le modèle ; il suit le champ « Formulée par ».",
+      "Un téléphone absent de BDDORGA se saisit dans la ligne : il est enregistré dans BDDORGA à l'impression ou à l'enregistrement (jamais d'écrasement d'un numéro existant, noté dans le journal)."
+    ]
+  },
+  {
     "id": "2026-10-26-181",
     "date": "2026-10-26",
     "title": "Version 5.96.2 — Prise en charge : bouton Retour au portail",

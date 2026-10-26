@@ -248,6 +248,7 @@
         return { groupes: ['Postes internes (4 chiffres)', 'Équipe Division Infrastructure — Collaborateurs & Bureaux › 🗒️ SECRÉTARIAT', 'Prestataires › MAINTENANCE'], rows: [
           [0, 'Réception', '📞 1000', 'Standard', ''], [0, 'Sûreté interne', '📞 1111', 'Poste de garde', ''],
           [1, 'DEMO Secrétaire', '📞 0555 00 00 00 | ✉️ secretariat@exemple.dz', 'SECRÉTAIRE', 'SONATRACH'], [2, 'Entreprise Atlas (démo)', '📞 0555 11 11 11', 'Maintenance', 'PRESTATAIRE']] };
+      case 'transport_telephone': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ecrit: true, tel: String(p.tel || '').replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1 ') }; }
       case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { remplace: ['DURAND Marc', 'MARTIN Hugo', 'BERNARD Louis'], personnes: [
           { nom: 'DURAND Marc', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0550000001', tels_alt: [], email: 'marc.durand@exemple.dz', email2: '', sona: 'sona00001', matricule: '10001A' },

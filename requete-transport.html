@@ -56,7 +56,7 @@
       <div class="deux"><div><label for="f-date">Date de la requête</label><input type="date" id="f-date"></div><div><label for="f-division">Division</label><input type="text" id="f-division"></div></div>
       <label for="f-demandeur">Formulée par Monsieur <small>(un nom de BDDORGA peut être choisi)</small></label><input type="text" id="f-demandeur" list="dl-pers" autocomplete="off">
       <div class="deux"><div><label for="f-vehicule">Type de véhicule demandé</label><select id="f-vehicule"><option>Véhicule</option><option>Bus</option><option>Minibus</option><option>Pick-up</option><option>Camion</option><option>Autre</option></select></div>
-        <div><label for="f-imputation">Imputation analytique <small>(11 chiffres)</small></label><input type="text" id="f-imputation" inputmode="numeric" maxlength="11"></div></div>
+        <div><label for="f-imputation">Imputation analytique <small id="imp-note">(détectée d'après le service)</small></label><select id="f-imputation"><option value="">— choisir —</option></select></div></div>
       <div class="deux"><div><label for="f-pour_le">Pour le</label><input type="date" id="f-pour_le"></div><div><label for="f-heure">à <small>(heure, ex. 05:00)</small></label><input type="time" id="f-heure"></div></div>
       <div class="deux"><div><label for="f-retour">Date de retour</label><input type="date" id="f-retour"></div><div><label for="f-parcours">Parcours</label><input type="text" id="f-parcours" list="dl-parcours" autocomplete="off"></div></div>
       <label for="f-objet">Objet de la mission</label><input type="text" id="f-objet" maxlength="160">
@@ -81,6 +81,7 @@
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
   document.getElementById('css-doc').textContent = Documents.css;
+  Documents.IMPUTATIONS.forEach(function (i) { var o = document.createElement('option'); o.value = i.code; o.textContent = i.libelle + ' — ' + i.code; $('f-imputation').appendChild(o); });   // les quatre choix
   var M = Documents.trouver('transport'), CLE = 'requete_transport_histo', CLE_P = 'requete_transport_parcours', personnes = [], moi = '';
   var CH = ['date', 'division', 'demandeur', 'vehicule', 'imputation', 'pour_le', 'heure', 'retour', 'parcours', 'objet', 'signataire'], lignes = [];
   function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
@@ -93,6 +94,11 @@
     var mots = q.split(/\s+/), c = personnes.filter(function (p) { var n = norm(p.nom); return mots.every(function (m) { return n.indexOf(m) !== -1; }); });
     return c.length === 1 ? c[0] : null;
   }
+  // Imputation de l'intéressé : d'après son service (BDDORGA) ; non détectée → les quatre choix restent à choisir
+  var service = '';
+  function serviceDe(nom) { var p = trouver(nom); return p && p.service ? p.service : (norm(nom) === norm(moi) ? service : ''); }
+  function imputationAuto(nom) { var i = Documents.imputationDe(serviceDe(nom)); return i ? i.code : ''; }
+  function noteImputation(auto) { $('imp-note').textContent = auto ? '(détectée : ' + auto.libelle + ')' : '(non détectée : choisissez)'; }
   function lire() {
     var v = {}; CH.forEach(function (k) { v[k] = $('f-' + k).value; });
     v.personnes = lignes.map(function (l) { return { nom: l.nom, tel: l.tel }; }); return v;
@@ -101,7 +107,7 @@
     CH.forEach(function (k) { $('f-' + k).value = v[k] == null ? '' : v[k]; });
     lignes = (v.personnes || []).map(function (p) { return { nom: p.nom || '', tel: p.tel || '' }; }); dessinerPersonnes(); apercu();
   }
-  function neuf() { return { date: iso(), division: 'INFRASTRUCTURES', demandeur: moi, vehicule: 'Véhicule', imputation: '43000451000', parcours: 'RNS – OUARGLA – RNS', signataire: 'Le Chef De Division Infrastructures', personnes: [] }; }
+  function neuf() { return { date: iso(), division: 'INFRASTRUCTURES', demandeur: moi, vehicule: 'Véhicule', imputation: imputationAuto(moi), parcours: 'RNS – OUARGLA – RNS', signataire: 'Le Chef De Division Infrastructures', personnes: [] }; }
   function dessinerPersonnes() {
     var z = $('l-pers'); z.textContent = '';
     lignes.forEach(function (l, i) {
@@ -110,6 +116,7 @@
       n.oninput = function () { l.nom = n.value; apercu(); };
       n.onchange = function () { var p = trouver(n.value); if (p) { l.nom = p.nom; l.tel = p.tel || l.tel; dessinerPersonnes(); apercu(); } };
       var t = document.createElement('input'); t.type = 'text'; t.value = l.tel; t.placeholder = 'Téléphone'; t.setAttribute('aria-label', 'Téléphone ' + (i + 1)); t.oninput = function () { l.tel = t.value; apercu(); };
+      var pp = trouver(l.nom), manque = pp && !pp.tel; if (manque) { t.style.borderColor = '#D97706'; t.title = 'Pas de téléphone dans BDDORGA : saisissez-le, il y sera enregistré'; t.placeholder = 'Téléphone (à saisir)'; }
       var x = document.createElement('button'); x.type = 'button'; x.className = 'btn-s'; x.textContent = '✕'; x.title = 'Retirer'; x.onclick = function () { lignes.splice(i, 1); dessinerPersonnes(); apercu(); };
       r.appendChild(n); r.appendChild(t); r.appendChild(x); z.appendChild(r);
     });
@@ -127,11 +134,30 @@
   });
   $('b-vide').onclick = function () { lignes.push({ nom: '', tel: '' }); dessinerPersonnes(); apercu(); };
 
-  // personnes de BDDORGA (annuaire) et utilisateur connecté
-  if (window.Api) {
-    Api.call('annuaire_personnes').then(function (r) { personnes = (r.personnes || []).filter(function (p) { return p.nom; }); var dl = $('dl-pers'); personnes.forEach(function (p) { var o = document.createElement('option'); o.value = p.nom; o.label = [p.fonction, p.tel].filter(Boolean).join(' · '); dl.appendChild(o); }); }).catch(function () { /* sans annuaire : saisie libre */ });
-    Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; if (!$('f-demandeur').value) { $('f-demandeur').value = moi; apercu(); } }).catch(function () { /* garde.js gère la session */ });
+  // personnes de BDDORGA (annuaire) et utilisateur connecté : l'intéressé est ajouté seul à la liste, avec son téléphone
+  function initialiser() {
+    if (!moi || !personnes.length && !moi) return;
+    var p = trouver(moi);
+    if (!lignes.length && !String($('f-objet').value).trim()) lignes.push({ nom: p ? p.nom : moi, tel: p && p.tel ? p.tel : '' });
+    if (!$('f-demandeur').value) $('f-demandeur').value = moi;
+    var auto = Documents.imputationDe(serviceDe(moi)); if (auto && !$('f-imputation').value) $('f-imputation').value = auto.code; noteImputation(auto);
+    dessinerPersonnes(); apercu();
   }
+  if (window.Api) {
+    var a1 = Api.call('annuaire_personnes').then(function (r) { personnes = (r.personnes || []).filter(function (p) { return p.nom; }); var dl = $('dl-pers'); personnes.forEach(function (p) { var o = document.createElement('option'); o.value = p.nom; o.label = [p.fonction, p.tel].filter(Boolean).join(' · '); dl.appendChild(o); }); }).catch(function () { /* sans annuaire : saisie libre */ });
+    var a2 = Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; service = (r.user && r.user.service) || ''; }).catch(function () { /* garde.js gère la session */ });
+    Promise.all([a1, a2]).then(initialiser);
+  }
+  // l'intéressé change : son imputation est redétectée
+  var dernierDem = '';
+  $('f-demandeur').addEventListener('focus', function () { dernierDem = $('f-demandeur').value; });
+  $('f-demandeur').addEventListener('change', function () {
+    var nom = $('f-demandeur').value, p = trouver(nom), auto = Documents.imputationDe(serviceDe(nom)); if (auto) $('f-imputation').value = auto.code; noteImputation(auto);
+    if (p) { nom = p.nom; $('f-demandeur').value = nom; }
+    // l'intéressé est aussi la personne transportée : sa ligne suit, avec son téléphone, tant qu'elle est seule dans la liste
+    if (lignes.length === 1 && norm(lignes[0].nom) === norm(dernierDem)) { lignes[0] = { nom: nom, tel: p && p.tel ? p.tel : '' }; dessinerPersonnes(); }
+    dernierDem = nom; apercu();
+  });
   // parcours déjà utilisés (ce navigateur)
   function parcours() { try { return JSON.parse(localStorage.getItem(CLE_P) || '[]'); } catch (e) { return []; } }
   function retenirParcours(p) { p = String(p || '').trim(); if (!p) return; var l = parcours().filter(function (x) { return x !== p; }); l.unshift(p); try { localStorage.setItem(CLE_P, JSON.stringify(l.slice(0, 15))); } catch (e) { /* rien */ } dessinerParcours(); }
@@ -152,13 +178,20 @@
       d.appendChild(o); d.appendChild(x); z.appendChild(d);
     });
   }
+  // téléphone absent de BDDORGA : le numéro saisi y est enregistré (jamais d'écrasement d'un numéro existant)
+  function envoyerTelephones() {
+    lignes.forEach(function (l) {
+      var p = trouver(l.nom); if (!p || p.tel || !String(l.tel).trim() || !window.Api) return;
+      Api.call('transport_telephone', { nom: p.nom, tel: l.tel }).then(function (r) { if (r.ecrit) { p.tel = r.tel; l.tel = r.tel; toast('Téléphone de ' + p.nom + ' enregistré dans BDDORGA'); dessinerPersonnes(); apercu(); } }).catch(function (e) { toast(e.message); });
+    });
+  }
   function garder() {
     var v = lire(); if (!String(v.objet).trim() && !lignes.some(function (l) { return String(l.nom).trim(); })) { toast('Indiquez au moins l\'objet ou une personne.'); return false; }
-    var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); retenirParcours(v.parcours); return true;
+    var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); retenirParcours(v.parcours); envoyerTelephones(); return true;
   }
   $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
   $('b-imp').onclick = function () { garder(); window.print(); };          // impression en un clic (fenêtre d'impression directe), la requête est gardée dans l'historique
-  $('b-vider').onclick = function () { ecrire(neuf()); };
+  $('b-vider').onclick = function () { ecrire(neuf()); initialiser(); };
   $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
   dessinerParcours(); ecrire(neuf()); dessinerHisto();
 })();
