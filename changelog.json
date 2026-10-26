@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-197",
+    "date": "2026-10-26",
+    "title": "Version 6.2.4 — Consolidé : envoyé au secrétariat seulement",
+    "changes": [
+      "Envoyer le consolidé (bouton et envoi automatique du soir) : le seul destinataire est le groupe Secrétariat (Sec-INFRA.RNS, sec.infra.rns, rayanem) ; les groupes chefs de service et chef de division sont retirés du réglage."
+    ]
+  },
+  {
     "id": "2026-10-26-196",
     "date": "2026-10-26",
     "title": "Version 6.2.3 — Envoi du consolidé : boîtes de service et suivi des échecs",

@@ -102,9 +102,7 @@
     <div class="bloc" id="envoi" hidden style="margin-top:16px">
       <b>✉ Envoyer le consolidé</b>
       <div class="barre" style="gap:14px;margin:8px 0">
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="secretariat" style="width:auto;min-width:0"> Secrétariat</label>
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_service" style="width:auto;min-width:0"> Chefs de service</label>
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_division" style="width:auto;min-width:0"> Chef de division</label>
+        <span style="font-size:13px;font-weight:600">Destinataires : le Secrétariat (Sec-INFRA.RNS, sec.infra.rns, rayanem)</span>
         <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé avec les groupes cochés (rien n'est envoyé)">👁 Voir les destinataires</button>
         <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux groupes cochés">✉ Envoyer maintenant</button>
       </div>
@@ -374,7 +372,7 @@
     }).catch(function () { /* liste indisponible */ });
   }
   // ----- Envoi du consolidé par e-mail (au clic) et envoi automatique du soir (option)
-  function groupesCoches() { var g = {}; document.querySelectorAll('#envoi input[data-g]').forEach(function (c) { g[c.getAttribute('data-g')] = c.checked; }); return g; }
+  function groupesCoches() { return { secretariat: true }; }   // l'envoi du consolidé est réservé au secrétariat
   function etatAuto(c) {
     $('auto-actif').checked = !!c.actif; $('auto-heure').value = c.heure;
     document.querySelectorAll('#envoi input[data-g]').forEach(function (x) { x.checked = !!c.groupes[x.getAttribute('data-g')]; });
