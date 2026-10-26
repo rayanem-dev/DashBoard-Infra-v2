@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-26-191",
+    "date": "2026-10-26",
+    "title": "Version 6.1.3 — Véhicules : tableau unique « SUIVI VH »",
+    "changes": [
+      "Affectation des véhicules : les deux onglets étant réunis, le portail lit et écrit désormais l'onglet « SUIVI VH » (type de véhicule, immatriculation, affectation, catégorie, prestataire, contrat, chauffeur, radio, date d'autorisation, valable jusqu'au).",
+      "Chaque autorisation d'accès générée renseigne le véhicule dans ce tableau sans aucune question ; le chauffeur est ajouté à ceux déjà notés, la catégorie et la radio existantes sont conservées.",
+      "Correction : les colonnes « Date d'autorisation » et « Valable jusqu'au » déjà présentes sont maintenant reconnues (elles étaient recréées à chaque génération) ; si elles existent en double, la première valeur renseignée est lue.",
+      "« Reprendre les autorisations du jour » ne modifie plus les contrats, dates et validités déjà renseignés (ex. CFCE valable jusqu'au 30/11)."
+    ]
+  },
+  {
     "id": "2026-10-26-190",
     "date": "2026-10-26",
     "title": "Version 6.1.2 — Véhicules : onglet « Feuille 2 » de SUIVI VH",

@@ -262,17 +262,18 @@
         return { mois: mois, lignes: st.l.filter(function (x) { return x.mois === mois; }), heures_par_agent: 360, mois_saisis: [mois], resume: { ajoutees: 0, mises_a_jour: 0 } }; }
       case 'vh_lire': case 'vh_maj': case 'vh_ajouter': case 'vh_supprimer': case 'vh_rattraper': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var cv = 'infra_v2_demo_vh', vh; try { vh = JSON.parse(sessionStorage.getItem(cv) || 'null'); } catch (e) { vh = null; }
-        var L = function (m, im, af, pe, co, da, va) { return { ligne: 0, modele: m, immat: im, affectation: af, personne: pe, contrat: co || '', date: da || '', valide: va || '' }; };
-        if (!vh) { vh = [L('TOYOTA HILUX', '000031-320-33', 'Service Construction', 'Vehicule Sonatrach'), L('SKODA RAPID', '00073-119-33', 'Chef division', 'Vehicule Sonatrach'), L('PRADO', '00464-103-30', 'Service Electromécanique', 'Vehicule Sonatrach'),
-          L('TOYOTA HILUX', '01307-316-30', 'Zaatout Abdenacer', 'Benkhet Mohamed', '58.INFRA.25', '2026-10-12', '2026-10-31'), L('SHACMAN', '000237-218-30', 'Zaatout Abdenacer', 'Belmehdi M', '58.INFRA.25', '2026-10-20', '2026-10-31'),
-          L('TOYOTA HILUX', '000017-323-30', 'SARL GCA', 'Machrie + GADA', '30.INFRA.24', '2026-09-03', '2026-09-30'), L('DOBLO', '000624-323-39', 'Ets Mehda', 'Saidi Ali', '06.INFRA.23')];
-          vh.forEach(function (x, i) { x.ligne = 5 + i; }); }
-        if (action === 'vh_rattraper') { exigerAdmin(); var jr = p.jour || new Date().toISOString().slice(0, 10); vh.push(L('TOYOTA HILUX', '00812-317-30', 'EURL CFCE', 'Haddad Omar', '58.INFRA.25', jr, jr.slice(0, 8) + '31')); vh[vh.length - 1].ligne = 5 + vh.length - 1; }
+        var L = function (m, im, af, ca, pr, co, ch, da, va) { return { ligne: 0, modele: m, immat: im, affectation: af, categorie: ca, prestataire: pr || '', contrat: co || '', chauffeur: ch || '', radio: '', date: da || '', valide: va || '' }; };
+        if (!vh) { vh = [L('TOYOTA HILUX', '000031-320-33', 'Service Construction', 'Vehicule Mis a dispo', 'Acosco', 'I/24/RNS-INFRA/2025', 'attente piece'), L('SKODA RAPID', '00073-119-33', 'Chef division', 'Vehicule Sonatrach', '', '', 'CDD'), L('PRADO', '00464-103-30', 'Service Electromécanique', 'Vehicule Sonatrach'),
+          L('TOYOTA HILUX', '01307-316-30', 'Service_Travaux_Entretien', 'Vehicule Prestataire', 'Zaatout Abdenacer', 'I/58/RNS-INFRA/2025', 'Benkhet Mohamed', '2026-10-12', '2026-10-31'), L('SHACMAN', '000237-218-30', 'Service_Travaux_Entretien', 'Vehicule Prestataire', 'Zaatout Abdenacer', 'I/53/RNS/INFRA/2025', 'Belmehdi M', '2026-10-20', '2026-10-31'),
+          L('DOBLO', '000624-323-39', 'Section Froid', 'Vehicule Mis a dispo', 'Ets mehda', 'I/06/RNS-INFRA/2023'), L('TOYOTA HILUX', '000017-323-30', 'Service Electromécanique', 'Vehicule Mis a dispo', 'SARL GCA', 'I/30/RNS/INFRA/2024', 'Machrie + GADA'),
+          L('FIAT DOBLO', '005377-3124-19', '', 'Vehicule Prestataire', 'EURL CFCE', '57.INFRA.25', 'ABDALLAH Djaber', '2026-10-26', '2026-11-30')];
+          vh.forEach(function (x, i) { x.ligne = 6 + i; }); }
+        if (action === 'vh_rattraper') { exigerAdmin(); }
         if (action === 'vh_maj') { exigerAdmin(); var m1 = vh.filter(function (x) { return x.ligne === Number(p.ligne); })[0]; if (m1) Object.keys(p.champs || {}).forEach(function (k) { m1[k] = p.champs[k]; }); }
         if (action === 'vh_ajouter') { exigerAdmin(); var ch = p.champs || {}; if (!ch.modele && !ch.immat) throw erreur('Indiquez le type de véhicule ou l\'immatriculation'); var n = vh.length ? Math.max.apply(null, vh.map(function (x) { return x.ligne; })) + 1 : 6; vh.push(Object.assign(L('', '', '', ''), ch, { ligne: n })); }
         if (action === 'vh_supprimer') { exigerAdmin(); vh = vh.filter(function (x) { return x.ligne !== Number(p.ligne); }); }
         try { sessionStorage.setItem(cv, JSON.stringify(vh)); } catch (e) { /* rien */ }
-        return { niveau: 3, lignes: vh, libelles: { modele: 'Type de véhicule', immat: 'Immatriculation', affectation: 'Affectation', personne: 'Nom & Prénom', contrat: 'Contrat N°', date: 'Date d\'autorisation', valide: 'Valable jusqu\'au' }, ok: true, ajoutes: 1, maj: 0, entreprises: ['EURL CFCE'] }; }
+        return { niveau: 3, lignes: vh, libelles: { modele: 'Type de véhicule', immat: 'Immatriculation', affectation: 'Affectation', categorie: 'Catégorie', prestataire: 'Prestataire', contrat: 'Contrat N°', chauffeur: 'Chauffeur', radio: 'Radio', date: 'Date d\'autorisation', valide: 'Valable jusqu\'au' }, ok: true, ajoutes: 1, maj: 0, entreprises: ['EURL CFCE'] }; }
       case 'transport_telephone': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ecrit: true, tel: String(p.tel || '').replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1 ') }; }
       case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { remplace: ['DURAND Marc', 'MARTIN Hugo', 'BERNARD Louis'], personnes: [

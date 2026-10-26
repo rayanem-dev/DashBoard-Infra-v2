@@ -1,22 +1,23 @@
 /**
- * Suivi des véhicules (classeur « SUIVI VH », onglet « Feuille 2 » : Affectation VH INFRA RNS = type de véhicule, immatriculation, affectation (entreprise ou service), nom & prénom).
- *  - la page vehicules.html (recherche par personne, véhicule, date d'autorisation, entreprise…) lit et corrige ce tableau ;
- *  - chaque Autorisation d'accès générée par « Prise en charge et autorisation d'accès » renseigne ou met à jour la ligne du véhicule (voir Pec.gs), sans aucune question ;
- *  - trois colonnes sont ajoutées à droite : « Contrat N° », « Date d'autorisation », « Valable jusqu'au ».
+ * Suivi des véhicules (classeur « SUIVI VH », onglet « SUIVI VH » : Tableau d'affectation des véhicules de la Division Infrastructure).
+ * Colonnes : type de véhicule, immatriculation, affectation (service), catégorie, prestataire, contrat N°, chauffeur, radio, date d'autorisation, valable jusqu'au.
+ *  - la page vehicules.html (recherche par chauffeur, véhicule, date d'autorisation, entreprise…) lit et corrige ce tableau ;
+ *  - chaque Autorisation d'accès générée par « Prise en charge et autorisation d'accès » renseigne ou met à jour la ligne du véhicule (voir Pec.gs), sans aucune question.
  * Partie PURE (testée en Node : test/vehicules.test.js), puis les accès au classeur.
  */
 var VH = (function () {
-  function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[°º]/g, ' ').replace(/[_\s]+/g, ' ').replace(/[:.\s]+$/, '').trim(); }
+  function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[°º'’]/g, ' ').replace(/[_\s]+/g, ' ').replace(/[:.\s]+$/, '').trim(); }
   function immatNorm(s) { var t = String(s == null ? '' : s).toUpperCase().replace(/[^0-9A-Z]/g, ''); return /^\d{4,}/.test(t) ? t : ''; }   // « 00164-216-30 » → « 0016421630 » ; « — » : pas une immatriculation
-  var CHAMPS = ['modele', 'immat', 'affectation', 'personne', 'contrat', 'date', 'valide'];
-  var LIBELLES = { modele: 'Type de véhicule', immat: 'Immatriculation', affectation: 'Affectation', personne: 'Nom & Prénom', contrat: 'Contrat N°', date: 'Date d\'autorisation', valide: 'Valable jusqu\'au' };
-  var ENTETES_NEUFS = { contrat: 'Contrat N°', date: 'Date d\'autorisation', valide: 'Valable jusqu\'au' };
-  /** Repère l'en-tête (ligne contenant « Immatriculation ») et la colonne de chaque champ ; null si absent. */
+  var CHAMPS = ['modele', 'immat', 'affectation', 'categorie', 'prestataire', 'contrat', 'chauffeur', 'radio', 'date', 'valide'];
+  var LIBELLES = { modele: 'Type de véhicule', immat: 'Immatriculation', affectation: 'Affectation', categorie: 'Catégorie', prestataire: 'Prestataire', contrat: 'Contrat N°', chauffeur: 'Chauffeur', radio: 'Radio', date: 'Date d\'autorisation', valide: 'Valable jusqu\'au' };
+  var ENTETES_NEUFS = { date: 'Date d\'autorisation', valide: 'Valable jusqu\'au' };
+  /** Repère l'en-tête (ligne contenant « Immatriculation ») et la colonne de chaque champ ; null si absent. date / valide peuvent exister en double : toutes les colonnes sont gardées (c.dates, c.valides). */
   function colonnes(valeurs) {
     for (var r = 0; r < Math.min(15, valeurs.length); r += 1) {
       var h = (valeurs[r] || []).map(norm), iI = h.indexOf('immatriculation'); if (iI < 0) continue;
-      var c = { ligne: r, modele: h.indexOf('type de vehicule'), immat: iI, affectation: Math.max(h.indexOf('affectation'), h.indexOf('affecation')), personne: Math.max(h.indexOf('nom & prenom'), h.indexOf('nom et prenom')),
-        contrat: h.indexOf('contrat n'), date: h.indexOf('date d autorisation'), valide: h.indexOf('valable jusqu au') };
+      var types = [], dates = [], valides = []; h.forEach(function (x, i) { if (x === 'type de vehicule') types.push(i); if (x === 'date d autorisation') dates.push(i); if (x === 'valable jusqu au') valides.push(i); });
+      var c = { ligne: r, modele: types[0], immat: iI, categorie: types[1], affectation: Math.max(h.indexOf('affecation'), h.indexOf('affectation')), prestataire: Math.max(h.indexOf('prestatire'), h.indexOf('prestataire')),
+        contrat: h.indexOf('contrat n'), chauffeur: h.indexOf('chauffeur'), radio: h.indexOf('radio'), date: dates.length ? dates[0] : -1, valide: valides.length ? valides[0] : -1, dates: dates, valides: valides };
       var dernier = -1; (valeurs[r] || []).forEach(function (x, i) { if (String(x == null ? '' : x).trim()) dernier = i; });
       c.largeur = dernier + 1;
       CHAMPS.forEach(function (k) { if (c[k] === undefined || c[k] < 0) c[k] = -1; });
@@ -33,6 +34,7 @@ var VH = (function () {
     for (var i = c.ligne + 1; i < valeurs.length; i += 1) {
       var r = valeurs[i] || [], o = { ligne: i + 1 };
       CHAMPS.forEach(function (k) { o[k] = c[k] >= 0 ? texte(r[c[k]]) : ''; });
+      [['date', c.dates], ['valide', c.valides]].forEach(function (g) { for (var j = 0; j < g[1].length && !o[g[0]]; j += 1) o[g[0]] = texte(r[g[1][j]]); });   // colonnes en double : première valeur renseignée
       if (!o.modele && !o.immat) continue;
       out.push(o);
     }
@@ -47,27 +49,29 @@ var VH = (function () {
     return deja ? actuel : actuel + ' / ' + nom;
   }
   /**
-   * Plan d'écriture pour des véhicules autorisés : vehicules = [{ modele, immat, personne }] ; ctx = { affectation (entreprise), contrat, date, valide }.
-   * Un véhicule déjà dans le tableau (même immatriculation) est mis à jour (la personne est ajoutée à celles déjà notées) ; sinon une ligne est ajoutée.
-   * L'affectation reprend l'orthographe déjà utilisée dans le tableau.
+   * Plan d'écriture pour des véhicules autorisés : vehicules = [{ modele, immat, chauffeur }] ; ctx = { affectation (service), categorie, prestataire, contrat, date, valide, sansEcraser }.
+   * Un véhicule déjà dans le tableau (même immatriculation) est mis à jour (le chauffeur est ajouté à ceux déjà notés ; la catégorie, la radio et le type déjà renseignés sont conservés) ; sinon une ligne est ajoutée.
+   * Avec sansEcraser, les cases contrat / date / valide déjà remplies ne sont pas modifiées (reprise d'un jour passé). L'affectation reprend l'orthographe déjà utilisée dans le tableau.
    */
   function planifier(lignes, vehicules, ctx) {
     var par = {}, ortho = {}, plan = { maj: [], ajouter: [] }, deja = {};
     (lignes || []).forEach(function (l) { var k = immatNorm(l.immat); if (k && !par[k]) par[k] = l; if (l.affectation) ortho[norm(l.affectation)] = l.affectation; });
-    var aff = ortho[norm(ctx.affectation)] || String(ctx.affectation || '');
+    var aff = ctx.affectation ? (ortho[norm(ctx.affectation)] || String(ctx.affectation)) : '';
     (vehicules || []).forEach(function (v) {
       var k = immatNorm(v.immat); if (!k) return;
-      if (deja[k]) { deja[k].champs.personne = fusionnerPersonne(deja[k].champs.personne, v.personne); return; }
+      if (deja[k]) { deja[k].champs.chauffeur = fusionnerPersonne(deja[k].champs.chauffeur, v.chauffeur); return; }
       var ex = par[k], entree;
       if (ex) {
-        var maj = {}, pers = fusionnerPersonne(ex.personne, v.personne);
+        var maj = {}, ch = fusionnerPersonne(ex.chauffeur, v.chauffeur);
         if (!ex.modele && v.modele) maj.modele = v.modele;
-        if (aff && aff !== ex.affectation) maj.affectation = aff;
-        if (pers !== ex.personne) maj.personne = pers;
-        ['contrat', 'date', 'valide'].forEach(function (f) { if (ctx[f] && ctx[f] !== ex[f]) maj[f] = ctx[f]; });
+        if (aff && norm(aff) !== norm(ex.affectation)) maj.affectation = aff;
+        if (ctx.categorie && !ex.categorie) maj.categorie = ctx.categorie;
+        if (ctx.prestataire && (!ex.prestataire || (!ctx.sansEcraser && norm(ctx.prestataire) !== norm(ex.prestataire)))) maj.prestataire = ctx.prestataire;
+        if (ch !== ex.chauffeur) maj.chauffeur = ch;
+        ['contrat', 'date', 'valide'].forEach(function (f) { if (ctx[f] && ctx[f] !== ex[f] && !(ctx.sansEcraser && ex[f])) maj[f] = ctx[f]; });
         entree = { ligne: ex.ligne, champs: maj }; plan.maj.push(entree);
       } else {
-        entree = { champs: { modele: v.modele || '', immat: v.immat, affectation: aff, personne: fusionnerPersonne('', v.personne), contrat: ctx.contrat || '', date: ctx.date || '', valide: ctx.valide || '' } }; plan.ajouter.push(entree);
+        entree = { champs: { modele: v.modele || '', immat: v.immat, affectation: aff, categorie: ctx.categorie || '', prestataire: ctx.prestataire || '', contrat: ctx.contrat || '', chauffeur: fusionnerPersonne('', v.chauffeur), date: ctx.date || '', valide: ctx.valide || '' } }; plan.ajouter.push(entree);
       }
       deja[k] = entree;
     });
@@ -80,7 +84,7 @@ var VH = (function () {
   function prestataireDe(s) { var p = String(s || '').split(' - ').map(function (x) { return x.trim(); }); return p.length > 1 ? { contrat: p[0], nom: p.slice(1).join(' - ') } : { contrat: '', nom: p[0] }; }
   /**
    * Rattrapage : les véhicules des Autorisations d'accès d'un jour, lus dans le Journal_PEC (en-tête : date, prestataire, base, documents, nom, prenom, fonction, vehicule, immatriculation…).
-   * Renvoie [{ prestataire, contrat, vehicules: [{ modele, immat, personne }] }] ; filtre = fragment du nom de l'entreprise (facultatif).
+   * Renvoie [{ prestataire, contrat, vehicules: [{ modele, immat, chauffeur }] }] ; filtre = fragment du nom de l'entreprise (facultatif).
    */
   function depuisJournal(valeurs, jour, filtre) {
     var h = (valeurs[0] || []).map(norm), iD = h.indexOf('date'), iP = h.indexOf('prestataire'), iDoc = h.indexOf('documents'), iN = h.indexOf('nom'), iPr = h.indexOf('prenom'), iV = h.indexOf('vehicule'), iI = h.indexOf('immatriculation');
@@ -92,7 +96,7 @@ var VH = (function () {
       if (!immatNorm(r[iI])) continue;
       var pr = prestataireDe(r[iP]); if (filtre && norm(r[iP]).indexOf(norm(filtre)) < 0) continue;
       var g = groupes[r[iP]]; if (!g) { g = groupes[r[iP]] = { prestataire: pr.nom, contrat: pr.contrat, vehicules: [] }; ordre.push(r[iP]); }
-      g.vehicules.push({ modele: String(r[iV] || '').trim().toUpperCase(), immat: String(r[iI]).trim().toUpperCase(), personne: [r[iN], r[iPr]].filter(function (x) { return x && String(x).trim(); }).join(' ').trim() });
+      g.vehicules.push({ modele: String(r[iV] || '').trim().toUpperCase(), immat: String(r[iI]).trim().toUpperCase(), chauffeur: [r[iN], r[iPr]].filter(function (x) { return x && String(x).trim(); }).join(' ').trim() });
     }
     return ordre.map(function (k) { return groupes[k]; });
   }
@@ -102,18 +106,18 @@ if (typeof module !== 'undefined') module.exports = VH;
 
 // ---------- classeur « SUIVI VH » ----------
 var SUIVI_VH_ID_DEFAUT_ = '1fRd_Yen2ynGPvkIF7zUMBh7P6-ZywrqfQ-2ZyTQmHfU';
-var SUIVI_VH_ONGLET_ = 'Feuille 2';
+var SUIVI_VH_ONGLET_ = 'SUIVI VH';
 function vhClasseur_() { return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('SUIVI_VH_ID') || SUIVI_VH_ID_DEFAUT_); }
-function vhOnglet_() { var sh = vhClasseur_().getSheetByName(SUIVI_VH_ONGLET_); if (!sh) throw new Error('Onglet « ' + SUIVI_VH_ONGLET_ + ' » introuvable dans le classeur SUIVI VH'); return sh; }
+function vhOnglet_() { var ss = vhClasseur_(); return ss.getSheetByName(SUIVI_VH_ONGLET_) || ss.getSheets()[0]; }
 function vhLireOnglet_() {
   var sh = vhOnglet_(), vals = sh.getDataRange().getValues(), lu = VH.lire(vals);
   if (!lu.colonnes) throw new Error('Tableau des véhicules introuvable (ligne d\'en-tête avec « Immatriculation »)');
   return { sh: sh, vals: vals, c: lu.colonnes, lignes: lu.lignes };
 }
-/** Ajoute à droite les en-têtes « Contrat N° », « Date d'autorisation » et « Valable jusqu'au » s'ils manquent (mêmes couleurs que l'en-tête voisin). */
+/** Ajoute à droite les en-têtes « Date d'autorisation » et « Valable jusqu'au » s'ils manquent (mêmes couleurs que l'en-tête voisin). */
 function vhAssurerColonnes_(t) {
-  var c = t.c, sh = t.sh, suivante = c.largeur, modele = Math.max(c.personne, c.affectation, 0);
-  ['contrat', 'date', 'valide'].forEach(function (k) {
+  var c = t.c, sh = t.sh, suivante = c.largeur, modele = Math.max(c.radio, c.chauffeur, 0);
+  ['date', 'valide'].forEach(function (k) {
     if (c[k] >= 0) return;
     if (sh.getMaxColumns() < suivante + 1) sh.insertColumnAfter(sh.getMaxColumns());
     var src = sh.getRange(c.ligne + 1, modele + 1), dst = sh.getRange(c.ligne + 1, suivante + 1);
@@ -145,13 +149,13 @@ function vhAppliquer_(t, vehicules, ctx) {
 function vhEnregistrerDepuisPec_(d) {
   var pr = VH.prestataireDe(d.prestataire), auj = Dates.today();
   var vehicules = (d.personnes || []).filter(function (p) { return p && VH.immatNorm(p.immatriculation); }).map(function (p) {
-    return { modele: String(p.typeVehicule || '').trim().toUpperCase(), immat: String(p.immatriculation).trim().toUpperCase(), personne: [p.nom, p.prenom].filter(function (x) { return x && String(x).trim(); }).join(' ').trim() };
+    return { modele: String(p.typeVehicule || '').trim().toUpperCase(), immat: String(p.immatriculation).trim().toUpperCase(), chauffeur: [p.nom, p.prenom].filter(function (x) { return x && String(x).trim(); }).join(' ').trim() };
   });
   if (!vehicules.length) return { maj: 0, ajoutes: 0 };
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var t = vhLireOnglet_(); vhAssurerColonnes_(t);
-    return vhAppliquer_(t, vehicules, { affectation: pr.nom, contrat: pr.contrat, date: auj, valide: VH.finDeMois(auj, !!d.valable2Mois) });
+    return vhAppliquer_(t, vehicules, { affectation: d.emputation || '', categorie: 'Vehicule Prestataire', prestataire: pr.nom, contrat: pr.contrat, date: auj, valide: VH.finDeMois(auj, !!d.valable2Mois) });
   } finally { lock.releaseLock(); }
 }
 /** Reprend dans le tableau les autorisations d'accès d'un jour (Journal_PEC) : jour = 'yyyy-MM-dd' (aujourd'hui par défaut), filtre = fragment du nom d'entreprise (facultatif). */
@@ -163,11 +167,11 @@ function vhRattraper_(jour, filtre) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var t = vhLireOnglet_(); vhAssurerColonnes_(t);
-    groupes.forEach(function (g) { var r = vhAppliquer_(t, g.vehicules, { affectation: g.prestataire, contrat: g.contrat, date: jour, valide: VH.finDeMois(jour, false) }); maj += r.maj; ajoutes += r.ajoutes; });
+    groupes.forEach(function (g) { var r = vhAppliquer_(t, g.vehicules, { categorie: 'Vehicule Prestataire', prestataire: g.prestataire, contrat: g.contrat, date: jour, valide: VH.finDeMois(jour, false), sansEcraser: true }); maj += r.maj; ajoutes += r.ajoutes; });
   } finally { lock.releaseLock(); }
   return { jour: jour, maj: maj, ajoutes: ajoutes, entreprises: groupes.map(function (g) { return g.prestataire; }) };
 }
-/** Une seule fois : reprend les autorisations d'accès CFCE du jour dans « Feuille 2 » (demande du propriétaire). Rejouable à la main depuis la page (niveau 2). */
+/** Une seule fois : reprend les autorisations d'accès CFCE du jour dans le tableau (demande du propriétaire). Rejouable à la main depuis la page (niveau 2). */
 function rattraperVehiculesCfce_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('VH_CFCE_JOUR_V1') === '1') return;
@@ -186,7 +190,7 @@ function vhLire_(req) {
   return { niveau: d.niveau, lignes: t.lignes, libelles: VH.LIBELLES };
 }
 function vhChamps_(c) {
-  var out = {}, LONG = { modele: 60, immat: 30, affectation: 80, personne: 200, contrat: 60, date: 10, valide: 10 };
+  var out = {}, LONG = { modele: 60, immat: 30, affectation: 80, categorie: 40, prestataire: 80, contrat: 60, chauffeur: 200, radio: 120, date: 10, valide: 10 };
   Object.keys(LONG).forEach(function (k) { if (c && c[k] !== undefined) { out[k] = String(c[k]).replace(/\s+/g, ' ').trim().slice(0, LONG[k]); if (/^[=+@<>]/.test(out[k])) throw new Error('Valeur invalide pour « ' + VH.LIBELLES[k] + ' »'); } });
   ['date', 'valide'].forEach(function (k) { if (out[k] && !/^\d{4}-\d{2}-\d{2}$/.test(out[k])) throw new Error(VH.LIBELLES[k] + ' : AAAA-MM-JJ'); });
   return out;

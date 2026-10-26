@@ -30,7 +30,7 @@ var SEED_APPS = [
  [
   "logistique",
   "Affectation Véhicule – Division Infra",
-  "Recherche rapide des véhicules par personne, véhicule, immatriculation, entreprise, contrat ou date d'autorisation (onglet « Feuille 2 » de SUIVI VH) ; le tableau est mis à jour automatiquement par chaque autorisation d'accès générée.",
+  "Recherche rapide des véhicules par personne, véhicule, immatriculation, entreprise, contrat ou date d'autorisation ; le tableau est mis à jour automatiquement par chaque autorisation d'accès générée.",
   "🚗",
   "vehicules.html",
   1
