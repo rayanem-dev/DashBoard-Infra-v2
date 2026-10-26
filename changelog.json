@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-183",
+    "date": "2026-10-26",
+    "title": "Version 5.97.1 — Requête de transport : impression sur une seule page",
+    "changes": [
+      "Impression de la requête de transport : une seule page A4 ; le pied de page (trait orange, adresse, contacts) reste en bas de la page au lieu d'être repoussé sur une page blanche."
+    ]
+  },
+  {
     "id": "2026-10-26-182",
     "date": "2026-10-26",
     "title": "Version 5.97.0 — Requête de transport : imputation détectée, intéressé et téléphone automatiques",
