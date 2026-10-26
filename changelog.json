@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-198",
+    "date": "2026-10-26",
+    "title": "Version 6.2.5 — La boule des jours sur toutes les pages",
+    "changes": [
+      "La boule des jours restants de la rotation s'affiche maintenant à gauche de la pastille du profil sur toutes les pages connectées (avant, seul l'accueil l'avait) : verte au travail, orange en repos, « ? » si la rotation n'est pas renseignée ; un clic ouvre l'accueil pour le détail."
+    ]
+  },
+  {
     "id": "2026-10-26-197",
     "date": "2026-10-26",
     "title": "Version 6.2.4 — Consolidé : bloc d'envoi réservé au secrétariat",
