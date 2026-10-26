@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Statistique sous-traitants – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .st { max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .barre { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .st input, .st select { padding: 7px 9px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); }
+  .btn-p { padding: 9px 15px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  table.edit { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.edit th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 6px 6px; border-bottom: 2px solid var(--border); }
+  table.edit td { padding: 4px 4px; border-bottom: 1px solid var(--border); }
+  table.edit td input { width: 100%; box-sizing: border-box; }
+  table.edit td.n input { text-align: right; }
+  table.edit tr.mod td:first-child { box-shadow: inset 3px 0 0 var(--orange-main); }
+  .total td { font-weight: 800; border-top: 2px solid var(--text-dark); padding: 8px 6px; }
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  .apercu { overflow: auto; background: #E5E7EB; padding: 14px; border-radius: 14px; }
+  #feuille { background: #fff; color: #111; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 14mm 15mm 12mm; box-shadow: 0 2px 14px rgba(0,0,0,.2); font-family: Arial, Helvetica, sans-serif; position: relative; box-sizing: border-box; transform-origin: top left; }
+  #feuille .tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; }
+  #feuille .tete img { width: 20mm; height: auto; display: block; }
+  #feuille .org { font-size: 9pt; line-height: 1.45; margin-top: 1mm; }
+  #feuille .tit { text-align: right; } #feuille .tit h1 { font-size: 15pt; margin: 4mm 0 2mm; letter-spacing: .3px; } #feuille .tit .mois { font-size: 12pt; font-weight: 700; color: #B94E00; text-transform: capitalize; }
+  #feuille .trait { height: 2.2mm; background: #F0A030; margin: 5mm -15mm 6mm 38mm; }
+  #feuille .div { font-size: 10pt; margin-bottom: 4mm; }
+  #feuille table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  #feuille th { background: #E85D04; color: #fff; border: 1px solid #B94E00; padding: 2.4mm 2mm; text-align: center; font-size: 9pt; }
+  #feuille td { border: 1px solid #999; padding: 2.2mm 2.4mm; vertical-align: middle; }
+  #feuille tbody tr:nth-child(even) td { background: #FFF4EA; }
+  #feuille td.c { text-align: center; } #feuille td.r { text-align: right; font-variant-numeric: tabular-nums; }
+  #feuille tfoot td { font-weight: 800; background: #FDE3C8 !important; border-top: 2px solid #111; }
+  #feuille .pied { margin-top: 8mm; font-size: 8pt; color: #555; }
+  #feuille .sig { display: flex; justify-content: space-between; margin-top: 12mm; font-size: 9.5pt; font-weight: 700; }
+  @media (max-width: 800px) { table.edit { font-size: 12.5px; } }
+  @media print {
+    @page { size: A4 portrait; margin: 0; }
+    html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; height: auto !important; min-height: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(main) { display: none !important; } .st > *:not(.apercu) { display: none !important; }
+    .st { padding: 0 !important; max-width: none !important; } .apercu { background: none !important; padding: 0 !important; overflow: visible !important; height: auto !important; }
+    #feuille { box-shadow: none !important; transform: none !important; margin: 0 !important; min-height: 0 !important; width: 210mm !important; }
+  }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">📊</div>
+    <div class="logo-text"><h1>Statistique sous-traitants</h1><p>Enquêtes administratives · agents pris en charge par mois et par prestataire</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="st">
+  <div class="bloc">
+    <div class="barre">
+      <button class="btn-s" id="m-prec" type="button" aria-label="Mois précédent">◀</button>
+      <input type="month" id="mois" aria-label="Mois">
+      <button class="btn-s" id="m-suiv" type="button" aria-label="Mois suivant">▶</button>
+      <button class="btn-s" id="b-calc" type="button" title="Recompte les agents pris en charge ce mois-là ; les lignes modifiées à la main ou supprimées ne sont pas touchées">🔄 Recalculer depuis les prises en charge</button>
+      <button class="btn-s" id="b-ajout" type="button">+ Ajouter une ligne</button>
+      <button class="btn-p" id="b-imp" type="button" style="margin-inline-start:auto">🖨 Imprimer / PDF</button>
+    </div>
+    <p class="note" id="info"></p>
+  </div>
+  <div class="bloc"><table class="edit"><thead><tr><th>Sous-traitant</th><th style="width:130px">Effectif présent</th><th style="width:150px">Heures travaillées / mois</th><th>Observation</th><th style="width:44px"></th></tr></thead><tbody id="corps"></tbody><tfoot id="pied-tab"></tfoot></table>
+    <p class="note">Le nombre d'agents est celui des personnes prises en charge qui touchent le mois (une personne n'est comptée qu'une fois par prestataire) ; les heures valent l'effectif × <span id="h-agent">360</span> h. Tout est modifiable ; un trait orange marque une ligne modifiée à la main.</p></div>
+  <div class="apercu"><div id="feuille" data-i18n-non></div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  var D = { mois: '', lignes: [], heures_par_agent: 360 }, moi = '';
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function milliers(n) { return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  function libMois(m) { var p = String(m).split('-'); return MOIS[(+p[1] || 1) - 1] + ' ' + p[0]; }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function decaler(m, n) { var p = m.split('-'), d = new Date(+p[0], +p[1] - 1 + n, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+
+  function charger(mois, recalc) {
+    $('info').textContent = recalc ? 'Calcul en cours…' : 'Chargement…';
+    return Api.call(recalc ? 'stats_st_recalculer' : 'stats_st_lire', { mois: mois }).then(function (r) {
+      D = r; $('mois').value = r.mois; $('h-agent').textContent = r.heures_par_agent;
+      if (recalc && r.resume) toast(r.resume.ajoutees + ' ligne(s) ajoutée(s), ' + r.resume.mises_a_jour + ' mise(s) à jour');
+      dessiner();
+    }).catch(function (e) {
+      if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+      if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : cette page est ouverte au chef de division, au secrétariat et aux chefs de service.'; return; }
+      $('info').textContent = ''; toast(e.message, true);
+    });
+  }
+  function maj(l, champs, ligneTr) {
+    return Api.call('stats_st_maj', { id: l.id, champs: champs }).then(function (r) { D = r; dessiner(); }).catch(function (e) { toast(e.message, true); dessiner(); });
+  }
+  function dessiner() {
+    var z = $('corps'); z.textContent = ''; var totE = 0, totH = 0;
+    D.lignes.forEach(function (l) {
+      totE += l.effectif; totH += l.heures;
+      var tr = document.createElement('tr'); if (l.modifie) tr.className = 'mod';
+      function cell(cls) { var td = document.createElement('td'); if (cls) td.className = cls; tr.appendChild(td); return td; }
+      var nom = document.createElement('input'); nom.type = 'text'; nom.value = l.prestataire; nom.maxLength = 160; nom.setAttribute('aria-label', 'Sous-traitant'); cell().appendChild(nom);
+      var ef = document.createElement('input'); ef.type = 'number'; ef.min = 0; ef.value = l.effectif; ef.setAttribute('aria-label', 'Effectif de ' + l.prestataire); cell('n').appendChild(ef);
+      var he = document.createElement('input'); he.type = 'number'; he.min = 0; he.value = l.heures; he.setAttribute('aria-label', 'Heures de ' + l.prestataire); cell('n').appendChild(he);
+      var ob = document.createElement('input'); ob.type = 'text'; ob.value = l.observation; ob.maxLength = 300; ob.setAttribute('aria-label', 'Observation'); cell().appendChild(ob);
+      var sup = document.createElement('button'); sup.type = 'button'; sup.className = 'btn-s'; sup.textContent = '🗑'; sup.title = 'Supprimer cette ligne'; cell().appendChild(sup);
+      nom.onchange = function () { maj(l, { prestataire: nom.value }); };
+      ef.onchange = function () { var h = Math.round(Number(ef.value) * D.heures_par_agent); maj(l, { effectif: ef.value, heures: h }); };   // les heures suivent l'effectif (modifiables ensuite)
+      he.onchange = function () { maj(l, { heures: he.value }); };
+      ob.onchange = function () { maj(l, { observation: ob.value }); };
+      sup.onclick = function () { if (!confirm('Supprimer la ligne « ' + l.prestataire + ' » de ' + libMois(D.mois) + ' ?')) return; Api.call('stats_st_supprimer', { id: l.id }).then(function (r) { D = r; dessiner(); toast('Ligne supprimée'); }).catch(function (e) { toast(e.message, true); }); };
+      z.appendChild(tr);
+    });
+    if (!D.lignes.length) { var v = document.createElement('tr'); var td = document.createElement('td'); td.colSpan = 5; td.style.cssText = 'padding:14px;color:var(--text-muted)'; td.textContent = 'Aucune prise en charge ce mois-là : ajoutez une ligne ou changez de mois.'; v.appendChild(td); z.appendChild(v); }
+    $('pied-tab').innerHTML = '<tr class="total"><td>TOTAL</td><td class="n" style="text-align:right">' + milliers(totE) + '</td><td class="n" style="text-align:right">' + milliers(totH) + '</td><td colspan="2"></td></tr>';
+    $('info').textContent = D.lignes.length + ' sous-traitant(s) · ' + milliers(totE) + ' agents · ' + milliers(totH) + ' h en ' + libMois(D.mois);
+    apercu(totE, totH);
+  }
+  function apercu(totE, totH) {
+    var lignes = D.lignes.map(function (l, i) { return '<tr><td class="c" style="width:9mm">' + (i + 1) + '</td><td>' + E(l.prestataire) + '</td><td class="r">' + milliers(l.effectif) + '</td><td class="r">' + milliers(l.heures) + '</td><td>' + E(l.observation) + '</td></tr>'; }).join('');
+    $('feuille').innerHTML =
+      '<div class="tete"><div><img src="img/odm-logo.jpeg" alt="Sonatrach"><div class="org"><b>Activité Exploration - Production</b><br><b>Division Production</b><br><b>Direction Régionale Rhourde Nouss</b><br><b>Division Infrastructures</b></div></div>' +
+      '<div class="tit"><h1>STATISTIQUES DES SOUS-TRAITANTS</h1><div class="mois">' + E(libMois(D.mois)) + '</div></div></div><div class="trait"></div>' +
+      '<div class="div"><b>Division :</b> INFRASTRUCTURES</div>' +
+      '<table><thead><tr><th>N°</th><th>Sous-traitant</th><th>Nombre d\'effectifs présents sur site</th><th>Nombre d\'heures travaillées / mois</th><th>Observation</th></tr></thead><tbody>' + (lignes || '<tr><td colspan="5" class="c">Aucune prise en charge ce mois-là.</td></tr>') + '</tbody>' +
+      '<tfoot><tr><td></td><td>TOTAL</td><td class="r">' + milliers(totE) + '</td><td class="r">' + milliers(totH) + '</td><td></td></tr></tfoot></table>' +
+      '<div class="sig"><span>Le Chef de Service</span><span>Le Chef de Division Infrastructures</span></div>' +
+      '<div class="pied">Édité le ' + E(iso().split('-').reverse().join('/')) + (moi ? ' par ' + E(moi) : '') + ' · ' + E(String(D.heures_par_agent)) + ' h par agent et par mois · agents pris en charge d\'après le journal des prises en charge.</div>';
+    ajuster();
+  }
+  function ajuster() { var z = $('feuille').parentNode, l = z.clientWidth - 28, w = 794, k = Math.min(1, l / w); $('feuille').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuille').offsetHeight * k + 28) + 'px' : ''; }
+  window.addEventListener('resize', ajuster);
+
+  $('mois').addEventListener('change', function () { if (/^\d{4}-\d{2}$/.test($('mois').value)) charger($('mois').value); });
+  $('m-prec').onclick = function () { charger(decaler(D.mois, -1)); }; $('m-suiv').onclick = function () { charger(decaler(D.mois, 1)); };
+  $('b-calc').onclick = function () { charger(D.mois, true); };
+  $('b-ajout').onclick = function () {
+    var nom = window.prompt('Nom du sous-traitant à ajouter à ' + libMois(D.mois) + ' :', ''); if (!nom || !nom.trim()) return;
+    var n = window.prompt('Effectif présent :', '0'); if (n === null) return;
+    Api.call('stats_st_ajouter', { mois: D.mois, prestataire: nom, effectif: n }).then(function (r) { D = r; dessiner(); toast('Ligne ajoutée'); }).catch(function (e) { toast(e.message, true); });
+  };
+  $('b-imp').onclick = function () { window.print(); };   // impression en un clic ; « Enregistrer au format PDF » dans la fenêtre d'impression
+  if (window.Api) Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; apercu(0, 0); if (D.lignes) dessiner(); }).catch(function () { /* rien */ });
+  charger(decaler(iso().slice(0, 7), -0));
+})();
+</script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

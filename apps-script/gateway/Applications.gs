@@ -164,6 +164,14 @@ var SEED_APPS = [
   1
  ],
  [
+  "badges",
+  "Statistique sous-traitants",
+  "Pour chaque mois, le nombre d'agents pris en charge et les heures travaillées par sous-traitant (calculés depuis les prises en charge, lignes modifiables et supprimables), avec un rendu PDF prêt à imprimer.",
+  "📊",
+  "stats-soustraitants.html",
+  2
+ ],
+ [
   "logistique",
   "Prise en charge hôtel",
   "Demande de prise en charge à l'hôtel (ex. Hôtel PLAZA à Boumerdes) pour un agent en mission : identité, ordre de mission, dates, nuitées calculées automatiquement, objet et imputation ; impression en un clic et historique.",
@@ -521,4 +529,12 @@ function retablirGenerateurTransport_() {
     props.setProperty('TRANSPORT_PORTAIL_V3', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+
+/** Une seule fois : ajoute au catalogue la carte « Statistique sous-traitants » (SEED_APPS) sur une installation existante. */
+function ajouterCarteStatsSt_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('CARTE_STATS_ST_V1') === '1') return;
+  try { ajouterApplicationsManquantes(); props.setProperty('CARTE_STATS_ST_V1', '1'); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera à la requête suivante */ }
 }

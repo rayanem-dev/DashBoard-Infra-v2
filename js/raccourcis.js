@@ -10,6 +10,10 @@
     { f: 'rapports.html', href: 'rapports.html', t: '📝 Rapports journaliers' },
     { f: 'affectation-chantier.html', href: 'affectation-chantier.html', t: '🔀 Affectation chantier' }
   ];
+  var ENQUETES = [
+    { f: 'habilitations.html', href: 'habilitations.html', t: '🗃️ Fichier des habilitations' },
+    { f: 'stats-soustraitants.html', href: 'stats-soustraitants.html', t: '📊 Statistique sous-traitants' }
+  ];
   var PLANNING = [
     { f: 'planning.html', href: 'planning.html', t: '🗓️ Planning' },
     { f: 'simulation.html', href: 'simulation.html', t: '🔮 Simulation', sans: '#demandes' },
@@ -19,7 +23,7 @@
     { f: 'affectation.html', href: 'affectation.html', t: '🔀 Affectations' }
   ];
   var page = (location.pathname.split('/').pop() || '').toLowerCase(), CLE = 'gm_pages';
-  var LIENS = [CHANTIERS, PLANNING].filter(function (g) { return g.some(function (l) { return l.f === page; }); })[0] || [];   // la famille de la page courante
+  var LIENS = [CHANTIERS, PLANNING, ENQUETES].filter(function (g) { return g.some(function (l) { return l.f === page; }); })[0] || [];   // la famille de la page courante
   function fichier(u) { return String(u || '').split(/[?#]/)[0].split('/').pop().toLowerCase(); }
   function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
   function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE) || 'null'); return o && Date.now() - o.t < 600000 ? o.f : null; } catch (e) { return null; } }
