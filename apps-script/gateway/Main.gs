@@ -519,16 +519,29 @@ function rapportsLus_() {
 function rapportsChantiers_(req) {
   var u = Auth.userFromToken(req.token), niv = niveauRapports_(u, 1);
   assurerColonnes_('Utilisateurs', ['chantiers_sup']); u = Auth.userFromToken(req.token);
-  var role = Droits.roleCanon(u.role), peut = Rapports.peutCorriger(u, role), vis = Rapports.chantiersVisibles(chantiersActifs_(), u, niv);
-  var fermes = peut ? Rapports.chantiersVisibles(chantiersTous_().filter(function (c) { return !c.actif && String(c.contrat || '').trim() || (!c.actif && c.phase); }), u, role === 'chef_service' || role === 'interim_chef_service' ? 1 : 3).map(function (c) { return { id: c.id, nom: c.nom, service: c.service }; }) : [];
-  return { chantiers: vis.map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service, phase: c.phase }; }), niveau: niv, peut_ouvrir: peut, fermes: fermes };
+  var role = Droits.roleCanon(u.role), peut = Rapports.peutCorriger(u, role), vis = Rapports.chantiersVisibles(chantiersActifs_(), u, niv), hors = [];
+  if (peut) {
+    var tous = chantiersTous_(), ouverts = {}; vis.forEach(function (c) { ouverts[c.id] = 1; });
+    try { hors = Rapports.horsExecution(cpmEnregistrements_(lignesSource_('cpm'))); } catch (e) { hors = []; }   // Suivi CPM illisible : on garde la saisie manuelle
+    hors = hors.filter(function (h) { return !ouverts[h.id]; });
+    var connus = {}; hors.forEach(function (h) { connus[h.id] = 1; });
+    tous.forEach(function (c) { if (!c.actif && c.phase && !connus[c.id] && !ouverts[c.id]) hors.push({ id: c.id, nom: c.nom, contrat: c.contrat, entreprise: c.entreprise, statut: 'Période terminée', phase: c.phase }); });
+  }
+  return { chantiers: vis.map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service, phase: c.phase }; }), niveau: niv, peut_ouvrir: peut, hors_contrat: hors };
 }
 /** Ouvre (ou rouvre) un chantier hors contrat : préparation avant le contrat, levée des réserves après ; chef de division, secrétariat et chefs de service, sans validation. */
 function rapportChantierOuvrir_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 1);
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
-    var v = Rapports.ouvrirChantier(req, u, Droits.roleCanon(u.role), Dates.today(), chantiersTous_()); if (v.erreur) throw new Error(v.erreur);
+    var existants = chantiersTous_(), id = String(req.id || '').toLowerCase();
+    if (id && !existants.some(function (c) { return c.id === id; })) {   // contrat du Suivi CPM pas encore chantier : créé (fermé) puis ouvert avec la phase demandée
+      var h = Rapports.horsExecution(cpmEnregistrements_(lignesSource_('cpm'))).filter(function (x) { return x.id === id; })[0];
+      if (!h) throw new Error('Ce contrat n\'est pas ouvrable hors contrat (en exécution, infructueux ou inconnu)');
+      var neuf = { id: id, nom: h.nom, service: '', actif: 0, contrat: h.contrat, entreprise: h.entreprise, source: 'cpm', fiche: '', suivi: '', phase: '', ouvert_jusqu: '' };
+      Store.maj('Chantiers', { id: id }, neuf); existants.push(neuf);
+    }
+    var v = Rapports.ouvrirChantier(req, u, Droits.roleCanon(u.role), Dates.today(), existants); if (v.erreur) throw new Error(v.erreur);
     Store.maj('Chantiers', { id: v.id }, v.valeurs);
     Store.journal('chantier_ouvert', u.email, v.id + ' ' + v.valeurs.phase + ' jusqu\'au ' + v.valeurs.ouvert_jusqu);
     return { id: v.id, neuf: v.neuf, phase: v.valeurs.phase, jusqu: v.valeurs.ouvert_jusqu };

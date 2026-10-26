@@ -210,3 +210,14 @@ test('synthèse : les chantiers hors contrat ne comptent pas comme « rapport ma
   const s = Rapports.synthese([{ id: 'a', nom: 'A', actif: 1 }, { id: 'b', nom: 'B', actif: 1, phase: 'preparation' }], [], '2026-10-26');
   assert.deepStrictEqual([s.manquants, s.chantiers[1].nom], [1, 'B — Préparation']);
 });
+
+test('contrats ouvrables hors contrat : tous ceux du Suivi CPM sauf en exécution et infructueux', () => {
+  const enr = { ordre: ['a', 'b', 'c', 'd', 'e', 'f'], dossiers: {
+    a: { statut: 'Contrat en exécution', n_contrat: '72.INFRA.25', intitule: 'Forage', attribue_a: 'ENAGEO' },
+    b: { statut: 'Contrat échu', n_contrat: '10.INFRA.24', intitule: 'Ancien', attribue_a: 'X' },
+    c: { statut: 'infructueux', n_contrat: '', intitule: 'Raté', attribue_a: '' },
+    d: { statut: 'Dossier en cours', n_contrat: '', intitule: 'Futur éclairage', attribue_a: '' },
+    e: { statut: 'Attribué', n_contrat: '12.INFRA.26', intitule: 'Abris', attribue_a: 'ENCC' },
+    f: { statut: 'Bloqué', n_contrat: '13.INFRA.26', intitule: 'Piste', attribue_a: 'Y' } } };
+  assert.deepStrictEqual(Rapports.horsExecution(enr).map(h => [h.id, h.phase]), [['10-infra-24', 'reserves'], ['hc-futur-eclairage', 'preparation'], ['12-infra-26', 'preparation'], ['13-infra-26', 'preparation']]);
+});

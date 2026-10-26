@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-194",
+    "date": "2026-10-26",
+    "title": "Version 6.2.1 — Chantiers hors contrat : tirés du Suivi CPM",
+    "changes": [
+      "« ＋ Chantier hors contrat » propose directement les contrats du Suivi CPM qui ne sont ni en exécution ni infructueux (non démarré, dossier en cours, attribué, bloqué, échu) ; la phase est choisie d'après le statut (échu → levée des réserves, les autres → préparation), modifiable.",
+      "Le contrat choisi devient un chantier ouvert tout de suite (6 mois par défaut) ; la saisie d'un chantier à la main reste possible."
+    ]
+  },
+  {
     "id": "2026-10-26-193",
     "date": "2026-10-26",
     "title": "Version 6.2.0 — Rapports journaliers : chantiers hors contrat",

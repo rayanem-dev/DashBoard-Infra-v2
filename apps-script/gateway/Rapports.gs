@@ -103,6 +103,22 @@ var Rapports = (function () {
   var PHASES = { preparation: 'Préparation', reserves: 'Levée des réserves' }, MOIS_OUVERTURE = 6;
   /** Date ISO + n mois (le jour est ramené à la fin du mois si besoin). */
   function jusquA(iso, n) { var p = String(iso).split('-'), y = +p[0], m = +p[1] - 1 + n, j = +p[2], d = new Date(Date.UTC(y, m, 1)); var fin = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), Math.min(j, fin))).toISOString().slice(0, 10); }
+  /**
+   * Contrats du Suivi CPM qui peuvent être ouverts « hors contrat » : tous sauf ceux en exécution (déjà des chantiers) et les infructueux.
+   * Avant l'exécution (non démarré, dossier en cours, attribué, bloqué) → Préparation ; contrat échu / terminé → Levée des réserves.
+   * Retourne [{ id, nom, contrat, entreprise, statut, phase }] (id = contrat sans caractères spéciaux, ou intitulé si le contrat n'a pas encore de numéro).
+   */
+  function horsExecution(enr) {
+    var out = [], vus = {};
+    ((enr && enr.ordre) || []).forEach(function (cle) {
+      var d = enr.dossiers[cle]; if (!d) return;
+      var st = sans(d.statut); if (!st || st.indexOf('infructueu') >= 0 || st.indexOf('execution') >= 0) return;
+      var contrat = String(d.n_contrat || '').trim(), titre = String(d.intitule || '').trim(), ent = String(d.attribue_a || '').trim();
+      var id = slugContrat(contrat) || (titre ? ('hc-' + slugContrat(titre.normalize('NFD').replace(/[\u0300-\u036f]/g, '')).slice(0, 44)) : ''); if (!id || vus[id]) return; vus[id] = 1;
+      out.push({ id: id, nom: (titre || contrat) + (ent ? ' — ' + ent : ''), contrat: contrat, entreprise: ent, statut: String(d.statut || '').trim(), phase: /echu|termin|clotur|acheve/.test(st) ? 'reserves' : 'preparation' });
+    });
+    return out;
+  }
   /** Chantier ouvert aux rapports à la date auj : actif, et pas arrivé au bout de sa période de préparation / de levée des réserves. */
   function ouvert(c, auj) { if (String(c.actif) === '0') return false; return !(c.phase && c.ouvert_jusqu && auj && String(auj) > String(c.ouvert_jusqu)); }
   /** Nom affiché : « Nom — Préparation » pour un chantier hors contrat. */
@@ -130,7 +146,8 @@ var Rapports = (function () {
       }
     }
     if (chefService && cleService(ex.service) && !servicePareil(ex.service, user.service)) return { erreur: 'Ce chantier est rattaché à un autre service' };
-    var v = { actif: 1, phase: phase, ouvert_jusqu: jusqu }; if (!String(ex.service || '').trim() && chefService) v.service = String(user.service || '');
+    var v = { actif: 1, phase: phase, ouvert_jusqu: jusqu };
+    if (!String(ex.service || '').trim()) { var sv = chefService ? String(user.service || '') : nettoyer(req.service, 60); if (sv) v.service = sv; }
     return { id: String(ex.id).toLowerCase(), neuf: false, valeurs: v };
   }
 
@@ -278,7 +295,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;
