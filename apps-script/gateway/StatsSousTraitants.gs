@@ -65,7 +65,21 @@ var StatsST = (function () {
     });
     return plan;
   }
-  return { HEURES_DEFAUT: HEURES_DEFAUT, norm: norm, dateIso: dateIso, bornes: bornes, decouper: decouper, compter: compter, fusionner: fusionner };
+  /**
+   * Lignes en double (même mois et même clé) : deux ouvertures simultanées de la page ont pu calculer le mois deux fois. Retourne les numéros de ligne à supprimer ;
+   * on garde, pour chaque clé, la ligne modifiée à la main (ou supprimée, pour garder la trace), à défaut la première.
+   */
+  function doublons(lignes) {
+    var groupes = {}, a_supprimer = [];
+    (lignes || []).forEach(function (l) { var k = String(l.mois) + '|' + String(l.cle); (groupes[k] = groupes[k] || []).push(l); });
+    Object.keys(groupes).forEach(function (k) {
+      var g = groupes[k]; if (g.length < 2) return;
+      var gardee = g.filter(function (l) { return String(l.modifie) === '1' || String(l.supprime) === '1'; })[0] || g[0];
+      g.forEach(function (l) { if (l !== gardee) a_supprimer.push(l.ligne); });
+    });
+    return a_supprimer.sort(function (a, b) { return b - a; });
+  }
+  return { doublons: doublons, HEURES_DEFAUT: HEURES_DEFAUT, norm: norm, dateIso: dateIso, bornes: bornes, decouper: decouper, compter: compter, fusionner: fusionner };
 })();
 if (typeof module !== 'undefined') module.exports = StatsST;
 
@@ -102,14 +116,23 @@ function statsStCalculer_(mois, par) {
   }
   return { ajoutees: plan.ajouter.length, mises_a_jour: plan.maj.length };
 }
+/** Supprime les lignes en double (voir StatsST.doublons) ; retourne leur nombre. */
+function statsStNettoyer_() {
+  var sh = statsStFeuille_(), d = StatsST.doublons(statsStLignes_());
+  d.forEach(function (n) { sh.deleteRow(n); });
+  return d.length;
+}
 function statsStLire_(req) {
-  var u = statsStDroit_(req), mois = statsStMois_(req);
-  if (!statsStLignes_().some(function (x) { return String(x.mois) === mois; })) { try { statsStCalculer_(mois, Annuaire.nomAffichable(u.nom, u.email)); } catch (e) { Logger.log('Stats sous-traitants : ' + e.message); } }
-  return statsStSortie_(mois);
+  var u = statsStDroit_(req), mois = statsStMois_(req), lock = LockService.getScriptLock(); lock.waitLock(30000);   // un seul calcul à la fois : deux ouvertures simultanées doublaient les lignes
+  try {
+    statsStNettoyer_();
+    if (!statsStLignes_().some(function (x) { return String(x.mois) === mois; })) { try { statsStCalculer_(mois, Annuaire.nomAffichable(u.nom, u.email)); } catch (e) { Logger.log('Stats sous-traitants : ' + e.message); } }
+    return statsStSortie_(mois);
+  } finally { lock.releaseLock(); }
 }
 function statsStRecalculer_(req) {
   var u = statsStDroit_(req), mois = statsStMois_(req), lock = LockService.getScriptLock(); lock.waitLock(30000);
-  try { var r = statsStCalculer_(mois, Annuaire.nomAffichable(u.nom, u.email)); Store.journal('stats_st_recalcul', u.email, mois + ' : ' + r.ajoutees + ' ajoutée(s), ' + r.mises_a_jour + ' mise(s) à jour'); var s = statsStSortie_(mois); s.resume = r; return s; }
+  try { statsStNettoyer_(); var r = statsStCalculer_(mois, Annuaire.nomAffichable(u.nom, u.email)); Store.journal('stats_st_recalcul', u.email, mois + ' : ' + r.ajoutees + ' ajoutée(s), ' + r.mises_a_jour + ' mise(s) à jour'); var s = statsStSortie_(mois); s.resume = r; return s; }
   finally { lock.releaseLock(); }
 }
 function statsStNombre_(v, max) { var n = Math.round(Number(v)); if (!(n >= 0 && n <= max)) throw new Error('Nombre invalide'); return n; }

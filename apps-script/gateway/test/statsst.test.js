@@ -36,3 +36,10 @@ test('fusionner : ajoute, met à jour les lignes automatiques, respecte les lign
   assert.deepStrictEqual(p.ajouter.map(x => x.cle), ['e']);
   assert.deepStrictEqual(p.maj.map(x => [x.ligne.cle, x.effectif, x.heures]), [['a', 5, 1800]]);
 });
+
+test('doublons : une seule ligne par mois et par clé, la modifiée ou supprimée est gardée', () => {
+  const l = [{ ligne: 2, mois: '2026-04', cle: 'a', modifie: 0 }, { ligne: 3, mois: '2026-04', cle: 'a', modifie: 0 }, { ligne: 4, mois: '2026-04', cle: 'b', modifie: 0 }, { ligne: 5, mois: '2026-04', cle: 'b', modifie: 1 },
+    { ligne: 6, mois: '2026-05', cle: 'a', modifie: 0 }, { ligne: 7, mois: '2026-04', cle: 'c', modifie: 0, supprime: 1 }, { ligne: 8, mois: '2026-04', cle: 'c', modifie: 0, supprime: 0 }];
+  assert.deepStrictEqual(S.doublons(l), [8, 4, 3]);   // du bas vers le haut, pour supprimer sans décaler les numéros
+  assert.deepStrictEqual(S.doublons([]), []);
+});
