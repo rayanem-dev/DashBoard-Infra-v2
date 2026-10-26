@@ -44,7 +44,7 @@ var Rapports = (function () {
       av = Math.round(av * 10) / 10;
     } else {
       var avl = lignes.map(function (l) { return l.avancement; }).filter(function (x) { return x !== ''; });
-      if (avl.length) av = Math.max.apply(null, avl); // sans avancement global : le plus avancé des ouvrages
+      if (avl.length) av = Math.round(avl.reduce(function (t, x) { return t + x; }, 0) / avl.length * 10) / 10; // sans avancement global saisi : moyenne des ouvrages (modifiable : la valeur saisie l'emporte)
     }
     return { rapport: { date: date, chantier: chantier, effectif: eff, travaux: travaux, lignes: lignes, difficultes: nettoyer(r.difficultes), commentaire: nettoyer(r.commentaire), avancement: av } };
   }

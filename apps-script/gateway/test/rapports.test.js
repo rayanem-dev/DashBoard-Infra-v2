@@ -76,7 +76,8 @@ test('rapport en lignes : zone, texte, avancement ; le texte et l\'avancement gl
   const r = Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '5', lignes }, AUJ, 2, IDS);
   assert.strictEqual(r.erreur, undefined);
   assert.deepStrictEqual(r.rapport.lignes, [{ zone: 'Base de vie (BVC)', texte: 'Finitions', avancement: 99 }, { zone: 'Région', texte: 'Peinture', avancement: 96.5 }]);
-  assert.strictEqual(r.rapport.avancement, 99);
+  assert.strictEqual(r.rapport.avancement, 97.8);   // moyenne des ouvrages (99 et 96,5) quand rien n'est saisi
+  assert.strictEqual(Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '5', avancement: '60', lignes }, AUJ, 2, IDS).rapport.avancement, 60);   // la valeur saisie l'emporte
   assert.strictEqual(r.rapport.travaux, '• Base de vie (BVC) : Finitions — 99 %\n• Région : Peinture — 96.5 %');
   assert.match(Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '5', lignes: [{ texte: 'ok ok', avancement: '150' }] }, AUJ, 2, IDS).erreur, /entre 0 et 100/);
   assert.match(Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '5', lignes: [{ zone: 'x', texte: '', avancement: '' }] }, AUJ, 2, IDS).erreur, /travaux/);
@@ -180,4 +181,10 @@ test('correction d\'un rapport passé : rôles autorisés et validation sans rè
 test('destinatairesDetail : nom, e-mail, rôle', () => {
   const d = Rapports.destinatairesDetail([{ nom: 'A B', email: 'a@x.dz', role: 'secretariat', actif: 1, service: 'Direction' }, { nom: 'C', email: 'c@x.dz', role: 'agent', actif: 1 }], { secretariat: true });
   assert.deepStrictEqual(d, [{ nom: 'A B', email: 'a@x.dz', role: 'secretariat', service: 'Direction' }]);
+});
+
+test('avancement automatique : moyenne des ouvrages (Dessablage 30, 40, 8, 60 → 34,5)', () => {
+  const lignes = [30, 40, 8, 60].map((a, i) => ({ zone: 'RA' + i, texte: 'Dessablage', avancement: String(a) })).concat([{ zone: 'LAVALIN', texte: 'Travaux génie civil', avancement: '' }]);
+  const r = Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '20', lignes }, AUJ, 2, IDS);
+  assert.strictEqual(r.rapport.avancement, 34.5);
 });
