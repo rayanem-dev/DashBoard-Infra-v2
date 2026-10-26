@@ -100,6 +100,17 @@ var Store = (function () {
     if (sec && sec.getLastRow() > 1) { var rs = sec.getDataRange(), q = Courriel.remplacer(rs.getValues(), ['email'], ancien, nouveau); q.cellules.forEach(function (c) { sec.getRange(c[0], c[1]).setValue(nouveau); }); total += q.n; }
     return total;
   }
+  /** Supprime complètement un compte : ligne Utilisateurs, exceptions, rotation, profil, vis-à-vis et mot de passe. Les rapports et l'historique restent. Refusé pour une personne inscrite dans BDDORGA (elle réapparaîtrait). */
+  function supprimerCompte(email) {
+    email = String(email).toLowerCase();
+    var u = utilisateur(email); if (!u) throw new Error('Compte inconnu');
+    if (sourceUtilisateurs_() === 'bddorga' && !u.horsBDDORGA) throw new Error('Cette personne figure dans BDDORGA (organigramme) : elle réapparaîtrait. Retirez-la d\'abord de BDDORGA, ou désactivez simplement le compte.');
+    ['Exceptions', 'Rotations', 'Profils'].forEach(function (n) { supprimerTout(n, { email: email }); });
+    if (u.uid) supprimerTout('VisAVis', { uid: String(u.uid) });
+    var sec = SpreadsheetApp.openById(prop_('SECRETS_ID')).getSheetByName('Identifiants');
+    if (sec && sec.getLastRow() > 1) { var v = sec.getDataRange().getValues(); for (var i = v.length - 1; i >= 1; i -= 1) if (String(v[i][0]).toLowerCase() === email) sec.deleteRow(i + 1); }
+    supprimerTout('Utilisateurs', { email: email });
+  }
   function parUid(uid) {
     uid = String(uid || '');
     if (!uid) return null;
@@ -110,5 +121,5 @@ var Store = (function () {
   function journal(action, email, detail) {
     try { db_().getSheetByName('Journal').appendRow([new Date(), action, email, detail || '']); } catch (e) { Logger.log('Journal : ' + e.message); }
   }
-  return { renommerEmail: renommerEmail, table: table, utilisateur: utilisateur, parUid: parUid, maj: maj, supprimer: supprimer, supprimerTout: supprimerTout, journal: journal };
+  return { supprimerCompte: supprimerCompte, renommerEmail: renommerEmail, table: table, utilisateur: utilisateur, parUid: parUid, maj: maj, supprimer: supprimer, supprimerTout: supprimerTout, journal: journal };
 })();

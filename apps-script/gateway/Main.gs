@@ -137,6 +137,29 @@ function route_(req) {
     case 'admin_mdp_defaut': return connexionsMdpDefautTous_(req);
     case 'admin_emails': return emailsControle_(req);
     case 'admin_email_contact': return emailContactAdmin_(req);
+    case 'admin_utilisateur_modifier': {
+      // Modifie les champs d'un compte : écrits dans BDDORGA quand la colonne existe, sinon dans Gateway_DB. Les champs que BDDORGA impose (ex. le nom) sont signalés.
+      var a12 = admin_(req); cible_(req.email);
+      var LONG12 = { nom: 120, service: 120, fonction: 120, dependance: 120, section: 60, telephone: 40, matricule: 30, sap: 30, sona: 30, civilite: 20, wifi_user: 60, date_integration: 10 };
+      var ch12 = req.champs || {}, v12 = {};
+      Object.keys(LONG12).forEach(function (k) { if (ch12[k] !== undefined) v12[k] = String(ch12[k]).replace(/\s+/g, ' ').trim().slice(0, LONG12[k]); });
+      if (v12.nom !== undefined && !v12.nom) throw new Error('Le nom est obligatoire');
+      if (v12.date_integration && !/^\d{4}-\d{2}-\d{2}$/.test(v12.date_integration)) throw new Error('Date d\'intégration : AAAA-MM-JJ');
+      Object.keys(v12).forEach(function (k) { if (/^[=+@<>]/.test(v12[k])) throw new Error('Valeur invalide pour « ' + k + ' »'); });
+      if (!Object.keys(v12).length) return { ignores: [] };
+      Store.maj('Utilisateurs', { email: req.email }, v12);
+      var ap12 = Store.utilisateur(req.email) || {}, ign12 = Object.keys(v12).filter(function (k) { return String(ap12[k] == null ? '' : ap12[k]) !== v12[k]; });
+      Store.journal('utilisateur_modifie', a12.email, req.email + ' : ' + Object.keys(v12).join(', ') + (ign12.length ? ' (imposé par BDDORGA : ' + ign12.join(', ') + ')' : ''));
+      return { ignores: ign12 };
+    }
+    case 'admin_utilisateur_supprimer': {
+      var a13 = admin_(req), em13 = String(req.email || '').trim().toLowerCase(); cible_(em13);
+      if (em13 === String(a13.email).toLowerCase()) throw new Error('Vous ne pouvez pas supprimer votre propre compte');
+      if (String(req.confirmation || '').trim().toUpperCase() !== 'SUPPRIMER') throw new Error('Confirmation manquante');
+      var cible13 = Store.utilisateur(em13);
+      if (Droits.roleCanon(cible13.role) === 'chef_division') throw new Error('Un chef de division ne se supprime pas ici : changez d\'abord son rôle');
+      Store.supprimerCompte(em13); Store.journal('utilisateur_supprime', a13.email, em13 + ' (' + (cible13.nom || '') + ')'); return {};
+    }
     case 'admin_email_changer': {
       var a10 = admin_(req), ancien = String(req.email || '').trim().toLowerCase(), nouveau = String(req.nouveau || '').trim().toLowerCase();
       if (!Courriel.valide(nouveau)) throw new Error('Adresse e-mail invalide');
@@ -180,7 +203,7 @@ function route_(req) {
         roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles), rubrique: String(x.rubrique || '') }; }),
-        utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0', portee: String(u.portee || ''), section: String(u.section || '') }; })
+        utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0', portee: String(u.portee || ''), section: String(u.section || ''), telephone: String(u.telephone || ''), matricule: String(u.matricule || ''), sap: String(u.sap || ''), sona: String(u.sona || ''), civilite: String(u.civilite || ''), wifi_user: String(u.wifi_user || ''), date_integration: String(u.date_integration || ''), hors: !!u.horsBDDORGA }; })
       };
     }
     case 'rapports_chantiers_admin': return rapportsChantiersAdmin_(req);

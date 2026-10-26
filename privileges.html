@@ -173,7 +173,9 @@
       var tdn = el('td', null, u.nom); var pe = Employeur.pastille(u.dependance); if (pe) tdn.appendChild(pe);
       var tm0 = el('div'); tm0.style.cssText = 'font-size:11.5px;color:var(--muted,#6B7280);margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap';
       tm0.appendChild(el('span', null, u.email)); var be = el('button', 'btn-s', '✎ E-mail'); be.type = 'button'; be.title = 'Corriger l\'adresse e-mail de connexion de ' + u.nom + ' (erreur de saisie)'; be.style.cssText = 'padding:1px 8px;font-size:11px';
-      be.addEventListener('click', function () { changerEmail(u); }); tm0.appendChild(be); tdn.appendChild(tm0);
+      be.addEventListener('click', function () { changerEmail(u); }); tm0.appendChild(be);
+      var bmod = el('button', 'btn-s', '✎ Modifier'); bmod.type = 'button'; bmod.title = 'Modifier tous les champs de ' + u.nom + ' ou supprimer le compte'; bmod.style.cssText = 'padding:1px 8px;font-size:11px';
+      bmod.addEventListener('click', function () { modifierCompte(u); }); tm0.appendChild(bmod); tdn.appendChild(tm0);
       if (u.role === 'prestataire') tdn.appendChild(zonePortee(u));
       tr.appendChild(tdn);
       var tds = el('td', null, u.service || ''), sec = document.createElement('input'); sec.type = 'text'; sec.value = u.section || ''; sec.placeholder = 'section (Froid, Électricité…)'; sec.setAttribute('list', 'l-sections'); sec.setAttribute('aria-label', 'Section de ' + u.nom);
@@ -376,6 +378,38 @@
     etat.modules.forEach(function (m) { var o = el('option', null, m.titre); o.value = m.id; sm.appendChild(o); });
   }
 
+  // ---- Modifier tous les champs d'un compte, ou le supprimer carrément ----
+  var CHAMPS = [['nom', 'Nom et prénom'], ['service', 'Service'], ['section', 'Section'], ['fonction', 'Fonction'], ['dependance', 'Dépendance / entreprise'], ['telephone', 'Téléphone'], ['matricule', 'Matricule'], ['sap', 'Matricule SAP'], ['sona', 'Identifiant SONA'], ['civilite', 'Civilité'], ['wifi_user', 'Identifiant Wi-Fi'], ['date_integration', 'Date d\'intégration (AAAA-MM-JJ)']];
+  function modifierCompte(u) {
+    var d = document.createElement('dialog'); d.style.cssText = 'margin:auto;width:min(640px,94vw);max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)';
+    d.appendChild(el('h3', null, 'Modifier ' + u.nom)).style.margin = '0 0 2px';
+    d.appendChild(el('p', 'aide', u.email + (u.hors ? '' : ' · inscrit dans BDDORGA : les champs que BDDORGA impose (ex. le nom) se changent dans BDDORGA'))).style.margin = '0 0 12px';
+    var g = el('div'); g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px'; var inp = {};
+    CHAMPS.forEach(function (c) {
+      var w = el('div'); if (c[0] === 'nom') w.style.gridColumn = '1/-1'; w.appendChild(el('label', null, c[1]));
+      var i = el('input'); i.value = u[c[0]] || ''; i.style.cssText = 'width:100%;box-sizing:border-box'; i.maxLength = 120; inp[c[0]] = i; w.appendChild(i); g.appendChild(w);
+    });
+    d.appendChild(g);
+    var er = el('p'); er.style.cssText = 'color:#B42318;font-weight:700;margin:8px 0 0'; d.appendChild(er);
+    var bar = el('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap';
+    var sup = el('button', 'btn-s', '🗑 Supprimer le compte'); sup.type = 'button'; sup.style.cssText = 'color:#B42318;border-color:#B42318';
+    sup.onclick = function () {
+      var c = window.prompt('SUPPRESSION DÉFINITIVE de ' + u.nom + ' (' + u.email + ').\nSon accès, ses droits, sa rotation, son profil et son mot de passe sont effacés ; ses rapports passés restent.\n\nTapez SUPPRIMER pour confirmer :', ''); if (c === null) return;
+      Api.call('admin_utilisateur_supprimer', { email: u.email, confirmation: c }).then(function () { d.close(); d.remove(); toast('Compte supprimé'); return recharger(); }).catch(function (e) { er.textContent = e.message; });
+    };
+    var dr = el('div'); dr.style.cssText = 'display:flex;gap:8px';
+    var an = el('button', 'btn-s', 'Annuler'); an.type = 'button'; an.onclick = function () { d.close(); d.remove(); };
+    var ok = el('button', 'btn-p', 'Enregistrer'); ok.type = 'button';
+    ok.onclick = function () {
+      var champs = {}; CHAMPS.forEach(function (c) { if ((inp[c[0]].value || '').trim() !== (u[c[0]] || '')) champs[c[0]] = inp[c[0]].value; });
+      if (!Object.keys(champs).length) { d.close(); d.remove(); return; }
+      ok.disabled = true; er.textContent = '';
+      Api.call('admin_utilisateur_modifier', { email: u.email, champs: champs }).then(function (r) {
+        d.close(); d.remove(); toast(r.ignores && r.ignores.length ? 'Enregistré, sauf (imposé par BDDORGA) : ' + r.ignores.join(', ') : 'Compte modifié'); return recharger();
+      }).catch(function (e) { er.textContent = e.message; }).then(function () { ok.disabled = false; });
+    };
+    dr.appendChild(an); dr.appendChild(ok); bar.appendChild(sup); bar.appendChild(dr); d.appendChild(bar); document.body.appendChild(d); d.showModal();
+  }
   // ---- Corriger l'adresse e-mail de connexion (saisie par erreur) ----
   function changerEmail(u) {
     var v = window.prompt('Adresse e-mail actuelle de ' + u.nom + ' : ' + u.email + '\n\nNouvelle adresse :', u.email); if (v === null) return;
