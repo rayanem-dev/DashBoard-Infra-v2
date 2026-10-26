@@ -93,6 +93,11 @@ function pecAppeler_(req) {
     else if (req.fn === 'listerFichiersGeneres' && r.fichiers) { var mes = pecMesFichiers_(u); r.fichiers = r.fichiers.filter(function (x) { return mes.indexOf(x.id) !== -1; }); }
     else if (req.fn === 'soumettreFormulairePEC' && r.liens) pecRetenirFichiers_(u, pecIdsDeLiens_(r.liens));
   }
+  // chaque Autorisation d'accès générée renseigne le tableau des véhicules (classeur « SUIVI VH ») ; jamais bloquant
+  if (req.fn === 'soumettreFormulairePEC' && r && r.success && args[0] && args[0].genererAuto && typeof vhEnregistrerDepuisPec_ === 'function') {
+    try { var vr = vhEnregistrerDepuisPec_(args[0]); Store.journal('vh_pec', u.email, String(args[0].prestataire || '').slice(0, 100) + ' : ' + vr.ajoutes + ' véhicule(s) ajouté(s), ' + vr.maj + ' mis à jour'); }
+    catch (ev) { Store.journal('vh_echec', u.email, String(ev && ev.message || ev).slice(0, 200)); }
+  }
   if (req.fn === 'soumettreFormulairePEC') Store.journal('pec', u.email, String(args[0] && args[0].prestataire || '').slice(0, 150) + (r && r.success ? '' : ' (échec)'));
   else if (def.admin) Store.journal('pec_admin', u.email, req.fn);
   return r;

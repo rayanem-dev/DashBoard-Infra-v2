@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-188",
+    "date": "2026-10-26",
+    "title": "Version 6.1.0 — Affectation des véhicules : application web liée aux autorisations d'accès",
+    "changes": [
+      "« Affectation Véhicule – Division Infra » devient une application web (vehicules.html) qui lit le classeur « SUIVI VH » : une grande case de recherche (personne, véhicule, immatriculation, entreprise, contrat, n° d'autorisation, date), des filtres par entreprise, affectation et date d'autorisation, des puces par catégorie, tri, export Excel (CSV) et impression. Niveau 2 du module Logistique : correction, ajout et suppression de lignes.",
+      "Chaque Autorisation d'accès générée dans « Prise en charge et autorisation d'accès » renseigne automatiquement le classeur, sans aucune question : le véhicule connu (même immatriculation) est mis à jour, un nouveau véhicule est ajouté avec le n° d'autorisation suivant (INFR N°…) ; entreprise, contrat, affectation, chauffeur, date d'autorisation et date de validité sont remplis. Deux colonnes sont ajoutées au tableau : « Date d'autorisation » et « Valable jusqu'au »."
+    ]
+  },
+  {
     "id": "2026-10-26-187",
     "date": "2026-10-26",
     "title": "Version 6.0.1 — Prise en charge : libellé de la validité",

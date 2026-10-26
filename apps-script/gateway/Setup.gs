@@ -220,6 +220,7 @@ function preparerSimulation_() {
   if (typeof migrerPriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerPriseEnCharge_();
   if (typeof retablirGenerateurTransport_ === 'function' && props.getProperty('SIMU_PRET') === '1') retablirGenerateurTransport_();
   if (typeof ajouterCarteStatsSt_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteStatsSt_();
+  if (typeof migrerAffectationVehicule_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerAffectationVehicule_();
   if (typeof retirerAnciennePec_ === 'function' && props.getProperty('SIMU_PRET') === '1' && props.getProperty('PEC_PORTAIL_V1') === '1') retirerAnciennePec_();
   if (props.getProperty('SIMU_PRET') === '1') return;
   var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;

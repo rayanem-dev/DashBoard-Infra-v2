@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Affectation des véhicules – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .vh { max-width: 1500px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .barre { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .barre label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 3px; }
+  .vh input, .vh select { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); }
+  #q { min-width: min(420px, 100%); flex: 1; font-size: 15px; padding: 10px 12px; }
+  .btn-p { padding: 9px 15px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .puces { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .puce { border: 1.5px solid var(--border); background: var(--surface); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .puce.on { background: var(--orange-main); border-color: var(--orange-main); color: #fff; }
+  .res { font-size: 12.5px; color: var(--text-muted); margin: 0 0 8px; }
+  .tab { overflow: auto; } table.v { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.v th { position: sticky; top: 0; background: var(--surface-2, #F3F4F6); text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); padding: 7px 8px; border-bottom: 2px solid var(--border); cursor: pointer; white-space: nowrap; }
+  table.v td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.v tbody tr:hover { background: var(--orange-pale, #FFF4EA); } table.v tbody tr.cl { cursor: pointer; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #E5E7EB; color: #374151; white-space: nowrap; }
+  .tag.p { background: #DBEAFE; color: #1E40AF; } .tag.d { background: #FEF3C7; color: #92400E; } .tag.s { background: #DCFCE7; color: #166534; } .tag.l { background: #EDE9FE; color: #5B21B6; }
+  .ok { color: #166534; font-weight: 700; } .ko { color: #B42318; font-weight: 700; } .immat { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  dialog { margin: auto; width: min(640px, 94vw); max-height: 90vh; overflow: auto; border: 0; border-radius: 16px; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  dialog label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin: 8px 0 3px; text-transform: none; letter-spacing: 0; }
+  dialog input, dialog select { width: 100%; box-sizing: border-box; }
+  .grille2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 700px) { .grille2 { grid-template-columns: 1fr; } }
+  @media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    html, body { background: #fff !important; height: auto !important; min-height: 0 !important; margin: 0 !important; filter: none !important; }
+    body > *:not(main) { display: none !important; } .vh .bloc.filtres, .puces, .no-print { display: none !important; }
+    .vh { padding: 0 !important; max-width: none !important; } table.v { font-size: 9pt; } table.v th { position: static; }
+  }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🚗</div>
+    <div class="logo-text"><h1>Affectation des véhicules</h1><p>Sonatrach · RNS · Division Infrastructure — recherche rapide</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="vh">
+  <div class="bloc filtres">
+    <div class="barre">
+      <div style="flex:1"><label for="q">Rechercher</label><input type="search" id="q" placeholder="Personne, véhicule, immatriculation, entreprise, contrat, n° d'autorisation…" autocomplete="off"></div>
+      <div><label for="f-ent">Entreprise</label><select id="f-ent"><option value="">Toutes</option></select></div>
+      <div><label for="f-aff">Affectation</label><select id="f-aff"><option value="">Toutes</option></select></div>
+      <div><label for="f-du">Autorisé du</label><input type="date" id="f-du"></div>
+      <div><label for="f-au">au</label><input type="date" id="f-au"></div>
+      <button class="btn-s" id="b-raz" type="button">Effacer</button>
+    </div>
+    <div class="puces" id="puces"></div>
+  </div>
+  <div class="bloc">
+    <div class="barre no-print" style="align-items:center;margin-bottom:8px"><p class="res" id="res" style="margin:0;flex:1"></p>
+      <button class="btn-s" id="b-csv" type="button">⬇ Excel (CSV)</button><button class="btn-s" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-p" id="b-ajout" type="button" hidden>+ Ajouter un véhicule</button></div>
+    <div class="tab"><table class="v"><thead id="tete"></thead><tbody id="corps"></tbody></table></div>
+    <p class="res no-print" style="margin-top:10px">Les autorisations d'accès générées dans « Prise en charge et autorisation d'accès » renseignent ce tableau automatiquement (véhicule, entreprise, contrat, chauffeur, date d'autorisation). Cliquez sur une ligne pour la corriger.</p>
+  </div>
+</main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var D = { lignes: [], niveau: 0, libelles: {} }, tri = { k: 'immat', sens: 1 }, cat = '';
+  var COLS = ['modele', 'immat', 'affectation', 'categorie', 'prestataire', 'contrat', 'auth', 'macaron', 'chauffeur', 'radio', 'date', 'valide'];
+  var CHAMPS_EDIT = COLS;
+  function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[_]+/g, ' '); }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3500); }
+  function fr(i) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(i || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : (i || ''); }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function joli(s) { return String(s || '').replace(/_/g, ' '); }
+  function classeCat(c) { c = norm(c); return /prestataire/.test(c) ? 'p' : /dispo/.test(c) ? 'd' : /sonatrach/.test(c) ? 's' : /location/.test(c) ? 'l' : ''; }
+  function texteRecherche(l) { return norm([l.modele, l.immat, l.affectation, l.categorie, l.prestataire, l.contrat, l.auth, l.macaron, l.chauffeur, l.personnes, l.radio, fr(l.date), l.date].join(' ')); }
+
+  function charger() {
+    return Api.call('vh_lire').then(function (r) {
+      D = r; D.lignes.forEach(function (l) { l._t = texteRecherche(l); });
+      listes(); $('b-ajout').hidden = D.niveau < 2; dessiner();
+    }).catch(function (e) {
+      if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+      if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : le module « Logistique » n\'est pas activé pour votre compte.'; return; }
+      $('res').textContent = '⚠ ' + e.message;
+    });
+  }
+  function valeursUniques(k) { var v = {}; D.lignes.forEach(function (l) { if (l[k]) v[l[k]] = true; }); return Object.keys(v).sort(function (a, b) { return a.localeCompare(b, 'fr', { sensitivity: 'base' }); }); }
+  function remplirSelect(id, k) { var s = $(id), cur = s.value; while (s.options.length > 1) s.remove(1); valeursUniques(k).forEach(function (x) { var o = document.createElement('option'); o.value = x; o.textContent = joli(x); s.appendChild(o); }); s.value = cur; }
+  function listes() { remplirSelect('f-ent', 'prestataire'); remplirSelect('f-aff', 'affectation'); }
+  function filtrees() {
+    var mots = norm($('q').value).split(/\s+/).filter(Boolean), ent = $('f-ent').value, aff = $('f-aff').value, du = $('f-du').value, au = $('f-au').value;
+    return D.lignes.filter(function (l) {
+      if (mots.some(function (m) { return l._t.indexOf(m) === -1; })) return false;
+      if (ent && l.prestataire !== ent) return false; if (aff && l.affectation !== aff) return false;
+      if (cat && norm(l.categorie) !== norm(cat)) return false;
+      if ((du || au) && (!l.date || (du && l.date < du) || (au && l.date > au))) return false;
+      return true;
+    });
+  }
+  function dessiner() {
+    var l = filtrees().sort(function (a, b) { var x = String(a[tri.k] || '').toLowerCase(), y = String(b[tri.k] || '').toLowerCase(); return (x < y ? -1 : x > y ? 1 : 0) * tri.sens; });
+    // puces de catégorie (avec le nombre de résultats hors filtre de catégorie)
+    var sauf = cat; cat = ''; var base = filtrees(); cat = sauf; var nb = {}; base.forEach(function (x) { var c = x.categorie || '(sans catégorie)'; nb[c] = (nb[c] || 0) + 1; });
+    var z = $('puces'); z.textContent = '';
+    var tout = el('button', 'puce' + (cat ? '' : ' on'), 'Tous (' + base.length + ')'); tout.type = 'button'; tout.onclick = function () { cat = ''; dessiner(); }; z.appendChild(tout);
+    Object.keys(nb).sort().forEach(function (c) { var b = el('button', 'puce' + (cat && norm(cat) === norm(c) ? ' on' : ''), joli(c) + ' (' + nb[c] + ')'); b.type = 'button'; b.onclick = function () { cat = c === '(sans catégorie)' ? '' : c; dessiner(); }; z.appendChild(b); });
+    $('res').textContent = l.length + ' véhicule' + (l.length > 1 ? 's' : '') + (l.length !== D.lignes.length ? ' sur ' + D.lignes.length : '');
+    var th = $('tete'); th.textContent = ''; var tr = el('tr');
+    COLS.forEach(function (k) { var h = el('th', null, (D.libelles[k] || k) + (tri.k === k ? (tri.sens > 0 ? ' ▲' : ' ▼') : '')); h.onclick = function () { tri = { k: k, sens: tri.k === k ? -tri.sens : 1 }; dessiner(); }; tr.appendChild(h); });
+    th.appendChild(tr);
+    var c = $('corps'); c.textContent = '';
+    if (!l.length) { var v = el('tr'), td = el('td', null, 'Aucun véhicule ne correspond à la recherche.'); td.colSpan = COLS.length; td.style.cssText = 'padding:16px;color:var(--text-muted)'; v.appendChild(td); c.appendChild(v); }
+    var auj = iso();
+    l.forEach(function (x) {
+      var r = el('tr', D.niveau >= 2 && x.ligne ? 'cl' : '');
+      COLS.forEach(function (k) {
+        var td = el('td'), val = x[k];
+        if (k === 'immat') { td.className = 'immat'; td.textContent = val; }
+        else if (k === 'categorie' && val) { td.appendChild(el('span', 'tag ' + classeCat(val), joli(val).replace(/^Vehicule /i, ''))); }
+        else if (k === 'affectation') td.textContent = joli(val);
+        else if (k === 'macaron') { td.textContent = val; if (/^ok$/i.test(val)) td.className = 'ok'; else if (val && !/^[—-]$/.test(val)) td.className = 'ko'; }
+        else if (k === 'chauffeur') td.textContent = [val, x.personnes && x.personnes.toLowerCase().indexOf(String(val).toLowerCase()) < 0 ? x.personnes : ''].filter(Boolean).join(' · ');
+        else if (k === 'date') td.textContent = fr(val);
+        else if (k === 'valide') { td.textContent = fr(val); if (val) td.className = val < auj ? 'ko' : 'ok'; }
+        else td.textContent = val || '';
+        r.appendChild(td);
+      });
+      if (D.niveau >= 2 && x.ligne) r.onclick = function () { formulaire(x); };
+      c.appendChild(r);
+    });
+    $('corps')._visible = l;
+  }
+  ['q', 'f-ent', 'f-aff', 'f-du', 'f-au'].forEach(function (id) { $(id).addEventListener('input', dessiner); $(id).addEventListener('change', dessiner); });
+  $('b-raz').onclick = function () { ['q', 'f-ent', 'f-aff', 'f-du', 'f-au'].forEach(function (id) { $(id).value = ''; }); cat = ''; dessiner(); };
+
+  // ----- fiche : correction, ajout, suppression (niveau 2 du module Logistique)
+  function formulaire(x) {
+    var neuf = !x, d = $('dlg'), v = {}; d.textContent = '';
+    d.appendChild(el('h3', null, neuf ? 'Ajouter un véhicule' : 'Véhicule ' + (x.immat || x.modele))).style.margin = '0 0 4px';
+    var g = el('div', 'grille2'), inp = {};
+    CHAMPS_EDIT.forEach(function (k) {
+      var w = el('div'); w.appendChild(el('label', null, D.libelles[k] || k)); var i = el('input'); i.type = (k === 'date' || k === 'valide') ? 'date' : 'text'; i.value = x ? (x[k] || '') : ''; i.maxLength = 120; inp[k] = i; w.appendChild(i); g.appendChild(w);
+    });
+    d.appendChild(g);
+    var er = el('p'); er.style.cssText = 'color:#B42318;font-weight:700;margin:8px 0 0'; d.appendChild(er);
+    var bar = el('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap';
+    var droite = el('div'); droite.style.cssText = 'display:flex;gap:8px;margin-inline-start:auto';
+    var an = el('button', 'btn-s', 'Annuler'); an.type = 'button'; an.onclick = function () { d.close(); };
+    var ok = el('button', 'btn-p', neuf ? 'Ajouter' : 'Enregistrer'); ok.type = 'button';
+    ok.onclick = function () {
+      var champs = {}; CHAMPS_EDIT.forEach(function (k) { if (neuf ? inp[k].value.trim() !== '' : inp[k].value.trim() !== (x[k] || '')) champs[k] = inp[k].value; });
+      if (!neuf && !Object.keys(champs).length) { d.close(); return; }
+      ok.disabled = true; er.textContent = '';
+      Api.call(neuf ? 'vh_ajouter' : 'vh_maj', neuf ? { champs: champs } : { ligne: x.ligne, immat_avant: x.immat, modele_avant: x.modele, champs: champs })
+        .then(function () { d.close(); toast(neuf ? 'Véhicule ajouté' : 'Véhicule corrigé'); return charger(); }).catch(function (e) { er.textContent = e.message; }).then(function () { ok.disabled = false; });
+    };
+    if (!neuf) {
+      var sup = el('button', 'btn-s', '🗑 Supprimer la ligne'); sup.type = 'button'; sup.style.cssText = 'color:#B42318;border-color:#B42318';
+      sup.onclick = function () { if (!confirm('Supprimer définitivement la ligne de ' + (x.immat || x.modele) + ' du tableau ?')) return; Api.call('vh_supprimer', { ligne: x.ligne, immat_avant: x.immat, modele_avant: x.modele }).then(function () { d.close(); toast('Ligne supprimée'); return charger(); }).catch(function (e) { er.textContent = e.message; }); };
+      bar.appendChild(sup);
+    }
+    droite.appendChild(an); droite.appendChild(ok); bar.appendChild(droite); d.appendChild(bar);
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  }
+  $('b-ajout').onclick = function () { formulaire(null); };
+  $('dlg').addEventListener('click', function (e) { if (e.target === $('dlg')) $('dlg').close(); });
+
+  // ----- export et impression
+  $('b-csv').onclick = function () {
+    var l = $('corps')._visible || [], q = function (s) { s = String(s == null ? '' : s).replace(/"/g, '""'); return /[;"\n]/.test(s) ? '"' + s + '"' : s; };
+    var lignes = [COLS.map(function (k) { return q(D.libelles[k] || k); }).join(';')].concat(l.map(function (x) { return COLS.map(function (k) { return q(k === 'chauffeur' ? [x.chauffeur, x.personnes].filter(Boolean).join(' · ') : x[k]); }).join(';'); }));
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lignes.join('\r\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'vehicules_' + iso() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  };
+  $('b-imp').onclick = function () { window.print(); };
+  charger();
+})();
+</script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

@@ -176,6 +176,10 @@ function route_(req) {
     case 'admin_test_mail': return connexionsTestMail_(req);
     case 'annuaire_personnes': return annuairePersonnes_(req);
     case 'transport_telephone': return transportTelephone_(req);
+    case 'vh_lire': return vhLire_(req);
+    case 'vh_maj': return vhMaj_(req);
+    case 'vh_ajouter': return vhAjouterAction_(req);
+    case 'vh_supprimer': return vhSupprimer_(req);
     case 'stats_st_lire': return statsStLire_(req);
     case 'stats_st_recalculer': return statsStRecalculer_(req);
     case 'stats_st_maj': return statsStMaj_(req);

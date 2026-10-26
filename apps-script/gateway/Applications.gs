@@ -30,9 +30,9 @@ var SEED_APPS = [
  [
   "logistique",
   "Affectation Véhicule – Division Infra",
-  "Suivi des véhicules de service, affectations au personnel et gestion des plannings de disponibilité.",
+  "Recherche rapide des véhicules par personne, véhicule, immatriculation, entreprise, contrat, affectation ou date d'autorisation ; le tableau est mis à jour automatiquement par chaque autorisation d'accès générée.",
   "🚗",
-  "https://docs.google.com/spreadsheets/d/1pvGALmksWQ-oLkxXrv74yjZk6QGyVbqHzgWfc6ol6SE/edit?usp=sharing",
+  "vehicules.html",
   1
  ],
  [
@@ -537,4 +537,20 @@ function ajouterCarteStatsSt_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('CARTE_STATS_ST_V1') === '1') return;
   try { ajouterApplicationsManquantes(); props.setProperty('CARTE_STATS_ST_V1', '1'); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+
+/** Une seule fois : la carte « Affectation Véhicule – Division Infra » (lien vers une feuille Google) ouvre désormais la page du portail vehicules.html. */
+function migrerAffectationVehicule_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('VEHICULES_PORTAIL_V1') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iD = h.indexOf('description'), iU = h.indexOf('url'), iE = h.indexOf('emoji');
+    var seed = SEED_APPS.filter(function (r) { return r[1] === 'Affectation Véhicule – Division Infra'; })[0];
+    for (var i = 1; i < v.length; i += 1) {
+      if (/^Affectation V[ée]hicule/.test(String(v[i][iT]))) { sh.getRange(i + 1, iU + 1).setValue('vehicules.html'); sh.getRange(i + 1, iD + 1).setValue(seed[2]); if (iE >= 0) sh.getRange(i + 1, iE + 1).setValue(seed[3]); break; }
+    }
+    props.setProperty('VEHICULES_PORTAIL_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
 }
