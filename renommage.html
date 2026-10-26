@@ -43,6 +43,7 @@
 <main class="rn">
   <div class="bloc">
     <div class="depot" id="depot" tabindex="0" role="button" aria-label="Choisir ou déposer des fichiers"><b>Déposez vos fichiers ici</b> (PDF, JPG, PNG) ou cliquez pour les choisir<br><small>Les fichiers restent sur votre ordinateur : rien n'est envoyé sur Internet.</small></div>
+    <p style="margin:8px 0 0"><button class="btn-s" id="b-dossier" type="button" hidden title="Lit les fichiers directement dans le dossier : ils sont ensuite renommés sur place, sans choisir le dossier une seconde fois">📂 Ouvrir un dossier (renommage sur place)</button></p>
     <input type="file" id="fichiers" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden>
     <div class="options">
       <label><input type="checkbox" id="o-texte" checked> Lire le texte des PDF quand le nom ne suffit pas</label>
@@ -210,6 +211,13 @@
     function essai(n) { return dir.getFileHandle(n).then(function () { k += 1; return essai(base + ' (' + k + ')' + (e ? '.' + e : '')); }, function (err) { if (err && err.name === 'NotFoundError') return n; throw err; }); }
     return essai(nom);
   }
+  /** Vrai renommage sur place (handle.move, Chrome / Edge) ; faux si le navigateur ne sait pas : on copie alors puis on supprime l'original. */
+  function deplacer(dir, ancien, nouveau) {
+    return dir.getFileHandle(ancien).then(function (h) { return typeof h.move === 'function' ? h.move(nouveau).then(function () { return true; }, function () { return false; }) : false; });
+  }
+  function copierPuisSupprimer(dir, it, ancien, nouveau) {
+    return octets(it).then(function (u) { return dir.getFileHandle(nouveau, { create: true }).then(function (h) { return h.createWritable(); }).then(function (w) { return w.write(u).then(function () { return w.close(); }); }); }).then(function () { return dir.removeEntry(ancien); });
+  }
   function renommer(liste) {
     if (!dossierChoisi) toast('Choisissez le dossier qui contient le fichier : un sous-dossier (ex. « Scans »), pas Documents, Téléchargements ou Bureau eux-mêmes, que le navigateur refuse. Sinon utilisez « Télécharger ».');
     var dir0 = dossierChoisi ? Promise.resolve(dossierChoisi) : window.showDirectoryPicker({ mode: 'readwrite' }).then(function (d) { dossierChoisi = d; return d; });
@@ -218,7 +226,7 @@
       return liste.reduce(function (p, it) {
         var i = items.indexOf(it);
         return p.then(function () { return dir.getFileHandle(it.f.name).then(function (h) { return h.getFile(); }).catch(function () { throw new Error('« ' + it.f.name + ' » n\'est pas dans le dossier choisi : choisissez le dossier qui le contient.'); }); })
-          .then(function (f) { it.f = f; if (noms[i] === f.name) return null; return nomLibreDans(dir, noms[i]).then(function (nl) { noms[i] = nl; return octets(it); }).then(function (u) { return dir.getFileHandle(noms[i], { create: true }).then(function (h) { return h.createWritable(); }).then(function (w) { return w.write(u).then(function () { return w.close(); }); }); }).then(function () { return dir.removeEntry(f.name); }); })
+          .then(function (f) { it.f = f; if (noms[i] === f.name) return null; return nomLibreDans(dir, noms[i]).then(function (nl) { noms[i] = nl; return deplacer(dir, f.name, nl).then(function (fait) { return fait || copierPuisSupprimer(dir, it, f.name, nl); }); }); })
           .then(function () { it.fait = true; it.nom = noms[i]; fait += 1; });
       }, Promise.resolve()).then(function () { toast('✔ ' + fait + ' fichier(s) renommé(s) dans le dossier.'); dessiner(); }, function (e) { dossierChoisi = null; dessiner(); throw e; });
     }).catch(function (e) { if (e && e.name !== 'AbortError') toast(e.message, true); });
@@ -231,6 +239,15 @@
   ['dragenter', 'dragover'].forEach(function (n) { dep.addEventListener(n, function (e) { e.preventDefault(); dep.classList.add('sur'); }); });
   ['dragleave', 'drop'].forEach(function (n) { dep.addEventListener(n, function (e) { e.preventDefault(); dep.classList.remove('sur'); }); });
   dep.addEventListener('drop', function (e) { ajouter(e.dataTransfer.files); });
+  if (window.showDirectoryPicker) {
+    $('b-dossier').hidden = false;
+    $('b-dossier').onclick = function () {
+      window.showDirectoryPicker({ mode: 'readwrite' }).then(function (d) {
+        dossierChoisi = d; var fs = [];
+        return (function lire(it) { return it.next().then(function (r) { if (r.done) return; var e = r.value[1]; if (e.kind === 'file' && /\.(pdf|jpe?g|png)$/i.test(e.name)) return e.getFile().then(function (f) { fs.push(f); return lire(it); }); return lire(it); }); })(d.entries()).then(function () { fs.sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); }); ajouter(fs); toast(fs.length + ' fichier(s) lus dans « ' + d.name + ' » : « Remplacer le nom » les renomme sur place.'); });
+      }).catch(function (e) { if (e && e.name !== 'AbortError') toast(e.message, true); });
+    };
+  }
   $('b-zip').onclick = telecharger; $('b-vider').onclick = function () { items = []; dessiner(); };
   if (window.showDirectoryPicker) { $('b-tous').hidden = false; $('b-tous').onclick = function () { renommer(items.filter(function (it) { return !it.fait; })); }; }
   $('r-exp').onclick = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(regles, null, 2)], { type: 'application/json' })); a.download = 'renomi-regles.json'; a.click(); };
