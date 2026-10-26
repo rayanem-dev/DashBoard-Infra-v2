@@ -710,8 +710,8 @@ function consolideEnvoyerCore_(date, groupes, parEmail) {
   var c = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
   var cons = c ? consolideDe_(c) : null;
   if (!cons || !cons.donnees) throw new Error('Aucun consolidé enregistré pour le ' + date + ' : générez-le d\'abord.');
-  var dest = Rapports.destinataires(Store.table('Utilisateurs'), groupes);
-  if (!dest.length) throw new Error('Aucun destinataire : aucun compte actif avec e-mail dans les groupes choisis.');
+  var dest = Rapports.boitesDestinataires(groupes).map(function (b) { return b.email; });   // boîtes de service, du chef de division et du secrétariat (pas les adresses personnelles)
+  if (!dest.length) throw new Error('Aucun destinataire : cochez au moins un groupe.');
   var m = Rapports.consolideMail(cons.donnees, cons.version);
   MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html });
   Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)');
@@ -720,7 +720,7 @@ function consolideEnvoyerCore_(date, groupes, parEmail) {
 /** Qui recevrait le consolidé avec les groupes cochés (aperçu, rien n'est envoyé). */
 function consoDestinataires_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
-  var l = Rapports.destinatairesDetail(Store.table('Utilisateurs'), groupesNettoyes_(req.groupes)).map(function (d) { return { nom: Annuaire.nomAffichable(d.nom, d.email), email: d.email, role: ({ secretariat: 'Secrétariat', chef_service: 'Chef de service', interim_chef_service: 'Chef de service (intérim)', chef_division: 'Chef de division' })[d.role] || d.role, service: d.service }; });
+  var l = Rapports.boitesDestinataires(groupesNettoyes_(req.groupes)).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
   return { destinataires: l };
 }
 function rapportsConsolideEnvoyer_(req) {
@@ -731,29 +731,43 @@ function rapportsConsolideEnvoyer_(req) {
 // ----- Envoi automatique du soir (option cochée dans Rapports journaliers ; désactivée par défaut)
 function consoAutoConfig_() {
   var c = {}; try { c = JSON.parse(PropertiesService.getScriptProperties().getProperty('CONSO_AUTO') || '{}'); } catch (e) { c = {}; }
-  var h = Number(c.heure); return { actif: !!c.actif, heure: h >= 0 && h <= 23 && Math.floor(h) === h ? h : 20, groupes: groupesNettoyes_(c.groupes), dernier: String(c.dernier || '') };
+  var h = Number(c.heure); return { actif: !!c.actif, heure: h >= 0 && h <= 23 && Math.floor(h) === h ? h : 20, groupes: groupesNettoyes_(c.groupes), dernier: String(c.dernier || ''), essai: String(c.essai || ''), erreur: String(c.erreur || '') };
 }
-function consoAutoLire_(req) { var u = Auth.userFromToken(req.token); niveauRapports_(u, 3); return consoAutoConfig_(); }
+function consoAutoEnregistrer_(c) { PropertiesService.getScriptProperties().setProperty('CONSO_AUTO', JSON.stringify(c)); }
+/** Le déclencheur du soir doit exister (toutes les 15 minutes) tant que l'envoi automatique est coché ; recréé s'il a disparu ou s'il date de l'ancienne version (toutes les heures). */
+function consoAutoAssurerDeclencheur_(force) {
+  var cache = CacheService.getScriptCache(); if (!force && cache.get('CONSO_TRIG_OK')) return false;   // vérifié il y a moins d'une demi-heure
+  var props = PropertiesService.getScriptProperties(), c = consoAutoConfig_(), presentes = ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === 'consoAutoTick'; });
+  if (!c.actif) { presentes.forEach(function (t) { ScriptApp.deleteTrigger(t); }); cache.put('CONSO_TRIG_OK', '1', 1800); return false; }
+  if (presentes.length === 1 && props.getProperty('CONSO_TRIG_V2') === '1') { cache.put('CONSO_TRIG_OK', '1', 1800); return false; }
+  presentes.forEach(function (t) { ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('consoAutoTick').timeBased().everyMinutes(15).create(); props.setProperty('CONSO_TRIG_V2', '1'); cache.put('CONSO_TRIG_OK', '1', 1800);
+  return true;
+}
+function consoAutoLire_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  try { if (consoAutoAssurerDeclencheur_(true)) Store.journal('consolide_auto_declencheur', u.email, 'déclencheur recréé'); } catch (e) { /* lecture seule si l'autorisation manque */ }
+  return consoAutoConfig_();
+}
 function consoAutoMaj_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
   var h = Number(req.heure); if (!(h >= 0 && h <= 23) || Math.floor(h) !== h) throw new Error('Heure : nombre entier de 0 à 23');
-  var c = { actif: !!req.actif, heure: h, groupes: groupesNettoyes_(req.groupes), dernier: consoAutoConfig_().dernier };
+  var ancien = consoAutoConfig_(), c = { actif: !!req.actif, heure: h, groupes: groupesNettoyes_(req.groupes), dernier: ancien.dernier, essai: '', erreur: '' };
   if (c.actif && !CONSOLIDE_GROUPES_.some(function (k) { return c.groupes[k]; })) throw new Error('Cochez au moins un destinataire pour l\'envoi automatique.');
-  PropertiesService.getScriptProperties().setProperty('CONSO_AUTO', JSON.stringify(c));
-  var presente = ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === 'consoAutoTick'; });
-  if (c.actif && !presente.length) ScriptApp.newTrigger('consoAutoTick').timeBased().everyHours(1).create();
-  if (!c.actif) presente.forEach(function (t) { ScriptApp.deleteTrigger(t); });
+  consoAutoEnregistrer_(c);
+  consoAutoAssurerDeclencheur_(true);
   Store.journal('consolide_auto_maj', u.email, (c.actif ? 'activé à ' + c.heure + ' h' : 'désactivé'));
   return consoAutoConfig_();
 }
-/** Déclencheur horaire : à partir de l'heure réglée, une seule fois par jour, génère (écrase) le consolidé du jour et l'envoie. Sans rapport ce jour-là, rien n'est envoyé. */
+/** Déclencheur (toutes les 15 min) : à partir de l'heure réglée, une seule fois par jour, génère (écrase) le consolidé du jour et l'envoie. Sans rapport ce jour-là, rien n'est envoyé. Chaque échec est noté (journal + réglage affiché dans Rapports journaliers). */
 function consoAutoTick() {
   var c = consoAutoConfig_(); if (!c.actif) return;
   var auj = Dates.today(), heure = Number(Utilities.formatDate(new Date(), 'Africa/Algiers', 'H'));
   if (heure < c.heure || c.dernier === auj) return;
-  var r; try { r = consolideGenererCore_(auj, 'Envoi automatique', ''); } catch (e) { Logger.log('Envoi auto : ' + e.message); return; }
-  try { consolideEnvoyerCore_(auj, c.groupes, 'auto'); } catch (e2) { Store.journal('consolide_auto_echec', 'auto', e2.message); return; }
-  c.dernier = auj; PropertiesService.getScriptProperties().setProperty('CONSO_AUTO', JSON.stringify(c));
+  var maintenant = Utilities.formatDate(new Date(), 'Africa/Algiers', 'yyyy-MM-dd HH:mm');
+  var r; try { r = consolideGenererCore_(auj, 'Envoi automatique', ''); } catch (e) { c.essai = maintenant; c.erreur = 'Génération : ' + e.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
+  try { consolideEnvoyerCore_(auj, c.groupes, 'auto'); } catch (e2) { c.essai = maintenant; c.erreur = 'Envoi : ' + e2.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
+  c.dernier = auj; c.essai = maintenant; c.erreur = ''; consoAutoEnregistrer_(c);
 }
 function rapportsConsolideLire_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);

@@ -379,6 +379,7 @@
     $('auto-actif').checked = !!c.actif; $('auto-heure').value = c.heure;
     document.querySelectorAll('#envoi input[data-g]').forEach(function (x) { x.checked = !!c.groupes[x.getAttribute('data-g')]; });
     $('auto-etat').textContent = c.actif ? 'Envoi automatique actif : chaque jour à partir de ' + c.heure + ' h' + (c.dernier ? ' (dernier envoi : ' + fr(c.dernier) + ')' : '') + '. Décochez puis « Enregistrer » pour l\'arrêter.' : 'Envoi automatique désactivé. Quand il est coché, le consolidé du jour est régénéré (il écrase l\'ancien) puis envoyé aux groupes cochés, une fois par jour, à l\'heure réglée ; sans rapport ce jour-là, rien n\'est envoyé.';
+    if (c.actif && c.erreur) $('auto-etat').textContent += ' ⚠ Dernier essai (' + c.essai + ') : ' + c.erreur;
   }
   $('b-liste-dest').addEventListener('click', function () {
     var z = $('liste-dest'), g = groupesCoches(); z.hidden = false; z.textContent = 'Chargement…';

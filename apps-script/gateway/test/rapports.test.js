@@ -221,3 +221,12 @@ test('contrats ouvrables hors contrat : tous ceux du Suivi CPM sauf en exécutio
     f: { statut: 'Bloqué', n_contrat: '13.INFRA.26', intitule: 'Piste', attribue_a: 'Y' } } };
   assert.deepStrictEqual(Rapports.horsExecution(enr).map(h => [h.id, h.phase]), [['10-infra-24', 'reserves'], ['hc-futur-eclairage', 'preparation'], ['12-infra-26', 'preparation'], ['13-infra-26', 'preparation']]);
 });
+
+test('destinataires du consolidé : boîtes de service, chef de division et secrétariat, pas les comptes personnels', () => {
+  const e = g => Rapports.boitesDestinataires(g).map(b => b.email);
+  assert.deepStrictEqual(e({ chef_division: true }), ['cdd_infra.rns@sonatrach.dz']);
+  assert.deepStrictEqual(e({ chef_service: true }), ['service_travaux_entretien_infra.rns@sonatrach.dz', 'infra_constr.rns@sonatrach.dz', 'infra_electromec.rns@sonatrach.dz', 'rns.cpm_infra@sonatrach.dz']);
+  assert.deepStrictEqual(e({ secretariat: true }), ['sec-infra.rns@sonatrach.dz', 'sec.infra.rns@gmail.com', 'rayanem@gmail.com']);
+  assert.strictEqual(e({ secretariat: true, chef_service: true, chef_division: true }).length, 8);
+  assert.deepStrictEqual(e({}), []);
+});

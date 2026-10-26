@@ -272,7 +272,26 @@ var Rapports = (function () {
     h += '<p style="color:#888;font-size:12px;margin-top:18px">Envoyé depuis le Portail Infra — rapports journaliers.</p></div>';
     return { sujet: 'Rapport journalier consolidé — ' + dateLongue(s.date), html: h };
   }
-  /** Adresses des destinataires : groupes = { secretariat, chef_service, chef_division } (booléens) ; seuls les comptes actifs avec e-mail. */
+  /**
+   * Boîtes fonctionnelles qui reçoivent le rapport consolidé (et non les adresses personnelles des agents) : une par service, celle du chef de division et celles du secrétariat.
+   * groupes = { secretariat, chef_service, chef_division } (booléens).
+   */
+  var BOITES = {
+    secretariat: [{ nom: 'Secrétariat Division INFRA', email: 'sec-infra.rns@sonatrach.dz' }, { nom: 'sec.infra.rns', email: 'sec.infra.rns@gmail.com' }, { nom: 'Madani Rayane', email: 'rayanem@gmail.com' }],
+    chef_service: [{ nom: 'Service Travaux Entretien INFRA - RNS', email: 'service_travaux_entretien_infra.rns@sonatrach.dz' }, { nom: 'Service Construction INFRA - RNS', email: 'infra_constr.rns@sonatrach.dz' },
+      { nom: 'Service Électromécanique INFRA - RNS', email: 'infra_electromec.rns@sonatrach.dz' }, { nom: 'CPM INFRA RNS', email: 'rns.cpm_infra@sonatrach.dz' }],
+    chef_division: [{ nom: 'Chef Division INFRA - RNS', email: 'cdd_infra.rns@sonatrach.dz' }]
+  };
+  var ROLES_BOITES = { secretariat: 'Secrétariat', chef_service: 'Boîte de service', chef_division: 'Chef de division' };
+  function boitesDestinataires(groupes) {
+    var vus = {}, out = [];
+    ['secretariat', 'chef_service', 'chef_division'].forEach(function (g) {
+      if (!groupes || !groupes[g]) return;
+      BOITES[g].forEach(function (b) { if (vus[b.email]) return; vus[b.email] = 1; out.push({ nom: b.nom, email: b.email, role: g, libelle: ROLES_BOITES[g] }); });
+    });
+    return out;
+  }
+  /** Adresses des destinataires (anciennement les comptes du portail) : groupes = { secretariat, chef_service, chef_division } (booléens) ; seuls les comptes actifs avec e-mail. */
   function destinataires(utilisateurs, groupes) {
     var roles = [];
     if (groupes && groupes.secretariat) roles.push('secretariat');
@@ -295,7 +314,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;
