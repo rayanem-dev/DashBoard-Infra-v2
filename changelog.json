@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-189",
+    "date": "2026-10-26",
+    "title": "Version 6.1.1 — Prise en charge : majuscules, fonction et saisie automatique",
+    "changes": [
+      "Prise en charge et autorisation d'accès : le type de véhicule et l'immatriculation passent en MAJUSCULES pendant la frappe ; la fonction prend une majuscule à chaque mot, comme un nom (« Chef de chantier »).",
+      "Saisie automatique depuis les anciens enregistrements : à la sortie du nom et du prénom, la fonction, le véhicule et l'immatriculation de la personne sont repris de sa dernière prise en charge (sans jamais écraser ce que vous avez saisi) ; une immatriculation connue donne son type de véhicule. Les fonctions, types et immatriculations déjà utilisés sont aussi proposés pendant la frappe. Un prestataire ne voit que les enregistrements de ses contrats."
+    ]
+  },
+  {
     "id": "2026-10-26-188",
     "date": "2026-10-26",
     "title": "Version 6.1.0 — Affectation des véhicules : application web liée aux autorisations d'accès",

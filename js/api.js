@@ -308,6 +308,7 @@
         if (fnp === 'rechercherPersonnes') return { ok: true, personnes: [] };
         if (fnp === 'listerFichiersGeneres') return { success: true, fichiers: [] };
         if (fnp === 'historiquePEC') return { ok: true, demandes: [] };
+        if (fnp === 'memoirePEC') return { personnes: [{ nom: 'BENKHET', prenom: 'Mohamed', fonction: 'chauffeur poids lourd', typeVehicule: 'TOYOTA HILUX', immatriculation: '01307-316-30' }], vehicules: [{ immat: '00437-216-30', modele: 'SHACMAN' }], fonctions: ['chauffeur poids lourd', 'électricien'], types: ['TOYOTA HILUX', 'SHACMAN'] };
         if (fnp === 'verifierEnquetes') return { ok: true, deja: [] };
         if (fnp === 'soumettreFormulairePEC') return { success: true, message: 'Démonstration : aucun document généré.', liens: [] };
         return { success: true, message: 'Démonstration' }; }
