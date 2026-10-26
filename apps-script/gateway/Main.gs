@@ -204,6 +204,7 @@ function route_(req) {
     case 'rapports_consolide_lire': return rapportsConsolideLire_(req);
     case 'rapports_consolide_envoyer': return rapportsConsolideEnvoyer_(req);
     case 'rapports_conso_destinataires': return consoDestinataires_(req);
+    case 'rapports_conso_personnes': return consoPersonnes_(req);
     case 'rapports_conso_auto_lire': return consoAutoLire_(req);
     case 'rapports_conso_auto_maj': return consoAutoMaj_(req);
     case 'rapports_consolides_liste': return rapportsConsolidesListe_(req);
@@ -712,32 +713,48 @@ function niveauConsolide_(u) {
   return n;
 }
 /** Envoie par e-mail le consolidé enregistré d'un jour aux groupes choisis. Jamais appelée sans clic, ni sans l'option automatique cochée. */
-function consolideEnvoyerCore_(date, groupes, parEmail) {
+function consolideEnvoyerCore_(date, groupes, parEmail, personnes) {
   var c = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
   var cons = c ? consolideDe_(c) : null;
   if (!cons || !cons.donnees) throw new Error('Aucun consolidé enregistré pour le ' + date + ' : générez-le d\'abord.');
-  var dest = Rapports.boitesDestinataires(groupes).map(function (b) { return b.email; });   // boîtes de service, du chef de division et du secrétariat (pas les adresses personnelles)
-  if (!dest.length) throw new Error('Aucun destinataire : cochez au moins un groupe.');
+  var dest = consoDestinatairesTous_(groupes, personnes).map(function (b) { return b.email; });
+  if (!dest.length) throw new Error('Aucun destinataire : cochez au moins un groupe ou une personne.');
   var m = Rapports.consolideMail(cons.donnees, cons.version);
   MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html });
   Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)');
   return { destinataires: dest.length, version: cons.version };
 }
+/** Personnes (comptes actifs avec e-mail : secrétariat, chefs de service, chef de division) proposées à cocher en plus des boîtes. */
+function consoPersonnesListe_() {
+  var lib = { secretariat: 'Secrétariat', chef_service: 'Chef de service', interim_chef_service: 'Chef de service (intérim)', chef_division: 'Chef de division' };
+  return Rapports.destinatairesDetail(Store.table('Utilisateurs'), { secretariat: true, chef_service: true, chef_division: true }).map(function (d) {
+    return { nom: Annuaire.nomAffichable(d.nom, d.email), email: d.email, role: lib[d.role] || d.role, service: d.service };
+  });
+}
+function personnesNettoyees_(l) { var o = [], vus = {}; (Array.isArray(l) ? l : []).forEach(function (e) { e = String(e || '').toLowerCase().trim(); if (e && e.length <= 120 && !vus[e]) { vus[e] = 1; o.push(e); } }); return o.slice(0, 60); }
+/** Boîtes des groupes cochés + personnes cochées (seulement celles qui sont bien dans la liste des comptes proposés : jamais une adresse libre). */
+function consoDestinatairesTous_(groupes, personnes) {
+  var out = Rapports.boitesDestinataires(groupes), vus = {}; out.forEach(function (b) { vus[b.email] = 1; });
+  var voulues = personnesNettoyees_(personnes);
+  if (voulues.length) consoPersonnesListe_().forEach(function (p) { if (voulues.indexOf(p.email) >= 0 && !vus[p.email]) { vus[p.email] = 1; out.push({ nom: p.nom, email: p.email, role: p.role, libelle: p.role }); } });
+  return out;
+}
+function consoPersonnes_(req) { var u = Auth.userFromToken(req.token); niveauConsolide_(u); return { personnes: consoPersonnesListe_() }; }
 /** Qui recevrait le consolidé avec les groupes cochés (aperçu, rien n'est envoyé). */
 function consoDestinataires_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
-  var l = Rapports.boitesDestinataires(groupesNettoyes_(req.groupes)).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
+  var l = consoDestinatairesTous_(groupesNettoyes_(req.groupes), req.personnes).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
   return { destinataires: l };
 }
 function rapportsConsolideEnvoyer_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
-  return consolideEnvoyerCore_(date, groupesNettoyes_(req.groupes), u.email);
+  return consolideEnvoyerCore_(date, groupesNettoyes_(req.groupes), u.email, req.personnes);
 }
 // ----- Envoi automatique du soir (option cochée dans Rapports journaliers ; désactivée par défaut)
 function consoAutoConfig_() {
   var c = {}; try { c = JSON.parse(PropertiesService.getScriptProperties().getProperty('CONSO_AUTO') || '{}'); } catch (e) { c = {}; }
-  var h = Number(c.heure); return { actif: !!c.actif, heure: h >= 0 && h <= 23 && Math.floor(h) === h ? h : 20, groupes: groupesNettoyes_(c.groupes), dernier: String(c.dernier || ''), essai: String(c.essai || ''), erreur: String(c.erreur || '') };
+  var h = Number(c.heure); return { actif: !!c.actif, heure: h >= 0 && h <= 23 && Math.floor(h) === h ? h : 20, groupes: groupesNettoyes_(c.groupes), dernier: String(c.dernier || ''), essai: String(c.essai || ''), erreur: String(c.erreur || ''), personnes: personnesNettoyees_(c.personnes) };
 }
 function consoAutoEnregistrer_(c) { PropertiesService.getScriptProperties().setProperty('CONSO_AUTO', JSON.stringify(c)); }
 /** Le déclencheur du soir doit exister (toutes les 15 minutes) tant que l'envoi automatique est coché ; recréé s'il a disparu ou s'il date de l'ancienne version (toutes les heures). */
@@ -758,8 +775,8 @@ function consoAutoLire_(req) {
 function consoAutoMaj_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var h = Number(req.heure); if (!(h >= 0 && h <= 23) || Math.floor(h) !== h) throw new Error('Heure : nombre entier de 0 à 23');
-  var ancien = consoAutoConfig_(), c = { actif: !!req.actif, heure: h, groupes: groupesNettoyes_(req.groupes), dernier: ancien.dernier, essai: '', erreur: '' };
-  if (c.actif && !CONSOLIDE_GROUPES_.some(function (k) { return c.groupes[k]; })) throw new Error('Cochez au moins un destinataire pour l\'envoi automatique.');
+  var ancien = consoAutoConfig_(), c = { actif: !!req.actif, heure: h, groupes: groupesNettoyes_(req.groupes), personnes: personnesNettoyees_(req.personnes), dernier: ancien.dernier, essai: '', erreur: '' };
+  if (c.actif && !CONSOLIDE_GROUPES_.some(function (k) { return c.groupes[k]; }) && !c.personnes.length) throw new Error('Cochez au moins un destinataire pour l\'envoi automatique.');
   consoAutoEnregistrer_(c);
   consoAutoAssurerDeclencheur_(true);
   Store.journal('consolide_auto_maj', u.email, (c.actif ? 'activé à ' + c.heure + ' h' : 'désactivé'));
@@ -772,7 +789,7 @@ function consoAutoTick() {
   if (heure < c.heure || c.dernier === auj) return;
   var maintenant = Utilities.formatDate(new Date(), 'Africa/Algiers', 'yyyy-MM-dd HH:mm');
   var r; try { r = consolideGenererCore_(auj, 'Envoi automatique', ''); } catch (e) { c.essai = maintenant; c.erreur = 'Génération : ' + e.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
-  try { consolideEnvoyerCore_(auj, c.groupes, 'auto'); } catch (e2) { c.essai = maintenant; c.erreur = 'Envoi : ' + e2.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
+  try { consolideEnvoyerCore_(auj, c.groupes, 'auto', c.personnes); } catch (e2) { c.essai = maintenant; c.erreur = 'Envoi : ' + e2.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
   c.dernier = auj; c.essai = maintenant; c.erreur = ''; consoAutoEnregistrer_(c);
 }
 function rapportsConsolideLire_(req) {
