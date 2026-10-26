@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-181",
+    "date": "2026-10-26",
+    "title": "Version 5.96.2 — Prise en charge : bouton Retour au portail",
+    "changes": [
+      "Prise en charge et autorisation d'accès : le retour à l'accueil redevient un bouton « ← Retour au portail » bien visible (l'icône maison se confondait avec les autres icônes ; sur téléphone, seule la flèche reste)."
+    ]
+  },
+  {
     "id": "2026-10-26-180",
     "date": "2026-10-26",
     "title": "Version 5.96.1 — Générateur Requête Transport rétabli",
