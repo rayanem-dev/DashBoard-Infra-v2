@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-176",
+    "date": "2026-10-26",
+    "title": "Version 5.94.0 — Modifier tous les champs d'un compte, ou le supprimer",
+    "changes": [
+      "Privilèges et utilisateurs : bouton « ✎ Modifier » sous chaque nom : nom, service, section, fonction, dépendance, téléphone, matricule, SAP, SONA, civilité, Wi-Fi, date d'intégration. Les champs sont écrits dans BDDORGA quand la colonne existe ; ce que BDDORGA impose (par exemple le nom d'une personne inscrite) est signalé.",
+      "« 🗑 Supprimer le compte » (confirmation en tapant SUPPRIMER) efface l'accès, les droits, la rotation, le profil et le mot de passe ; les rapports passés restent. Refusé pour sa propre fiche, pour un chef de division, et pour une personne inscrite dans BDDORGA (elle réapparaîtrait : on la retire d'abord de BDDORGA, ou on désactive le compte)."
+    ]
+  },
+  {
     "id": "2026-10-26-175",
     "date": "2026-10-26",
     "title": "Version 5.93.0 — Corriger l'e-mail d'un compte",

@@ -374,13 +374,15 @@
       case 'admin_etat': exigerAdmin();
         return { roles: demoRoles.map(function (r) { var n = DEMO_USERS.filter(function (u) { return u.role === r.id; }).length; return Object.assign({ nb_utilisateurs: n }, r); }),
           applications: demoApps, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
-          utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false, portee: x.portee || '', section: x.section || '' }; }) };
+          utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false, portee: x.portee || '', section: x.section || '', telephone: x.telephone || '', matricule: x.matricule || '', sap: x.sap || '', sona: x.sona || '', civilite: x.civilite || '', wifi_user: x.wifi_user || '', date_integration: x.date_integration || '', hors: true }; }) };
       case 'admin_role': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas modifier votre propre rôle');
         cibleDemo(p.email).role = p.role; return {};
       case 'admin_utilisateur_ajouter': { exigerAdmin(); var emd = String(p.email || '').trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emd)) throw erreur('Adresse e-mail invalide'); if (!String(p.nom || '').trim()) throw erreur('Le nom est obligatoire');
         if (DEMO_USERS.some(function (u) { return u.email === emd; })) throw erreur('Un compte existe déjà avec cette adresse');
         DEMO_USERS.push({ email: emd, nom: String(p.nom).trim(), service: p.service || '', dependance: p.dependance || '', section: p.section || '', role: p.role, actif: true }); return { email: emd }; }
       case 'admin_portee': { exigerAdmin(); cibleDemo(p.email).portee = (Array.isArray(p.entreprises) ? p.entreprises.join(' ; ') : String(p.entreprises || '')); return {}; }
+      case 'admin_utilisateur_modifier': { exigerAdmin(); var cm = cibleDemo(p.email), chm = p.champs || {}; if (chm.nom !== undefined && !String(chm.nom).trim()) throw erreur('Le nom est obligatoire'); Object.keys(chm).forEach(function (k) { cm[k] = String(chm[k]).trim(); }); return { ignores: [] }; }
+      case 'admin_utilisateur_supprimer': { exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas supprimer votre propre compte'); if (String(p.confirmation || '').toUpperCase() !== 'SUPPRIMER') throw erreur('Confirmation manquante'); var ix = DEMO_USERS.map(function (x) { return x.email; }).indexOf(p.email); if (ix < 0) throw erreur('Compte inconnu'); DEMO_USERS.splice(ix, 1); return {}; }
       case 'admin_email_changer': { exigerAdmin(); var cd = cibleDemo(p.email), nv = String(p.nouveau || '').trim().toLowerCase();
         if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(nv)) throw erreur('Adresse e-mail invalide'); if (DEMO_USERS.some(function (x) { return x.email.toLowerCase() === nv; })) throw erreur('Cette adresse est déjà utilisée par un autre compte');
         if (cd.email === demoState.user.email) throw erreur('Vous ne pouvez pas changer votre propre adresse ici : demandez à un autre administrateur'); cd.email = nv; return { cellules: 3, email: nv }; }
