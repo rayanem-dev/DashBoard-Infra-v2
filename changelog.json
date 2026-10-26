@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-195",
+    "date": "2026-10-26",
+    "title": "Version 6.2.2 — Fiche d'évaluation : contrats hors exécution",
+    "changes": [
+      "Fiche d'évaluation : en plus des contrats en exécution, la liste propose les contrats du Suivi CPM hors exécution — préparation (non démarré, dossier en cours, attribué, bloqué) et levée des réserves (échu) — classés par groupes ; les infructueux ne sont jamais proposés."
+    ]
+  },
+  {
     "id": "2026-10-26-194",
     "date": "2026-10-26",
     "title": "Version 6.2.1 — Chantiers hors contrat : tirés du Suivi CPM",
