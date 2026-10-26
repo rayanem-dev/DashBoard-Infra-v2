@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-26-190",
+    "date": "2026-10-26",
+    "title": "Version 6.1.2 — Véhicules : onglet « Feuille 2 » de SUIVI VH",
+    "changes": [
+      "Affectation des véhicules : le tableau utilisé est désormais l'onglet « Feuille 2 » du classeur SUIVI VH (type de véhicule, immatriculation, affectation = entreprise, nom & prénom) ; l'ancien onglet « OLd » n'est plus touché.",
+      "Chaque autorisation d'accès générée renseigne ou met à jour la ligne du véhicule dans « Feuille 2 », sans aucune question : entreprise, personne (ajoutée aux précédentes), et trois colonnes ajoutées à droite — Contrat N°, Date d'autorisation, Valable jusqu'au.",
+      "Les autorisations d'accès CFCE d'aujourd'hui sont reprises dans « Feuille 2 » automatiquement au prochain déploiement ; le bouton « Reprendre les autorisations du jour » (niveau 2 du module Logistique) refait la même reprise pour toutes les entreprises du jour.",
+      "La page de recherche est simplifiée aux colonnes de « Feuille 2 » (filtre unique Entreprise / service)."
+    ]
+  },
+  {
     "id": "2026-10-26-189",
     "date": "2026-10-26",
     "title": "Version 6.1.1 — Prise en charge : majuscules, fonction et saisie automatique",

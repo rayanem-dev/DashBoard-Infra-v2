@@ -180,6 +180,7 @@ function route_(req) {
     case 'vh_maj': return vhMaj_(req);
     case 'vh_ajouter': return vhAjouterAction_(req);
     case 'vh_supprimer': return vhSupprimer_(req);
+    case 'vh_rattraper': return vhRattraperAction_(req);
     case 'stats_st_lire': return statsStLire_(req);
     case 'stats_st_recalculer': return statsStRecalculer_(req);
     case 'stats_st_maj': return statsStMaj_(req);
