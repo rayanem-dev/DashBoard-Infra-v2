@@ -120,7 +120,7 @@ window.AIDE = {
   'Requête transport': { titre: 'Requête transport', img: 'transport',
     resume: 'Demande de transport de personnel ou de matériel.',
     etapes: ['Indiquez « Formulée par », la date, le trajet et le nombre de personnes.', 'Validez : la requête est transmise au service transport.'], astuces: ['La liste « Formulée par » sera alimentée depuis BDDORGA.'] },
-  'Requête de transport de personnel': { titre: 'Requête de transport de personnel', img: 'transport',
+  'requete-transport.html': { titre: 'Requête de transport de personnel', img: 'transport',
     resume: 'Demande de véhicule pour transporter du personnel : la mise en page de la requête de la Division Infrastructures, prête à imprimer en un clic.',
     etapes: ['Renseignez « Formulée par », la date et l\'heure, la date de retour, l\'objet et le parcours.', 'Ajoutez les personnes : tapez le nom, il est choisi dans BDDORGA et son téléphone est repris ; le nombre de personnes se calcule seul.', '« Imprimer » ouvre directement la fenêtre d\'impression (ou enregistrez en PDF).'],
     astuces: ['L\'imputation analytique (11 chiffres) et le parcours habituel sont préremplis.', 'Le cadre « Réservé à la Division Appro/Transport » reste vide, à remplir à la main.'] },

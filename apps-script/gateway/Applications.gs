@@ -80,7 +80,7 @@ var SEED_APPS = [
   "Requête de transport de personnel",
   "Requête de transport de personnel de la division Infrastructure : les personnes se choisissent dans BDDORGA (nom et téléphone repris), le nombre se calcule seul ; document prêt à imprimer en un clic.",
   "🚚",
-  "documents.html#transport",
+  "requete-transport.html",
   1
  ],
  [
@@ -497,19 +497,22 @@ function retirerAnciennePec_() {
 }
 
 
-/** Une seule fois : la carte « Générateur Requête Transport » (ancienne application externe) ouvre désormais le modèle « Requête de transport de personnel » du portail (documents.html#transport). */
+/**
+ * Une seule fois : la carte « Générateur Requête Transport » (ancienne application externe, ou carte déjà basculée sur documents.html#transport) ouvre
+ * désormais la page à part « Requête de transport de personnel » du portail (requete-transport.html).
+ */
 function migrerRequeteTransport_() {
   var props = PropertiesService.getScriptProperties();
-  if (props.getProperty('TRANSPORT_PORTAIL_V1') === '1') return;
+  if (props.getProperty('TRANSPORT_PORTAIL_V2') === '1') return;
   try {
     var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iD = h.indexOf('description'), iU = h.indexOf('url');
     for (var i = 1; i < v.length; i += 1) {
-      if (/^Générateur Requête Transport/.test(String(v[i][iT]))) {
-        sh.getRange(i + 1, iT + 1).setValue('Requête de transport de personnel'); sh.getRange(i + 1, iU + 1).setValue('documents.html#transport');
+      if (/^(Générateur Requête Transport|Requête de transport de personnel)/.test(String(v[i][iT]))) {
+        sh.getRange(i + 1, iT + 1).setValue('Requête de transport de personnel'); sh.getRange(i + 1, iU + 1).setValue('requete-transport.html');
         sh.getRange(i + 1, iD + 1).setValue(SEED_APPS.filter(function (r) { return r[1] === 'Requête de transport de personnel'; })[0][2]); break;
       }
     }
-    props.setProperty('TRANSPORT_PORTAIL_V1', '1');
+    props.setProperty('TRANSPORT_PORTAIL_V2', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }

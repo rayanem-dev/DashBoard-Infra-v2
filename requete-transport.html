@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Requête de transport de personnel – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<script src="js/documents-modeles.js"></script>
+<style>
+  .rt { max-width: 1400px; margin: 0 auto; padding: 16px 16px 40px; display: grid; grid-template-columns: 420px 1fr; gap: 16px; align-items: start; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .rt label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 3px; }
+  .rt label small { text-transform: none; font-weight: 500; letter-spacing: 0; }
+  .rt input, .rt select { width: 100%; padding: 7px 9px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); }
+  .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pers { display: grid; grid-template-columns: 1fr 130px auto; gap: 6px; margin-bottom: 6px; }
+  .nb { display: inline-block; min-width: 28px; text-align: center; border: 1.5px solid var(--border); border-radius: 8px; padding: 1px 8px; font-weight: 800; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .btn-p { padding: 10px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .histo { display: flex; gap: 8px; align-items: center; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-top: 6px; font-size: 12.5px; } .histo .i { flex: 1; min-width: 0; } .histo small { display: block; color: var(--text-muted); }
+  .apercu { overflow: auto; background: #E5E7EB; padding: 14px; border-radius: 14px; }
+  #feuille { background: #fff; color: #000; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 14mm 15mm; box-shadow: 0 2px 14px rgba(0,0,0,.2); position: relative; transform-origin: top left; }
+  @media (max-width: 1100px) { .rt { grid-template-columns: 1fr; } }
+  @media print {
+    @page { size: A4 portrait; margin: 0; }
+    html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(main), .rt > *:not(.apercu) { display: none !important; }
+    .rt { display: block !important; padding: 0 !important; max-width: none !important; } .apercu { background: none !important; padding: 0 !important; overflow: visible !important; height: auto !important; }
+    #feuille { box-shadow: none !important; transform: none !important; width: 210mm !important; min-height: 0 !important; margin: 0 !important; padding: 14mm 15mm !important; box-sizing: border-box; }
+  }
+</style>
+<style id="css-doc"></style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">RT</div>
+    <div class="logo-text"><h1>Requête de transport de personnel</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="rt">
+  <div>
+    <div class="bloc">
+      <h2>🚚 Nouvelle requête</h2>
+      <div class="deux"><div><label for="f-date">Date de la requête</label><input type="date" id="f-date"></div><div><label for="f-division">Division</label><input type="text" id="f-division"></div></div>
+      <label for="f-demandeur">Formulée par Monsieur <small>(un nom de BDDORGA peut être choisi)</small></label><input type="text" id="f-demandeur" list="dl-pers" autocomplete="off">
+      <div class="deux"><div><label for="f-vehicule">Type de véhicule demandé</label><select id="f-vehicule"><option>Véhicule</option><option>Bus</option><option>Minibus</option><option>Pick-up</option><option>Camion</option><option>Autre</option></select></div>
+        <div><label for="f-imputation">Imputation analytique <small>(11 chiffres)</small></label><input type="text" id="f-imputation" inputmode="numeric" maxlength="11"></div></div>
+      <div class="deux"><div><label for="f-pour_le">Pour le</label><input type="date" id="f-pour_le"></div><div><label for="f-heure">à <small>(heure, ex. 05:00)</small></label><input type="time" id="f-heure"></div></div>
+      <div class="deux"><div><label for="f-retour">Date de retour</label><input type="date" id="f-retour"></div><div><label for="f-parcours">Parcours</label><input type="text" id="f-parcours" list="dl-parcours" autocomplete="off"></div></div>
+      <label for="f-objet">Objet de la mission</label><input type="text" id="f-objet" maxlength="160">
+    </div>
+    <div class="bloc">
+      <h2>Personnes à transporter <span class="nb" id="nb">0</span></h2>
+      <label for="ajout">Ajouter une personne <small>(tapez le nom : choisi dans BDDORGA, son téléphone est repris)</small></label>
+      <input type="text" id="ajout" list="dl-pers" autocomplete="off" placeholder="Nom de la personne…">
+      <div id="l-pers" style="margin-top:10px"></div>
+      <button class="btn-s" id="b-vide" type="button">+ Ajouter une ligne vide</button>
+      <datalist id="dl-pers"></datalist><datalist id="dl-parcours"></datalist>
+      <label for="f-signataire" style="margin-top:14px">Signataire</label><input type="text" id="f-signataire">
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">Nouvelle requête</button></div>
+    </div>
+    <div class="bloc"><h2>🗂 Historique <button class="btn-s" id="h-tout" type="button" style="float:right">🗑 Tout supprimer</button></h2><div id="histo"></div></div>
+  </div>
+  <div class="apercu"><div id="feuille" data-i18n-non></div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  document.getElementById('css-doc').textContent = Documents.css;
+  var M = Documents.trouver('transport'), CLE = 'requete_transport_histo', CLE_P = 'requete_transport_parcours', personnes = [], moi = '';
+  var CH = ['date', 'division', 'demandeur', 'vehicule', 'imputation', 'pour_le', 'heure', 'retour', 'parcours', 'objet', 'signataire'], lignes = [];
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function fr(i) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(i || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.className = 'toast show'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3000); }
+  function trouver(txt) {
+    var q = norm(txt).trim(); if (!q) return null;
+    var ex = personnes.filter(function (p) { return norm(p.nom) === q; }); if (ex.length) return ex[0];
+    var mots = q.split(/\s+/), c = personnes.filter(function (p) { var n = norm(p.nom); return mots.every(function (m) { return n.indexOf(m) !== -1; }); });
+    return c.length === 1 ? c[0] : null;
+  }
+  function lire() {
+    var v = {}; CH.forEach(function (k) { v[k] = $('f-' + k).value; });
+    v.personnes = lignes.map(function (l) { return { nom: l.nom, tel: l.tel }; }); return v;
+  }
+  function ecrire(v) {
+    CH.forEach(function (k) { $('f-' + k).value = v[k] == null ? '' : v[k]; });
+    lignes = (v.personnes || []).map(function (p) { return { nom: p.nom || '', tel: p.tel || '' }; }); dessinerPersonnes(); apercu();
+  }
+  function neuf() { return { date: iso(), division: 'INFRASTRUCTURES', demandeur: moi, vehicule: 'Véhicule', imputation: '43000451000', parcours: 'RNS – OUARGLA – RNS', signataire: 'Le Chef De Division Infrastructures', personnes: [] }; }
+  function dessinerPersonnes() {
+    var z = $('l-pers'); z.textContent = '';
+    lignes.forEach(function (l, i) {
+      var r = document.createElement('div'); r.className = 'pers';
+      var n = document.createElement('input'); n.type = 'text'; n.value = l.nom; n.setAttribute('list', 'dl-pers'); n.setAttribute('aria-label', 'Nom de la personne ' + (i + 1));
+      n.oninput = function () { l.nom = n.value; apercu(); };
+      n.onchange = function () { var p = trouver(n.value); if (p) { l.nom = p.nom; l.tel = p.tel || l.tel; dessinerPersonnes(); apercu(); } };
+      var t = document.createElement('input'); t.type = 'text'; t.value = l.tel; t.placeholder = 'Téléphone'; t.setAttribute('aria-label', 'Téléphone ' + (i + 1)); t.oninput = function () { l.tel = t.value; apercu(); };
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'btn-s'; x.textContent = '✕'; x.title = 'Retirer'; x.onclick = function () { lignes.splice(i, 1); dessinerPersonnes(); apercu(); };
+      r.appendChild(n); r.appendChild(t); r.appendChild(x); z.appendChild(r);
+    });
+  }
+  function apercu() {
+    var v = lire(); $('nb').textContent = lignes.filter(function (l) { return String(l.nom).trim(); }).length;
+    $('feuille').innerHTML = Documents.rendre(M, v); ajuster();
+  }
+  function ajuster() { var z = $('feuille').parentNode, l = z.clientWidth - 28, w = 794; var k = Math.min(1, l / w); $('feuille').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuille').offsetHeight * k + 28) + 'px' : ''; }
+  window.addEventListener('resize', ajuster);
+  CH.forEach(function (k) { $('f-' + k).addEventListener('input', apercu); $('f-' + k).addEventListener('change', apercu); });
+  $('ajout').addEventListener('change', function () {
+    var p = trouver($('ajout').value); if (!p) { if ($('ajout').value.trim()) { lignes.push({ nom: $('ajout').value.trim(), tel: '' }); } else return; } else lignes.push({ nom: p.nom, tel: p.tel || '' });
+    $('ajout').value = ''; dessinerPersonnes(); apercu();
+  });
+  $('b-vide').onclick = function () { lignes.push({ nom: '', tel: '' }); dessinerPersonnes(); apercu(); };
+
+  // personnes de BDDORGA (annuaire) et utilisateur connecté
+  if (window.Api) {
+    Api.call('annuaire_personnes').then(function (r) { personnes = (r.personnes || []).filter(function (p) { return p.nom; }); var dl = $('dl-pers'); personnes.forEach(function (p) { var o = document.createElement('option'); o.value = p.nom; o.label = [p.fonction, p.tel].filter(Boolean).join(' · '); dl.appendChild(o); }); }).catch(function () { /* sans annuaire : saisie libre */ });
+    Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; if (!$('f-demandeur').value) { $('f-demandeur').value = moi; apercu(); } }).catch(function () { /* garde.js gère la session */ });
+  }
+  // parcours déjà utilisés (ce navigateur)
+  function parcours() { try { return JSON.parse(localStorage.getItem(CLE_P) || '[]'); } catch (e) { return []; } }
+  function retenirParcours(p) { p = String(p || '').trim(); if (!p) return; var l = parcours().filter(function (x) { return x !== p; }); l.unshift(p); try { localStorage.setItem(CLE_P, JSON.stringify(l.slice(0, 15))); } catch (e) { /* rien */ } dessinerParcours(); }
+  function dessinerParcours() { var dl = $('dl-parcours'); dl.textContent = ''; var l = parcours(); if (l.indexOf('RNS – OUARGLA – RNS') < 0) l.push('RNS – OUARGLA – RNS'); l.forEach(function (p) { var o = document.createElement('option'); o.value = p; dl.appendChild(o); }); }
+
+  // historique (ce navigateur)
+  function histo() { try { return JSON.parse(localStorage.getItem(CLE) || '[]'); } catch (e) { return []; } }
+  function sauver(l) { try { localStorage.setItem(CLE, JSON.stringify(l.slice(0, 60))); } catch (e) { /* stockage indisponible */ } dessinerHisto(); }
+  function dessinerHisto() {
+    var z = $('histo'), l = histo(); z.textContent = ''; $('h-tout').hidden = !l.length;
+    if (!l.length) { var p = document.createElement('p'); p.style.cssText = 'font-size:12.5px;color:var(--text-muted)'; p.textContent = 'Aucune requête enregistrée sur cet ordinateur.'; z.appendChild(p); return; }
+    l.forEach(function (v, i) {
+      var d = document.createElement('div'); d.className = 'histo'; var c = document.createElement('div'); c.className = 'i';
+      var b = document.createElement('b'); b.textContent = (v.objet || '(sans objet)') + ' — ' + (v.parcours || ''); var s = document.createElement('small'); s.textContent = 'Pour le ' + fr(v.pour_le) + ' · ' + ((v.personnes || []).filter(function (x) { return x.nom; }).length) + ' personne(s)';
+      c.appendChild(b); c.appendChild(s); d.appendChild(c);
+      var o = document.createElement('button'); o.className = 'btn-s'; o.type = 'button'; o.textContent = 'Rouvrir'; o.onclick = function () { ecrire(v); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      var x = document.createElement('button'); x.className = 'btn-s'; x.type = 'button'; x.textContent = '🗑'; x.title = 'Supprimer'; x.onclick = function () { if (!confirm('Supprimer cette requête de l\'historique ?')) return; var h = histo(); h.splice(i, 1); sauver(h); };
+      d.appendChild(o); d.appendChild(x); z.appendChild(d);
+    });
+  }
+  function garder() {
+    var v = lire(); if (!String(v.objet).trim() && !lignes.some(function (l) { return String(l.nom).trim(); })) { toast('Indiquez au moins l\'objet ou une personne.'); return false; }
+    var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); retenirParcours(v.parcours); return true;
+  }
+  $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
+  $('b-imp').onclick = function () { garder(); window.print(); };          // impression en un clic (fenêtre d'impression directe), la requête est gardée dans l'historique
+  $('b-vider').onclick = function () { ecrire(neuf()); };
+  $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
+  dessinerParcours(); ecrire(neuf()); dessinerHisto();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

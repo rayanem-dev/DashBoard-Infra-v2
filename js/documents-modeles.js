@@ -93,7 +93,7 @@
         '<div class="odm-sign"><b>' + E(v.signataire || 'Le Chef de Division Infrastructures') + '</b></div>' + PIED_ODM;
     });
 
-  /** Requête de transport de personnel (modèle de la Division Infrastructures) : mise en page de l'original, personnes choisies dans BDDORGA (nom, téléphone). */
+  /** Requête de transport de personnel (modèle de la Division Infrastructures ; page à part : requete-transport.html) : mise en page de l'original, personnes choisies dans BDDORGA (nom, téléphone). */
   modele('transport', 'autres', 'Requête de transport de personnel', 'Demande à la Division Appro/Transport un véhicule pour des agents (date, heure, parcours, personnes de BDDORGA avec leur téléphone, imputation analytique).',
     [L.date, { k: 'demandeur', l: 'Formulée par Monsieur', def: 'user.nom', pers: { nom: 'demandeur' } }, { k: 'division', l: 'Division', def: 'INFRASTRUCTURES' },
       { k: 'vehicule', l: 'Type de véhicule demandé', t: 'select', opts: ['Véhicule', 'Bus', 'Minibus', 'Pick-up', 'Camion', 'Autre'], def: 'Véhicule' },
@@ -125,6 +125,7 @@
         '<div class="odm-sign"><b><u>' + E(v.signataire || 'Le Chef De Division Infrastructures') + '</u></b></div></div>' + PIED_ODM;
     });
   M[M.length - 1].opts = { _titre: 'REQUETE DE TRANSPORT DE PERSONNEL', _sansNum: true, _division: 'Division Infrastructures' };
+  M[M.length - 1].cache = true;   // modèle de la page « Requête de transport de personnel » (requete-transport.html), pas de la liste des documents administratifs
 
   modele('demande-mission', 'missions', 'Demande de mission', 'Demande au Directeur Régional d\'autoriser une mission de travail.',
     [L.date, L.division, L.agent, L.matricule, L.fonction, { k: 'objet', l: 'Objet détaillé de la mission', t: 'textarea' }, { k: 'depart', l: 'Date de départ', t: 'date' },
