@@ -108,6 +108,7 @@
         <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé avec les groupes cochés (rien n'est envoyé)">👁 Voir les destinataires</button>
         <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux groupes cochés">✉ Envoyer maintenant</button>
       </div>
+      <details id="pers" style="margin:0 0 10px"><summary style="cursor:pointer;font-size:13px;font-weight:700">＋ Choisir des personnes (en plus des boîtes) <span id="pers-n" class="aide"></span></summary><div id="pers-liste" class="aide" style="margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 14px">Chargement…</div></details>
       <div id="liste-dest" class="aide" style="margin:0 0 10px" hidden></div>
       <div class="barre" style="gap:8px">
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" id="auto-actif" style="width:auto;min-width:0"> Envoi automatique chaque jour à</label>
@@ -374,17 +375,34 @@
     }).catch(function () { /* liste indisponible */ });
   }
   // ----- Envoi du consolidé par e-mail (au clic) et envoi automatique du soir (option)
+  function personnesCochees() { if (!document.querySelector('#pers-liste input')) return personnesVoulues.slice(); return Array.prototype.map.call(document.querySelectorAll('#pers-liste input:checked'), function (c) { return c.value; }); }
+  function majNbPers() { var n = personnesCochees().length; $('pers-n').textContent = n ? '(' + n + ' cochée' + (n > 1 ? 's' : '') + ')' : ''; }
+  var personnesChargees = null, personnesVoulues = [];
+  function chargerPersonnes() {
+    if (personnesChargees) return personnesChargees;
+    return personnesChargees = Api.call('rapports_conso_personnes').then(function (r) {
+      var z = $('pers-liste'); z.textContent = '';
+      r.personnes.forEach(function (p) {
+        var l = el('label'); l.style.cssText = 'display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:500';
+        var c = el('input'); c.type = 'checkbox'; c.value = p.email; c.style.cssText = 'width:auto;min-width:0'; c.checked = personnesVoulues.indexOf(p.email) >= 0; c.onchange = majNbPers;
+        l.appendChild(c); l.appendChild(el('span', null, p.nom + ' — ' + p.role + (p.service ? ' · ' + p.service : ''))); z.appendChild(l);
+      });
+      if (!r.personnes.length) z.textContent = 'Aucun compte actif avec e-mail.'; majNbPers();
+    }).catch(function (e) { personnesChargees = null; $('pers-liste').textContent = e.message; });
+  }
+  $('pers').addEventListener('toggle', function () { if ($('pers').open) chargerPersonnes(); });
   function groupesCoches() { var g = {}; document.querySelectorAll('#envoi input[data-g]').forEach(function (c) { g[c.getAttribute('data-g')] = c.checked; }); return g; }
   function etatAuto(c) {
     $('auto-actif').checked = !!c.actif; $('auto-heure').value = c.heure;
     document.querySelectorAll('#envoi input[data-g]').forEach(function (x) { x.checked = !!c.groupes[x.getAttribute('data-g')]; });
+    personnesVoulues = c.personnes || []; document.querySelectorAll('#pers-liste input').forEach(function (x) { x.checked = personnesVoulues.indexOf(x.value) >= 0; }); if (personnesVoulues.length) $('pers-n').textContent = '(' + personnesVoulues.length + ' cochée' + (personnesVoulues.length > 1 ? 's' : '') + ')';
     $('auto-etat').textContent = c.actif ? 'Envoi automatique actif : chaque jour à partir de ' + c.heure + ' h' + (c.dernier ? ' (dernier envoi : ' + fr(c.dernier) + ')' : '') + '. Décochez puis « Enregistrer » pour l\'arrêter.' : 'Envoi automatique désactivé. Quand il est coché, le consolidé du jour est régénéré (il écrase l\'ancien) puis envoyé aux groupes cochés, une fois par jour, à l\'heure réglée ; sans rapport ce jour-là, rien n\'est envoyé.';
     if (c.actif && c.erreur) $('auto-etat').textContent += ' ⚠ Dernier essai (' + c.essai + ') : ' + c.erreur;
   }
   $('b-liste-dest').addEventListener('click', function () {
     var z = $('liste-dest'), g = groupesCoches(); z.hidden = false; z.textContent = 'Chargement…';
-    if (!g.secretariat && !g.chef_service && !g.chef_division) { z.textContent = 'Cochez au moins un groupe.'; return; }
-    Api.call('rapports_conso_destinataires', { groupes: g }).then(function (r) {
+    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length) { z.textContent = 'Cochez au moins un groupe ou une personne.'; return; }
+    Api.call('rapports_conso_destinataires', { groupes: g, personnes: personnesCochees() }).then(function (r) {
       z.textContent = '';
       z.appendChild(el('b', null, r.destinataires.length + ' destinataire(s) :'));
       if (!r.destinataires.length) { z.appendChild(document.createTextNode(' aucun compte actif avec e-mail dans ces groupes.')); return; }
@@ -395,15 +413,15 @@
   });
   $('b-envoyer').addEventListener('click', function () {
     var j = $('s-date').value, g = groupesCoches();
-    if (!g.secretariat && !g.chef_service && !g.chef_division) { toast('Cochez au moins un destinataire', true); return; }
+    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length) { toast('Cochez au moins un destinataire', true); return; }
     if (!consolideDuJour) { toast('Générez d\'abord le consolidé du ' + fr(j), true); return; }
-    if (!confirm('Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux groupes cochés ?')) return;
+    if (!confirm('Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux destinataires cochés ?')) return;
     var b = $('b-envoyer'); b.disabled = true;
-    Api.call('rapports_consolide_envoyer', { date: j, groupes: g }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+    Api.call('rapports_consolide_envoyer', { date: j, groupes: g, personnes: personnesCochees() }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
   });
   $('b-auto').addEventListener('click', function () {
     var b = $('b-auto'); b.disabled = true;
-    Api.call('rapports_conso_auto_maj', { actif: $('auto-actif').checked, heure: Number($('auto-heure').value), groupes: groupesCoches() }).then(function (c) { etatAuto(c); toast(c.actif ? 'Envoi automatique enregistré' : 'Envoi automatique désactivé'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+    Api.call('rapports_conso_auto_maj', { actif: $('auto-actif').checked, heure: Number($('auto-heure').value), groupes: groupesCoches(), personnes: personnesCochees() }).then(function (c) { etatAuto(c); toast(c.actif ? 'Envoi automatique enregistré' : 'Envoi automatique désactivé'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
   });
   $('b-gen').addEventListener('click', function () {
     var b = $('b-gen'), j = $('s-date').value;

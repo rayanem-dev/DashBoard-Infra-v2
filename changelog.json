@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-199",
+    "date": "2026-10-26",
+    "title": "Version 6.2.6 — Consolidé : personnes à cocher en plus des boîtes",
+    "changes": [
+      "Envoyer le consolidé : « ＋ Choisir des personnes » liste les comptes actifs (secrétariat, chefs de service, chef de division) avec leur e-mail ; on coche ceux qui doivent le recevoir, en plus (ou à la place) des boîtes. Valable pour « Envoyer maintenant » et pour l'envoi automatique du soir (le choix est mémorisé)."
+    ]
+  },
+  {
     "id": "2026-10-26-198",
     "date": "2026-10-26",
     "title": "Version 6.2.5 — La boule des jours sur toutes les pages",
