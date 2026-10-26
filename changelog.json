@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-174",
+    "date": "2026-10-26",
+    "title": "Version 5.92.1 — Avancement du chantier : moyenne automatique",
+    "changes": [
+      "Rapport journalier : l'avancement du chantier se calcule automatiquement comme la moyenne des pourcentages des ouvrages (il s'affiche dans la case pendant la saisie) ; on peut toujours le saisir soi-même, la valeur saisie l'emporte. Avant, le plus avancé des ouvrages était retenu.",
+      "Les rapports déjà enregistrés gardent leur valeur ; en les corrigeant (« ✎ Corriger »), laisser la case vide applique la moyenne."
+    ]
+  },
+  {
     "id": "2026-10-26-173",
     "date": "2026-10-26",
     "title": "Version 5.92.0 — Vidéo de formation : Rapports journaliers",
