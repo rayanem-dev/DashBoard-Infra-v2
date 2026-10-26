@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-180",
+    "date": "2026-10-26",
+    "title": "Version 5.96.1 — Générateur Requête Transport rétabli",
+    "changes": [
+      "La carte « Générateur Requête Transport » (personnel, engins, etc.) est rétablie : elle n'aurait pas dû être remplacée. « Requête de transport de personnel » reste une carte à part (page du portail, personnes de BDDORGA, impression en un clic)."
+    ]
+  },
+  {
     "id": "2026-10-26-179",
     "date": "2026-10-26",
     "title": "Version 5.96.0 — Requête de transport de personnel : page à part",

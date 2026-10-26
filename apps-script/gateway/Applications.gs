@@ -77,9 +77,17 @@ var SEED_APPS = [
  ],
  [
   "logistique",
+  "Générateur Requête Transport",
+  "Application de génération des requêtes de transport pour la division Infrastructure.",
+  "🚚",
+  "https://script.google.com/macros/s/AKfycbzdT9ccbrUmHZfTHCdFC09ZFG-KX3TR95qvpe5fyuIjE_tSMe-1hVEQDKknD629KHoU/exec",
+  1
+ ],
+ [
+  "logistique",
   "Requête de transport de personnel",
   "Requête de transport de personnel de la division Infrastructure : les personnes se choisissent dans BDDORGA (nom et téléphone repris), le nombre se calcule seul ; document prêt à imprimer en un clic.",
-  "🚚",
+  "🚌",
   "requete-transport.html",
   1
  ],
@@ -498,21 +506,19 @@ function retirerAnciennePec_() {
 
 
 /**
- * Une seule fois : la carte « Générateur Requête Transport » (ancienne application externe, ou carte déjà basculée sur documents.html#transport) ouvre
- * désormais la page à part « Requête de transport de personnel » du portail (requete-transport.html).
+ * Une seule fois : « Générateur Requête Transport » (application externe : personnel, engins, etc.) reste une carte à part entière ; « Requête de transport de personnel »
+ * (page du portail requete-transport.html) en est une autre. Rétablit l'ancienne carte si une version précédente l'avait remplacée.
  */
-function migrerRequeteTransport_() {
+function retablirGenerateurTransport_() {
   var props = PropertiesService.getScriptProperties();
-  if (props.getProperty('TRANSPORT_PORTAIL_V2') === '1') return;
+  if (props.getProperty('TRANSPORT_PORTAIL_V3') === '1') return;
   try {
-    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iD = h.indexOf('description'), iU = h.indexOf('url');
-    for (var i = 1; i < v.length; i += 1) {
-      if (/^(Générateur Requête Transport|Requête de transport de personnel)/.test(String(v[i][iT]))) {
-        sh.getRange(i + 1, iT + 1).setValue('Requête de transport de personnel'); sh.getRange(i + 1, iU + 1).setValue('requete-transport.html');
-        sh.getRange(i + 1, iD + 1).setValue(SEED_APPS.filter(function (r) { return r[1] === 'Requête de transport de personnel'; })[0][2]); break;
-      }
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iU = h.indexOf('url');
+    for (var i = 1; i < v.length; i += 1) {   // la carte transformée par les versions 5.95 / 5.96 devient la carte de la page du portail
+      if (/^Requête de transport de personnel/.test(String(v[i][iT])) && String(v[i][iU]) !== 'requete-transport.html') sh.getRange(i + 1, iU + 1).setValue('requete-transport.html');
     }
-    props.setProperty('TRANSPORT_PORTAIL_V2', '1');
+    ajouterApplicationsManquantes();   // remet « Générateur Requête Transport » (absente) et ajoute la carte de la page si besoin
+    props.setProperty('TRANSPORT_PORTAIL_V3', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }

@@ -218,7 +218,7 @@ function preparerSimulation_() {
   if (typeof fusionnerVivier_ === 'function' && props.getProperty('SIMU_PRET') === '1') fusionnerVivier_();
   if (typeof retirerCartesEnquetes_ === 'function' && props.getProperty('SIMU_PRET') === '1') retirerCartesEnquetes_();
   if (typeof migrerPriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerPriseEnCharge_();
-  if (typeof migrerRequeteTransport_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerRequeteTransport_();
+  if (typeof retablirGenerateurTransport_ === 'function' && props.getProperty('SIMU_PRET') === '1') retablirGenerateurTransport_();
   if (typeof retirerAnciennePec_ === 'function' && props.getProperty('SIMU_PRET') === '1' && props.getProperty('PEC_PORTAIL_V1') === '1') retirerAnciennePec_();
   if (props.getProperty('SIMU_PRET') === '1') return;
   var lock = (typeof LockService !== 'undefined') ? LockService.getScriptLock() : null;
