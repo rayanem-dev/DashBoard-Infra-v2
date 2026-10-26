@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-187",
+    "date": "2026-10-26",
+    "title": "Version 6.0.1 — Prise en charge : libellé de la validité",
+    "changes": [
+      "Prise en charge et autorisation d'accès : la case « Valable 2 mois » devient « Valable jusqu'à la fin du mois prochain », avec le mois suivant détecté et écrit (par exemple « novembre 2026 »)."
+    ]
+  },
+  {
     "id": "2026-10-26-186",
     "date": "2026-10-26",
     "title": "Version 6.0.0 — Barre latérale rabattable",

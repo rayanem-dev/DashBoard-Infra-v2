@@ -264,7 +264,7 @@ window.google = { script: { run: (function () {
       </div>
       <div class="ligne-check" id="ligneValable2Mois" style="display:none;">
         <input type="checkbox" id="valable2Mois">
-        <label>Valable 2 mois</label>
+        <label for="valable2Mois" id="libValable">Valable jusqu'à la fin du mois prochain</label>
       </div>
       <div class="ligne-check">
         <input type="checkbox" id="injecterEnquetes" checked>
@@ -441,6 +441,12 @@ window.google = { script: { run: (function () {
     document.getElementById('dateDepart').value = d.toISOString().split('T')[0];
   });
 
+  // « Valable jusqu'à la fin du mois prochain » : le mois suivant est détecté et écrit (ex. « fin de novembre 2026 »)
+  (function () {
+    const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    const n = new Date(); const p = new Date(n.getFullYear(), n.getMonth() + 1, 1);
+    const l = document.getElementById('libValable'); if (l) l.textContent = 'Valable jusqu\'à la fin du mois prochain (' + MOIS[p.getMonth()] + ' ' + p.getFullYear() + ')';
+  })();
   let servicesParPrestataire = {}, basesParPrestataire = {}, imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
