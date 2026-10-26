@@ -105,6 +105,8 @@
   });
   // avatar du compte en haut à droite (pages du site connectées ; ni la connexion ni les applications Apps Script)
   if (!NOM && !/connexion\.html/.test(location.pathname) && window.Api && !window.Avatar) { var av = document.createElement('script'); av.src = BASE + 'js/avatar.js'; document.head.appendChild(av); }
+  // boule des jours restants de la rotation, contre la pastille du profil (toutes les pages connectées sauf l'accueil, qui a la sienne)
+  if (!NOM && !/connexion\.html|portail\.html/.test(location.pathname) && window.Api && !window.JaugeEntete) { var je = document.createElement('script'); je.src = BASE + 'js/jauge-entete.js'; document.head.appendChild(je); }
   // barre latérale rabattable (version 6) : applications et catégories du menu, sur toutes les pages du site connectées
   if (!NOM && !/connexion\.html/.test(location.pathname) && window.Api && !window.MenuLateral) { var ml = document.createElement('script'); ml.src = BASE + 'js/menu-lateral.js'; document.head.appendChild(ml); }
 })();
