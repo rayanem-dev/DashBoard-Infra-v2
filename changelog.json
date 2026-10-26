@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-196",
+    "date": "2026-10-26",
+    "title": "Version 6.2.3 — Envoi du consolidé : boîtes de service et suivi des échecs",
+    "changes": [
+      "Le rapport journalier consolidé est désormais envoyé aux boîtes fonctionnelles : Service Travaux Entretien, Construction, Électromécanique et CPM INFRA RNS (groupe « Chefs de service »), Chef Division INFRA - RNS, et le secrétariat (Sec-INFRA, sec.infra.rns, rayanem) — plus aux adresses personnelles des comptes.",
+      "Envoi automatique du soir : le déclencheur passe de toutes les heures à toutes les 15 minutes (envoi dans le quart d'heure après l'heure réglée) et se recrée tout seul s'il a disparu ; chaque échec (aucun rapport, e-mail refusé…) est noté dans le journal et affiché sous le réglage."
+    ]
+  },
+  {
     "id": "2026-10-26-195",
     "date": "2026-10-26",
     "title": "Version 6.2.2 — Fiche d'évaluation : contrats hors exécution",
