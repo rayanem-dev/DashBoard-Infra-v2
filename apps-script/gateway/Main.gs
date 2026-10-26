@@ -703,8 +703,9 @@ function consolideGenererCore_(date, parNom, parEmail) {
     return { consolide: consolideDe_({ date: date, version: version, genere_par: ligne[2], genere_le: maintenant, nb_chantiers: ligne[4], nb_rapports: nbR, p1: p[0], p2: p[1], p3: p[2], p4: p[3] }), remplace: !!ex };
   } finally { lock.releaseLock(); }
 }
-var CONSOLIDE_GROUPES_ = ['secretariat', 'chef_service', 'chef_division'];
-function groupesNettoyes_(g) { var o = {}; CONSOLIDE_GROUPES_.forEach(function (k) { o[k] = !!(g && (g[k] === true || g[k] === 'true' || g[k] === 1)); }); return o; }
+var CONSOLIDE_GROUPES_ = ['secretariat'];
+/** Le consolidé n'est envoyé qu'au secrétariat (décision du propriétaire) : les autres groupes d'anciens réglages sont ignorés. */
+function groupesNettoyes_(g) { return { secretariat: true }; }
 /** Envoie par e-mail le consolidé enregistré d'un jour aux groupes choisis. Jamais appelée sans clic, ni sans l'option automatique cochée. */
 function consolideEnvoyerCore_(date, groupes, parEmail) {
   var c = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
