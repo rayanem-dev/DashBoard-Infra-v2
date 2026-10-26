@@ -138,6 +138,6 @@ window.AIDE = {
     astuces: ['Le commentaire BDDORGA n\'est pas affiché.'] },
   'Fiche d’évaluation': { titre: 'Fiche d\'évaluation', img: 'fiche', video: 'fiche-evaluation',
     resume: 'Fiche mensuelle d\'évaluation d\'une entreprise : la cartouche se remplit depuis le Suivi CPM, le taux se calcule seul.',
-    etapes: ['Choisissez le contrat : entrepreneur, montant, dates et délai sont repris du Suivi CPM.', 'Cliquez sur les cases (pourcentage par critère) : le taux global se met à jour.', '« Générer » crée le PDF et l\'archive ; l\'onglet des fiches permet de rouvrir, imprimer ou supprimer.'],
+    etapes: ['Choisissez le contrat : entrepreneur, montant, dates et délai sont repris du Suivi CPM. La liste est classée : contrats en exécution, puis hors contrat (préparation avant l\'exécution, levée des réserves après) ; les contrats infructueux ne sont jamais proposés.', 'Cliquez sur les cases (pourcentage par critère) : le taux global se met à jour.', '« Générer » crée le PDF et l\'archive ; l\'onglet des fiches permet de rouvrir, imprimer ou supprimer.'],
     astuces: ['Les réponses sont conservées avec le PDF pour pouvoir rouvrir une fiche.'] }
 };

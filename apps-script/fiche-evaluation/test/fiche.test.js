@@ -25,7 +25,8 @@ test('cartouche depuis le Suivi CPM : contrats en exécution, formats de la fich
   const l = (statut, contrat, extra) => { const r = new Array(19).fill(''); r[3] = 'Terrassement'; r[8] = statut; r[12] = 'ETB ZATOUT ABDENCER'; r[13] = contrat; r[14] = '162300000'; r[16] = '10/05/2025'; r[17] = '36'; r[18] = '09/05/2028'; return Object.assign(r, extra || {}); };
   const lignes = [['', '', '', 'Intitulé', '', '', '', '', 'Statut'], l('Contrat en exécution', '53.INFRA.25'), l('Contrat échu', '10.INFRA.24'), l('Contrat en exécution', '53.INFRA.25')];
   const r = contratsDepuis_(lignes);
-  assert.deepStrictEqual(r, [{ contrat: 'I/53/RNS/INFRA/2025', numeroCpm: '53.INFRA.25', entrepreneur: 'ETB ZATOUT ABDENCER', montant: '162 300 000,00 DA HT', dateOds: '10/05/2025', dateVigueur: '10/05/2025', dateService: '09/05/2028', delai: '36 Mois', manques: [], projet: 'Terrassement' }]);
+  assert.deepStrictEqual(r.filter(x => x.phase === 'execution'), [{ contrat: 'I/53/RNS/INFRA/2025', numeroCpm: '53.INFRA.25', entrepreneur: 'ETB ZATOUT ABDENCER', montant: '162 300 000,00 DA HT', dateOds: '10/05/2025', dateVigueur: '10/05/2025', dateService: '09/05/2028', delai: '36 Mois', manques: [], projet: 'Terrassement', statut: 'Contrat en exécution', phase: 'execution' }]);
+  assert.deepStrictEqual(r.map(x => [x.numeroCpm, x.phase]), [['53.INFRA.25', 'execution'], ['10.INFRA.24', 'reserves']]);   // l'échu est proposé en levée des réserves, après l'exécution
 });
 test('cartouche : numéro avec année sur 4 chiffres ou faute de frappe, unité de durée, champs manquants signalés', () => {
   assert.strictEqual(numeroLong_('03.INFRA.2026'), 'I/03/RNS/INFRA/2026'); assert.strictEqual(numeroLong_('40,INFRA,26'), 'I/40/RNS/INFRA/2026');
@@ -68,4 +69,10 @@ test('services : cinq boîtes e-mail, recherche par identifiant, liste sans adre
   assert.strictEqual(C.serviceMail_('cpm').email, 'RNS.CPM_INFRA@Sonatrach.dz');
   assert.strictEqual(C.serviceMail_('inconnu'), null);
   assert.ok(!JSON.stringify(C.listeServices()).includes('@'), 'les adresses ne sortent pas vers l\'écran');
+});
+
+test('phases des contrats : exécution, préparation avant, levée des réserves après, infructueux jamais proposés', () => {
+  const { phaseDe_ } = require('../Code.js');
+  assert.deepStrictEqual(['Contrat en exécution', 'Non démarré', 'Dossier en cours', 'Attribué', 'Bloqué', 'Contrat échu', 'Terminé', 'infructueux', ''].map(phaseDe_),
+    ['execution', 'preparation', 'preparation', 'preparation', 'preparation', 'reserves', 'reserves', '', '']);
 });

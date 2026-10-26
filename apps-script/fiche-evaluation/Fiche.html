@@ -64,7 +64,7 @@
     <div class="edition" id="edition"></div>
     <div class="carte"><h2>Cartouche</h2>
       <div class="grille">
-        <div class="large"><label for="contratCpm">Contrat en exécution (Suivi CPM) — remplit la cartouche</label><select id="contratCpm"><option value="">— choisir un contrat, ou tout saisir à la main —</option></select><p class="aide" id="aideCpm">Chargement des contrats du Suivi CPM…</p></div>
+        <div class="large"><label for="contratCpm">Contrat du Suivi CPM (en exécution, ou hors contrat : préparation / levée des réserves) — remplit la cartouche</label><select id="contratCpm"><option value="">— choisir un contrat, ou tout saisir à la main —</option></select><p class="aide" id="aideCpm">Chargement des contrats du Suivi CPM…</p></div>
         <div><label for="ref">Réf</label><input id="ref" placeholder="……………………"></div>
         <div><label for="date">Date de la fiche</label><input type="date" id="date"></div>
         <div></div>
@@ -151,13 +151,18 @@
     google.script.run
       .withSuccessHandler(l => {
         contrats = l || []; const s = $('contratCpm');
-        contrats.forEach((c, i) => { const o = el('option', null, (c.manques && c.manques.length ? '⚠ ' : '') + c.entrepreneur + ' — ' + (c.contrat || 'sans n°') + ' — ' + c.projet.slice(0, 70)); o.value = i; s.appendChild(o); });
-        $('aideCpm').textContent = contrats.length + ' contrat(s) en exécution dans le Suivi CPM (lecture seule). Tout reste modifiable. ⚠ = information manquante dans le Suivi CPM.';
+        const GROUPES = { execution: 'Contrats en exécution', preparation: 'Hors contrat — préparation (avant l\'exécution)', reserves: 'Hors contrat — levée des réserves (contrat échu)' }, groupes = {};
+        contrats.forEach((c, i) => {
+          if (!groupes[c.phase]) { groupes[c.phase] = document.createElement('optgroup'); groupes[c.phase].label = GROUPES[c.phase] || c.phase; s.appendChild(groupes[c.phase]); }
+          const o = el('option', null, (c.manques && c.manques.length ? '⚠ ' : '') + c.entrepreneur + ' — ' + (c.contrat || 'sans n°') + ' — ' + c.projet.slice(0, 70)); o.value = i; groupes[c.phase].appendChild(o);
+        });
+        const nb = p => contrats.filter(c => c.phase === p).length;
+        $('aideCpm').textContent = nb('execution') + ' contrat(s) en exécution, ' + nb('preparation') + ' en préparation, ' + nb('reserves') + ' en levée des réserves dans le Suivi CPM (lecture seule). Tout reste modifiable. ⚠ = information manquante dans le Suivi CPM.';
       })
       .withFailureHandler(e => { $('aideCpm').textContent = 'Suivi CPM indisponible : ' + e.message + ' — saisie à la main possible.'; })
       .getContrats();
   }
-  $('contratCpm').addEventListener('change', () => { const c = contrats[$('contratCpm').value]; if (c) { remplir(c); $('aideCpm').textContent = c.manques && c.manques.length ? '⚠ Non renseigné dans le Suivi CPM : ' + c.manques.join(', ') + ' — à compléter dans le Suivi CPM ou à saisir ici.' : contrats.length + ' contrat(s) en exécution dans le Suivi CPM (lecture seule). Tout reste modifiable.'; } });
+  $('contratCpm').addEventListener('change', () => { const c = contrats[$('contratCpm').value]; if (c) { remplir(c); $('aideCpm').textContent = c.manques && c.manques.length ? '⚠ Non renseigné dans le Suivi CPM : ' + c.manques.join(', ') + ' — à compléter dans le Suivi CPM ou à saisir ici.' : (c.phase !== 'execution' ? 'Hors contrat (' + (c.phase === 'reserves' ? 'levée des réserves' : 'préparation') + ', statut « ' + c.statut + ' »). ' : '') + 'Cartouche reprise du Suivi CPM (lecture seule). Tout reste modifiable.'; } });
 
   $('btnGenerer').addEventListener('click', () => {
     const cartouche = {}; CHAMPS.forEach(k => cartouche[k] = $(k).value);
