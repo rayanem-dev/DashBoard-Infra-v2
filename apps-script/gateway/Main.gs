@@ -527,7 +527,7 @@ function rapportsChantiers_(req) {
     var connus = {}; hors.forEach(function (h) { connus[h.id] = 1; });
     tous.forEach(function (c) { if (!c.actif && c.phase && !connus[c.id] && !ouverts[c.id]) hors.push({ id: c.id, nom: c.nom, contrat: c.contrat, entreprise: c.entreprise, statut: 'Période terminée', phase: c.phase }); });
   }
-  return { chantiers: vis.map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service, phase: c.phase }; }), niveau: niv, peut_ouvrir: peut, hors_contrat: hors };
+  return { chantiers: vis.map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service, phase: c.phase }; }), niveau: niv, peut_ouvrir: peut, peut_envoyer: role === 'secretariat' && niv >= 3, hors_contrat: hors };
 }
 /** Ouvre (ou rouvre) un chantier hors contrat : préparation avant le contrat, levée des réserves après ; chef de division, secrétariat et chefs de service, sans validation. */
 function rapportChantierOuvrir_(req) {
@@ -703,9 +703,14 @@ function consolideGenererCore_(date, parNom, parEmail) {
     return { consolide: consolideDe_({ date: date, version: version, genere_par: ligne[2], genere_le: maintenant, nb_chantiers: ligne[4], nb_rapports: nbR, p1: p[0], p2: p[1], p3: p[2], p4: p[3] }), remplace: !!ex };
   } finally { lock.releaseLock(); }
 }
-var CONSOLIDE_GROUPES_ = ['secretariat'];
-/** Le consolidé n'est envoyé qu'au secrétariat (décision du propriétaire) : les autres groupes d'anciens réglages sont ignorés. */
-function groupesNettoyes_(g) { return { secretariat: true }; }
+var CONSOLIDE_GROUPES_ = ['secretariat', 'chef_service', 'chef_division'];
+function groupesNettoyes_(g) { var o = {}; CONSOLIDE_GROUPES_.forEach(function (k) { o[k] = !!(g && (g[k] === true || g[k] === 'true' || g[k] === 1)); }); return o; }
+/** Génération, aperçu, envoi et réglage automatique du consolidé : réservés au rôle secrétariat (décision du propriétaire). */
+function niveauConsolide_(u) {
+  var n = niveauRapports_(u, 3);
+  if (Droits.roleCanon(u.role) !== 'secretariat') throw Object.assign(new Error('L\'envoi du consolidé est réservé au secrétariat'), { code: 'DROITS' });
+  return n;
+}
 /** Envoie par e-mail le consolidé enregistré d'un jour aux groupes choisis. Jamais appelée sans clic, ni sans l'option automatique cochée. */
 function consolideEnvoyerCore_(date, groupes, parEmail) {
   var c = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
@@ -720,12 +725,12 @@ function consolideEnvoyerCore_(date, groupes, parEmail) {
 }
 /** Qui recevrait le consolidé avec les groupes cochés (aperçu, rien n'est envoyé). */
 function consoDestinataires_(req) {
-  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var l = Rapports.boitesDestinataires(groupesNettoyes_(req.groupes)).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
   return { destinataires: l };
 }
 function rapportsConsolideEnvoyer_(req) {
-  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
   return consolideEnvoyerCore_(date, groupesNettoyes_(req.groupes), u.email);
 }
@@ -746,12 +751,12 @@ function consoAutoAssurerDeclencheur_(force) {
   return true;
 }
 function consoAutoLire_(req) {
-  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   try { if (consoAutoAssurerDeclencheur_(true)) Store.journal('consolide_auto_declencheur', u.email, 'déclencheur recréé'); } catch (e) { /* lecture seule si l'autorisation manque */ }
   return consoAutoConfig_();
 }
 function consoAutoMaj_(req) {
-  var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
+  var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var h = Number(req.heure); if (!(h >= 0 && h <= 23) || Math.floor(h) !== h) throw new Error('Heure : nombre entier de 0 à 23');
   var ancien = consoAutoConfig_(), c = { actif: !!req.actif, heure: h, groupes: groupesNettoyes_(req.groupes), dernier: ancien.dernier, essai: '', erreur: '' };
   if (c.actif && !CONSOLIDE_GROUPES_.some(function (k) { return c.groupes[k]; })) throw new Error('Cochez au moins un destinataire pour l\'envoi automatique.');
