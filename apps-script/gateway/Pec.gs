@@ -14,6 +14,7 @@ var PEC_APPELS_ = {
   rechercherPersonnes: { global: 'rechercherPersonnes', niveau: 1 },
   verifierEnquetes: { global: 'verifierEnquetes', niveau: 1 },
   historiquePEC: { global: 'historiquePEC', niveau: 1 },
+  memoirePEC: { global: 'pecMemoireBrute_', niveau: 1 },
   listerFichiersGeneres: { moteur: 'pecw_listerFichiersGeneres', niveau: 1 },
   lireFichierPourImpression: { moteur: 'pecw_lireFichierPourImpression', niveau: 1, fichier: true },
   envoyerFichierParMail: { moteur: 'pecw_envoyerFichierParMail', niveau: 1, fichier: true },
@@ -47,6 +48,32 @@ function pecImputationFixee_(portee, demande, options) {
   var emp = options && options.servicesParPrestataire && options.servicesParPrestataire[demande.prestataire];
   if (!emp) return demande;
   var r = {}; Object.keys(demande).forEach(function (k) { r[k] = demande[k]; }); r.emputation = emp; return r;
+}
+/** Données brutes de la mémoire de saisie : le Journal_PEC (une ligne par personne et par demande) et les véhicules connus du tableau des véhicules. */
+function pecMemoireBrute_() {
+  var sh = SpreadsheetApp.openById(PEC_SS_ID).getSheetByName('Journal_PEC'), vehicules = [];
+  try { if (typeof vhLireOnglet_ === 'function') vehicules = vhLireOnglet_().lignes.map(function (l) { return { immat: l.immat, modele: l.modele }; }); } catch (e) { /* tableau des véhicules indisponible */ }
+  return { valeurs: sh && sh.getLastRow() > 1 ? sh.getDataRange().getDisplayValues() : [], vehicules: vehicules };
+}
+/**
+ * Pur : mémoire de saisie pour auto-remplir le formulaire depuis les anciens enregistrements. brut = { valeurs: Journal_PEC (en-tête comprise : date, prestataire, base, documents, nom, prenom, fonction, vehicule, immatriculation, …), vehicules: [{ immat, modele }] }.
+ * Retourne { personnes: [{ nom, prenom, fonction, typeVehicule, immatriculation }], vehicules: [{ immat, modele }], fonctions: [..], types: [..] } : la saisie la plus récente de chaque personne ;
+ * un prestataire (portee non nulle) ne reçoit que les enregistrements de ses contrats et aucun véhicule du tableau.
+ */
+function pecMemoireDepuis_(brut, portee) {
+  var cle = function (t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }, immatCle = function (t) { return String(t || '').toUpperCase().replace(/[^0-9A-Z]/g, ''); };
+  var v = (brut && brut.valeurs) || [], pers = {}, ordre = [], veh = {}, fonctions = {}, types = {};
+  for (var i = v.length - 1; i >= 1; i -= 1) {   // du plus récent au plus ancien
+    var r = v[i]; if (!r || !r[4] && !r[5]) continue;
+    if (portee !== null && !pecOptionAutorisee_(portee, r[1])) continue;
+    var k = cle(r[4]) + '|' + cle(r[5]), f = String(r[6] || '').trim(), t = String(r[7] || '').trim(), im = String(r[8] || '').trim();
+    var p = pers[k]; if (!p) { p = pers[k] = { nom: String(r[4] || '').trim(), prenom: String(r[5] || '').trim(), fonction: '', typeVehicule: '', immatriculation: '' }; ordre.push(k); }
+    if (!p.fonction && f) p.fonction = f; if (!p.typeVehicule && t) p.typeVehicule = t; if (!p.immatriculation && im) p.immatriculation = im;
+    if (f) fonctions[f] = true; if (t) types[t.toUpperCase()] = true;
+    var ic = immatCle(im); if (ic.length >= 5 && !veh[ic]) veh[ic] = { immat: im.toUpperCase(), modele: t.toUpperCase() };
+  }
+  if (portee === null) ((brut && brut.vehicules) || []).forEach(function (x) { var ic = immatCle(x.immat); if (ic.length >= 5 && !veh[ic] && x.modele) veh[ic] = { immat: String(x.immat).toUpperCase(), modele: String(x.modele).toUpperCase() }; if (x.modele) types[String(x.modele).toUpperCase()] = true; });
+  return { personnes: ordre.slice(0, 3000).map(function (k) { return pers[k]; }), vehicules: Object.keys(veh).slice(0, 3000).map(function (k) { return veh[k]; }), fonctions: Object.keys(fonctions).sort().slice(0, 500), types: Object.keys(types).sort().slice(0, 300) };
 }
 /** Pur : identifiants Drive contenus dans des liens « …/d/ID/… » ou « …?id=ID ». */
 function pecIdsDeLiens_(liens) {
@@ -86,6 +113,7 @@ function pecAppeler_(req) {
     if (/permission|authori[sz]ation|autoris/i.test(String(e && e.message))) throw new Error('La prise en charge n\'a pas encore l\'autorisation de créer des documents : l\'administrateur doit activer les autorisations de la passerelle (docs/PRISE-EN-CHARGE-PASSERELLE.md).');
     throw e;
   } finally { if (lock) lock.releaseLock(); }
+  if (req.fn === 'memoirePEC') r = pecMemoireDepuis_(r, portee);   // saisie automatique depuis les anciens enregistrements (limitée aux contrats d'un prestataire)
   // filtres de sortie pour un prestataire
   if (portee !== null && r) {
     if (req.fn === 'obtenirOptionsFormulaire') { r = pecOptionsPourPortee_(r, portee); r.imputation_fixe = true; }

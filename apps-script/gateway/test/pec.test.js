@@ -98,3 +98,21 @@ test('prestataire : l\'imputation n\'est pas un choix, elle vient du service du 
   assert.strictEqual(m.appeler('obtenirOptionsFormulaire', []).imputation_fixe, true);
   assert.strictEqual(monde('chef_service', '').appeler('obtenirOptionsFormulaire', []).imputation_fixe, undefined);
 });
+
+test('mémoire de saisie : dernière saisie de chaque personne, véhicules connus, limitée aux contrats d\'un prestataire', () => {
+  const m = monde('chef_service', '');
+  const f = (brut, portee) => JSON.parse(vm.runInContext('JSON.stringify(pecMemoireDepuis_(' + JSON.stringify(brut) + ',' + JSON.stringify(portee) + '))', m.ctx));
+  const E = ['date', 'prestataire', 'base', 'documents', 'nom', 'prenom', 'fonction', 'vehicule', 'immatriculation'];
+  const brut = { valeurs: [E,
+    ['2026-09-01', '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement', 'B', 'PEC', 'BENKHET', 'Mohamed', 'chauffeur', 'toyota hilux', '01307-316-30'],
+    ['2026-10-01', '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement', 'B', 'PEC', 'BENKHET', 'Mohamed', 'Chauffeur poids lourd', '', ''],
+    ['2026-10-02', '30.INFRA.24 - GLOBI CORP - Maintenance', 'B', 'PEC', 'DUPONT', 'Paul', 'Électricien', 'Nacelle', '00164-316-30']],
+    vehicules: [{ immat: '00437-216-30', modele: 'Shacman' }] };
+  const t = f(brut, null);
+  assert.strictEqual(t.personnes.length, 2);
+  const b = t.personnes.filter(p => p.nom === 'BENKHET')[0];
+  assert.deepStrictEqual([b.fonction, b.typeVehicule, b.immatriculation], ['Chauffeur poids lourd', 'toyota hilux', '01307-316-30']);   // fonction la plus récente, véhicule le plus récent renseigné
+  assert.ok(t.vehicules.some(v => v.immat === '00437-216-30' && v.modele === 'SHACMAN')); assert.ok(t.types.indexOf('NACELLE') >= 0);
+  const pr = f(brut, ['etb zatout abdenacer']);
+  assert.deepStrictEqual(pr.personnes.map(p => p.nom), ['BENKHET']); assert.ok(!pr.vehicules.some(v => v.immat === '00437-216-30'));
+});

@@ -323,6 +323,7 @@ window.google = { script: { run: (function () {
   </div>
 </div>
 
+<datalist id="dl-fonctions"></datalist><datalist id="dl-types"></datalist><datalist id="dl-immat"></datalist>
 <script>
   // Construit les 12 lignes du tableau
   const corps = document.getElementById('corpsTableau');
@@ -336,10 +337,10 @@ window.google = { script: { run: (function () {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td><input data-champ="nom"></td>
       <td><input data-champ="prenom"></td>
-      <td><input data-champ="fonction" placeholder="auto"></td>
+      <td><input data-champ="fonction" placeholder="auto" list="dl-fonctions" autocomplete="off"></td>
       <td class="col-base"><select data-champ="base" aria-label="Base de vie"></select></td>
-      <td class="col-veh"><input data-champ="typeVehicule"></td>
-      <td class="col-veh"><input data-champ="immatriculation"></td>`;
+      <td class="col-veh"><input data-champ="typeVehicule" list="dl-types" autocomplete="off" style="text-transform:uppercase"></td>
+      <td class="col-veh"><input data-champ="immatriculation" list="dl-immat" autocomplete="off" style="text-transform:uppercase"></td>`;
     const sel = tr.querySelector('select'); optionsBase(sel, document.getElementById('base').value);
     sel.addEventListener('change', () => {
       sel.dataset.manuel = '1';   // une base choisie à la main n'est plus écrasée par la base par défaut
@@ -379,6 +380,7 @@ window.google = { script: { run: (function () {
         tr.dataset.connu = '1';
         marquer(tr);
         fermerSugg();
+        if (typeof remplirDepuisMemoire === 'function') setTimeout(() => remplirDepuisMemoire(tr), 0);
       };
       sugg.appendChild(d);
     });
@@ -723,10 +725,53 @@ window.google = { script: { run: (function () {
   function capPrenom(t) {
     return String(t || '').trim().replace(/\s+/g, ' ').split(' ').map(m => m.replace(/[^\s\-'’]+/g, w => ((w === w.toLowerCase() || w === w.toUpperCase()) && /[A-Za-zÀ-ÿ]/.test(w)) ? w.charAt(0).toLocaleUpperCase('fr') + w.slice(1).toLocaleLowerCase('fr') : w)).join(' ');
   }
+  // Fonction : première lettre de chaque mot en majuscule, comme un nom (les petits mots « de », « du », « et »… restent en minuscules) ; véhicule et immatriculation : toujours en MAJUSCULES
+  const PETITS = ['de', 'du', 'des', 'd', 'la', 'le', 'les', 'et', 'en', 'au', 'aux', 'à', 'pour', 'sur', 'sous', 'chez'];
+  function capFonction(t) {
+    return String(t || '').trim().replace(/\s+/g, ' ').split(' ').map((m, i) => m.replace(/[^\s\-'’]+/g, w => (i > 0 && PETITS.indexOf(w.toLowerCase()) !== -1) ? w.toLowerCase() : w.charAt(0).toLocaleUpperCase('fr') + w.slice(1).toLocaleLowerCase('fr'))).join(' ').replace(/\b(d|l|j|n|s|c|qu)(['’])(\p{Lu})/giu, (m, a, ap, c) => a.toLowerCase() + ap + c.toLocaleLowerCase('fr'));   // « d'équipe » : pas de majuscule après l'élision
+  }
+  function majVeh(t) { return String(t || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('fr'); }
+  corps.addEventListener('input', e => {   // majuscules pendant la frappe (le curseur reste à sa place)
+    const c = e.target && e.target.dataset ? e.target.dataset.champ : '';
+    if (c !== 'typeVehicule' && c !== 'immatriculation') return;
+    const i = e.target, a = i.selectionStart, b = i.selectionEnd, v = i.value.toLocaleUpperCase('fr');
+    if (v !== i.value) { i.value = v; try { i.setSelectionRange(a, b); } catch (x) { /* rien */ } }
+  });
+  // Saisie automatique depuis les anciens enregistrements (Journal des prises en charge + tableau des véhicules)
+  let memoire = { personnes: [], vehicules: [] };
+  const cleP = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const cleI = t => String(t || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+  function chargerMemoire() {
+    google.script.run.withSuccessHandler(function (r) {
+      if (!r || !r.personnes) return; memoire = r;
+      const rempl = (id, l) => { const dl = document.getElementById(id); dl.textContent = ''; l.forEach(x => { const o = document.createElement('option'); o.value = x; dl.appendChild(o); }); };
+      rempl('dl-fonctions', (r.fonctions || []).map(capFonction).filter((x, i, a) => a.indexOf(x) === i)); rempl('dl-types', r.types || []); rempl('dl-immat', (r.vehicules || []).map(v => v.immat));
+      corps.querySelectorAll('tr').forEach(remplirDepuisMemoire);
+    }).memoirePEC();
+  }
+  /** Complète (sans jamais écraser) fonction, véhicule et immatriculation d'une ligne d'après l'ancien enregistrement de la personne, ou le type d'après l'immatriculation. */
+  function remplirDepuisMemoire(tr) {
+    const v = n => tr.querySelector('[data-champ=' + n + ']'), auto = document.getElementById('genererAuto').checked;
+    const nom = v('nom').value, prenom = v('prenom').value;
+    if (nom.trim() && prenom.trim()) {
+      const k = cleP(nom) + '|' + cleP(prenom), p = memoire.personnes.filter(x => cleP(x.nom) + '|' + cleP(x.prenom) === k)[0];
+      if (p) {
+        if (!v('fonction').value.trim() && p.fonction) v('fonction').value = capFonction(p.fonction);
+        if (auto) { if (!v('typeVehicule').value.trim() && p.typeVehicule) v('typeVehicule').value = majVeh(p.typeVehicule); if (!v('immatriculation').value.trim() && p.immatriculation) v('immatriculation').value = majVeh(p.immatriculation); }
+      }
+    }
+    const im = cleI(v('immatriculation').value);
+    if (auto && im.length >= 5 && !v('typeVehicule').value.trim()) { const x = memoire.vehicules.filter(q => cleI(q.immat) === im)[0]; if (x && x.modele) v('typeVehicule').value = majVeh(x.modele); }
+  }
   document.addEventListener('focusout', e => {
     const c = e.target && e.target.dataset ? e.target.dataset.champ : '';
     if (c === 'nom') e.target.value = majNom(e.target.value); else if (c === 'prenom') e.target.value = capPrenom(e.target.value);
+    else if (c === 'fonction') e.target.value = capFonction(e.target.value);
+    else if (c === 'typeVehicule' || c === 'immatriculation') e.target.value = majVeh(e.target.value);
+    if (c === 'nom' || c === 'prenom' || c === 'immatriculation') { const tr = e.target.closest('tr'); if (tr) setTimeout(() => remplirDepuisMemoire(tr), 0); }
   });
+  document.getElementById('genererAuto').addEventListener('change', () => corps.querySelectorAll('tr').forEach(remplirDepuisMemoire));
+  chargerMemoire();
 
   function envoyer() {
     const personnes = [];
@@ -735,6 +780,7 @@ window.google = { script: { run: (function () {
       tr.querySelectorAll('input').forEach(inp => p[inp.dataset.champ] = inp.value.trim());
       const sb = tr.querySelector('select[data-champ=base]'); p.base = (document.getElementById('genererPEC').checked && sb) ? sb.value : '';
       if (p.nom) p.nom = majNom(p.nom); if (p.prenom) p.prenom = capPrenom(p.prenom);
+      if (p.fonction) p.fonction = capFonction(p.fonction); if (p.typeVehicule) p.typeVehicule = majVeh(p.typeVehicule); if (p.immatriculation) p.immatriculation = majVeh(p.immatriculation);
       if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
     });
 
