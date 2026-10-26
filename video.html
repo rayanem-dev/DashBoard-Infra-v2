@@ -38,7 +38,7 @@
 <script>
 (function () {
   // La vidéo n'est plus publiée sur le site : elle est servie par la passerelle après connexion. Sans session, on passe par la connexion puis on revient ici.
-  var VIDEOS = { 'fiche-evaluation': { titre: 'Fiche d\'évaluation : comment l\'utiliser', desc: 'Choisir le contrat, cocher les critères, générer la fiche PDF, l\'imprimer ou l\'envoyer (1 min 37).' } };
+  var VIDEOS = { 'rapports-journaliers': { titre: 'Rapports journaliers : du rapport du jour au consolidé', desc: 'Saisir le rapport du jour, le corriger, générer le consolidé, voir les destinataires et l\'envoyer (1 min 53).' }, 'fiche-evaluation': { titre: 'Fiche d\'évaluation : comment l\'utiliser', desc: 'Choisir le contrat, cocher les critères, générer la fiche PDF, l\'imprimer ou l\'envoyer (1 min 37).' } };
   var k = new URLSearchParams(location.search).get('v') || 'fiche-evaluation', id = VIDEOS[k] ? k : 'fiche-evaluation', d = VIDEOS[id];
   document.getElementById('t').textContent = d.titre; document.getElementById('d').textContent = d.desc;
   if (!window.Api || !Api.token()) { try { sessionStorage.setItem('infra_retour', location.pathname.split('/').pop() + location.search); } catch (e) { /* rien */ } location.replace('connexion.html'); return; }

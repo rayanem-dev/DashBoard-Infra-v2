@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-173",
+    "date": "2026-10-26",
+    "title": "Version 5.92.0 — Vidéo de formation : Rapports journaliers",
+    "changes": [
+      "Nouvelle vidéo de formation (1 min 53) : saisir le rapport du jour, le corriger, générer le consolidé, voir les destinataires, l'envoyer et régler l'envoi automatique. Elle est disponible depuis le bouton « ? » de la page Rapports journaliers, après connexion (comme la vidéo de la fiche d'évaluation, elle n'est pas publique).",
+      "Elle a été tournée avec les données de démonstration du portail."
+    ]
+  },
+  {
     "id": "2026-10-25-172",
     "date": "2026-10-25",
     "title": "Version 5.91.3 — Accueil : avancement à jour, détail des jours sur téléphone",

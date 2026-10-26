@@ -2,7 +2,7 @@
  * Vidéos de formation, servies APRÈS CONNEXION seulement (elles ne sont plus publiées sur le site public).
  * Les données viennent des fichiers générés VideosFormation*.gs (source privée : data/videos, voir outils/generer-videos-gateway.js).
  */
-var VIDEOS_TITRES_ = { 'fiche-evaluation': 'Fiche d\'évaluation : comment l\'utiliser' };
+var VIDEOS_TITRES_ = { 'fiche-evaluation': 'Fiche d\'évaluation : comment l\'utiliser', 'rapports-journaliers': 'Rapports journaliers : du rapport du jour au consolidé' };
 /** Pur (testé en Node) : assemble les morceaux d'une vidéo ; null si l'identifiant n'existe pas. */
 function videoAssembler_(parties, id) {
   var p = parties && Object.prototype.hasOwnProperty.call(parties, id) ? parties[id] : null; if (!p) return null;
