@@ -103,10 +103,10 @@ test('chantiers depuis le CPM : seuls les contrats en exécution ; rien de manue
     { id: '43-infra-25', nom: 'ancien nom', service: 'Construction', source: 'cpm', actif: '1' },
     { id: '99-infra-20', nom: 'Fini', service: '', source: 'cpm', actif: '1' },
     { id: 'routine-entretien', nom: 'Routine', service: 'Entretien', source: 'manuel', actif: '1' }];
-  const p = Rapports.chantiersDepuisCpm(enr, existants);
+  const p = Rapports.chantiersDepuisCpm(enr, existants, '2026-10-26');
   assert.deepStrictEqual(p.ajouter.map(c => [c.id, c.nom, c.service]), [['72-infra-25', 'Forage trois puits — ENAGEO', '']]);
   assert.deepStrictEqual(p.maj, [{ id: '43-infra-25', nom: 'Abris — ENCC' }]);
-  assert.deepStrictEqual(p.desactiver, ['99-infra-20']); // contrat sorti de l'exécution ; la routine manuelle reste
+  assert.deepStrictEqual(p.reserves, [{ id: '99-infra-20', jusqu: '2027-04-26' }]); // contrat sorti de l'exécution : levée des réserves pendant 6 mois ; la routine manuelle reste
   assert.deepStrictEqual(p.reactiver, []);
 });
 
@@ -187,4 +187,26 @@ test('avancement automatique : moyenne des ouvrages (Dessablage 30, 40, 8, 60 �
   const lignes = [30, 40, 8, 60].map((a, i) => ({ zone: 'RA' + i, texte: 'Dessablage', avancement: String(a) })).concat([{ zone: 'LAVALIN', texte: 'Travaux génie civil', avancement: '' }]);
   const r = Rapports.valider({ date: AUJ, chantier: 'forage_rns', effectif: '20', lignes }, AUJ, 2, IDS);
   assert.strictEqual(r.rapport.avancement, 34.5);
+});
+
+test('chantiers hors contrat : ouverture par les chefs, 6 mois par défaut, fermeture à la date de fin', () => {
+  const ex = [{ id: '99-infra-20', nom: 'Fini', service: 'Construction', actif: 0, contrat: '99.INFRA.20' }];
+  assert.ok(Rapports.ouvrirChantier({ phase: 'preparation', nom: 'Aménagement zone' }, {}, 'agent', AUJ, ex).erreur);
+  const n = Rapports.ouvrirChantier({ phase: 'preparation', nom: 'Aménagement zone base vie', service: 'Construction', contrat: '12.INFRA.26' }, { service: 'Électromécanique' }, 'chef_division', '2026-10-26', ex);
+  assert.deepStrictEqual([n.neuf, n.id, n.valeurs.service, n.valeurs.ouvert_jusqu, n.valeurs.phase, n.valeurs.actif], [true, 'hc-amenagement-zone-base-vie', 'Construction', '2027-04-26', 'preparation', 1]);
+  const cs = Rapports.ouvrirChantier({ phase: 'preparation', nom: 'Essai', service: 'Construction' }, { service: 'Électromécanique' }, 'chef_service', '2026-10-26', ex);
+  assert.strictEqual(cs.valeurs.service, 'Électromécanique');   // un chef de service ouvre pour son service
+  assert.ok(Rapports.ouvrirChantier({ phase: 'reserves', id: '99-infra-20' }, { service: 'Électromécanique' }, 'chef_service', '2026-10-26', ex).erreur);
+  const re = Rapports.ouvrirChantier({ phase: 'reserves', id: '99-infra-20', jusqu: '2026-12-31' }, {}, 'secretariat', '2026-10-26', ex);
+  assert.deepStrictEqual([re.neuf, re.valeurs.phase, re.valeurs.ouvert_jusqu], [false, 'reserves', '2026-12-31']);
+  assert.ok(Rapports.ouvrirChantier({ phase: 'reserves', id: '99-infra-20', jusqu: '2026-01-01' }, {}, 'secretariat', '2026-10-26', ex).erreur);
+  assert.strictEqual(Rapports.ouvert({ actif: 1, phase: 'reserves', ouvert_jusqu: '2026-12-31' }, '2026-12-31'), true);
+  assert.strictEqual(Rapports.ouvert({ actif: 1, phase: 'reserves', ouvert_jusqu: '2026-12-31' }, '2027-01-01'), false);
+  assert.strictEqual(Rapports.ouvert({ actif: 1 }, '2030-01-01'), true);
+  assert.strictEqual(Rapports.jusquA('2026-08-31', 6), '2027-02-28');
+  assert.strictEqual(Rapports.etiquette({ nom: 'X', phase: 'reserves' }), 'X — Levée des réserves');
+});
+test('synthèse : les chantiers hors contrat ne comptent pas comme « rapport manquant »', () => {
+  const s = Rapports.synthese([{ id: 'a', nom: 'A', actif: 1 }, { id: 'b', nom: 'B', actif: 1, phase: 'preparation' }], [], '2026-10-26');
+  assert.deepStrictEqual([s.manquants, s.chantiers[1].nom], [1, 'B — Préparation']);
 });

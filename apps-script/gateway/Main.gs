@@ -194,6 +194,7 @@ function route_(req) {
     case 'donnees_multi': return donneesMulti_(req);
     case 'rapport_diapos': return rapportDiaposInjecter_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);
+    case 'rapport_chantier_ouvrir': return rapportChantierOuvrir_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
     case 'rapport_corriger': return rapportCorriger_(req);
@@ -494,9 +495,15 @@ function assurerColonnes_(nom, colonnes) {
   props.setProperty(cle, '1');
 }
 function chantiersTous_() {
-  assurerColonnes_('Chantiers', ['contrat', 'entreprise', 'source', 'fiche', 'suivi']);
+  assurerColonnes_('Chantiers', ['contrat', 'entreprise', 'source', 'fiche', 'suivi']); assurerColonnes_('Chantiers', ['phase', 'ouvert_jusqu']);
+  var auj = Dates.today();
   return Store.table('Chantiers').filter(function (c) { return c.id; })
-    .map(function (c) { return { id: String(c.id).toLowerCase(), nom: c.nom, service: c.service || '', actif: String(c.actif) === '0' ? 0 : 1, contrat: c.contrat || '', entreprise: c.entreprise || '', source: c.source || '', fiche: c.fiche || '', suivi: c.suivi || '' }; });
+    .map(function (c) {
+      var o = { id: String(c.id).toLowerCase(), nom: c.nom, service: c.service || '', actif: String(c.actif) === '0' ? 0 : 1, contrat: c.contrat || '', entreprise: c.entreprise || '', source: c.source || '', fiche: c.fiche || '', suivi: c.suivi || '',
+        phase: String(c.phase || ''), ouvert_jusqu: c.ouvert_jusqu instanceof Date ? Utilities.formatDate(c.ouvert_jusqu, 'Africa/Algiers', 'yyyy-MM-dd') : String(c.ouvert_jusqu || '') };
+      if (!Rapports.ouvert(o, auj)) o.actif = 0;   // préparation / levée des réserves arrivée à sa date de fin : fermé sans écriture
+      return o;
+    });
 }
 function chantiersActifs_() { return chantiersTous_().filter(function (c) { return c.actif; }); }
 function lignesLues_(v) { if (Array.isArray(v)) return v; try { var l = JSON.parse(String(v || '[]')); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
@@ -512,7 +519,20 @@ function rapportsLus_() {
 function rapportsChantiers_(req) {
   var u = Auth.userFromToken(req.token), niv = niveauRapports_(u, 1);
   assurerColonnes_('Utilisateurs', ['chantiers_sup']); u = Auth.userFromToken(req.token);
-  return { chantiers: Rapports.chantiersVisibles(chantiersActifs_(), u, niv), niveau: niv };
+  var role = Droits.roleCanon(u.role), peut = Rapports.peutCorriger(u, role), vis = Rapports.chantiersVisibles(chantiersActifs_(), u, niv);
+  var fermes = peut ? Rapports.chantiersVisibles(chantiersTous_().filter(function (c) { return !c.actif && String(c.contrat || '').trim() || (!c.actif && c.phase); }), u, role === 'chef_service' || role === 'interim_chef_service' ? 1 : 3).map(function (c) { return { id: c.id, nom: c.nom, service: c.service }; }) : [];
+  return { chantiers: vis.map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service, phase: c.phase }; }), niveau: niv, peut_ouvrir: peut, fermes: fermes };
+}
+/** Ouvre (ou rouvre) un chantier hors contrat : préparation avant le contrat, levée des réserves après ; chef de division, secrétariat et chefs de service, sans validation. */
+function rapportChantierOuvrir_(req) {
+  var u = Auth.userFromToken(req.token); niveauRapports_(u, 1);
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var v = Rapports.ouvrirChantier(req, u, Droits.roleCanon(u.role), Dates.today(), chantiersTous_()); if (v.erreur) throw new Error(v.erreur);
+    Store.maj('Chantiers', { id: v.id }, v.valeurs);
+    Store.journal('chantier_ouvert', u.email, v.id + ' ' + v.valeurs.phase + ' jusqu\'au ' + v.valeurs.ouvert_jusqu);
+    return { id: v.id, neuf: v.neuf, phase: v.valeurs.phase, jusqu: v.valeurs.ouvert_jusqu };
+  } finally { lock.releaseLock(); }
 }
 function rapportEnregistrer_(req) {
   var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 2);
@@ -599,15 +619,15 @@ function rapportsChantiersSync_(req) {
   var u = Auth.userFromToken(req.token); niveauRapports_(u, 3);
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
-    var existants = chantiersTous_(), plan = Rapports.chantiersDepuisCpm(cpmEnregistrements_(lignesSource_('cpm')), existants);
+    var existants = chantiersTous_(), plan = Rapports.chantiersDepuisCpm(cpmEnregistrements_(lignesSource_('cpm')), existants, Dates.today());
     plan.ajouter.forEach(function (c) { Store.maj('Chantiers', { id: c.id }, c); });
     plan.maj.forEach(function (c) { Store.maj('Chantiers', { id: c.id }, { nom: c.nom }); });
-    plan.desactiver.forEach(function (id) { Store.maj('Chantiers', { id: id }, { actif: 0 }); });
-    plan.reactiver.forEach(function (id) { Store.maj('Chantiers', { id: id }, { actif: 1 }); });
+    plan.reserves.forEach(function (x) { Store.maj('Chantiers', { id: x.id }, { phase: 'reserves', ouvert_jusqu: x.jusqu }); });
+    plan.reactiver.forEach(function (id) { Store.maj('Chantiers', { id: id }, { actif: 1, phase: '', ouvert_jusqu: '' }); });
     var routines = 0;
     CHANTIERS_ROUTINE_.forEach(function (r) { if (!existants.some(function (c) { return c.id === r[0]; })) { Store.maj('Chantiers', { id: r[0] }, { id: r[0], nom: r[1], service: r[2], actif: 1, source: 'manuel', contrat: '', entreprise: '' }); routines += 1; } });
-    Store.journal('chantiers_sync', u.email, plan.ajouter.length + ' ajoutés, ' + plan.maj.length + ' renommés, ' + plan.desactiver.length + ' désactivés, ' + plan.reactiver.length + ' réactivés, ' + routines + ' routine(s)');
-    return { ajoutes: plan.ajouter.length, renommes: plan.maj.length, desactives: plan.desactiver.length, reactives: plan.reactiver.length, routines: routines, total: chantiersTous_().filter(function (c) { return c.actif; }).length };
+    Store.journal('chantiers_sync', u.email, plan.ajouter.length + ' ajoutés, ' + plan.maj.length + ' renommés, ' + plan.reserves.length + ' en levée des réserves, ' + plan.reactiver.length + ' réactivés, ' + routines + ' routine(s)');
+    return { ajoutes: plan.ajouter.length, renommes: plan.maj.length, desactives: plan.reserves.length, reactives: plan.reactiver.length, routines: routines, total: chantiersTous_().filter(function (c) { return c.actif; }).length };
   } finally { lock.releaseLock(); }
 }
 /** Pages Avancement et Suivi chantier : un élément par chantier actif ayant un contrat (voir Rapports.tableau). Lecture : pilotage ou module rapports. */

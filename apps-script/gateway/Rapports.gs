@@ -74,10 +74,11 @@ var Rapports = (function () {
   function slugContrat(n) { return String(n == null ? '' : n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
   /**
    * Chantiers à partir du Suivi CPM (lecture seule) : un chantier par contrat « en exécution ». enr = cpmEnregistrements_ ; existants = lignes de l'onglet Chantiers.
-   * Retourne { ajouter: [{ id, nom, contrat, entreprise, service: '', source: 'cpm', actif: 1 }], maj: [{ id, nom }], desactiver: [id], reactiver: [id] }.
-   * Seuls les chantiers venus du CPM (source « cpm ») sont désactivés quand leur contrat n'est plus en exécution ; le service et les chantiers saisis à la main ne sont jamais touchés.
+   * Retourne { ajouter: [{ id, nom, contrat, entreprise, service: '', source: 'cpm', actif: 1 }], maj: [{ id, nom }], reserves: [{ id, jusqu }], reactiver: [id] }.
+   * Un chantier venu du CPM (source « cpm ») dont le contrat n'est plus en exécution passe en « levée des réserves » : il reste ouvert aux rapports jusqu'à `jusqu` (auj + 6 mois), puis se ferme tout seul.
+   * Un chantier fermé ou en phase (préparation / réserves) dont le contrat est en exécution est remis en exécution (reactiver). Le service et les chantiers saisis à la main ne sont jamais touchés.
    */
-  function chantiersDepuisCpm(enr, existants) {
+  function chantiersDepuisCpm(enr, existants, auj) {
     var voulus = {}, ordre = [];
     (enr.ordre || []).forEach(function (cle) {
       var d = enr.dossiers[cle]; if (!d || sans(d.statut).indexOf('execution') < 0) return;
@@ -87,15 +88,50 @@ var Rapports = (function () {
       voulus[id] = { id: id, nom: titre + (ent ? ' — ' + ent : ''), contrat: contrat, entreprise: ent, service: '', source: 'cpm', actif: 1 }; ordre.push(id);
     });
     var parId = {}; (existants || []).forEach(function (c) { if (c.id) parId[String(c.id).toLowerCase()] = c; });
-    var plan = { ajouter: [], maj: [], desactiver: [], reactiver: [] };
+    var plan = { ajouter: [], maj: [], reserves: [], reactiver: [] };
     ordre.forEach(function (id) {
       var c = parId[id], v = voulus[id];
       if (!c) { plan.ajouter.push(v); return; }
       if (String(c.nom) !== v.nom && String(c.source) === 'cpm') plan.maj.push({ id: id, nom: v.nom });
-      if (String(c.actif) === '0' && String(c.source) === 'cpm') plan.reactiver.push(id);
+      if ((String(c.actif) === '0' && String(c.source) === 'cpm') || c.phase) plan.reactiver.push(id);
     });
-    Object.keys(parId).forEach(function (id) { var c = parId[id]; if (String(c.source) === 'cpm' && !voulus[id] && String(c.actif) !== '0') plan.desactiver.push(id); });
+    Object.keys(parId).forEach(function (id) { var c = parId[id]; if (String(c.source) === 'cpm' && !voulus[id] && String(c.actif) !== '0' && !c.phase) plan.reserves.push({ id: id, jusqu: auj ? jusquA(auj, MOIS_OUVERTURE) : '' }); });
     return plan;
+  }
+
+  // ---- chantiers hors contrat : préparation (avant le contrat) et levée des réserves (après) ----
+  var PHASES = { preparation: 'Préparation', reserves: 'Levée des réserves' }, MOIS_OUVERTURE = 6;
+  /** Date ISO + n mois (le jour est ramené à la fin du mois si besoin). */
+  function jusquA(iso, n) { var p = String(iso).split('-'), y = +p[0], m = +p[1] - 1 + n, j = +p[2], d = new Date(Date.UTC(y, m, 1)); var fin = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), Math.min(j, fin))).toISOString().slice(0, 10); }
+  /** Chantier ouvert aux rapports à la date auj : actif, et pas arrivé au bout de sa période de préparation / de levée des réserves. */
+  function ouvert(c, auj) { if (String(c.actif) === '0') return false; return !(c.phase && c.ouvert_jusqu && auj && String(auj) > String(c.ouvert_jusqu)); }
+  /** Nom affiché : « Nom — Préparation » pour un chantier hors contrat. */
+  function etiquette(c) { return PHASES[c.phase] ? c.nom + ' — ' + PHASES[c.phase] : c.nom; }
+  /**
+   * Ouverture (ou réouverture) d'un chantier hors contrat par le chef de division, le secrétariat ou un chef de service.
+   * req = { phase, id?, nom?, service?, contrat?, jusqu? } ; existants = chantiers connus. Retourne { erreur } ou { id, valeurs, neuf }.
+   * Un chef de service n'ouvre que pour son service. Sans date de fin, le chantier reste ouvert 6 mois.
+   */
+  function ouvrirChantier(req, user, role, auj, existants) {
+    if (['chef_division', 'secretariat', 'chef_service', 'interim_chef_service'].indexOf(role) < 0) return { erreur: 'Seuls le chef de division, le secrétariat et les chefs de service peuvent ouvrir un chantier hors contrat' };
+    var phase = String(req.phase || ''); if (!PHASES[phase]) return { erreur: 'Choisissez la phase : préparation ou levée des réserves' };
+    var jusqu = String(req.jusqu || '').trim() || jusquA(auj, MOIS_OUVERTURE);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(jusqu) || jusqu < auj) return { erreur: 'La date de fin doit être aujourd\'hui ou plus tard' };
+    var chefService = role === 'chef_service' || role === 'interim_chef_service';
+    var id = String(req.id || '').toLowerCase().trim(), ex = id ? (existants || []).filter(function (c) { return String(c.id).toLowerCase() === id; })[0] : null;
+    if (id && !ex) return { erreur: 'Chantier inconnu' };
+    if (!ex) {
+      var nom = nettoyer(req.nom, 120); if (nom.length < 3) return { erreur: 'Indiquez le nom du chantier (3 caractères au moins)' };
+      id = ('hc-' + slugContrat(nom.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))).slice(0, 48).replace(/-+$/, '');
+      ex = (existants || []).filter(function (c) { return String(c.id).toLowerCase() === id; })[0] || null;
+      if (!ex) {
+        var service = chefService ? String(user.service || '') : nettoyer(req.service, 60);
+        return { id: id, neuf: true, valeurs: { id: id, nom: nom, service: service, contrat: nettoyer(req.contrat, 60), entreprise: '', source: 'manuel', actif: 1, phase: phase, ouvert_jusqu: jusqu } };
+      }
+    }
+    if (chefService && cleService(ex.service) && !servicePareil(ex.service, user.service)) return { erreur: 'Ce chantier est rattaché à un autre service' };
+    var v = { actif: 1, phase: phase, ouvert_jusqu: jusqu }; if (!String(ex.service || '').trim() && chefService) v.service = String(user.service || '');
+    return { id: String(ex.id).toLowerCase(), neuf: false, valeurs: v };
   }
 
   function dansLaPortee(user, niveau, r) {
@@ -125,10 +161,10 @@ var Rapports = (function () {
     var out = chantiers.filter(function (c) { return String(c.actif) !== '0'; }).map(function (c) {
       var rs = liste.filter(function (r) { return r.date === date && norm(r.chantier) === norm(c.id); });
       var avs = rs.map(function (r) { return r.avancement; }).filter(function (a) { return a !== '' && a != null; });
-      return { id: c.id, nom: c.nom, service: c.service, rapports: rs, effectif: rs.reduce(function (s, r) { return s + (Number(r.effectif) || 0); }, 0),
+      return { id: c.id, nom: etiquette(c), phase: c.phase || '', service: c.service, rapports: rs, effectif: rs.reduce(function (s, r) { return s + (Number(r.effectif) || 0); }, 0),
                avancement: avs.length ? Math.max.apply(null, avs) : null };
     });
-    return { date: date, chantiers: out, manquants: out.filter(function (c) { return !c.rapports.length; }).length };
+    return { date: date, chantiers: out, manquants: out.filter(function (c) { return !c.rapports.length && !c.phase; }).length };
   }
 
   function dateFr(s) {
@@ -151,7 +187,7 @@ var Rapports = (function () {
       var id = slugContrat(d.n_contrat); if (id && !parContrat[id]) parContrat[id] = d;
     });
     var aujMs = dateFr(auj), il7 = aujMs == null ? null : isoDe(aujMs - 6 * 864e5);
-    return chantiers.filter(function (c) { return String(c.actif) !== '0' && String(c.contrat || '').trim(); }).map(function (c) {
+    return chantiers.filter(function (c) { return String(c.actif) !== '0' && !c.phase && String(c.contrat || '').trim(); }).map(function (c) {
       var d = parContrat[c.id] || null, ods = d ? dateFr(d.date_ods) : null, ech = d ? dateFr(d.echeance) : null;
       var duree = d ? parseFloat(String(d.duree_contrat).replace(',', '.')) || null : null;
       if (ech == null && ods != null && duree) { var x = new Date(ods); x.setUTCMonth(x.getUTCMonth() + Math.round(duree)); ech = x.getTime(); }
@@ -242,7 +278,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;
