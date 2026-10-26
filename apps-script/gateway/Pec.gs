@@ -41,6 +41,13 @@ function pecOptionsPourPortee_(options, portee) {
   r.servicesParPrestataire = filtre(options.servicesParPrestataire); r.basesParPrestataire = filtre(options.basesParPrestataire);
   return r;
 }
+/** Pur : pour un prestataire, l'émputation (imputation) n'est pas un choix : elle est celle du service du contrat dans le Suivi CPM. Retourne la demande avec cette émputation (inchangée si le contrat n'a pas de service connu). */
+function pecImputationFixee_(portee, demande, options) {
+  if (portee === null || !demande) return demande;
+  var emp = options && options.servicesParPrestataire && options.servicesParPrestataire[demande.prestataire];
+  if (!emp) return demande;
+  var r = {}; Object.keys(demande).forEach(function (k) { r[k] = demande[k]; }); r.emputation = emp; return r;
+}
 /** Pur : identifiants Drive contenus dans des liens « …/d/ID/… » ou « …?id=ID ». */
 function pecIdsDeLiens_(liens) {
   var ids = [];
@@ -69,6 +76,7 @@ function pecAppeler_(req) {
     if (req.fn === 'soumettreFormulairePEC' || req.fn === 'verifierEnquetes') { if (!pecOptionAutorisee_(portee, args[0] && args[0].prestataire)) throw Object.assign(new Error('Ce contrat ne fait pas partie de vos contrats'), { code: 'DROITS' }); }
     if (def.fichier && pecMesFichiers_(u).indexOf(String(args[0] || '')) === -1) throw Object.assign(new Error('Ce document ne fait pas partie de vos documents'), { code: 'DROITS' });
     if (req.fn === 'historiquePEC') return { ok: true, demandes: [] };
+    if (req.fn === 'soumettreFormulairePEC' && args[0]) args[0] = pecImputationFixee_(portee, args[0], pecGlobale_('pecw_obtenirOptionsFormulaire')());   // le prestataire ne choisit pas l'imputation
   }
   var lock = def.verrou ? LockService.getScriptLock() : null;
   if (lock) lock.waitLock(100000);
@@ -80,7 +88,7 @@ function pecAppeler_(req) {
   } finally { if (lock) lock.releaseLock(); }
   // filtres de sortie pour un prestataire
   if (portee !== null && r) {
-    if (req.fn === 'obtenirOptionsFormulaire') r = pecOptionsPourPortee_(r, portee);
+    if (req.fn === 'obtenirOptionsFormulaire') { r = pecOptionsPourPortee_(r, portee); r.imputation_fixe = true; }
     else if (req.fn === 'rechercherPersonnes' && r.personnes) r.personnes = r.personnes.filter(function (p) { return badgesDansPortee_(portee, p.entreprise); });
     else if (req.fn === 'listerFichiersGeneres' && r.fichiers) { var mes = pecMesFichiers_(u); r.fichiers = r.fichiers.filter(function (x) { return mes.indexOf(x.id) !== -1; }); }
     else if (req.fn === 'soumettreFormulairePEC' && r.liens) pecRetenirFichiers_(u, pecIdsDeLiens_(r.liens));

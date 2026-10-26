@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-178",
+    "date": "2026-10-26",
+    "title": "Version 5.95.1 — Prise en charge prestataire : imputation imposée par le contrat",
+    "changes": [
+      "Prise en charge et autorisation d'accès : pour un compte prestataire, l'imputation (émputation) n'est plus un choix : elle est celle du service du contrat dans le Suivi CPM, grisée dans la page et imposée côté serveur. Le personnel de la division garde le choix libre."
+    ]
+  },
+  {
     "id": "2026-10-26-177",
     "date": "2026-10-26",
     "title": "Version 5.95.0 — Requête de transport de personnel",

@@ -87,3 +87,14 @@ test('une action inconnue ou un droit insuffisant est refusé', () => {
   m.ctx.acces_ = () => ({});
   assert.throws(() => m.appeler('obtenirOptionsFormulaire', []), /Droits insuffisants/);
 });
+
+test('prestataire : l\'imputation n\'est pas un choix, elle vient du service du contrat', () => {
+  const m = monde('prestataire', 'ETB Zatout Abdenacer');
+  const f = (portee, d, o) => vm.runInContext('pecImputationFixee_(' + JSON.stringify(portee) + ',' + JSON.stringify(d) + ',' + JSON.stringify(o) + ')', m.ctx);
+  const o = { servicesParPrestataire: { 'C1': 'Travaux Entretien' } };
+  assert.strictEqual(f(['x'], { prestataire: 'C1', emputation: 'Construction' }, o).emputation, 'Travaux Entretien');   // le choix du prestataire est écrasé
+  assert.strictEqual(f(['x'], { prestataire: 'C2', emputation: 'Construction' }, o).emputation, 'Construction');          // contrat sans service connu : inchangé
+  assert.strictEqual(f(null, { prestataire: 'C1', emputation: 'Construction' }, o).emputation, 'Construction');            // personnel de la division : libre
+  assert.strictEqual(m.appeler('obtenirOptionsFormulaire', []).imputation_fixe, true);
+  assert.strictEqual(monde('chef_service', '').appeler('obtenirOptionsFormulaire', []).imputation_fixe, undefined);
+});
