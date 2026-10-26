@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-26-185",
+    "date": "2026-10-26",
+    "title": "Version 5.98.1 — Statistique sous-traitants : lignes en double corrigées",
+    "changes": [
+      "Statistique sous-traitants : les sous-traitants apparaissaient deux fois (deux ouvertures simultanées de la page calculaient le mois en double). Le calcul est maintenant protégé par un verrou et les doublons existants sont supprimés tout seuls à la prochaine ouverture (la ligne modifiée à la main est conservée)."
+    ]
+  },
+  {
     "id": "2026-10-26-184",
     "date": "2026-10-26",
     "title": "Version 5.98.0 — Statistique sous-traitants",
