@@ -95,7 +95,7 @@
   function dessinerListe() {
     var q = norm($('q').value), z = $('liste'); z.textContent = '';
     Documents.categories.forEach(function (c) {
-      var ms = Documents.modeles.filter(function (m) { return m.categorie === c.id && (!q || norm(m.titre + ' ' + m.description).indexOf(q) !== -1); });
+      var ms = Documents.modeles.filter(function (m) { return !m.cache && m.categorie === c.id && (!q || norm(m.titre + ' ' + m.description).indexOf(q) !== -1); });
       if (!ms.length) return;
       z.appendChild(el('div', 'dp-cat', c.emoji + ' ' + c.titre));
       ms.forEach(function (m) { var b = el('button', 'dp-m' + (courant && courant.id === m.id ? ' on' : ''), m.titre); b.type = 'button'; b.onclick = function () { ouvrir(m.id); }; z.appendChild(b); });

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-26-179",
+    "date": "2026-10-26",
+    "title": "Version 5.96.0 — Requête de transport de personnel : page à part",
+    "changes": [
+      "« Requête de transport de personnel » devient une application à part entière (requete-transport.html), séparée des Documents administratifs : formulaire, aperçu A4, personnes choisies dans BDDORGA avec leur téléphone, nombre calculé seul, impression en un clic, historique et parcours déjà utilisés proposés.",
+      "Le modèle n'apparaît plus dans la liste des Documents administratifs ; la carte Logistique ouvre la nouvelle page."
+    ]
+  },
+  {
     "id": "2026-10-26-178",
     "date": "2026-10-26",
     "title": "Version 5.95.1 — Prise en charge prestataire : imputation imposée par le contrat",
