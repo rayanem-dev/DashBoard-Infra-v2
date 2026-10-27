@@ -36,7 +36,7 @@
     return lignes.map(function (l) { return l.map(function (c) { var t = String(c); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; }).join(','); }).join('\n');
   }
   function demoOrg() { try { var o = JSON.parse(sessionStorage.getItem('infra_v2_demo_org') || 'null'); if (o) return o; } catch (e) { /* rien */ } return { rubriques: [], apps: {} }; }
-  function demoOrganise(menu, avecMasquees) { var o = demoOrg(); return menu.map(function (m) { return Object.assign({}, m, { apps: (m.apps || []).map(function (x) { var w = o.apps[x.titre]; return w ? Object.assign({}, x, { rubrique: w.rubrique, ordre: w.ordre, actif: w.actif === 0 ? 0 : 1 }) : x; }).filter(function (x) { return avecMasquees || x.actif !== 0; }) }); }); }
+  function demoOrganise(menu, avecMasquees) { var o = demoOrg(); return menu.map(function (m) { return Object.assign({}, m, { apps: (m.apps || []).map(function (x) { var w = o.apps[x.titre]; return w ? Object.assign({}, x, { rubrique: w.rubrique, ordre: w.ordre, actif: w.actif === 0 ? 0 : 1, vision: w.vision == null ? null : w.vision }) : x; }).filter(function (x) { return avecMasquees || x.actif !== 0; }) }); }); }
   function menuDemo(role) {
     var m = (DEMO_MENU[role] || []).slice();
     if (!m.some(function (x) { return x.id === 'planning'; })) m.push({ id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 1, apps: [{ titre: 'Planning & rotations', description: 'Votre planning : 1 mois, 3 mois, 6 mois, 1 an.', emoji: '🗓️', url: 'planning.html' }] });
@@ -245,9 +245,9 @@
         return { user: pub(demoState.user), mdp_par_defaut: demoState.user.uid === 'u6', menu: demoOrganise(menuDemo(demoState.user.role)), rubriques: demoOrg().rubriques, organiser: demoState.user.role === 'secretariat' };
       case 'menu_organisation_lire': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); if (demoState.user.role !== 'secretariat') throw erreur('L\'organisation du menu est réservée au secrétariat', 'DROITS');
         var apps0 = []; demoOrganise(menuDemo('chef_division'), true).forEach(function (m) { m.apps.forEach(function (x) { apps0.push({ module: m.id, module_titre: m.titre, titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: x.rubrique || '', actif: x.actif === 0 ? 0 : 1, ordre: x.ordre === undefined ? '' : x.ordre }); }); });
-        return { rubriques: demoOrg().rubriques, apps: apps0 }; }
+        return { niveaux: [{ rang: 0, nom: 'Secrétariat (super admin)' }, { rang: 1, nom: 'Chef de division' }, { rang: 2, nom: 'Cadre supérieur' }, { rang: 3, nom: 'Chef de service / Intérim' }, { rang: 4, nom: 'Ordonnateur' }, { rang: 5, nom: 'Ingénieur / Chef d\'atelier' }, { rang: 6, nom: 'Conducteur' }, { rang: 7, nom: 'Agent' }, { rang: 8, nom: 'Stagiaire' }, { rang: 9, nom: 'Prestataire' }, { rang: 10, nom: 'Invité / visiteur' }], rubriques: demoOrg().rubriques, apps: apps0 }; }
       case 'menu_organisation_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); if (demoState.user.role !== 'secretariat') throw erreur('L\'organisation du menu est réservée au secrétariat', 'DROITS');
-        var org = { rubriques: p.rubriques || [], apps: {} }; (p.apps || []).forEach(function (x) { org.apps[x.titre] = { rubrique: x.rubrique, ordre: x.ordre, actif: x.actif === 0 ? 0 : 1 }; });
+        var org = { rubriques: p.rubriques || [], apps: {} }; (p.apps || []).forEach(function (x) { org.apps[x.titre] = { rubrique: x.rubrique, ordre: x.ordre, actif: x.actif === 0 ? 0 : 1, vision: x.vision == null ? null : x.vision }; });
         try { sessionStorage.setItem('infra_v2_demo_org', JSON.stringify(org)); } catch (e) { /* rien */ } return { categories: org.rubriques.length, applications: (p.apps || []).length }; }
       case 'donnees': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         if (p.source === 'cpm') return { csv: demoCpmCsv(), maj: new Date().toISOString() };

@@ -6,7 +6,7 @@
  */
 (function () {
   if (window.MenuOrganiser) return;
-  var cats = [], dlg, zone, msg, glisse = null;
+  var cats = [], dlg, zone, msg, glisse = null, niveaux = [], simul = null;   // simul = rang simulé (« Voir comme »), null = aucune simulation
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function nouvelId() { return 'c' + Date.now().toString(36) + Math.floor(Math.random() * 36).toString(36); }
   function auto(c) { return /^autres-/.test(c.id); }
@@ -19,7 +19,7 @@
     '#mo .mo-cat{border:1.5px solid var(--border,#E5E7EB);border-radius:12px;margin:0 0 10px;background:var(--surface-2,#F8F9FA)}#mo .mo-cat.sur{border-color:#E85D04;background:#FFF4EA}#mo .mo-cat.auto{opacity:.85;border-style:dashed}' +
     '#mo .mo-ch{display:flex;gap:6px;align-items:center;padding:8px 10px}#mo .mo-poi{cursor:grab;opacity:.55;font-size:15px;flex:none;user-select:none}' +
     '#mo input.mo-ico{width:44px;text-align:center;padding:5px 2px;font-size:16px}#mo input.mo-nom{flex:1;min-width:0;padding:6px 8px;font-weight:700}' +
-    '#mo input{border:1.5px solid var(--border,#E5E7EB);border-radius:8px;background:var(--surface,#fff);color:inherit;font:inherit}#mo select{border:1.5px solid var(--border,#E5E7EB);border-radius:8px;background:var(--surface,#fff);color:inherit;font:inherit;font-size:12px;padding:4px;max-width:120px}' +
+    '#mo input{border:1.5px solid var(--border,#E5E7EB);border-radius:8px;background:var(--surface,#fff);color:inherit;font:inherit}#mo select.mo-vis{max-width:150px;font-size:11.5px}#mo select{border:1.5px solid var(--border,#E5E7EB);border-radius:8px;background:var(--surface,#fff);color:inherit;font:inherit;font-size:12px;padding:4px;max-width:120px}' +
     '#mo .mo-b{border:1px solid var(--border,#E5E7EB);background:var(--surface,#fff);border-radius:8px;min-width:30px;height:30px;cursor:pointer;font:inherit;flex:none}#mo .mo-b:disabled{opacity:.35;cursor:default}#mo .mo-b.p{background:linear-gradient(135deg,#E85D04,#F48C06);color:#fff;border:0;padding:0 16px;height:36px;font-weight:700}' +
     '#mo ul{list-style:none;margin:0;padding:0 10px 8px}#mo li{display:flex;gap:6px;align-items:center;padding:5px 8px;margin:3px 0;border-radius:9px;background:var(--surface,#fff);border:1px solid var(--border,#E5E7EB)}#mo li.glisse{opacity:.4}#mo li .mo-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}#mo li.sur{box-shadow:0 -3px 0 #E85D04}' +
     '#mo .mo-vide{padding:6px 12px 10px;font-size:12.5px;color:var(--text-muted,#6B7280)}#mo .mo-err{color:#B42318;font-weight:700;font-size:13px;flex:1}';
@@ -68,7 +68,11 @@
         var sel = el('select'); sel.setAttribute('aria-label', 'Déplacer vers une autre catégorie'); var o0 = el('option', null, '↪ Déplacer…'); o0.value = ''; sel.appendChild(o0);
         cats.forEach(function (d) { if (d.id !== c.id && !auto(d)) { var o = el('option', null, (d.icone || '') + ' ' + d.titre); o.value = d.id; sel.appendChild(o); } });
         sel.addEventListener('change', function () { if (sel.value) deplacerApp(a.titre, sel.value, null); });
-        li.appendChild(h2); li.appendChild(b2); li.appendChild(sel); ul.appendChild(li);
+        var vis = el('select', 'mo-vis'); vis.setAttribute('aria-label', 'Niveau de vision : qui voit cette application'); vis.title = 'Qui voit cette application (en plus des droits du module) : ce niveau et tous ceux au-dessus';
+        var v0 = el('option', null, 'Tous'); v0.value = ''; vis.appendChild(v0); niveaux.forEach(function (n) { var o = el('option', null, '≤ ' + n.rang + ' ' + n.nom); o.value = String(n.rang); vis.appendChild(o); });
+        vis.value = a.vision == null ? '' : String(a.vision); vis.addEventListener('change', function () { a.vision = vis.value === '' ? null : Number(vis.value); dessiner(); });
+        if (simul !== null && (masq(c) || (a.vision != null && simul > a.vision))) { li.style.opacity = '.35'; li.title = 'Invisible pour le niveau simulé'; }
+        li.appendChild(h2); li.appendChild(b2); li.appendChild(vis); li.appendChild(sel); ul.appendChild(li);
       });
       if (!c.apps.length) bloc.appendChild(el('div', 'mo-vide', masq(c) ? 'Aucune application masquée.' : 'Aucune application : glissez-en une ici.'));
       bloc.appendChild(ul);
@@ -88,7 +92,7 @@
     msg.textContent = '';
     var vraies = cats.filter(function (c) { return !fige(c); });
     for (var i = 0; i < vraies.length; i += 1) if (String(vraies[i].titre).trim().length < 2) { msg.textContent = 'Chaque catégorie doit avoir un nom (2 caractères au moins).'; return; }
-    var apps = []; cats.forEach(function (c) { c.apps.forEach(function (a, i) { apps.push({ titre: a.titre, rubrique: fige(c) ? '' : c.id, ordre: (i + 1) * 10, actif: masq(c) ? 0 : 1 }); }); });
+    var apps = []; cats.forEach(function (c) { c.apps.forEach(function (a, i) { apps.push({ titre: a.titre, rubrique: fige(c) ? '' : c.id, ordre: (i + 1) * 10, actif: masq(c) ? 0 : 1, vision: a.vision == null ? null : a.vision }); }); });
     bouton.disabled = true;
     Api.call('menu_organisation_enregistrer', { rubriques: vraies.map(function (c) { return { id: c.id, titre: String(c.titre).trim(), icone: String(c.icone || '').trim() || '📁' }; }), apps: apps })
       .then(function () { try { sessionStorage.removeItem('ml_menu'); sessionStorage.removeItem('ml_menu2'); sessionStorage.removeItem('gm_pages'); } catch (e) { /* rien */ } location.reload(); })
@@ -97,7 +101,8 @@
 
   function construire(d) {
     // applications rangées comme elles s'affichent aujourd'hui (mêmes règles que la barre et les cartes) ; les masquées (actif = 0) vont dans leur groupe
-    var cartes = function (a) { return { titre: a.titre, description: a.description, emoji: a.emoji, url: a.url, rubrique: a.rubrique, ordre: a.ordre, module_titre: a.module_titre }; };
+    niveaux = d.niveaux || [];
+    var cartes = function (a) { return { titre: a.titre, description: a.description, emoji: a.emoji, url: a.url, rubrique: a.rubrique, ordre: a.ordre, module_titre: a.module_titre, vision: a.vision == null ? null : a.vision }; };
     var visibles = d.apps.filter(function (a) { return a.actif !== 0; }).map(cartes), cachees = d.apps.filter(function (a) { return a.actif === 0; }).map(cartes);
     var cfg = d.rubriques && d.rubriques.length ? d.rubriques : null, groupes = Rubriques.regrouper([{ id: 'tout', titre: 'Tout', icone: '', apps: visibles }], cfg);
     cats = groupes.map(function (g) { return { id: g.id, titre: g.titre, icone: g.icone, apps: g.apps.slice() }; });
@@ -108,14 +113,14 @@
   /** Organisation validée par le secrétariat (tableau « Frequence / Qui ») : catégories dans l'ordre, applications dans l'ordre, et celles à masquer. Les titres sont comparés sans accents ni majuscules ; « ~ » = contient. */
   var PRESET = {
     cats: [
-      { id: 'pilotage', titre: 'Chantiers', icone: '📈', apps: ['Affectation chantier', 'Avancement Chantiers', 'Suivi Chantier', 'Suivi des Tâches Journalières', 'Fiche d\'évaluation', 'Passation des Consignes'] },
+      { id: 'pilotage', titre: 'Chantiers', icone: '📈', apps: ['Affectation chantier|3', 'Avancement Chantiers|6', 'Suivi Chantier|6', 'Suivi des Tâches Journalières', 'Fiche d\'évaluation|6', 'Passation des Consignes|7'] },
       { id: 'marches', titre: 'Marchés', icone: '📑', apps: ['Suivi CPM V5', 'Dossiers CPM — Détail', 'Vivier des Entreprises', 'Passation des Contrats — Outils CPM'] },
-      { id: 'logistique', titre: 'Logistique & Accès site', icone: '🚧', apps: ['Prises en Charge + Autorisation d\'Accès', 'Badges prestataires', 'Fichier des habilitations', 'Statistique sous-traitants', 'Bon de sortie matériel', '~avril 2026', 'Affectation Véhicule – Division Infra', 'Générateur Requête Transport', 'Autorisation GAZ-OIL', 'Ordre de travail', 'Repas à emporter', 'Commande de Pièces – Service Électromécanique', 'Suivi des Écarts Inventaire', 'Liste Radio INFRA RNS'] },
-      { id: 'personnel', titre: 'Personnel', icone: '👥', apps: ['Planning & rotations', 'Simulation de planning', 'Affectation du personnel', 'Feuille de pointage', 'Organigramme — Division Infrastructure', 'Personnel de Permanence', 'Planning de Formation', 'Planning de Visite Médicale', 'Veste en Cuir – Personnel Actif RNS', 'Dotation Vivres & Eau Minérale', 'Prise en charge hôtel', 'Réservation Vol', 'Demande de réservation', 'Requête de transport de personnel', 'Documents administratifs'] },
-      { id: 'admin', titre: 'Admin', icone: '📨', apps: ['Paramétrage', 'Renommage de documents', 'Suivi des Instances Courriers', 'Ordres de Mission'] },
-      { id: 'it', titre: 'Informatique', icone: '💻', apps: ['Contrôle de l\'annuaire', 'Gestion des privilèges', 'HELPDESK Ticket support IT', 'Accès, Partage & Privilèges', 'Email en Quarantaine (anti-spam)'] },
-      { id: 'rapports', titre: 'Rapport', icone: '📊', apps: ['Rapports journaliers', 'Rapport Hebdomadaire Infra'] },
-      { id: 'bibliotheque', titre: 'Bibliothèque', icone: '📚', apps: ['Imputation SH RNS', 'Table Stock Magasin RNS', 'Catalogue Formation', 'Vidéos Formation SAP'] }
+      { id: 'logistique', titre: 'Logistique & Accès site', icone: '🚧', apps: ['Prises en Charge + Autorisation d\'Accès|9', 'Badges prestataires|9', 'Fichier des habilitations|3', 'Statistique sous-traitants|3', 'Bon de sortie matériel|7', '~avril 2026|3', 'Affectation Véhicule – Division Infra|7', 'Générateur Requête Transport|7', 'Autorisation GAZ-OIL|9', 'Ordre de travail|7', 'Repas à emporter|6', 'Commande de Pièces – Service Électromécanique|5', 'Suivi des Écarts Inventaire|5', 'Liste Radio INFRA RNS|7'] },
+      { id: 'personnel', titre: 'Personnel', icone: '👥', apps: ['Planning & rotations|7', 'Simulation de planning|7', 'Affectation du personnel|3', 'Feuille de pointage|7', 'Organigramme — Division Infrastructure|7', 'Personnel de Permanence|7', 'Planning de Formation|7', 'Planning de Visite Médicale|7', 'Veste en Cuir – Personnel Actif RNS', 'Dotation Vivres & Eau Minérale|6', 'Prise en charge hôtel|3', 'Réservation Vol|7', 'Demande de réservation|7', 'Requête de transport de personnel|7', 'Documents administratifs|7'] },
+      { id: 'admin', titre: 'Admin', icone: '📨', apps: ['Paramétrage|0', 'Renommage de documents|7', 'Suivi des Instances Courriers', 'Ordres de Mission|7'] },
+      { id: 'it', titre: 'Informatique', icone: '💻', apps: ['Contrôle de l\'annuaire|0', 'Gestion des privilèges|0', 'HELPDESK Ticket support IT|7', 'Accès, Partage & Privilèges', 'Email en Quarantaine (anti-spam)|7'] },
+      { id: 'rapports', titre: 'Rapport', icone: '📊', apps: ['Rapports journaliers|7', 'Rapport Hebdomadaire Infra|3'] },
+      { id: 'bibliotheque', titre: 'Bibliothèque', icone: '📚', apps: ['Imputation SH RNS|7', 'Table Stock Magasin RNS|7', 'Catalogue Formation|7', 'Vidéos Formation SAP|7'] }
     ],
     masquees: ['Suivi des Tâches Journalières', 'Veste en Cuir – Personnel Actif RNS', 'Suivi des Instances Courriers', 'Accès, Partage & Privilèges']
   };
@@ -131,7 +136,7 @@
     var pris = function (motif) { var i = trouve(reste, motif); return i < 0 ? null : reste.splice(i, 1)[0]; };
     var masquees = PRESET.masquees.map(function (m) { return trouve(reste, m); }).filter(function (i) { return i >= 0; });   // titres à masquer, repérés avant de ranger
     var aMasquer = {}; masquees.forEach(function (i) { aMasquer[reste[i].titre] = 1; });
-    var nouv = PRESET.cats.map(function (c) { return { id: c.id, titre: c.titre, icone: c.icone, apps: c.apps.map(pris).filter(function (a) { return a && !aMasquer[a.titre]; }) }; });
+    var nouv = PRESET.cats.map(function (c) { return { id: c.id, titre: c.titre, icone: c.icone, apps: c.apps.map(function (e) { var m = String(e).split('|'), a = pris(m[0]); if (a && m.length > 1) a.vision = m[1] === '' ? null : Number(m[1]); return a; }).filter(function (a) { return a && !aMasquer[a.titre]; }) }; });
     var cachees = []; Object.keys(aMasquer).forEach(function (t) { cats.forEach(function (c) { c.apps.forEach(function (a) { if (a.titre === t) cachees.push(a); }); }); });
     nouv.forEach(function (c) { c.apps = c.apps.filter(function (a) { return !aMasquer[a.titre]; }); });
     var autres = reste.filter(function (a) { return !aMasquer[a.titre]; });
@@ -149,7 +154,13 @@
       dlg = el('dialog'); dlg.id = 'mo';
       var inn = el('div', 'mo-in'), tete = el('div', 'mo-tete');
       tete.appendChild(el('h3', null, 'Organiser les applications'));
-      tete.appendChild(el('p', 'mo-aide', 'Glissez une application dans une catégorie (ou utilisez ▲ ▼ et « Déplacer… »), renommez les catégories, ajoutez-en. Le menu de gauche et les cartes de l\'accueil suivent. Aucun droit n\'est modifié.'));
+      tete.appendChild(el('p', 'mo-aide', 'Glissez une application dans une catégorie (ou utilisez ▲ ▼ et « Déplacer… »), renommez les catégories, ajoutez-en. Le menu de gauche et les cartes de l\'accueil suivent. Le niveau de vision de chaque application (liste « ≤ N ») restreint qui la voit, en plus des droits du module ; « Voir comme » montre l\'effet.'));
+      var sim = el('div'); sim.style.cssText = 'margin-top:8px;display:flex;gap:8px;align-items:center;font-size:12.5px;flex-wrap:wrap';
+      var simSel = el('select'); simSel.style.cssText = 'font-size:12.5px;padding:4px'; var s0 = el('option', null, '— aucune —'); s0.value = ''; simSel.appendChild(s0);
+      niveaux.forEach(function (n) { var o = el('option', null, n.nom); o.value = String(n.rang); simSel.appendChild(o); });
+      simSel.addEventListener('change', function () { simul = simSel.value === '' ? null : Number(simSel.value); dessiner(); });
+      sim.appendChild(el('span', null, '👁 Voir comme :')); sim.appendChild(simSel); sim.appendChild(el('span', 'mo-aide', 'les applications grisées ne seraient pas visibles pour ce niveau (en plus des droits du module)'));
+      tete.appendChild(sim);
       zone = el('div', 'mo-corps'); var pied = el('div', 'mo-pied'); msg = el('span', 'mo-err');
       var ajout = el('button', 'mo-b', '＋ Ajouter une catégorie'); ajout.type = 'button'; ajout.style.padding = '0 12px'; ajout.style.height = '36px';
       ajout.addEventListener('click', function () { var i = cats.findIndex(fige); var c = { id: nouvelId(), titre: 'Nouvelle catégorie', icone: '📁', apps: [] }; if (i < 0) cats.push(c); else cats.splice(i, 0, c); dessiner(); var champs = zone.querySelectorAll('.mo-nom'); var f = champs[(i < 0 ? cats.length : i) - 1]; if (f && f.select) { f.focus(); f.select(); f.scrollIntoView({ block: 'center' }); } });

@@ -160,3 +160,15 @@ test('menu : une carte masquée (actif = 0) n\'apparaît pour personne', () => {
   const apps = [{ module: 'pilotage', titre: 'A', url: 'a.html', niveau_min: 1 }, { module: 'pilotage', titre: 'B', url: 'b.html', niveau_min: 1, actif: 0 }, { module: 'pilotage', titre: 'C', url: 'c.html', niveau_min: 1, actif: 1 }];
   assert.deepStrictEqual(Droits.menu({ pilotage: 3 }, cat, apps, 'agent')[0].apps.map(a => a.titre), ['A', 'C']);
 });
+
+test('niveau de vision : une carte n\'est vue que par les rôles de rang ≤ sa vision (en plus des droits du module)', () => {
+  const cat = [{ id: 'pilotage', titre: 'P', icone: 'p', ordre: 1, actif: 1 }];
+  const apps = [{ module: 'pilotage', titre: 'Tous', url: 't.html', niveau_min: 1 }, { module: 'pilotage', titre: 'Chef service', url: 'cs.html', niveau_min: 1, vision: 3 }, { module: 'pilotage', titre: 'Conducteur', url: 'c.html', niveau_min: 1, vision: 6 }, { module: 'pilotage', titre: 'Agent', url: 'a.html', niveau_min: 1, vision: '7' }];
+  const vus = (role) => Droits.menu({ pilotage: 3 }, cat, apps, role)[0].apps.map(a => a.titre);
+  assert.deepStrictEqual(vus('secretariat'), ['Tous', 'Chef service', 'Conducteur', 'Agent']);
+  assert.deepStrictEqual(vus('chef_service'), ['Tous', 'Chef service', 'Conducteur', 'Agent']);
+  assert.deepStrictEqual(vus('conducteur'), ['Tous', 'Conducteur', 'Agent']);
+  assert.deepStrictEqual(vus('agent'), ['Tous', 'Agent']);
+  assert.deepStrictEqual(vus('stagiaire'), ['Tous']);
+  assert.deepStrictEqual(Droits.visionDe(''), null); assert.strictEqual(Droits.visionDe('12'), 10);
+});

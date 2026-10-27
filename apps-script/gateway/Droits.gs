@@ -110,6 +110,14 @@ var Droits = (function () {
     return res;
   }
 
+  /**
+   * Niveau de vision (échelle du secrétariat) : 0 = le plus haut. Une carte peut avoir une « vision » (0 à 10) : elle n'est vue que par les rôles de rang ≤ ce nombre,
+   * en plus des droits du module. Hypothèses : le rôle « cpm » compte comme un conducteur (6) et « dessinateur » comme un agent (7).
+   */
+  var RANGS = { secretariat: 0, chef_division: 1, cadre_sup: 2, chef_service: 3, interim_chef_service: 3, ordonnateur: 4, chef_atelier: 5, conducteur: 6, cpm: 6, agent: 7, dessinateur: 7, stagiaire: 8, prestataire: 9, guest: 10 };
+  function rang(role) { var v = RANGS[roleCanon(role)]; return v === undefined ? 7 : v; }
+  function visionDe(x) { return x === '' || x == null || isNaN(Number(x)) ? null : Math.max(0, Math.min(10, Math.round(Number(x)))); }
+
   function rolesDe(x) {
     return String(x == null ? '' : x).split(/[,;]/).map(roleCanon).filter(function (r) { return r; });
   }
@@ -128,6 +136,7 @@ var Droits = (function () {
             var liste = rolesDe(x.roles);
             return !liste.length || liste.indexOf(rc) !== -1;
           })
+          .filter(function (x) { var v = visionDe(x.vision); return v === null || rang(rc) <= v; })
           .filter(function (x) { return rc !== 'prestataire' || APPS_PRESTATAIRE.indexOf(String(x.url)) !== -1; })
           .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || ''), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre) }; });
         return { id: m.id, titre: m.titre, icone: m.icone, niveau: niv, apps: apps };
@@ -143,7 +152,7 @@ var Droits = (function () {
     return '';
   }
 
-  return { resolve: resolve, menu: menu, verifier: verifier, roleCanon: roleCanon, rolesDe: rolesDe, configurer: configurer, validerRole: validerRole, rolesParDefaut: rolesParDefaut, ROLES: ROLES, PLAFOND: PLAFOND, INTERDITS: INTERDITS };
+  return { rang: rang, RANGS: RANGS, visionDe: visionDe, resolve: resolve, menu: menu, verifier: verifier, roleCanon: roleCanon, rolesDe: rolesDe, configurer: configurer, validerRole: validerRole, rolesParDefaut: rolesParDefaut, ROLES: ROLES, PLAFOND: PLAFOND, INTERDITS: INTERDITS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Droits;
