@@ -645,11 +645,15 @@ window.google = { script: { run: (function () {
   }
   function ouvrirAide() { const b = document.querySelector('.aide-btn'); if (b) b.click(); }
   function envoyerParMail(btn, id) {
-    const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Envoi…';
-    google.script.run.withSuccessHandler(function(res) {
-      btn.disabled = false; btn.textContent = txt;
-      afficherAlerteModale(res.success ? 'E-mail envoyé' : 'Erreur', res.success ? '✅ Document envoyé à sec.infra.rns@gmail.com !' : String(res.error || 'Envoi impossible'), res.success ? 'ok' : 'err');
-    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).envoyerFichierParMail(id);
+    // au clic seulement : la fenêtre propose le secrétariat (coché par défaut) et/ou la boîte du service de l'agent
+    Diffusion.choisir({ titre: '✉ Envoyer ce document' }).then(function(ch) {
+      if (!ch) return;
+      const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Envoi…';
+      google.script.run.withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = txt;
+        afficherAlerteModale(res.success ? 'E-mail envoyé' : 'Erreur', res.success ? '✅ Document envoyé à : ' + (res.destinataires || []).join(', ') : String(res.error || 'Envoi impossible'), res.success ? 'ok' : 'err');
+      }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).envoyerFichierParMail(id, ch);
+    }).catch(function(e) { afficherAlerteModale('Erreur', e.message, 'err'); });
   }
   function supprimerFichier(btn, id) {
     afficherConfirmationModale('Supprimer ce document ?', 'Le PDF sera mis à la corbeille.', function() {
@@ -903,6 +907,7 @@ window.google = { script: { run: (function () {
     if (res.success) { chargerFichiers(); if (document.getElementById('histo').style.display !== 'none') chargerHistorique(); }
   }
 </script>
+<script src="js/diffusion.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>

@@ -57,7 +57,7 @@
       <div class="calc" id="calc">Saisissez la quantité : elle est divisée en fûts.</div>
       <label for="f-per">Période (date)</label><input type="date" id="f-per">
       <label for="f-a">Destinataire <small>(une ligne par ligne)</small></label><textarea id="f-a" rows="2"></textarea>
-      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">Nouvelle autorisation</button></div>
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-mail" type="button" title="Envoie le document au secrétariat et/ou au service (au clic seulement)">✉ Envoyer</button><button class="btn-s" id="b-vider" type="button">Nouvelle autorisation</button></div>
     </div>
     <div class="bloc"><h2>🗂 Historique <button class="btn-s" id="h-tout" type="button" style="float:right">🗑 Tout supprimer</button></h2><div id="histo"></div></div>
   </div>
@@ -149,11 +149,18 @@
   function garder() { var v = lire(); if (!String(v.ent).trim() || !(Number(v.l) > 0)) { toast('Indiquez l\'entreprise et la quantité en litres.'); return false; } var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); return true; }
   $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
   $('b-imp').onclick = function () { garder(); window.print(); };          // impression en un clic
+  $('b-mail').onclick = function () {
+    if (!garder()) return; var b = $('b-mail'); b.disabled = true;
+    Diffusion.envoyerHtml({ titre: '✉ Envoyer l\'autorisation GAZ-OIL', sujet: 'Autorisation GAZ-OIL — ' + fr(iso()), nom: 'autorisation-gaz-oil-' + iso(),
+      html: '<style>' + Array.prototype.map.call(document.querySelectorAll('style'), function (x) { return x.textContent; }).join('\n').replace(/@media print\s*\{[\s\S]*$/, '') + '</style><div id="feuille">' + $('feuille').innerHTML + '</div>' })
+      .then(function (r) { if (r) toast('✅ Envoyé à : ' + r.destinataires.join(', ')); }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+  };
   $('b-vider').onclick = function () { ecrire(neuf()); };
   $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
   ecrire(neuf()); dessinerHisto();
 })();
 </script>
+<script src="js/diffusion.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>
