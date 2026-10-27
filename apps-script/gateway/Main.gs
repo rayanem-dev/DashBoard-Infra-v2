@@ -60,7 +60,7 @@ function route_(req) {
       if (typeof preparerCarteBadges_ === 'function') preparerCarteBadges_();
       if (typeof preparerCartesNouvelles_ === 'function') preparerCartesNouvelles_();
       if (typeof preparerJournalCpm_ === 'function') preparerJournalCpm_();
-      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: Droits.roleCanon(u.role) === 'secretariat' };
+      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: peutOrganiser_(u) };
     }
     case 'emettreCode': {
       var admin = Auth.userFromToken(req.token);
@@ -843,9 +843,11 @@ function orgRubriques_() {
       .map(function (x) { return { id: String(x.id), titre: String(x.titre), icone: String(x.icone || '📁') }; });
   } catch (e) { return []; }   // onglet pas encore créé
 }
+/** Rôle secrétariat, ou plein pouvoir (module Sécurité niveau 3 : gestion des privilèges). */
+function peutOrganiser_(u) { return Droits.roleCanon(u.role) === 'secretariat' || (acces_(u).securite || 0) >= 3; }
 function menuOrgSecretariat_(req) {
   var u = Auth.userFromToken(req.token);
-  if (Droits.roleCanon(u.role) !== 'secretariat') throw Object.assign(new Error('L\'organisation du menu est réservée au secrétariat'), { code: 'DROITS' });
+  if (!peutOrganiser_(u)) throw Object.assign(new Error('L\'organisation du menu est réservée au secrétariat'), { code: 'DROITS' });
   return u;
 }
 function menuOrgLire_(req) {
