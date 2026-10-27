@@ -6,7 +6,7 @@
  */
 (function () {
   if (window.MenuOrganiser) return;
-  var cats = [], dlg, zone, msg, glisse = null, niveaux = [], simul = null;   // simul = rang simulé (« Voir comme »), null = aucune simulation
+  var cats = [], dlg, zone, msg, glisse = null, niveaux = [], rangDe = {}, simul = null;   // simul = rang simulé (« Voir comme »), null = aucune simulation
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function nouvelId() { return 'c' + Date.now().toString(36) + Math.floor(Math.random() * 36).toString(36); }
   function auto(c) { return /^autres-/.test(c.id); }
@@ -69,9 +69,9 @@
         cats.forEach(function (d) { if (d.id !== c.id && !auto(d)) { var o = el('option', null, (d.icone || '') + ' ' + d.titre); o.value = d.id; sel.appendChild(o); } });
         sel.addEventListener('change', function () { if (sel.value) deplacerApp(a.titre, sel.value, null); });
         var vis = el('select', 'mo-vis'); vis.setAttribute('aria-label', 'Niveau de vision : qui voit cette application'); vis.title = 'Qui voit cette application (en plus des droits du module) : ce niveau et tous ceux au-dessus';
-        var v0 = el('option', null, 'Tous'); v0.value = ''; vis.appendChild(v0); niveaux.forEach(function (n) { var o = el('option', null, '≤ ' + n.rang + ' ' + n.nom); o.value = String(n.rang); vis.appendChild(o); });
-        vis.value = a.vision == null ? '' : String(a.vision); vis.addEventListener('change', function () { a.vision = vis.value === '' ? null : Number(vis.value); dessiner(); });
-        if (simul !== null && (masq(c) || (a.vision != null && simul > a.vision))) { li.style.opacity = '.35'; li.title = 'Invisible pour le niveau simulé'; }
+        var v0 = el('option', null, 'Tous'); v0.value = ''; vis.appendChild(v0); niveaux.forEach(function (n) { var o = el('option', null, '≤ ' + n.nom); o.value = n.id; vis.appendChild(o); });
+        vis.value = a.vision == null ? '' : String(a.vision); vis.addEventListener('change', function () { a.vision = vis.value === '' ? null : vis.value; dessiner(); });
+        if (simul !== null && (masq(c) || (a.vision != null && rangDe[a.vision] !== undefined && simul > rangDe[a.vision]))) { li.style.opacity = '.35'; li.title = 'Invisible pour le niveau simulé'; }
         li.appendChild(h2); li.appendChild(b2); li.appendChild(vis); li.appendChild(sel); ul.appendChild(li);
       });
       if (!c.apps.length) bloc.appendChild(el('div', 'mo-vide', masq(c) ? 'Aucune application masquée.' : 'Aucune application : glissez-en une ici.'));
@@ -101,7 +101,7 @@
 
   function construire(d) {
     // applications rangées comme elles s'affichent aujourd'hui (mêmes règles que la barre et les cartes) ; les masquées (actif = 0) vont dans leur groupe
-    niveaux = d.niveaux || [];
+    niveaux = d.niveaux || []; rangDe = {}; niveaux.forEach(function (n) { rangDe[n.id] = n.rang; });
     var cartes = function (a) { return { titre: a.titre, description: a.description, emoji: a.emoji, url: a.url, rubrique: a.rubrique, ordre: a.ordre, module_titre: a.module_titre, vision: a.vision == null ? null : a.vision }; };
     var visibles = d.apps.filter(function (a) { return a.actif !== 0; }).map(cartes), cachees = d.apps.filter(function (a) { return a.actif === 0; }).map(cartes);
     var cfg = d.rubriques && d.rubriques.length ? d.rubriques : null, groupes = Rubriques.regrouper([{ id: 'tout', titre: 'Tout', icone: '', apps: visibles }], cfg);
@@ -111,6 +111,7 @@
   }
 
   /** Organisation validée par le secrétariat (tableau « Frequence / Qui ») : catégories dans l'ordre, applications dans l'ordre, et celles à masquer. Les titres sont comparés sans accents ni majuscules ; « ~ » = contient. */
+  var VISIONS = { '0': 'secretariat', '3': 'interim_chef_service', '5': 'ingenieur', '6': 'conducteur', '7': 'agent', '9': 'prestataire' };   // niveaux du tableau validé → rôle-seuil (chef de service et intérim, ingénieur / chef d'atelier…)
   var PRESET = {
     cats: [
       { id: 'pilotage', titre: 'Chantiers', icone: '📈', apps: ['Affectation chantier|3', 'Avancement Chantiers|6', 'Suivi Chantier|6', 'Suivi des Tâches Journalières', 'Fiche d\'évaluation|6', 'Passation des Consignes|7'] },
@@ -136,7 +137,7 @@
     var pris = function (motif) { var i = trouve(reste, motif); return i < 0 ? null : reste.splice(i, 1)[0]; };
     var masquees = PRESET.masquees.map(function (m) { return trouve(reste, m); }).filter(function (i) { return i >= 0; });   // titres à masquer, repérés avant de ranger
     var aMasquer = {}; masquees.forEach(function (i) { aMasquer[reste[i].titre] = 1; });
-    var nouv = PRESET.cats.map(function (c) { return { id: c.id, titre: c.titre, icone: c.icone, apps: c.apps.map(function (e) { var m = String(e).split('|'), a = pris(m[0]); if (a && m.length > 1) a.vision = m[1] === '' ? null : Number(m[1]); return a; }).filter(function (a) { return a && !aMasquer[a.titre]; }) }; });
+    var nouv = PRESET.cats.map(function (c) { return { id: c.id, titre: c.titre, icone: c.icone, apps: c.apps.map(function (e) { var m = String(e).split('|'), a = pris(m[0]); if (a && m.length > 1) a.vision = m[1] === '' ? null : (VISIONS[m[1]] || m[1]); return a; }).filter(function (a) { return a && !aMasquer[a.titre]; }) }; });
     var cachees = []; Object.keys(aMasquer).forEach(function (t) { cats.forEach(function (c) { c.apps.forEach(function (a) { if (a.titre === t) cachees.push(a); }); }); });
     nouv.forEach(function (c) { c.apps = c.apps.filter(function (a) { return !aMasquer[a.titre]; }); });
     var autres = reste.filter(function (a) { return !aMasquer[a.titre]; });
