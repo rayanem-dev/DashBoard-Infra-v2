@@ -54,6 +54,16 @@
   }
   function $(id) { return document.getElementById(id); }
   function ici(a) { return fichier(a.url) === page && (String(a.url).indexOf('#') < 0 || location.hash === '#' + String(a.url).split('#')[1] || (page === 'documents.html' && !location.hash)); }
+  /** Compte une ouverture d'application (mêmes compteurs que les cartes de l'accueil : « Mes applications » = les 9 plus utilisées). */
+  function compterUsage(titre) {
+    if (!titre) return;
+    try {
+      var av = JSON.parse(sessionStorage.getItem('infra_avatar') || 'null'), uid = av && av.user && av.user.uid; if (!uid) return;
+      var cle = 'infra_usage_' + uid, o = JSON.parse(localStorage.getItem(cle) || '{}'); o[titre] = (o[titre] || 0) + 1;
+      var tot = Object.keys(o).reduce(function (n, k) { return n + o[k]; }, 0); if (tot > 300) Object.keys(o).forEach(function (k) { o[k] = Math.floor(o[k] / 2); if (!o[k]) delete o[k]; });
+      localStorage.setItem(cle, JSON.stringify(o));
+    } catch (e) { /* stockage indisponible */ }
+  }
   function dessiner(filtre) {
     var q = norm(filtre).trim(); nav.textContent = ''; var n = 0;
     groupes.forEach(function (g) {
@@ -71,6 +81,7 @@
       apps.forEach(function (a) {
         var href = lienApp(a), x = el('a', ici(a) ? 'ici' : ''); x.href = href; x.appendChild(el('span', 'ml-ico', a.emoji || '📄')); x.appendChild(el('span', 'ml-nom', a.titre || '')); x.title = a.titre || '';
         if (ici(a)) x.setAttribute('aria-current', 'page');
+        x.addEventListener('click', function () { compterUsage(a.titre); }); x.addEventListener('auxclick', function () { compterUsage(a.titre); });   // alimente « Mes applications » de l'accueil
         if (etranger(href)) { x.target = '_blank'; x.rel = 'noopener'; }
         l.appendChild(x);
       });

@@ -119,7 +119,7 @@
   var UID = '';
   function cleUsage() { return 'infra_usage_' + UID; }
   function usages() { try { return JSON.parse(localStorage.getItem(cleUsage()) || '{}'); } catch (e) { return {}; } }
-  function compter(titre) { if (!titre) return; try { var o = usages(); o[titre] = (o[titre] || 0) + 1; localStorage.setItem(cleUsage(), JSON.stringify(o)); } catch (e) { /* stockage indisponible */ } }
+  function compter(titre) { if (!titre) return; try { var o = usages(); o[titre] = (o[titre] || 0) + 1; var tot = Object.keys(o).reduce(function (n, k) { return n + o[k]; }, 0); if (tot > 300) Object.keys(o).forEach(function (k) { o[k] = Math.floor(o[k] / 2); if (!o[k]) delete o[k]; });   /* les habitudes récentes l'emportent peu à peu */ localStorage.setItem(cleUsage(), JSON.stringify(o)); } catch (e) { /* stockage indisponible */ } }
 
   // ---------- Fiche de l'agent ----------
   function initiales(nom) { var m = String(nom || '').trim().split(/\s+/).filter(function (x) { return /[A-Za-zÀ-ÿ]/.test(x); }); return ((m[0] || '?').charAt(0) + (m[1] ? m[1].charAt(0) : '')).toUpperCase(); }
@@ -168,6 +168,7 @@
 
   // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
   // Mes applications : une icône par application autorisée pour cet utilisateur (nom au survol), même ouverture que les cartes du bas
+  var TOP_APPS = 9;   // raccourcis : les 9 applications que l'agent ouvre le plus ; elles changent avec ses habitudes
   function mesApps(menu) {
     var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0, liste = [], us = usages(); g.textContent = '';
     (menu || []).forEach(function (m) {
@@ -176,14 +177,14 @@
       });
     });
     liste.sort(function (x, y) { return (us[y.a.titre] || 0) - (us[x.a.titre] || 0) || x.rang - y.rang; });   // les plus utilisées d'abord, puis l'ordre du menu
-    liste.forEach(function (x) {
-      var a = x.a, c = el('a', 'mes-app'); c.appendChild(el('span', 'mes-app-ico', a.emoji || '📄')); c.appendChild(el('span', 'mes-app-nom', a.titre || '')); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
+    liste.forEach(function (x, i) {
+      var a = x.a, c = el('a', 'mes-app' + (i >= TOP_APPS ? ' hors-top' : '')); c.appendChild(el('span', 'mes-app-ico', a.emoji || '📄')); c.appendChild(el('span', 'mes-app-nom', a.titre || '')); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
       if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
       c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
       g.appendChild(c);
     });
-    $('mes-apps-n').textContent = n ? '(' + n + ')' : ''; box.hidden = !n;
-    var plus = $('mes-apps-plus'); g.classList.add('replie'); plus.hidden = n <= 12; plus.textContent = 'Voir toutes mes applications (' + n + ') ▾';
+    $('mes-apps-n').textContent = n ? '(' + Math.min(n, TOP_APPS) + ' les plus utilisées sur ' + n + ')' : ''; box.hidden = !n;
+    var plus = $('mes-apps-plus'); g.classList.add('replie'); plus.hidden = n <= TOP_APPS; plus.textContent = 'Voir toutes mes applications (' + n + ') ▾';
     plus.onclick = function () { var ouvert = g.classList.toggle('replie') === false; plus.textContent = ouvert ? 'Réduire ▴' : 'Voir toutes mes applications (' + n + ') ▾'; };
   }
   function raccourcis(menu) {

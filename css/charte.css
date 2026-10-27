@@ -651,7 +651,7 @@ table.plan2 tr.moi td.nom.emp-teinte { box-shadow: inset 4px 0 0 var(--emp-bord)
 .agent .jauge-bloc .jauge-texte { align-items: flex-start; }
 .agent .mes-apps { grid-column: 1 / -1; }
 .agent .mes-apps-grille { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
-.agent .mes-apps-grille.replie { max-height: 188px; overflow: hidden; }
+.agent .mes-apps-grille.replie { max-height: none; overflow: visible; } .agent .mes-apps-grille.replie .hors-top { display: none; }   /* 6.10 : seules les 9 applications les plus utilisées sont affichées, les autres derrière « Voir toutes » */
 .agent .mes-app { height: auto; padding: 8px 4px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 22px; text-align: center; }
 .agent .mes-app::after { display: none; }
 .agent .mes-app-ico { font-size: 24px; line-height: 1; } .agent .mes-app-nom { font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--text-dark); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
