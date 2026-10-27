@@ -21,7 +21,7 @@ var SEED_APPS = [
  ],
  [
   "logistique",
-  "Demande de réservation",
+  "Réservation Vol",
   "Réservation de places d'avion ALGER ⇄ RNS : le nombre de personnes crée les lignes, le nom se choisit dans l'organigramme (fonction et société se remplissent seules, mention « Rattaché à la division Infra » hors SONATRACH) et le bouton Envoyer adresse la demande au secrétariat.",
   "✈️",
   "reservation.html",
@@ -551,6 +551,18 @@ function migrerAffectationVehicule_() {
       if (/^Affectation V[ée]hicule/.test(String(v[i][iT]))) { sh.getRange(i + 1, iU + 1).setValue('vehicules.html'); sh.getRange(i + 1, iD + 1).setValue(seed[2]); if (iE >= 0) sh.getRange(i + 1, iE + 1).setValue(seed[3]); break; }
     }
     props.setProperty('VEHICULES_PORTAIL_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+/** Une seule fois : la carte « Demande de réservation » devient « Réservation Vol » (demande du secrétariat) ; ses droits et son rangement sont conservés. */
+function renommerReservationVol_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('RESERVATION_VOL_V1') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre');
+    for (var i = 1; i < v.length; i += 1) if (String(v[i][iT]) === 'Demande de réservation') { sh.getRange(i + 1, iT + 1).setValue('Réservation Vol'); break; }
+    props.setProperty('RESERVATION_VOL_V1', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }

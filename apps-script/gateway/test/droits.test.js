@@ -154,3 +154,9 @@ test('rolesParDefaut reste celui d\'origine même après une configuration perso
   try { assert.strictEqual(Droits.rolesParDefaut().length, 14); assert.strictEqual(Droits.rolesParDefaut().find(r => r.id === 'guest').niveau_max, 1); }
   finally { Droits.configurer([]); }
 });
+
+test('menu : une carte masquée (actif = 0) n\'apparaît pour personne', () => {
+  const cat = [{ id: 'pilotage', titre: 'P', icone: 'p', ordre: 1, actif: 1 }];
+  const apps = [{ module: 'pilotage', titre: 'A', url: 'a.html', niveau_min: 1 }, { module: 'pilotage', titre: 'B', url: 'b.html', niveau_min: 1, actif: 0 }, { module: 'pilotage', titre: 'C', url: 'c.html', niveau_min: 1, actif: 1 }];
+  assert.deepStrictEqual(Droits.menu({ pilotage: 3 }, cat, apps, 'agent')[0].apps.map(a => a.titre), ['A', 'C']);
+});

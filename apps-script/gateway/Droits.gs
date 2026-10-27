@@ -124,7 +124,7 @@ var Droits = (function () {
         var niv = acces[norm(m.id)];
         var apps = (applications || [])
           .filter(function (x) {
-            if (norm(x.module) !== norm(m.id) || niv < (Number(x.niveau_min) || 1)) return false;
+            if (norm(x.module) !== norm(m.id) || niv < (Number(x.niveau_min) || 1) || String(x.actif) === '0') return false;   // actif = 0 : carte masquée pour tous (organisation du menu)
             var liste = rolesDe(x.roles);
             return !liste.length || liste.indexOf(rc) !== -1;
           })

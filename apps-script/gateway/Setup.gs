@@ -220,6 +220,7 @@ function preparerSimulation_() {
   if (typeof migrerPriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerPriseEnCharge_();
   if (typeof retablirGenerateurTransport_ === 'function' && props.getProperty('SIMU_PRET') === '1') retablirGenerateurTransport_();
   if (typeof ajouterCarteStatsSt_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteStatsSt_();
+  if (typeof renommerReservationVol_ === 'function' && props.getProperty('SIMU_PRET') === '1') renommerReservationVol_();
   if (typeof migrerAffectationVehicule_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerAffectationVehicule_();
   if (typeof consoAutoAssurerDeclencheur_ === 'function' && props.getProperty('SIMU_PRET') === '1') { try { consoAutoAssurerDeclencheur_(); } catch (e) { /* autorisation manquante : signalé à l'ouverture de Rapports */ } }
   if (typeof rattraperVehiculesCfce_ === 'function' && props.getProperty('SIMU_PRET') === '1') rattraperVehiculesCfce_();

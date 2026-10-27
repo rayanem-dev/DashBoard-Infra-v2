@@ -853,13 +853,13 @@ function menuOrgSecretariat_(req) {
   return u;
 }
 function menuOrgLire_(req) {
-  menuOrgSecretariat_(req); assurerColonnes_('Applications', ['rubrique', 'ordre']);
+  menuOrgSecretariat_(req); assurerColonnes_('Applications', ['rubrique', 'ordre', 'actif']);
   var mods = {}; Store.table('Modules').forEach(function (m) { mods[String(m.id).toLowerCase()] = m.titre; });
   return { rubriques: orgRubriques_(), apps: Store.table('Applications').filter(function (x) { return x.titre; }).map(function (x) {
-    return { module: x.module, module_titre: mods[String(x.module).toLowerCase()] || x.module, titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || ''), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre) }; }) };
+    return { module: x.module, module_titre: mods[String(x.module).toLowerCase()] || x.module, titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || ''), actif: String(x.actif) === '0' ? 0 : 1, ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre) }; }) };
 }
 function menuOrgEnregistrer_(req) {
-  var u = menuOrgSecretariat_(req); assurerColonnes_('Applications', ['rubrique', 'ordre']);
+  var u = menuOrgSecretariat_(req); assurerColonnes_('Applications', ['rubrique', 'ordre', 'actif']);
   var cats = Array.isArray(req.rubriques) ? req.rubriques : [], apps = Array.isArray(req.apps) ? req.apps : [];
   if (cats.length > 30) throw new Error('30 catégories au plus');
   var ids = {}, propres = cats.map(function (c, i) {
@@ -874,12 +874,12 @@ function menuOrgEnregistrer_(req) {
     var sh = cpmFeuille_('Rubriques', RUBRIQUES_ENTETES_);
     if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 4).clearContent();
     if (propres.length) { var z = sh.getRange(2, 1, propres.length, 4); z.setNumberFormat('@'); z.setValues(propres.map(function (l) { return l.map(String); })); }
-    var ap = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = ap.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iR = h.indexOf('rubrique'), iO = h.indexOf('ordre');
-    if (iT < 0 || iR < 0 || iO < 0) throw new Error('Colonnes « rubrique » / « ordre » introuvables dans Applications');
-    var voulu = {}; apps.forEach(function (a) { var rb = String(a.rubrique || ''); if (rb && !ids[rb]) throw new Error('Une application est rangée dans une catégorie inconnue'); voulu[String(a.titre)] = { rubrique: rb, ordre: Number(a.ordre) || '' }; });
-    var colR = [], colO = [], n = 0;
-    for (var i = 1; i < v.length; i += 1) { var w = voulu[String(v[i][iT])]; if (w) { colR.push([w.rubrique]); colO.push([w.ordre]); n += 1; } else { colR.push([v[i][iR]]); colO.push([v[i][iO]]); } }
-    if (v.length > 1) { ap.getRange(2, iR + 1, v.length - 1, 1).setValues(colR); ap.getRange(2, iO + 1, v.length - 1, 1).setValues(colO); }
+    var ap = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = ap.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iR = h.indexOf('rubrique'), iO = h.indexOf('ordre'), iA = h.indexOf('actif');
+    if (iT < 0 || iR < 0 || iO < 0 || iA < 0) throw new Error('Colonnes « rubrique » / « ordre » / « actif » introuvables dans Applications');
+    var voulu = {}; apps.forEach(function (a) { var rb = String(a.rubrique || ''); if (rb && !ids[rb]) throw new Error('Une application est rangée dans une catégorie inconnue'); voulu[String(a.titre)] = { rubrique: rb, ordre: Number(a.ordre) || '', actif: a.actif === 0 || a.actif === '0' || a.actif === false ? 0 : 1 }; });
+    var colR = [], colO = [], colA = [], n = 0;
+    for (var i = 1; i < v.length; i += 1) { var w = voulu[String(v[i][iT])]; if (w) { colR.push([w.actif ? w.rubrique : '']); colO.push([w.ordre]); colA.push([w.actif]); n += 1; } else { colR.push([v[i][iR]]); colO.push([v[i][iO]]); colA.push([v[i][iA]]); } }
+    if (v.length > 1) { ap.getRange(2, iR + 1, v.length - 1, 1).setValues(colR); ap.getRange(2, iO + 1, v.length - 1, 1).setValues(colO); ap.getRange(2, iA + 1, v.length - 1, 1).setValues(colA); }
     ['TBL_Applications', 'TBL_Rubriques'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) { /* rien */ } });
     Store.journal('menu_organise', u.email, propres.length + ' catégories, ' + n + ' applications rangées');
     return { categories: propres.length, applications: n };
