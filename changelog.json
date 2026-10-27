@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-27-210",
+    "date": "2026-10-27",
+    "title": "Version 6.7.0 — Échelle des rôles à 15 niveaux",
+    "changes": [
+      "Nouvelle échelle des rôles (0 à 14) : Secrétariat, Chef de division, Cadre supérieur, Chef de service, Chef de service (intérim), Cellule Passation de marché, Ordonnateur, Chef d'atelier, Ingénieur, Dessinateur, Conducteur des travaux, Agent, DSP, Prestataire, Invité ; elle ordonne les colonnes de la Gestion des privilèges et sert aux niveaux de vision.",
+      "Le niveau de vision d'une application mémorise le rôle le plus bas qui la voit (et non un numéro) : l'échelle peut être réordonnée sans rien casser ; les anciens numéros enregistrés sont convertis. « Stagiaire », absent de l'échelle, est placé au rang de DSP."
+    ]
+  },
+  {
     "id": "2026-10-27-209",
     "date": "2026-10-27",
     "title": "Version 6.6.2 — Rôles classés par niveau de vision",

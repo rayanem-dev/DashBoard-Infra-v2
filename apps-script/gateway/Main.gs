@@ -856,8 +856,7 @@ function menuOrgSecretariat_(req) {
 function menuOrgLire_(req) {
   menuOrgSecretariat_(req); assurerColonnes_('Applications', ['rubrique', 'ordre', 'actif', 'vision']);
   var mods = {}; Store.table('Modules').forEach(function (m) { mods[String(m.id).toLowerCase()] = m.titre; });
-  var libR = { secretariat: 'Secrétariat', chef_division: 'Chef de division', cadre_sup: 'Cadre supérieur', chef_service: 'Chef de service / Intérim', ordonnateur: 'Ordonnateur', chef_atelier: 'Ingénieur / Chef d\'atelier', conducteur: 'Conducteur', agent: 'Agent', stagiaire: 'Stagiaire', prestataire: 'Prestataire', guest: 'Invité / visiteur' };
-  var niveaux = [{ rang: 0, nom: 'Secrétariat (super admin)' }, { rang: 1, nom: 'Chef de division' }, { rang: 2, nom: 'Cadre supérieur' }, { rang: 3, nom: 'Chef de service / Intérim' }, { rang: 4, nom: 'Ordonnateur' }, { rang: 5, nom: 'Ingénieur / Chef d\'atelier' }, { rang: 6, nom: 'Conducteur' }, { rang: 7, nom: 'Agent' }, { rang: 8, nom: 'Stagiaire' }, { rang: 9, nom: 'Prestataire' }, { rang: 10, nom: 'Invité / visiteur' }];
+  var niveaux = Object.keys(Droits.RANGS).sort(function (x, y) { return Droits.RANGS[x] - Droits.RANGS[y]; }).map(function (id) { return { id: id, rang: Droits.RANGS[id], nom: Droits.LIBELLES_RANGS[id] || id }; });
   return { niveaux: niveaux, rangs: Droits.RANGS, rubriques: orgRubriques_(), apps: Store.table('Applications').filter(function (x) { return x.titre; }).map(function (x) {
     return { module: x.module, module_titre: mods[String(x.module).toLowerCase()] || x.module, titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || ''), actif: String(x.actif) === '0' ? 0 : 1, vision: Droits.visionDe(x.vision), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre) }; }) };
 }

@@ -111,12 +111,21 @@ var Droits = (function () {
   }
 
   /**
-   * Niveau de vision (échelle du secrétariat) : 0 = le plus haut. Une carte peut avoir une « vision » (0 à 10) : elle n'est vue que par les rôles de rang ≤ ce nombre,
-   * en plus des droits du module. Hypothèses : le rôle « cpm » compte comme un conducteur (6) et « dessinateur » comme un agent (7).
+   * Niveau de vision (échelle du secrétariat, 0 = le plus haut). Une carte peut avoir une « vision » = le rôle le plus bas qui la voit : elle n'est vue que par ce rôle et par tous ceux de rang inférieur ou égal
+   * (plus haut dans l'échelle), en plus des droits du module. Le rôle est mémorisé par son identifiant : renuméroter l'échelle ne casse rien.
+   * Hypothèse : « stagiaire » (absent de l'échelle) est au rang de DSP.
    */
-  var RANGS = { secretariat: 0, chef_division: 1, cadre_sup: 2, chef_service: 3, interim_chef_service: 3, ordonnateur: 4, chef_atelier: 5, conducteur: 6, cpm: 6, agent: 7, dessinateur: 7, stagiaire: 8, prestataire: 9, guest: 10 };
-  function rang(role) { var v = RANGS[roleCanon(role)]; return v === undefined ? 7 : v; }
-  function visionDe(x) { return x === '' || x == null || isNaN(Number(x)) ? null : Math.max(0, Math.min(10, Math.round(Number(x)))); }
+  var RANGS = { secretariat: 0, chef_division: 1, cadre_sup: 2, chef_service: 3, interim_chef_service: 4, cpm: 5, ordonnateur: 6, chef_atelier: 7, ingenieur: 8, dessinateur: 9, conducteur: 10, agent: 11, dsp: 12, stagiaire: 12, prestataire: 13, guest: 14 };
+  var LIBELLES_RANGS = { secretariat: 'Secrétariat', chef_division: 'Chef de division', cadre_sup: 'Cadre supérieur', chef_service: 'Chef de service', interim_chef_service: 'Chef de service (intérim)', cpm: 'Cellule Passation de marché', ordonnateur: 'Ordonnateur', chef_atelier: 'Chef d\'atelier', ingenieur: 'Ingénieur', dessinateur: 'Dessinateur', conducteur: 'Conducteur des travaux', agent: 'Agent', dsp: 'DSP', stagiaire: 'Stagiaire', prestataire: 'Prestataire', guest: 'Invité (lecture seule)' };
+  function rang(role) { var v = RANGS[roleCanon(role)]; return v === undefined ? 11 : v; }
+  // anciennes valeurs numériques (0 à 10, première échelle) → rôle équivalent
+  var VISION_ANCIENNE = ['secretariat', 'chef_division', 'cadre_sup', 'interim_chef_service', 'ordonnateur', 'ingenieur', 'conducteur', 'agent', 'stagiaire', 'prestataire', 'guest'];
+  /** Rôle-seuil d'une carte (identifiant) ou null si tous. Accepte l'ancien nombre 0–10. */
+  function visionDe(x) {
+    if (x === '' || x == null) return null;
+    if (/^\d+$/.test(String(x).trim())) { var n = Number(x); return n >= 0 && n < VISION_ANCIENNE.length ? VISION_ANCIENNE[n] : null; }
+    var r = roleCanon(x); return RANGS[r] === undefined ? null : r;
+  }
 
   function rolesDe(x) {
     return String(x == null ? '' : x).split(/[,;]/).map(roleCanon).filter(function (r) { return r; });
@@ -136,7 +145,7 @@ var Droits = (function () {
             var liste = rolesDe(x.roles);
             return !liste.length || liste.indexOf(rc) !== -1;
           })
-          .filter(function (x) { var v = visionDe(x.vision); return v === null || rang(rc) <= v; })
+          .filter(function (x) { var v = visionDe(x.vision); return v === null || rang(rc) <= RANGS[v]; })
           .filter(function (x) { return rc !== 'prestataire' || APPS_PRESTATAIRE.indexOf(String(x.url)) !== -1; })
           .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || ''), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre) }; });
         return { id: m.id, titre: m.titre, icone: m.icone, niveau: niv, apps: apps };
@@ -152,7 +161,7 @@ var Droits = (function () {
     return '';
   }
 
-  return { rang: rang, RANGS: RANGS, visionDe: visionDe, resolve: resolve, menu: menu, verifier: verifier, roleCanon: roleCanon, rolesDe: rolesDe, configurer: configurer, validerRole: validerRole, rolesParDefaut: rolesParDefaut, ROLES: ROLES, PLAFOND: PLAFOND, INTERDITS: INTERDITS };
+  return { rang: rang, RANGS: RANGS, LIBELLES_RANGS: LIBELLES_RANGS, visionDe: visionDe, resolve: resolve, menu: menu, verifier: verifier, roleCanon: roleCanon, rolesDe: rolesDe, configurer: configurer, validerRole: validerRole, rolesParDefaut: rolesParDefaut, ROLES: ROLES, PLAFOND: PLAFOND, INTERDITS: INTERDITS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Droits;
