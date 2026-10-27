@@ -499,7 +499,11 @@
   }
   function ouvrirConnexions(email) { $('o-cnx').click(); $('cnx-filtre').value = email; chargerConnexions(); diagnostic(email); }
   function dessiner() { dessinerGrille(); dessinerUsers(); dessinerDef(); dessinerRoles(); dessinerApps(); dessinerExc(); }
-  function recharger() { return Api.call('admin_etat').then(function (r) { etat = r; dessiner(); }); }
+  // colonnes et listes de rôles dans l'ordre de l'échelle du secrétariat : secrétariat (0), chef de division, cadre supérieur, chef de service / intérim, ordonnateur, ingénieur / chef d'atelier, conducteur, agent, stagiaire, prestataire, invité
+  var RANGS = { secretariat: 0, chef_division: 1, cadre_sup: 2, chef_service: 3, interim_chef_service: 3, ordonnateur: 4, chef_atelier: 5, conducteur: 6, cpm: 6, agent: 7, dessinateur: 7, stagiaire: 8, prestataire: 9, guest: 10 };
+  function rangDe(r) { return typeof r.rang === 'number' ? r.rang : (RANGS[r.id] === undefined ? 7 : RANGS[r.id]); }
+  function trierRoles(roles) { return roles.map(function (r, i) { return { r: r, i: i }; }).sort(function (a, b) { return rangDe(a.r) - rangDe(b.r) || a.i - b.i; }).map(function (x) { return x.r; }); }
+  function recharger() { return Api.call('admin_etat').then(function (r) { r.roles = trierRoles(r.roles || []); etat = r; dessiner(); }); }
 
   document.querySelectorAll('.onglet').forEach(function (b) {
     b.addEventListener('click', function () {

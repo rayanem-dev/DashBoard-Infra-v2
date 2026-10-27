@@ -217,7 +217,7 @@ function route_(req) {
       var us = Store.table('Utilisateurs'); var nb = {};
       us.forEach(function (u) { var c = Droits.roleCanon(u.role); nb[c] = (nb[c] || 0) + 1; });
       return {
-        roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
+        roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0, rang: Droits.rang(r.id) }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
         applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles), rubrique: String(x.rubrique || ''), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre), actif: String(x.actif) === '0' ? 0 : 1, vision: Droits.visionDe(x.vision) }; }),
         rubriques: orgRubriques_(),
