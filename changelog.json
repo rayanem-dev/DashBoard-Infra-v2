@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-27-207",
+    "date": "2026-10-27",
+    "title": "Version 6.6.0 — Niveaux de vision des applications",
+    "changes": [
+      "Chaque application peut avoir un niveau de vision (échelle du secrétariat : 0 secrétariat, 1 chef de division, 2 cadre supérieur, 3 chef de service / intérim, 4 ordonnateur, 5 ingénieur / chef d'atelier, 6 conducteur, 7 agent, 8 stagiaire, 9 prestataire, 10 invité) : elle n'est vue que par ce niveau et tous ceux au-dessus, en plus des droits du module.",
+      "Dans « Organiser les applications » : une liste « ≤ N » par application, et « 👁 Voir comme » qui grise ce qu'un niveau ne verrait pas ; « Appliquer l'organisation validée » renseigne aussi les niveaux du tableau. Rien n'est appliqué avant « Enregistrer »."
+    ]
+  },
+  {
     "id": "2026-10-27-206",
     "date": "2026-10-27",
     "title": "Version 6.5.0 — Organisation validée du menu, cartes masquables, Réservation Vol",
