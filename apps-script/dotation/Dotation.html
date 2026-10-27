@@ -427,8 +427,7 @@
 
   <div class="card" id="cardInfosGenerales">
     <div class="card-title">📋 Informations générales</div>
-    <label class="field-label">Date</label>
-    <input type="date" id="date">
+    <input type="hidden" id="date">   <!-- date du document : toujours aujourd'hui (fixée aussi côté serveur), plus saisie -->
     <div id="rowDateDebut">
       <label class="field-label">Date de début (dotation)</label>
       <input type="date" id="dateDebut">
@@ -713,16 +712,11 @@ function chargerDivision(){
 }
 
 function majPeriodeDivision(){
-  const date = document.getElementById('date').value;
-  if(!date) return;
   google.script.run.withSuccessHandler(function(periode){
     document.getElementById('periodeDivisionAffichee').value = periode.debut + '  Au  ' + periode.fin;
-  }).getPeriodeDivisionPreview(date);
+  }).getPeriodeDivisionPreview();
 }
 
-document.getElementById('date').addEventListener('change', function(){
-  if (typeActuel === 'DIVISION') majPeriodeDivision();
-});
 
 function majRepasType(){
   const casse = document.getElementById('repasType').value === 'CASSE_CROUTE';
@@ -780,18 +774,14 @@ function generer(type){
   }
 
   if(type === 'VIVRES' || type === 'EAU'){
-    if(!form.date || !form.dateDebut || !form.service){
-      alert('Merci de renseigner les deux dates et le service.');
+    if(!form.dateDebut || !form.service){
+      alert('Merci de renseigner la date de début et le service.');
       return;
     }
     if(!form.presents.length){
       alert('Merci de sélectionner au moins un agent présent.');
       return;
     }
-  } else if(type === 'ENTRETIEN'){
-    if(!form.date){ alert('Merci de renseigner la date.'); return; }
-  } else if(type === 'DIVISION'){
-    if(!form.date){ alert('Merci de renseigner la date.'); return; }
   }
 
   const btnId = (type === 'VIVRES') ? 'btnGenererVivres'

@@ -87,3 +87,12 @@ test('dotation eau : le nombre de fardeaux figure dans la quantité (PDF et aper
   assert.strictEqual(run('calcQuantiteEau(3, "1L", 14)'), '6 Fardeaux (36 Bouteilles 1L)');
   assert.strictEqual(run('calcQuantiteEau(0, "1L", 7)'), '0 Fardeau (0 Bouteilles 1L)');
 });
+
+test('dotation division : la quinzaine se calcule seule (01-15 ou 16-fin du mois)', () => {
+  const q = (d) => run(`getPeriodeQuinzaine_(${JSON.stringify(d)})`);
+  assert.deepStrictEqual(q('2026-10-01'), { debut: '01/10/2026', fin: '15/10/2026' });
+  assert.deepStrictEqual(q('2026-10-15'), { debut: '01/10/2026', fin: '15/10/2026' });
+  assert.deepStrictEqual(q('2026-10-16'), { debut: '16/10/2026', fin: '31/10/2026' });
+  assert.deepStrictEqual(q('2026-02-27'), { debut: '16/02/2026', fin: '28/02/2026' });
+  assert.deepStrictEqual(q('2028-02-20'), { debut: '16/02/2028', fin: '29/02/2028' });
+});

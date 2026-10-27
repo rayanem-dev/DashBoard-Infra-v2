@@ -118,6 +118,7 @@ function normalizeTxt_(s) {
 // Point d'entrée unique appelé par le formulaire
 // ------------------------------------------------------------------------
 function genererDotation(form) {
+  form.date = aujourdhuiIso_();   // la date du document est celle d'aujourd'hui, quoi que la page envoie
   if (form.type === 'EAU') return genererDotationEau_(form);
   if (form.type === 'ENTRETIEN') return genererDotationEntretien_(form);
   if (form.type === 'DIVISION') return genererDotationDivision_(form);
@@ -348,29 +349,18 @@ function getProduitsDivision() {
 }
 
 // Calcule automatiquement la quinzaine (01-15 ou 16-fin de mois) à partir d'une date
+/** Quinzaine de la date (AAAA-MM-JJ) : du 01 au 15 si le jour est ≤ 15, sinon du 16 à la fin du mois. Pur : testé en Node. */
 function getPeriodeQuinzaine_(dateStr) {
-  const d = new Date(dateStr);
-  const annee = d.getFullYear();
-  const mois = d.getMonth(); // 0-11
-  const jour = d.getDate();
-  const tz = Session.getScriptTimeZone();
-  let debut, fin;
-  if (jour <= 15) {
-    debut = new Date(annee, mois, 1);
-    fin = new Date(annee, mois, 15);
-  } else {
-    debut = new Date(annee, mois, 16);
-    fin = new Date(annee, mois + 1, 0); // dernier jour du mois
-  }
-  return {
-    debut: Utilities.formatDate(debut, tz, 'dd/MM/yyyy'),
-    fin: Utilities.formatDate(fin, tz, 'dd/MM/yyyy')
-  };
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateStr || ''));
+  const annee = m ? +m[1] : new Date(dateStr).getFullYear(), mois = m ? +m[2] : new Date(dateStr).getMonth() + 1, jour = m ? +m[3] : new Date(dateStr).getDate();
+  const p2 = (n) => (n < 10 ? '0' : '') + n, dernier = new Date(annee, mois, 0).getDate();   // mois 1-12 : le jour 0 du mois suivant = dernier jour de ce mois
+  const fmt = (j) => p2(j) + '/' + p2(mois) + '/' + annee;
+  return jour <= 15 ? { debut: fmt(1), fin: fmt(15) } : { debut: fmt(16), fin: fmt(dernier) };
 }
-
-// Appelé depuis le front pour afficher la période avant génération
-function getPeriodeDivisionPreview(dateStr) {
-  return getPeriodeQuinzaine_(dateStr);
+/** Date du jour (AAAA-MM-JJ, fuseau du script) : la date du document est TOUJOURS celle d'aujourd'hui, jamais saisie. */
+function aujourdhuiIso_() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'); }
+function getPeriodeDivisionPreview() {
+  return getPeriodeQuinzaine_(aujourdhuiIso_());   // calculée toute seule d'après aujourd'hui
 }
 
 function genererDotationDivision_(form) {
