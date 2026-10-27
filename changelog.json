@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-27-201",
+    "date": "2026-10-27",
+    "title": "Version 6.3.1 — Bouton d'organisation du menu plus fiable",
+    "changes": [
+      "Le bouton ✏️ « Organiser les applications » apparaît aussi pour les comptes qui ont le plein pouvoir (gestion des privilèges), pas seulement le rôle secrétariat.",
+      "Le menu mémorisé dans le navigateur est renouvelé : le bouton s'affiche sans attendre l'expiration de l'ancienne copie."
+    ]
+  },
+  {
     "id": "2026-10-27-200",
     "date": "2026-10-27",
     "title": "Version 6.3.0 — Organiser le menu et les cartes (secrétariat)",

@@ -8,7 +8,7 @@
   if (window.MenuLateral || !window.Api || !Api.token || !Api.token()) return;
   var page = (location.pathname.split('/').pop() || '').toLowerCase();
   if (/^(connexion|index|app|requete)\.html$/.test(page)) return;
-  var CLE_ETAT = 'ml_etat', CLE_MENU = 'ml_menu', TTL = 600000, LARGE = 1000, WO = 260, WR = 60;
+  var CLE_ETAT = 'ml_etat', CLE_MENU = 'ml_menu2', TTL = 600000, LARGE = 1000, WO = 260, WR = 60;
   var LARGES = /^(portail|planning|simulation|organigramme|dossiers_cpm|pointage|habilitations|simulation-v1)\.html$/;
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }

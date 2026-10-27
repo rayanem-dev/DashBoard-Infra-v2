@@ -89,7 +89,7 @@
     var apps = []; cats.forEach(function (c) { c.apps.forEach(function (a, i) { apps.push({ titre: a.titre, rubrique: auto(c) ? '' : c.id, ordre: (i + 1) * 10 }); }); });
     bouton.disabled = true;
     Api.call('menu_organisation_enregistrer', { rubriques: vraies.map(function (c) { return { id: c.id, titre: String(c.titre).trim(), icone: String(c.icone || '').trim() || '📁' }; }), apps: apps })
-      .then(function () { try { sessionStorage.removeItem('ml_menu'); sessionStorage.removeItem('gm_pages'); } catch (e) { /* rien */ } location.reload(); })
+      .then(function () { try { sessionStorage.removeItem('ml_menu'); sessionStorage.removeItem('ml_menu2'); sessionStorage.removeItem('gm_pages'); } catch (e) { /* rien */ } location.reload(); })
       .catch(function (e) { msg.textContent = e.message; bouton.disabled = false; });
   }
 
