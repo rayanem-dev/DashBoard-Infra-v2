@@ -219,7 +219,8 @@ function route_(req) {
       return {
         roles: ROLES_INFO_.map(function (r) { return { id: r.id, libelle: r.libelle, niveau_max: r.niveau_max, interdits: r.interdits, nb_utilisateurs: nb[r.id] || 0 }; }),
         modules: Store.table('Modules'), droitsRole: Store.table('DroitsRole'), exceptions: Store.table('Exceptions'),
-        applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles), rubrique: String(x.rubrique || '') }; }),
+        applications: Store.table('Applications').map(function (x) { return { module: x.module, titre: x.titre, niveau_min: Number(x.niveau_min) || 1, roles: Droits.rolesDe(x.roles), rubrique: String(x.rubrique || ''), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre), actif: String(x.actif) === '0' ? 0 : 1, vision: Droits.visionDe(x.vision) }; }),
+        rubriques: orgRubriques_(),
         utilisateurs: us.map(function (u) { return { email: u.email, nom: Annuaire.nomAffichable(u.nom, u.email), service: u.service, fonction: u.fonction, dependance: u.dependance || '', role: Droits.roleCanon(u.role), actif: String(u.actif) !== '0', portee: String(u.portee || ''), section: String(u.section || ''), telephone: String(u.telephone || ''), matricule: String(u.matricule || ''), sap: String(u.sap || ''), sona: String(u.sona || ''), civilite: String(u.civilite || ''), wifi_user: String(u.wifi_user || ''), date_integration: String(u.date_integration || ''), hors: !!u.horsBDDORGA }; })
       };
     }
