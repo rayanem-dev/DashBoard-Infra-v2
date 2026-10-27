@@ -64,7 +64,7 @@
     return l;
   }
 
-  function monter(zone, d) {
+  function monter(zone, d, extras) {
     zone.textContent = ''; var b = d.blocs || {}, n = 0, grille = el('div', 'tb-grille');
     function ajout(c) { grille.appendChild(c); n += 1; }
     if (b.presents) {
@@ -101,6 +101,7 @@
       if (b.echeances && b.echeances.length) { c5.appendChild(el('small', null, 'Échéances à moins de 60 jours :')); var u2 = el('ul', 'tb-liste'); b.echeances.slice(0, 4).forEach(function (e) { u2.appendChild(el('li', null, e.nom + ' — ' + e.jours + ' j')); }); c5.appendChild(u2); }
       ajout(c5);
     }
+    (extras || []).forEach(function (x) { x.classList.add('tb-carte'); grille.appendChild(x); n += 1; });   // cartes ajoutées par la page (ex. journal des changements du CPM)
     if (!n) { zone.hidden = true; return; }
     var h = el('h3', 'tb-h', '📊 Tableau de bord'); h.appendChild(el('span', null, 'mis à jour à l\'ouverture de la page'));
     zone.appendChild(h); zone.appendChild(grille); zone.hidden = false;
@@ -111,10 +112,11 @@
     '.tb-carte small{display:block;color:var(--text-muted,#6B7280);font-size:11.5px;margin-top:6px}.tb-ligne{display:flex;gap:12px;align-items:center}.tb-col{min-width:0;flex:1}.tb-liste{margin:2px 0 0 16px;padding:0;font-size:12px}.tb-liste li{margin:1px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
     '.tb-barres{display:flex;flex-direction:column;gap:5px;margin-top:6px}.tb-lig{display:grid;grid-template-columns:minmax(70px,38%) 1fr auto;gap:8px;align-items:center;font-size:12px}.tb-nom{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
     '.tb-bar{position:relative;height:9px;border-radius:5px;background:rgba(148,163,184,.25)}.tb-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}.tb-bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#0F172A;text-decoration:none}' +
+    '.tb-journal .syn-titre,.tb-journal h3{font-size:13px;margin:0 0 4px}.tb-journal .syn-sous{margin:0 0 4px}.tb-journal .syn-puces{font-size:12px}.tb-journal{overflow:auto;max-height:330px}' +
     '.tb-legende{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;margin-top:2px}.tb-legende i,.tb-pt i{display:inline-block;width:9px;height:9px;border-radius:2px}.tb-pt{font-size:12px;margin:2px 0}';
-  function charger(zone) {
+  function charger(zone, extras) {
     if (!document.getElementById('tb-css')) { var st = el('style'); st.id = 'tb-css'; st.textContent = CSS; document.head.appendChild(st); }
-    return Api.call('tableau_bord').then(function (d) { monter(zone, d); }).catch(function () { zone.hidden = true; });
+    return Api.call('tableau_bord').then(function (d) { monter(zone, d, extras); }).catch(function () { monter(zone, { blocs: {} }, extras); });   // sans graphiques (droits ou réseau), les cartes ajoutées restent
   }
   var API = { charger: charger, monter: monter };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.TableauBord = API;

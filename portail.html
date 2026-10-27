@@ -75,7 +75,7 @@
     <div class="onglets-modules" id="onglets-modules"></div>
   </div>
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
-  <section class="syntheses" id="syntheses"><div class="syn syn-alerte-modifs" id="syn-modifs" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
+  <section class="syntheses" id="syntheses"><div class="syn syn-alerte-modifs" id="syn-modifs" hidden></div></section>
   <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
   <section class="tb" id="tableau-bord" hidden aria-label="Tableau de bord"></section>
   <div id="modules"></div>
@@ -240,8 +240,9 @@
     // Synthèses : seulement pour qui a accès aux applications correspondantes
     var urls = []; menu.forEach(function (m) { m.apps.forEach(function (a) { urls.push(String(a.url)); }); });
     function a(f) { return urls.some(function (u) { return u.indexOf(f) !== -1; }); }
-    if (a('Dossiers_CPM.html')) Synthese.monterJournal($('syn-journal'));   // les anciennes cartes « Avancement chantiers » et « Suivi CPM » sont remplacées par le tableau de bord
-    if (window.TableauBord && (a('Avancement_des_Chantiers.html') || a('rapports.html') || a('badges.html'))) TableauBord.charger($('tableau-bord'));   // graphiques de l'accueil (selon les droits)
+    // le journal des changements du CPM est une carte du tableau de bord (même format que les autres)
+    var extras = []; if (a('Dossiers_CPM.html')) { var cj = document.createElement('div'); cj.className = 'tb-journal'; extras.push(cj); Synthese.monterJournal(cj); }
+    if (window.TableauBord && (extras.length || a('Avancement_des_Chantiers.html') || a('rapports.html') || a('badges.html'))) TableauBord.charger($('tableau-bord'), extras);   // graphiques de l'accueil (selon les droits)
   }
   $('recherche').addEventListener('input', filtrer);
   // Compteur de rotation en haut : un clic ouvre le détail (état, barre, reliquat, modifier ma rotation, raccourcis, Sijil)
