@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-27-212",
+    "date": "2026-10-27",
+    "title": "Version 6.8.0 — Tableau de bord de l'accueil",
+    "changes": [
+      "Nouveau tableau de bord sur l'accueil (selon vos droits) : présence sur site (chiffre du jour, courbe sur 30 jours, entreprises les plus présentes), rapports du jour reçus / manquants, effectif des chantiers par service sur 14 jours, avancement contre délai écoulé des chantiers (les plus en retard d'abord) et état des contrats du Suivi CPM avec les échéances à moins de 60 jours.",
+      "Lecture seule, sans bibliothèque externe : les graphiques sont dessinés par la page ; un bloc n'apparaît que si le compte a accès au module concerné."
+    ]
+  },
+  {
     "id": "2026-10-27-211",
     "date": "2026-10-27",
     "title": "Version 6.7.1 — Journal des rapports : filtres automatiques, tous les chantiers, impression par agent",
