@@ -77,6 +77,7 @@
   <p class="alerte" id="verrou" hidden>🔒 Pour accéder au site, indiquez d'abord où vous en êtes dans votre rotation (situation, date de début, rythme).</p>
   <section class="syntheses" id="syntheses"><div class="syn syn-alerte-modifs" id="syn-modifs" hidden></div><div class="syn" id="syn-chantiers" hidden></div><div class="syn" id="syn-cpm" hidden></div><div class="syn syn-journal-boite" id="syn-journal" hidden></div></section>
   <p class="vide" id="aucun-resultat" hidden>Aucune application ne correspond à votre recherche.</p>
+  <section class="tb" id="tableau-bord" hidden aria-label="Tableau de bord"></section>
   <div id="modules"></div>
   <section id="entreprises-zone" class="annuaire-zone" hidden>
     <h3>🏢 Entreprises du vivier</h3>
@@ -199,7 +200,7 @@
   // ---------- Recherche, filtres par module, date, synthèses (comme l'ancien accueil) ----------
   var modulesFiltre = '', verrouContenu = false, aDesApps = false;
   function norme(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
-  function afficherContenu() { var cache = verrouContenu; $('modules').hidden = cache || modulesFiltre === '__annuaire'; $('syntheses').hidden = cache; if (cache) $('annuaire-zone').hidden = true; $('outils').hidden = cache || !aDesApps; $('barre-haut').hidden = cache || !aDesApps; }
+  function afficherContenu() { var cache = verrouContenu; if (cache) $('tableau-bord').hidden = true; $('modules').hidden = cache || modulesFiltre === '__annuaire'; $('syntheses').hidden = cache; if (cache) $('annuaire-zone').hidden = true; $('outils').hidden = cache || !aDesApps; $('barre-haut').hidden = cache || !aDesApps; }
   // Entreprises du Vivier trouvées par la recherche (seulement si la personne a l'application Vivier ; liste lue une fois, à la première frappe)
   var vivier = null, vivierEssai = false;
   function aVivier() { return Array.prototype.some.call(document.querySelectorAll('#modules .app'), function (c) { return /vivier/.test(c.dataset.t || ''); }); }
@@ -240,6 +241,7 @@
     function a(f) { return urls.some(function (u) { return u.indexOf(f) !== -1; }); }
     if (a('Avancement_des_Chantiers.html')) Synthese.monterChantiers($('syn-chantiers'));
     if (a('Dossiers_CPM.html')) { Synthese.monterCpm($('syn-cpm')); Synthese.monterJournal($('syn-journal')); }
+    if (window.TableauBord && (a('Avancement_des_Chantiers.html') || a('rapports.html') || a('badges.html'))) TableauBord.charger($('tableau-bord'));   // graphiques de l'accueil (selon les droits)
   }
   $('recherche').addEventListener('input', filtrer);
   // Compteur de rotation en haut : un clic ouvre le détail (état, barre, reliquat, modifier ma rotation, raccourcis, Sijil)
@@ -429,6 +431,7 @@
   });
 })();
 </script>
+<script src="js/tableau-bord.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>
