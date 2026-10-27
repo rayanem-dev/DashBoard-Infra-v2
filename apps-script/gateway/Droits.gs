@@ -129,7 +129,7 @@ var Droits = (function () {
             return !liste.length || liste.indexOf(rc) !== -1;
           })
           .filter(function (x) { return rc !== 'prestataire' || APPS_PRESTATAIRE.indexOf(String(x.url)) !== -1; })
-          .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || '') }; });
+          .map(function (x) { return { titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || ''), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre) }; });
         return { id: m.id, titre: m.titre, icone: m.icone, niveau: niv, apps: apps };
       });
   }

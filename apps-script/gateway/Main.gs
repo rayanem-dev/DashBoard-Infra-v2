@@ -60,7 +60,7 @@ function route_(req) {
       if (typeof preparerCarteBadges_ === 'function') preparerCarteBadges_();
       if (typeof preparerCartesNouvelles_ === 'function') preparerCartesNouvelles_();
       if (typeof preparerJournalCpm_ === 'function') preparerJournalCpm_();
-      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role) };
+      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: Droits.roleCanon(u.role) === 'secretariat' };
     }
     case 'emettreCode': {
       var admin = Auth.userFromToken(req.token);
@@ -195,6 +195,8 @@ function route_(req) {
     case 'rapport_diapos': return rapportDiaposInjecter_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);
     case 'rapport_chantier_ouvrir': return rapportChantierOuvrir_(req);
+    case 'menu_organisation_lire': return menuOrgLire_(req);
+    case 'menu_organisation_enregistrer': return menuOrgEnregistrer_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
     case 'rapport_corriger': return rapportCorriger_(req);
@@ -317,7 +319,7 @@ function route_(req) {
       var ap6 = Store.table('Applications').filter(function (x) { return String(x.titre) === String(req.titre); })[0];
       if (!ap6) throw new Error('Application inconnue');
       var rb = String(req.rubrique || '');
-      if (rb && RUBRIQUES_IDS_.indexOf(rb) === -1) throw new Error('Catégorie inconnue');
+      if (rb && RUBRIQUES_IDS_.concat(orgRubriques_().map(function (x) { return x.id; })).indexOf(rb) === -1) throw new Error('Catégorie inconnue');
       Store.maj('Applications', { titre: req.titre }, { rubrique: rb });
       Store.journal('rubrique', a6.email, req.titre + ' -> ' + (rb || 'automatique')); return {};
     }
@@ -829,4 +831,53 @@ function profilEnregistrer_(req) {
   try { var n = ecrireDansBddorga_(u.email, versOrga); Store.journal('profil_bddorga', u.email, n + ' cellule(s) écrite(s) dans BDDORGA'); }
   catch (err) { Store.journal('profil_bddorga_echec', u.email, String(err.message || err)); } // l'agent n'est pas bloqué : la valeur est déjà dans la passerelle
   return { user: pubUser_(Store.utilisateur(u.email)) };
+}
+
+// ----- Organisation du menu (catégories et ordre des applications) : réservée au rôle secrétariat ; ne change aucun droit, seulement le rangement affiché (barre latérale ET cartes de l'accueil)
+var RUBRIQUES_ENTETES_ = ['id', 'titre', 'icone', 'ordre'];
+/** Catégories choisies par le secrétariat, dans l'ordre : [{ id, titre, icone }] ; vide tant que rien n'a été organisé (le portail utilise alors ses catégories d'origine). */
+function orgRubriques_() {
+  try {
+    return Store.table('Rubriques').filter(function (x) { return x.id && x.titre; })
+      .sort(function (a, b) { return (Number(a.ordre) || 0) - (Number(b.ordre) || 0); })
+      .map(function (x) { return { id: String(x.id), titre: String(x.titre), icone: String(x.icone || '📁') }; });
+  } catch (e) { return []; }   // onglet pas encore créé
+}
+function menuOrgSecretariat_(req) {
+  var u = Auth.userFromToken(req.token);
+  if (Droits.roleCanon(u.role) !== 'secretariat') throw Object.assign(new Error('L\'organisation du menu est réservée au secrétariat'), { code: 'DROITS' });
+  return u;
+}
+function menuOrgLire_(req) {
+  menuOrgSecretariat_(req); assurerColonnes_('Applications', ['rubrique', 'ordre']);
+  var mods = {}; Store.table('Modules').forEach(function (m) { mods[String(m.id).toLowerCase()] = m.titre; });
+  return { rubriques: orgRubriques_(), apps: Store.table('Applications').filter(function (x) { return x.titre; }).map(function (x) {
+    return { module: x.module, module_titre: mods[String(x.module).toLowerCase()] || x.module, titre: x.titre, description: x.description, emoji: x.emoji, url: x.url, rubrique: String(x.rubrique || ''), ordre: x.ordre === '' || x.ordre == null || isNaN(Number(x.ordre)) ? '' : Number(x.ordre) }; }) };
+}
+function menuOrgEnregistrer_(req) {
+  var u = menuOrgSecretariat_(req); assurerColonnes_('Applications', ['rubrique', 'ordre']);
+  var cats = Array.isArray(req.rubriques) ? req.rubriques : [], apps = Array.isArray(req.apps) ? req.apps : [];
+  if (cats.length > 30) throw new Error('30 catégories au plus');
+  var ids = {}, propres = cats.map(function (c, i) {
+    var id = String(c.id || '').toLowerCase(), titre = Rapports.nettoyer(c.titre, 40), icone = Rapports.nettoyer(c.icone, 8) || '📁';
+    if (!/^[a-z0-9][a-z0-9_-]{1,29}$/.test(id)) throw new Error('Identifiant de catégorie invalide');
+    if (titre.length < 2 || /^[=+@\-]/.test(titre)) throw new Error('Nom de catégorie invalide (2 caractères au moins)');
+    if (ids[id]) throw new Error('Catégorie en double : ' + titre); ids[id] = 1;
+    return [id, titre, icone, i + 1];
+  });
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = cpmFeuille_('Rubriques', RUBRIQUES_ENTETES_);
+    if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 4).clearContent();
+    if (propres.length) { var z = sh.getRange(2, 1, propres.length, 4); z.setNumberFormat('@'); z.setValues(propres.map(function (l) { return l.map(String); })); }
+    var ap = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = ap.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iR = h.indexOf('rubrique'), iO = h.indexOf('ordre');
+    if (iT < 0 || iR < 0 || iO < 0) throw new Error('Colonnes « rubrique » / « ordre » introuvables dans Applications');
+    var voulu = {}; apps.forEach(function (a) { var rb = String(a.rubrique || ''); if (rb && !ids[rb]) throw new Error('Une application est rangée dans une catégorie inconnue'); voulu[String(a.titre)] = { rubrique: rb, ordre: Number(a.ordre) || '' }; });
+    var colR = [], colO = [], n = 0;
+    for (var i = 1; i < v.length; i += 1) { var w = voulu[String(v[i][iT])]; if (w) { colR.push([w.rubrique]); colO.push([w.ordre]); n += 1; } else { colR.push([v[i][iR]]); colO.push([v[i][iO]]); } }
+    if (v.length > 1) { ap.getRange(2, iR + 1, v.length - 1, 1).setValues(colR); ap.getRange(2, iO + 1, v.length - 1, 1).setValues(colO); }
+    ['TBL_Applications', 'TBL_Rubriques'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) { /* rien */ } });
+    Store.journal('menu_organise', u.email, propres.length + ' catégories, ' + n + ' applications rangées');
+    return { categories: propres.length, applications: n };
+  } finally { lock.releaseLock(); }
 }

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-27-200",
+    "date": "2026-10-27",
+    "title": "Version 6.3.0 — Organiser le menu et les cartes (secrétariat)",
+    "changes": [
+      "Secrétariat : le bouton ✏️ en haut de la barre latérale ouvre « Organiser les applications » — glisser une application d'une catégorie à l'autre (ou ▲ ▼ / « Déplacer… » sur téléphone), changer son ordre, renommer les catégories et leur icône, en ajouter, supprimer les catégories vides, changer l'ordre des catégories.",
+      "Le rangement enregistré s'applique à la barre latérale et aux cartes de l'accueil ; il est partagé par tous les comptes et ne modifie aucun droit. Les applications non classées restent visibles dans « Autres »."
+    ]
+  },
+  {
     "id": "2026-10-26-199",
     "date": "2026-10-26",
     "title": "Version 6.2.6 — Consolidé : personnes à cocher en plus des boîtes",

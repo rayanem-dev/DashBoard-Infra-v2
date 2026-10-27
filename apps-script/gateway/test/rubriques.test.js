@@ -29,3 +29,13 @@ test('regroupement : aucune carte perdue ni doublée, ordre des rubriques fixe, 
   assert.ok(R.regrouper([]).length === 0);
 });
 test('mots de recherche supplémentaires', () => { assert.match(R.motsCles({ titre: 'Repas à emporter' }), /casse croute/); });
+
+test('catégories choisies par le secrétariat : ordre des catégories, rangement explicite, ordre des cartes, nouvelle catégorie vide conservée', () => {
+  const R = require('../../../js/rubriques.js');
+  const menu = [{ id: 'm', titre: 'M', icone: 'm', apps: [{ titre: 'Rapports journaliers', url: 'r.html', ordre: 20 }, { titre: 'Suivi Chantier', url: 's.html', ordre: 10 }, { titre: 'Renommage de documents', url: 'n.html', rubrique: 'ma-cat' }, { titre: 'Carte libre', url: 'x.html' }] }];
+  const config = [{ id: 'ma-cat', titre: 'Mes essentiels', icone: '⭐' }, { id: 'pilotage', titre: 'Chantiers', icone: '📈' }, { id: 'vide', titre: 'Vide', icone: '📁' }];
+  const g = R.regrouper(menu, config);
+  assert.deepStrictEqual(g.map(x => [x.id, x.apps.map(a => a.titre)]), [['ma-cat', ['Renommage de documents']], ['pilotage', ['Suivi Chantier', 'Rapports journaliers']], ['vide', []], ['autres-m', ['Carte libre']]]);
+  assert.strictEqual(g[0].titre, 'Mes essentiels');
+  assert.deepStrictEqual(R.regrouper(menu).map(x => x.id), ['pilotage', 'admin', 'autres-m']);   // sans config : catégories d'origine
+});

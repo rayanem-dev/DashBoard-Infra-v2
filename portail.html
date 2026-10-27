@@ -259,7 +259,7 @@
     Synthese.monterModifs($('syn-modifs')); // demandes de modification de planning à décider
     $('alerte-mdp').hidden = !r.mdp_par_defaut;
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
-    var groupes = window.Rubriques ? Rubriques.regrouper(r.menu) : r.menu;
+    var groupes = window.Rubriques ? Rubriques.regrouper(r.menu, r.rubriques).filter(function (g) { return g.apps.length; }) : r.menu;
     var zone = $('modules'); zone.textContent = ''; outilsAccueil(groupes);
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
     groupes.forEach(function (m) {

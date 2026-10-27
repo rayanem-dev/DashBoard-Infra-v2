@@ -76,14 +76,16 @@
     });
     if (!n) nav.appendChild(el('div', 'ml-vide', q ? 'Aucune application ne correspond.' : 'Aucune application disponible.'));
   }
-  function monter(menu) {
-    groupes = window.Rubriques ? Rubriques.regrouper(menu) : (menu || []).map(function (m) { return { id: m.id, titre: m.titre, icone: m.icone, apps: m.apps || [] }; });
+  function monter(menu, rubriques, organiser) {
+    groupes = window.Rubriques ? Rubriques.regrouper(menu, rubriques) : (menu || []).map(function (m) { return { id: m.id, titre: m.titre, icone: m.icone, apps: m.apps || [] }; });
     var st = el('style'); st.id = 'ml-css'; st.textContent = CSS; document.head.appendChild(st);
     racine = el('aside'); racine.id = 'ml'; racine.setAttribute('aria-label', 'Applications');
     var tete = el('div', 'ml-tete'), logo = el('a', 'ml-logo', 'SH'); logo.href = 'portail.html'; logo.title = 'Accueil du portail'; logo.setAttribute('aria-label', 'Accueil du portail');
     var tit = el('a', 'ml-titre', 'Portail Infra'); tit.href = 'portail.html';
     var bas = el('button', 'ml-bascule'); bas.type = 'button'; bas.addEventListener('click', function () { if (etroit()) { tiroir = false; appliquer(); return; } etat = etat === 'rail' ? 'ouvert' : 'rail'; sauver(etat); appliquer(); });
-    tete.appendChild(logo); tete.appendChild(tit); tete.appendChild(bas); racine.appendChild(tete);
+    tete.appendChild(logo); tete.appendChild(tit);
+    if (organiser) { var org = el('button', 'ml-bascule ml-org', '✏️'); org.type = 'button'; org.title = 'Organiser les applications : glisser, renommer, ajouter des catégories'; org.setAttribute('aria-label', 'Organiser les applications'); org.addEventListener('click', ouvrirOrganisation); tete.appendChild(org); }
+    tete.appendChild(bas); racine.appendChild(tete);
     var rc = el('div', 'ml-cherche'); champ = el('input'); champ.type = 'search'; champ.placeholder = 'Rechercher une application…'; champ.setAttribute('aria-label', 'Rechercher une application'); champ.autocomplete = 'off'; champ.addEventListener('input', function () { dessiner(champ.value); }); rc.appendChild(champ); racine.appendChild(rc);
     nav = el('nav'); nav.setAttribute('aria-label', 'Catégories'); racine.appendChild(nav);
     var voile = el('div'); voile.id = 'ml-voile'; voile.addEventListener('click', function () { tiroir = false; appliquer(); });
@@ -93,15 +95,21 @@
     window.addEventListener('resize', function () { var large = !etroit(); if (document.body.classList.contains('ml-large') !== large) { tiroir = false; appliquer(); } });
     dessiner(''); appliquer();
   }
-  function lireCache() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return o && Date.now() - o.t < TTL ? o.menu : null; } catch (e) { return null; } }
+  function lireCache() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return o && Date.now() - o.t < TTL ? o : null; } catch (e) { return null; } }
+  /** Éditeur d'organisation (secrétariat) : chargé seulement au clic, puis le menu et l'accueil sont rechargés. */
+  function ouvrirOrganisation() {
+    var go = function () { window.MenuOrganiser.ouvrir(); };
+    if (window.MenuOrganiser) return go();
+    var sc = document.createElement('script'); sc.src = BASE + 'js/menu-organiser.js'; sc.onload = go; document.head.appendChild(sc);
+  }
   var BASE = (function () { var s = document.currentScript; return s && s.src ? s.src.replace(/js\/menu-lateral\.js(\?.*)?$/, '') : ''; })();
   function avecRubriques(fin) {   // les catégories viennent de js/rubriques.js (chargé s'il ne l'est pas déjà sur la page)
     if (window.Rubriques) return fin();
     var r = document.createElement('script'); r.src = BASE + 'js/rubriques.js'; r.onload = r.onerror = fin; document.head.appendChild(r);
   }
   function charger() {
-    var c = lireCache(); if (c) { avecRubriques(function () { monter(c); }); return; }
-    Api.call('menu').then(function (r) { var m = r && r.menu || []; try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), menu: m })); } catch (e) { /* rien */ } avecRubriques(function () { monter(m); }); }).catch(function () { /* sans menu : pas de barre */ });
+    var c = lireCache(); if (c) { avecRubriques(function () { monter(c.menu, c.rubriques, c.organiser); }); return; }
+    Api.call('menu').then(function (r) { var m = r && r.menu || [], rb = r && r.rubriques || [], og = !!(r && r.organiser); try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), menu: m, rubriques: rb, organiser: og })); } catch (e) { /* rien */ } avecRubriques(function () { monter(m, rb, og); }); }).catch(function () { /* sans menu : pas de barre */ });
   }
   window.MenuLateral = { charger: charger };
   if (document.body) charger(); else document.addEventListener('DOMContentLoaded', charger);
