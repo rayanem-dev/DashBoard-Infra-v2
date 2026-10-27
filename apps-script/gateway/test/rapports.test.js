@@ -155,7 +155,7 @@ test('consolideMail : échappe le texte et signale les chantiers sans rapport', 
     { id: 'a', nom: 'Chantier <A>', service: 'Construction', effectif: 5, avancement: 40, rapports: [{ auteur_nom: 'X', lignes: [{ zone: 'Z', texte: 'dalle', avancement: 40 }], difficultes: 'pluie' }] },
     { id: 'b', nom: 'Chantier B', service: '', effectif: 0, avancement: null, rapports: [] }] };
   const m = Rapports.consolideMail(s, 2);
-  assert.match(m.sujet, /samedi 24\/10\/2026/); assert.match(m.html, /Chantier &lt;A&gt;/); assert.match(m.html, /Sans rapport :<\/b> Chantier B/); assert.match(m.html, /version 2/);
+  assert.match(m.sujet, /samedi 24\/10\/2026/); assert.match(m.html, /Chantier &lt;A&gt;/); assert.match(m.html, /Chantiers sans rapport ce jour/); assert.match(m.html, /Chantier B/); assert.match(m.html, /version 2/);
 });
 
 test('chantiersVisibles : projets d\'autres services ouverts à l\'agent (chantiers_sup)', () => {
@@ -229,4 +229,11 @@ test('destinataires du consolidé : boîtes de service, chef de division et secr
   assert.deepStrictEqual(e({ secretariat: true }), ['sec-infra.rns@sonatrach.dz', 'sec.infra.rns@gmail.com', 'rayanem@gmail.com']);
   assert.strictEqual(e({ secretariat: true, chef_service: true, chef_division: true }).length, 8);
   assert.deepStrictEqual(e({}), []);
+});
+
+test('consolideMail : mêmes détails que le consolidé imprimé (commentaire, difficultés, visa, pied, signatures)', () => {
+  const s = { date: '2026-10-27', chantiers: [{ id: 'a', nom: 'Piscines', service: 'Construction', effectif: 7, avancement: 34.3, rapports: [{ auteur_nom: 'CHAREF KAMEL', effectif: 7, lignes: [{ zone: 'Piscine DSP', texte: 'Travaux en arrêt', avancement: 45 }], difficultes: 'Arrêt', commentaire: 'Il a été demandé d\'accélérer', visa_par: 'Chef', visa_note: 'ok' }] }, { id: 'p', nom: 'Prép', phase: 'preparation', rapports: [] }] };
+  const m = Rapports.consolideMail(s, 1, { genere_par: 'Envoi automatique', genere_le: '27/10/2026 21:10' });
+  ['SONATRACH', 'RAPPORT JOURNALIER CONSOLIDÉ DES CHANTIERS', 'Commentaire :</b> Il a été demandé', 'Difficultés :</b> Arrêt', 'Vu par Chef — ok', 'Établi par : <b>CHAREF KAMEL', 'Consolidé par <b>Envoi automatique', 'version 1', 'Le Chef de Division Infrastructures'].forEach(t => assert.ok(m.html.includes(t), t));
+  assert.ok(!m.html.includes('Prép'));   // un chantier hors contrat sans rapport n'est pas « manquant »
 });

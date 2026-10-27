@@ -245,31 +245,42 @@ var Rapports = (function () {
   function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
   function dateLongue(iso) { var p = String(iso).split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); return JOURS[d.getUTCDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0]; }
-  /** Rapport consolidé (résultat de synthese) → { sujet, html } pour l'e-mail (styles en ligne). */
-  function consolideMail(s, version) {
-    var avec = s.chantiers.filter(function (c) { return c.rapports.length; }), sans = s.chantiers.filter(function (c) { return !c.rapports.length; });
+  /**
+   * Rapport consolidé (résultat de synthese) → { sujet, html } pour l'e-mail : MÊME contenu que le consolidé imprimé (en-tête Sonatrach, résumé, services, chantiers avec leurs rapports :
+   * travaux, difficultés, commentaire, visa ; chantiers sans rapport ; pied avec auteur, date, version et signatures). Styles en ligne (tableaux) pour les messageries.
+   * meta (facultatif) = { genere_par, genere_le }.
+   */
+  function consolideMail(s, version, meta) {
+    var avec = s.chantiers.filter(function (c) { return c.rapports.length; }), sans = s.chantiers.filter(function (c) { return !c.rapports.length && !c.phase; });
     var eff = avec.reduce(function (n, c) { return n + (Number(c.effectif) || 0); }, 0);
-    var h = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;max-width:720px"><h2 style="margin:0 0 4px;color:#1A1A2E">Rapport journalier consolidé des chantiers</h2>' +
-      '<p style="margin:0 0 12px;color:#555">' + esc(dateLongue(s.date)) + (version ? ' · version ' + version : '') + ' — Division Infrastructure RNS</p>' +
-      '<p style="margin:0 0 14px"><b>' + s.chantiers.length + '</b> chantier(s) suivi(s) · <b>' + avec.length + '</b> avec rapport · <b>' + sans.length + '</b> sans rapport · effectif présent : <b>' + eff + '</b></p>';
+    var B = 'border:1px solid #999', G = '#f2f2f2';
+    var h = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#000;max-width:760px">' +
+      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-bottom:2.5px solid #F0A030;margin-bottom:8px"><tr>' +
+      '<td style="vertical-align:top;font-size:11px;line-height:1.4;padding-bottom:6px"><b>SONATRACH</b><br>Activité Exploration – Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure</td>' +
+      '<td style="vertical-align:top;text-align:right;padding-bottom:6px"><div style="font-size:16px;font-weight:bold">RAPPORT JOURNALIER CONSOLIDÉ DES CHANTIERS</div><div style="font-weight:bold;margin-top:3px">' + esc(dateLongue(s.date)) + (version ? ' <span style="font-weight:normal;color:#555">· version ' + version + '</span>' : '') + '</div></td></tr></table>' +
+      '<div style="background:' + G + ';padding:6px 9px;margin:0 0 10px"><b>' + s.chantiers.length + '</b> chantier(s) suivi(s) · <b>' + avec.length + '</b> avec rapport · <b>' + sans.length + '</b> sans rapport · effectif total présent : <b>' + eff + '</b></div>';
     var parService = {}, ordre = [];
     avec.forEach(function (c) { var k = c.service || 'Sans service'; if (!parService[k]) { parService[k] = []; ordre.push(k); } parService[k].push(c); });
     ordre.forEach(function (k) {
-      h += '<h3 style="margin:18px 0 6px;font-size:15px;color:#B94E00;border-bottom:2px solid #F48C06">' + esc(k) + '</h3>';
+      h += '<div style="font-size:14px;font-weight:bold;background:#FFE9D2;padding:4px 8px;margin:14px 0 6px">' + esc(k) + '</div>';
       parService[k].forEach(function (c) {
-        h += '<div style="margin:0 0 12px;padding:8px 12px;border:1px solid #ddd;border-radius:8px"><b>' + esc(c.nom) + '</b><div style="color:#555;font-size:12px">Effectif : ' + c.effectif + (c.avancement != null ? ' · Avancement : ' + c.avancement + ' %' : '') + '</div>';
-        c.rapports.forEach(function (r) {
-          h += '<div style="margin-top:6px;font-size:13px"><span style="color:#555">Établi par ' + esc(r.auteur_nom || r.auteur_email) + '</span>';
-          if (r.lignes && r.lignes.length) h += '<ul style="margin:4px 0;padding-left:18px">' + r.lignes.map(function (l) { return '<li>' + (l.routine ? '<i>[Routine]</i> ' : '') + (l.zone ? '<b>' + esc(l.zone) + '</b> : ' : '') + esc(l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + esc(l.avancement) + ' %' : '') + '</li>'; }).join('') + '</ul>';
-          else if (r.travaux) h += '<p style="margin:4px 0">' + esc(r.travaux) + '</p>';
-          if (r.difficultes) h += '<p style="margin:4px 0;color:#B91C1C"><b>Difficultés :</b> ' + esc(r.difficultes) + '</p>';
-          h += '</div>';
+        h += '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="' + B + ';border-collapse:collapse;margin-bottom:8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#000"><tr><td style="background:' + G + ';padding:4px 8px;border-bottom:1px solid #999"><b>' + esc(c.nom) + '</b></td>' +
+          '<td style="background:' + G + ';padding:4px 8px;border-bottom:1px solid #999;text-align:right;white-space:nowrap">Effectif : ' + c.effectif + (c.avancement != null ? ' · Avancement : ' + c.avancement + ' %' : '') + '</td></tr>';
+        c.rapports.forEach(function (r, i) {
+          h += '<tr><td colspan="2" style="padding:5px 8px;' + (i ? 'border-top:1px dashed #bbb;' : '') + '"><div style="font-size:11px;color:#333;margin-bottom:2px">Établi par : <b>' + esc(r.auteur_nom || r.auteur_email) + '</b>' + (r.effectif !== '' && r.effectif != null ? ' · effectif ' + esc(r.effectif) : '') + '</div>';
+          if (r.lignes && r.lignes.length) h += '<ul style="margin:3px 0 3px 18px;padding:0">' + r.lignes.map(function (l) { return '<li>' + (l.routine ? '<i>[Routine]</i> ' : '') + (l.zone ? '<b>' + esc(l.zone) + '</b> : ' : '') + esc(l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + esc(l.avancement) + ' %' : '') + '</li>'; }).join('') + '</ul>';
+          if (r.travaux && !(r.lignes && r.lignes.length && String(r.travaux).indexOf('• ') === 0)) h += '<p style="margin:3px 0">' + esc(r.travaux) + '</p>';
+          if (r.difficultes) h += '<p style="margin:3px 0;color:#8a1c1c"><b>Difficultés :</b> ' + esc(r.difficultes) + '</p>';
+          if (r.commentaire) h += '<p style="margin:3px 0"><b>Commentaire :</b> ' + esc(r.commentaire) + '</p>';
+          if (r.visa_par) h += '<p style="margin:3px 0;font-style:italic;font-size:11px">Vu par ' + esc(r.visa_par) + (r.visa_note ? ' — ' + esc(r.visa_note) : '') + '</p>';
+          h += '</td></tr>';
         });
-        h += '</div>';
+        h += '</table>';
       });
     });
-    if (sans.length) h += '<p style="color:#B91C1C"><b>Sans rapport :</b> ' + sans.map(function (c) { return esc(c.nom); }).join(' · ') + '</p>';
-    h += '<p style="color:#888;font-size:12px;margin-top:18px">Envoyé depuis le Portail Infra — rapports journaliers.</p></div>';
+    if (sans.length) h += '<div style="font-size:14px;font-weight:bold;background:#FFE9D2;padding:4px 8px;margin:14px 0 6px">Chantiers sans rapport ce jour</div><p style="margin:3px 0;color:#8a1c1c;line-height:1.5">' + sans.map(function (c) { return esc(c.nom); }).join(' · ') + '</p>';
+    h += '<p style="margin:18px 0 6px;font-size:12px">Consolidé par <b>' + esc(meta && meta.genere_par ? meta.genere_par : 'Portail Infra') + '</b>' + (meta && meta.genere_le ? ' le ' + esc(meta.genere_le) : '') + (version ? ' · version ' + version : '') + ' — un seul rapport consolidé par jour : le régénérer remplace la version précédente.</p>' +
+      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:24px;font-weight:bold;font-size:12px"><tr><td>Le Chef de Service</td><td style="text-align:right">Le Chef de Division Infrastructures</td></tr></table></div>';
     return { sujet: 'Rapport journalier consolidé — ' + dateLongue(s.date), html: h };
   }
   /**

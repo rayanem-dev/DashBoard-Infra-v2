@@ -725,8 +725,10 @@ function consolideEnvoyerCore_(date, groupes, parEmail, personnes) {
   if (!cons || !cons.donnees) throw new Error('Aucun consolidé enregistré pour le ' + date + ' : générez-le d\'abord.');
   var dest = consoDestinatairesTous_(groupes, personnes).map(function (b) { return b.email; });
   if (!dest.length) throw new Error('Aucun destinataire : cochez au moins un groupe ou une personne.');
-  var m = Rapports.consolideMail(cons.donnees, cons.version);
-  MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html });
+  var quand = ''; try { quand = Utilities.formatDate(new Date(cons.genere_le), 'Africa/Algiers', 'dd/MM/yyyy HH:mm'); } catch (e) { quand = ''; }
+  var m = Rapports.consolideMail(cons.donnees, cons.version, { genere_par: cons.genere_par, genere_le: quand }), pieces = [];
+  try { pieces.push(Utilities.newBlob('<html><head><meta charset="utf-8"></head><body>' + m.html + '</body></html>', 'text/html', 'consolide.html').getAs('application/pdf').setName('Rapport-consolide-' + date + '.pdf')); } catch (e) { /* le corps du message contient déjà tout le détail */ }
+  MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, attachments: pieces });
   Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)');
   return { destinataires: dest.length, version: cons.version };
 }
