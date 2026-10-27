@@ -338,10 +338,16 @@
     });
     return l.length;
   }
+  var CSS_JOURNAL = '@page{size:A4 portrait;margin:10mm}html,body{margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}#feuille-journal{display:block;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:10pt}' +
+    '.tete{border-bottom:2.5px solid #F0A030;padding-bottom:6px;margin-bottom:10px}h1{font-size:14pt;margin:0 0 3px}.sous{margin:0;font-size:9pt;color:#333}.ag{break-before:page}.ag:first-of-type{break-before:auto}h2{font-size:12pt;margin:4px 0 8px;background:#FFE9D2;padding:4px 8px}' +
+    '.rap{border:1px solid #999;margin:0 0 8px;padding:5px 8px;break-inside:avoid}.rap h3{font-size:10.5pt;margin:0 0 2px}.par{font-size:8.5pt;color:#333;margin-bottom:3px}.bloc{margin:3px 0}ul{margin:2px 0 2px 16px;padding:0}p{margin:2px 0}.diff{color:#8a1c1c}.visa{font-style:italic;font-size:8.5pt}';
+  /** Impression dans un cadre isolé (aucune règle de la page ne peut la masquer) : la fenêtre d'impression s'ouvre directement. */
   function imprimerJournal(parAgent) {
-    var fj = $('feuille-journal'); if (fj.parentNode !== document.body) document.body.appendChild(fj);   // la feuille doit être directement dans <body> : tout le reste de la page est masqué à l'impression
     if (!feuilleJournal(parAgent)) { toast('Aucun rapport à imprimer sur cette période.', true); return; }
-    document.body.classList.add('imprime-journal'); window.print();
+    var cadre = document.createElement('iframe'); cadre.setAttribute('aria-hidden', 'true'); cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+    cadre.onload = function () { try { cadre.contentWindow.focus(); cadre.contentWindow.print(); } catch (e) { toast('Impression impossible : ' + e.message, true); } setTimeout(function () { cadre.remove(); }, 120000); };
+    cadre.srcdoc = '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Journal des rapports journaliers</title><style>' + CSS_JOURNAL + '</style></head><body><div id="feuille-journal">' + $('feuille-journal').innerHTML + '</div></body></html>';
+    document.body.appendChild(cadre);
   }
   window.addEventListener('afterprint', function () { document.body.classList.remove('imprime-journal'); });
   ['du', 'au', 'f-chantier'].forEach(function (id) { $(id).addEventListener('change', journal); });   // la liste se met à jour toute seule
@@ -523,7 +529,7 @@
       .catch(function (e) { $('hc-err').textContent = e.message; }).then(function () { b.disabled = false; });
   };
   // ----- Démarrage
-  $('du').value = plus(auj, -6); $('au').value = auj; $('s-date').value = auj; $('s-date').max = auj;
+  $('du').value = auj; $('au').value = auj; $('s-date').value = auj; $('s-date').max = auj;
   Api.call('me').then(function (m) { var u = (m && m.user) || {}; moi.nom = u.nom || u.email || ''; moi.qual = [u.fonction, u.service].filter(Boolean).join(' · '); $('etabli-nom').textContent = moi.nom; $('etabli-qual').textContent = moi.qual; }).catch(function () { /* le nom s'affichera à l'enregistrement */ });
   Api.call('rapports_chantiers').then(function (r) {
     remplirChantiers(r); peutEnvoyer = !!r.peut_envoyer;
