@@ -15,10 +15,16 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/charte.css">
 <style>
-  #feuille-conso { display: none; }
+  #feuille-conso, #feuille-journal { display: none; }
   @media print {
     @page { size: A4 portrait; margin: 0; }   /* marge de page à 0 : plus d'adresse du site ni de date imprimées par le navigateur */
     html, body { background: #fff !important; margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body.imprime-journal > *:not(#feuille-journal) { display: none !important; }
+    body.imprime-journal #feuille-journal { display: block; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; padding: 12mm 14mm; }
+    #feuille-journal .tete { border-bottom: 2.5px solid #F0A030; padding-bottom: 6px; margin-bottom: 10px; } #feuille-journal h1 { font-size: 14pt; margin: 0 0 3px; } #feuille-journal .sous { margin: 0; font-size: 9pt; color: #333; }
+    #feuille-journal .ag { break-before: page; } #feuille-journal .ag:first-of-type { break-before: auto; } #feuille-journal h2 { font-size: 12pt; margin: 4px 0 8px; background: #FFE9D2; padding: 4px 8px; }
+    #feuille-journal .rap { border: 1px solid #999; margin: 0 0 8px; padding: 5px 8px; break-inside: avoid; } #feuille-journal .rap h3 { font-size: 10.5pt; margin: 0 0 2px; } #feuille-journal .par { font-size: 8.5pt; color: #333; margin-bottom: 3px; }
+    #feuille-journal ul { margin: 2px 0 2px 16px; padding: 0; } #feuille-journal p { margin: 2px 0; } #feuille-journal .diff { color: #8a1c1c; } #feuille-journal .visa { font-style: italic; font-size: 8.5pt; }
     body.imprime-conso > *:not(#feuille-conso) { display: none !important; }
     body.imprime-conso #feuille-conso { display: block; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
     #feuille-conso table.cadre { width: 100%; border-collapse: collapse; } #feuille-conso table.cadre td { padding: 0 14mm; } #feuille-conso .esp { height: 12mm; }
@@ -90,9 +96,14 @@
       <label class="aide" for="du" style="margin:0">Du</label><input type="date" id="du" style="min-width:150px">
       <label class="aide" for="au" style="margin:0">au</label><input type="date" id="au" style="min-width:150px">
       <select id="f-chantier" aria-label="Chantier"><option value="">Tous les chantiers</option></select>
-      <button class="btn-s" id="b-filtre" type="button">Afficher</button>
+      <select id="f-agent" aria-label="Agent"><option value="">Tous les agents</option></select>
+      <button class="btn-s" id="b-filtre" type="button" title="Actualise la liste (elle se met aussi à jour toute seule quand vous changez un filtre)">↻ Actualiser</button>
+      <button class="btn-s" id="b-imp-j" type="button" title="Imprime les rapports affichés (selon la période, le chantier et l'agent choisis)">🖨 Imprimer</button>
+      <button class="btn-s" id="b-imp-ag" type="button" title="Imprime les rapports affichés avec une nouvelle page pour chaque agent">🖨 Un agent par page</button>
     </div>
+    <p class="aide" id="j-resume" style="margin:6px 0"></p>
     <div id="liste"></div>
+    <div id="feuille-journal"></div>
   </section>
 
   <section class="panneau" id="p-synth" hidden>
@@ -282,14 +293,61 @@
     };
     bar.appendChild(an); bar.appendChild(ok); d.appendChild(bar); document.body.appendChild(d); d.showModal();
   }
+  var dernierJournal = [];
+  function agentsDe(l) { var m = {}; l.forEach(function (x) { var k = String(x.auteur_email || '').toLowerCase(); if (k && !m[k]) m[k] = x.auteur_nom || x.auteur_email; }); return m; }
+  function filtresAgent(l) { var a = $('f-agent').value; return a ? l.filter(function (x) { return String(x.auteur_email || '').toLowerCase() === a; }) : l; }
+  function majAgents(l) {
+    var s = $('f-agent'), cur = s.value, m = agentsDe(l); s.textContent = '';
+    var t = el('option', null, 'Tous les agents'); t.value = ''; s.appendChild(t);
+    Object.keys(m).sort(function (x, y) { return m[x].localeCompare(m[y], 'fr'); }).forEach(function (k) { var o = el('option', null, m[k]); o.value = k; s.appendChild(o); });
+    s.value = m[cur] ? cur : '';
+  }
+  function dessinerJournal(tronque) {
+    var l = filtresAgent(dernierJournal), z = $('liste'); z.textContent = '';
+    $('j-resume').textContent = l.length + ' rapport' + (l.length > 1 ? 's' : '') + ' · ' + Object.keys(agentsDe(l)).length + ' agent(s)';
+    if (!l.length) z.appendChild(el('p', 'vide', 'Aucun rapport sur cette période.'));
+    l.forEach(function (x) { z.appendChild(fiche(x)); });
+    if (tronque) z.appendChild(el('p', 'aide', 'Résultats limités aux 300 plus récents : affinez la période.'));
+  }
   function journal() {
     return Api.call('rapports_liste', { du: $('du').value, au: $('au').value, chantier: $('f-chantier').value }).then(function (r) {
-      var z = $('liste'); z.textContent = '';
-      if (!r.rapports.length) z.appendChild(el('p', 'vide', 'Aucun rapport sur cette période.'));
-      r.rapports.forEach(function (x) { z.appendChild(fiche(x)); });
-      if (r.tronque) z.appendChild(el('p', 'aide', 'Résultats limités aux 300 plus récents : affinez la période.'));
+      dernierJournal = r.rapports; majAgents(dernierJournal); dessinerJournal(r.tronque);
     }).catch(function (e) { toast(e.message, true); });
   }
+  /** Feuille d'impression : les rapports affichés (période, chantier, agent), du plus ancien au plus récent ; parAgent = une page par agent. */
+  function feuilleJournal(parAgent) {
+    var l = filtresAgent(dernierJournal).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }), f = $('feuille-journal'); f.textContent = '';
+    var ch = $('f-chantier').value ? ($('f-chantier').selectedOptions[0] || {}).textContent : 'Tous les chantiers', ag = $('f-agent').value ? ($('f-agent').selectedOptions[0] || {}).textContent : 'Tous les agents';
+    var tete = el('div', 'tete'); tete.appendChild(el('h1', null, 'Journal des rapports journaliers — Division Infrastructure RNS'));
+    tete.appendChild(el('p', 'sous', 'Période : ' + Rotation.frDate($('du').value) + ' au ' + Rotation.frDate($('au').value) + ' · ' + ch + ' · ' + ag + ' · ' + l.length + ' rapport(s) · imprimé le ' + new Date().toLocaleDateString('fr-FR')));
+    f.appendChild(tete);
+    function rapport(x) {
+      var d = el('div', 'rap'); d.appendChild(el('h3', null, nomChantier(x.chantier)));
+      d.appendChild(el('div', 'par', Rotation.frDate(x.date) + ' · Établi par ' + (x.auteur_nom || x.auteur_email) + ' · effectif ' + x.effectif + (x.avancement !== '' && x.avancement != null ? ' · avancement ' + x.avancement + ' %' : '')));
+      d.appendChild(x.lignes && x.lignes.length ? lignesHtml(x.lignes) : ligne('Travaux réalisés', x.travaux));
+      if (x.difficultes) { var q = ligne('Difficultés', x.difficultes); q.className += ' diff'; d.appendChild(q); }
+      if (x.commentaire) d.appendChild(ligne('Commentaire', x.commentaire));
+      if (x.visa_par) d.appendChild(el('div', 'visa', 'Vu par ' + x.visa_par + (x.visa_note ? ' — ' + x.visa_note : '')));
+      return d;
+    }
+    if (!parAgent) { l.forEach(function (x) { f.appendChild(rapport(x)); }); return l.length; }
+    var m = agentsDe(l);
+    Object.keys(m).sort(function (x, y) { return m[x].localeCompare(m[y], 'fr'); }).forEach(function (k) {
+      var g = el('div', 'ag'), mine = l.filter(function (x) { return String(x.auteur_email || '').toLowerCase() === k; });
+      g.appendChild(el('h2', null, m[k] + ' — ' + mine.length + ' rapport' + (mine.length > 1 ? 's' : ''))); mine.forEach(function (x) { g.appendChild(rapport(x)); }); f.appendChild(g);
+    });
+    return l.length;
+  }
+  function imprimerJournal(parAgent) {
+    if (!feuilleJournal(parAgent)) { toast('Aucun rapport à imprimer sur cette période.', true); return; }
+    document.body.classList.add('imprime-journal'); window.print();
+  }
+  window.addEventListener('afterprint', function () { document.body.classList.remove('imprime-journal'); });
+  ['du', 'au', 'f-chantier'].forEach(function (id) { $(id).addEventListener('change', journal); });   // la liste se met à jour toute seule
+  $('f-agent').addEventListener('change', function () { dessinerJournal(false); });
+  $('b-imp-j').addEventListener('click', function () { imprimerJournal(false); });
+  $('b-imp-ag').addEventListener('click', function () { imprimerJournal(true); });
+  setInterval(function () { if (!document.hidden && !$('p-journal').hidden) journal(); }, 60000);   // actualisation automatique toutes les minutes tant que l'onglet est affiché
   $('b-filtre').addEventListener('click', journal);
 
   // ----- Synthèse (niveau 3)
@@ -444,7 +502,7 @@
 
   function remplirChantiers(r) {
     chantiers = r.chantiers; fermes = r.hors_contrat || [];
-    [$('chantier'), $('f-chantier')].forEach(function (s) { var cur = s.value; s.textContent = ''; chantiers.forEach(function (c) { var o = el('option', null, c.nom); o.value = c.id; s.appendChild(o); }); if (cur) s.value = cur; });
+    [$('chantier'), $('f-chantier')].forEach(function (s) { var cur = s.value; s.textContent = ''; if (s.id === 'f-chantier') { var tous = el('option', null, 'Tous les chantiers'); tous.value = ''; s.appendChild(tous); } chantiers.forEach(function (c) { var o = el('option', null, c.nom); o.value = c.id; s.appendChild(o); }); if (cur) s.value = cur; });   // le filtre du journal garde « Tous les chantiers »
     $('b-hc').hidden = !r.peut_ouvrir;
   }
   var fermes = [], peutEnvoyer = false;
