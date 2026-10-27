@@ -339,6 +339,7 @@
     return l.length;
   }
   function imprimerJournal(parAgent) {
+    var fj = $('feuille-journal'); if (fj.parentNode !== document.body) document.body.appendChild(fj);   // la feuille doit être directement dans <body> : tout le reste de la page est masqué à l'impression
     if (!feuilleJournal(parAgent)) { toast('Aucun rapport à imprimer sur cette période.', true); return; }
     document.body.classList.add('imprime-journal'); window.print();
   }
