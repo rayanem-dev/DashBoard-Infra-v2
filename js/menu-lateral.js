@@ -35,6 +35,7 @@
     '#ml .ml-apps a{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;text-decoration:none;font-weight:500}#ml .ml-apps a:hover{background:var(--surface-2,#F3F4F6)}#ml .ml-apps a.ici{background:var(--orange-pale,#FFF0E5);color:var(--orange-dark,#B94E00);font-weight:700}#ml .ml-apps .ml-ico{font-size:15px;width:22px}' +
     '#ml .ml-vide{padding:10px 12px;color:var(--text-muted,#6B7280);font-size:12.5px}' +
     'body.ml-rail #ml{width:' + WR + 'px}body.ml-rail #ml .ml-titre,body.ml-rail #ml .ml-cherche,body.ml-rail #ml .ml-nom,body.ml-rail #ml .ml-fl,body.ml-rail #ml .ml-apps{display:none!important}body.ml-rail #ml .ml-tete{flex-direction:column;padding:10px 0;gap:6px}body.ml-rail #ml .ml-cat>button{justify-content:center;padding:9px 0}' +
+    '#ml .ml-org{display:grid;place-items:center}#ml .ml-orgtxt{display:flex;align-items:center;gap:8px;margin:0 12px 12px;padding:8px 10px;border:1.5px dashed var(--border,#CBD5E1);border-radius:10px;background:none;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text-muted,#6B7280)}#ml .ml-orgtxt:hover{border-color:#E85D04;color:#E85D04}body.ml-rail #ml .ml-orgtxt span{display:none}body.ml-rail #ml .ml-orgtxt{justify-content:center;margin:0 8px 12px}' +
     '#ml-btn{display:none;position:fixed;top:12px;inset-inline-start:12px;z-index:9991;width:40px;height:40px;border-radius:12px;border:1.5px solid rgba(255,255,255,.35);background:rgba(26,26,46,.88);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25)}' +
     '#ml-voile{display:none;position:fixed;inset:0;z-index:9989;background:rgba(0,0,0,.4)}' +
     'body.ml-large{margin-inline-start:' + WO + 'px;transition:margin .2s}body.ml-large.ml-rail{margin-inline-start:' + WR + 'px}' +
@@ -42,11 +43,12 @@
     'body.ml-large .aide-btn{left:' + (WO + 12) + 'px!important}body.ml-large.ml-rail .aide-btn{left:' + (WR + 12) + 'px!important}' +
     '@media print{#ml,#ml-btn,#ml-voile{display:none!important}body.ml-large{margin:0!important}}';
 
+  var CRAYON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';   // dessiné en SVG : l'emoji crayon ne s'affiche pas sur tous les ordinateurs
   function appliquer() {
     var large = !etroit();
     document.body.classList.toggle('ml-large', large); document.body.classList.toggle('ml-rail', large && etat === 'rail');
     racine.classList.toggle('tiroir', !large && tiroir); $('ml-voile').classList.toggle('tiroir', !large && tiroir);
-    var b = racine.querySelector('.ml-bascule'); b.textContent = !large ? '✕' : etat === 'rail' ? '›' : '‹'; b.setAttribute('aria-expanded', large ? (etat === 'rail' ? 'false' : 'true') : 'true'); b.title = !large ? 'Fermer le menu' : etat === 'rail' ? 'Déplier la barre' : 'Replier la barre';
+    var b = racine.querySelector('.ml-bascule:not(.ml-org)'); b.textContent = !large ? '✕' : etat === 'rail' ? '›' : '‹'; b.setAttribute('aria-expanded', large ? (etat === 'rail' ? 'false' : 'true') : 'true'); b.title = !large ? 'Fermer le menu' : etat === 'rail' ? 'Déplier la barre' : 'Replier la barre';
     $('ml-btn').setAttribute('aria-expanded', !large && tiroir ? 'true' : 'false');
     setTimeout(function () { try { window.dispatchEvent(new Event('resize')); } catch (e) { /* rien */ } }, 230);   // les aperçus A4 et les frises recalculent leur largeur
   }
@@ -84,10 +86,11 @@
     var tit = el('a', 'ml-titre', 'Portail Infra'); tit.href = 'portail.html';
     var bas = el('button', 'ml-bascule'); bas.type = 'button'; bas.addEventListener('click', function () { if (etroit()) { tiroir = false; appliquer(); return; } etat = etat === 'rail' ? 'ouvert' : 'rail'; sauver(etat); appliquer(); });
     tete.appendChild(logo); tete.appendChild(tit);
-    if (organiser) { var org = el('button', 'ml-bascule ml-org', '✏️'); org.type = 'button'; org.title = 'Organiser les applications : glisser, renommer, ajouter des catégories'; org.setAttribute('aria-label', 'Organiser les applications'); org.addEventListener('click', ouvrirOrganisation); tete.appendChild(org); }
+    if (organiser) { var org = el('button', 'ml-bascule ml-org'); org.innerHTML = CRAYON; org.type = 'button'; org.title = 'Organiser les applications : glisser, renommer, ajouter des catégories'; org.setAttribute('aria-label', 'Organiser les applications'); org.addEventListener('click', ouvrirOrganisation); tete.appendChild(org); }
     tete.appendChild(bas); racine.appendChild(tete);
     var rc = el('div', 'ml-cherche'); champ = el('input'); champ.type = 'search'; champ.placeholder = 'Rechercher une application…'; champ.setAttribute('aria-label', 'Rechercher une application'); champ.autocomplete = 'off'; champ.addEventListener('input', function () { dessiner(champ.value); }); rc.appendChild(champ); racine.appendChild(rc);
     nav = el('nav'); nav.setAttribute('aria-label', 'Catégories'); racine.appendChild(nav);
+    if (organiser) { var pied = el('button', 'ml-orgtxt'); pied.type = 'button'; pied.innerHTML = CRAYON + ' <span>Organiser les applications</span>'; pied.addEventListener('click', ouvrirOrganisation); racine.appendChild(pied); }
     var voile = el('div'); voile.id = 'ml-voile'; voile.addEventListener('click', function () { tiroir = false; appliquer(); });
     var btn = el('button', null, '☰'); btn.id = 'ml-btn'; btn.type = 'button'; btn.setAttribute('aria-label', 'Menu des applications'); btn.setAttribute('aria-controls', 'ml'); btn.addEventListener('click', function () { tiroir = !tiroir; appliquer(); if (tiroir) champ.focus(); });
     document.body.appendChild(voile); document.body.appendChild(racine); document.body.appendChild(btn);
