@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-27-215",
+    "date": "2026-10-27",
+    "title": "Version 6.8.3 — Accueil : anciennes cartes retirées",
+    "changes": [
+      "Accueil : les cartes « Avancement chantiers » et « Suivi CPM » sont retirées ; le tableau de bord (avancement contre délai, état des contrats, rapports du jour, effectif, présence) les remplace. Le journal des modifications du Suivi CPM et l'alerte de planning restent."
+    ]
+  },
+  {
     "id": "2026-10-27-214",
     "date": "2026-10-27",
     "title": "Version 6.8.2 — Impression du journal fiable, dates du jour par défaut",
