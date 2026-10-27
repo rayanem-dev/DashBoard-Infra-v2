@@ -105,6 +105,12 @@ function pecAppeler_(req) {
     if (req.fn === 'historiquePEC') return { ok: true, demandes: [] };
     if (req.fn === 'soumettreFormulairePEC' && args[0]) args[0] = pecImputationFixee_(portee, args[0], pecGlobale_('pecw_obtenirOptionsFormulaire')());   // le prestataire ne choisit pas l'imputation
   }
+  if (req.fn === 'envoyerFichierParMail') {   // envoi au clic : secrétariat (par défaut) et/ou service de l'agent ; le PDF est relu par le moteur (il vérifie qu'il s'agit bien d'un document généré)
+    var lu = pecGlobale_('pecw_lireFichierPourImpression')(args[0]), opts = args[1] || { secretariat: true };
+    if (!lu || !lu.success) return { success: false, error: (lu && lu.error) || 'Document introuvable' };
+    try { var env = diffusionEnvoyer_(u, { sujet: 'Prise en charge — ' + lu.nom, nom: lu.nom, octets: Utilities.base64Decode(lu.base64) }, opts); return { success: true, destinataires: env.destinataires }; }
+    catch (e) { return { success: false, error: String(e && e.message || e) }; }
+  }
   var lock = def.verrou ? LockService.getScriptLock() : null;
   if (lock) lock.waitLock(100000);
   var r;

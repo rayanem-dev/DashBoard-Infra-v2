@@ -195,6 +195,8 @@ function route_(req) {
     case 'rapport_diapos': return rapportDiaposInjecter_(req);
     case 'rapports_chantiers': return rapportsChantiers_(req);
     case 'rapport_chantier_ouvrir': return rapportChantierOuvrir_(req);
+    case 'diffusion_options': return diffusionOptions_(req);
+    case 'diffusion_envoyer': return diffusionEnvoyer_Action_(req);
     case 'menu_organisation_lire': return menuOrgLire_(req);
     case 'menu_organisation_enregistrer': return menuOrgEnregistrer_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);

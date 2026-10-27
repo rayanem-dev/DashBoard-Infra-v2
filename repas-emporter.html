@@ -56,7 +56,7 @@
       <datalist id="dl-imp"><option value="225 575">Travaux sur puits</option><option value="4300045000">Division</option><option value="4300045100">Électromécanique</option><option value="4300045200">Travaux Entretien</option><option value="4300045300">Construction</option></datalist>
       <label for="f-obs">Observations <small>(une par ligne)</small></label>
       <textarea id="f-obs" rows="2" placeholder="TRAVAUX SUR PUITS TAOP01"></textarea>
-      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">🧹 Vider</button></div>
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-mail" type="button" title="Envoie la prise en charge au secrétariat et/ou au service (au clic seulement)">✉ Envoyer</button><button class="btn-s" id="b-vider" type="button">🧹 Vider</button></div>
     </div>
     <div class="bloc"><h2>🗂 Historique <button class="btn-s" id="h-tout" type="button" style="float:right">🗑 Tout supprimer</button></h2><div id="histo"></div></div>
   </div>
@@ -112,11 +112,19 @@
   function garder() { var v = lire(); if (!lignes(v.des).length) { toast('Indiquez au moins une désignation.'); return false; } var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); return true; }
   $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
   $('b-imp').onclick = function () { garder(); window.print(); };
+  $('b-mail').onclick = function () {
+    var v = lire(); if (!lignes(v.des).length) { toast('Indiquez au moins une désignation.'); return; }
+    garder(); var b = $('b-mail'); b.disabled = true;
+    Diffusion.envoyerHtml({ titre: '✉ Envoyer la prise en charge repas', sujet: 'Prise en charge : repas à emporter — ' + lignes(v.des)[0] + ' — ' + fr(v.date), nom: 'repas-emporter-' + (v.date || iso()),
+      html: '<style>' + Array.prototype.map.call(document.querySelectorAll('style'), function (s) { return s.textContent; }).join('\n').replace(/@media print\s*\{[\s\S]*$/, '') + '</style><div id="feuille">' + $('feuille').innerHTML + '</div>' })
+      .then(function (r) { if (r) toast('✅ Envoyé à : ' + r.destinataires.join(', ')); }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+  };
   $('b-vider').onclick = function () { ecrire({ doc: iso(), date: iso() }); };
   $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
   ecrire({ doc: iso(), date: iso() }); dessinerHisto();
 })();
 </script>
+<script src="js/diffusion.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>

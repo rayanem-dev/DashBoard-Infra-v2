@@ -66,3 +66,17 @@ test('prise en charge repas : génération complète avec un faux DocumentApp qu
     assert.strictEqual(r.success, true, t + ' : ' + r.error);
   });
 });
+
+test('envoi par e-mail : boîte du service d\'après le nom du fichier, secrétariat par défaut, jamais sans choix', () => {
+  const b = (n) => run(`(boiteServiceDeFichier_(${JSON.stringify(n)}) || {}).email || null`);
+  assert.strictEqual(b('DOTATION_VIVRES_Service Construction (Génie Civil)_01-10-2026.pdf'), 'infra_constr.rns@sonatrach.dz');
+  assert.strictEqual(b('DOTATION_EAU_Service Electromécanique_01-10-2026.pdf'), 'infra_electromec.rns@sonatrach.dz');
+  assert.strictEqual(b('DOTATION_ENTRETIEN_Atelier_1ere-quinzaine.pdf'), 'service_travaux_entretien_infra.rns@sonatrach.dz');
+  assert.strictEqual(b('DOTATION_DIVISION_01-10-2026_au_15-10-2026.pdf'), 'cdd_infra.rns@sonatrach.dz');
+  assert.strictEqual(b('DOTATION_REPAS_4300045200_26-10-2026.pdf'), 'service_travaux_entretien_infra.rns@sonatrach.dz');
+  assert.strictEqual(b('AUTRE.pdf'), null);
+  assert.deepStrictEqual(run(`destinatairesDotation_({ secretariat: true }, 'DOTATION_EAU_Service Construction_x.pdf')`), ['sec-infra.rns@sonatrach.dz', 'sec.infra.rns@gmail.com', 'rayanem@gmail.com']);
+  assert.strictEqual(run(`destinatairesDotation_({ secretariat: true, service: true }, 'DOTATION_EAU_Service Construction_x.pdf').length`), 4);
+  assert.throws(() => run(`destinatairesDotation_({}, 'DOTATION_EAU_Service Construction_x.pdf')`), /Cochez/);
+  assert.throws(() => run(`destinatairesDotation_({ service: true }, 'AUTRE.pdf')`), /Aucune boîte/);
+});

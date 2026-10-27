@@ -813,9 +813,11 @@ function generer(type){
     document.getElementById('resultat').innerHTML =
       '<a href="'+res.docUrl+'" target="_blank" rel="noopener">📄 Ouvrir le Google Doc</a>' +
       '<a href="'+res.pdfUrl+'" target="_blank" rel="noopener">⬇️ Ouvrir le PDF</a>' +
-      '<button type="button" class="btn-imprimer" id="btnImprimerResultat">🖨 Imprimer</button>';
+      '<button type="button" class="btn-imprimer" id="btnImprimerResultat">🖨 Imprimer</button>' +
+      '<button type="button" class="btn-imprimer" id="btnEnvoyerResultat">✉ Envoyer</button>';
     const idRes = res.pdfId || idDrive_(res.pdfUrl);
     document.getElementById('btnImprimerResultat').onclick = function(){ imprimerDirect(idRes, this); };
+    document.getElementById('btnEnvoyerResultat').onclick = function(){ envoyerDotation(idRes, this); };
     chargerHistorique();
   }).withFailureHandler(function(err){
     btn.disabled = false; btn.textContent = texteOriginal;
@@ -840,7 +842,7 @@ function chargerHistorique(){
       row.className = 'histo-item';
       let links = '';
       if(f.docId) links += '<a href="https://docs.google.com/document/d/'+f.docId+'/edit" target="_blank" rel="noopener">📄 Doc</a>';
-      if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank" rel="noopener">⬇️ PDF</a><button type="button" class="btn-imprimer" data-pdf="'+f.pdfId+'">🖨 Imprimer</button>';
+      if(f.pdfId) links += '<a href="https://drive.google.com/file/d/'+f.pdfId+'/view" target="_blank" rel="noopener">⬇️ PDF</a><button type="button" class="btn-imprimer" data-pdf="'+f.pdfId+'">🖨 Imprimer</button><button type="button" class="btn-imprimer btn-mail" data-pdf="'+f.pdfId+'">✉ Envoyer</button>';
       const tagClass = (f.type === 'EAU') ? 'eau' : (f.type === 'ENTRETIEN') ? 'entretien' : (f.type === 'DIVISION') ? 'division' : (f.type === 'REPAS') ? 'repas' : 'vivres';
       row.innerHTML =
         '<span class="histo-tag ' + tagClass + '">' + f.type + '</span>' +
@@ -850,7 +852,8 @@ function chargerHistorique(){
         '</div>' +
         '<div class="histo-links">' + links + '</div>' +
         '<button class="btn-suppr-item" title="Supprimer" onclick="supprimerUn(this, \''+ (f.docId||'') +'\', \''+ (f.pdfId||'') +'\')">🗑</button>';
-      row.querySelectorAll('.btn-imprimer').forEach(function(b){ b.onclick = function(){ imprimerDirect(b.dataset.pdf, b); }; });
+      row.querySelectorAll('.btn-imprimer:not(.btn-mail)').forEach(function(b){ b.onclick = function(){ imprimerDirect(b.dataset.pdf, b); }; });
+      row.querySelectorAll('.btn-mail').forEach(function(b){ b.onclick = function(){ envoyerDotation(b.dataset.pdf, b); }; });
       div.appendChild(row);
     });
   }).withFailureHandler(function(err){
@@ -877,6 +880,30 @@ function imprimerDirect(pdfId, btn){
       setTimeout(function(){ cadre.remove(); URL.revokeObjectURL(url); }, 180000);
     } catch(e){ alert('Impression impossible : ' + e.message); }
   }).withFailureHandler(function(err){ btn.disabled = false; btn.textContent = txt; alert('Erreur : ' + err.message); }).lireDotationPourImpression(pdfId);
+}
+
+/** Envoi par e-mail au clic : secrétariat (coché par défaut) et/ou service concerné par la dotation. */
+function envoyerDotation(pdfId, btn){
+  if(!pdfId){ alert('Envoi impossible : PDF introuvable.'); return; }
+  const vieux = document.getElementById('dlgEnvoi'); if(vieux) vieux.remove();
+  const d = document.createElement('dialog'); d.id = 'dlgEnvoi';
+  d.style.cssText = 'margin:auto;border:0;border-radius:16px;padding:20px;width:min(420px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.4)';
+  d.innerHTML = '<h3 style="margin:0 0 6px">✉ Envoyer cette dotation</h3><p style="margin:0 0 10px;font-size:12.5px;color:#6B7280">Rien n\'est envoyé sans votre clic. Le PDF part en pièce jointe.</p>' +
+    '<label style="display:flex;gap:8px;margin:8px 0;font-weight:600"><input type="checkbox" id="envSec" checked> Secrétariat</label>' +
+    '<label style="display:flex;gap:8px;margin:8px 0;font-weight:600"><input type="checkbox" id="envSrv"> Service concerné par la dotation</label>' +
+    '<p id="envErr" style="color:#B42318;font-weight:700;font-size:13px;margin:8px 0 0"></p>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button type="button" id="envNon">Annuler</button><button type="button" id="envOui" style="font-weight:700">Envoyer</button></div>';
+  document.body.appendChild(d); d.showModal();
+  d.querySelector('#envNon').onclick = function(){ d.close(); d.remove(); };
+  d.querySelector('#envOui').onclick = function(){
+    const opts = { secretariat: d.querySelector('#envSec').checked, service: d.querySelector('#envSrv').checked };
+    if(!opts.secretariat && !opts.service){ d.querySelector('#envErr').textContent = 'Cochez au moins un destinataire.'; return; }
+    const ok = d.querySelector('#envOui'); ok.disabled = true; ok.textContent = 'Envoi…';
+    google.script.run.withSuccessHandler(function(res){
+      if(!res.success){ d.querySelector('#envErr').textContent = res.error; ok.disabled = false; ok.textContent = 'Envoyer'; return; }
+      d.close(); d.remove(); alert('✅ Dotation envoyée à ' + res.nb + ' adresse(s).');
+    }).withFailureHandler(function(err){ d.querySelector('#envErr').textContent = err.message; ok.disabled = false; ok.textContent = 'Envoyer'; }).envoyerDotationParMail(pdfId, opts);
+  };
 }
 
 function supprimerUn(btn, docId, pdfId){

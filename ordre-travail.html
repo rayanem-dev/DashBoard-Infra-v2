@@ -82,7 +82,7 @@
       <h2>Signatures</h2>
       <div class="deux"><div><label for="f-svc">Service émetteur</label><input type="text" id="f-svc"></div><div><label for="f-resp">Responsable exécution</label><input type="text" id="f-resp"></div></div>
       <div class="deux"><div><label for="f-ch1">Approbation : Chef</label><input type="text" id="f-ch1"></div><div><label for="f-ch2">Approbation : Chef</label><input type="text" id="f-ch2"></div></div>
-      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-vider" type="button">Nouvel ordre</button></div>
+      <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-garder" type="button">💾 Enregistrer dans l'historique</button><button class="btn-s" id="b-mail" type="button" title="Envoie le document au secrétariat et/ou au service (au clic seulement)">✉ Envoyer</button><button class="btn-s" id="b-vider" type="button">Nouvel ordre</button></div>
     </div>
     <div class="bloc"><h2>🗂 Historique <button class="btn-s" id="h-tout" type="button" style="float:right">🗑 Tout supprimer</button></h2><div id="histo"></div></div>
   </div>
@@ -173,11 +173,18 @@
   function garder() { var v = lire(); if (!String(v.equ).trim() && !lignes(v.desc).length) { toast('Indiquez au moins l\'équipement ou la description du travail.'); return false; } var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); return true; }
   $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
   $('b-imp').onclick = function () { garder(); window.print(); };          // impression en un clic (fenêtre d'impression directe), l'ordre est gardé dans l'historique
+  $('b-mail').onclick = function () {
+    if (!garder()) return; var b = $('b-mail'); b.disabled = true;
+    Diffusion.envoyerHtml({ titre: '✉ Envoyer l\'ordre de travail', sujet: 'Ordre de travail — ' + fr(iso()), nom: 'ordre-de-travail-' + iso(),
+      html: '<style>' + Array.prototype.map.call(document.querySelectorAll('style'), function (x) { return x.textContent; }).join('\n').replace(/@media print\s*\{[\s\S]*$/, '') + '</style><div id="feuille">' + $('feuille').innerHTML + '</div>' })
+      .then(function (r) { if (r) toast('✅ Envoyé à : ' + r.destinataires.join(', ')); }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+  };
   $('b-vider').onclick = function () { ecrire(neuf()); };
   $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
   ecrire(neuf()); dessinerHisto();
 })();
 </script>
+<script src="js/diffusion.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>

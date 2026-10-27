@@ -607,6 +607,49 @@ function lireDotationPourImpression(pdfId) {
   } catch (error) { return { success: false, error: error.message }; }
 }
 
+// ----- Envoi par e-mail, TOUJOURS au clic : secrétariat (coché par défaut) et/ou boîte du service concerné par la dotation
+const SECRETARIAT_MAILS = ['sec-infra.rns@sonatrach.dz', 'sec.infra.rns@gmail.com', 'rayanem@gmail.com'];
+const BOITES_SERVICE = {
+  construction: { nom: 'Service Construction INFRA - RNS', email: 'infra_constr.rns@sonatrach.dz' },
+  electromec: { nom: 'Service Électromécanique INFRA - RNS', email: 'infra_electromec.rns@sonatrach.dz' },
+  entretien: { nom: 'Service Travaux Entretien INFRA - RNS', email: 'service_travaux_entretien_infra.rns@sonatrach.dz' },
+  division: { nom: 'Chef Division INFRA - RNS', email: 'cdd_infra.rns@sonatrach.dz' }
+};
+/** Boîte du service concerné, d'après le nom du fichier (« DOTATION_VIVRES_Service Travaux Entretien_01-10-2026 », « DOTATION_DIVISION_… »…) ; null si inconnue. Pur : testé en Node. */
+function boiteServiceDeFichier_(nom) {
+  const n = String(nom || '');
+  if (/^DOTATION_DIVISION_/.test(n)) return BOITES_SERVICE.division;
+  if (/^DOTATION_ENTRETIEN_/.test(n)) return BOITES_SERVICE.entretien;
+  const reste = n.replace(/^DOTATION_(VIVRES|EAU)_/, '');
+  if (reste === n && !/^DOTATION_REPAS_/.test(n)) return null;
+  const t = normalizeTxt_(reste.replace(/^DOTATION_REPAS_/, ''));
+  if (/construction|genie civil|4300045300/.test(t)) return BOITES_SERVICE.construction;
+  if (/electrom|4300045100/.test(t)) return BOITES_SERVICE.electromec;
+  if (/entretien|4300045200/.test(t)) return BOITES_SERVICE.entretien;
+  if (/division|4300045000/.test(t)) return BOITES_SERVICE.division;
+  return null;
+}
+function destinatairesDotation_(opts, nomFichier) {
+  const out = [];
+  if (opts && opts.secretariat) SECRETARIAT_MAILS.forEach(e => out.push(e));
+  if (opts && opts.service) {
+    const b = boiteServiceDeFichier_(nomFichier);
+    if (!b) throw new Error('Aucune boîte e-mail connue pour le service de cette dotation : cochez le secrétariat.');
+    if (out.indexOf(b.email) < 0) out.push(b.email);
+  }
+  if (!out.length) throw new Error('Cochez au moins un destinataire.');
+  return out;
+}
+function envoyerDotationParMail(pdfId, opts) {
+  try {
+    const f = DriveApp.getFileById(String(pdfId || ''));
+    if (f.getMimeType() !== MimeType.PDF || f.getName().indexOf('DOTATION_') !== 0) throw new Error('Ce fichier n\'est pas une dotation générée.');
+    const dest = destinatairesDotation_(opts, f.getName());
+    MailApp.sendEmail({ to: dest.join(','), subject: 'Dotation — ' + f.getName().replace(/\.pdf$/i, ''), body: 'Veuillez trouver ci-joint le document généré depuis le portail de la Division Infrastructure RNS.', attachments: [f.getBlob()], name: 'Division Infrastructure RNS' });
+    return { success: true, nb: dest.length };
+  } catch (error) { return { success: false, error: error.message }; }
+}
+
 function supprimerDotation(docId, pdfId) {
   try {
     if (docId) DriveApp.getFileById(docId).setTrashed(true);
@@ -637,3 +680,6 @@ function supprimerToutesLesDotations() {
     return { success: false, error: error.toString() };
   }
 }
+
+/** À lancer UNE FOIS dans l'éditeur Apps Script (▶ Exécuter) : autorise l'envoi d'e-mails (bouton « ✉ Envoyer »). */
+function autoriserEnvoiMail() { Logger.log('Quota d\'e-mails restant aujourd\'hui : ' + MailApp.getRemainingDailyQuota()); }
