@@ -89,15 +89,14 @@ function calcCafe(n) {
   return (Math.ceil(n / 2) * 250) + ' GR';
 }
 
-// Affichage simple : "12 Bouteilles 1L"
+// Affichage dans le PDF et à l'écran : « 2 Fardeaux (12 Bouteilles 1L) » — un fardeau par agent et par semaine ; 6 bouteilles de 1 L ou 12 de 0.5 L par fardeau
 function calcQuantiteEau(nAgents, format, dureeJours) {
-  if (nAgents <= 0) return '0 Bouteilles ' + format;
+  if (nAgents <= 0) return '0 Fardeau (0 Bouteilles ' + format + ')';
   const semaines = Math.max(1, Math.ceil(dureeJours / 7));
-  const fardeauxParAgent = semaines;
-  const totalFardeaux = nAgents * fardeauxParAgent;
+  const totalFardeaux = nAgents * semaines;
   const bouteillesParFardeau = (format === '0.5L') ? 12 : 6;
   const totalBouteilles = totalFardeaux * bouteillesParFardeau;
-  return totalBouteilles + ' Bouteilles ' + format;
+  return totalFardeaux + (totalFardeaux > 1 ? ' Fardeaux' : ' Fardeau') + ' (' + totalBouteilles + ' Bouteilles ' + format + ')';
 }
 
 function addDays(dateStr, days) {

@@ -80,3 +80,10 @@ test('envoi par e-mail : boîte du service d\'après le nom du fichier, secréta
   assert.throws(() => run(`destinatairesDotation_({}, 'DOTATION_EAU_Service Construction_x.pdf')`), /Cochez/);
   assert.throws(() => run(`destinatairesDotation_({ service: true }, 'AUTRE.pdf')`), /Aucune boîte/);
 });
+
+test('dotation eau : le nombre de fardeaux figure dans la quantité (PDF et aperçu)', () => {
+  assert.strictEqual(run('calcQuantiteEau(2, "1L", 7)'), '2 Fardeaux (12 Bouteilles 1L)');
+  assert.strictEqual(run('calcQuantiteEau(1, "0.5L", 7)'), '1 Fardeau (12 Bouteilles 0.5L)');
+  assert.strictEqual(run('calcQuantiteEau(3, "1L", 14)'), '6 Fardeaux (36 Bouteilles 1L)');
+  assert.strictEqual(run('calcQuantiteEau(0, "1L", 7)'), '0 Fardeau (0 Bouteilles 1L)');
+});
