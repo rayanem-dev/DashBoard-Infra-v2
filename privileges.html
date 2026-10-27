@@ -231,19 +231,20 @@
     // mêmes familles et même ordre que le menu du portail (Rubriques) ; une application sans famille reste rangée sous son module
     var groupes = [], parId = {};
     function groupe(id, titre, icone) { if (!parId[id]) { parId[id] = { id: id, titre: titre, icone: icone, apps: [] }; groupes.push(parId[id]); } return parId[id]; }
-    var defs = window.Rubriques ? Rubriques.definitions : [];
+    var defs = window.Rubriques ? Rubriques.defs(etat.rubriques) : [];   // catégories choisies par le secrétariat (« Organiser les applications »), sinon celles d'origine
     defs.forEach(function (d) { groupe(d.id, d.titre, d.icone); });
     etat.applications.forEach(function (a) {
       var m = etat.modules.filter(function (x) { return String(x.id).toLowerCase() === String(a.module).toLowerCase(); })[0] || { id: a.module, titre: a.module, icone: '📁' };
       if (f && (a.titre + ' ' + m.titre).toLowerCase().indexOf(f) === -1) return;
-      var r = window.Rubriques ? Rubriques.rubriqueDe(a) : '', d = defs.filter(function (x) { return x.id === r; })[0];
-      (d ? groupe(d.id) : groupe('mod-' + m.id, m.titre, m.icone || '📁')).apps.push(a);
+      var r = window.Rubriques ? Rubriques.rubriqueDe(a, defs) : '', d = defs.filter(function (x) { return x.id === r; })[0];
+      (a.actif === 0 ? groupe('masquees', 'Masquées (invisibles pour tous)', '🚫') : d ? groupe(d.id) : groupe('mod-' + m.id, m.titre, m.icone || '📁')).apps.push(a);
     });
+    groupes.forEach(function (g) { var rg = function (a) { return typeof a.ordre === 'number' ? a.ordre : 1e9; }; g.apps = g.apps.map(function (a, i) { return { a: a, i: i }; }).sort(function (x, y) { return rg(x.a) - rg(y.a) || x.i - y.i; }).map(function (x) { return x.a; }); });   // même ordre que le menu
     groupes.forEach(function (g) {
       if (!g.apps.length) return;
       var trm = el('tr', 'mod'), tdm = el('td', null, (g.icone || '') + ' ' + g.titre); tdm.colSpan = etat.roles.length + 2; trm.appendChild(tdm); tb.appendChild(trm);
       g.apps.forEach(function (a) {
-        var tr = el('tr'), ta = el('td', 'gapp', a.titre); ta.appendChild(el('small', null, String(a.niveau_min)));
+        var tr = el('tr'), ta = el('td', 'gapp', a.titre); ta.appendChild(el('small', null, String(a.niveau_min) + (a.vision != null ? ' · vue ≤' + a.vision : '')));
         var sc = document.createElement('select'); sc.className = 'cat'; sc.title = 'Déplacer « ' + a.titre + ' » dans une autre catégorie (affichage uniquement, aucun droit ne change)'; sc.setAttribute('aria-label', 'Catégorie de ' + a.titre);
         var o0 = el('option', null, '↔ Catégorie : automatique'); o0.value = ''; sc.appendChild(o0);
         defs.forEach(function (dd) { var oo = el('option', null, dd.icone + ' ' + dd.titre); oo.value = dd.id; sc.appendChild(oo); });

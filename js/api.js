@@ -421,7 +421,7 @@
         if (p.nouveau === '0000') throw erreur('Choisissez un autre mot de passe que celui par défaut'); return {}; }
       case 'admin_etat': exigerAdmin();
         return { roles: demoRoles.map(function (r) { var n = DEMO_USERS.filter(function (u) { return u.role === r.id; }).length; return Object.assign({ nb_utilisateurs: n }, r); }),
-          applications: demoApps, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
+          applications: demoApps, rubriques: demoOrg().rubriques, modules: DEMO_MODULES, droitsRole: demoDroits, exceptions: demoExceptions,
           utilisateurs: DEMO_USERS.map(function (x) { return { email: x.email, nom: x.nom, service: x.service, fonction: '', dependance: x.dependance || 'SONATRACH', role: x.role, actif: x.actif !== false, portee: x.portee || '', section: x.section || '', telephone: x.telephone || '', matricule: x.matricule || '', sap: x.sap || '', sona: x.sona || '', civilite: x.civilite || '', wifi_user: x.wifi_user || '', date_integration: x.date_integration || '', hors: true }; }) };
       case 'admin_role': exigerAdmin(); if (p.email === demoState.user.email) throw erreur('Vous ne pouvez pas modifier votre propre rôle');
         cibleDemo(p.email).role = p.role; return {};
