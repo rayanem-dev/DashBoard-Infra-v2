@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-27-206",
+    "date": "2026-10-27",
+    "title": "Version 6.5.0 — Organisation validée du menu, cartes masquables, Réservation Vol",
+    "changes": [
+      "Organiser les applications : bouton « 📋 Appliquer l'organisation validée » — reclasse les 52 applications d'après le tableau du secrétariat (Chantiers, Marchés, Logistique & Accès site, Personnel, Admin, Informatique, Rapport, Bibliothèque) ; on vérifie, on ajuste, puis « Enregistrer ».",
+      "Nouveau groupe « 🚫 Masquées » dans l'organisateur : une application glissée dedans disparaît du menu et des cartes pour tout le monde (réversible) ; utilisé pour Suivi des Tâches Journalières, Veste en Cuir, Suivi des Instances Courriers et Accès, Partage & Privilèges.",
+      "« Demande de réservation » devient « Réservation Vol »."
+    ]
+  },
+  {
     "id": "2026-10-27-205",
     "date": "2026-10-27",
     "title": "Version 6.4.2 — Dotation : date du jour automatique et quinzaine calculée",
