@@ -244,3 +244,10 @@ test('texte libre : retour à la ligne conservé, * ouvre un nouveau point (mêm
   assert.strictEqual(t('* Décoffrage du regard\n* Remise en état <b>', ''), '<ul style="margin:3px 0 3px 18px;padding:0"><li>Décoffrage du regard</li><li>Remise en état &lt;b&gt;</li></ul>');
   assert.ok(t('Décoffrage * Remise en état * Nettoyage', '').includes('<li>Nettoyage</li>'));
 });
+
+test('toute la division : tous les comptes actifs avec e-mail (SH, ACOSCO, GTP), sans doublon ni compte inactif', () => {
+  const l = Rapports.tousLesComptes([
+    { nom: 'A', email: 'a@sh.dz', role: 'conducteur', actif: '1' }, { nom: 'B', email: 'B@acosco.dz', role: 'prestataire', service: 'ACOSCO' },
+    { nom: 'C', email: 'a@sh.dz', role: 'x' }, { nom: 'D', email: 'd@gtp.dz', actif: '0' }, { nom: 'E', email: '' }, { nom: 'F', email: 'pas-une-adresse' }]);
+  assert.deepStrictEqual(l.map(x => x.email), ['a@sh.dz', 'b@acosco.dz']);
+});

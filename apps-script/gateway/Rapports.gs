@@ -316,6 +316,16 @@ var Rapports = (function () {
     if (groupes && groupes.chef_division) roles.push('chef_division');
     return destinatairesDetail(utilisateurs, groupes).map(function (d) { return d.email; });
   }
+  /** Tous les comptes actifs avec e-mail (SH, ACOSCO, GTP…) : [{ nom, email, role, service }]. Usage exceptionnel (envoi « toute la division »). */
+  function tousLesComptes(utilisateurs) {
+    var vus = {}, out = [];
+    (utilisateurs || []).forEach(function (u) {
+      var m = norm(u.email_contact || u.email);
+      if (String(u.actif) === '0' || u.actif === false || !m || m.indexOf('@') < 1 || vus[m]) return;
+      vus[m] = 1; out.push({ nom: String(u.nom || ''), email: m, role: norm(u.role), service: String(u.service || '') });
+    });
+    return out;
+  }
   /** Même liste, avec le nom et le rôle de chacun : [{ nom, email, role }]. */
   function destinatairesDetail(utilisateurs, groupes) {
     var roles = [];
@@ -331,7 +341,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { texteLibreHtml: texteLibreHtml, boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { tousLesComptes: tousLesComptes, texteLibreHtml: texteLibreHtml, boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

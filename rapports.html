@@ -123,6 +123,7 @@
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="secretariat" style="width:auto;min-width:0"> Secrétariat</label>
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_service" style="width:auto;min-width:0"> Chefs de service</label>
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_division" style="width:auto;min-width:0"> Chef de division</label>
+        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:#8a1c1c" title="Exceptionnel, pour tester : tous les comptes actifs de la division (SH, ACOSCO, GTP…). Envoi manuel uniquement, jamais automatique."><input type="checkbox" id="toute-div" style="width:auto;min-width:0"> Toute la division (exceptionnel)</label>
         <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé avec les groupes cochés (rien n'est envoyé)">👁 Voir les destinataires</button>
         <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux groupes cochés">✉ Envoyer maintenant</button>
       </div>
@@ -497,8 +498,8 @@
   }
   $('b-liste-dest').addEventListener('click', function () {
     var z = $('liste-dest'), g = groupesCoches(); z.hidden = false; z.textContent = 'Chargement…';
-    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length) { z.textContent = 'Cochez au moins un groupe ou une personne.'; return; }
-    Api.call('rapports_conso_destinataires', { groupes: g, personnes: personnesCochees() }).then(function (r) {
+    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length && !$('toute-div').checked) { z.textContent = 'Cochez au moins un groupe ou une personne.'; return; }
+    Api.call('rapports_conso_destinataires', { groupes: g, personnes: personnesCochees(), toute_division: $('toute-div').checked }).then(function (r) {
       z.textContent = '';
       z.appendChild(el('b', null, r.destinataires.length + ' destinataire(s) :'));
       if (!r.destinataires.length) { z.appendChild(document.createTextNode(' aucun compte actif avec e-mail dans ces groupes.')); return; }
@@ -509,11 +510,12 @@
   });
   $('b-envoyer').addEventListener('click', function () {
     var j = $('s-date').value, g = groupesCoches();
-    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length) { toast('Cochez au moins un destinataire', true); return; }
+    var toute = $('toute-div').checked;
+    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length && !toute) { toast('Cochez au moins un destinataire', true); return; }
     if (!consolideDuJour) { toast('Générez d\'abord le consolidé du ' + fr(j), true); return; }
-    if (!confirm('Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux destinataires cochés ?')) return;
+    if (!confirm(toute ? '⚠ ENVOI À TOUTE LA DIVISION : le consolidé du ' + fr(j) + ' sera envoyé à TOUS les comptes actifs (SH, ACOSCO, GTP…). Utilisez « Voir les destinataires » avant. Confirmer ?' : 'Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux destinataires cochés ?')) return;
     var b = $('b-envoyer'); b.disabled = true;
-    Api.call('rapports_consolide_envoyer', { date: j, groupes: g, personnes: personnesCochees() }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+    Api.call('rapports_consolide_envoyer', { date: j, groupes: g, personnes: personnesCochees(), toute_division: toute }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
   });
   $('b-auto').addEventListener('click', function () {
     var b = $('b-auto'); b.disabled = true;

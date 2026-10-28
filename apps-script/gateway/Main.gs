@@ -723,17 +723,19 @@ function niveauConsolide_(u) {
   return n;
 }
 /** Envoie par e-mail le consolidé enregistré d'un jour aux groupes choisis. Jamais appelée sans clic, ni sans l'option automatique cochée. */
-function consolideEnvoyerCore_(date, groupes, parEmail, personnes) {
+function consolideEnvoyerCore_(date, groupes, parEmail, personnes, toute) {
   var c = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
   var cons = c ? consolideDe_(c) : null;
   if (!cons || !cons.donnees) throw new Error('Aucun consolidé enregistré pour le ' + date + ' : générez-le d\'abord.');
-  var dest = consoDestinatairesTous_(groupes, personnes).map(function (b) { return b.email; });
+  var dest = consoDestinatairesTous_(groupes, personnes, toute).map(function (b) { return b.email; });
   if (!dest.length) throw new Error('Aucun destinataire : cochez au moins un groupe ou une personne.');
   var quand = ''; try { quand = Utilities.formatDate(new Date(cons.genere_le), 'Africa/Algiers', 'dd/MM/yyyy HH:mm'); } catch (e) { quand = ''; }
   var m = Rapports.consolideMail(cons.donnees, cons.version, { genere_par: cons.genere_par, genere_le: quand }), pieces = [];
   try { pieces.push(Utilities.newBlob('<html><head><meta charset="utf-8"></head><body>' + m.html + '</body></html>', 'text/html', 'consolide.html').getAs('application/pdf').setName('Rapport-consolide-' + date + '.pdf')); } catch (e) { /* le corps du message contient déjà tout le détail */ }
-  MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, attachments: pieces });
-  Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)');
+  if (toute) {   // toute la division : envoi par paquets de 50 en copie cachée (les adresses ne sont pas exposées entre destinataires)
+    for (var k = 0; k < dest.length; k += 50) MailApp.sendEmail({ to: parEmail, bcc: dest.slice(k, k + 50).join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, attachments: pieces });
+  } else MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, attachments: pieces });
+  Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)' + (toute ? ' [TOUTE LA DIVISION]' : ''));
   return { destinataires: dest.length, version: cons.version };
 }
 /** Personnes (comptes actifs avec e-mail : secrétariat, chefs de service, chef de division) proposées à cocher en plus des boîtes. */
@@ -745,8 +747,9 @@ function consoPersonnesListe_() {
 }
 function personnesNettoyees_(l) { var o = [], vus = {}; (Array.isArray(l) ? l : []).forEach(function (e) { e = String(e || '').toLowerCase().trim(); if (e && e.length <= 120 && !vus[e]) { vus[e] = 1; o.push(e); } }); return o.slice(0, 60); }
 /** Boîtes des groupes cochés + personnes cochées (seulement celles qui sont bien dans la liste des comptes proposés : jamais une adresse libre). */
-function consoDestinatairesTous_(groupes, personnes) {
+function consoDestinatairesTous_(groupes, personnes, toute) {
   var out = Rapports.boitesDestinataires(groupes), vus = {}; out.forEach(function (b) { vus[b.email] = 1; });
+  if (toute) Rapports.tousLesComptes(Store.table('Utilisateurs')).forEach(function (d) { if (!vus[d.email]) { vus[d.email] = 1; out.push({ nom: Annuaire.nomAffichable(d.nom, d.email), email: d.email, role: d.role, libelle: d.role + (d.service ? ', ' + d.service : '') }); } });
   var voulues = personnesNettoyees_(personnes);
   if (voulues.length) consoPersonnesListe_().forEach(function (p) { if (voulues.indexOf(p.email) >= 0 && !vus[p.email]) { vus[p.email] = 1; out.push({ nom: p.nom, email: p.email, role: p.role, libelle: p.role }); } });
   return out;
@@ -755,13 +758,13 @@ function consoPersonnes_(req) { var u = Auth.userFromToken(req.token); niveauCon
 /** Qui recevrait le consolidé avec les groupes cochés (aperçu, rien n'est envoyé). */
 function consoDestinataires_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
-  var l = consoDestinatairesTous_(groupesNettoyes_(req.groupes), req.personnes).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
+  var l = consoDestinatairesTous_(groupesNettoyes_(req.groupes), req.personnes, req.toute_division === true).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
   return { destinataires: l };
 }
 function rapportsConsolideEnvoyer_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
-  return consolideEnvoyerCore_(date, groupesNettoyes_(req.groupes), u.email, req.personnes);
+  return consolideEnvoyerCore_(date, groupesNettoyes_(req.groupes), u.email, req.personnes, req.toute_division === true);
 }
 // ----- Envoi automatique du soir (option cochée dans Rapports journaliers ; désactivée par défaut)
 function consoAutoConfig_() {

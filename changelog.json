@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-241",
+    "date": "2026-10-28",
+    "title": "Version 6.22.0 — Synthèse du jour : envoi du consolidé à toute la division (exceptionnel)",
+    "changes": [
+      "Dans « Envoyer le consolidé », nouvelle case « Toute la division (exceptionnel) » : regroupe tous les comptes actifs avec e-mail (SH, ACOSCO, GTP…) pour tester l'envoi. « Voir les destinataires » affiche la liste avant l'envoi.",
+      "Envoi manuel uniquement (jamais par l'envoi automatique du soir), réservé au secrétariat, avec confirmation renforcée ; les adresses sont en copie cachée, par paquets de 50, et l'envoi est noté au journal."
+    ]
+  },
+  {
     "id": "2026-10-28-240",
     "date": "2026-10-28",
     "title": "Version 6.21.1 — Rapports journaliers : retours à la ligne et points « * »",
