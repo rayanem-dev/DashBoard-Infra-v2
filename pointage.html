@@ -64,7 +64,7 @@
     </div>
     <div class="bloc eff">
       <h2>👥 Effectif de la division</h2>
-      <p class="note" style="margin-top:0">Seules les personnes de cette liste sont concernées (les autres sont à l'atelier). Les noms et fonctions viennent de BDDORGA (pages Sonatrach et Autre) ; décochez une personne absente cette semaine.</p>
+      <p class="note" style="margin-top:0">Les présents viennent du <b>planning</b> : une personne ayant une rotation est cochée automatiquement les jours de travail (un clic sur une case annule ou ajoute une croix). Les <b>ateliers et leurs techniciens</b> n'ont pas de planning : ajoutez-les dans le groupe « hors planning », leurs cases se cochent à la main. Noms et fonctions viennent de BDDORGA ; décochez une personne absente cette semaine.</p>
       <div id="effectif"></div>
       <button class="btn-s" id="b-eff" type="button" style="margin-top:10px">Rétablir l'effectif de départ</button>
     </div>
@@ -88,9 +88,22 @@
   function jetons(s) { return norm(s).split(' ').filter(Boolean); }
 
   // ----- effectif (modifiable, gardé sur cet ordinateur) -----
-  function depart() { return DEPART.map(function (g) { return { t: g.t, l: g.l.map(function (x) { return { nom: x[0], fonction: x[1], actif: true }; }) }; }); }
+  var HP = 'Ateliers et techniciens (hors planning)';   // pas de rotation dans le planning : leurs cases ne se remplissent jamais toutes seules
+  function depart() { return DEPART.filter(function (g) { return !g.hp; }).map(function (g) { return { t: g.t, l: g.l.map(function (x) { return { nom: x[0], fonction: x[1], actif: true }; }) }; }).concat([{ t: HP, hp: true, l: [] }]); }
   var eff; try { eff = JSON.parse(localStorage.getItem(CLE) || 'null'); } catch (e) { eff = null; } if (!Array.isArray(eff)) eff = [];
+  function assurerHP() { if (!eff.some(function (g) { return g.hp; })) eff.push({ t: HP, hp: true, l: [] }); }
   function sauverEff() { try { localStorage.setItem(CLE, JSON.stringify(eff)); } catch (e) { /* stockage indisponible */ } }
+  // ----- présents d'après le planning : une personne qui a une rotation est cochée les jours de travail ; les autres (ateliers, techniciens…) se cochent à la main -----
+  var plan = [], planDu = '';
+  function ligneDePlanning(p) {
+    var j = jetons(p.nom); if (!j.length) return null;
+    return plan.filter(function (l) { return l.configuree && l.grille; }).filter(function (l) { var t = jetons(l.nom); return j.every(function (x) { return t.indexOf(x) >= 0; }) || t.every(function (x) { return j.indexOf(x) >= 0; }); })[0] || null;
+  }
+  function auto(p, du, i) { var l = ligneDePlanning(affiche(p)) || ligneDePlanning(p); return !!l && l.grille.charAt(i) === 'T'; }
+  function chargerPlanning() {
+    var du = $('f-du').value; if (!window.Api || !du || du === planDu) return; planDu = du;
+    Api.call('planning', { debut: du, jours: JOURS }).then(function (r) { if ($('f-du').value !== du) return; plan = r.lignes || []; dessinerEff(); feuilles(); }).catch(function () { plan = []; });
+  }
   // nom et fonction de BDDORGA : une personne de l'effectif est rapprochée de BDDORGA quand tous les mots de son nom s'y retrouvent (ordre libre)
   var annuaire = [];
   function rapprocher(p) {
@@ -101,7 +114,7 @@
     return tous[0];
   }
   function affiche(p) { var a = rapprocher(p); return { nom: a && a.nom ? a.nom : p.nom, fonction: a && a.fonction ? a.fonction : p.fonction }; }
-  function appliquerDepart(g) { DEPART = g || []; if (!eff.length) { eff = depart(); sauverEff(); } dessinerEff(); feuilles(); }
+  function appliquerDepart(g) { DEPART = g || []; if (!eff.some(function (g) { return !g.hp; })) { var hp0 = eff.filter(function (g) { return g.hp; })[0]; eff = depart(); if (hp0) eff[eff.length - 1] = hp0; sauverEff(); } assurerHP(); dessinerEff(); feuilles(); }
   if (window.Api) Api.call('pointage_effectif').then(function (r) { appliquerDepart(r.groupes); }).catch(function () { /* sans la liste de départ : l'effectif enregistré dans ce navigateur, ou à saisir à la main */ });
   if (window.Api) Api.call('annuaire_personnes').then(function (r) { annuaire = (r.personnes || []).filter(function (p) { return p.nom; }); dessinerEff(); feuilles(); }).catch(function () { /* sans annuaire : noms et fonctions de la fiche d'origine */ });
 
@@ -112,7 +125,7 @@
       g.l.forEach(function (p, pi) {
         var d = document.createElement('div'); d.className = 'p'; var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = p.actif;
         c.onchange = function () { p.actif = c.checked; sauverEff(); dessinerEff(); feuilles(); };
-        var a = affiche(p), n = document.createElement('span'), f = document.createElement('small'); n.textContent = a.nom; f.textContent = a.fonction;
+        var a = affiche(p), n = document.createElement('span'), f = document.createElement('small'); n.textContent = a.nom; f.textContent = a.fonction + (g.hp ? '' : (plan.length && !ligneDePlanning(a) && !ligneDePlanning(p) ? ' · ⚠ pas de planning : à cocher à la main' : ''));
         l.appendChild(c); l.appendChild(n); l.appendChild(f); d.appendChild(l);
         var x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.title = 'Retirer de la division';
         x.onclick = function () { if (!confirm('Retirer ' + a.nom + ' de l\'effectif de la division ?')) return; g.l.splice(pi, 1); sauverEff(); dessinerEff(); feuilles(); };
@@ -128,10 +141,12 @@
     var deja = {}; eff.forEach(function (g) { g.l.forEach(function (x) { var r = rapprocher(x); deja[norm(r ? r.nom : x.nom)] = 1; }); });
     annuaire.forEach(function (a) { if (deja[norm(a.nom)]) return; var o = document.createElement('option'); o.value = a.nom; dl.appendChild(o); });
   }
-  $('b-eff').onclick = function () { if (!confirm('Rétablir l\'effectif de la fiche d\'origine ?')) return; eff = depart(); sauverEff(); dessinerEff(); feuilles(); };
+  $('b-eff').onclick = function () { if (!confirm('Rétablir l\'effectif de la fiche d\'origine ?')) return; var hp = eff.filter(function (g) { return g.hp; })[0]; eff = depart(); if (hp) eff[eff.length - 1] = hp; sauverEff(); dessinerEff(); feuilles(); };
 
   // ----- croix (cases cliquées, gardées avec la semaine) -----
   var croix = {}; try { croix = JSON.parse(localStorage.getItem(CLE_X) || '{}'); } catch (e) { croix = {}; }
+  // croix[k] : 1 = cochée à la main, -1 = croix du planning annulée ; sans valeur : la croix du planning s'applique
+  function coche(k, auto) { return croix[k] === 1 || (auto && croix[k] !== -1); }
   function sauverX() { try { localStorage.setItem(CLE_X, JSON.stringify(croix)); } catch (e) { /* rien */ } }
   $('b-raz').onclick = function () { var du = $('f-du').value; Object.keys(croix).forEach(function (k) { if (k.indexOf(du + '|') === 0) delete croix[k]; }); sauverX(); feuilles(); };
 
@@ -151,7 +166,7 @@
           jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
           lignes.map(function (x) {
             var a = affiche(x);
-            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '">' + (croix[k] ? '✓' : '') + '</td>'; }).join('') + '</tr>';
+            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '" data-a="' + (!g.hp && auto(x, du, jours.indexOf(j)) ? 1 : 0) + '">' + (coche(k, !g.hp && auto(x, du, jours.indexOf(j))) ? '✓' : '') + '</td>'; }).join('') + '</tr>';
           }).join('') + '</tbody></table></div>';
       });
     });
@@ -163,14 +178,14 @@
       var h = Math.max(24, Math.min(dispo / rows.length, 72)), grand = h > 36;
       rows.forEach(function (tr) { tr.querySelectorAll('td').forEach(function (td) { td.style.height = h + 'px'; if (td.classList.contains('n') || td.classList.contains('f')) td.style.fontSize = grand ? '10pt' : ''; else td.style.fontSize = grand ? '14pt' : ''; }); });
     });
-    $('feuilles').querySelectorAll('td.c').forEach(function (td) { td.onclick = function () { var k = td.dataset.k; if (croix[k]) delete croix[k]; else croix[k] = 1; td.textContent = croix[k] ? '✓' : ''; sauverX(); }; });
+    $('feuilles').querySelectorAll('td.c').forEach(function (td) { td.onclick = function () { var k = td.dataset.k, a = td.dataset.a === '1', on = coche(k, a); if (on) { if (a) croix[k] = -1; else delete croix[k]; } else if (a) delete croix[k]; else croix[k] = 1; td.textContent = coche(k, a) ? '✓' : ''; sauverX(); }; });
     ajuster();
   }
   function ajuster() { var z = $('feuilles').parentNode, l = z.clientWidth - 28, w = $('feuilles').offsetWidth || 1122; var k = Math.min(1, l / w); $('feuilles').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuilles').offsetHeight * k + 28) + 'px' : ''; }
   window.addEventListener('resize', ajuster);
-  $('f-du').addEventListener('input', feuilles);
+  $('f-du').addEventListener('input', function () { feuilles(); chargerPlanning(); });
   $('b-imp').onclick = function () { window.print(); };          // impression en un clic
-  $('f-du').value = iso(new Date()); dessinerEff(); feuilles();
+  $('f-du').value = iso(new Date()); assurerHP(); dessinerEff(); feuilles(); chargerPlanning();
 })();
 </script>
 <script src="js/pied.js"></script>
