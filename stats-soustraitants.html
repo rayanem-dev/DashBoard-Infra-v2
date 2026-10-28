@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="same-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Statistique sous-traitants – Division Infrastructure RNS</title>
+<title>Statistiques – Division Infrastructure RNS</title>
 <meta name="theme-color" content="#E85D04">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -27,6 +27,17 @@
   table.edit tr.mod td:first-child { box-shadow: inset 3px 0 0 var(--orange-main); }
   .total td { font-weight: 800; border-top: 2px solid var(--text-dark); padding: 8px 6px; }
   .note { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  .onglets { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .onglets button { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .onglets button.actif { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; border-color: transparent; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 12px 14px; }
+  .kpi b { display: block; font-size: 24px; line-height: 1.15; color: var(--text-dark); font-variant-numeric: tabular-nums; } .kpi span { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+  .kpi small { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .barre-taux { display: inline-block; vertical-align: middle; width: 70px; height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; margin-inline-end: 6px; } .barre-taux i { display: block; height: 100%; background: var(--orange-main); }
+  table.res { width: 100%; border-collapse: collapse; font-size: 13px; } table.res th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 6px; border-bottom: 2px solid var(--border); } table.res td { padding: 6px; border-bottom: 1px solid var(--border); vertical-align: top; } table.res td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .alerte-st { color: #8a1c1c; font-size: 13px; margin: 4px 0; } .vert { color: #1b7a3a; } .rouge { color: #8a1c1c; }
+  #graphe svg { width: 100%; height: auto; display: block; } #graphe text { fill: var(--text-muted); font-size: 10px; }
   .apercu { overflow: auto; background: #E5E7EB; padding: 14px; border-radius: 14px; }
   #feuille { background: #fff; color: #111; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 14mm 15mm 12mm; box-shadow: 0 2px 14px rgba(0,0,0,.2); font-family: Arial, Helvetica, sans-serif; position: relative; box-sizing: border-box; transform-origin: top left; }
   #feuille .tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; }
@@ -56,11 +67,13 @@
 <body>
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">📊</div>
-    <div class="logo-text"><h1>Statistique sous-traitants</h1><p>Enquêtes administratives · agents pris en charge par mois et par prestataire</p></div></div>
+    <div class="logo-text"><h1>Statistiques</h1><p>Sous-traitants (enquêtes administratives) · Rapports journaliers</p></div></div>
   <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 <main class="st">
+  <div class="onglets" role="tablist"><button type="button" id="t-st" class="actif" role="tab">👷 Sous-traitants</button><button type="button" id="t-rap" role="tab">📝 Rapports journaliers</button></div>
+<div id="v-st">
   <div class="bloc">
     <div class="barre">
       <button class="btn-s" id="m-prec" type="button" aria-label="Mois précédent">◀</button>
@@ -74,6 +87,18 @@
   </div>
   <div class="bloc"><table class="edit"><thead><tr><th>Sous-traitant</th><th style="width:130px">Effectif présent</th><th style="width:150px">Heures travaillées / mois</th><th>Observation</th><th style="width:44px"></th></tr></thead><tbody id="corps"></tbody><tfoot id="pied-tab"></tfoot></table>
     <p class="note">Le nombre d'agents est celui des personnes prises en charge qui touchent le mois (une personne n'est comptée qu'une fois par prestataire) ; les heures valent l'effectif × <span id="h-agent">360</span> h. Tout est modifiable ; un trait orange marque une ligne modifiée à la main.</p></div>
+</div>
+<div id="v-rap" hidden>
+  <div class="bloc"><div class="barre">
+    <label>Du <input type="date" id="r-du"></label><label>au <input type="date" id="r-au"></label>
+    <button class="btn-s" id="r-30" type="button">30 derniers jours</button><button class="btn-s" id="r-mois" type="button">Ce mois</button><button class="btn-s" id="r-mprec" type="button">Mois précédent</button>
+    <button class="btn-p" id="r-imp" type="button" style="margin-inline-start:auto">🖨 Imprimer / PDF</button>
+  </div><p class="note" id="r-info"></p></div>
+  <div class="kpis" id="r-kpis"></div>
+  <div class="bloc"><h2>Effectif déclaré et rapports reçus, jour par jour</h2><div id="graphe"></div></div>
+  <div class="bloc"><h2>Chantier par chantier</h2><div style="overflow:auto"><table class="res"><thead><tr><th>Chantier</th><th>Remise des rapports</th><th>Effectif moyen</th><th>Avancement</th><th>Difficultés</th><th>Dernier rapport</th></tr></thead><tbody id="r-corps"></tbody></table></div><p class="note">Remise = jours avec rapport ÷ jours où au moins un rapport a été reçu (les week-ends et jours fériés sans aucun rapport ne comptent pas). Avancement : premier → dernier de la période.</p></div>
+  <div class="bloc" id="r-alertes" hidden></div>
+</div>
   <div class="apercu"><div id="feuille" data-i18n-non></div></div>
 </main>
 <div class="toast" id="toast" role="status"></div>
@@ -98,7 +123,7 @@
       dessiner();
     }).catch(function (e) {
       if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
-      if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : cette page est ouverte au chef de division, au secrétariat et aux chefs de service.'; return; }
+      if (e.code === 'DROITS') { $('v-st').textContent = 'Accès réservé : les statistiques des sous-traitants sont ouvertes au chef de division, au secrétariat et aux chefs de service.'; return; }
       $('info').textContent = ''; toast(e.message, true);
     });
   }
@@ -129,6 +154,7 @@
     apercu(totE, totH);
   }
   function apercu(totE, totH) {
+    if (mode === 'rap') return;
     var lignes = D.lignes.map(function (l, i) { return '<tr><td class="c" style="width:9mm">' + (i + 1) + '</td><td>' + E(l.prestataire) + '</td><td class="r">' + milliers(l.effectif) + '</td><td class="r">' + milliers(l.heures) + '</td><td>' + E(l.observation) + '</td></tr>'; }).join('');
     $('feuille').innerHTML =
       '<div class="tete"><div><img src="img/odm-logo.jpeg" alt="Sonatrach"><div class="org"><b>Activité Exploration - Production</b><br><b>Division Production</b><br><b>Direction Régionale Rhourde Nouss</b><br><b>Division Infrastructures</b></div></div>' +
@@ -152,7 +178,79 @@
     Api.call('stats_st_ajouter', { mois: D.mois, prestataire: nom, effectif: n }).then(function (r) { D = r; dessiner(); toast('Ligne ajoutée'); }).catch(function (e) { toast(e.message, true); });
   };
   $('b-imp').onclick = function () { window.print(); };   // impression en un clic ; « Enregistrer au format PDF » dans la fenêtre d'impression
-  if (window.Api) Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; apercu(0, 0); if (D.lignes) dessiner(); }).catch(function () { /* rien */ });
+
+  // ----- Onglet « Rapports journaliers » : statistiques calculées par le serveur sur une période (même droits de lecture que la liste des rapports)
+  var mode = 'st', R = null;
+  function pct(x) { return x == null ? '—' : Math.round(x * 100) + ' %'; }
+  function jj(d) { var p = String(d).split('-'); return p[2] + '/' + p[1]; }
+  function jjj(d) { var p = String(d).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  function periode(du, au) { $('r-du').value = du; $('r-au').value = au; chargerRap(); }
+  function chargerRap() {
+    var du = $('r-du').value, au = $('r-au').value; if (!du || !au) return;
+    $('r-info').textContent = 'Calcul en cours…';
+    return Api.call('stats_rapports_lire', { du: du, au: au }).then(function (r) { R = r; dessinerRap(); }).catch(function (e) {
+      if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+      $('r-info').textContent = ''; toast(e.message, true);
+    });
+  }
+  function kpi(v, lib, aide) { return '<div class="kpi"><b>' + v + '</b><span>' + lib + '</span>' + (aide ? '<small>' + aide + '</small>' : '') + '</div>'; }
+  function graphe(jours) {
+    if (!jours.length) return '<p class="note">Aucun rapport sur la période.</p>';
+    var W = 760, H = 190, g = 34, b = 22, max = Math.max.apply(null, jours.map(function (j) { return j.effectif; }).concat([1])), n = jours.length, pas = (W - g - 6) / n, bw = Math.max(2, Math.min(26, pas * 0.7)), o = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Effectif déclaré par jour">';
+    [0, 0.5, 1].forEach(function (f) { var y = H - b - (H - b - 10) * f; o += '<line x1="' + g + '" x2="' + (W - 4) + '" y1="' + y + '" y2="' + y + '" stroke="var(--border)"/><text x="' + (g - 4) + '" y="' + (y + 3) + '" text-anchor="end">' + Math.round(max * f) + '</text>'; });
+    jours.forEach(function (j, i) {
+      var h = (H - b - 10) * j.effectif / max, x = g + i * pas + (pas - bw) / 2;
+      o += '<rect x="' + x.toFixed(1) + '" y="' + (H - b - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="var(--orange-main)"><title>' + jjj(j.date) + ' : effectif ' + j.effectif + ', ' + j.rapports + ' rapport(s)</title></rect>';
+      if (n <= 16 || i % Math.ceil(n / 12) === 0) o += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">' + jj(j.date) + '</text>';
+    });
+    return o + '</svg>';
+  }
+  function dessinerRap() {
+    var k = R.kpi, z = $('r-kpis');
+    $('r-info').textContent = 'Période du ' + jjj(R.du) + ' au ' + jjj(R.au) + ' · ' + k.rapports + ' rapport(s) reçus sur ' + k.joursActifs + ' jour(s) d\'activité';
+    z.innerHTML = kpi(k.rapports, 'Rapports reçus', k.joursActifs + ' jour(s) d\'activité') + kpi(pct(k.tauxRemise), 'Taux de remise', k.chantiersAvecRapport + ' / ' + k.chantiersSuivis + ' chantiers ont rapporté') +
+      kpi(k.effectifMoyenJour == null ? '—' : k.effectifMoyenJour, 'Effectif moyen / jour', 'tous chantiers confondus') + kpi(k.avancementMoyen == null ? '—' : k.avancementMoyen + ' %', 'Avancement moyen', 'dernier avancement déclaré par chantier') +
+      kpi(k.difficultes, 'Difficultés signalées', 'rapports mentionnant un problème') + kpi(pct(k.tauxVisa), 'Rapports visés', 'visa du chef de service');
+    $('graphe').innerHTML = graphe(R.jours);
+    var c = $('r-corps'); c.textContent = '';
+    R.chantiers.forEach(function (l) {
+      var tr = document.createElement('tr'), av = l.avFin == null ? '—' : (l.avDebut !== l.avFin ? l.avDebut + ' → ' : '') + l.avFin + ' %' + (l.progression ? ' <span class="vert">(+' + l.progression + ')</span>' : '');
+      tr.innerHTML = '<td><b>' + E(l.nom) + '</b><br><small class="note">' + E(l.service) + '</small></td><td style="white-space:nowrap"><span class="barre-taux"><i style="width:' + Math.round((l.taux || 0) * 100) + '%"></i></span>' + pct(l.taux) + ' <small class="note" style="white-space:nowrap">(' + l.jours + ' j)</small></td>' +
+        '<td class="n">' + (l.effectifMoyen == null ? '—' : l.effectifMoyen) + '</td><td class="n">' + av + '</td><td class="n">' + (l.difficultes ? '<span class="rouge">' + l.difficultes + '</span>' : '0') + '</td><td class="n">' + (l.dernier ? jjj(l.dernier) + (l.silence ? ' <span class="rouge">(' + l.silence + ' j sans rapport)</span>' : '') : '<span class="rouge">aucun</span>') + '</td>';
+      c.appendChild(tr);
+    });
+    if (!R.chantiers.length) c.innerHTML = '<tr><td colspan="6" class="note" style="padding:14px">Aucun chantier suivi.</td></tr>';
+    var al = '', rel = R.chantiers.filter(function (l) { return l.rapports === 0 || l.silence >= 2; });
+    if (rel.length) al += '<h2>⚠ Chantiers à relancer</h2>' + rel.map(function (l) { return '<p class="alerte-st">' + E(l.nom) + ' — ' + (l.rapports ? l.silence + ' jour(s) d\'activité sans rapport (dernier : ' + jjj(l.dernier) + ')' : 'aucun rapport sur la période') + '</p>'; }).join('');
+    if (R.difficultes.length) al += '<h2 style="margin-top:10px">Dernières difficultés signalées</h2><ul style="margin:4px 0 0 18px;padding:0">' + R.difficultes.map(function (d) { var ch = R.chantiers.filter(function (l) { return l.id === d.chantier; })[0]; return '<li><b>' + jjj(d.date) + '</b> · ' + E(ch ? ch.nom : d.chantier) + ' : ' + E(d.texte) + '</li>'; }).join('') + '</ul>';
+    if (R.auteurs.length) al += '<h2 style="margin-top:10px">Rapporteurs les plus réguliers</h2><p class="note">' + R.auteurs.map(function (a) { return E(a.nom) + ' (' + a.n + ')'; }).join(' · ') + '</p>';
+    $('r-alertes').innerHTML = al; $('r-alertes').hidden = !al;
+    feuilleRap();
+  }
+  function feuilleRap() {
+    var k = R.kpi, lignes = R.chantiers.map(function (l, i) { return '<tr><td class="c" style="width:9mm">' + (i + 1) + '</td><td>' + E(l.nom) + '</td><td class="c">' + l.rapports + '</td><td class="c">' + pct(l.taux) + '</td><td class="r">' + (l.effectifMoyen == null ? '—' : l.effectifMoyen) + '</td><td class="c">' + (l.avFin == null ? '—' : (l.avDebut !== l.avFin ? l.avDebut + ' → ' : '') + l.avFin + ' %') + '</td><td class="c">' + l.difficultes + '</td></tr>'; }).join('');
+    var diff = R.difficultes.map(function (d) { var ch = R.chantiers.filter(function (l) { return l.id === d.chantier; })[0]; return '<li>' + jjj(d.date) + ' · ' + E(ch ? ch.nom : d.chantier) + ' : ' + E(d.texte) + '</li>'; }).join('');
+    $('feuille').innerHTML =
+      '<div class="tete"><div><img src="img/odm-logo.jpeg" alt="Sonatrach"><div class="org"><b>Activité Exploration - Production</b><br><b>Division Production</b><br><b>Direction Régionale Rhourde Nouss</b><br><b>Division Infrastructures</b></div></div>' +
+      '<div class="tit"><h1>STATISTIQUES DES RAPPORTS JOURNALIERS</h1><div class="mois">du ' + jjj(R.du) + ' au ' + jjj(R.au) + '</div></div></div><div class="trait"></div>' +
+      '<div class="div"><b>' + k.rapports + '</b> rapports reçus sur <b>' + k.joursActifs + '</b> jour(s) · taux de remise <b>' + pct(k.tauxRemise) + '</b> · effectif moyen <b>' + (k.effectifMoyenJour == null ? '—' : k.effectifMoyenJour) + '</b> par jour · avancement moyen <b>' + (k.avancementMoyen == null ? '—' : k.avancementMoyen + ' %') + '</b> · <b>' + k.difficultes + '</b> difficulté(s) signalée(s)</div>' +
+      '<table><thead><tr><th>N°</th><th>Chantier</th><th>Rapports</th><th>Remise</th><th>Effectif moyen</th><th>Avancement</th><th>Difficultés</th></tr></thead><tbody>' + (lignes || '<tr><td colspan="7" class="c">Aucun chantier suivi.</td></tr>') + '</tbody></table>' +
+      (diff ? '<div class="div" style="margin-top:5mm"><b>Dernières difficultés signalées</b><ul style="margin:2mm 0 0 5mm;padding:0">' + diff + '</ul></div>' : '') +
+      '<div class="sig"><span>Le Chef de Service</span><span>Le Chef de Division Infrastructures</span></div>' +
+      '<div class="pied">Édité le ' + E(iso().split('-').reverse().join('/')) + (moi ? ' par ' + E(moi) : '') + ' · remise = jours avec rapport ÷ jours où au moins un rapport a été reçu · d\'après les rapports journaliers saisis sur le portail.</div>';
+    ajuster();
+  }
+  function onglet(m) {
+    mode = m; $('v-st').hidden = m !== 'st'; $('v-rap').hidden = m !== 'rap'; $('t-st').classList.toggle('actif', m === 'st'); $('t-rap').classList.toggle('actif', m === 'rap');
+    if (m === 'st') { if (D.lignes) dessiner(); } else if (R) feuilleRap(); else { if (!$('r-du').value) periode(iso().slice(0, 8) + '01', iso()); }
+  }
+  $('t-st').onclick = function () { onglet('st'); }; $('t-rap').onclick = function () { onglet('rap'); };
+  $('r-du').addEventListener('change', chargerRap); $('r-au').addEventListener('change', chargerRap);
+  $('r-30').onclick = function () { var d = new Date(); d.setDate(d.getDate() - 29); periode(d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2), iso()); };
+  $('r-mois').onclick = function () { periode(iso().slice(0, 8) + '01', iso()); };
+  $('r-mprec').onclick = function () { var m = decaler(iso().slice(0, 7), -1), p = m.split('-'), fin = new Date(+p[0], +p[1], 0).getDate(); periode(m + '-01', m + '-' + ('0' + fin).slice(-2)); };
+  $('r-imp').onclick = function () { window.print(); };
+  if (window.Api) Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; if (mode === 'rap') { if (R) feuilleRap(); } else { apercu(0, 0); if (D.lignes) dessiner(); } }).catch(function () { /* rien */ });
   charger(decaler(iso().slice(0, 7), -0));
 })();
 </script>

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-28-243",
+    "date": "2026-10-28",
+    "title": "Version 6.24.0 — Statistiques des rapports journaliers",
+    "changes": [
+      "La page « Statistiques » reçoit un onglet « Rapports journaliers » : sur la période choisie (30 derniers jours, ce mois, mois précédent ou dates libres) elle donne le nombre de rapports reçus, le taux de remise, l'effectif moyen par jour, l'avancement moyen, les difficultés signalées et le taux de visa.",
+      "Un graphique montre l'effectif déclaré jour par jour ; un tableau détaille chaque chantier (remise, effectif moyen, avancement début → fin, difficultés, dernier rapport) ; les chantiers sans rapport ou en silence sont signalés « à relancer », avec les dernières difficultés et les rapporteurs les plus réguliers.",
+      "Une feuille A4 « Statistiques des rapports journaliers » est prête à imprimer ou à enregistrer en PDF. Mêmes droits de lecture que la liste des rapports."
+    ]
+  },
+  {
     "id": "2026-10-28-242",
     "date": "2026-10-28",
     "title": "Version 6.23.0 — Page d'accueil : les carrés d'applications n'apparaissent qu'à la recherche",
