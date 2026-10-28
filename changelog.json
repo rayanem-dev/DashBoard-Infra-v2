@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-28-242",
+    "date": "2026-10-28",
+    "title": "Version 6.23.0 — Page d'accueil : les carrés d'applications n'apparaissent qu'à la recherche",
+    "changes": [
+      "Sur la page d'accueil, les carrés des applications sont masqués au repos (comme les contacts) : ils s'affichent quand on les cherche dans « Rechercher… » ou quand on choisit une catégorie. « Mes applications » reste visible."
+    ]
+  },
+  {
     "id": "2026-10-28-241",
     "date": "2026-10-28",
     "title": "Version 6.22.0 — Synthèse du jour : envoi du consolidé à toute la division (exceptionnel)",
