@@ -206,6 +206,7 @@ function route_(req) {
     case 'menu_organisation_enregistrer': return menuOrgEnregistrer_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
+    case 'stats_rapports_lire': return statsRapportsLire_(req);
     case 'rapport_corriger': return rapportCorriger_(req);
     case 'rapport_viser': return rapportViser_(req);
     case 'rapports_synthese': return rapportsSynthese_(req);
@@ -588,6 +589,17 @@ function rapportsListe_(req) {
   var liste = Rapports.filtrer(rapportsLus_(), u, voitTout ? 3 : niv, { du: du, au: au, chantier: req.chantier || '', auteur: niv >= 2 || voitTout ? (req.auteur || '') : '' });
   var out = liste.slice(0, 300).map(function (r) { r.peut_viser = Rapports.peutViser(u, niv, r); r.peut_corriger = voitTout; r.le_mien = String(r.auteur_email).toLowerCase() === String(u.email).toLowerCase(); return r; });
   return { du: du, au: au, niveau: niv, rapports: out, tronque: liste.length > 300 };
+}
+/** Statistiques des rapports journaliers sur une période (page « Statistiques », onglet Rapports journaliers) : mêmes droits de lecture que la liste des rapports. */
+function statsRapportsLire_(req) {
+  var u = Auth.userFromToken(req.token), niv = niveauRapports_(u, 1), auj = Dates.today();
+  var du = Dates.isDate(req.du) ? req.du : Dates.addDays(auj, -29), au = Dates.isDate(req.au) ? req.au : auj;
+  if (du > au) throw new Error('La période est à l\'envers');
+  if (Dates.diffDays(du, au) > 400) throw new Error('Période trop longue (400 jours au plus)');
+  var voitTout = Rapports.peutCorriger(u, Droits.roleCanon(u.role));
+  var liste = Rapports.filtrer(rapportsLus_(), u, voitTout ? 3 : niv, { du: du, au: au, chantier: req.chantier || '' });
+  var chs = (voitTout || niv >= 3 ? chantiersActifs_() : Rapports.chantiersVisibles(chantiersActifs_(), u, niv)).map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service }; });
+  return Rapports.statistiques(liste, chs, du, au, auj);
 }
 /** Corrige un rapport d'un jour passé (chef de division, secrétariat, chef de service de son service) ; l'auteur, la date et le chantier restent, la correction est tracée. */
 function rapportCorriger_(req) {

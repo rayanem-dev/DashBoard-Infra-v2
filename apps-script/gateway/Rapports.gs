@@ -316,6 +316,53 @@ var Rapports = (function () {
     if (groupes && groupes.chef_division) roles.push('chef_division');
     return destinatairesDetail(utilisateurs, groupes).map(function (d) { return d.email; });
   }
+
+  /**
+   * Statistiques des rapports journaliers sur une période [du, au] (jusqu'à aujourd'hui au plus).
+   * rapports = rapports de la période (déjà filtrés selon les droits) ; chantiers = chantiers suivis [{ id, nom, service }].
+   * « Jours d'activité » = jours où au moins un rapport a été reçu (aucune hypothèse sur les week-ends ni les jours fériés) ;
+   * taux de remise d'un chantier = jours avec rapport / jours d'activité.
+   */
+  function statistiques(rapports, chantiers, du, au, aujourdhui) {
+    var fin = aujourdhui && au > aujourdhui ? aujourdhui : au, rs = (rapports || []).filter(function (r) { return r.date >= du && r.date <= fin; });
+    var parJour = {}, parCh = {}, parAuteur = {}, diff = [];
+    rs.forEach(function (r) {
+      var j = parJour[r.date] = parJour[r.date] || { date: r.date, rapports: 0, effectif: 0 }; j.rapports += 1; j.effectif += Number(r.effectif) || 0;
+      var k = norm(r.chantier), c = parCh[k] = parCh[k] || { rs: [], jours: {} }; c.rs.push(r); c.jours[r.date] = 1;
+      var a = norm(r.auteur_email); parAuteur[a] = parAuteur[a] || { nom: r.auteur_nom || r.auteur_email, n: 0 }; parAuteur[a].n += 1;
+      if (String(r.difficultes || '').trim()) diff.push({ date: r.date, chantier: k, texte: String(r.difficultes).trim() });
+    });
+    var jours = Object.keys(parJour).sort(), nbJoursActifs = jours.length;
+    var suivis = (chantiers || []).slice(), connus = {}; suivis.forEach(function (c) { connus[norm(c.id)] = 1; });
+    Object.keys(parCh).forEach(function (k) { if (!connus[k]) suivis.push({ id: k, nom: k, service: '' }); });
+    var lignes = suivis.map(function (c) {
+      var k = norm(c.id), d = parCh[k], r = d ? d.rs.slice().sort(function (x, y) { return x.date < y.date ? -1 : x.date > y.date ? 1 : 0; }) : [];
+      var av = r.filter(function (x) { return x.avancement !== '' && x.avancement != null && isFinite(Number(x.avancement)); });
+      var nbJ = d ? Object.keys(d.jours).length : 0, eff = r.reduce(function (n, x) { return n + (Number(x.effectif) || 0); }, 0);
+      var dernier = r.length ? r[r.length - 1].date : '', silence = dernier ? jours.filter(function (x) { return x > dernier; }).length : nbJoursActifs;
+      return { id: k, nom: c.nom, service: c.service || '', rapports: r.length, jours: nbJ, taux: nbJoursActifs ? nbJ / nbJoursActifs : null,
+        effectifMoyen: nbJ ? Math.round(eff / nbJ * 10) / 10 : null, avDebut: av.length ? Number(av[0].avancement) : null, avFin: av.length ? Number(av[av.length - 1].avancement) : null,
+        progression: av.length > 1 ? Math.round((Number(av[av.length - 1].avancement) - Number(av[0].avancement)) * 10) / 10 : null,
+        difficultes: r.filter(function (x) { return String(x.difficultes || '').trim(); }).length, vises: r.filter(function (x) { return x.visa_par; }).length, dernier: dernier, silence: silence };
+    }).sort(function (a, b) { return (b.rapports - a.rapports) || String(a.nom).localeCompare(String(b.nom), 'fr'); });
+    var avecRapport = lignes.filter(function (l) { return l.rapports > 0; }), avs = lignes.filter(function (l) { return l.avFin != null; });
+    var jourCh = lignes.reduce(function (n, l) { return n + l.jours; }, 0), eff = jours.reduce(function (n, d) { return n + parJour[d].effectif; }, 0);
+    return {
+      du: du, au: fin,
+      kpi: {
+        rapports: rs.length, joursActifs: nbJoursActifs, chantiersSuivis: lignes.length, chantiersAvecRapport: avecRapport.length,
+        tauxRemise: nbJoursActifs && lignes.length ? jourCh / (nbJoursActifs * lignes.length) : null,
+        effectifMoyenJour: nbJoursActifs ? Math.round(eff / nbJoursActifs * 10) / 10 : null,
+        avancementMoyen: avs.length ? Math.round(avs.reduce(function (n, l) { return n + l.avFin; }, 0) / avs.length * 10) / 10 : null,
+        difficultes: diff.length, tauxVisa: rs.length ? rs.filter(function (x) { return x.visa_par; }).length / rs.length : null
+      },
+      jours: jours.map(function (d) { return parJour[d]; }),
+      chantiers: lignes,
+      sansRapport: lignes.filter(function (l) { return !l.rapports; }).map(function (l) { return l.nom; }),
+      auteurs: Object.keys(parAuteur).map(function (a) { return parAuteur[a]; }).sort(function (x, y) { return y.n - x.n; }).slice(0, 8),
+      difficultes: diff.sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 10)
+    };
+  }
   /** Tous les comptes actifs avec e-mail (SH, ACOSCO, GTP…) : [{ nom, email, role, service }]. Usage exceptionnel (envoi « toute la division »). */
   function tousLesComptes(utilisateurs) {
     var vus = {}, out = [];
@@ -341,7 +388,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { tousLesComptes: tousLesComptes, texteLibreHtml: texteLibreHtml, boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { statistiques: statistiques, tousLesComptes: tousLesComptes, texteLibreHtml: texteLibreHtml, boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

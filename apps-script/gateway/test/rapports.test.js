@@ -251,3 +251,24 @@ test('toute la division : tous les comptes actifs avec e-mail (SH, ACOSCO, GTP),
     { nom: 'C', email: 'a@sh.dz', role: 'x' }, { nom: 'D', email: 'd@gtp.dz', actif: '0' }, { nom: 'E', email: '' }, { nom: 'F', email: 'pas-une-adresse' }]);
   assert.deepStrictEqual(l.map(x => x.email), ['a@sh.dz', 'b@acosco.dz']);
 });
+
+test('statistiques des rapports : remise, effectif, avancement, silences, difficultés', () => {
+  const ch = [{ id: 'a', nom: 'Chantier A', service: 'S1' }, { id: 'b', nom: 'Chantier B', service: 'S1' }, { id: 'c', nom: 'Chantier C', service: 'S2' }];
+  const rp = (date, chantier, effectif, av, extra) => Object.assign({ date, chantier, effectif, avancement: av, auteur_email: 'x@y.dz', auteur_nom: 'X' }, extra || {});
+  const s = Rapports.statistiques([
+    rp('2026-10-01', 'a', 10, 10), rp('2026-10-02', 'a', 12, 14, { difficultes: 'Retard béton', visa_par: 'Chef' }), rp('2026-10-03', 'a', 8, 20),
+    rp('2026-10-01', 'b', 4, ''), rp('2026-10-03', 'b', 6, 5), rp('2026-10-09', 'a', 99, 99)], ch, '2026-10-01', '2026-10-31', '2026-10-03');
+  assert.strictEqual(s.au, '2026-10-03'); assert.strictEqual(s.kpi.rapports, 5);          // le rapport du 9 est dans le futur : écarté
+  assert.strictEqual(s.kpi.joursActifs, 3);
+  const A = s.chantiers.find(x => x.id === 'a'), B = s.chantiers.find(x => x.id === 'b'), C = s.chantiers.find(x => x.id === 'c');
+  assert.strictEqual(A.jours, 3); assert.strictEqual(A.taux, 1); assert.strictEqual(A.effectifMoyen, 10);
+  assert.strictEqual(A.avDebut, 10); assert.strictEqual(A.avFin, 20); assert.strictEqual(A.progression, 10);
+  assert.strictEqual(B.jours, 2); assert.ok(Math.abs(B.taux - 2 / 3) < 1e-9); assert.strictEqual(B.avDebut, 5); assert.strictEqual(B.progression, null);
+  assert.strictEqual(C.rapports, 0); assert.deepStrictEqual(s.sansRapport, ['Chantier C']);
+  assert.ok(Math.abs(s.kpi.tauxRemise - 5 / 9) < 1e-9);
+  assert.strictEqual(s.kpi.effectifMoyenJour, 13.3);                                       // (14 + 12 + 14) / 3
+  assert.strictEqual(s.kpi.avancementMoyen, 12.5);                                         // derniers avancements : A 20, B 5
+  assert.strictEqual(s.kpi.difficultes, 1); assert.strictEqual(s.difficultes[0].texte, 'Retard béton');
+  assert.strictEqual(s.kpi.tauxVisa, 0.2);
+  assert.strictEqual(Rapports.statistiques([], ch, '2026-10-01', '2026-10-31', '2026-10-03').kpi.tauxRemise, null);
+});
