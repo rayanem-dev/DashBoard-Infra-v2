@@ -237,3 +237,10 @@ test('consolideMail : mêmes détails que le consolidé imprimé (commentaire, d
   ['SONATRACH', 'RAPPORT JOURNALIER CONSOLIDÉ DES CHANTIERS', 'Commentaire :</b> Il a été demandé', 'Difficultés :</b> Arrêt', 'Vu par Chef — ok', 'Établi par : <b>CHAREF KAMEL', 'Consolidé par <b>Envoi automatique', 'version 1', 'Le Chef de Division Infrastructures'].forEach(t => assert.ok(m.html.includes(t), t));
   assert.ok(!m.html.includes('Prép'));   // un chantier hors contrat sans rapport n'est pas « manquant »
 });
+
+test('texte libre : retour à la ligne conservé, * ouvre un nouveau point (même collé sur une ligne)', () => {
+  const t = Rapports.texteLibreHtml;
+  assert.strictEqual(t('Décoffrage du regard\nRemise en état du pavé', 'm:0'), '<p style="m:0">Décoffrage du regard<br>Remise en état du pavé</p>');
+  assert.strictEqual(t('* Décoffrage du regard\n* Remise en état <b>', ''), '<ul style="margin:3px 0 3px 18px;padding:0"><li>Décoffrage du regard</li><li>Remise en état &lt;b&gt;</li></ul>');
+  assert.ok(t('Décoffrage * Remise en état * Nettoyage', '').includes('<li>Nettoyage</li>'));
+});

@@ -243,6 +243,12 @@ var Rapports = (function () {
   }
 
   function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  /** Texte libre en HTML : retour à la ligne conservé ; une ligne commençant par * (ou - ou •) ouvre un nouveau point (liste). */
+  function texteLibreHtml(t, style) {
+    var puces = false, out = [];
+    String(t == null ? '' : t).replace(/\r/g, '').split('\n').forEach(function (x) { x.trim().split(/\s\*\s/).forEach(function (y, k) { var m = /^[*•]\s*|^-\s+/.exec(y); if (m || k > 0) puces = true; y = y.replace(/^[*•]\s*|^-\s+/, '').trim(); if (y) out.push(esc(y)); }); });
+    return puces ? '<ul style="margin:3px 0 3px 18px;padding:0">' + out.map(function (y) { return '<li>' + y + '</li>'; }).join('') + '</ul>' : '<p style="' + style + '">' + out.join('<br>') + '</p>';
+  }
   var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
   function dateLongue(iso) { var p = String(iso).split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); return JOURS[d.getUTCDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0]; }
   /**
@@ -269,7 +275,7 @@ var Rapports = (function () {
         c.rapports.forEach(function (r, i) {
           h += '<tr><td colspan="2" style="padding:5px 8px;' + (i ? 'border-top:1px dashed #bbb;' : '') + '"><div style="font-size:11px;color:#333;margin-bottom:2px">Établi par : <b>' + esc(r.auteur_nom || r.auteur_email) + '</b>' + (r.effectif !== '' && r.effectif != null ? ' · effectif ' + esc(r.effectif) : '') + '</div>';
           if (r.lignes && r.lignes.length) h += '<ul style="margin:3px 0 3px 18px;padding:0">' + r.lignes.map(function (l) { return '<li>' + (l.routine ? '<i>[Routine]</i> ' : '') + (l.zone ? '<b>' + esc(l.zone) + '</b> : ' : '') + esc(l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + esc(l.avancement) + ' %' : '') + '</li>'; }).join('') + '</ul>';
-          if (r.travaux && !(r.lignes && r.lignes.length && String(r.travaux).indexOf('• ') === 0)) h += '<p style="margin:3px 0">' + esc(r.travaux) + '</p>';
+          if (r.travaux && !(r.lignes && r.lignes.length && String(r.travaux).indexOf('• ') === 0)) h += texteLibreHtml(r.travaux, 'margin:3px 0');
           if (r.difficultes) h += '<p style="margin:3px 0;color:#8a1c1c"><b>Difficultés :</b> ' + esc(r.difficultes) + '</p>';
           if (r.commentaire) h += '<p style="margin:3px 0"><b>Commentaire :</b> ' + esc(r.commentaire) + '</p>';
           if (r.visa_par) h += '<p style="margin:3px 0;font-style:italic;font-size:11px">Vu par ' + esc(r.visa_par) + (r.visa_note ? ' — ' + esc(r.visa_note) : '') + '</p>';
@@ -325,7 +331,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { texteLibreHtml: texteLibreHtml, boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

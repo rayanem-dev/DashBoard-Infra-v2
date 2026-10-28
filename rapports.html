@@ -88,7 +88,7 @@
         <div id="lignes"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn-s" type="button" id="b-ligne">+ Ligne</button><button class="btn-s" type="button" id="b-reprendre" title="Reprend aussi le texte du dernier rapport de ce chantier">↻ Reprendre le dernier rapport</button></div>
         <p class="aide" id="reprise" style="margin-top:6px"></p></div>
-      <div class="champ"><label for="travaux">Travaux réalisés — texte libre <span class="aide" style="font-weight:400">(facultatif si des lignes sont remplies)</span></label><textarea id="travaux" maxlength="1000"></textarea></div>
+      <div class="champ"><label for="travaux">Travaux réalisés — texte libre <span class="aide" style="font-weight:400">(facultatif si des lignes sont remplies)</span></label><textarea id="travaux" maxlength="1000"></textarea><p class="aide" style="margin:3px 0 0">Le texte ne passe pas à la ligne tout seul : appuyez sur Entrée pour aller à la ligne et commencez par <b>*</b> chaque nouveau point (ex. <i>* Décoffrage du regard</i>).</p></div>
       <div class="champ"><label for="difficultes">Difficultés / incidents — facultatif</label><textarea id="difficultes" maxlength="1000"></textarea></div>
       <div class="champ"><label for="commentaire">Commentaire du jour — facultatif</label><textarea id="commentaire" maxlength="1000"></textarea></div>
       <button class="btn" id="b-save" type="submit" style="max-width:320px">Enregistrer le rapport</button>
@@ -231,7 +231,18 @@
   });
 
   // ----- Journal
-  function ligne(titre, texte) { var b = el('div', 'bloc'); b.appendChild(el('b', null, titre)); b.appendChild(document.createTextNode(texte)); return b; }
+  /** Texte libre : un retour à la ligne reste un retour à la ligne ; une ligne commençant par * (ou - ou •) ouvre un nouveau point. Retourne { puces, lignes }. */
+  function decouperTexte(texte) {
+    var l = String(texte == null ? '' : texte).replace(/\r/g, '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean), puces = false, out = [];
+    l.forEach(function (x) { x.split(/\s\*\s/).forEach(function (y, i) { var m = /^[*•]\s*|^-\s+/.exec(y); if (m || i > 0) puces = true; y = y.replace(/^[*•]\s*|^-\s+/, '').trim(); if (y) out.push(y); }); });
+    return { puces: puces, lignes: out };
+  }
+  function ligne(titre, texte) {
+    var b = el('div', 'bloc'); b.appendChild(el('b', null, titre)); var d = decouperTexte(texte);
+    if (d.puces) { var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px'; d.lignes.forEach(function (x) { u.appendChild(el('li', null, x)); }); b.appendChild(u); return b; }
+    d.lignes.forEach(function (x, i) { if (i) b.appendChild(document.createElement('br')); else b.appendChild(document.createTextNode(' ')); b.appendChild(document.createTextNode(x)); });
+    return b;
+  }
   function lignesHtml(ls) {
     var b = el('div', 'bloc'); b.appendChild(el('b', null, 'Travaux réalisés'));
     var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px'; ls.forEach(function (l) { u.appendChild(el('li', null, (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''))); });
@@ -415,7 +426,7 @@
         c.rapports.forEach(function (r) {
           h += '<div class="rap"><div class="par">Établi par : <b>' + esc(r.auteur_nom || r.auteur_email) + '</b>' + (r.effectif !== '' && r.effectif != null ? ' · effectif ' + esc(r.effectif) : '') + '</div>';
           if (r.lignes && r.lignes.length) h += '<ul>' + r.lignes.map(function (l) { return '<li>' + (l.routine ? '<i>[Routine]</i> ' : '') + (l.zone ? '<b>' + esc(l.zone) + '</b> : ' : '') + esc(l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + esc(l.avancement) + ' %' : '') + '</li>'; }).join('') + '</ul>';
-          if (r.travaux && !(r.lignes && r.lignes.length && r.travaux.indexOf('• ') === 0)) h += '<p>' + esc(r.travaux) + '</p>';
+          if (r.travaux && !(r.lignes && r.lignes.length && r.travaux.indexOf('• ') === 0)) { var dt = decouperTexte(r.travaux); h += dt.puces ? '<ul>' + dt.lignes.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '<p>' + dt.lignes.map(esc).join('<br>') + '</p>'; }
           if (r.difficultes) h += '<p class="diff"><b>Difficultés :</b> ' + esc(r.difficultes) + '</p>';
           if (r.commentaire) h += '<p><b>Commentaire :</b> ' + esc(r.commentaire) + '</p>';
           if (r.visa_par) h += '<p class="visa">Vu par ' + esc(r.visa_par) + (r.visa_note ? ' — ' + esc(r.visa_note) : '') + '</p>';
