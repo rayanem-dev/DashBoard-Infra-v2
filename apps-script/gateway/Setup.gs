@@ -14,6 +14,7 @@ var DROITS_DEFAUT_ = [
   ['conducteur', 'planning', 1], ['conducteur', 'rapports', 2], ['conducteur', 'pilotage', 1], ['conducteur', 'logistique', 2],
   ['dessinateur', 'planning', 1], ['dessinateur', 'rapports', 1], ['dessinateur', 'pilotage', 1],
   ['chef_atelier', 'planning', 1], ['chef_atelier', 'rapports', 2], ['chef_atelier', 'pilotage', 1], ['chef_atelier', 'logistique', 2],
+  ['ingenieur', 'planning', 1], ['ingenieur', 'rapports', 2], ['ingenieur', 'pilotage', 1], ['ingenieur', 'logistique', 2],
   ['chef_service', 'planning', 2], ['chef_service', 'rapports', 2], ['chef_service', 'pilotage', 2], ['chef_service', 'cpm', 1], ['chef_service', 'logistique', 2], ['chef_service', 'rh', 1], ['chef_service', 'admin', 1],
   ['interim_chef_service', 'planning', 2], ['interim_chef_service', 'rapports', 2], ['interim_chef_service', 'pilotage', 2], ['interim_chef_service', 'cpm', 1], ['interim_chef_service', 'logistique', 2], ['interim_chef_service', 'rh', 1], ['interim_chef_service', 'admin', 1],
   ['cadre_sup', 'planning', 1], ['cadre_sup', 'rapports', 2], ['cadre_sup', 'pilotage', 2], ['cadre_sup', 'cpm', 1], ['cadre_sup', 'logistique', 2], ['cadre_sup', 'rh', 1], ['cadre_sup', 'admin', 1],
@@ -36,7 +37,7 @@ function ajouterDroitsParDefaut() {
 // Module « simulation » : niveau 2 = pour son service (chef de service, intérim) ; 3 = pour tous (chef de division, secrétariat).
 // Niveau 1 (tous les autres rôles) : l'agent simule et consulte son propre planning et ses vis-à-vis seulement.
 var DROITS_SIMULATION_ = [['chef_service', 'simulation', 2], ['interim_chef_service', 'simulation', 2], ['chef_division', 'simulation', 3], ['secretariat', 'simulation', 3],
-  ['agent', 'simulation', 1], ['conducteur', 'simulation', 1], ['dessinateur', 'simulation', 1], ['chef_atelier', 'simulation', 1], ['cadre_sup', 'simulation', 1], ['ordonnateur', 'simulation', 1], ['cpm', 'simulation', 1]];
+  ['agent', 'simulation', 1], ['conducteur', 'simulation', 1], ['dessinateur', 'simulation', 1], ['chef_atelier', 'simulation', 1], ['ingenieur', 'simulation', 1], ['cadre_sup', 'simulation', 1], ['ordonnateur', 'simulation', 1], ['cpm', 'simulation', 1]];
 /** Crée le module « simulation » et ses droits par défaut s'ils n'existent pas (ne touche jamais aux réglages existants). */
 function ajouterModuleSimulation() {
   var db = SpreadsheetApp.openById(prop_('DB_ID'));
@@ -51,7 +52,7 @@ function ajouterModuleSimulation() {
 
 // Module « benchmark » : 1 = consulter · 2 = créer / modifier · 3 = supprimer. Rangs 0 à 8 de l'échelle des rôles (du secrétariat à l'ingénieur) ; le rôle « ingénieur » s'ouvre dans Privilèges.
 var DROITS_BENCHMARK_ = [['secretariat', 'benchmark', 3], ['chef_division', 'benchmark', 3], ['cadre_sup', 'benchmark', 2], ['chef_service', 'benchmark', 2], ['interim_chef_service', 'benchmark', 2],
-  ['cpm', 'benchmark', 3], ['ordonnateur', 'benchmark', 1], ['chef_atelier', 'benchmark', 2]];
+  ['cpm', 'benchmark', 3], ['ordonnateur', 'benchmark', 1], ['chef_atelier', 'benchmark', 2], ['ingenieur', 'benchmark', 2]];
 /** Crée le module « benchmark » et ses droits par défaut s'ils n'existent pas (ne touche jamais aux réglages existants). */
 function ajouterModuleBenchmark() {
   var db = SpreadsheetApp.openById(prop_('DB_ID'));
@@ -62,6 +63,22 @@ function ajouterModuleBenchmark() {
   if (nouveaux.length) dr.getRange(dr.getLastRow() + 1, 1, nouveaux.length, 3).setValues(nouveaux);
   CacheService.getScriptCache().removeAll(['TBL_Modules', 'TBL_DroitsRole']);
   Logger.log('Module benchmark prêt (' + nouveaux.length + ' droit(s) ajouté(s)).');
+}
+
+/** Une seule fois : crée le rôle « Ingénieur » (rang 8) sur une installation existante : ligne dans « Roles » et droits par défaut (comme le chef d'atelier, plus le benchmark). Ne touche à aucun réglage existant. */
+function ajouterRoleIngenieur_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('ROLE_INGENIEUR_V1') === '1') return;
+  try {
+    var db = SpreadsheetApp.openById(prop_('DB_ID')), ro = db.getSheetByName('Roles');
+    if (!ro.getDataRange().getValues().slice(1).some(function (l) { return Droits.roleCanon(l[0]) === 'ingenieur'; })) ro.appendRow(['ingenieur', 'Ingénieur', 0, '']);
+    var dr = db.getSheetByName('DroitsRole'), v = dr.getDataRange().getValues().slice(1);
+    var voulus = DROITS_DEFAUT_.filter(function (r) { return r[0] === 'ingenieur'; }).concat([['ingenieur', 'simulation', 1]]);
+    var nouveaux = voulus.filter(function (r) { return !v.some(function (l) { return Droits.roleCanon(l[0]) === 'ingenieur' && String(l[1]).toLowerCase() === r[1]; }); });
+    if (nouveaux.length) dr.getRange(dr.getLastRow() + 1, 1, nouveaux.length, 3).setValues(nouveaux);
+    CacheService.getScriptCache().removeAll(['TBL_Roles', 'TBL_DroitsRole']);
+    props.setProperty('ROLE_INGENIEUR_V1', '1');
+  } catch (e) { /* on réessaiera à la requête suivante */ }
 }
 
 // Module « affectation » : niveau 3 = tout le personnel (chef de division, secrétariat). Le niveau 2 (son service) s'accorde dans Privilèges.
@@ -235,6 +252,7 @@ function preparerSimulation_() {
   if (typeof migrerPriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerPriseEnCharge_();
   if (typeof retablirGenerateurTransport_ === 'function' && props.getProperty('SIMU_PRET') === '1') retablirGenerateurTransport_();
   if (typeof ajouterCarteStatsSt_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteStatsSt_();
+  if (typeof ajouterRoleIngenieur_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterRoleIngenieur_();
   if (typeof ajouterCarteBenchmark_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteBenchmark_();
   if (typeof migrerIconePriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerIconePriseEnCharge_();
   if (typeof renommerReservationVol_ === 'function' && props.getProperty('SIMU_PRET') === '1') renommerReservationVol_();
@@ -405,7 +423,7 @@ function ajouterChantiersParDefaut_installation_(db) {
 // ---------------------------------------------------------------------------------------------
 // 1 = voit SON planning · 2 = voit tout le monde (filtre par service) · 3 = + modifie la rotation de chacun.
 var PLANNING_NIVEAUX_ = {
-  agent: 1, conducteur: 1, dessinateur: 1, chef_atelier: 1, cadre_sup: 1, ordonnateur: 1, cpm: 1,
+  agent: 1, conducteur: 1, dessinateur: 1, chef_atelier: 1, ingenieur: 1, cadre_sup: 1, ordonnateur: 1, cpm: 1,
   chef_service: 2, interim_chef_service: 2,
   chef_division: 3, secretariat: 3
 };

@@ -15,7 +15,7 @@ var Droits = (function () {
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
 
   // ---- Rôles ----
-  var ROLES = ['agent', 'conducteur', 'dessinateur', 'chef_atelier', 'chef_service', 'interim_chef_service', 'cadre_sup', 'chef_division',
+  var ROLES = ['agent', 'conducteur', 'dessinateur', 'chef_atelier', 'ingenieur', 'chef_service', 'interim_chef_service', 'cadre_sup', 'chef_division',
                'ordonnateur', 'cpm', 'secretariat', 'stagiaire', 'prestataire', 'guest'];
   // Variantes de saisie courantes → rôle canonique (accents, majuscules, « _ » ou espace, fautes fréquentes).
   var ALIAS = {
@@ -42,7 +42,7 @@ var Droits = (function () {
 
   // Définition des rôles fournis d'origine (graine de l'onglet « Roles ») : { id, libelle, niveau_max (0 = sans plafond), interdits }.
   var LIBELLES = {
-    agent: 'Agent', conducteur: 'Conducteur des travaux', dessinateur: 'Dessinateur', chef_atelier: 'Chef d\'atelier',
+    agent: 'Agent', conducteur: 'Conducteur des travaux', dessinateur: 'Dessinateur', chef_atelier: 'Chef d\'atelier', ingenieur: 'Ingénieur',
     chef_service: 'Chef de service', interim_chef_service: 'Chef de service (intérim)', cadre_sup: 'Cadre supérieur',
     chef_division: 'Chef de division', ordonnateur: 'Ordonnateur', cpm: 'Cellule Passation de marché',
     secretariat: 'Secrétariat', stagiaire: 'Stagiaire', prestataire: 'Prestataire', guest: 'Invité (lecture seule)'

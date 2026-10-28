@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-222",
+    "date": "2026-10-28",
+    "title": "Version 6.12.1 — Nouveau rôle « Ingénieur »",
+    "changes": [
+      "Le rôle « Ingénieur » (rang 8, entre chef d'atelier et dessinateur) existe désormais : il peut être attribué à un compte dans la gestion des privilèges. Droits par défaut : planning (le sien), rapports journaliers, pilotage, logistique, simulation et Benchmark des prix (saisie).",
+      "Le Benchmark des prix est donc visible et utilisable par l'ingénieur comme par tous les rangs jusqu'au secrétariat."
+    ]
+  },
+  {
     "id": "2026-10-28-221",
     "date": "2026-10-28",
     "title": "Version 6.12.0 — Benchmark des prix (normativité des prix)",
