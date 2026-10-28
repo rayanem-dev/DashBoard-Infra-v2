@@ -294,7 +294,7 @@
       var m = LE.metadonnees(best.d.entete || ''); return { articles: best.d.articles, offres: best.d.offres, meta: m, total: null, source: 'excel', nom: nom };
     });
     else if (/^(jpe?g|png|webp|bmp|tiff?)$/.test(ext) || /^image\//.test(file.type)) lire = script(CDN_OCR).then(function () { return window.Tesseract.recognize(file, 'fra'); }).then(function (r) { return deTexte(r.data.text, 'scan', nom); });
-    else lire = window.AutoDetect.lireFichier(file, { echelle: 3, gris: true, interlignes: true, pages: 12, progres: function (n, t) { occupe('Lecture du scan : page ' + n + ' sur ' + t + '… (environ 20 secondes par page)'); } }).then(function (r) { return deTexte(r.texte, r.source === 'ocr' ? 'scan' : 'pdf', nom); });
+    else lire = window.AutoDetect.lireFichier(file, { echelle: 3, gris: true, interlignes: true, chiffres: true, pages: 12, progres: function (n, t) { occupe('Lecture du scan : page ' + n + ' sur ' + t + '… (environ 20 secondes par page)'); } }).then(function (r) { return deTexte(r.texte, r.source === 'ocr' ? 'scan' : 'pdf', nom); });
     return lire.then(function (r) { toast('Lecture terminée'); return r; }, function (e) { throw e; });
   }
   function deTexte(texte, source, nom) { var d = LE.depuisTexte(texte); return { articles: d.articles, offres: [], meta: LE.metadonnees(texte), total: d.total, source: source, nom: nom, mode: d.mode, nature: LE.nature(texte) }; }

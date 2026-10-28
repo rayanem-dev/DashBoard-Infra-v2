@@ -318,7 +318,7 @@ Banchy.Lecture = (function () {
       if (a.pu === '') a.verifier = true;
     });
     arts.forEach(function (a) { delete a.ligne; delete a.suite; delete a.avantNext;  });
-    var mt = String(texte || '').match(/(?:montant\s+total|total\s+g[ée]n[ée]ral)[^\d\n]*([\d][\d  .,]*)/i);
+    var mt = String(texte || '').match(/(?:montant\s+total|total\s+g[ée]n[ée]ral)[^\d]{0,60}?([\d][\d  .,]*)/i);
     // canevas VIERGE (la demande envoyée aux régions) : des lignes numérotées et des unités, mais aucun prix
     var numerotees = 0, unites = 0;
     lignes.forEach(function (l) { var t = vide(l.replace(/[|\/‘’`´]/g, ' ')).split(' ').filter(Boolean); if (t.length >= 3 && NUM_ARTICLE.test(t[0]) && /[A-Za-zÀ-ÿ]{3}/.test(t[1])) numerotees += 1; else if (t.length === 1 && UNITE_OCR.test(t[0])) unites += 1; });
