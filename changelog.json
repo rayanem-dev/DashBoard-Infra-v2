@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-237",
+    "date": "2026-10-28",
+    "title": "Version 6.19.2 — Banchy : fin du décalage des désignations, unités et N° relus",
+    "changes": [
+      "Benchmark : sur une offre scannée, la désignation de chaque article commence maintenant par son propre texte : les lignes sont réparties autour de la ligne du numéro (au milieu de la cellule), et non plus coupées au hasard entre deux articles.",
+      "Les colonnes des unités et des numéros d'article sont relues à part, comme les prix. Sur l'offre de 7 pages, la somme des 48 articles lus est à 0,23 % du total du document (228,5 millions pour 229,06). Les tableaux à traits nets (GTL) sont aussi lus cellule par cellule."
+    ]
+  },
+  {
     "id": "2026-10-28-236",
     "date": "2026-10-28",
     "title": "Version 6.19.1 — Banchy relit les colonnes de prix des scans",

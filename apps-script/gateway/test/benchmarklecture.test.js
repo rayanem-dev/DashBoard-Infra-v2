@@ -148,3 +148,22 @@ test('colonnes de chiffres relues à part : l\'offre de GTL est lue en entier, l
   const offre = L.depuisTexte(fx('benchmark-offre.txt')).articles;
   assert.deepStrictEqual(L.rapprocher(offre, r.articles).map(x => x.i >= 0 ? r.articles[x.i].pu : null), [null, 1600, 600, null, 1200, 800]);
 });
+
+test('offre de 7 pages relue avec colonnes d\'unités, de N° et de chiffres : 48 articles, somme à 0,3 % du total, désignations dans le bon ordre', () => {
+  const r = L.depuisTexte(fx('benchmark-offre-zaatout-nav2.txt'));
+  assert.ok(r.articles.length >= 47); assert.strictEqual(r.total, 229056000);
+  const v = L.verifierTotal(r.articles, r.total); assert.ok(Math.abs(v.ecart) / v.total < 0.005, 'écart ' + v.ecart);
+  // chaque désignation commence par son propre texte (plus de décalage d'une ligne sur l'article voisin)
+  const d = r.articles.map(a => a.des);
+  assert.ok(/^Depose de revêtement mural/.test(d[1]) && /^Depose de plinthes existantes au niveau des chambres/.test(d[2]) && /^Dépose de revêtement de sol existant dans les couloirs/.test(d[3]) && /^Dépose de plinthes existantes au niveau des couloirs/.test(d[4]) && /^Dépose des portes/.test(d[5]));
+  assert.ok(/^F\/P de tampon/.test(d[6]) && /^Curage du réseau/.test(d[7]));
+  assert.ok(r.articles.filter(a => a.u).length >= 20 && r.articles.filter(a => a.n).length >= 15);   // unités et N° relus à part
+});
+test('grille lue sur l\'image (tableau à traits, GTL) : une rangée par ligne du tableau, cellules séparées, somme = total du document', () => {
+  const g = JSON.parse(fx('benchmark-grille-gtl.json')), total = L.depuisTexte(fx('benchmark-region-gtl-chiffres.txt')).total;
+  const r = L.depuisGrille(g, total);
+  assert.deepStrictEqual(r.colonnes, { n: 0, des: 1, u: 2, qte: 3, pu: 4, montant: 5 });
+  assert.strictEqual(r.articles.length, 13); assert.strictEqual(L.verifierTotal(r.articles, r.total).ok, true);
+  assert.deepStrictEqual(r.articles.filter(a => /forme de pente/.test(a.des)).map(a => [a.qte, a.pu, a.montant]), [[500, 1600, 800000]]);
+  assert.deepStrictEqual(L.depuisGrille([['a']], null).articles, []);
+});

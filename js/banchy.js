@@ -288,26 +288,41 @@ Banchy.Lecture = (function () {
     });
     // désignations : lignes de texte entre deux articles
     var texteLigne = function (i) { return vide(lignes[i].replace(/\t/g, ' ')); };
-    var apres = [];
-    arts.forEach(function (a, k) {
-      var debut = a.ligne + 1, fin = k + 1 < arts.length ? arts[k + 1].ligne : lignes.length, g = [];
-      for (var i = debut; i < fin; i += 1) if (!info[i]) g.push(i);
-      var coupe = g.length, cible = Math.round(g.length / 2);
-      if (k + 1 < arts.length) {
-        var best = -1, bs = -9;
-        for (var c = 0; c <= g.length; c += 1) {
-          var fin = c > 0 && /[.;:]$/.test(texteLigne(g[c - 1])), haut = c < g.length && /^[A-ZÉÈÀÂÊÎÔÛÇ]/.test(texteLigne(g[c]));
-          var sc = c === 0 ? 0.5 : c === g.length ? (fin ? 2 : 0.5) : fin ? (haut ? 2.5 : 2) : haut ? 1 : -1;   // une phrase finie vaut mieux qu'une simple majuscule
-          if (c < g.length && sep[g[c]] && c > 0) sc = 3;
-          if (sc > bs || (sc === bs && Math.abs(c - cible) < Math.abs(best - cible))) { bs = sc; best = c; }
+    // Le N°, l'unité et les prix sont au MILIEU de la cellule : le texte d'une désignation est réparti autant avant qu'après la ligne de son N°. Les lignes d'écart entre deux articles sont donc
+    // coupées en un point choisi pour deux raisons à la fois : la fin d'une phrase / la ligne vide (coût de coupe) et le centrage de chaque article (autant de lignes avant qu'après) ; programmation dynamique.
+    var m = arts.length, gaps = arts.map(function (a, k) { var fin = k + 1 < m ? arts[k + 1].ligne : lignes.length, g = []; for (var i = a.ligne + 1; i < fin; i += 1) if (!info[i]) g.push(i); return { l: g, suivant: k + 1 < m ? arts[k + 1].ligne : -1 }; });
+    var dispo0 = 0; for (var i0 = arts[0] ? arts[0].ligne - 1 : -1; i0 >= 0 && !info[i0] && dispo0 < 12; i0 -= 1) dispo0 += 1;
+    var LAM = 0.5, valeurCoupe = function (g, c) {
+      var gl = g.l, fin = c > 0 && /[.;:]$/.test(texteLigne(gl[c - 1])), haut = c < gl.length && /^[A-ZÉÈÀÂÊÎÔÛÇ]/.test(texteLigne(gl[c])), blanc = c < gl.length ? sep[gl[c]] : (g.suivant >= 0 && sep[g.suivant]);
+      if (blanc) return 8;
+      return c === 0 ? 0.5 : c === gl.length ? (fin ? 4 : 0.5) : fin ? (haut ? 5 : 4) : haut ? 1 : -1;
+    };
+    var coupes = [], dernierAvant = 0;
+    if (m === 1) { arts[0].suite = gaps[0].l.slice(0, Math.min(gaps[0].l.length, dispo0)).map(texteLigne); arts[0].avantNext = []; }
+    else if (m > 1) {
+      var cout = [], pere = [], c, cp, v, meilleur, bp;
+      for (var i = 0; i < m - 1; i += 1) {
+        cout[i] = []; pere[i] = [];
+        for (c = 0; c <= gaps[i].l.length; c += 1) {
+          var cc = -valeurCoupe(gaps[i], c);
+          if (i === 0) { cout[0][c] = cc + LAM * Math.pow(Math.max(0, c - dispo0), 2); pere[0][c] = -1; continue; }
+          meilleur = Infinity; bp = 0;
+          for (cp = 0; cp <= gaps[i - 1].l.length; cp += 1) { v = cout[i - 1][cp] + LAM * Math.pow(c - (gaps[i - 1].l.length - cp), 2); if (v < meilleur) { meilleur = v; bp = cp; } }
+          cout[i][c] = cc + meilleur; pere[i][c] = bp;
         }
-        coupe = best < 0 ? cible : best;
-      } else coupe = Math.min(g.length, k > 0 ? arts[k - 1].avantNext.length : 1);   // dernier article : autant de lignes après son N° que l'article précédent en avait avant (pas le pied de page)
-      a.suite = g.slice(0, coupe).map(texteLigne); a.avantNext = g.slice(coupe).map(texteLigne);
-    });
+      }
+      var dernier = gaps[m - 2].l.length, fin = Infinity, cf = 0, restant = Math.min(gaps[m - 1].l.length, 12);
+      for (c = 0; c <= dernier; c += 1) { v = cout[m - 2][c] + LAM * Math.pow(Math.max(0, (dernier - c) - restant), 2); if (v < fin) { fin = v; cf = c; } }
+      coupes[m - 2] = cf; for (var r = m - 2; r > 0; r -= 1) coupes[r - 1] = pere[r][coupes[r]];
+      dernierAvant = dernier - cf;
+      arts.forEach(function (a, k) {
+        if (k < m - 1) { a.suite = gaps[k].l.slice(0, coupes[k]).map(texteLigne); a.avantNext = gaps[k].l.slice(coupes[k]).map(texteLigne); }
+        else { a.suite = gaps[k].l.slice(0, Math.min(dernierAvant, gaps[k].l.length)).map(texteLigne); a.avantNext = []; }
+      });
+    }
     arts.forEach(function (a, k) {
       var avant = k > 0 ? arts[k - 1].avantNext : [];
-      if (k === 0) { avant = []; for (var i = a.ligne - 1; i >= 0 && !info[i] && avant.length < a.suite.length + 2; i -= 1) avant.unshift(texteLigne(i)); }   // pas plus de lignes avant le 1er article qu'après (le reste est le courrier ou le titre)
+      if (k === 0) { avant = []; for (var i = a.ligne - 1; i >= 0 && !info[i] && avant.length < Math.min(dispo0, a.suite.length + 1); i -= 1) avant.unshift(texteLigne(i)); }   // pas plus de lignes avant le 1er article qu'après (le reste est le courrier ou le titre)
       a.des = vide(avant.concat([a.des], a.suite).join(' ').replace(/[|‘’`´]+/g, ' ').replace(/\s+([.,;])/g, '$1'));
     });
     // l'OCR confond parfois un chiffre du N° (« 93 » pour « 03 ») : la suite 01, 02, ?, 04 corrige ; un prix dont les décimales ne sont pas « ,00 » est à vérifier
@@ -384,6 +399,52 @@ Banchy.Lecture = (function () {
     return o;
   }
 
+  /**
+   * Grille lue sur l'IMAGE d'un tableau à traits (voir AutoDetect, option grille) : lignes = [[cellule, …], …], une rangée par ligne du tableau, une cellule par colonne.
+   * Les rôles des colonnes se déduisent du contenu : montants à 2 décimales (le dernier = montant, l'avant-dernier = prix unitaire ; un seul = prix unitaire), nombres entiers (la plus
+   * proche à gauche du prix = quantité), unités, N° d'article, désignation (la colonne de texte la plus longue). Plus de décalage de lignes : tout le texte d'une cellule reste ensemble.
+   */
+  function nombreCellule(t) {
+    t = vide(chiffresOcr(vide(String(t || '').replace(/[|‘’`´]/g, ' '))));
+    var m = /^((?:\d{1,4}(?:[ .,:;']\d{3})*|\d+))[.,:;]\s?(\d{2})$/.exec(t);
+    if (m) { var v = Number(m[1].replace(/\D/g, '') + '.' + m[2]); return v > 0 ? { v: v, dec: true } : null; }
+    var e = /^\d[\d ]*$/.exec(t); if (e) { var n = Number(t.replace(/\s/g, '')); return n > 0 ? { v: n, dec: false } : null; }
+    var f = /^(\d+)[.,](\d{1,3})$/.exec(t); if (f) return { v: Number(f[1] + '.' + f[2]), dec: false };
+    return null;
+  }
+  function uniteCellule(c) { var u = String(c || '').replace(/[|\[\]\s]/g, ''); return UNITE_OCR.test(u) ? (/^m[?î²2³3]?$/i.test(u) ? 'M2' : u) : ''; }
+  function depuisGrille(lignes, total) {
+    var rows = (lignes || []).map(function (r) { return (r || []).map(function (c) { return vide(c); }); }), m = rows.reduce(function (x, r) { return Math.max(x, r.length); }, 0), k, i;
+    if (rows.length < 3 || m < 3) return { articles: [], total: total || null, mode: 1, grille: true };
+    var col = []; for (k = 0; k < m; k += 1) col.push({ dec: 0, ent: 0, txt: 0, unite: 0, n: 0, plein: 0, long: 0 });
+    rows.forEach(function (r) { r.forEach(function (c, j) { if (!c) return; var x = col[j], nb = nombreCellule(c); x.plein += 1; if (nb && nb.dec) x.dec += 1; else if (nb) x.ent += 1; else { x.txt += 1; x.long += c.length; } if (uniteCellule(c)) x.unite += 1; if (NUM_ARTICLE.test(c.replace(/[|\[\]]/g, '').trim())) x.n += 1; }); });
+    var decs = [], j; for (j = 0; j < m; j += 1) if (col[j].dec >= 3 && col[j].dec / col[j].plein >= 0.5) decs.push(j);
+    if (!decs.length) return { articles: [], total: total || null, mode: 1, grille: true };
+    var puC = decs.length >= 2 ? decs[decs.length - 2] : decs[0], moC = decs.length >= 2 ? decs[decs.length - 1] : -1, qteC = -1, uC = -1, nC = -1, dC = -1;
+    for (j = puC - 1; j >= 0; j -= 1) if (col[j].ent >= 3 && col[j].ent / col[j].plein >= 0.4) { qteC = j; break; }
+    for (j = (qteC >= 0 ? qteC : puC) - 1; j >= 0; j -= 1) if (col[j].unite >= 2) { uC = j; break; }
+    for (j = 0; j < m; j += 1) if (j !== uC && col[j].n >= 3 && col[j].n / col[j].plein >= 0.3 && col[j].long / Math.max(1, col[j].txt) < 12) { nC = j; break; }
+    var best = 0; for (j = 0; j < m; j += 1) if (j !== nC && j !== uC && col[j].long > best) { best = col[j].long; dC = j; }
+    var arts = [];
+    rows.forEach(function (r) {
+      var pu = nombreCellule(r[puC]), mo = moC >= 0 ? nombreCellule(r[moC]) : null, q = qteC >= 0 ? nombreCellule(r[qteC]) : null;
+      if (!pu && !mo) return;
+      var a = { n: nC >= 0 ? r[nC].replace(/[|\[\]]/g, '').trim() : '', des: dC >= 0 ? r[dC].replace(/[|‘’`´]/g, ' ').replace(/\s+/g, ' ').trim() : '', u: uC >= 0 ? uniteCellule(r[uC]) : '', qte: q ? q.v : '', pu: pu ? pu.v : '', montant: mo ? mo.v : '', verifier: false };
+      if (moC >= 0) {   // quantité × prix = montant : le contrôle de chaque ligne, et la réparation du chiffre abîmé
+        if (a.pu !== '' && a.montant !== '' && a.qte === '') { var qd = a.montant / a.pu; if (qd >= 1 && Math.abs(qd - Math.round(qd)) < 0.001) { a.qte = Math.round(qd); a.verifier = true; } else a.verifier = true; }
+        else if (a.pu === '' && a.montant !== '' && a.qte !== '') { var pd = a.montant / a.qte; if (pd >= 1 && Math.abs(pd - Math.round(pd)) < 0.001) { a.pu = Math.round(pd); } a.verifier = true; }
+        else if (a.pu !== '' && a.montant !== '' && a.qte !== '' && !coherent([a.qte, a.pu, a.montant])) {
+          var p2 = a.montant / a.qte; if (p2 >= 1 && Math.abs(p2 - Math.round(p2)) < 0.001 && Math.round(p2) % 50 === 0) a.pu = Math.round(p2);
+          else { var q2 = a.montant / a.pu; if (q2 >= 1 && Math.abs(q2 - Math.round(q2)) < 0.001) a.qte = Math.round(q2); }
+          a.verifier = true;
+        }
+      }
+      if (a.pu === '') a.verifier = true;
+      if (!a.n) a.verifier = a.verifier || false;
+      arts.push(a);
+    });
+    return { articles: arts, total: total || null, mode: moC >= 0 ? 3 : 1, grille: true, colonnes: { n: nC, des: dC, u: uC, qte: qteC, pu: puC, montant: moC } };
+  }
   /** Somme quantité × prix des articles lus comparée au total du document : un écart signale des lignes manquantes ou mal lues. */
   function verifierTotal(articles, total) {
     var somme = (articles || []).reduce(function (t, a) { return t + (Number(a.qte) > 0 && Number(a.pu) > 0 ? Number(a.qte) * Number(a.pu) : 0); }, 0);
@@ -419,7 +480,7 @@ Banchy.Lecture = (function () {
     if (libresO.length && libresO.length === libresL.length) libresO.forEach(function (k, z) { out[k] = { i: libresL[z], methode: 'ordre' }; });
     return out;
   }
-  var api = { _ligne: ligneChiffree, verifierTotal: verifierTotal, nature: nature, depuisTexte: depuisTexte, depuisTableau: depuisTableau, metadonnees: metadonnees, rapprocher: rapprocher, nombre: nombre, segmentations: segmentations };
+  var api = { depuisGrille: depuisGrille, _ligne: ligneChiffree, verifierTotal: verifierTotal, nature: nature, depuisTexte: depuisTexte, depuisTableau: depuisTableau, metadonnees: metadonnees, rapprocher: rapprocher, nombre: nombre, segmentations: segmentations };
   return api;
 })();
 if (typeof module !== 'undefined') module.exports = Banchy;
