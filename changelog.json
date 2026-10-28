@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-28-239",
+    "date": "2026-10-28",
+    "title": "Version 6.21.0 — Rapports journaliers : aperçu avant impression",
+    "changes": [
+      "Journal des rapports : nouveau bouton « 👁 Aperçu » qui montre le rendu exact du document avant de l'imprimer, avec la case « Un agent par page » et un bouton « Imprimer » dans l'aperçu."
+    ]
+  },
+  {
     "id": "2026-10-28-238",
     "date": "2026-10-28",
     "title": "Version 6.20.0 — Logo Banchy",

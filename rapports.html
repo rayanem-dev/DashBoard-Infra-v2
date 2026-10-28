@@ -48,6 +48,12 @@
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives (les rapports ne sont pas enregistrés au-delà de cette session)</div>
 
+<dialog id="dlg-ap" style="margin:auto;border:0;border-radius:16px;padding:16px;width:min(900px,96vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><b style="flex:1">Aperçu avant impression</b>
+    <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ap-ag"> Un agent par page</label>
+    <button class="btn-s" id="ap-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="ap-fermer" type="button">Fermer</button></div>
+  <iframe id="ap-cadre" title="Aperçu du journal" style="width:100%;height:70vh;border:1px solid var(--border);border-radius:8px;background:#fff"></iframe>
+</dialog>
 <dialog id="dlg-hc" style="margin:auto;border:0;border-radius:16px;padding:20px;width:min(520px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
   <h3 style="margin:0 0 4px">Ouvrir un chantier hors contrat</h3>
   <p class="aide" style="margin:0 0 10px">Pour les travaux <b>avant</b> le contrat (préparation) ou <b>après</b> (levée des réserves). Les contrats du Suivi CPM (hors exécution et infructueux) sont proposés. Le chantier s'ouvre tout de suite et se ferme seul à la date de fin (6 mois par défaut).</p>
@@ -99,6 +105,7 @@
       <select id="f-agent" aria-label="Agent"><option value="">Tous les agents</option></select>
       <button class="btn-s" id="b-filtre" type="button" title="Actualise la liste (elle se met aussi à jour toute seule quand vous changez un filtre)">↻ Actualiser</button>
       <button class="btn-s" id="b-imp-j" type="button" title="Imprime les rapports affichés (selon la période, le chantier et l'agent choisis)">🖨 Imprimer</button>
+      <button class="btn-s" id="b-apercu" type="button" title="Voir le rendu du journal avant de l'imprimer">👁 Aperçu</button>
       <button class="btn-s" id="b-imp-ag" type="button" title="Imprime les rapports affichés avec une nouvelle page pour chaque agent">🖨 Un agent par page</button>
     </div>
     <p class="aide" id="j-resume" style="margin:6px 0"></p>
@@ -342,13 +349,26 @@
     '.tete{border-bottom:2.5px solid #F0A030;padding-bottom:6px;margin-bottom:10px}h1{font-size:14pt;margin:0 0 3px}.sous{margin:0;font-size:9pt;color:#333}.ag{break-before:page}.ag:first-of-type{break-before:auto}h2{font-size:12pt;margin:4px 0 8px;background:#FFE9D2;padding:4px 8px}' +
     '.rap{border:1px solid #999;margin:0 0 8px;padding:5px 8px;break-inside:avoid}.rap h3{font-size:10.5pt;margin:0 0 2px}.par{font-size:8.5pt;color:#333;margin-bottom:3px}.bloc{margin:3px 0}ul{margin:2px 0 2px 16px;padding:0}p{margin:2px 0}.diff{color:#8a1c1c}.visa{font-style:italic;font-size:8.5pt}';
   /** Impression dans un cadre isolé (aucune règle de la page ne peut la masquer) : la fenêtre d'impression s'ouvre directement. */
+  function documentJournal(parAgent) {
+    if (!feuilleJournal(parAgent)) return null;
+    return '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Journal des rapports journaliers</title><style>' + CSS_JOURNAL + '</style></head><body><div id="feuille-journal">' + $('feuille-journal').innerHTML + '</div></body></html>';
+  }
   function imprimerJournal(parAgent) {
-    if (!feuilleJournal(parAgent)) { toast('Aucun rapport à imprimer sur cette période.', true); return; }
+    var h = documentJournal(parAgent); if (!h) { toast('Aucun rapport à imprimer sur cette période.', true); return; }
     var cadre = document.createElement('iframe'); cadre.setAttribute('aria-hidden', 'true'); cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
     cadre.onload = function () { try { cadre.contentWindow.focus(); cadre.contentWindow.print(); } catch (e) { toast('Impression impossible : ' + e.message, true); } setTimeout(function () { cadre.remove(); }, 120000); };
-    cadre.srcdoc = '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Journal des rapports journaliers</title><style>' + CSS_JOURNAL + '</style></head><body><div id="feuille-journal">' + $('feuille-journal').innerHTML + '</div></body></html>';
+    cadre.srcdoc = h;
     document.body.appendChild(cadre);
   }
+  /** Aperçu : le même document que l'impression, affiché à l'écran (case « Un agent par page » modifiable). */
+  function apercuJournal() {
+    var h = documentJournal($('ap-ag').checked); if (!h) { toast('Aucun rapport à afficher sur cette période.', true); return false; }
+    $('ap-cadre').srcdoc = h.replace('<body>', '<body style="padding:12px 16px">'); return true;
+  }
+  $('b-apercu').addEventListener('click', function () { $('ap-ag').checked = false; if (apercuJournal()) $('dlg-ap').showModal(); });
+  $('ap-ag').addEventListener('change', apercuJournal);
+  $('ap-imp').addEventListener('click', function () { imprimerJournal($('ap-ag').checked); });
+  $('ap-fermer').addEventListener('click', function () { $('dlg-ap').close(); });
   window.addEventListener('afterprint', function () { document.body.classList.remove('imprime-journal'); });
   ['du', 'au', 'f-chantier'].forEach(function (id) { $(id).addEventListener('change', journal); });   // la liste se met à jour toute seule
   $('f-agent').addEventListener('change', function () { dessinerJournal(false); });
