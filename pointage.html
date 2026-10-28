@@ -60,15 +60,15 @@
       <label class="l" for="f-du">Semaine du</label><input type="date" id="f-du">
       <p class="note" id="au"></p>
       <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-raz" type="button">Effacer les croix</button></div>
-      <label class="l" style="display:flex;gap:6px;align-items:center;text-transform:none;font-size:12.5px;letter-spacing:0"><input type="checkbox" id="o-masque" style="width:auto"> Masquer les personnes absentes toute la semaine (repos, absence)</label>
-      <label class="l" style="margin-top:8px">Jours de présence des ateliers et des personnes sans planning</label>
+      <label class="l" style="display:flex;gap:6px;align-items:center;text-transform:none;font-size:12.5px;letter-spacing:0"><input type="checkbox" id="o-masque" style="width:auto"> Ne lister que les présents ou rentrants de la semaine (planning)</label>
+      <label class="l" style="margin-top:8px">Jours de présence des ateliers et personnes sans planning (pour les lister)</label>
       <div id="o-jours" style="display:flex;gap:6px;flex-wrap:wrap;font-size:12.5px"></div>
       <p class="note" id="o-info"></p>
       <p class="note">Sur l'écran, un clic sur une case marque une croix (✓) ; elle s'imprime. Les cases vides se remplissent à la main.</p>
     </div>
     <div class="bloc eff">
       <h2>👥 Effectif de la division</h2>
-      <p class="note" style="margin-top:0">Les présents viennent du <b>planning</b> : une personne ayant une rotation est cochée automatiquement les jours de travail (un clic sur une case annule ou ajoute une croix). Les <b>ateliers et leurs techniciens</b> (Section Construction et Section Électricité de BDDORGA) n'ont pas de planning : ils arrivent seuls dans le groupe « hors planning », leurs cases se cochent à la main. Noms et fonctions viennent de BDDORGA ; décochez une personne absente cette semaine.</p>
+      <p class="note" style="margin-top:0">La feuille reste <b>vide</b> (à cocher à la main). Y figurent les personnes présentes ou qui rentrent pendant la semaine choisie, d'après le <b>planning</b> ; celles en repos ou absentes toute la semaine sont masquées. Les <b>ateliers et leurs techniciens</b> (Section Construction et Section Électricité de BDDORGA) n'ont pas de planning : ils arrivent seuls dans le groupe « hors planning » et sont toujours listés. Noms et fonctions viennent de BDDORGA ; décochez une personne à ne pas lister.</p>
       <div id="effectif"></div>
       <button class="btn-s" id="b-eff" type="button" style="margin-top:10px">Rétablir l'effectif de départ</button>
     </div>
@@ -179,7 +179,7 @@
     [{ m: 'M', cls: 'matin', lib: 'MATIN' }, { m: 'S', cls: 'soir', lib: 'APRÈS-MIDI' }].forEach(function (per) {
       eff.forEach(function (g) {
         var lignes = g.l.filter(function (x) { return x.actif; });
-        if (OPT.masque && planPret) lignes = lignes.filter(function (x) { var vue = [0, 1, 2, 3, 4, 5, 6].some(function (i) { var k = du + '|' + x.nom + '|' + plus(du, i), pr = presumee(x, g, du, i); return coche(k + 'M', pr) || coche(k + 'S', pr); }); if (!vue && per.m === 'M') masquees += 1; return vue; });
+        if (OPT.masque && planPret) lignes = lignes.filter(function (x) { var vue = [0, 1, 2, 3, 4, 5, 6].some(function (i) { return presumee(x, g, du, i); }); if (!vue && per.m === 'M') masquees += 1; return vue; });
         if (!lignes.length) return;
         html += '<div class="page ' + per.cls + '"><div class="periode"><img src="badges/logo-sonatrach.png" alt="Sonatrach"><div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure</div><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
           '<div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
@@ -187,11 +187,11 @@
           jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
           lignes.map(function (x) {
             var a = affiche(x);
-            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '" data-a="' + (presumee(x, g, du, jours.indexOf(j)) ? 1 : 0) + '">' + (coche(k, presumee(x, g, du, jours.indexOf(j))) ? '✓' : '') + '</td>'; }).join('') + '</tr>';
+            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '" data-a="' + 0 + '">' + (coche(k, false) ? '✓' : '') + '</td>'; }).join('') + '</tr>';
           }).join('') + '</tbody></table></div>';
       });
     });
-    $('o-info').textContent = masquees ? masquees + ' personne(s) absente(s) toute la semaine ne figurent pas sur la feuille (décochez l\'option pour les voir).' : '';
+    $('o-info').textContent = masquees ? masquees + ' personne(s) en repos ou absente(s) toute la semaine ne figurent pas sur la feuille (décochez l\'option pour les voir).' : '';
     $('feuilles').innerHTML = html || '<p style="padding:20px">Aucune personne dans l\'effectif.</p>';
     // lignes agrandies pour remplir la page : recalculé à chaque ajout, retrait ou (dé)cochage d'une personne
     $('feuilles').querySelectorAll('.page').forEach(function (pg) {

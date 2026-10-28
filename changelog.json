@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-226",
+    "date": "2026-10-28",
+    "title": "Version 6.14.2 — Feuille de pointage : feuille vide, liste des présents et rentrants",
+    "changes": [
+      "La feuille de pointage s'imprime de nouveau vide (plus aucune croix pré-cochée) : le planning ne sert qu'à choisir qui y figure.",
+      "Y figurent les personnes présentes ou qui rentrent pendant la semaine choisie ; celles en repos ou absentes toute la semaine sont masquées (option). Les ateliers et techniciens hors planning sont toujours listés."
+    ]
+  },
+  {
     "id": "2026-10-28-225",
     "date": "2026-10-28",
     "title": "Version 6.14.1 — Feuille de pointage : seuls les présents, cases cochées par défaut",
