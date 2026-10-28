@@ -260,6 +260,14 @@ var SEED_APPS = [
   1
  ],
  [
+  "benchmark",
+  "Benchmark des prix",
+  "Normativité des prix : saisissez l'offre reçue et les prix des autres régions sur des contrats comparables ; l'outil actualise les prix, calcule la référence, l'écart par article et l'écart global pondéré, puis imprime ou exporte vers Excel.",
+  "⚖️",
+  "benchmark.html",
+  1
+ ],
+ [
   "cpm",
   "Passation des Contrats — Outils CPM",
   "Portail Sonatrach Activité EP dédié à la passation des marchés : suivi et gestion des dossiers de contrats au niveau national.",
@@ -539,6 +547,26 @@ function ajouterCarteStatsSt_() {
   try { ajouterApplicationsManquantes(); props.setProperty('CARTE_STATS_ST_V1', '1'); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera à la requête suivante */ }
 }
 
+
+/** Une seule fois : crée le module « benchmark » (droits par défaut des rangs 0 à 8), ajoute la carte « Benchmark des prix » et la range dans Marchés, visible du rang Ingénieur au Secrétariat. */
+function ajouterCarteBenchmark_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('CARTE_BENCHMARK_V1') === '1') return;
+  try {
+    ajouterModuleBenchmark();
+    ajouterApplicationsManquantes();
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String);
+    var iT = h.indexOf('titre'), iR = h.indexOf('rubrique'), iV = h.indexOf('vision');
+    for (var i = 1; i < v.length; i += 1) {
+      if (String(v[i][iT]) !== 'Benchmark des prix') continue;
+      if (iR >= 0 && !v[i][iR]) sh.getRange(i + 1, iR + 1).setValue('marches');
+      if (iV >= 0 && !v[i][iV]) sh.getRange(i + 1, iV + 1).setValue('ingenieur');
+      break;
+    }
+    props.setProperty('CARTE_BENCHMARK_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
 
 /** Une seule fois : la carte « Affectation Véhicule – Division Infra » (lien vers une feuille Google) ouvre désormais la page du portail vehicules.html. */
 function migrerAffectationVehicule_() {

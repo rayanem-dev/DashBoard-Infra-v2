@@ -186,6 +186,10 @@ function route_(req) {
     case 'stats_st_maj': return statsStMaj_(req);
     case 'stats_st_supprimer': return statsStSupprimer_(req);
     case 'stats_st_ajouter': return statsStAjouter_(req);
+    case 'benchmark_liste': return benchmarkListe_(req);
+    case 'benchmark_lire': return benchmarkLire_(req);
+    case 'benchmark_enregistrer': return benchmarkEnregistrer_(req);
+    case 'benchmark_supprimer': return benchmarkSupprimer_(req);
     case 'pointage_effectif': { Auth.userFromToken(req.token); if ((acces_(Auth.userFromToken(req.token)).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' }); return { groupes: POINTAGE_EFFECTIF }; }   // effectif de la division : réservé aux personnes connectées ayant le module planning
     case 'annuaire_fiches': { Auth.userFromToken(req.token); return { groupes: ANNUAIRE_DATA.groupes, rows: ANNUAIRE_DATA.rows }; }   // fiches contact : réservées aux personnes connectées (le fichier n'est plus publié sur le site)
     case 'cpm_journal': return cpmJournalListe_(req);

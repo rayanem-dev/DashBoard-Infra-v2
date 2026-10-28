@@ -49,6 +49,21 @@ function ajouterModuleSimulation() {
   Logger.log('Module simulation prêt (' + nouveaux.length + ' droit(s) ajouté(s)).');
 }
 
+// Module « benchmark » : 1 = consulter · 2 = créer / modifier · 3 = supprimer. Rangs 0 à 8 de l'échelle des rôles (du secrétariat à l'ingénieur) ; le rôle « ingénieur » s'ouvre dans Privilèges.
+var DROITS_BENCHMARK_ = [['secretariat', 'benchmark', 3], ['chef_division', 'benchmark', 3], ['cadre_sup', 'benchmark', 2], ['chef_service', 'benchmark', 2], ['interim_chef_service', 'benchmark', 2],
+  ['cpm', 'benchmark', 3], ['ordonnateur', 'benchmark', 1], ['chef_atelier', 'benchmark', 2]];
+/** Crée le module « benchmark » et ses droits par défaut s'ils n'existent pas (ne touche jamais aux réglages existants). */
+function ajouterModuleBenchmark() {
+  var db = SpreadsheetApp.openById(prop_('DB_ID'));
+  var mo = db.getSheetByName('Modules');
+  if (!mo.getDataRange().getValues().slice(1).some(function (l) { return String(l[0]).toLowerCase() === 'benchmark'; })) mo.appendRow(['benchmark', 'Benchmark des prix', '⚖️', 10, 1]);
+  var dr = db.getSheetByName('DroitsRole'), v = dr.getDataRange().getValues().slice(1);
+  var nouveaux = DROITS_BENCHMARK_.filter(function (r) { return !v.some(function (l) { return Droits.roleCanon(l[0]) === r[0] && String(l[1]).toLowerCase() === 'benchmark'; }); });
+  if (nouveaux.length) dr.getRange(dr.getLastRow() + 1, 1, nouveaux.length, 3).setValues(nouveaux);
+  CacheService.getScriptCache().removeAll(['TBL_Modules', 'TBL_DroitsRole']);
+  Logger.log('Module benchmark prêt (' + nouveaux.length + ' droit(s) ajouté(s)).');
+}
+
 // Module « affectation » : niveau 3 = tout le personnel (chef de division, secrétariat). Le niveau 2 (son service) s'accorde dans Privilèges.
 var DROITS_AFFECTATION_ = [['chef_division', 'affectation', 3], ['secretariat', 'affectation', 3]];
 function ajouterModuleAffectation() {
@@ -220,6 +235,7 @@ function preparerSimulation_() {
   if (typeof migrerPriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerPriseEnCharge_();
   if (typeof retablirGenerateurTransport_ === 'function' && props.getProperty('SIMU_PRET') === '1') retablirGenerateurTransport_();
   if (typeof ajouterCarteStatsSt_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteStatsSt_();
+  if (typeof ajouterCarteBenchmark_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteBenchmark_();
   if (typeof migrerIconePriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerIconePriseEnCharge_();
   if (typeof renommerReservationVol_ === 'function' && props.getProperty('SIMU_PRET') === '1') renommerReservationVol_();
   if (typeof migrerAffectationVehicule_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerAffectationVehicule_();
@@ -334,6 +350,7 @@ function mettreAJourStructure() {
   ajouterDroitsParDefaut();
   ajouterModuleSimulation();
   ajouterModuleAffectation();
+  ajouterModuleBenchmark();
   ajouterChantiersParDefaut();
   rangerCartes();
 }
