@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-223",
+    "date": "2026-10-28",
+    "title": "Version 6.13.0 — Feuille de pointage : présents repris du planning",
+    "changes": [
+      "La feuille de pointage coche automatiquement les jours de travail du planning pour chaque personne qui a une rotation (matin et après-midi) ; un clic sur une case annule la croix du planning ou en ajoute une.",
+      "Les ateliers et leurs techniciens, qui n'ont pas de planning, ont leur groupe « Ateliers et techniciens (hors planning) » : leurs cases se cochent à la main. Une personne de l'effectif sans rotation est signalée « pas de planning »."
+    ]
+  },
+  {
     "id": "2026-10-28-222",
     "date": "2026-10-28",
     "title": "Version 6.12.1 — Nouveau rôle « Ingénieur »",
