@@ -79,7 +79,7 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var CLE = 'pointage_effectif', CLE_X = 'pointage_croix';
+  var CLE = 'pointage_effectif2', CLE_X = 'pointage_croix';
   // Effectif de la division (fiche de pointage d'origine) : seules ces personnes sont concernées ; la fonction est celle de BDDORGA quand elle y figure
   var DEPART = [];   // effectif : servi par la passerelle après connexion (action pointage_effectif)
   var JOURS = 7, MOIS = ['JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
@@ -92,9 +92,10 @@
   function jetons(s) { return norm(s).split(' ').filter(Boolean); }
 
   // ----- effectif (modifiable, gardé sur cet ordinateur) -----
-  function depart() { return DEPART.filter(function (g) { return !g.hp; }).map(function (g) { return { t: g.t, l: g.l.map(function (x) { return { nom: x[0], fonction: x[1], actif: true }; }) }; }); }
+  function depart() { var l = []; DEPART.forEach(function (g) { if (!g.hp) g.l.forEach(function (x) { l.push({ nom: x[0], fonction: x[1], actif: true }); }); }); return groupes(l, []); }   // repli : l'ancienne liste fixe, sans catégories
+  function groupes(s, p) { return [{ id: 'S', t: 'SONATRACH (recto)', l: s }, { id: 'P', t: 'Prestataires (verso)', l: p }]; }
   var eff; try { eff = JSON.parse(localStorage.getItem(CLE) || 'null'); } catch (e) { eff = null; } if (!Array.isArray(eff)) eff = [];
-  eff = eff.filter(function (g) { return !g.hp; });
+  if (!eff.every(function (g) { return g.id === 'S' || g.id === 'P'; })) eff = [];
   function sauverEff() { try { localStorage.setItem(CLE, JSON.stringify(eff)); } catch (e) { /* stockage indisponible */ } }
   // ----- présents d'après le planning (utilisés seulement par « Importer l'effectif présent ») -----
   var plan = [];
@@ -104,28 +105,36 @@
   }
   function lirePlanning() { return window.Api ? Api.call('planning', { debut: $('f-du').value, jours: JOURS }).then(function (r) { plan = r.lignes || []; }) : Promise.resolve(); }
   function purgerCroix() { var du = $('f-du').value; Object.keys(croix).forEach(function (k) { if (k.indexOf(du + '|') === 0) delete croix[k]; }); }
-  function importerTout() { purgerCroix(); sauverX(); listeDe($('f-du').value); eff = depart(); sauverEff(); dessinerEff(); feuilles(); toast(eff.reduce(function (n, g) { return n + g.l.length; }, 0) + ' personne(s) importée(s)'); }
-  // présents = les agents SONATRACH du planning qui ont au moins un jour de travail dans la semaine (rentrants compris), rangés par service
+  function estSonatrach(l) { return norm(l.dependance || 'sonatrach') === 'sonatrach'; }
+  function personne(l) { return { nom: l.nom, fonction: (estSonatrach(l) ? '' : String(l.dependance || '').trim() + (l.fonction ? ' · ' : '')) + (l.fonction || ''), actif: true }; }
+  function trier(a) { return a.sort(function (x, y) { return x.nom < y.nom ? -1 : 1; }); }
+  function importerTout() {
+    var du = $('f-du').value;
+    lirePlanning().then(function () {
+      var s = [], pr = []; plan.forEach(function (l) { (estSonatrach(l) ? s : pr).push(personne(l)); });
+      eff = groupes(trier(s), trier(pr)); finImport(du, s.length + pr.length + ' personne(s) importée(s)', true);
+    }).catch(function () { eff = depart(); finImport(du, 'Planning indisponible : ancienne liste de la division reprise', true); });
+  }
+  function finImport(du, msg, effacer) { if (effacer) purgerCroix(); listeDe(du); sauverX(); sauverEff(); dessinerEff(); feuilles(); toast(msg); }
+  // présents = ceux du planning qui travaillent au moins un jour de la semaine (rentrants compris) : agents SONATRACH au recto, prestataires (ACOSCO, GTP…) au verso
   function importerPresents(silencieux) {
     var du = $('f-du').value;
     return lirePlanning().then(function () {
-      purgerCroix(); var n = 0, par = {}, ordre = [];
+      purgerCroix(); var s = [], pr = [];
       plan.forEach(function (l) {
-        if (!l.configuree || !l.grille || norm(l.dependance || 'sonatrach') !== 'sonatrach') return;
+        if (!l.configuree || !l.grille) return;
         var jours = []; for (var i = 0; i < JOURS; i += 1) if (l.grille.charAt(i) === 'T') jours.push(i);
         if (!jours.length) return;
-        var t = String(l.service || '').trim() || 'Autres'; if (!par[t]) { par[t] = []; ordre.push(t); }
         jours.forEach(function (i) { croix[du + '|' + l.nom + '|' + plus(du, i) + 'M'] = 1; croix[du + '|' + l.nom + '|' + plus(du, i) + 'S'] = 1; });
-        par[t].push({ nom: l.nom, fonction: l.fonction || '', actif: true }); n += 1;
+        (estSonatrach(l) ? s : pr).push(personne(l));
       });
-      eff = ordre.sort().map(function (t) { par[t].sort(function (a, b) { return a.nom < b.nom ? -1 : 1; }); return { t: t, l: par[t] }; });
-      listeDe(du); sauverX(); sauverEff(); dessinerEff(); feuilles();
-      if (!silencieux || !n) toast(n ? n + ' présent(s) importé(s) du planning' : 'Aucun présent dans le planning cette semaine', !n);
+      eff = groupes(trier(s), trier(pr)); listeDe(du); sauverX(); sauverEff(); dessinerEff(); feuilles();
+      var n = s.length + pr.length; if (!silencieux || !n) toast(n ? s.length + ' agent(s) Sonatrach et ' + pr.length + ' prestataire(s) présent(s) ou à venir' : 'Aucun présent dans le planning cette semaine', !n);
     }).catch(function () { if (!silencieux) toast('Planning indisponible : utilisez « Importer tout le personnel »', true); });
   }
   // la liste est refaite toute seule à l'ouverture et au changement de semaine ; une liste déjà établie pour cette semaine est conservée (ajouts et retraits manuels)
-  function listeDe(du) { try { localStorage.setItem('pointage_semaine', du); } catch (e) { /* rien */ } }
-  function auto() { var du = $('f-du').value, vu = ''; try { vu = localStorage.getItem('pointage_semaine') || ''; } catch (e) { /* rien */ } if (du && vu !== du && window.Api) importerPresents(true); }
+  function listeDe(du) { try { localStorage.setItem('pointage_semaine2', du); } catch (e) { /* rien */ } }
+  function auto() { var du = $('f-du').value, vu = ''; try { vu = localStorage.getItem('pointage_semaine2') || ''; } catch (e) { /* rien */ } if (du && vu !== du && window.Api) importerPresents(true); }
   // nom et fonction de BDDORGA : une personne de l'effectif est rapprochée de BDDORGA quand tous les mots de son nom s'y retrouvent (ordre libre)
   var annuaire = [];
   function rapprocher(p) {
@@ -136,7 +145,7 @@
     return tous[0];
   }
   function affiche(p) { var a = rapprocher(p); return { nom: a && a.nom ? a.nom : p.nom, fonction: a && a.fonction ? a.fonction : p.fonction }; }
-  function appliquerDepart(g) { DEPART = g || []; var vu = ''; try { vu = localStorage.getItem('pointage_semaine') || ''; } catch (e) { /* rien */ } if (!eff.length && !vu) { eff = depart(); sauverEff(); } dessinerEff(); feuilles(); }
+  function appliquerDepart(g) { DEPART = g || []; }
   if (window.Api) Api.call('pointage_effectif').then(function (r) { appliquerDepart(r.groupes); }).catch(function () { /* sans la liste de départ : l'effectif enregistré dans ce navigateur, ou à saisir à la main */ });
   if (window.Api) Api.call('annuaire_personnes').then(function (r) { annuaire = (r.personnes || []).filter(function (p) { return p.nom; }); dessinerEff(); feuilles(); }).catch(function () { /* sans annuaire : noms et fonctions de la fiche d'origine */ });
 
@@ -174,22 +183,25 @@
   // ----- feuilles : une page par groupe, comme la fiche d'origine -----
   function feuilles() {
     var du = $('f-du').value || iso(new Date()), au = plus(du, JOURS - 1), p = du.split('-');
-    $('au').textContent = 'Au ' + fr(au) + ' (7 jours) : 2 pages pour le matin, puis 2 pages pour l\'après-midi.';
+    $('au').textContent = 'Au ' + fr(au) + ' (7 jours) : recto = agents Sonatrach, verso = prestataires ; le matin, puis l\'après-midi.';
     var jours = []; for (var i = 0; i < JOURS; i += 1) jours.push(plus(du, i));
     var html = '', JS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+    var PAR = 15, cote = [{ id: 'S', lib: 'SONATRACH' }, { id: 'P', lib: 'PRESTATAIRES' }];
+    var morceaux = {}; cote.forEach(function (c) { var g = eff.filter(function (x) { return x.id === c.id; })[0], a = g ? g.l.filter(function (x) { return x.actif; }) : [], m = []; for (var k0 = 0; k0 < a.length; k0 += PAR) m.push(a.slice(k0, k0 + PAR)); morceaux[c.id] = m; });
+    var nb = Math.max(morceaux.S.length, morceaux.P.length);
+    var page = function (per, c, lignes, suite) {
+      return '<div class="page ' + per.cls + '"><div class="periode"><img src="badges/logo-sonatrach.png" alt="Sonatrach"><div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure</div><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
+        '<div class="titre">Fiche de pointage — ' + c.lib + (suite ? ' (suite)' : '') + ' — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
+        '<table><colgroup><col style="width:52mm"><col style="width:68mm">' + jours.map(function () { return '<col>'; }).join('') + '</colgroup><thead><tr><th>Nom et Prénom</th><th>Fonction</th>' +
+        jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        lignes.map(function (x) {
+          var a = affiche(x);
+          return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '">' + (coche(k) ? '✓' : '') + '</td>'; }).join('') + '</tr>';
+        }).join('') + '</tbody></table></div>';
+    };
+    // recto = agents SONATRACH, verso = prestataires : la i-ème page de l'un est au dos de la i-ème page de l'autre
     [{ m: 'M', cls: 'matin', lib: 'MATIN' }, { m: 'S', cls: 'soir', lib: 'APRÈS-MIDI' }].forEach(function (per) {
-      eff.forEach(function (g) {
-        var lignes = g.l.filter(function (x) { return x.actif; });
-        if (!lignes.length) return;
-        html += '<div class="page ' + per.cls + '"><div class="periode"><img src="badges/logo-sonatrach.png" alt="Sonatrach"><div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure</div><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
-          '<div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
-          '<table><colgroup><col style="width:52mm"><col style="width:68mm">' + jours.map(function () { return '<col>'; }).join('') + '</colgroup><thead><tr><th>Nom et Prénom</th><th>Fonction</th>' +
-          jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-          lignes.map(function (x) {
-            var a = affiche(x);
-            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '" ">' + (coche(k) ? '✓' : '') + '</td>'; }).join('') + '</tr>';
-          }).join('') + '</tbody></table></div>';
-      });
+      for (var n = 0; n < nb; n += 1) cote.forEach(function (c) { html += page(per, c, morceaux[c.id][n] || [], n > 0); });
     });
     $('feuilles').innerHTML = html || '<p style="padding:20px">Aucune personne dans l\'effectif.</p>';
     // lignes agrandies pour remplir la page : recalculé à chaque ajout, retrait ou (dé)cochage d'une personne
