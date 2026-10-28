@@ -50,7 +50,7 @@
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
         { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' },
-        { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: '⚖️', url: 'benchmark.html' } ] },
+        { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: 'img/icones/banchy-96.png', url: 'benchmark.html' } ] },
       { id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 2, apps: [
         { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
       { id: 'simulation', titre: 'Simulation de planning', icone: '🧪', niveau: 3, apps: [
@@ -92,7 +92,7 @@
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
         { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' },
-        { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: '⚖️', url: 'benchmark.html' } ] }
+        { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: 'img/icones/banchy-96.png', url: 'benchmark.html' } ] }
     ]
   };
   DEMO_MENU.secretariat = DEMO_MENU.chef_division;

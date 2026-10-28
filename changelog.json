@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-238",
+    "date": "2026-10-28",
+    "title": "Version 6.20.0 — Logo Banchy",
+    "changes": [
+      "Le Benchmark des prix prend le logo de Banchy : dans l'en-tête de la page, sur l'onglet du navigateur, sur la carte et dans le menu (à la place de l'emoji), et sur le document imprimé.",
+      "Banchy est présenté comme « outil de comparaison et de benchmark financier »."
+    ]
+  },
+  {
     "id": "2026-10-28-237",
     "date": "2026-10-28",
     "title": "Version 6.19.2 — Banchy : fin du décalage des désignations, unités et N° relus",

@@ -262,8 +262,8 @@ var SEED_APPS = [
  [
   "benchmark",
   "Benchmark des prix",
-  "Normativité des prix : saisissez l'offre reçue et les prix des autres régions sur des contrats comparables ; l'outil actualise les prix, calcule la référence, l'écart par article et l'écart global pondéré, puis imprime ou exporte vers Excel.",
-  "⚖️",
+  "Banchy : normativité des prix. Saisissez ou faites lire (PDF, scan, Excel) l'offre reçue et les prix des autres régions sur des contrats comparables ; l'outil actualise les prix, calcule la référence, l'écart par article et l'écart global pondéré, puis imprime ou exporte vers Excel.",
+  "img/icones/banchy-96.png",
   "benchmark.html",
   1
  ],
@@ -564,6 +564,18 @@ function ajouterCarteBenchmark_() {
       break;
     }
     props.setProperty('CARTE_BENCHMARK_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+/** Une seule fois : la carte « Benchmark des prix » prend le logo Banchy (image du site) à la place de l'emoji ⚖️. */
+function migrerIconeBanchy_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('BANCHY_ICONE_V1') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iE = h.indexOf('emoji');
+    for (var i = 1; i < v.length; i += 1) if (String(v[i][iT]) === 'Benchmark des prix') sh.getRange(i + 1, iE + 1).setValue('img/icones/banchy-96.png');
+    props.setProperty('BANCHY_ICONE_V1', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }
