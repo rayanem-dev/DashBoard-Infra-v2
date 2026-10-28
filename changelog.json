@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-231",
+    "date": "2026-10-28",
+    "title": "Version 6.17.0 — Banchy lit les offres : PDF, scan et Excel",
+    "changes": [
+      "Benchmark des prix : le moteur, baptisé « Banchy » et conservé dans la bibliothèque lib, lit maintenant les fichiers. « Lire un fichier » reconnaît dans un PDF (texte ou scan), une photo ou un Excel les articles, unités, quantités et prix unitaires de l'offre ; pour une région, il lit le contrat, l'année, le n° de courrier et les prix, et les met en face des articles de l'offre (par N°, puis par désignation, puis par ordre).",
+      "Un ancien tableau Excel de benchmark (colonnes de prix de plusieurs régions) est relu en une fois. Une fenêtre de vérification s'affiche avant chaque import : un scan lu par OCR peut contenir des chiffres faux."
+    ]
+  },
+  {
     "id": "2026-10-28-230",
     "date": "2026-10-28",
     "title": "Version 6.16.0 — Feuille de pointage : recto Sonatrach, verso prestataires",
