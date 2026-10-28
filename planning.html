@@ -197,7 +197,7 @@
       }
       tr.appendChild(n);
       var s = l.situation, et = null;
-      if (!l.configuree || !s) { et = ['Non configuré']; et.libre = true; }
+      if (!l.configuree || !s) { et = [l.hors_planning ? 'Hors planning' : 'Non configuré']; et.libre = true; }
       else if (s.avant) { et = ['Débute le ' + Rotation.frDate(s.debut)]; et.libre = true; }
       else {
         var r = s.restants + ' restant' + (s.restants > 1 ? 's' : '');
