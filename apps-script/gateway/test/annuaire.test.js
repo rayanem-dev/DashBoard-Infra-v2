@@ -53,7 +53,7 @@ test('SÉCURITÉ : aucun mot de passe n\'est recopié ; le NIN (18 chiffres) est
   for (const secret of ['MOT-DE-PASSE-SECRET']) assert.ok(!j.includes(secret), secret);
   assert.strictEqual(Annuaire.lire(SRC).personnes[0].nin, NUM);
   assert.strictEqual(Annuaire.lire(SRC).personnes[0].nom, 'DURAND MARIE');
-  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['actif', 'civilite', 'date_integration', 'dependance', 'email', 'email_contact', 'fonction', 'ligne', 'matricule', 'nin', 'nom', 'nomDeduit', 'role', 'sap', 'service', 'sona', 'telephone', 'wifi_user']);
+  assert.deepStrictEqual(Object.keys(Annuaire.lire(SRC).personnes[0]).sort(), ['actif', 'civilite', 'date_integration', 'dependance', 'email', 'email_contact', 'fonction', 'ligne', 'matricule', 'nin', 'nom', 'nomDeduit', 'role', 'sap', 'section', 'service', 'sona', 'telephone', 'wifi_user']);
 });
 
 // ----- Ancienne disposition (nom puis numéro côte à côte après « dépendance ») : doit marcher aussi
@@ -208,4 +208,21 @@ test('lignes fantômes : doublons d\'une personne déjà présente avec e-mail ;
   const f = JSON.parse(JSON.stringify(Annuaire.fantomes(users)));
   assert.deepStrictEqual(f.doublons.map(d => [d.ligne, d.avec]), [[3, 'yasser.aries@sonatrach.dz'], [5, 'lamine.fartass@sonatrach.dz']]);
   assert.deepStrictEqual(f.seuls.map(d => d.nom), ['MAHALOU IBRAHIM']);
+});
+
+test('hors planning : Section Construction et Section Électricité (ateliers et techniciens), avec ou sans « Section », accents et casse ignorés', () => {
+  const A = require('../Annuaire.gs');
+  ['Section Construction', 'SECTION ÉLECTRICITÉ', 'section electricite', 'Électricité', 'construction', '  Section  Construction '].forEach(s => assert.strictEqual(A.horsPlanning(s), true, s));
+  ['', null, 'Section Froid', 'Service Construction', 'Travaux Entretien'].forEach(s => assert.strictEqual(A.horsPlanning(s), false, String(s)));
+});
+test('la colonne « Section » de BDDORGA est lue, reprise dans Utilisateurs et créée à l\'écriture', () => {
+  const A = require('../Annuaire.gs'); global.Annuaire = A; const U = require('../UtilisateursBDDORGA.gs');
+  const v = [['Nom', 'E-Mail', 'Service', 'Fonction', 'Section'], ['DUPONT Jean', 'j.dupont@sonatrach.dz', 'Service Construction', 'Technicien', 'Section Construction'], ['MARTIN Paul', 'p.martin@sonatrach.dz', 'Service Construction', 'Chef', '']];
+  const lu = A.lire(v), col = A.colonnes(v);
+  assert.strictEqual(lu.personnes[0].section, 'Section Construction'); assert.strictEqual(lu.personnes[1].section, '');
+  const us = U.construire(lu, col, [], e => 'u-' + e);
+  assert.strictEqual(us[0].section, 'Section Construction');
+  const sans = [['Nom', 'E-Mail', 'Service'], ['DUPONT Jean', 'j.dupont@sonatrach.dz', 'S']];
+  const plan = U.planEcriture(sans, 'j.dupont@sonatrach.dz', { section: 'Section Électricité' }, {});
+  assert.strictEqual(plan.ecritures[0].entete, 'Section'); assert.strictEqual(plan.ecritures[0].valeur, 'Section Électricité');
 });

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-28-224",
+    "date": "2026-10-28",
+    "title": "Version 6.14.0 — « Hors planning » défini dans BDDORGA (Section Construction, Section Électricité)",
+    "changes": [
+      "BDDORGA a désormais une colonne « Section » (créée automatiquement à la première écriture) : « Section Construction » et « Section Électricité » désignent les ateliers et leurs techniciens, qui n'ont pas de rotation dans le planning. La règle est unique et sert à toutes les applications.",
+      "Feuille de pointage : le groupe « Ateliers et techniciens (hors planning) » se remplit tout seul depuis BDDORGA (les personnes ajoutées à la main restent) ; leurs cases se cochent à la main.",
+      "Planning : ces personnes sont indiquées « Hors planning » au lieu de « Non configuré »."
+    ]
+  },
+  {
     "id": "2026-10-28-223",
     "date": "2026-10-28",
     "title": "Version 6.13.0 — Feuille de pointage : présents repris du planning",

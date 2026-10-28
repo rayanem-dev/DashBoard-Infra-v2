@@ -4,13 +4,13 @@
  * Activation : propriété de script UTILISATEURS_SOURCE = « bddorga » (fonctions activerBDDORGADirect / desactiverBDDORGADirect).
  * Sans cette propriété, rien ne change. En cas d'échec de lecture de BDDORGA, la passerelle retombe sur l'ancienne table (personne n'est bloqué).
  *
- * Colonnes ajoutées à droite de BDDORGA par la migration : « Rôle », « Actif », « E-mail de contact », « Civilité ».
+ * Colonnes ajoutées à droite de BDDORGA par la migration : « Rôle », « Actif », « E-mail de contact », « Civilité », « Section ».
  * Quand une de ces colonnes existe dans BDDORGA, elle fait foi (vide = pas de rôle / actif / pas d'adresse de contact).
  * Les mots de passe et leurs empreintes ne sont JAMAIS dans BDDORGA : ils restent dans Gateway_Secrets.
  * Les personnes présentes seulement dans l'ancienne table (avec e-mail) sont conservées (marquées horsBDDORGA) pour ne verrouiller aucun compte.
  */
 var UBD = (function () {
-  var ENTETES = { role: 'Rôle', actif: 'Actif', email_contact: 'E-mail de contact', civilite: 'Civilité' };
+  var ENTETES = { role: 'Rôle', actif: 'Actif', email_contact: 'E-mail de contact', civilite: 'Civilité', section: 'Section' };
   var DIRECTS = ['nom', 'matricule', 'service', 'fonction', 'dependance', 'telephone', 'sona', 'date_integration', 'wifi_user', 'sap', 'nin'];
 
   function actifDe(v, defaut) {
@@ -34,6 +34,7 @@ var UBD = (function () {
       o.actif = idx.actif >= 0 ? actifDe(p.actif, 1) : actifDe(a.actif, 1);
       o.email_contact = idx.email_contact >= 0 ? p.email_contact : (a.email_contact || '');
       o.civilite = idx.civilite >= 0 ? p.civilite : (a.civilite || '');
+      o.section = idx.section >= 0 ? p.section : (a.section || '');   // « Section Construction » / « Section Électricité » : voir Annuaire.horsPlanning
       o.ligne_bddorga = p.ligne;
       sortie.push(o);
     });

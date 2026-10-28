@@ -50,6 +50,16 @@ var Annuaire = (function () {
   function n(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
   function t(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
 
+  /**
+   * Règle UNIQUE « hors planning » (colonne « Section » de BDDORGA) : les ateliers et leurs techniciens — Section Construction et Section Électricité — n'ont pas de rotation
+   * dans le planning. Toute application qui doit les traiter à part (feuille de pointage, planning…) passe par cette fonction ; pour ajouter une section, la mettre ici.
+   */
+  var SECTIONS_HORS_PLANNING = ['section construction', 'section electricite'];
+  function horsPlanning(section) {
+    var s = n(section); if (!s) return false;
+    return SECTIONS_HORS_PLANNING.some(function (x) { return s === x || s === x.replace('section ', ''); });
+  }
+
   /** Vrai si la valeur ressemble à un NOM de personne (lettres, espaces, apostrophes, tirets) : ni numéro, ni e-mail. */
   function ressembleNom(v) {
     var s = t(v);
@@ -96,7 +106,7 @@ var Annuaire = (function () {
       }
       var iTel = Math.max(h.indexOf('numero telephone'), h.indexOf('telephone'));
       return { ligne: r, idx: { nom: noms[0], noms: noms, email: iMail, matricule: h.indexOf('matricule'), service: iServ, fonction: h.lastIndexOf('fonction'), dependance: h.indexOf('dependance'), telephone: iTel, sona: h.indexOf('sona'), date_integration: h.indexOf('date integration'), wifi_user: h.indexOf('wifi user'), sap: h.indexOf('matricule sap'), nin: iNin,
-        role: h.indexOf('role'), actif: h.indexOf('actif'), email_contact: Math.max(h.indexOf('e mail de contact'), h.indexOf('email de contact'), h.indexOf('email contact')), civilite: h.indexOf('civilite') } };
+        role: h.indexOf('role'), actif: h.indexOf('actif'), email_contact: Math.max(h.indexOf('e mail de contact'), h.indexOf('email de contact'), h.indexOf('email contact')), civilite: h.indexOf('civilite'), section: h.indexOf('section') } };
     }
     return { erreur: 'En-têtes introuvables dans BDDORGA (colonnes « Service » et « E-Mail » attendues)' };
   }
@@ -155,7 +165,7 @@ var Annuaire = (function () {
       if (email !== t(emailBrut).toLowerCase()) avertissements.push({ ligne: r + 1, texte: 'e-mail nettoyé (espaces ou caractères invisibles retirés) : « ' + email + ' »' });
       if (vus[email]) { ignores.push({ ligne: r + 1, nom: nom, raison: 'e-mail en double (ligne ' + vus[email] + ')' }); continue; }
       vus[email] = r + 1;
-      personnes.push({ ligne: r + 1, role: t(cell(row, i.role)), actif: t(cell(row, i.actif)), email_contact: t(cell(row, i.email_contact)).toLowerCase(), civilite: t(cell(row, i.civilite)), nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
+      personnes.push({ ligne: r + 1, role: t(cell(row, i.role)), actif: t(cell(row, i.actif)), email_contact: t(cell(row, i.email_contact)).toLowerCase(), civilite: t(cell(row, i.civilite)), section: t(cell(row, i.section)), nomDeduit: deduit, email: email, nom: nom, matricule: t(cell(row, i.matricule)), service: t(cell(row, i.service)),
                        fonction: t(cell(row, i.fonction)), dependance: t(cell(row, i.dependance)), telephone: telephone(cell(row, i.telephone)),
                        sona: t(cell(row, i.sona)).replace(/[\u200B-\u200D\uFEFF]/g, ''), date_integration: dateIso(cell(row, i.date_integration)), wifi_user: t(cell(row, i.wifi_user)), sap: t(cell(row, i.sap)), nin: nin(cell(row, i.nin)) });
     }
@@ -247,7 +257,7 @@ var Annuaire = (function () {
     return { erreur: 'Adresse absente de BDDORGA : ' + mail };
   }
 
-  return { fantomes: fantomes, nettoyerEmail: nettoyerEmail, analyserEmail: analyserEmail, planAffectation: planAffectation, nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
+  return { fantomes: fantomes, nettoyerEmail: nettoyerEmail, analyserEmail: analyserEmail, planAffectation: planAffectation, horsPlanning: horsPlanning, SECTIONS_HORS_PLANNING: SECTIONS_HORS_PLANNING, nin: nin, planEcriture: planEcriture, lire: lire, fusionner: fusionner, colonnes: colonnes, ressembleNom: ressembleNom, nomAffichable: nomAffichable, dateIso: dateIso, norm: n, ressembleNumero: ressembleNumero, depuisEmail: depuisEmail, CHAMPS: CHAMPS };
 })();
 
 if (typeof module !== 'undefined') module.exports = Annuaire;
