@@ -60,6 +60,10 @@
       <label class="l" for="f-du">Semaine du</label><input type="date" id="f-du">
       <p class="note" id="au"></p>
       <div class="actions"><button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="b-raz" type="button">Effacer les croix</button></div>
+      <label class="l" style="display:flex;gap:6px;align-items:center;text-transform:none;font-size:12.5px;letter-spacing:0"><input type="checkbox" id="o-masque" style="width:auto"> Masquer les personnes absentes toute la semaine (repos, absence)</label>
+      <label class="l" style="margin-top:8px">Jours de présence des ateliers et des personnes sans planning</label>
+      <div id="o-jours" style="display:flex;gap:6px;flex-wrap:wrap;font-size:12.5px"></div>
+      <p class="note" id="o-info"></p>
       <p class="note">Sur l'écran, un clic sur une case marque une croix (✓) ; elle s'imprime. Les cases vides se remplissent à la main.</p>
     </div>
     <div class="bloc eff">
@@ -106,10 +110,19 @@
     var j = jetons(p.nom); if (!j.length) return null;
     return plan.filter(function (l) { return l.configuree && l.grille; }).filter(function (l) { var t = jetons(l.nom); return j.every(function (x) { return t.indexOf(x) >= 0; }) || t.every(function (x) { return j.indexOf(x) >= 0; }); })[0] || null;
   }
-  function auto(p, du, i) { var l = ligneDePlanning(affiche(p)) || ligneDePlanning(p); return !!l && l.grille.charAt(i) === 'T'; }
+  // présence présumée : avec une rotation, les jours de travail du planning ; sans rotation (ateliers, techniciens, personnes non configurées), les jours choisis, hors jours fériés
+  var OPT = { masque: true, jours: [0, 1, 2, 3, 4] }; try { var o0 = JSON.parse(localStorage.getItem('pointage_options') || 'null'); if (o0 && Array.isArray(o0.jours)) OPT = { masque: o0.masque !== false, jours: o0.jours }; } catch (e) { /* défauts */ }
+  function sauverOpt() { try { localStorage.setItem('pointage_options', JSON.stringify(OPT)); } catch (e) { /* rien */ } }
+  var feries = {}, planPret = false;
+  function chargerFeries(du) { feries = {}; if (window.Holidays) { try { Holidays.between(du, plus(du, JOURS - 1), '').forEach(function (h) { feries[h.date] = h.nom; }); } catch (e) { /* sans jours fériés */ } } }
+  function presumee(x, g, du, i) {
+    if (!g.hp) { var l = ligneDePlanning(affiche(x)) || ligneDePlanning(x); if (l) return l.grille.charAt(i) === 'T'; if (!planPret) return false; }
+    var j = plus(du, i), q = j.split('-'), w = new Date(+q[0], +q[1] - 1, +q[2]).getDay();
+    return OPT.jours.indexOf(w) >= 0 && !feries[j];
+  }
   function chargerPlanning() {
-    var du = $('f-du').value; if (!window.Api || !du || du === planDu) return; planDu = du;
-    Api.call('planning', { debut: du, jours: JOURS }).then(function (r) { if ($('f-du').value !== du) return; plan = r.lignes || []; dessinerEff(); feuilles(); }).catch(function () { plan = []; });
+    var du = $('f-du').value; if (!window.Api) { planPret = true; return; } if (!du || du === planDu) return; planDu = du; plan = []; planPret = false;
+    Api.call('planning', { debut: du, jours: JOURS }).then(function (r) { if ($('f-du').value !== du) return; plan = r.lignes || []; planPret = true; dessinerEff(); feuilles(); }).catch(function () { plan = []; planPret = true; feuilles(); });
   }
   // nom et fonction de BDDORGA : une personne de l'effectif est rapprochée de BDDORGA quand tous les mots de son nom s'y retrouvent (ordre libre)
   var annuaire = [];
@@ -159,13 +172,14 @@
 
   // ----- feuilles : une page par groupe, comme la fiche d'origine -----
   function feuilles() {
-    var du = $('f-du').value || iso(new Date()), au = plus(du, JOURS - 1), p = du.split('-');
+    var du = $('f-du').value || iso(new Date()), au = plus(du, JOURS - 1), p = du.split('-'); chargerFeries(du); var masquees = 0;
     $('au').textContent = 'Au ' + fr(au) + ' (7 jours) : 2 pages pour le matin, puis 2 pages pour l\'après-midi.';
     var jours = []; for (var i = 0; i < JOURS; i += 1) jours.push(plus(du, i));
     var html = '', JS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
     [{ m: 'M', cls: 'matin', lib: 'MATIN' }, { m: 'S', cls: 'soir', lib: 'APRÈS-MIDI' }].forEach(function (per) {
       eff.forEach(function (g) {
         var lignes = g.l.filter(function (x) { return x.actif; });
+        if (OPT.masque && planPret) lignes = lignes.filter(function (x) { var vue = [0, 1, 2, 3, 4, 5, 6].some(function (i) { var k = du + '|' + x.nom + '|' + plus(du, i), pr = presumee(x, g, du, i); return coche(k + 'M', pr) || coche(k + 'S', pr); }); if (!vue && per.m === 'M') masquees += 1; return vue; });
         if (!lignes.length) return;
         html += '<div class="page ' + per.cls + '"><div class="periode"><img src="badges/logo-sonatrach.png" alt="Sonatrach"><div class="ent">Activité Exploration - Production<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division Infrastructure</div><b>' + per.lib + '</b><span>Mois de : ' + MOIS[+p[1] - 1] + ' ' + p[0] + '</span></div>' +
           '<div class="titre">Fiche de pointage — Semaine du ' + fr(du) + ' Au ' + fr(au) + '</div>' +
@@ -173,10 +187,11 @@
           jours.map(function (j) { var q = j.split('-'); return '<th>' + JS[new Date(+q[0], +q[1] - 1, +q[2]).getDay()] + ' ' + fr(j).slice(0, 5) + '</th>'; }).join('') + '</tr></thead><tbody>' +
           lignes.map(function (x) {
             var a = affiche(x);
-            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '" data-a="' + (!g.hp && auto(x, du, jours.indexOf(j)) ? 1 : 0) + '">' + (coche(k, !g.hp && auto(x, du, jours.indexOf(j))) ? '✓' : '') + '</td>'; }).join('') + '</tr>';
+            return '<tr><td class="n">' + E(a.nom) + '</td><td class="f">' + E(a.fonction) + '</td>' + jours.map(function (j) { var k = du + '|' + x.nom + '|' + j + per.m; return '<td class="c" data-k="' + E(k) + '" data-a="' + (presumee(x, g, du, jours.indexOf(j)) ? 1 : 0) + '">' + (coche(k, presumee(x, g, du, jours.indexOf(j))) ? '✓' : '') + '</td>'; }).join('') + '</tr>';
           }).join('') + '</tbody></table></div>';
       });
     });
+    $('o-info').textContent = masquees ? masquees + ' personne(s) absente(s) toute la semaine ne figurent pas sur la feuille (décochez l\'option pour les voir).' : '';
     $('feuilles').innerHTML = html || '<p style="padding:20px">Aucune personne dans l\'effectif.</p>';
     // lignes agrandies pour remplir la page : recalculé à chaque ajout, retrait ou (dé)cochage d'une personne
     $('feuilles').querySelectorAll('.page').forEach(function (pg) {
@@ -190,11 +205,18 @@
   }
   function ajuster() { var z = $('feuilles').parentNode, l = z.clientWidth - 28, w = $('feuilles').offsetWidth || 1122; var k = Math.min(1, l / w); $('feuilles').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuilles').offsetHeight * k + 28) + 'px' : ''; }
   window.addEventListener('resize', ajuster);
+  (function () {
+    var z = $('o-jours'), N = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.']; $('o-masque').checked = OPT.masque;
+    N.forEach(function (n, w) { var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.style.width = 'auto'; c.checked = OPT.jours.indexOf(w) >= 0; l.style.cssText = 'display:flex;gap:3px;align-items:center;text-transform:none;letter-spacing:0;font-weight:500;margin:0'; l.appendChild(c); l.appendChild(document.createTextNode(n)); z.appendChild(l);
+      c.onchange = function () { OPT.jours = OPT.jours.filter(function (x) { return x !== w; }); if (c.checked) OPT.jours.push(w); sauverOpt(); feuilles(); }; });
+    $('o-masque').onchange = function () { OPT.masque = $('o-masque').checked; sauverOpt(); feuilles(); };
+  })();
   $('f-du').addEventListener('input', function () { feuilles(); chargerPlanning(); });
   $('b-imp').onclick = function () { window.print(); };          // impression en un clic
   $('f-du').value = iso(new Date()); assurerHP(); dessinerEff(); feuilles(); chargerPlanning();
 })();
 </script>
+<script src="js/feries.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>
