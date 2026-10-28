@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-234",
+    "date": "2026-10-28",
+    "title": "Version 6.18.1 — Banchy lit vos 3 régions",
+    "changes": [
+      "Benchmark : Banchy lit maintenant correctement les scans des trois régions de la consultation. Pour GTL (bordereau chiffré avec quantités et montants), il retrouve les prix unitaires et non plus les montants ; les prix abîmés par l'OCR sont réparés quand quantité et montant le permettent (1 600 relu 4 800 → 1 600) et signalés « à vérifier ».",
+      "La fenêtre de contrôle signale un prix très éloigné de celui de l'offre (« ⚠ ×0,12 de l'offre » : un 5 perdu dans 5 600). Si le fichier est la demande envoyée aux régions (lettre et canevas vierge), la page l'explique au lieu de dire seulement « aucun prix reconnu »."
+    ]
+  },
+  {
     "id": "2026-10-28-233",
     "date": "2026-10-28",
     "title": "Version 6.18.0 — Dotations : demande libre d'entretien, un onglet par type de repas",
