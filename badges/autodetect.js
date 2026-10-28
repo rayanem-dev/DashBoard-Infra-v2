@@ -132,7 +132,8 @@ var AutoDetect = (function () {
     return charger(CDN.ocr).then(function () { return window.Tesseract.createWorker('fra'); }).then(function (w) {
       var out = [];
       var suite = function (n) {
-        if (n > Math.min(pdf.numPages, 5)) return w.terminate().then(function () { return out.join('\n'); });
+        if (n > Math.min(pdf.numPages, (opt && opt.pages) || 5)) return w.terminate().then(function () { return out.join('\n'); });
+        if (opt && opt.progres) opt.progres(n, Math.min(pdf.numPages, opt.pages || 5));
         return pdf.getPage(n).then(function (pg) {
           var vp = pg.getViewport({ scale: (opt && opt.echelle) || 2.2 }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
           return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { if (opt && opt.gris) griser(cv); return w.recognize(cv); });

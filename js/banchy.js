@@ -162,7 +162,7 @@ Banchy.Lecture = (function () {
     if (!/^\d+(\.\d+)?$/.test(s)) return null; var n = Number(s); return n > 0 ? n : null;
   }
   var UNITE = /^(m2|m²|m3|m³|ml|m\.l|u|un|unit[ée]|ens|ensemble|kg|t|l|ft|fft|forfait|h|j|jour|pce|pi[èe]ce|lot|km|m)$/i;
-  var BRUIT = /montant\s+total|arr[êe]t[ée]|en\s+lettre|en\s+chiffre|^\s*page\s+\d|bordereau\s+des\s+prix|^\s*n°?\s*d[ée]signation|d[ée]signations?\s+unit[ée]|consultation\s+(nationale|de\s+fournisseurs)|^\s*annexe\s+\d+|(millions?|milliers?|mille)\b.*(dinars?|\bDA\b)/i;
+  var BRUIT = /montant\s+total|arr[êe]t[ée]|en\s+lettre|en\s+chiffre|^\s*page\s+\d|bordereau\s+des\s+prix|^\s*n°?\s*d[ée]signation|d[ée]signations?\s+unit[ée]|consultation\s+(nationale|de\s+fournisseurs)|^\s*annexe\s+\d+|pu\s*\(da\)|montant\s*\(da\)|devis\s+quantitatif|fait\s+[àa]\s+\w+|commission\s+d.ouverture|(millions?|milliers?|mille)\b.*(dinars?|\bDA\b)/i;
 
   /** Ligne sans chiffre dont moins de 40 % des mots ont 3 lettres et dont aucun mot n'a 6 lettres : traits de tableau, tampons ou taches lus comme du texte. */
   function bruitOcr(l) { if (/\d{2}/.test(l) || UNITE_OCR.test(vide(l).replace(/[|\/]/g, ''))) return false; var m = vide(l).split(' ').filter(Boolean); if (!m.length) return true; var vrais = m.filter(function (x) { return /[A-Za-zÀ-ÿ]{3}/.test(x); }).length, long = m.some(function (x) { return /[A-Za-zÀ-ÿ]{6}/.test(x); }); return vrais / m.length < 0.4 && !long; }
@@ -184,12 +184,23 @@ Banchy.Lecture = (function () {
   }
   /** [prix, montant] sans quantité lisible (« 1 200,00 600 000,00 ») : la quantité est le rapport, s'il est entier. */
   function deduireQte(c) {
-    var r = c.filter(function (x) { return x.length === 2 && x[1] / x[0] >= 1 && Math.abs(x[1] / x[0] - Math.round(x[1] / x[0])) < 0.001; })[0];
-    return r ? [Math.round(r[1] / r[0]), r[0], r[1]] : null;
+    var meilleur = null;   // plusieurs découpages possibles (« 3 600 000,00 » ou « 3 » + « 600 000,00 ») : la plus petite quantité entière est la plus plausible
+    c.forEach(function (x) {
+      if (x.length < 2) return; var pu = x[x.length - 2], mo = x[x.length - 1], q = mo / pu;
+      if (q >= 1 && q <= 1e6 && Math.abs(q - Math.round(q)) < 0.001 && (!meilleur || Math.round(q) < meilleur[0])) meilleur = [Math.round(q), pu, mo];
+    });
+    return meilleur;
   }
+  /** Prix lu sans virgule ni espaces (« 180000 » pour 1 800,00) : le prix est le montant ÷ la quantité (le nombre avant le prix), s'il tombe rond. */
+  function reparerPu(c) {
+    var r = c.filter(function (x) { if (x.length < 4) return false; var q = x[x.length - 3], mo = x[x.length - 1]; return q >= 1 && mo / q >= 1 && Math.abs(mo / q - Math.round(mo / q)) < 0.001 && Math.round(mo / q) % 50 === 0; })[0];
+    return r ? [r[r.length - 3], Math.round(r[r.length - 1] / r[r.length - 3]), r[r.length - 1]] : null;
+  }
+  /** Quantité, prix, montant : les 3 derniers nombres ; devant eux, d'éventuelles colonnes de quantités (nombre de chambres × quantité par chambre) sont ignorées. */
+  function coh3(r) { return r.length >= 3 && coherent(r.slice(-3)); }
   function coherent(n) { return n.length === 3 && Math.abs(n[0] * n[1] - n[2]) <= Math.max(1, n[2] * 0.02); }
 
-  var NUM_ARTICLE = /^(\d{1,3}|[IVX]+(\.\d+)+|\d+(\.\d+)+|[A-Z]\d{1,3})$/;
+  var NUM_ARTICLE = /^(\d{1,3}|[IVXl]+([.,]\d+)+|\d+([.,]\d+)+|[A-Z]\d{1,3})$/;   // 1.2.5, I.4.4, « I,1 » (virgule), « 1,4 » (I lu 1 par l'OCR)
   var UNITE_OCR = /^(m|m[?î²2³3]|u|ml|m\.l|ens|ensemble|kg|t|l|ft|fft|forfait|lot)$/i;
   /** Montant lu par l'OCR : « 10:500;00 », « 5.800,00 », « 10 000.00 » → 10500, 5800, 10000 (les 2 derniers chiffres après un séparateur sont les décimales). null si illisible (« 000;06 »). */
   function montantOcr(entiers, decimales) { var v = Number(String(entiers).replace(/\D/g, '') + '.' + decimales); return v >= 1 ? v : null; }
@@ -204,6 +215,7 @@ Banchy.Lecture = (function () {
    * { avant, unite, ocr } si elle se termine par un montant à 2 décimales, éventuellement bruité par l'OCR, et porte un N° ou une unité ; null sinon.
    */
   function ligneChiffree(txt) {
+    txt = txt.replace(/[\[\]{}]/g, ' ');   // crochets : traits du tableau lus par l'OCR (« [U »)
     var t = vide(txt.replace(/\t/g, ' ').replace(/[|‘’`´]/g, ' ')).split(' ');
     for (var u = 0; u < t.length - 1; u += 1) {
       if (!UNITE.test(t[u])) continue;
@@ -214,8 +226,9 @@ Banchy.Lecture = (function () {
     }
     var propre = chiffresOcr(vide(txt.replace(/\t/g, ' ').replace(/[|‘’`´]/g, ' ')));
     // quantité + prix unitaire + montant lus par l'OCR (« 7000 600.00 4 200 000.00 »), ou prix + montant sans quantité (« 1 200.00 30 000.00 » : quantité déduite)
-    var AMT = "(?:\\d{1,3}(?:[ .,:;']\\d{3})*|\\d+)[.,:;]\\s?\\d{2}", val = function (a) { var d = a.replace(/\D/g, ''); return d.length > 2 ? Number(d.slice(0, -2) + '.' + d.slice(-2)) : null; };
-    var mA = new RegExp('(?:^|\\s)(\\d{1,6})\\s+(' + AMT + ')\\s+(' + AMT + ')\\s*$').exec(propre), mC = new RegExp('(?:^|\\s)(' + AMT + ')\\s+(' + AMT + ')\\s*$').exec(propre), trois = null, debut = -1;
+    // le montant peut perdre un espace (« 1600 000,00 ») : AMTM accepte 4 chiffres en tête
+    var AMT = "(?:\\d{1,3}(?:[ .,:;']\\d{3})*|\\d+)[.,:;]\\s?\\d{2}", AMTM = "(?:\\d{1,4}(?:[ .,:;']\\d{3})*|\\d+)[.,:;]\\s?\\d{2}", val = function (a) { var d = a.replace(/\D/g, ''); return d.length > 2 ? Number(d.slice(0, -2) + '.' + d.slice(-2)) : null; };
+    var mA = new RegExp('(?:^|\\s)(\\d{1,6})\\s+(' + AMT + ')\\s+(' + AMTM + ')\\s*$').exec(propre), mC = new RegExp('(?:^|\\s)(' + AMT + ')\\s+(' + AMTM + ')\\s*$').exec(propre), trois = null, debut = -1;
     var deduit = mC && val(mC[1]) && val(mC[2]) && val(mC[2]) / val(mC[1]) >= 1 && Math.abs(val(mC[2]) / val(mC[1]) - Math.round(val(mC[2]) / val(mC[1]))) < 0.001;
     if (mA && val(mA[2]) && val(mA[3])) { var q = Number(mA[1]), pu = val(mA[2]), mo = val(mA[3]); trois = { qte: q, pu: pu, montant: mo, ok: coherent([q, pu, mo]) }; debut = mA.index;
       if (!trois.ok && q > 0 && mo / q >= 1 && Math.abs(mo / q - Math.round(mo / q)) < 0.001 && Math.round(mo / q) % 50 === 0) { trois.pu = Math.round(mo / q); trois.repare = true; } }   // prix abîmé (4800 pour 1600) : le montant et la quantité, plus longs à lire, donnent le prix
@@ -249,27 +262,27 @@ Banchy.Lecture = (function () {
     var cand = info.map(function (x) { return x && x.jetons ? segmentations(x.jetons) : []; });
     // mode du document : 3 si des lignes vérifient quantité × PU = montant ; 2 si une quantité à 4 chiffres ou plus apparaît seule ; sinon 1
     var mode = 1, trois = 0, deux = 0;
-    cand.forEach(function (c, i) { if (!info[i]) return; if (c.some(coherent)) trois += 1; else if (c.some(function (r) { return r.length === 2 && r[0] >= 1000 && Number.isInteger(r[0]); })) deux += 1; });
+    cand.forEach(function (c, i) { if (!info[i]) return; if (c.some(coh3)) trois += 1; else if (c.some(function (r) { return r.length === 2 && r[0] >= 1000 && Number.isInteger(r[0]); })) deux += 1; });
     var nb = info.filter(function (x) { return x && x.jetons; }).length;
     var troisOcr = info.filter(function (x) { return x && x.trois && x.trois.ok; }).length;   // lignes lues par l'OCR dont quantité × prix = montant
     if ((trois && trois >= nb / 2) || troisOcr >= 2) mode = 3; else if (deux && deux >= nb / 3) mode = 2;
     var arts = [];
     info.forEach(function (x, i) {
       if (!x) return;
-      var c = cand[i], choix = null;
+      var c = cand[i], choix = null, reparee = false;
       if (x.ocr !== undefined) {   // ligne lue par l'OCR : prix souvent bruités
         var t3 = mode === 3 && x.trois ? x.trois : null;
         var ar = { n: '', des: '', u: x.unite, qte: t3 ? t3.qte : '', pu: t3 ? t3.pu : (mode === 3 ? '' : (x.ocr === null ? '' : x.ocr)), montant: t3 ? t3.montant : '', ligne: i, verifier: !(t3 && t3.ok && !t3.deduit) }, av = x.avant.slice();
         if (av.length && NUM_ARTICLE.test(av[0])) ar.n = av.shift(); ar.des = av.join(' '); arts.push(ar); return;
       }
-      if (mode === 3) choix = c.filter(coherent)[0] || deduireQte(c) || c.filter(function (r) { return r.length === 3; })[0];
+      if (mode === 3) { choix = c.filter(coh3)[0] || deduireQte(c); if (!choix) { choix = reparerPu(c); reparee = !!choix; } if (!choix) choix = c.filter(function (r) { return r.length >= 3; })[0]; if (choix && choix.length > 3) choix = choix.slice(-3); }
       else if (mode === 2) choix = c.filter(function (r) { return r.length === 2; })[0];
       else choix = c.filter(function (r) { return r.length === 1; }).sort(function (p, q) { return 0; })[0];
       if (!choix) choix = c.sort(function (p, q) { return p.length - q.length; })[0]; if (!choix) return;
       var avant = x.avant.slice(), n = '';
       if (avant.length && NUM_ARTICLE.test(avant[0])) n = avant.shift();
       var a = { n: n, des: avant.join(' '), u: x.unite, qte: '', pu: '', montant: '', ligne: i, verifier: false };
-      if (choix.length === 1) a.pu = choix[0]; else if (choix.length === 2) { a.qte = choix[0]; a.pu = choix[1]; } else { a.qte = choix[0]; a.pu = choix[1]; a.montant = choix[2]; a.verifier = !coherent(choix); }
+      if (choix.length === 1) a.pu = choix[0]; else if (choix.length === 2) { a.qte = choix[0]; a.pu = choix[1]; } else { a.qte = choix[0]; a.pu = choix[1]; a.montant = choix[2]; a.verifier = !coherent(choix) || reparee; }
       if (!a.n) a.verifier = true;
       arts.push(a);
     });
@@ -305,7 +318,7 @@ Banchy.Lecture = (function () {
       if (a.pu === '') a.verifier = true;
     });
     arts.forEach(function (a) { delete a.ligne; delete a.suite; delete a.avantNext;  });
-    var mt = String(texte || '').match(/montant\s+total[^\d\n]*([\d][\d  .,]*)/i);
+    var mt = String(texte || '').match(/(?:montant\s+total|total\s+g[ée]n[ée]ral)[^\d\n]*([\d][\d  .,]*)/i);
     // canevas VIERGE (la demande envoyée aux régions) : des lignes numérotées et des unités, mais aucun prix
     var numerotees = 0, unites = 0;
     lignes.forEach(function (l) { var t = vide(l.replace(/[|\/‘’`´]/g, ' ')).split(' ').filter(Boolean); if (t.length >= 3 && NUM_ARTICLE.test(t[0]) && /[A-Za-zÀ-ÿ]{3}/.test(t[1])) numerotees += 1; else if (t.length === 1 && UNITE_OCR.test(t[0])) unites += 1; });
@@ -371,6 +384,12 @@ Banchy.Lecture = (function () {
     return o;
   }
 
+  /** Somme quantité × prix des articles lus comparée au total du document : un écart signale des lignes manquantes ou mal lues. */
+  function verifierTotal(articles, total) {
+    var somme = (articles || []).reduce(function (t, a) { return t + (Number(a.qte) > 0 && Number(a.pu) > 0 ? Number(a.qte) * Number(a.pu) : 0); }, 0);
+    if (!total) return { somme: somme, total: null, ecart: null, ok: null };
+    return { somme: somme, total: total, ecart: total - somme, ok: Math.abs(total - somme) <= Math.max(1, total * 0.001) };
+  }
   /**
    * Nature d'un document, pour expliquer pourquoi rien n'est importé :
    * 'demande' (la lettre « Normativité des prix » envoyée aux régions, canevas vierge joint) · 'reponse' (courrier d'une région) · 'canevas-vierge' · 'offre' (bordereau chiffré avec quantités et montants)
@@ -400,7 +419,7 @@ Banchy.Lecture = (function () {
     if (libresO.length && libresO.length === libresL.length) libresO.forEach(function (k, z) { out[k] = { i: libresL[z], methode: 'ordre' }; });
     return out;
   }
-  var api = { nature: nature, depuisTexte: depuisTexte, depuisTableau: depuisTableau, metadonnees: metadonnees, rapprocher: rapprocher, nombre: nombre, segmentations: segmentations };
+  var api = { _ligne: ligneChiffree, verifierTotal: verifierTotal, nature: nature, depuisTexte: depuisTexte, depuisTableau: depuisTableau, metadonnees: metadonnees, rapprocher: rapprocher, nombre: nombre, segmentations: segmentations };
   return api;
 })();
 if (typeof module !== 'undefined') module.exports = Banchy;

@@ -294,7 +294,7 @@
       var m = LE.metadonnees(best.d.entete || ''); return { articles: best.d.articles, offres: best.d.offres, meta: m, total: null, source: 'excel', nom: nom };
     });
     else if (/^(jpe?g|png|webp|bmp|tiff?)$/.test(ext) || /^image\//.test(file.type)) lire = script(CDN_OCR).then(function () { return window.Tesseract.recognize(file, 'fra'); }).then(function (r) { return deTexte(r.data.text, 'scan', nom); });
-    else lire = window.AutoDetect.lireFichier(file, { echelle: 3, gris: true, interlignes: true }).then(function (r) { return deTexte(r.texte, r.source === 'ocr' ? 'scan' : 'pdf', nom); });
+    else lire = window.AutoDetect.lireFichier(file, { echelle: 3, gris: true, interlignes: true, pages: 12, progres: function (n, t) { occupe('Lecture du scan : page ' + n + ' sur ' + t + '… (environ 20 secondes par page)'); } }).then(function (r) { return deTexte(r.texte, r.source === 'ocr' ? 'scan' : 'pdf', nom); });
     return lire.then(function (r) { toast('Lecture terminée'); return r; }, function (e) { throw e; });
   }
   function deTexte(texte, source, nom) { var d = LE.depuisTexte(texte); return { articles: d.articles, offres: [], meta: LE.metadonnees(texte), total: d.total, source: source, nom: nom, mode: d.mode, nature: LE.nature(texte) }; }
@@ -304,6 +304,11 @@
   var SRC_LIB = { pdf: 'PDF (texte)', scan: 'scan lu par OCR', excel: 'Excel' };
   function avertir(r) { return (r.source === 'scan' ? '<br><b>Scan lu par OCR :</b> vérifiez surtout les chiffres (un 1 lu comme 7, une virgule oubliée…) avant d\'importer.' : '') + (r.articles.some(function (a) { return a.verifier; }) ? '<br>⚠ Les lignes marquées sont à vérifier (N° ou montant incohérent).' : ''); }
 
+  /** Compare la somme des articles lus au total écrit dans le document : le contrôle le plus sûr d'une lecture de scan. */
+  function controleTotal(r) {
+    var v = LE.verifierTotal(r.articles, r.total); if (!r.total) return '';
+    return v.ok ? '<br>✓ La somme des articles lus (' + nf(v.somme, 2) + ' DA) correspond au total du document.' : '<br><b style="color:var(--err)">⚠ La somme des articles lus (' + nf(v.somme, 2) + ' DA) ne correspond pas au total du document (' + nf(v.total, 2) + ' DA) : écart de ' + nf(Math.abs(v.ecart), 2) + ' DA. Des lignes manquent ou sont mal lues : comparez avec le document.</b>';
+  }
   function lireOffre() {
     choisirFichier(function (f) {
       analyserFichier(f).then(function (r) {
@@ -311,7 +316,7 @@
         var tab = '<table class="edit"><thead><tr><th style="width:36px"></th><th style="width:70px">N°</th><th>Désignation</th><th style="width:60px">U</th><th class="n" style="width:90px">Qté</th><th class="n" style="width:110px">PU (DA)</th></tr></thead><tbody>' + r.articles.map(function (a, i) {
           return '<tr data-i="' + i + '"><td><input type="checkbox" data-c="on" checked></td><td><input data-c="n" value="' + E(a.n) + '"' + (a.verifier ? ' style="border-color:var(--orange-main)"' : '') + '></td><td><input data-c="des" value="' + E(a.des) + '"></td><td><input data-c="u" value="' + E(a.u) + '"></td><td class="n"><input data-c="qte" value="' + E(a.qte) + '"></td><td class="n"><input data-c="pu" value="' + E(a.pu) + '"></td></tr>'; }).join('') + '</tbody></table>';
         var offres = r.offres.length ? '<label style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="d2-offres" checked style="width:auto"> Importer aussi les ' + r.offres.length + ' colonne(s) de prix des régions : ' + E(r.offres.map(function (o) { return (o.libelle || 'région').slice(0, 40); }).join(' · ')) + '</label>' : '';
-        dlg2('Offre lue : ' + r.articles.length + ' article(s)', 'Fichier « ' + E(r.nom) + ' » (' + SRC_LIB[r.source] + ')' + (r.total ? ' · total lu : ' + nf(r.total, 2) + ' DA' : '') + '. Corrigez si besoin puis importez.' + avertir(r), tab + offres, function () {
+        dlg2('Offre lue : ' + r.articles.length + ' article(s)', 'Fichier « ' + E(r.nom) + ' » (' + SRC_LIB[r.source] + ')' + '. Corrigez si besoin puis importez.' + avertir(r) + controleTotal(r), tab + offres, function () {
           var lignes = [].slice.call($('d2-c').querySelectorAll('tbody tr')), garde = [];
           lignes.forEach(function (tr) { var v = function (c) { return tr.querySelector('[data-c="' + c + '"]'); }; if (!v('on').checked) return; var idx = +tr.dataset.i; garde.push({ idx: idx, a: { id: nouvelId('a'), n: v('n').value, des: v('des').value, u: v('u').value, qte: B.nombre(v('qte').value) || '', pu: B.nombre(v('pu').value) || '' } }); });
           if (!garde.length) return;

@@ -114,3 +114,19 @@ test('nature du document : demande de prix envoyée aux régions, canevas vierge
   assert.strictEqual(L.nature(fx('benchmark-offre.txt')), 'offre'); assert.strictEqual(L.nature(fx('benchmark-region-gtl-nav.txt')), 'offre');
   assert.strictEqual(L.nature(fx('benchmark-region-hmd.txt')), 'reponse'); assert.strictEqual(L.nature(''), 'inconnu');
 });
+
+test('VRAI scan de 7 pages (ETB ZAATOUT, 400 chambres, 300 ppi) : colonnes nombre de chambres × quantité par chambre, N° « I,1 », total lu, somme contrôlée', () => {
+  const r = L.depuisTexte(fx('benchmark-offre-zaatout-nav.txt'));
+  assert.strictEqual(r.mode, 3); assert.strictEqual(r.total, 229056000); assert.ok(r.articles.length >= 44);
+  const a = d => r.articles.filter(x => d.test(x.des))[0];
+  assert.deepStrictEqual([a(/Faux Plafond en BA 13, réalisé/).qte, a(/Faux Plafond en BA 13, réalisé/).pu, a(/Faux Plafond en BA 13, réalisé/).montant], [4800, 3800, 18240000]);   // 400 × 12, 5 nombres sur la ligne
+  assert.deepStrictEqual([a(/Dépose de plinthes existantes au niveau des couloirs/).qte, a(/Dépose de plinthes existantes au niveau des couloirs/).pu], [1720, 100]);
+  assert.deepStrictEqual([a(/revêtement de sol existant dans les couloirs/).qte, a(/revêtement de sol existant dans les couloirs/).pu], [1200, 200]);
+  assert.strictEqual(a(/accessoires pour Porte d'entrée de la chambre/).pu, 9000);          // quantité 400 perdue, déduite : 3 600 000 ÷ 9 000
+  assert.strictEqual(a(/plafonnier pour couloir/).pu, 9000); assert.strictEqual(a(/plafonnier pour couloir/).verifier, true);   // « 900000 » : prix = 720 000 ÷ 80
+  assert.strictEqual(a(/climatiseur/).qte, 400);                                           // « 1600 000,00 » = 1 600 000,00
+  const v = L.verifierTotal(r.articles, r.total);
+  assert.strictEqual(v.ok, false); assert.ok(v.ecart > 0 && v.ecart / v.total < 0.05);      // lignes manquantes signalées, jamais une somme fausse présentée comme juste
+  assert.strictEqual(L.verifierTotal(L.depuisTexte(fx('benchmark-offre.txt')).articles, 49495000).ok, true);
+  assert.strictEqual(L.nature(fx('benchmark-offre-zaatout-nav.txt')), 'offre');
+});
