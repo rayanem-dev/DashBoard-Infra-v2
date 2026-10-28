@@ -5,9 +5,9 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="same-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Benchmark des prix – Division Infrastructure RNS</title>
+<title>Banchy – Benchmark des prix – Division Infrastructure RNS</title>
 <meta name="theme-color" content="#E85D04">
-<link rel="icon" href="icon-192.png">
+<link rel="icon" href="img/banchy/banchy-icone-192.png">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/charte.css">
@@ -86,8 +86,8 @@
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
-  <div class="logo-area"><div class="logo-circle">⚖️</div>
-    <div class="logo-text"><h1>Benchmark des prix</h1><p>Normativité des prix · offre reçue comparée aux prix des autres régions</p></div></div>
+  <div class="logo-area"><div class="logo-circle" style="background:#fff;padding:5px"><img src="img/banchy/banchy-icone-96.png" alt="Banchy" style="width:100%;height:100%;object-fit:contain"></div>
+    <div class="logo-text"><h1>Benchmark des prix · Banchy</h1><p>Outil de comparaison et de benchmark financier · normativité des prix</p></div></div>
   <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
@@ -401,7 +401,7 @@
     $('alertes').innerHTML = al.map(function (x) { return '<div class="avis">' + x + '</div>'; }).join('');
     $('methode').innerHTML = 'Méthode : prix des régions × coefficient d\'actualisation → référence par article (' + ({ mediane: 'médiane', moyenne: 'moyenne', min: 'minimum' }[p.statistique]) + ') → écart de l\'offre = (prix offre − référence) / référence ; l\'écart global est pondéré par les montants (quantité × prix) et ne retient que les articles fiables. Positif = l\'offre est plus chère que la référence.' +
       (t.moyenneSimpleFeuille !== null ? ' <br>Pour comparaison, la moyenne simple des écarts du tableau d\'origine (région − offre) / offre donnerait ' + pc(t.moyenneSimpleFeuille) + ' : elle compte chaque article pour 1 quel que soit son montant et se laisse tirer par les prix aberrants.' : '');
-    $('entete-rendu').innerHTML = '<h1>BENCHMARK DES PRIX — NORMATIVITÉ DES PRIX</h1><div class="l"><b>' + E(S.titre) + '</b>' + (S.reference ? ' · Réf. ' + E(S.reference) : '') + '</div><div class="l">' + (S.entreprise ? 'Offre : ' + E(S.entreprise) + ' · ' : '') + 'RNS, le ' + E((S.date || aujourdhui()).split('-').reverse().join('/')) + '</div>';
+    $('entete-rendu').innerHTML = '<img src="img/banchy/banchy-logo.png" alt="Banchy" style="height:12mm;float:right"><h1>BENCHMARK DES PRIX — NORMATIVITÉ DES PRIX</h1><div class="l"><b>' + E(S.titre) + '</b>' + (S.reference ? ' · Réf. ' + E(S.reference) : '') + '</div><div class="l">' + (S.entreprise ? 'Offre : ' + E(S.entreprise) + ' · ' : '') + 'RNS, le ' + E((S.date || aujourdhui()).split('-').reverse().join('/')) + '</div>';
     $('sig-nom').textContent = moi;
   }
 
