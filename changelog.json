@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-230",
+    "date": "2026-10-28",
+    "title": "Version 6.16.0 — Feuille de pointage : recto Sonatrach, verso prestataires",
+    "changes": [
+      "La feuille de pointage a deux faces : le recto liste les agents SONATRACH présents ou qui rentrent pendant la semaine, le verso les prestataires (ACOSCO, GTP…) présents ou qui rentrent ; d'abord le matin, puis l'après-midi. La i-ème page recto est au dos de la i-ème page verso (15 personnes par page).",
+      "Plus de catégories (CPM, Cadre sup…) : une seule liste par face. « Importer tout le personnel de la division » reprend tout le personnel du planning, réparti de la même façon."
+    ]
+  },
+  {
     "id": "2026-10-28-229",
     "date": "2026-10-28",
     "title": "Version 6.15.2 — Feuille de pointage : retrait d'une personne sans confirmation",
