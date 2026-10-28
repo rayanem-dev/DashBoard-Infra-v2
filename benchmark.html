@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Benchmark des prix – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<script src="js/benchmark-calc.js"></script>
+<style>
+  .bm { max-width: 1400px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+  .bloc h2 .num { background: var(--orange-main); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .bloc .aide { font-size: 12.5px; color: var(--text-muted); margin: 0 0 10px; }
+  .barre { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; }
+  .bm label.c { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); }
+  .bm input, .bm select, .bm textarea { padding: 7px 9px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); text-transform: none; letter-spacing: 0; font-weight: 500; min-width: 0; }
+  .bm input:focus, .bm select:focus, .bm textarea:focus { outline: 0; border-color: var(--orange-main); }
+  .btn-p { padding: 9px 15px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .btn-p:disabled, .btn-s:disabled { opacity: .45; cursor: not-allowed; }
+  .defil { overflow-x: auto; }
+  table.edit { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.edit th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); padding: 6px 5px; border-bottom: 2px solid var(--border); vertical-align: bottom; }
+  table.edit td { padding: 3px 4px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.edit td input { width: 100%; }
+  table.edit td.n input, table.edit th.n { text-align: right; }
+  table.edit .des { min-width: 260px; }
+  table.edit td .lecture { padding: 8px 5px; display: block; font-size: 12.5px; }
+  .src-t { min-width: 150px; }
+  .src-t input { margin-bottom: 4px; width: 100%; font-size: 12.5px; padding: 5px 7px; }
+  .src-t .bt { display: flex; gap: 4px; }
+  .src-t .bt .btn-s { padding: 4px 8px; font-size: 11px; }
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  .avis { background: var(--tint-orange); border: 1px solid var(--orange-light); border-radius: 10px; padding: 8px 12px; font-size: 12.5px; margin-top: 10px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .kpi { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--surface-2); }
+  .kpi small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); font-weight: 700; }
+  .kpi b { display: block; font-size: 21px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .kpi span { font-size: 12px; color: var(--text-muted); }
+  .kpi.conforme { background: var(--tint-ok); border-color: #86EFAC; } .kpi.conforme b { color: var(--ok); }
+  .kpi.eleve { background: var(--tint-err); border-color: #FCA5A5; } .kpi.eleve b { color: var(--err); }
+  .kpi.bas { background: var(--tint-orange); border-color: var(--orange-light); } .kpi.bas b { color: #B45309; }
+  table.res { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.res th { background: var(--gray-dark); color: #fff; padding: 7px 6px; text-align: center; font-size: 11px; border: 1px solid #000; }
+  table.res td { padding: 6px; border: 1px solid var(--border); vertical-align: top; }
+  table.res td.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.res td.c { text-align: center; }
+  table.res td small { display: block; color: var(--text-muted); font-size: 10.5px; }
+  table.res tfoot td { font-weight: 800; background: var(--surface-2); border-top: 2px solid var(--text-dark); }
+  table.res .long { display: none; } table.res td:nth-child(2) { min-width: 230px; }
+  .pastille { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .p-conforme { background: #DCFCE7; color: #166534; } .p-eleve { background: #FEE2E2; color: #991B1B; } .p-bas { background: #FFEDD5; color: #9A3412; }
+  .p-verifier { background: #EDE9FE; color: #5B21B6; } .p-insuffisant, .p-sans_ref { background: #F3F4F6; color: #4B5563; }
+  .suspect { color: #5B21B6; font-weight: 700; }
+  #entete-rendu { display: none; }
+  dialog { border: 0; border-radius: 14px; padding: 16px; width: min(560px, 94vw); box-shadow: 0 12px 48px rgba(0,0,0,.35); }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  dialog textarea { width: 100%; min-height: 160px; font-family: monospace; font-size: 12.5px; }
+  dialog h3 { font-size: 15px; margin-bottom: 4px; } dialog p { font-size: 12.5px; color: var(--text-muted); margin-bottom: 8px; }
+  dialog .boutons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+  .modif { color: var(--orange-main); font-weight: 700; font-size: 12px; }
+  @media (max-width: 800px) { .bm { padding: 10px 10px 30px; } table.edit { font-size: 12.5px; } }
+  @media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(main) { display: none !important; }
+    .bm > *:not(#rendu) { display: none !important; }
+    .bm { padding: 0; max-width: none; } #rendu { box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+    #entete-rendu { display: block; margin-bottom: 8px; }
+    #entete-rendu h1 { font-size: 17pt; } #entete-rendu .l { font-size: 9.5pt; margin-top: 2px; }
+    .kpis { grid-template-columns: repeat(4, 1fr); } .kpi b { font-size: 15pt; }
+    table.res { font-size: 8.5pt; } table.res .court { display: none; } table.res .long { display: inline; }
+    table.res tr { break-inside: avoid; }
+    .signature { display: flex !important; justify-content: space-between; margin-top: 14mm; font-weight: 700; font-size: 10pt; }
+  }
+  .signature { display: none; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">⚖️</div>
+    <div class="logo-text"><h1>Benchmark des prix</h1><p>Normativité des prix · offre reçue comparée aux prix des autres régions</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="bm">
+  <div class="bloc">
+    <div class="barre">
+      <select id="liste" aria-label="Benchmarks enregistrés" style="min-width:240px"><option value="">— Nouveau benchmark —</option></select>
+      <button class="btn-p" id="b-enr" type="button">💾 Enregistrer</button>
+      <button class="btn-s" id="b-nouv" type="button">+ Nouveau</button>
+      <button class="btn-s" id="b-ex" type="button" title="Charge l'exemple des toitures-terrasses de Rhourde Nouss (offre ALKO CONSTRUCTION, 3 contrats de régions)">📋 Exemple (toitures-terrasses)</button>
+      <button class="btn-s" id="b-sup" type="button" hidden>🗑 Supprimer</button>
+      <span class="modif" id="etat"></span>
+    </div>
+    <p class="note" id="info"></p>
+  </div>
+
+  <div class="bloc">
+    <h2><span class="num">1</span> Consultation</h2>
+    <div class="grille">
+      <label class="c">Titre du benchmark<input id="titre" maxlength="160" placeholder="ex. Étanchéité des toitures-terrasses"></label>
+      <label class="c">Référence de la consultation<input id="reference" maxlength="160" placeholder="ex. CF N° 38/SH-PROD/RNS/INFRA/2026"></label>
+      <label class="c">Entreprise (offre reçue)<input id="entreprise" maxlength="120" placeholder="ex. SARL ALKO CONSTRUCTION"></label>
+      <label class="c">Date<input id="date" type="date"></label>
+    </div>
+    <details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px;font-weight:700">⚙️ Paramètres du calcul <span class="note" style="font-weight:400">(à valider : ce ne sont pas des règles figées)</span></summary>
+      <div class="grille" style="margin-top:10px">
+        <label class="c">Année de référence<input id="p-annee" type="number" min="2000" max="2100"></label>
+        <label class="c">Taux d'actualisation par an (%)<input id="p-taux" type="number" min="0" max="100" step="0.1"></label>
+        <label class="c">Référence de prix<select id="p-stat"><option value="mediane">Médiane (recommandée)</option><option value="moyenne">Moyenne</option><option value="min">Prix le plus bas</option></select></label>
+        <label class="c">Écart toléré (± %)<input id="p-seuil" type="number" min="0" max="1000" step="1"></label>
+        <label class="c">Sources minimum par article<input id="p-nmin" type="number" min="1" max="20"></label>
+        <label class="c">Prix incohérents si rapport &gt; ×<input id="p-disp" type="number" min="1.1" max="1000" step="0.1"></label>
+        <label class="c">Couverture minimale pour conclure (%)<input id="p-couv" type="number" min="0" max="100" step="1"></label>
+        <label class="c" style="flex-direction:row;align-items:center;gap:8px;text-transform:none;font-size:12.5px"><input id="p-excl" type="checkbox" style="width:auto"> Écarter les prix suspects de la référence</label>
+      </div>
+      <p class="note">Le coefficient d'actualisation d'une région est celui que vous saisissez dans sa colonne ; à défaut, (1 + taux)^(année de référence − année du contrat). Un coefficient de 1,3 pour un contrat de 2023 correspond à environ 9 % par an.</p>
+    </details>
+  </div>
+
+  <div class="bloc">
+    <h2><span class="num">2</span> Offre reçue du client (bordereau des prix)</h2>
+    <p class="aide">Collez le bordereau depuis Excel (colonnes : N°, désignation, unité, quantité, prix unitaire HT en DA) ou saisissez les lignes.</p>
+    <div class="barre" style="margin-bottom:8px">
+      <button class="btn-s" id="b-coller-offre" type="button">📥 Coller depuis Excel</button>
+      <button class="btn-s" id="b-ajout" type="button">+ Ajouter un article</button>
+    </div>
+    <div class="defil"><table class="edit"><thead><tr><th style="width:62px">N°</th><th class="des">Désignation</th><th style="width:64px">U</th><th class="n" style="width:100px">Qté</th><th class="n" style="width:130px">PU offre (DA)</th><th style="width:40px"></th></tr></thead><tbody id="corps-offre"></tbody></table></div>
+  </div>
+
+  <div class="bloc">
+    <h2><span class="num">3</span> Prix reçus des autres régions</h2>
+    <p class="aide">Une colonne par région ayant répondu. Indiquez le contrat et son année : les prix sont ramenés à l'année de référence. Un prix manquant reste vide.</p>
+    <div class="barre" style="margin-bottom:8px"><button class="btn-s" id="b-src" type="button">+ Ajouter une région</button></div>
+    <div class="defil"><table class="edit" id="tab-src"></table></div>
+  </div>
+
+  <div class="bloc" id="rendu">
+    <div id="entete-rendu"></div>
+    <h2><span class="num">4</span> Résultat</h2>
+    <div class="barre" style="margin-bottom:10px">
+      <button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button>
+      <button class="btn-s" id="b-csv" type="button">⬇ Excel (CSV)</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="defil"><table class="res" id="res"></table></div>
+    <div id="alertes"></div>
+    <p class="note" id="methode"></p>
+    <div class="signature"><span>Établi par : <span id="sig-nom"></span></span><span>P/ Le Chef de Division Infrastructures</span></div>
+  </div>
+</main>
+<dialog id="dlg"><h3 id="dlg-t"></h3><p id="dlg-a"></p><textarea id="dlg-x" spellcheck="false"></textarea><div class="boutons"><button class="btn-s" id="dlg-non" type="button">Annuler</button><button class="btn-p" id="dlg-ok" type="button">Importer</button></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var B = window.Benchmark;
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var S = null, compteur = 0, idCourant = '', droits = { modifier: false, supprimer: false }, sale = false, moi = '', res = null;
+
+  function E(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3400); }
+  function nf(x, d) { return x === null || x === undefined || x === '' ? '' : Number(x).toLocaleString('fr-FR', { minimumFractionDigits: d === undefined ? 2 : d, maximumFractionDigits: d === undefined ? 2 : d }); }
+  function pc(x) { return x === null || x === undefined ? '—' : (x > 0 ? '+' : '') + nf(x * 100, 1) + ' %'; }
+  function aujourdhui() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function nouvelId(p) { compteur += 1; return p + Date.now().toString(36).slice(-4) + compteur; }
+  function marquer(v) { sale = v; $('etat').textContent = v ? '● non enregistré' : ''; }
+
+  function vide() { return { titre: '', reference: '', entreprise: '', objet: '', date: aujourdhui(), params: B.parametres({}), items: [], sources: [] }; }
+  function exemple() {
+    var it = [['01', 'Décapage et dépose des anciens composants de l\'étanchéité et de la chape en béton, y compris le gravier roulé, transfert vers une décharge située dans un rayon de 5 km, ainsi que le nettoyage de l\'assiette et l\'application d\'une couche de FLINTKOTE, y compris toutes sujétions de mise en œuvre', 'M2', 5000, 738],
+      ['02', 'Réalisation d\'une forme de pente en béton maigre dosé à 250 kg/m³ CPA 325, et compris joint de fractionnement et de pontage périphérique en joint mou, et compris une chape au mortier de ciment et compris toutes sujétions de mise en œuvre', 'M2', 5000, 1000],
+      ['03', 'Réfection et rattrapage de niveau de la forme de pente existante avec une chape au mortier de ciment hydrofuge, et compris le traitement des fissures et joints de dilatation avec injection et colmatage et compris toutes sujétions de mise en œuvre', 'M2', 2000, 400],
+      ['04', 'Fourniture et pose d\'un complexe d\'étanchéité multicouche pour terrasse (pare-vapeur 36 S, film polyane, isolant polystyrène expansé 4 cm, papier kraft, feutre bitumé 36 S, 3 couches d\'E.A.C., Paxalumin BA40 de premier choix), y compris relevés d\'étanchéité, E.I.F. et toutes sujétions', 'M2', 6500, 5170],
+      ['05', 'F/P Gargouille EPDM et compris crapaudine – évacuation horizontale eau de pluie', 'U', 200, 2000],
+      ['06', 'Protection lourde en gravier roulé EP 5 cm', 'M2', 5000, 1200]];
+    var d = vide(); d.titre = 'Étanchéité des toitures-terrasses — Rhourde Nouss'; d.reference = 'CF N° 38/SH-PROD/RNS/INFRA/2026'; d.entreprise = 'SARL ALKO CONSTRUCTION (moins-disant)'; d.date = '2026-10-28';
+    d.items = it.map(function (x, i) { return { id: 'a' + (i + 1), n: x[0], des: x[1], u: x[2], qte: x[3], pu: x[4] }; });
+    d.sources = [{ id: 's1', nom: 'DR HMD', contrat: 'N°39/LOG-HMD/2023', annee: 2023, coef: 1.3, courrier: 'N°225/SH/E&P/HMD/LOG/2026', prix: { a1: 1200, a2: 10000, a3: 10500, a4: 5600, a5: 2000, a6: 550 } },
+      { id: 's2', nom: 'GTL', contrat: 'N°I/14/GTL-INFRA/2026', annee: 2026, coef: 1, courrier: '', prix: { a2: 1600, a3: 600, a5: 1200, a6: 800 } },
+      { id: 's3', nom: 'HAMRA', contrat: 'N°I/37/HAMRA/2022', annee: 2022, coef: 1.4, courrier: '', prix: { a2: 900 } }];
+    return d;
+  }
+
+  // ---------- formulaire ↔ état ----------
+  function versFormulaire() {
+    $('titre').value = S.titre || ''; $('reference').value = S.reference || ''; $('entreprise').value = S.entreprise || ''; $('date').value = S.date || '';
+    var p = B.parametres(S.params); S.params = p;
+    $('p-annee').value = p.anneeRef; $('p-taux').value = Math.round(p.taux * 1000) / 10; $('p-stat').value = p.statistique; $('p-seuil').value = Math.round(p.seuil * 1000) / 10; $('p-nmin').value = p.nMin; $('p-disp').value = p.dispersion; $('p-couv').value = Math.round(p.couvertureMin * 100); $('p-excl').checked = p.exclureSuspects;
+    dessinerOffre(); dessinerSources(); calculer();
+  }
+  function lireEntetes() {
+    S.titre = $('titre').value; S.reference = $('reference').value; S.entreprise = $('entreprise').value; S.date = $('date').value;
+    S.params = { anneeRef: $('p-annee').value, taux: $('p-taux').value === '' ? '' : Number($('p-taux').value) / 100, statistique: $('p-stat').value, seuil: $('p-seuil').value === '' ? '' : Number($('p-seuil').value) / 100, nMin: $('p-nmin').value, dispersion: $('p-disp').value, couvertureMin: $('p-couv').value === '' ? '' : Number($('p-couv').value) / 100, exclureSuspects: $('p-excl').checked };
+  }
+  ['titre', 'reference', 'entreprise', 'date', 'p-annee', 'p-taux', 'p-stat', 'p-seuil', 'p-nmin', 'p-disp', 'p-couv', 'p-excl'].forEach(function (id) { $(id).addEventListener('input', function () { lireEntetes(); marquer(true); calculer(); }); $(id).addEventListener('change', function () { lireEntetes(); marquer(true); calculer(); }); });
+
+  // ---------- offre ----------
+  function dessinerOffre() {
+    $('corps-offre').innerHTML = S.items.map(function (a, i) {
+      return '<tr data-i="' + i + '"><td><input data-c="n" value="' + E(a.n) + '" aria-label="N°"></td><td class="des"><input data-c="des" value="' + E(a.des) + '" aria-label="Désignation"></td><td><input data-c="u" value="' + E(a.u) + '" aria-label="Unité"></td>' +
+        '<td class="n"><input data-c="qte" inputmode="decimal" value="' + E(a.qte === '' ? '' : nf(a.qte, 2).replace(/ | /g, ' ')) + '" aria-label="Quantité"></td><td class="n"><input data-c="pu" inputmode="decimal" value="' + E(a.pu === '' ? '' : nf(a.pu, 2).replace(/ | /g, ' ')) + '" aria-label="Prix unitaire"></td>' +
+        '<td><button class="btn-s" data-x="1" type="button" aria-label="Supprimer l\'article" title="Supprimer l\'article">🗑</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="note">Aucun article : collez le bordereau ou ajoutez une ligne.</td></tr>';
+  }
+  $('corps-offre').addEventListener('input', function (e) {
+    var tr = e.target.closest('tr[data-i]'); if (!tr || !e.target.dataset.c) return;
+    var a = S.items[+tr.dataset.i], c = e.target.dataset.c, v = e.target.value;
+    a[c] = c === 'qte' || c === 'pu' ? (B.nombre(v) || (c === 'qte' && /^0/.test(v.trim()) ? 0 : '')) : v;
+    marquer(true); calculer();
+  });
+  $('corps-offre').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-x]'); if (!b) return;
+    var i = +b.closest('tr').dataset.i, a = S.items[i];
+    S.items.splice(i, 1); S.sources.forEach(function (s) { delete s.prix[a.id]; });
+    dessinerOffre(); dessinerSources(); marquer(true); calculer();
+  });
+  $('b-ajout').onclick = function () { var n = S.items.length + 1; S.items.push({ id: nouvelId('a'), n: ('0' + n).slice(-2), des: '', u: 'M2', qte: '', pu: '' }); dessinerOffre(); dessinerSources(); marquer(true); calculer(); };
+
+  // ---------- régions ----------
+  function dessinerSources() {
+    var t = $('tab-src');
+    if (!S.items.length) { t.innerHTML = '<tbody><tr><td class="note">Ajoutez d\'abord les articles de l\'offre.</td></tr></tbody>'; return; }
+    var tete = '<thead><tr><th style="width:62px">N°</th><th class="des">Désignation</th>' + S.sources.map(function (s, j) {
+      return '<th class="src-t" data-j="' + j + '"><input data-s="nom" value="' + E(s.nom) + '" placeholder="Région (ex. DR HMD)" aria-label="Région"><input data-s="contrat" value="' + E(s.contrat) + '" placeholder="Contrat N°" aria-label="Contrat">' +
+        '<div class="bt"><input data-s="annee" type="number" value="' + E(s.annee) + '" placeholder="Année" aria-label="Année du contrat" style="width:60%"><input data-s="coef" value="' + E(s.coef === '' || s.coef === undefined ? '' : String(s.coef).replace('.', ',')) + '" placeholder="Coef." title="Coefficient d\'actualisation (vide = calculé avec le taux annuel)" aria-label="Coefficient d\'actualisation" style="width:40%"></div>' +
+        '<input data-s="courrier" value="' + E(s.courrier) + '" placeholder="Courrier de réponse" aria-label="Courrier de réponse">' +
+        '<div class="bt"><button class="btn-s" data-act="coller" type="button">📥 Coller</button><button class="btn-s" data-act="retirer" type="button" aria-label="Retirer la région" title="Retirer la région">🗑</button></div></th>';
+    }).join('') + '</tr></thead>';
+    var corps = '<tbody>' + S.items.map(function (a, i) {
+      return '<tr data-i="' + i + '"><td class="note" style="padding-top:11px">' + E(a.n) + '</td><td class="des"><span class="lecture" title="' + E(a.des) + '">' + E(a.des.length > 90 ? a.des.slice(0, 90) + '…' : a.des) + '</span></td>' + S.sources.map(function (s, j) {
+        var v = s.prix[a.id]; return '<td class="n"><input data-p="' + j + '" inputmode="decimal" value="' + (v === undefined || v === '' ? '' : E(nf(v, 2).replace(/ | /g, ' '))) + '" aria-label="Prix ' + E(s.nom) + ' article ' + E(a.n) + '"></td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+    t.innerHTML = tete + corps;
+    if (!S.sources.length) t.querySelector('thead tr').insertAdjacentHTML('beforeend', '<th class="note" style="text-transform:none">Aucune région : « + Ajouter une région ».</th>');
+  }
+  $('tab-src').addEventListener('input', function (e) {
+    var th = e.target.closest('th[data-j]'), c = e.target.dataset;
+    if (th && c.s) { var s = S.sources[+th.dataset.j], v = e.target.value; s[c.s] = c.s === 'annee' ? (Number(v) || '') : c.s === 'coef' ? (B.nombre(v) || '') : v; marquer(true); calculer(); return; }
+    if (c.p !== undefined) { var tr = e.target.closest('tr[data-i]'), a = S.items[+tr.dataset.i], src = S.sources[+c.p], n = B.nombre(e.target.value); if (n === null) delete src.prix[a.id]; else src.prix[a.id] = n; marquer(true); calculer(); }
+  });
+  $('tab-src').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]'); if (!b) return; var j = +b.closest('th').dataset.j, s = S.sources[j];
+    if (b.dataset.act === 'retirer') { if (!window.confirm('Retirer la région « ' + (s.nom || 'sans nom') + ' » et ses prix ?')) return; S.sources.splice(j, 1); dessinerSources(); marquer(true); calculer(); return; }
+    dialogue('Coller les prix de « ' + (s.nom || 'la région') + ' »', 'Un prix par ligne, dans l\'ordre des ' + S.items.length + ' articles (copiez la colonne depuis Excel ; une ligne vide = pas de prix).', function (txt) {
+      var col = B.lireColonne(txt), n = 0; S.items.forEach(function (a, i) { if (col[i]) { s.prix[a.id] = col[i]; n += 1; } else if (i < col.length) delete s.prix[a.id]; });
+      dessinerSources(); marquer(true); calculer(); toast(n + ' prix importé(s)');
+    });
+  });
+  $('b-src').onclick = function () { if (!S.items.length) { toast('Ajoutez d\'abord les articles de l\'offre', true); return; } if (S.sources.length >= 8) { toast('8 régions au maximum', true); return; } S.sources.push({ id: nouvelId('s'), nom: '', contrat: '', annee: '', coef: '', courrier: '', prix: {} }); dessinerSources(); marquer(true); calculer(); };
+
+  // ---------- collage ----------
+  var cbDlg = null;
+  function dialogue(titre, aide, cb) { $('dlg-t').textContent = titre; $('dlg-a').textContent = aide; $('dlg-x').value = ''; cbDlg = cb; $('dlg').showModal(); $('dlg-x').focus(); }
+  $('dlg-non').onclick = function () { $('dlg').close(); };
+  $('dlg-ok').onclick = function () { var f = cbDlg, v = $('dlg-x').value; $('dlg').close(); if (f) f(v); };
+  $('b-coller-offre').onclick = function () {
+    dialogue('Coller le bordereau de l\'offre', 'Copiez les cellules dans Excel (N°, Désignation, U, Qté, PU) puis collez ici. Les lignes remplacent les articles actuels.', function (txt) {
+      var l = B.lireArticles(txt); if (!l.length) { toast('Aucune ligne reconnue : collez des cellules copiées depuis Excel', true); return; }
+      if (S.items.length && !window.confirm('Remplacer les ' + S.items.length + ' article(s) actuel(s) par ' + l.length + ' ligne(s) ? Les prix des régions seront effacés.')) return;
+      S.items = l.slice(0, 80).map(function (x) { x.id = nouvelId('a'); return x; }); S.sources.forEach(function (s) { s.prix = {}; });
+      dessinerOffre(); dessinerSources(); marquer(true); calculer(); toast(S.items.length + ' article(s) importé(s)');
+    });
+  };
+
+  // ---------- résultat ----------
+  var CLS = { conforme: 'conforme', eleve: 'eleve', bas: 'bas' };
+  function calculer() {
+    lireEntetes(); res = B.calculer(S); var t = res.totaux, p = res.params;
+    var texteGlobal = { conforme: 'Offre conforme à la référence', eleve: 'Offre au-dessus de la référence', bas: 'Offre en dessous de la référence', insuffisant: 'Conclusion impossible : ' + (t.ecartFiable === null ? 'aucun article fiable' : 'les articles fiables ne couvrent que ' + nf(t.couverture * 100, 0) + ' % du marché (minimum ' + nf(p.couvertureMin * 100, 0) + ' %)') }[t.verdictGlobal];
+    $('kpis').innerHTML =
+      '<div class="kpi"><small>Montant de l\'offre HT</small><b>' + nf(t.montantOffre, 2) + ' DA</b><span>' + t.nArticles + ' article(s)</span></div>' +
+      '<div class="kpi ' + (CLS[t.verdictGlobal] || '') + '"><small>Écart global pondéré</small><b>' + pc(t.ecartFiable) + '</b><span>' + texteGlobal + (t.verdictGlobal === 'insuffisant' ? '' : ' (± ' + nf(p.seuil * 100, 0) + ' % toléré)') + '</span></div>' +
+      '<div class="kpi"><small>Montant au prix de référence</small><b>' + nf(t.montantRefFiable, 2) + ' DA</b><span>articles fiables · tous articles chiffrés : ' + pc(t.ecartGlobal) + ' (indicatif)</span></div>' +
+      '<div class="kpi"><small>Couverture du marché</small><b>' + nf(t.couverture * 100, 1) + ' %</b><span>' + t.nFiables + ' article(s) fiable(s) sur ' + t.nArticles + '</span></div>';
+    var cols = res.sources.length;
+    var th = '<thead><tr><th rowspan="2">N°</th><th rowspan="2">Désignation</th><th rowspan="2">U</th><th rowspan="2">Qté</th><th colspan="3">Offre reçue</th>' + (cols ? '<th colspan="' + cols + '">Prix actualisés des régions (DA)</th>' : '') + '<th colspan="3">Normativité</th></tr><tr><th>PU (DA)</th><th>Montant (DA)</th><th>%</th>' +
+      S.sources.map(function (s, j) { return '<th>' + E(s.nom || 'Région ' + (j + 1)) + '<small style="font-weight:400;display:block">' + E(s.contrat) + ' · ×' + nf(res.sources[j].coef, 3) + '</small></th>'; }).join('') + '<th>Référence (' + ({ mediane: 'médiane', moyenne: 'moyenne', min: 'minimum' }[p.statistique]) + ')</th><th>Écart offre / réf.</th><th>Verdict</th></tr></thead>';
+    var corps = '<tbody>' + res.lignes.map(function (r) {
+      var cl = r.verdict === 'eleve' ? 'color:var(--err);font-weight:800' : r.verdict === 'bas' ? 'color:#B45309;font-weight:800' : r.verdict === 'conforme' ? 'color:var(--ok);font-weight:800' : '';
+      return '<tr><td class="c">' + E(r.n) + '</td><td><span class="court" title="' + E(r.des) + '">' + E(r.des.length > 110 ? r.des.slice(0, 110) + '…' : r.des) + '</span><span class="long">' + E(r.des) + '</span></td><td class="c">' + E(r.u) + '</td><td class="r">' + nf(r.qte, 0) + '</td>' +
+        '<td class="r">' + nf(r.pu) + '</td><td class="r">' + nf(r.montant) + '</td><td class="r">' + nf(r.poids * 100, 1) + ' %</td>' +
+        res.sources.map(function (s) { var v = r.valeurs.filter(function (x) { return x.source === s.id; })[0]; return '<td class="r">' + (v ? '<span class="' + (v.suspect ? 'suspect' : '') + '">' + nf(v.actualise) + (v.suspect ? ' ⚠' : '') + '</span>' + (res.sources[res.sources.indexOf(s)].coef !== 1 ? '<small>reçu : ' + nf(v.brut) + '</small>' : '') : '') + '</td>'; }).join('') +
+        '<td class="r">' + (r.ref ? nf(r.ref) + '<small>' + r.nRetenus + ' source(s)</small>' : '—') + '</td><td class="r" style="' + cl + '">' + pc(r.ecart) + '</td><td class="c"><span class="pastille p-' + r.verdict + '">' + E(B.LIBELLES[r.verdict]) + '</span></td></tr>';
+    }).join('') + '</tbody>';
+    var pied = '<tfoot><tr><td colspan="5" style="text-align:right">Montant total de l\'offre en HT (DA)</td><td class="r">' + nf(t.montantOffre) + '</td><td class="r">100 %</td><td colspan="' + (cols + 3) + '"></td></tr></tfoot>';
+    $('res').innerHTML = S.items.length ? th + corps + pied : '<tbody><tr><td class="note">Saisissez l\'offre et les prix des régions : le résultat s\'affiche ici automatiquement.</td></tr></tbody>';
+    var al = [];
+    if (t.nVerifier) al.push('⚠ <b>' + t.nVerifier + ' article(s) à vérifier</b> : les prix reçus sont incohérents entre eux (rapport supérieur à ×' + p.dispersion + ') — souvent une erreur de saisie ou de zéro, ou un périmètre de travaux différent. Ils sont exclus de l\'écart global tant qu\'ils ne sont pas corrigés ou confirmés par la région.');
+    if (t.nInsuffisant) al.push('ℹ <b>' + t.nInsuffisant + ' article(s) sans verdict</b> : moins de ' + p.nMin + ' source(s). Demandez d\'autres contrats comparables aux régions pour les couvrir (l\'écart indiqué reste donné à titre indicatif).');
+    S.sources.forEach(function (s, j) { if (!s.annee && !s.coef) al.push('ℹ La région « ' + E(s.nom || j + 1) + ' » n\'a ni année de contrat ni coefficient : ses prix ne sont pas actualisés.'); });
+    $('alertes').innerHTML = al.map(function (x) { return '<div class="avis">' + x + '</div>'; }).join('');
+    $('methode').innerHTML = 'Méthode : prix des régions × coefficient d\'actualisation → référence par article (' + ({ mediane: 'médiane', moyenne: 'moyenne', min: 'minimum' }[p.statistique]) + ') → écart de l\'offre = (prix offre − référence) / référence ; l\'écart global est pondéré par les montants (quantité × prix) et ne retient que les articles fiables. Positif = l\'offre est plus chère que la référence.' +
+      (t.moyenneSimpleFeuille !== null ? ' <br>Pour comparaison, la moyenne simple des écarts du tableau d\'origine (région − offre) / offre donnerait ' + pc(t.moyenneSimpleFeuille) + ' : elle compte chaque article pour 1 quel que soit son montant et se laisse tirer par les prix aberrants.' : '');
+    $('entete-rendu').innerHTML = '<h1>BENCHMARK DES PRIX — NORMATIVITÉ DES PRIX</h1><div class="l"><b>' + E(S.titre) + '</b>' + (S.reference ? ' · Réf. ' + E(S.reference) : '') + '</div><div class="l">' + (S.entreprise ? 'Offre : ' + E(S.entreprise) + ' · ' : '') + 'RNS, le ' + E((S.date || aujourdhui()).split('-').reverse().join('/')) + '</div>';
+    $('sig-nom').textContent = moi;
+  }
+
+  // ---------- enregistrement ----------
+  function actualiserListe(choisir) {
+    return Api.call('benchmark_liste', {}).then(function (r) {
+      droits = { modifier: !!r.peut_modifier, supprimer: !!r.peut_supprimer };
+      $('liste').innerHTML = '<option value="">— Nouveau benchmark —</option>' + r.benchmarks.map(function (b) { return '<option value="' + E(b.id) + '">' + E(b.titre) + ' · ' + E((b.maj_le || '').slice(0, 10).split('-').reverse().join('/')) + '</option>'; }).join('');
+      $('liste').value = choisir || idCourant || ''; $('b-enr').disabled = !droits.modifier; $('b-sup').hidden = !(droits.supprimer && idCourant);
+      $('info').textContent = droits.modifier ? '' : 'Consultation seule : vous pouvez calculer et imprimer, mais pas enregistrer.';
+    });
+  }
+  function erreur(e) { if (e && (e.code === 'SESSION' || (!Api.token() && !Api.demo))) { Api.setToken(''); location.replace('connexion.html'); return; } toast((e && e.message) || 'Erreur', true); }
+  $('b-enr').onclick = function () {
+    lireEntetes(); if (!S.titre.trim()) { toast('Donnez un titre au benchmark', true); $('titre').focus(); return; }
+    $('b-enr').disabled = true;
+    Api.call('benchmark_enregistrer', { id: idCourant, doc: S }).then(function (r) { idCourant = r.id; marquer(false); toast('Benchmark enregistré'); return actualiserListe(idCourant); }).catch(erreur).then(function () { $('b-enr').disabled = !droits.modifier; });
+  };
+  $('liste').onchange = function () {
+    var id = $('liste').value;
+    if (sale && !window.confirm('Des modifications ne sont pas enregistrées. Les abandonner ?')) { $('liste').value = idCourant; return; }
+    if (!id) { idCourant = ''; S = vide(); versFormulaire(); marquer(false); $('b-sup').hidden = true; return; }
+    Api.call('benchmark_lire', { id: id }).then(function (r) { idCourant = id; S = r.doc; S.items = S.items || []; S.sources = S.sources || []; versFormulaire(); marquer(false); $('b-sup').hidden = !droits.supprimer; }).catch(erreur);
+  };
+  $('b-nouv').onclick = function () { if (sale && !window.confirm('Des modifications ne sont pas enregistrées. Les abandonner ?')) return; idCourant = ''; S = vide(); $('liste').value = ''; versFormulaire(); marquer(false); $('b-sup').hidden = true; };
+  $('b-ex').onclick = function () { if (sale && !window.confirm('Des modifications ne sont pas enregistrées. Les abandonner ?')) return; idCourant = ''; S = exemple(); $('liste').value = ''; versFormulaire(); marquer(true); $('b-sup').hidden = true; };
+  $('b-sup').onclick = function () {
+    if (!idCourant || !window.confirm('Supprimer définitivement ce benchmark ?')) return;
+    Api.call('benchmark_supprimer', { id: idCourant }).then(function () { idCourant = ''; S = vide(); versFormulaire(); marquer(false); toast('Benchmark supprimé'); return actualiserListe(''); }).catch(erreur);
+  };
+
+  // ---------- sorties ----------
+  $('b-imp').onclick = function () { calculer(); window.print(); };   // impression en un clic ; « Enregistrer au format PDF » dans la fenêtre d'impression
+  $('b-csv').onclick = function () {
+    calculer(); var blob = new Blob([B.versCsv(S, res)], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'Benchmark_' + (S.titre || 'prix').replace(/[^\w\-]+/g, '_').slice(0, 50) + '.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  };
+  window.addEventListener('beforeunload', function (e) { if (sale) { e.preventDefault(); e.returnValue = ''; } });
+
+  S = vide(); versFormulaire();
+  if (window.Api) {
+    Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; $('sig-nom').textContent = moi; }).catch(function () { /* rien */ });
+    actualiserListe('').catch(erreur);
+  }
+})();
+</script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

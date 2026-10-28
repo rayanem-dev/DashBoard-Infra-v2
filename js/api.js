@@ -49,7 +49,8 @@
         { titre: 'Suivi Chantier', description: 'Détail du suivi par chantier.', emoji: '🗂️', url: 'Suivi_Chantier.html' } ] },
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
-        { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' } ] },
+        { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' },
+        { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: '⚖️', url: 'benchmark.html' } ] },
       { id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 2, apps: [
         { titre: 'Planning global', description: 'Qui est au travail, qui est en repos : vue d\'ensemble des rotations.', emoji: '🗓️', url: 'planning.html' } ] },
       { id: 'simulation', titre: 'Simulation de planning', icone: '🧪', niveau: 3, apps: [
@@ -90,7 +91,8 @@
     cpm: [
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
-        { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' } ] }
+        { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' },
+        { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: '⚖️', url: 'benchmark.html' } ] }
     ]
   };
   DEMO_MENU.secretariat = DEMO_MENU.chef_division;
@@ -260,6 +262,16 @@
         return { groupes: ['Postes internes (4 chiffres)', 'Équipe Division Infrastructure — Collaborateurs & Bureaux › 🗒️ SECRÉTARIAT', 'Prestataires › MAINTENANCE'], rows: [
           [0, 'Réception', '📞 1000', 'Standard', ''], [0, 'Sûreté interne', '📞 1111', 'Poste de garde', ''],
           [1, 'DEMO Secrétaire', '📞 0555 00 00 00 | ✉️ secretariat@exemple.dz', 'SECRÉTAIRE', 'SONATRACH'], [2, 'Entreprise Atlas (démo)', '📞 0555 11 11 11', 'Maintenance', 'PRESTATAIRE']] };
+      case 'benchmark_liste': case 'benchmark_lire': case 'benchmark_enregistrer': case 'benchmark_supprimer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var bk = 'infra_v2_demo_benchmarks', bl; try { bl = JSON.parse(sessionStorage.getItem(bk) || '[]'); } catch (e) { bl = []; }
+        var bsave = function () { try { sessionStorage.setItem(bk, JSON.stringify(bl)); } catch (e) { /* stockage plein ou interdit */ } };
+        if (action === 'benchmark_liste') return { benchmarks: bl.map(function (d) { return { id: d.id, titre: d.titre, reference: d.reference || '', nb_articles: (d.items || []).length, nb_sources: (d.sources || []).length, maj_par: d.maj_par, maj_le: d.maj_le }; }).reverse(), peut_modifier: true, peut_supprimer: demoState.user.role === 'chef_division' };
+        if (action === 'benchmark_lire') { var f = bl.filter(function (d) { return d.id === p.id; })[0]; if (!f) throw erreur('Benchmark introuvable'); return { doc: f }; }
+        if (action === 'benchmark_supprimer') { bl = bl.filter(function (d) { return d.id !== p.id; }); bsave(); return {}; }
+        if (!p.doc || !String(p.doc.titre || '').trim()) throw erreur('Donnez un titre au benchmark');
+        var nd = JSON.parse(JSON.stringify(p.doc)), i0 = bl.map(function (d) { return d.id; }).indexOf(p.id);
+        nd.id = i0 >= 0 ? p.id : 'b' + Date.now(); nd.maj_par = demoState.user.nom; nd.maj_le = new Date().toISOString();
+        if (i0 >= 0) bl[i0] = nd; else bl.push(nd); bsave(); return { id: nd.id, maj_par: nd.maj_par, maj_le: nd.maj_le }; }
       case 'stats_st_lire': case 'stats_st_recalculer': case 'stats_st_maj': case 'stats_st_supprimer': case 'stats_st_ajouter': { exigerAdmin();
         var cle = 'infra_v2_demo_stats', st; try { st = JSON.parse(sessionStorage.getItem(cle) || '{}'); } catch (e) { st = {}; }
         var mois = p.mois || (p.id && (st.l || []).filter(function (x) { return x.id === p.id; })[0] || {}).mois || new Date().toISOString().slice(0, 7);
