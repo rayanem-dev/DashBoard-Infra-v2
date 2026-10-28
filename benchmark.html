@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/charte.css">
 <script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
-<script src="js/benchmark-calc.js"></script>
+<script src="js/banchy.js"></script><script src="badges/autodetect.js"></script>
 <style>
   .bm { max-width: 1400px; margin: 0 auto; padding: 16px 16px 40px; }
   .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
@@ -131,6 +131,7 @@
     <h2><span class="num">2</span> Offre reçue du client (bordereau des prix)</h2>
     <p class="aide">Collez le bordereau depuis Excel (colonnes : N°, désignation, unité, quantité, prix unitaire HT en DA) ou saisissez les lignes.</p>
     <div class="barre" style="margin-bottom:8px">
+      <button class="btn-s" id="b-lire-offre" type="button" title="Lit un PDF (texte ou scan), un Excel ou une photo : articles, unités, quantités, prix">📄 Lire un fichier (PDF, Excel, scan)</button>
       <button class="btn-s" id="b-coller-offre" type="button">📥 Coller depuis Excel</button>
       <button class="btn-s" id="b-ajout" type="button">+ Ajouter un article</button>
     </div>
@@ -140,7 +141,7 @@
   <div class="bloc">
     <h2><span class="num">3</span> Prix reçus des autres régions</h2>
     <p class="aide">Une colonne par région ayant répondu. Indiquez le contrat et son année : les prix sont ramenés à l'année de référence. Un prix manquant reste vide.</p>
-    <div class="barre" style="margin-bottom:8px"><button class="btn-s" id="b-src" type="button">+ Ajouter une région</button></div>
+    <div class="barre" style="margin-bottom:8px"><button class="btn-s" id="b-lire-src" type="button" title="Lit le courrier de réponse d'une région (PDF, scan, Excel) : contrat, année, prix">📄 Ajouter une région depuis un fichier</button><button class="btn-s" id="b-src" type="button">+ Ajouter une région vide</button></div>
     <div class="defil"><table class="edit" id="tab-src"></table></div>
   </div>
 
@@ -159,11 +160,13 @@
   </div>
 </main>
 <dialog id="dlg"><h3 id="dlg-t"></h3><p id="dlg-a"></p><textarea id="dlg-x" spellcheck="false"></textarea><div class="boutons"><button class="btn-s" id="dlg-non" type="button">Annuler</button><button class="btn-p" id="dlg-ok" type="button">Importer</button></div></dialog>
+<dialog id="dlg2" style="width:min(940px,96vw)"><h3 id="d2-t"></h3><p id="d2-a"></p><div id="d2-c" style="max-height:58vh;overflow:auto"></div><div class="boutons"><button class="btn-s" id="d2-non" type="button">Annuler</button><button class="btn-p" id="d2-ok" type="button">Importer</button></div></dialog>
+<input type="file" id="fichier" accept=".pdf,.xlsx,.xls,.xlsm,.csv,image/*" hidden>
 <div class="toast" id="toast" role="status"></div>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var B = window.Benchmark;
+  var B = window.Banchy, LE = B.Lecture;
   if (window.Api && Api.demo) $('demo').hidden = false;
   var S = null, compteur = 0, idCourant = '', droits = { modifier: false, supprimer: false }, sale = false, moi = '', res = null;
 
@@ -234,7 +237,7 @@
       return '<th class="src-t" data-j="' + j + '"><input data-s="nom" value="' + E(s.nom) + '" placeholder="Région (ex. DR HMD)" aria-label="Région"><input data-s="contrat" value="' + E(s.contrat) + '" placeholder="Contrat N°" aria-label="Contrat">' +
         '<div class="bt"><input data-s="annee" type="number" value="' + E(s.annee) + '" placeholder="Année" aria-label="Année du contrat" style="width:60%"><input data-s="coef" value="' + E(s.coef === '' || s.coef === undefined ? '' : String(s.coef).replace('.', ',')) + '" placeholder="Coef." title="Coefficient d\'actualisation (vide = calculé avec le taux annuel)" aria-label="Coefficient d\'actualisation" style="width:40%"></div>' +
         '<input data-s="courrier" value="' + E(s.courrier) + '" placeholder="Courrier de réponse" aria-label="Courrier de réponse">' +
-        '<div class="bt"><button class="btn-s" data-act="coller" type="button">📥 Coller</button><button class="btn-s" data-act="retirer" type="button" aria-label="Retirer la région" title="Retirer la région">🗑</button></div></th>';
+        '<div class="bt"><button class="btn-s" data-act="lire" type="button" title="Lire un fichier (PDF, Excel, scan)">📄 Lire</button><button class="btn-s" data-act="coller" type="button">📥 Coller</button><button class="btn-s" data-act="retirer" type="button" aria-label="Retirer la région" title="Retirer la région">🗑</button></div></th>';
     }).join('') + '</tr></thead>';
     var corps = '<tbody>' + S.items.map(function (a, i) {
       return '<tr data-i="' + i + '"><td class="note" style="padding-top:11px">' + E(a.n) + '</td><td class="des"><span class="lecture" title="' + E(a.des) + '">' + E(a.des.length > 90 ? a.des.slice(0, 90) + '…' : a.des) + '</span></td>' + S.sources.map(function (s, j) {
@@ -251,6 +254,7 @@
   });
   $('tab-src').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-act]'); if (!b) return; var j = +b.closest('th').dataset.j, s = S.sources[j];
+    if (b.dataset.act === 'lire') { lireRegion(j); return; }
     if (b.dataset.act === 'retirer') { if (!window.confirm('Retirer la région « ' + (s.nom || 'sans nom') + ' » et ses prix ?')) return; S.sources.splice(j, 1); dessinerSources(); marquer(true); calculer(); return; }
     dialogue('Coller les prix de « ' + (s.nom || 'la région') + ' »', 'Un prix par ligne, dans l\'ordre des ' + S.items.length + ' articles (copiez la colonne depuis Excel ; une ligne vide = pas de prix).', function (txt) {
       var col = B.lireColonne(txt), n = 0; S.items.forEach(function (a, i) { if (col[i]) { s.prix[a.id] = col[i]; n += 1; } else if (i < col.length) delete s.prix[a.id]; });
@@ -272,6 +276,82 @@
       dessinerOffre(); dessinerSources(); marquer(true); calculer(); toast(S.items.length + ' article(s) importé(s)');
     });
   };
+
+
+  // ---------- lecture automatique d'un fichier (PDF, scan, Excel) : Banchy.Lecture ----------
+  function script(src) { return new Promise(function (ok, ko) { if (document.querySelector('script[src="' + src + '"]')) { ok(); return; } var t = document.createElement('script'); t.src = src; t.onload = ok; t.onerror = function () { ko(new Error('Chargement impossible (réseau ?) : ' + src.split('/').pop())); }; document.head.appendChild(t); }); }
+  var CDN_XLSX = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', CDN_OCR = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.5/tesseract.min.js';
+  function occupe(m) { var t = $('toast'); t.textContent = m; t.className = 'toast on'; clearTimeout(toast.t); }
+  function choisirFichier(cb) { var f = $('fichier'); f.value = ''; f.onchange = function () { if (f.files && f.files[0]) cb(f.files[0]); }; f.click(); }
+  /** Lit le fichier et en tire { articles, offres, meta, total, source, nom }. Rien n'est enregistré. */
+  function analyserFichier(file) {
+    var nom = file.name || '', ext = (nom.split('.').pop() || '').toLowerCase();
+    occupe('Lecture de « ' + nom + ' »… (un scan peut prendre une minute)');
+    var lire;
+    if (/^(xlsx|xls|xlsm|csv)$/.test(ext)) lire = Promise.all([script(CDN_XLSX), file.arrayBuffer()]).then(function (r) {
+      var wb = window.XLSX.read(r[1], { type: 'array' }), best = null;
+      wb.SheetNames.forEach(function (n) { var rows = window.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' }), d = LE.depuisTableau(rows); if (!best || d.articles.length > best.d.articles.length) best = { d: d, rows: rows }; });
+      var m = LE.metadonnees(best.d.entete || ''); return { articles: best.d.articles, offres: best.d.offres, meta: m, total: null, source: 'excel', nom: nom };
+    });
+    else if (/^(jpe?g|png|webp|bmp|tiff?)$/.test(ext) || /^image\//.test(file.type)) lire = script(CDN_OCR).then(function () { return window.Tesseract.recognize(file, 'fra'); }).then(function (r) { return deTexte(r.data.text, 'scan', nom); });
+    else lire = window.AutoDetect.lireFichier(file).then(function (r) { return deTexte(r.texte, r.source === 'ocr' ? 'scan' : 'pdf', nom); });
+    return lire.then(function (r) { toast('Lecture terminée'); return r; }, function (e) { throw e; });
+  }
+  function deTexte(texte, source, nom) { var d = LE.depuisTexte(texte); return { articles: d.articles, offres: [], meta: LE.metadonnees(texte), total: d.total, source: source, nom: nom, mode: d.mode }; }
+  function dlg2(titre, aide, html, ok) { $('d2-t').textContent = titre; $('d2-a').innerHTML = aide; $('d2-c').innerHTML = html; $('d2-ok').onclick = function () { var f = ok; $('dlg2').close(); if (f) f(); }; $('d2-non').onclick = function () { $('dlg2').close(); }; $('dlg2').showModal(); }
+  var SRC_LIB = { pdf: 'PDF (texte)', scan: 'scan lu par OCR', excel: 'Excel' };
+  function avertir(r) { return (r.source === 'scan' ? '<br><b>Scan lu par OCR :</b> vérifiez surtout les chiffres (un 1 lu comme 7, une virgule oubliée…) avant d\'importer.' : '') + (r.articles.some(function (a) { return a.verifier; }) ? '<br>⚠ Les lignes marquées sont à vérifier (N° ou montant incohérent).' : ''); }
+
+  function lireOffre() {
+    choisirFichier(function (f) {
+      analyserFichier(f).then(function (r) {
+        if (!r.articles.length) { toast('Aucun article reconnu dans « ' + r.nom + ' » : collez les cellules depuis Excel.', true); return; }
+        var tab = '<table class="edit"><thead><tr><th style="width:36px"></th><th style="width:70px">N°</th><th>Désignation</th><th style="width:60px">U</th><th class="n" style="width:90px">Qté</th><th class="n" style="width:110px">PU (DA)</th></tr></thead><tbody>' + r.articles.map(function (a, i) {
+          return '<tr data-i="' + i + '"><td><input type="checkbox" data-c="on" checked></td><td><input data-c="n" value="' + E(a.n) + '"' + (a.verifier ? ' style="border-color:var(--orange-main)"' : '') + '></td><td><input data-c="des" value="' + E(a.des) + '"></td><td><input data-c="u" value="' + E(a.u) + '"></td><td class="n"><input data-c="qte" value="' + E(a.qte) + '"></td><td class="n"><input data-c="pu" value="' + E(a.pu) + '"></td></tr>'; }).join('') + '</tbody></table>';
+        var offres = r.offres.length ? '<label style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="d2-offres" checked style="width:auto"> Importer aussi les ' + r.offres.length + ' colonne(s) de prix des régions : ' + E(r.offres.map(function (o) { return (o.libelle || 'région').slice(0, 40); }).join(' · ')) + '</label>' : '';
+        dlg2('Offre lue : ' + r.articles.length + ' article(s)', 'Fichier « ' + E(r.nom) + ' » (' + SRC_LIB[r.source] + ')' + (r.total ? ' · total lu : ' + nf(r.total, 2) + ' DA' : '') + '. Corrigez si besoin puis importez.' + avertir(r), tab + offres, function () {
+          var lignes = [].slice.call($('d2-c').querySelectorAll('tbody tr')), garde = [];
+          lignes.forEach(function (tr) { var v = function (c) { return tr.querySelector('[data-c="' + c + '"]'); }; if (!v('on').checked) return; var idx = +tr.dataset.i; garde.push({ idx: idx, a: { id: nouvelId('a'), n: v('n').value, des: v('des').value, u: v('u').value, qte: B.nombre(v('qte').value) || '', pu: B.nombre(v('pu').value) || '' } }); });
+          if (!garde.length) return;
+          if (S.items.length && !window.confirm('Remplacer les ' + S.items.length + ' article(s) actuel(s) par ' + garde.length + ' article(s) lu(s) ? Les prix des régions seront effacés.')) return;
+          S.items = garde.map(function (g) { return g.a; }); S.sources.forEach(function (s) { s.prix = {}; });
+          var box = $('d2-offres'); if (box && box.checked) r.offres.forEach(function (o) {
+            var prix = {}; garde.forEach(function (g) { var v = o.prix[g.idx]; if (v) prix[g.a.id] = v; });
+            if (S.sources.length < 8) S.sources.push({ id: nouvelId('s'), nom: nomRegion(o.libelle), contrat: o.contrat || '', annee: o.annee || '', coef: '', courrier: '', prix: prix });
+          });
+          if (!S.reference && r.meta.reference) S.reference = r.meta.reference;
+          versFormulaire(); marquer(true); toast(S.items.length + ' article(s) importé(s)');
+        });
+      }).catch(function (e) { toast(e.message || 'Lecture impossible', true); });
+    });
+  }
+  function nomRegion(lib) { var t = String(lib || '').replace(/contrat\s*n°?\s*/i, '').split(/[\/\- ]+/).filter(function (x) { return /^[A-Z]{3,6}$/.test(x) && !/^(LOG|INFRA|PROD|CONTRAT|DR|SH|RNS)$/.test(x); }); return t[0] || String(lib || '').replace(/contrat\s*n°?\s*/i, '').slice(0, 30); }
+
+  function lireRegion(j) {
+    if (!S.items.length) { toast('Ajoutez d\'abord les articles de l\'offre', true); return; }
+    choisirFichier(function (f) {
+      analyserFichier(f).then(function (r) {
+        var lus = r.articles;
+        if (!lus.length) { toast('Aucun prix reconnu dans « ' + r.nom + ' » : collez la colonne de prix depuis Excel.', true); return; }
+        var m = LE.rapprocher(S.items, lus), meta = r.meta;
+        var opts = function (sel) { return '<option value="-1">— aucun —</option>' + lus.map(function (l, k) { return '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + E((l.n || '?') + ' · ' + (l.des || '').slice(0, 60) + ' · ' + nf(l.pu, 2)) + '</option>'; }).join(''); };
+        var tab = '<div class="grille" style="margin-bottom:10px"><label class="c">Région<input id="d2-nom" value="' + E((j === null ? '' : S.sources[j].nom) || meta.region || '') + '"></label><label class="c">Contrat N°<input id="d2-contrat" value="' + E((j === null ? '' : S.sources[j].contrat) || meta.contrat || '') + '"></label><label class="c">Année du contrat<input id="d2-annee" type="number" value="' + E((j === null ? '' : S.sources[j].annee) || meta.annee || '') + '"></label><label class="c">Courrier de réponse<input id="d2-courrier" value="' + E((j === null ? '' : S.sources[j].courrier) || meta.courrier || '') + '"></label></div>' +
+          '<table class="edit"><thead><tr><th style="width:55px">N°</th><th>Article de l\'offre</th><th>Ligne lue dans le fichier</th><th class="n" style="width:120px">PU (DA)</th><th style="width:90px">Trouvé par</th></tr></thead><tbody>' + S.items.map(function (a, i) {
+          var k = m[i].i; return '<tr data-i="' + i + '"><td class="note" style="padding-top:11px">' + E(a.n) + '</td><td><span class="lecture" title="' + E(a.des) + '">' + E(a.des.slice(0, 70)) + '</span></td><td><select data-c="sel" style="width:100%">' + opts(k) + '</select></td><td class="n"><input data-c="pu" inputmode="decimal" value="' + (k >= 0 ? E(nf(lus[k].pu, 2).replace(/ | /g, ' ')) : '') + '"></td><td class="note">' + E(m[i].methode) + '</td></tr>'; }).join('') + '</tbody></table>';
+        dlg2('Prix lus : ' + lus.length + ' ligne(s)', 'Fichier « ' + E(r.nom) + ' » (' + SRC_LIB[r.source] + '). Chaque article de l\'offre est mis en face d\'une ligne du fichier : corrigez le choix ou le prix, puis importez.' + avertir(r), tab, function () {
+          var s = j === null ? { id: nouvelId('s'), nom: '', contrat: '', annee: '', coef: '', courrier: '', prix: {} } : S.sources[j];
+          if (j === null) { if (S.sources.length >= 8) { toast('8 régions au maximum', true); return; } S.sources.push(s); }
+          s.nom = $('d2-nom').value; s.contrat = $('d2-contrat').value; s.annee = Number($('d2-annee').value) || ''; s.courrier = $('d2-courrier').value; s.prix = {};
+          var n = 0; [].slice.call($('d2-c').querySelectorAll('tbody tr')).forEach(function (tr) { var pu = B.nombre(tr.querySelector('[data-c="pu"]').value); if (pu) { s.prix[S.items[+tr.dataset.i].id] = pu; n += 1; } });
+          dessinerSources(); marquer(true); calculer(); toast(n + ' prix importé(s) pour « ' + (s.nom || 'la région') + ' »');
+        });
+        // le choix d'une autre ligne recopie son prix
+        $('d2-c').querySelectorAll('select[data-c="sel"]').forEach(function (sel) { sel.onchange = function () { var k = +sel.value, tr = sel.closest('tr'); tr.querySelector('[data-c="pu"]').value = k >= 0 ? nf(lus[k].pu, 2).replace(/ | /g, ' ') : ''; }; });
+      }).catch(function (e) { toast(e.message || 'Lecture impossible', true); });
+    });
+  }
+  $('b-lire-offre').onclick = lireOffre;
+  $('b-lire-src').onclick = function () { if (!S.items.length) { toast('Lisez ou saisissez d\'abord l\'offre à analyser', true); return; } lireRegion(null); };
 
   // ---------- résultat ----------
   var CLS = { conforme: 'conforme', eleve: 'eleve', bas: 'bas' };

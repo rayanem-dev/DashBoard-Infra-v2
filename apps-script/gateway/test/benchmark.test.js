@@ -1,7 +1,7 @@
 // node --test apps-script/gateway/test/benchmark.test.js
 const test = require('node:test');
 const assert = require('node:assert');
-const B = require('../../../js/benchmark-calc.js');
+const B = require('../../../js/banchy.js');
 
 // Données du tableau d'origine (benchmark.xlsx) : toitures-terrasses de Rhourde Nouss, offre ALKO CONSTRUCTION, 3 contrats d'autres régions (coefficients du tableau).
 const items = [
