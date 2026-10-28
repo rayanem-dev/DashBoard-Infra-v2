@@ -14,6 +14,7 @@
   function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function fichier(u) { return String(u || '').split(/[?#]/)[0].split('/').pop().toLowerCase(); }
   function lienSur(u) { u = String(u || ''); return /^(https?:\/\/|[A-Za-z0-9_\-\/]+\.html)/.test(u) ? u : '#'; }
+  function ico(n, e) { if (/^img\/[\w\/.-]+\.(png|svg|webp)$/i.test(String(e || ''))) { var i = document.createElement('img'); i.src = e; i.alt = ''; i.className = 'ico-img'; n.appendChild(i); } else n.textContent = e || '📄'; return n; }   // l'icône d'une carte est un emoji ou une image du site
   function lienApp(a) { var u = lienSur(a.url); return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_\-]+\/exec$/.test(u) ? 'app.html?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(a.titre || '') + '&e=' + encodeURIComponent(String(a.emoji || a.icone || '').slice(0, 8)) : u; }
   function etatSauve() { try { var v = localStorage.getItem(CLE_ETAT); return v === 'ouvert' || v === 'rail' ? v : null; } catch (e) { return null; } }
   function sauver(v) { try { localStorage.setItem(CLE_ETAT, v); } catch (e) { /* rien */ } }
@@ -28,7 +29,7 @@
     '#ml .ml-titre{font-weight:800;font-size:14px;line-height:1.15;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}' +
     '#ml .ml-bascule{border:1px solid var(--border,#E5E7EB);background:var(--surface-2,#F8F9FA);border-radius:9px;width:30px;height:30px;cursor:pointer;flex:none;font-size:14px;line-height:1}' +
     '#ml .ml-cherche{margin:2px 12px 8px}#ml .ml-cherche input{width:100%;padding:7px 10px;border:1.5px solid var(--border,#E5E7EB);border-radius:9px;background:var(--surface,#fff);color:inherit;font:inherit;font-size:13px}' +
-    '#ml nav{flex:1;overflow-y:auto;padding:0 8px 12px}#ml .ml-cat{margin-bottom:2px}' +
+    '#ml nav{flex:1;overflow-y:auto;padding:0 8px 12px}#ml .ml-cat{margin-bottom:2px}#ml .ml-ico img{width:22px;height:22px;object-fit:contain;display:block;margin:0 auto}' +
     '#ml .ml-cat>button{display:flex;align-items:center;gap:9px;width:100%;text-align:start;border:0;background:none;cursor:pointer;padding:8px 8px;border-radius:9px;font-weight:700}#ml .ml-cat>button:hover{background:var(--surface-2,#F3F4F6)}' +
     '#ml .ml-ico{width:26px;text-align:center;font-size:17px;flex:none}#ml .ml-nom{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#ml .ml-fl{font-size:10px;opacity:.55;transition:transform .15s}#ml .ml-cat.ouvert>button .ml-fl{transform:rotate(90deg)}' +
     '#ml .ml-apps{display:none;padding:0 0 4px 8px}#ml .ml-cat.ouvert .ml-apps{display:block}' +
@@ -79,7 +80,7 @@
       cat.appendChild(b);
       var l = el('div', 'ml-apps');
       apps.forEach(function (a) {
-        var href = lienApp(a), x = el('a', ici(a) ? 'ici' : ''); x.href = href; x.appendChild(el('span', 'ml-ico', a.emoji || '📄')); x.appendChild(el('span', 'ml-nom', a.titre || '')); x.title = a.titre || '';
+        var href = lienApp(a), x = el('a', ici(a) ? 'ici' : ''); x.href = href; x.appendChild(ico(el('span', 'ml-ico'), a.emoji)); x.appendChild(el('span', 'ml-nom', a.titre || '')); x.title = a.titre || '';
         if (ici(a)) x.setAttribute('aria-current', 'page');
         x.addEventListener('click', function () { compterUsage(a.titre); }); x.addEventListener('auxclick', function () { compterUsage(a.titre); });   // alimente « Mes applications » de l'accueil
         if (etranger(href)) { x.target = '_blank'; x.rel = 'noopener'; }

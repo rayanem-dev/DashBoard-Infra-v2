@@ -7,7 +7,8 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="same-origin">
 <meta name="theme-color" content="#E85D04">
-<link rel="icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="img/icones/pec-32.png">
+<link rel="apple-touch-icon" href="img/icones/pec-192.png">
 <link rel="manifest" href="manifest.json">
 <script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
 <script>
@@ -86,6 +87,8 @@ window.google = { script: { run: (function () {
   .retour-portail:hover { background: rgba(255,255,255,.24); border-color: var(--orange-light); }
   @media (max-width: 560px) { .retour-portail span { display: none; } .retour-portail { padding: 0 12px; } }
   .icone:hover { background: rgba(255,255,255,.24); border-color: var(--orange-light); } .icone:disabled { opacity: .5; cursor: wait; }
+  @media (min-width: 701px) { .icones { margin-right: 108px; } }   /* place de la boule des jours et de l'avatar, posés en haut à droite */
+  .logo-circle.logo-img { background: none; box-shadow: none; width: 58px; height: 58px; } .logo-circle.logo-img img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
   .logo-text h1 { font-size: 18px; } @media (max-width: 560px) { .logo-text h1 { font-size: 14px; } .header-inner { padding: 10px 14px; gap: 10px; } }
   .form-card { background: var(--white); border-radius: 20px; padding: 24px 26px; box-shadow: var(--shadow-card); border: 1px solid var(--border); }
   label { display: block; font-weight: 700; margin: 16px 0 6px; font-size: 13px; color: var(--gray-dark); }
@@ -175,7 +178,7 @@ window.google = { script: { run: (function () {
   @media (max-width: 700px) {
     html, body { overflow-x: hidden; }
     .header-inner { flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
-    .logo-circle { width: 40px; height: 40px; border-radius: 11px; font-size: 14px; }
+    .logo-circle { width: 40px; height: 40px; border-radius: 11px; font-size: 14px; } .logo-circle.logo-img { width: 44px; height: 44px; }
     .header-inner { padding-left: 58px; }   /* place du bouton ☰ du menu */
     .logo-text { flex: 1; min-width: 0; padding-right: 100px; }   /* place de la boule des jours et de l'avatar, posés en haut à droite */ .logo-text h1 { font-size: 13.5px; line-height: 1.2; } .logo-text p { display: none; }
     .icones { flex: 1 0 100%; margin-left: 0; justify-content: space-between; gap: 6px; }
@@ -206,7 +209,7 @@ window.google = { script: { run: (function () {
 
 <header>
   <div class="header-inner">
-    <div class="logo-circle">PEC</div>
+    <div class="logo-circle logo-img"><img src="img/icones/pec-96.png" alt="Prise en charge et autorisation d'accès" width="56" height="56"></div>
     <div class="logo-text">
       <h1>Prise en charge et autorisation d'accès</h1>
       <p>Gestion prestataires</p>

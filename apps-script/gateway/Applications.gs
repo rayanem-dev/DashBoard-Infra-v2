@@ -15,7 +15,7 @@ var SEED_APPS = [
   "logistique",
   "Prises en Charge + Autorisation d'Accès",
   "Application unifiée et intelligente regroupant la création, la vérification et le suivi des prises en charge ainsi que des autorisations d'accès. Des fragments d'intelligence artificielle ont été utilisés pour automatiser la saisie et accélérer le traitement des dossiers.",
-  "🧾🪪",
+  "img/icones/pec-96.png",
   "prise-en-charge.html",
   1
  ],
@@ -563,6 +563,18 @@ function renommerReservationVol_() {
     var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre');
     for (var i = 1; i < v.length; i += 1) if (String(v[i][iT]) === 'Demande de réservation') { sh.getRange(i + 1, iT + 1).setValue('Réservation Vol'); break; }
     props.setProperty('RESERVATION_VOL_V1', '1');
+    try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+
+/** Une seule fois : l'icône de la carte « Prises en Charge + Autorisation d'Accès » devient l'image du site (hexagone hébergement · restauration · accès). */
+function migrerIconePriseEnCharge_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('PEC_ICONE_V1') === '1') return;
+  try {
+    var sh = SpreadsheetApp.openById(prop_('DB_ID')).getSheetByName('Applications'), v = sh.getDataRange().getValues(), h = v[0].map(String), iT = h.indexOf('titre'), iE = h.indexOf('emoji');
+    for (var i = 1; i < v.length; i += 1) if (/^Prises? en Charge/i.test(String(v[i][iT]))) sh.getRange(i + 1, iE + 1).setValue('img/icones/pec-96.png');
+    props.setProperty('PEC_ICONE_V1', '1');
     try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {}
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }
