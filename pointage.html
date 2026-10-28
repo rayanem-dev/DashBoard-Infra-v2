@@ -149,8 +149,8 @@
         c.onchange = function () { p.actif = c.checked; sauverEff(); dessinerEff(); feuilles(); };
         var a = affiche(p), n = document.createElement('span'), f = document.createElement('small'); n.textContent = a.nom; f.textContent = a.fonction;
         l.appendChild(c); l.appendChild(n); l.appendChild(f); d.appendChild(l);
-        var x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.title = 'Retirer de la division';
-        x.onclick = function () { if (!confirm('Retirer ' + a.nom + ' de l\'effectif de la division ?')) return; g.l.splice(pi, 1); sauverEff(); dessinerEff(); feuilles(); };
+        var x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.title = 'Retirer de la feuille';
+        x.onclick = function () { g.l.splice(pi, 1); sauverEff(); dessinerEff(); feuilles(); };
         d.appendChild(x); z.appendChild(d);
       });
       var ad = document.createElement('div'); ad.className = 'add'; var i = document.createElement('input'); i.type = 'text'; i.placeholder = 'Ajouter une personne (nom de BDDORGA)'; i.setAttribute('list', 'dl-pers'); i.setAttribute('aria-label', 'Ajouter une personne à ' + g.t);
