@@ -104,25 +104,28 @@
   }
   function lirePlanning() { return window.Api ? Api.call('planning', { debut: $('f-du').value, jours: JOURS }).then(function (r) { plan = r.lignes || []; }) : Promise.resolve(); }
   function purgerCroix() { var du = $('f-du').value; Object.keys(croix).forEach(function (k) { if (k.indexOf(du + '|') === 0) delete croix[k]; }); }
-  function importerTout() { purgerCroix(); sauverX(); eff = depart(); sauverEff(); dessinerEff(); feuilles(); toast(eff.reduce(function (n, g) { return n + g.l.length; }, 0) + ' personne(s) importée(s)'); }
-  function importerPresents() {
+  function importerTout() { purgerCroix(); sauverX(); listeDe($('f-du').value); eff = depart(); sauverEff(); dessinerEff(); feuilles(); toast(eff.reduce(function (n, g) { return n + g.l.length; }, 0) + ' personne(s) importée(s)'); }
+  // présents = les agents SONATRACH du planning qui ont au moins un jour de travail dans la semaine (rentrants compris), rangés par service
+  function importerPresents(silencieux) {
     var du = $('f-du').value;
-    lirePlanning().then(function () {
-      purgerCroix(); var n = 0, sans = 0, out = [];
-      depart().forEach(function (g) {
-        var l = g.l.filter(function (x) {
-          var pl = ligneDePlanning(affiche(x)) || ligneDePlanning(x); if (!pl) { sans += 1; return false; }
-          var jours = []; for (var i = 0; i < JOURS; i += 1) if (pl.grille.charAt(i) === 'T') jours.push(i);
-          if (!jours.length) return false;
-          jours.forEach(function (i) { croix[du + '|' + x.nom + '|' + plus(du, i) + 'M'] = 1; croix[du + '|' + x.nom + '|' + plus(du, i) + 'S'] = 1; });
-          n += 1; return true;
-        });
-        if (l.length) out.push({ t: g.t, l: l });
+    return lirePlanning().then(function () {
+      purgerCroix(); var n = 0, par = {}, ordre = [];
+      plan.forEach(function (l) {
+        if (!l.configuree || !l.grille || norm(l.dependance || 'sonatrach') !== 'sonatrach') return;
+        var jours = []; for (var i = 0; i < JOURS; i += 1) if (l.grille.charAt(i) === 'T') jours.push(i);
+        if (!jours.length) return;
+        var t = String(l.service || '').trim() || 'Autres'; if (!par[t]) { par[t] = []; ordre.push(t); }
+        jours.forEach(function (i) { croix[du + '|' + l.nom + '|' + plus(du, i) + 'M'] = 1; croix[du + '|' + l.nom + '|' + plus(du, i) + 'S'] = 1; });
+        par[t].push({ nom: l.nom, fonction: l.fonction || '', actif: true }); n += 1;
       });
-      eff = out; sauverX(); sauverEff(); dessinerEff(); feuilles();
-      toast(n + ' présent(s) importé(s)' + (sans ? ' · ' + sans + ' sans planning non repris (utilisez « tout le personnel »)' : ''));
-    }).catch(function () { toast('Planning indisponible : utilisez « Importer tout le personnel »', true); });
+      eff = ordre.sort().map(function (t) { par[t].sort(function (a, b) { return a.nom < b.nom ? -1 : 1; }); return { t: t, l: par[t] }; });
+      listeDe(du); sauverX(); sauverEff(); dessinerEff(); feuilles();
+      if (!silencieux || !n) toast(n ? n + ' présent(s) importé(s) du planning' : 'Aucun présent dans le planning cette semaine', !n);
+    }).catch(function () { if (!silencieux) toast('Planning indisponible : utilisez « Importer tout le personnel »', true); });
   }
+  // la liste est refaite toute seule à l'ouverture et au changement de semaine ; une liste déjà établie pour cette semaine est conservée (ajouts et retraits manuels)
+  function listeDe(du) { try { localStorage.setItem('pointage_semaine', du); } catch (e) { /* rien */ } }
+  function auto() { var du = $('f-du').value, vu = ''; try { vu = localStorage.getItem('pointage_semaine') || ''; } catch (e) { /* rien */ } if (du && vu !== du && window.Api) importerPresents(true); }
   // nom et fonction de BDDORGA : une personne de l'effectif est rapprochée de BDDORGA quand tous les mots de son nom s'y retrouvent (ordre libre)
   var annuaire = [];
   function rapprocher(p) {
@@ -133,7 +136,7 @@
     return tous[0];
   }
   function affiche(p) { var a = rapprocher(p); return { nom: a && a.nom ? a.nom : p.nom, fonction: a && a.fonction ? a.fonction : p.fonction }; }
-  function appliquerDepart(g) { DEPART = g || []; if (!eff.length) { eff = depart(); sauverEff(); } dessinerEff(); feuilles(); }
+  function appliquerDepart(g) { DEPART = g || []; var vu = ''; try { vu = localStorage.getItem('pointage_semaine') || ''; } catch (e) { /* rien */ } if (!eff.length && !vu) { eff = depart(); sauverEff(); } dessinerEff(); feuilles(); }
   if (window.Api) Api.call('pointage_effectif').then(function (r) { appliquerDepart(r.groupes); }).catch(function () { /* sans la liste de départ : l'effectif enregistré dans ce navigateur, ou à saisir à la main */ });
   if (window.Api) Api.call('annuaire_personnes').then(function (r) { annuaire = (r.personnes || []).filter(function (p) { return p.nom; }); dessinerEff(); feuilles(); }).catch(function () { /* sans annuaire : noms et fonctions de la fiche d'origine */ });
 
@@ -201,10 +204,10 @@
   }
   function ajuster() { var z = $('feuilles').parentNode, l = z.clientWidth - 28, w = $('feuilles').offsetWidth || 1122; var k = Math.min(1, l / w); $('feuilles').style.transform = k < 1 ? 'scale(' + k + ')' : ''; z.style.height = k < 1 ? Math.ceil($('feuilles').offsetHeight * k + 28) + 'px' : ''; }
   window.addEventListener('resize', ajuster);
-  $('f-du').addEventListener('input', feuilles);
-  $('b-pres').onclick = importerPresents; $('b-tous').onclick = importerTout;
+  $('f-du').addEventListener('input', function () { feuilles(); auto(); });
+  $('b-pres').onclick = function () { importerPresents(false); }; $('b-tous').onclick = importerTout;
   $('b-imp').onclick = function () { window.print(); };          // impression en un clic
-  $('f-du').value = iso(new Date()); dessinerEff(); feuilles();
+  $('f-du').value = iso(new Date()); dessinerEff(); feuilles(); auto();
 })();
 </script>
 <script src="js/pied.js"></script>

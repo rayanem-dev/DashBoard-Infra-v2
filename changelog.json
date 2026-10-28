@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-228",
+    "date": "2026-10-28",
+    "title": "Version 6.15.1 — Feuille de pointage : les présents du planning arrivent tout seuls",
+    "changes": [
+      "À l'ouverture et à chaque changement de semaine, la feuille se remplit toute seule avec les agents SONATRACH du planning qui travaillent au moins un jour de la semaine (rentrants compris), rangés par service, leurs jours de présence cochés. Avant, seule l'ancienne liste fixe de l'effectif était consultée, d'où des personnes du planning absentes de la feuille.",
+      "Une liste déjà établie pour la semaine est conservée (ajouts et retraits manuels) ; « Importer l'effectif présent » la refait à la demande."
+    ]
+  },
+  {
     "id": "2026-10-28-227",
     "date": "2026-10-28",
     "title": "Version 6.15.0 — Feuille de pointage simplifiée : deux boutons d'import",
