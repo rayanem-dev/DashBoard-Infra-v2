@@ -210,7 +210,7 @@
     $('r-info').textContent = 'Période du ' + jjj(R.du) + ' au ' + jjj(R.au) + ' · ' + k.rapports + ' rapport(s) reçus sur ' + k.joursActifs + ' jour(s) d\'activité';
     z.innerHTML = kpi(k.rapports, 'Rapports reçus', k.joursActifs + ' jour(s) d\'activité') + kpi(pct(k.tauxRemise), 'Taux de remise', k.chantiersAvecRapport + ' / ' + k.chantiersSuivis + ' chantiers ont rapporté') +
       kpi(k.effectifMoyenJour == null ? '—' : k.effectifMoyenJour, 'Effectif moyen / jour', 'tous chantiers confondus') + kpi(k.avancementMoyen == null ? '—' : k.avancementMoyen + ' %', 'Avancement moyen', 'dernier avancement déclaré par chantier') +
-      kpi(k.difficultes, 'Difficultés signalées', 'rapports mentionnant un problème') + kpi(pct(k.tauxVisa), 'Rapports visés', 'visa du chef de service');
+      kpi(k.difficultes, 'Difficultés signalées', 'rapports mentionnant un problème');
     $('graphe').innerHTML = graphe(R.jours);
     var c = $('r-corps'); c.textContent = '';
     R.chantiers.forEach(function (l) {
