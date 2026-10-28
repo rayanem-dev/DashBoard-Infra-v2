@@ -121,6 +121,7 @@ function genererDotation(form) {
   form.date = aujourdhuiIso_();   // la date du document est celle d'aujourd'hui, quoi que la page envoie
   if (form.type === 'EAU') return genererDotationEau_(form);
   if (form.type === 'ENTRETIEN') return genererDotationEntretien_(form);
+  if (form.type === 'ENTRETIEN_LIBRE') return genererEntretienLibre_(form);
   if (form.type === 'DIVISION') return genererDotationDivision_(form);
   if (form.type === 'REPAS') return genererPriseEnChargeRepas_(form);
   return genererDotationVivres_(form);
@@ -319,6 +320,79 @@ function genererDotationEntretien_(form) {
              docId: copie.getId(), pdfId: pdfFile.getId(), nom: nomBase };
   } catch (error) {
     return { success: false, error: error.toString() };
+  }
+}
+
+// ===================== DEMANDE LIBRE (produits d'entretien hors dotation mensuelle) =====================
+// Pas forcément pour un atelier : n'importe quel service ou structure, des lignes libres (désignation + quantité), sans la fenêtre du 01 au 15.
+const STRUCTURES_LIBRE = ['Division Infrastructure'].concat(SERVICES_VIVRES_EAU, ATELIERS);
+const IMPUTATION_LIBRE_MAP = Object.assign({ 'Division Infrastructure': '4300045000' }, IMPUTATION_MAP, IMPUTATION_ENTRETIEN_MAP);
+function getStructuresLibre() { return STRUCTURES_LIBRE.map(n => ({ nom: n, imputation: IMPUTATION_LIBRE_MAP[n] || '' })); }
+/** Contenu du tableau d'une demande libre, d'après le formulaire. Pur : testé en Node. */
+function entretienLibreChamps_(form) {
+  const service = String(form.service || '').replace(/\s+/g, ' ').trim();
+  if (!service) throw new Error('Indiquez le service ou la structure concernée.');
+  const lignes = (Array.isArray(form.lignes) ? form.lignes : []).map(l => ({ des: String((l && l.des) || '').replace(/\s+/g, ' ').trim(), qte: String((l && l.qte) == null ? '' : l.qte).replace(/\s+/g, ' ').trim() })).filter(l => l.des || l.qte);
+  if (!lignes.length) throw new Error('Ajoutez au moins une ligne (désignation et quantité).');
+  lignes.forEach((l, i) => { if (!l.des) throw new Error('Ligne ' + (i + 1) + ' : indiquez la désignation.'); if (!l.qte) throw new Error('Ligne ' + (i + 1) + ' : indiquez la quantité.'); });
+  const d1 = jjmmaaaa_(form.dateDebut || form.date), d2 = jjmmaaaa_(form.dateFin);
+  if (!d1) throw new Error('Indiquez la période de dotation.');
+  const periode = d2 && d2 !== d1 ? d1 + ' Au ' + d2 : d1;
+  const imputation = String(form.imputation || '').trim() || IMPUTATION_LIBRE_MAP[service] || '';
+  return { service: service, lignes: lignes, periode: periode, imputation: imputation, observations: lignes_(form.observations), date: jjmmaaaa_(form.date || form.dateDebut) };
+}
+function genererEntretienLibre_(form) {
+  try {
+    const c = entretienLibreChamps_(form), dossier = getDossierParent_(ENTRETIEN_TEMPLATE_ID);
+    const nomBase = 'DOTATION_ENTRETIEN_LIBRE_' + c.service.replace(/[^\wÀ-ÿ()-]+/g, '_') + '_' + c.date.replace(/\//g, '-');
+    const doc = DocumentApp.create(nomBase), body = doc.getBody();
+    body.setPageWidth(842).setPageHeight(595).setMarginTop(30).setMarginBottom(30).setMarginLeft(48).setMarginRight(48);
+    const C = DocumentApp.HorizontalAlignment.CENTER, R = DocumentApp.HorizontalAlignment.RIGHT, L = DocumentApp.HorizontalAlignment.LEFT, ORANGE = '#E58A00';
+    const mise = (p, o) => { if (!p) return p; o = o || {}; p.setSpacingBefore(o.avant || 0).setSpacingAfter(o.apres || 0).setAlignment(o.align || L); p.setBold(!!o.gras).setItalic(false).setUnderline(!!o.souligne).setFontSize(o.taille || 10).setFontFamily('Arial').setForegroundColor('#000000'); return p; };
+    const cellule = (cell, lignes, o) => {
+      o = o || {}; cell.setPaddingTop(o.pad == null ? 5 : o.pad).setPaddingBottom(o.pad == null ? 5 : o.pad).setPaddingLeft(5).setPaddingRight(5).setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+      const l = lignes.length ? lignes : [''], premier = cell.getNumChildren() ? cell.getChild(0).asParagraph() : cell.appendParagraph(' ');
+      premier.setText(vide_(l[0]));
+      [premier].concat(l.slice(1).map(x => cell.appendParagraph(vide_(x)))).forEach(p => mise(p, { align: o.align || C, gras: o.gras, taille: o.taille }));
+    };
+    // En-tête : logo et service à gauche, « A Monsieur / Le Chef de Division MG » à droite, filet orange, date
+    const entete = body.appendTable([[' ', ' ']]); entete.setBorderWidth(0); entete.setColumnWidth(0, 330).setColumnWidth(1, 410);
+    const g = entete.getRow(0).getCell(0), d = entete.getRow(0).getCell(1);
+    g.setPaddingTop(0).setPaddingBottom(0).setPaddingLeft(0); d.setPaddingTop(0).setPaddingBottom(0).setVerticalAlignment(DocumentApp.VerticalAlignment.TOP);
+    const pl = g.getChild(0).asParagraph(); mise(pl, { apres: 2 });
+    pl.appendInlineImage(Utilities.newBlob(Utilities.base64Decode(LOGO_SONATRACH_B64), 'image/png', 'sonatrach.png')).setWidth(66).setHeight(98);
+    ['Activité Exploration - Production', 'Division Production', 'Direction Régionale Rhourde Nouss', 'Division Infrastructure'].forEach(t => mise(g.appendParagraph(t), { gras: true, taille: 10 }));
+    const pd = d.getChild(0).asParagraph(); mise(pd, { apres: 0 });
+    mise(d.appendParagraph('A Monsieur'), { gras: true, taille: 10, avant: 14, apres: 8 });
+    mise(d.appendParagraph('Le Chef de Division MG'), { gras: true, taille: 10, apres: 6 });
+    const filet = d.appendParagraph('━'.repeat(40)); mise(filet, { taille: 9, apres: 12 }); filet.setForegroundColor(ORANGE);
+    const dt = d.appendParagraph('Rhourde Nouss : ' + c.date); mise(dt, { align: R, taille: 10 });
+    dt.editAsText().setBold(false).setBold(0, 14, true);
+    mise(body.appendParagraph("DOTATION PRODUITS D'ENTRETIEN"), { align: C, gras: true, souligne: true, taille: 13, avant: 30, apres: 18 });
+    const ENT = ['DESIGNATIONS', 'QUANTITE', 'N° CDE', 'PERIODE DE DOTATION', 'IMPUTATION ANALYTIQUE', 'OBSERVATIONS'];
+    // une ligne par article ; service, période et imputation répétés, observations sur la première ligne seulement
+    const rows = [ENT].concat(c.lignes.map(() => [' ', ' ', ' ', ' ', ' ', ' ']));
+    const tab = body.appendTable(rows);
+    [200, 70, 100, 110, 100, 156].forEach((w, i) => tab.setColumnWidth(i, w));
+    ENT.forEach((h, i) => cellule(tab.getRow(0).getCell(i), [h], { gras: true }));
+    c.lignes.forEach((l, k) => {
+      const r = tab.getRow(k + 1);
+      cellule(r.getCell(0), [l.des], { pad: 8 }); cellule(r.getCell(1), [l.qte], { pad: 8 }); cellule(r.getCell(2), [c.service], { pad: 8 });
+      cellule(r.getCell(3), [c.periode], { pad: 8 }); cellule(r.getCell(4), [c.imputation], { pad: 8 }); cellule(r.getCell(5), k === 0 ? c.observations : [], { pad: 8 });
+    });
+    mise(body.appendParagraph(' '), { taille: 6, apres: 22 });
+    const noms = ['LE CHEF DIVISION INFRASTRUCTURES', 'LE PRENEUR', 'LE CHEF DIVISION DMG'];
+    const sig = body.appendTable([noms]); sig.setBorderWidth(0);
+    noms.forEach((nom, i) => cellule(sig.getRow(0).getCell(i), [nom], { gras: true, taille: 11, align: C, pad: 2 }));
+    const pied = doc.addFooter();
+    const f0 = pied.getNumChildren() ? pied.getChild(0).asParagraph() : pied.appendParagraph(' '); f0.setText('━'.repeat(38)); mise(f0, { taille: 10, apres: 4 }); f0.setForegroundColor(ORANGE);
+    ['Direction Régionale Rhourde-Nouss - BP 27 Hassi Messaoud – Ouargla Algérie', 'Tél. : 029 74 01 48     Fax : 029 74 01 40     www.sonatrach.dz     Secrétariat.RNS@sonatrach.dz'].forEach(t => mise(pied.appendParagraph(t), { align: C, taille: 8 }));
+    doc.saveAndClose();
+    const docFile = DriveApp.getFileById(doc.getId()); docFile.moveTo(dossier);
+    const pdfFile = dossier.createFile(doc.getAs('application/pdf')); pdfFile.setName(nomBase + '.pdf');
+    return { success: true, docUrl: docFile.getUrl(), pdfUrl: pdfFile.getUrl(), docId: doc.getId(), pdfId: pdfFile.getId(), nom: nomBase };
+  } catch (error) {
+    return { success: false, error: error.message || String(error) };
   }
 }
 
@@ -608,6 +682,14 @@ const BOITES_SERVICE = {
 function boiteServiceDeFichier_(nom) {
   const n = String(nom || '');
   if (/^DOTATION_DIVISION_/.test(n)) return BOITES_SERVICE.division;
+  if (/^DOTATION_ENTRETIEN_LIBRE_/.test(n)) {   // demande libre : le service est dans le nom du fichier
+    const t = normalizeTxt_(n.replace(/^DOTATION_ENTRETIEN_LIBRE_/, '').replace(/_/g, ' '));
+    if (/construction|genie civil/.test(t)) return BOITES_SERVICE.construction;
+    if (/electrom/.test(t)) return BOITES_SERVICE.electromec;
+    if (/entretien/.test(t)) return BOITES_SERVICE.entretien;
+    if (/division/.test(t)) return BOITES_SERVICE.division;
+    return null;
+  }
   if (/^DOTATION_ENTRETIEN_/.test(n)) return BOITES_SERVICE.entretien;
   const reste = n.replace(/^DOTATION_(VIVRES|EAU)_/, '');
   if (reste === n && !/^DOTATION_REPAS_/.test(n)) return null;

@@ -147,6 +147,10 @@
     background: white; color: var(--green-main);
     box-shadow: 0 2px 8px rgba(45,106,79,0.18);
   }
+  .type-btn.active.repas {
+    background: white; color: #BE185D;
+    box-shadow: 0 2px 8px rgba(190,24,93,0.18);
+  }
   .type-btn.active.division {
     background: white; color: var(--purple-main);
     box-shadow: 0 2px 8px rgba(91,33,182,0.18);
@@ -261,6 +265,9 @@
     background: linear-gradient(135deg, var(--blue-main), #1B5FAE);
     box-shadow: 0 4px 14px rgba(15,52,96,0.35);
   }
+  .btn-s-libre { margin: 8px 0 4px; padding: 7px 12px; border: 1.5px dashed var(--green-main); border-radius: 9px; background: transparent; color: var(--green-main); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .ligne-libre { display: grid; grid-template-columns: 1fr 110px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .ligne-libre button { border: 0; background: none; color: #B91C1C; font-size: 16px; cursor: pointer; }
   button.generer.entretien {
     background: linear-gradient(135deg, var(--green-main), var(--green-light));
     box-shadow: 0 4px 14px rgba(45,106,79,0.35);
@@ -337,7 +344,7 @@
   .histo-tag.entretien { background: var(--green-pale); color: var(--green-main); }
   .histo-tag.division { background: var(--purple-pale); color: var(--purple-main); }
   .histo-tag.repas { background: #FCE7F3; color: #BE185D; }
-  #cardRepas textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font: inherit; font-size: 14px; resize: vertical; }
+  #cardRepas textarea, #cardEntretien textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font: inherit; font-size: 14px; resize: vertical; }
   #cardRepas select, #cardRepas input[type=text], #cardRepas input[type=number], #cardRepas input[type=date] { width: 100%; }
   #cardRepas .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   button.generer.repas { background: linear-gradient(135deg, #DB2777, #F472B6); }
@@ -387,7 +394,7 @@
     .card { padding: 16px 14px; border-radius: 14px; }
     .type-selector { display: grid; grid-template-columns: 1fr 1fr; }
     .type-btn { min-width: 0; padding: 12px 6px; font-size: 13px; }
-    input[type=date], input[type=text], input[type=number], select, #cardRepas textarea { font-size: 16px; }   /* évite le zoom automatique sur iPhone */
+    input[type=date], input[type=text], input[type=number], select, #cardRepas textarea, #cardEntretien textarea { font-size: 16px; }   /* évite le zoom automatique sur iPhone */
     .qte-row { flex-direction: column; align-items: stretch; gap: 6px; }
     .qte-row input, .qte-row select, .qte-row.division input { width: 100%; text-align: left; }
     #cardRepas .deux { grid-template-columns: 1fr; }
@@ -421,7 +428,10 @@
       <button type="button" class="type-btn eau" id="btnTypeEau" onclick="setType('EAU')">💧 Eau</button>
       <button type="button" class="type-btn entretien" id="btnTypeEntretien" onclick="setType('ENTRETIEN')">🧽 Entretien</button>
       <button type="button" class="type-btn division" id="btnTypeDivision" onclick="setType('DIVISION')">🏢 Division</button>
-      <button type="button" class="type-btn repas" id="btnTypeRepas" onclick="setType('REPAS')">🍴 Repas &amp; collations</button>
+      <button type="button" class="type-btn repas" id="btnRepasCOLLATION" onclick="setRepas('COLLATION')">🥂 Collation</button>
+      <button type="button" class="type-btn repas" id="btnRepasREPAS_EMPORTER" onclick="setRepas('REPAS_EMPORTER')">🥡 Repas à emporter</button>
+      <button type="button" class="type-btn repas" id="btnRepasPAUSE_CAFE" onclick="setRepas('PAUSE_CAFE')">☕ Pause café</button>
+      <button type="button" class="type-btn repas" id="btnRepasCASSE_CROUTE" onclick="setRepas('CASSE_CROUTE')">🥪 Casse-croûte</button>
     </div>
   </div>
 
@@ -481,6 +491,11 @@
   <!-- Bloc Produits d'entretien -->
   <div class="card" id="cardEntretien" style="display:none;">
     <div class="card-title">🧽 Dotation Produits d'Entretien</div>
+    <div class="type-selector" style="margin-bottom:14px;">
+      <button type="button" class="type-btn active entretien" id="btnEntMensuel" onclick="setModeEntretien('MENSUEL')">Dotation mensuelle (ateliers)</button>
+      <button type="button" class="type-btn entretien" id="btnEntLibre" onclick="setModeEntretien('LIBRE')">✏️ Demande libre</button>
+    </div>
+    <div id="entMensuel">
     <div id="alerteFenetre"></div>
     <label class="field-label">Atelier</label>
     <select id="atelier" onchange="onAtelierChange()">
@@ -492,6 +507,25 @@
     <input type="text" id="periodeAffichee" disabled>
     <div id="listeProduits" style="margin-top:14px;"></div>
     <button class="generer entretien" id="btnGenererEntretien" onclick="generer('ENTRETIEN')">Générer la dotation Entretien</button>
+    </div>
+    <div id="entLibre" style="display:none;">
+      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">Pour un besoin ponctuel, d'un atelier ou de n'importe quel service : saisissez librement les articles et les quantités. Disponible toute l'année (pas de fenêtre du 01 au 15).</p>
+      <label class="field-label">Service / structure <span style="text-transform:none;font-weight:500;">(colonne N° CDE)</span></label>
+      <input type="text" id="libreService" list="dlStructuresLibre" placeholder="Ex. : Service Construction (Génie Civil)" oninput="majImputationLibre()">
+      <datalist id="dlStructuresLibre"></datalist>
+      <label class="field-label">Articles demandés</label>
+      <div id="libreLignes"></div>
+      <button type="button" class="btn-s-libre" onclick="ajouterLigneLibre()">+ Ajouter une ligne</button>
+      <div class="deux">
+        <div><label class="field-label">Période de dotation</label><input type="date" id="libreDebut"></div>
+        <div><label class="field-label">Jusqu'au <span style="text-transform:none;font-weight:500;">(facultatif)</span></label><input type="date" id="libreFin"></div>
+      </div>
+      <label class="field-label">Imputation analytique <span style="text-transform:none;font-weight:500;">(selon le service, modifiable)</span></label>
+      <input type="text" id="libreImputation" placeholder="4300045300">
+      <label class="field-label">Observations <span style="text-transform:none;font-weight:500;">(une par ligne)</span></label>
+      <textarea id="libreObservations" rows="2" placeholder="Ex. : Pour nettoyage clôture + CSC"></textarea>
+      <button class="generer entretien" id="btnGenererLibre" onclick="generer('ENTRETIEN_LIBRE')">Générer la demande libre</button>
+    </div>
   </div>
 
   <!-- Bloc Dotation Division (quinzaine) -->
@@ -507,9 +541,8 @@
 
   <!-- Bloc Prises en charge repas : collation, pause café, repas à emporter, casse-croûte -->
   <div class="card" id="cardRepas" style="display:none;">
-    <div class="card-title">🍴 Prise en charge : repas &amp; collations</div>
-    <label class="field-label">Type</label>
-    <select id="repasType" onchange="majRepasType()">
+    <div class="card-title" id="repasTitre">🍴 Prise en charge</div>
+    <select id="repasType" onchange="majRepasType()" style="display:none" aria-hidden="true">
       <option value="COLLATION">Collation</option>
       <option value="PAUSE_CAFE">Pause café</option>
       <option value="REPAS_EMPORTER">Repas à emporter</option>
@@ -551,13 +584,20 @@
 let typeActuel = 'VIVRES';
 let produitsDivisionCharges = false;
 
+const REPAS_LIBELLES = { COLLATION: '🥂 Prise en charge : collation', REPAS_EMPORTER: '🥡 Prise en charge : repas à emporter', PAUSE_CAFE: '☕ Prise en charge : pause café', CASSE_CROUTE: '🥪 Prise en charge : casse-croûte' };
+/** Un onglet par type de prise en charge (collation, repas à emporter, pause café, casse-croûte). */
+function setRepas(sousType){
+  document.getElementById('repasType').value = sousType;
+  setType('REPAS');
+}
+
 function setType(type){
   typeActuel = type;
   document.getElementById('btnTypeVivres').classList.toggle('active', type === 'VIVRES');
   document.getElementById('btnTypeEau').classList.toggle('active', type === 'EAU');
   document.getElementById('btnTypeEntretien').classList.toggle('active', type === 'ENTRETIEN');
   document.getElementById('btnTypeDivision').classList.toggle('active', type === 'DIVISION');
-  document.getElementById('btnTypeRepas').classList.toggle('active', type === 'REPAS');
+  ['COLLATION', 'REPAS_EMPORTER', 'PAUSE_CAFE', 'CASSE_CROUTE'].forEach(function(c){ document.getElementById('btnRepas' + c).classList.toggle('active', type === 'REPAS' && document.getElementById('repasType').value === c); });
 
   document.getElementById('cardVivres').style.display = (type === 'VIVRES') ? 'block' : 'none';
   document.getElementById('cardEau').style.display = (type === 'EAU') ? 'block' : 'none';
@@ -572,6 +612,7 @@ function setType(type){
   document.getElementById('rowService').style.display =
     (type === 'VIVRES' || type === 'EAU') ? 'block' : 'none';
   if (type === 'REPAS') majRepasType();
+  if (type === 'ENTRETIEN') setModeEntretien(modeEntretien);
   document.getElementById('rowPeriodeDivision').style.display =
     (type === 'DIVISION') ? 'block' : 'none';
 
@@ -718,7 +759,39 @@ function majPeriodeDivision(){
 }
 
 
+let modeEntretien = 'MENSUEL', structuresLibreChargees = false;
+function setModeEntretien(m){
+  modeEntretien = m;
+  document.getElementById('btnEntMensuel').classList.toggle('active', m === 'MENSUEL');
+  document.getElementById('btnEntLibre').classList.toggle('active', m === 'LIBRE');
+  document.getElementById('entMensuel').style.display = (m === 'MENSUEL') ? 'block' : 'none';
+  document.getElementById('entLibre').style.display = (m === 'LIBRE') ? 'block' : 'none';
+  if (m === 'LIBRE') {
+    if (!document.getElementById('libreLignes').children.length) ajouterLigneLibre();
+    if (!document.getElementById('libreDebut').value) document.getElementById('libreDebut').value = new Date().toISOString().slice(0, 10);
+    if (!structuresLibreChargees) {
+      structuresLibreChargees = true;
+      google.script.run.withSuccessHandler(function(l){
+        window.__imputLibre = {}; const dl = document.getElementById('dlStructuresLibre');
+        l.forEach(function(x){ window.__imputLibre[x.nom] = x.imputation; const o = document.createElement('option'); o.value = x.nom; dl.appendChild(o); });
+      }).getStructuresLibre();
+    }
+  }
+}
+function ajouterLigneLibre(){
+  const d = document.createElement('div'); d.className = 'ligne-libre';
+  d.innerHTML = '<input type="text" class="libre-des" placeholder="Désignation (ex. Sac poubelle GM)"><input type="text" class="libre-qte" placeholder="Quantité"><button type="button" title="Retirer la ligne" onclick="this.parentNode.remove()">✕</button>';
+  document.getElementById('libreLignes').appendChild(d);
+}
+function majImputationLibre(){
+  const v = document.getElementById('libreService').value, m = window.__imputLibre || {}, champ = document.getElementById('libreImputation');
+  if (m[v] && (!champ.value || champ.dataset.auto === '1')) { champ.value = m[v]; champ.dataset.auto = '1'; }
+}
+
 function majRepasType(){
+  const code = document.getElementById('repasType').value;
+  document.getElementById('repasTitre').textContent = REPAS_LIBELLES[code] || '🍴 Prise en charge';
+  ['COLLATION', 'REPAS_EMPORTER', 'PAUSE_CAFE', 'CASSE_CROUTE'].forEach(function(c){ document.getElementById('btnRepas' + c).classList.toggle('active', typeActuel === 'REPAS' && code === c); });
   const casse = document.getElementById('repasType').value === 'CASSE_CROUTE';
   document.getElementById('repasLblDebut').textContent = casse ? 'Période : du' : 'Date';
   const avecHeureLieu = ['COLLATION', 'PAUSE_CAFE'].indexOf(document.getElementById('repasType').value) >= 0;   // heure et lieu : collation et pause café seulement
@@ -754,6 +827,15 @@ function generer(type){
       form.quantites[inp.dataset.nom] = inp.value;
     });
     if(!form.atelier){ alert('Merci de choisir un atelier.'); return; }
+  } else if(type === 'ENTRETIEN_LIBRE'){
+    form.service = document.getElementById('libreService').value;
+    form.lignes = Array.from(document.querySelectorAll('#libreLignes .ligne-libre')).map(function(l){ return { des: l.querySelector('.libre-des').value, qte: l.querySelector('.libre-qte').value }; })
+      .filter(function(l){ return l.des.trim() || l.qte.trim(); });
+    form.dateDebut = document.getElementById('libreDebut').value;
+    form.dateFin = document.getElementById('libreFin').value;
+    form.imputation = document.getElementById('libreImputation').value;
+    form.observations = document.getElementById('libreObservations').value;
+    if(!form.service.trim() || !form.lignes.length || !form.dateDebut){ alert('Merci de renseigner le service, au moins une ligne (désignation et quantité) et la période.'); return; }
   } else if(type === 'REPAS'){
     form.sousType = document.getElementById('repasType').value;
     form.designations = document.getElementById('repasDesignations').value;
@@ -787,6 +869,7 @@ function generer(type){
   const btnId = (type === 'VIVRES') ? 'btnGenererVivres'
     : (type === 'EAU') ? 'btnGenererEau'
     : (type === 'ENTRETIEN') ? 'btnGenererEntretien'
+    : (type === 'ENTRETIEN_LIBRE') ? 'btnGenererLibre'
     : (type === 'REPAS') ? 'btnGenererRepas'
     : 'btnGenererDivision';
   const btn = document.getElementById(btnId);

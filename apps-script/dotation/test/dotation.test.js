@@ -96,3 +96,39 @@ test('dotation division : la quinzaine se calcule seule (01-15 ou 16-fin du mois
   assert.deepStrictEqual(q('2026-02-27'), { debut: '16/02/2026', fin: '28/02/2026' });
   assert.deepStrictEqual(q('2028-02-20'), { debut: '16/02/2028', fin: '29/02/2028' });
 });
+
+test('demande libre d\'entretien : lignes libres, service quelconque, imputation selon le service, période', () => {
+  const r = run(`entretienLibreChamps_({ service: 'Service Construction (Génie Civil)', lignes: [{ des: ' SAC POUBELLE  GM ', qte: '50' }, { des: '', qte: '' }, { des: 'Gants', qte: '2 cartons' }], dateDebut: '2026-09-02', date: '2026-09-02', observations: 'Pour Nettoyage\\nCloture + CSC' })`);
+  assert.deepStrictEqual(r.lignes, [{ des: 'SAC POUBELLE GM', qte: '50' }, { des: 'Gants', qte: '2 cartons' }]);
+  assert.strictEqual(r.imputation, '4300045300'); assert.strictEqual(r.periode, '02/09/2026'); assert.deepStrictEqual(r.observations, ['Pour Nettoyage', 'Cloture + CSC']);
+  assert.strictEqual(run(`entretienLibreChamps_({ service: 'Atelier Froid', lignes: [{ des: 'a', qte: '1' }], dateDebut: '2026-09-02', dateFin: '2026-09-10' })`).periode, '02/09/2026 Au 10/09/2026');
+  assert.strictEqual(run(`entretienLibreChamps_({ service: 'Cellule X', lignes: [{ des: 'a', qte: '1' }], dateDebut: '2026-09-02', imputation: '4300000001' })`).imputation, '4300000001');
+  assert.strictEqual(run(`entretienLibreChamps_({ service: 'Cellule X', lignes: [{ des: 'a', qte: '1' }], dateDebut: '2026-09-02' })`).imputation, '');   // service inconnu : imputation à saisir
+  assert.strictEqual(run('getStructuresLibre().length'), 8); assert.strictEqual(run("getStructuresLibre().filter(x => x.nom === 'Division Infrastructure')[0].imputation"), '4300045000');
+});
+test('demande libre : champs obligatoires', () => {
+  const e = (f) => assert.throws(() => run(`entretienLibreChamps_(${JSON.stringify(f)})`), () => true);
+  const base = { service: 'S', lignes: [{ des: 'a', qte: '1' }], dateDebut: '2026-09-02' };
+  e(Object.assign({}, base, { service: ' ' })); e(Object.assign({}, base, { lignes: [] })); e(Object.assign({}, base, { lignes: [{ des: 'a', qte: '' }] })); e(Object.assign({}, base, { lignes: [{ des: '', qte: '3' }] })); e(Object.assign({}, base, { dateDebut: '' }));
+});
+test('demande libre : génération complète (faux DocumentApp qui refuse les textes vides) et dossier d\'entretien', () => {
+  const videDans = (x) => x === '' || (Array.isArray(x) && x.some(videDans));
+  const objet = () => new Proxy(function () {}, {
+    get: (t, k) => k === 'getNumChildren' ? () => 1 : k === 'getText' ? () => 'x' : k === 'getUrl' ? () => 'u' : k === 'getId' ? () => 'id'
+      : k === 'getParents' ? () => ({ next: objet() }) : k === Symbol.toPrimitive ? () => '' : new Proxy(function () {}, { apply: (f, th, args) => { if (args.some(videDans)) throw new Error("Impossible d'insérer un élément de texte vide."); return objet(); }, get: (f, k2) => objet()[k2] }),
+    apply: () => objet() });
+  ctx.DocumentApp = { create: () => objet(), HorizontalAlignment: { CENTER: 'c', RIGHT: 'r', LEFT: 'l' }, VerticalAlignment: { CENTER: 'c', TOP: 't' } };
+  ctx.Utilities = { newBlob: () => ({}), base64Decode: () => [], formatDate: () => '20-10-2026' };
+  ctx.DriveApp = { getFileById: () => objet() }; ctx.Session = { getScriptTimeZone: () => 'Africa/Algiers' };
+  const r = run(`genererDotation({ type: 'ENTRETIEN_LIBRE', service: 'Service Construction (Génie Civil)', lignes: [{ des: 'SAC POUBELLE GM', qte: '50' }, { des: 'Gants', qte: '10' }], dateDebut: '2026-09-02', date: '2026-09-02', observations: '' })`);
+  assert.strictEqual(r.success, true, r.error);
+  assert.strictEqual(run(`genererDotation({ type: 'ENTRETIEN_LIBRE', service: '', lignes: [], date: '2026-09-02' }).success`), false);
+});
+test('demande libre : le fichier est envoyé à la boîte du service indiqué dans son nom', () => {
+  const b = (n) => run(`(boiteServiceDeFichier_(${JSON.stringify(n)}) || {}).email || null`);
+  assert.strictEqual(b('DOTATION_ENTRETIEN_LIBRE_Service_Construction_(Génie_Civil)_02-09-2026.pdf'), 'infra_constr.rns@sonatrach.dz');
+  assert.strictEqual(b('DOTATION_ENTRETIEN_LIBRE_Service_Electromécanique_02-09-2026.pdf'), 'infra_electromec.rns@sonatrach.dz');
+  assert.strictEqual(b('DOTATION_ENTRETIEN_LIBRE_Division_Infrastructure_02-09-2026.pdf'), 'cdd_infra.rns@sonatrach.dz');
+  assert.strictEqual(b('DOTATION_ENTRETIEN_LIBRE_Cellule_X_02-09-2026.pdf'), null);
+  assert.strictEqual(b('DOTATION_ENTRETIEN_Atelier_Froid_OCTOBRE-2026.pdf'), 'service_travaux_entretien_infra.rns@sonatrach.dz');
+});

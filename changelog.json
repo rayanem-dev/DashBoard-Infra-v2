@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-233",
+    "date": "2026-10-28",
+    "title": "Version 6.18.0 — Dotations : demande libre d'entretien, un onglet par type de repas",
+    "changes": [
+      "Dotation Produits d'Entretien : nouvelle « ✏️ Demande libre » pour un besoin ponctuel, pour n'importe quel service ou atelier. On saisit les articles et leurs quantités, le service (colonne N° CDE), la période et les observations ; l'imputation analytique se remplit selon le service. Le document reprend la mise en page de la dotation (A Monsieur / Chef de Division MG, tableau, trois signatures). Pas de fenêtre du 01 au 15 pour une demande libre ; l'envoi par e-mail va à la boîte du service indiqué.",
+      "Repas et collations : un onglet par type — Collation, Repas à emporter, Pause café, Casse-croûte — au lieu d'une liste de choix dans un seul onglet."
+    ]
+  },
+  {
     "id": "2026-10-28-232",
     "date": "2026-10-28",
     "title": "Version 6.17.1 — Banchy lit mieux les scans",
