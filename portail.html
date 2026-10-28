@@ -113,6 +113,7 @@
   // N'autorise que http(s) et les pages relatives du site : jamais javascript: ni data:
   function lienSur(u) { u = String(u || ''); return /^(https?:\/\/|[A-Za-z0-9_\-\/]+\.html)/.test(u) ? u : '#'; }
   // Les applications Apps Script s'ouvrent dans le site (même en-tête, « Retour au portail ») au lieu d'une page nue
+  function ico(n, e) { if (/^img\/[\w\/.-]+\.(png|svg|webp)$/i.test(String(e || ''))) { var i = document.createElement('img'); i.src = e; i.alt = ''; i.className = 'ico-img'; n.appendChild(i); } else n.textContent = e || '📄'; return n; }   // l'icône d'une carte est un emoji ou une image du site
   function lienApp(a) { var u = lienSur(a.url); return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_\-]+\/exec$/.test(u) ? 'app.html?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(a.titre || '') + '&e=' + encodeURIComponent(String(a.emoji || a.icone || '').slice(0, 8)) : u; }
 
   // Applications les plus utilisées d'abord dans « Mes applications » : un compteur par application et par personne, gardé dans ce navigateur
@@ -178,7 +179,7 @@
     });
     liste.sort(function (x, y) { return (us[y.a.titre] || 0) - (us[x.a.titre] || 0) || x.rang - y.rang; });   // les plus utilisées d'abord, puis l'ordre du menu
     liste.forEach(function (x, i) {
-      var a = x.a, c = el('a', 'mes-app' + (i >= TOP_APPS ? ' hors-top' : '')); c.appendChild(el('span', 'mes-app-ico', a.emoji || '📄')); c.appendChild(el('span', 'mes-app-nom', a.titre || '')); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
+      var a = x.a, c = el('a', 'mes-app' + (i >= TOP_APPS ? ' hors-top' : '')); c.appendChild(ico(el('span', 'mes-app-ico'), a.emoji)); c.appendChild(el('span', 'mes-app-nom', a.titre || '')); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
       if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
       c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
       g.appendChild(c);
@@ -274,7 +275,7 @@
         var c = el('a', 'app'); c.href = lienApp(a); c.dataset.t = norme((a.titre || '') + ' ' + (a.description || '') + ' ' + (m.titre || '') + ' ' + (a.mots || ''));
         // Pages du site : même onglet (la session est propre à l'onglet) ; sites externes : nouvel onglet.
         if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
-        c.appendChild(el('div', 'em', a.emoji || '📄')); c.appendChild(el('h4', null, a.titre));
+        c.appendChild(ico(el('div', 'em'), a.emoji)); c.appendChild(el('h4', null, a.titre));
         c.appendChild(el('p', null, a.description || '')); c.appendChild(el('div', 'ouvrir', 'Ouvrir →'));
         c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
         g.appendChild(c);

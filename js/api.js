@@ -62,7 +62,7 @@
         { titre: 'Autorisation GAZ-OIL', description: 'Autorisation d\'approvisionnement en GAZ-OIL (fûts de 200 L), imprimable en un clic.', emoji: '⛽', url: 'autorisation-gazoil.html' },
         { titre: 'Ordre de travail', description: 'Ordre de travail de la division, imprimable en un clic, avec historique.', emoji: '🛠', url: 'ordre-travail.html' },
         { titre: 'Prise en charge hôtel', description: 'Demande de prise en charge à l\'hôtel pour un agent en mission, imprimable en un clic, avec historique.', emoji: '🏨', url: 'hotel-prise-en-charge.html' },
-        { titre: 'Prises en Charge + Autorisation d\'Accès', description: 'Prises en charge et autorisations d\'accès des prestataires.', emoji: '🧾', url: 'prise-en-charge.html' },
+        { titre: 'Prises en Charge + Autorisation d\'Accès', description: 'Prises en charge et autorisations d\'accès des prestataires.', emoji: 'img/icones/pec-96.png', url: 'prise-en-charge.html' },
         { titre: 'Affectation Véhicule – Division Infra', description: 'Recherche rapide des véhicules par personne, immatriculation, entreprise ou date d\'autorisation.', emoji: '🚗', url: 'vehicules.html' },
         { titre: 'Demande de réservation', description: 'Réservation de places d\'avion ALGER ⇄ RNS, envoyée au secrétariat.', emoji: '✈️', url: 'reservation.html' },
         { titre: 'Générateur Requête Transport', description: 'Application de génération des requêtes de transport pour la division Infrastructure.', emoji: '🚚', url: 'https://script.google.com/macros/s/AKfycbzdT9ccbrUmHZfTHCdFC09ZFG-KX3TR95qvpe5fyuIjE_tSMe-1hVEQDKknD629KHoU/exec' },

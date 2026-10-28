@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-220",
+    "date": "2026-10-28",
+    "title": "Version 6.11.0 — Nouvelle icône Prise en charge et autorisation d'accès",
+    "changes": [
+      "Prise en charge et autorisation d'accès a sa propre icône : l'hexagone hébergement · restauration · accès (détourée, fond transparent) remplace l'emoji sur sa carte, dans le menu de gauche, dans « Mes applications » et dans l'en-tête de la page ; elle sert aussi d'icône d'onglet et d'icône d'écran d'accueil du téléphone.",
+      "Une carte peut désormais avoir une image du site comme icône (champ emoji = chemin img/icones/….png)."
+    ]
+  },
+  {
     "id": "2026-10-27-219",
     "date": "2026-10-27",
     "title": "Version 6.10.2 — E-mail du consolidé : mêmes détails que le document imprimé",
