@@ -190,8 +190,7 @@ function route_(req) {
     case 'benchmark_lire': return benchmarkLire_(req);
     case 'benchmark_enregistrer': return benchmarkEnregistrer_(req);
     case 'benchmark_supprimer': return benchmarkSupprimer_(req);
-    case 'pointage_effectif': { Auth.userFromToken(req.token); if ((acces_(Auth.userFromToken(req.token)).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' }); var hp12 = Store.table('Utilisateurs').filter(function (x) { return String(x.actif) !== '0' && x.email && Annuaire.horsPlanning(x.section); }).map(function (x) { return [Annuaire.nomAffichable(x.nom, x.email), String(x.fonction || x.section || '')]; }).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
-      return { groupes: POINTAGE_EFFECTIF.concat([{ t: 'Ateliers et techniciens (hors planning)', hp: true, l: hp12 }]) }; }   // effectif de la division : réservé aux personnes connectées ayant le module planning
+    case 'pointage_effectif': { Auth.userFromToken(req.token); if ((acces_(Auth.userFromToken(req.token)).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' }); return { groupes: POINTAGE_EFFECTIF }; }   // effectif de la division : réservé aux personnes connectées ayant le module planning
     case 'annuaire_fiches': { Auth.userFromToken(req.token); return { groupes: ANNUAIRE_DATA.groupes, rows: ANNUAIRE_DATA.rows }; }   // fiches contact : réservées aux personnes connectées (le fichier n'est plus publié sur le site)
     case 'cpm_journal': return cpmJournalListe_(req);
     case 'cpm_journal_supprimer': return cpmJournalSupprimer_(req);
@@ -419,7 +418,6 @@ function planning_(req) {
   }).map(function (x) {
     var l = { uid: String(x.uid || ''), nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
     if (niv >= 3) l.email = x.email;
-    l.hors_planning = Annuaire.horsPlanning(x.section);   // ateliers et techniciens : pas de rotation, ce n'est pas un oubli de configuration
     var rot = rotationDe_(x.email);
     if (!rot) return l;
     var corr = mods[String(x.email).toLowerCase()] || [];
