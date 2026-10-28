@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-28-229",
+    "date": "2026-10-28",
+    "title": "Version 6.15.2 — Feuille de pointage : retrait d'une personne sans confirmation",
+    "changes": [
+      "Le ✕ d'une personne de la feuille la retire tout de suite, sans fenêtre de confirmation (elle se rajoute avec « + » ou en réimportant)."
+    ]
+  },
+  {
     "id": "2026-10-28-228",
     "date": "2026-10-28",
     "title": "Version 6.15.1 — Feuille de pointage : les présents du planning arrivent tout seuls",
