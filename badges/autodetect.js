@@ -98,23 +98,36 @@ var AutoDetect = (function () {
   // ---------- lecture du fichier (navigateur) ----------
   function charger(src) { return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { ko(new Error('Chargement impossible : ' + src)); }; document.head.appendChild(s); }); }
   /** Lignes du PDF : les éléments de texte sont regroupés par hauteur, une tabulation sépare deux cellules éloignées. */
-  function lignesDePage(items) {
+  /** Écarts entre lignes successives (déjà triées) : un écart nettement plus grand que l'écart habituel sépare deux lignes d'un tableau. */
+  function ecartsLarges(ecarts) { var t = ecarts.slice().sort(function (a, b) { return a - b; }), med = t.length ? t[Math.floor(t.length / 2)] : 0; return ecarts.map(function (e) { return med > 0 && e > med * 1.35; }); }
+  function lignesDePage(items, opt) {
     var rangs = [];
     items.forEach(function (it) { if (!vide(it.str)) return; var y = Math.round(it.transform[5] / 3) * 3, r = rangs.filter(function (z) { return Math.abs(z.y - y) <= 3; })[0]; if (!r) { r = { y: y, t: [] }; rangs.push(r); } r.t.push({ x: it.transform[4], w: it.width || 0, s: it.str }); });
     rangs.sort(function (a, b) { return b.y - a.y; });
-    return rangs.map(function (r) { r.t.sort(function (a, b) { return a.x - b.x; }); var out = '', fin = null; r.t.forEach(function (e) { if (fin !== null) out += (e.x - fin > 14 ? '\t' : ' '); out += e.s; fin = e.x + e.w; }); return out; });
+    var lignes = rangs.map(function (r) { r.t.sort(function (a, b) { return a.x - b.x; }); var out = '', fin = null; r.t.forEach(function (e) { if (fin !== null) out += (e.x - fin > 14 ? '\t' : ' '); out += e.s; fin = e.x + e.w; }); return out; });
+    if (!(opt && opt.interlignes)) return lignes;
+    var larges = ecartsLarges(rangs.slice(1).map(function (r, i) { return rangs[i].y - r.y; })), avecBlancs = [];   // option : une ligne vide marque l'espace entre deux rangées de tableau
+    lignes.forEach(function (l, i) { if (i > 0 && larges[i - 1]) avecBlancs.push(''); avecBlancs.push(l); });
+    return avecBlancs;
   }
-  function lirePdfTexte(data) {
+  function lirePdfTexte(data, opt) {
     return charger(CDN.pdf).then(function () {
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = CDN.pdfWorker;
       return window.pdfjsLib.getDocument({ data: data }).promise;
     }).then(function (pdf) {
       var pages = []; for (var n = 1; n <= Math.min(pdf.numPages, 10); n += 1) pages.push(n);
-      return pages.reduce(function (p, n) { return p.then(function (acc) { return pdf.getPage(n).then(function (pg) { return pg.getTextContent(); }).then(function (tc) { return acc.concat(lignesDePage(tc.items)); }); }); }, Promise.resolve([])).then(function (l) { return { pdf: pdf, texte: l.join('\n') }; });
+      return pages.reduce(function (p, n) { return p.then(function (acc) { return pdf.getPage(n).then(function (pg) { return pg.getTextContent(); }).then(function (tc) { return acc.concat(lignesDePage(tc.items, opt)); }); }); }, Promise.resolve([])).then(function (l) { return { pdf: pdf, texte: l.join('\n') }; });
     });
   }
   /** Niveaux de gris + étirement du contraste : un scan à 100 ppi est lu bien mieux (chiffres d'un tableau) qu'en couleur. */
   function griser(cv) { var cx = cv.getContext('2d'), im = cx.getImageData(0, 0, cv.width, cv.height), d = im.data, mn = 255, mx = 0, i, g; for (i = 0; i < d.length; i += 4) { g = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000; d[i] = d[i + 1] = d[i + 2] = g; if (g < mn) mn = g; if (g > mx) mx = g; } var k = mx > mn ? 255 / (mx - mn) : 1; for (i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = Math.max(0, Math.min(255, (d[i] - mn) * k)); cx.putImageData(im, 0, 0); }
+  /** Texte de l'OCR où une ligne vide sépare deux lignes d'un tableau (écart vertical plus grand que d'habitude). */
+  function texteOcrAvecEcarts(d) {
+    var l = (d.lines || []).filter(function (x) { return x.text && x.text.trim(); }); if (l.length < 4) return d.text;
+    var larges = ecartsLarges(l.slice(1).map(function (x, i) { return x.bbox.y0 - l[i].bbox.y1; }).map(function (e) { return Math.max(0, e) + 1; })), out = [];
+    l.forEach(function (x, i) { if (i > 0 && larges[i - 1]) out.push(''); out.push(x.text.replace(/\s+$/, '')); });
+    return out.join('\n');
+  }
   function lireOcr(pdf, opt) {
     return charger(CDN.ocr).then(function () { return window.Tesseract.createWorker('fra'); }).then(function (w) {
       var out = [];
@@ -123,14 +136,14 @@ var AutoDetect = (function () {
         return pdf.getPage(n).then(function (pg) {
           var vp = pg.getViewport({ scale: (opt && opt.echelle) || 2.2 }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
           return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { if (opt && opt.gris) griser(cv); return w.recognize(cv); });
-        }).then(function (r) { out.push(r.data.text); return suite(n + 1); });
+        }).then(function (r) { out.push(opt && opt.interlignes ? texteOcrAvecEcarts(r.data) : r.data.text); return suite(n + 1); });
       };
       return suite(1);
     });
   }
   /** opt (facultatif) : { echelle: 3, gris: true } pour un scan de faible résolution (tableaux de prix). */
   function lireFichier(file, opt) {
-    return file.arrayBuffer().then(function (buf) { return lirePdfTexte(new Uint8Array(buf)); }).then(function (r) {
+    return file.arrayBuffer().then(function (buf) { return lirePdfTexte(new Uint8Array(buf), opt); }).then(function (r) {
       if (vide(r.texte).length >= 40) return { texte: r.texte, source: 'pdf' };
       return lireOcr(r.pdf, opt).then(function (t) { return { texte: t, source: 'ocr' }; }); // PDF scanné : pas de texte, on lit l'image
     });

@@ -82,3 +82,35 @@ test('montants bruités par l\'OCR', () => {
   assert.strictEqual(l('03 Gargouille EPDM et compris crapaudine U | =\u2018000;06').pu, '');
   assert.strictEqual(l('04 Protection lourde en gravier roulé M² 550,00').pu, 550);
 });
+
+test('VRAIE lecture du navigateur (pdf.js + niveaux de gris + Tesseract) du canevas de HMD : « 10S00:00 » relu 10 500, 6 articles, plus de ligne de bruit', () => {
+  const r = L.depuisTexte(fx('benchmark-region-hmd-nav.txt'));
+  assert.deepStrictEqual(r.articles.map(a => a.n), ['01', '02', '03', '04', '05', '06']);
+  assert.deepStrictEqual(r.articles.map(a => a.pu), [1200, 10000, 10500, 600, '', 550]);   // 04 : le « 5 » de 5 600 est perdu par l'OCR, 05 illisible
+  assert.ok(r.articles[4].verifier && /^Décapage/.test(r.articles[0].des) && !/see ===/.test(r.articles[0].des));
+});
+test('troisième région (GTL, bordereau chiffré scanné) : prix unitaires, pas les montants ; PU abîmé réparé par montant ÷ quantité', () => {
+  const r = L.depuisTexte(fx('benchmark-region-gtl-nav.txt'));
+  assert.strictEqual(r.mode, 3);
+  const par = d => r.articles.filter(a => d.test(a.des))[0];
+  assert.strictEqual(par(/Réfection et rattrapage/).pu, 600);
+  assert.strictEqual(par(/Gargouille/).pu, 1200); assert.strictEqual(par(/Gargouille/).qte, 25);        // quantité perdue, déduite de 30 000 ÷ 1 200
+  assert.strictEqual(par(/Protection lourde/).pu, 800);
+  assert.strictEqual(par(/forme de pente/).pu, 1600); assert.strictEqual(par(/forme de pente/).verifier, true);   // lu 4 800 ; 800 000 ÷ 500 = 1 600
+  assert.strictEqual(par(/complexe d'étanchéité multicouches/).pu, 2400);   // montant mal lu : le prix lisible est gardé (1 525 n'est pas un prix rond)
+  assert.ok(!/Monsieur|Directeur/.test(r.articles[0].des));                  // le courrier de la page 1 n'entre pas dans la désignation
+  const m = L.metadonnees(fx('benchmark-region-gtl-nav.txt'));
+  assert.strictEqual(m.contrat, 'I/14/GTL-INFRA/2026'); assert.strictEqual(m.annee, 2026); assert.strictEqual(m.region, 'Gassi Touil'); assert.ok(!/RNS/.test(m.courrier));
+});
+test('rapprochement des 3 régions avec l\'offre : les prix retrouvés sont ceux de votre tableau Excel', () => {
+  const offre = L.depuisTexte(fx('benchmark-offre.txt')).articles, g = L.depuisTexte(fx('benchmark-region-gtl-nav.txt')).articles, h = L.depuisTexte(fx('benchmark-region-hmd-ocr3.txt')).articles;
+  const prix = (lus) => L.rapprocher(offre, lus).map(x => x.i >= 0 ? lus[x.i].pu : null);
+  assert.deepStrictEqual(prix(g).slice(1), [1600, 600, null, 1200, 800]);                   // GTL : 02, 03, (04 non comparable), 05, 06
+  assert.deepStrictEqual(prix(h).slice(1, 3), [10000, 10500]);
+});
+test('nature du document : demande de prix envoyée aux régions, canevas vierge, offre, réponse', () => {
+  assert.strictEqual(L.nature(fx('benchmark-demande-ocr.txt') + '\n' + fx('benchmark-canevas-vierge-ocr.txt')), 'demande');
+  assert.strictEqual(L.nature(fx('benchmark-canevas-vierge-ocr.txt')), 'canevas-vierge');
+  assert.strictEqual(L.nature(fx('benchmark-offre.txt')), 'offre'); assert.strictEqual(L.nature(fx('benchmark-region-gtl-nav.txt')), 'offre');
+  assert.strictEqual(L.nature(fx('benchmark-region-hmd.txt')), 'reponse'); assert.strictEqual(L.nature(''), 'inconnu');
+});
