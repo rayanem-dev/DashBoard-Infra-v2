@@ -3,7 +3,7 @@
  *   Nom · Prénom · Fonction · Entreprise · Contrat
  * Aucune dépendance à installer : pdf.js (texte du PDF) et tesseract.js (PDF scanné) sont chargés à la demande depuis cdnjs.
  *
- *   AutoDetect.lireFichier(file)          → Promise<{ texte, source: 'pdf' | 'ocr' }>   (texte avec une tabulation entre les cellules d'une ligne)
+ *   AutoDetect.lireFichier(file, opt?)    → Promise<{ texte, source: 'pdf' | 'ocr' }>   (texte avec une tabulation entre les cellules d'une ligne)
  *   AutoDetect.analyser(texte)            → { entreprise, contrat, intitule, date, personnes: [{ nom, prenom, fonction, verifier }], avertissements: [] }
  *   AutoDetect.depuisFichier(file)        → Promise<analyser(...) + { source }>
  *   AutoDetect.versTsv(resultat)          → texte « Nom ⇥ Prénom ⇥ Fonction ⇥ Entreprise ⇥ Contrat » à coller dans un import
@@ -113,23 +113,26 @@ var AutoDetect = (function () {
       return pages.reduce(function (p, n) { return p.then(function (acc) { return pdf.getPage(n).then(function (pg) { return pg.getTextContent(); }).then(function (tc) { return acc.concat(lignesDePage(tc.items)); }); }); }, Promise.resolve([])).then(function (l) { return { pdf: pdf, texte: l.join('\n') }; });
     });
   }
-  function lireOcr(pdf) {
+  /** Niveaux de gris + étirement du contraste : un scan à 100 ppi est lu bien mieux (chiffres d'un tableau) qu'en couleur. */
+  function griser(cv) { var cx = cv.getContext('2d'), im = cx.getImageData(0, 0, cv.width, cv.height), d = im.data, mn = 255, mx = 0, i, g; for (i = 0; i < d.length; i += 4) { g = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000; d[i] = d[i + 1] = d[i + 2] = g; if (g < mn) mn = g; if (g > mx) mx = g; } var k = mx > mn ? 255 / (mx - mn) : 1; for (i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = Math.max(0, Math.min(255, (d[i] - mn) * k)); cx.putImageData(im, 0, 0); }
+  function lireOcr(pdf, opt) {
     return charger(CDN.ocr).then(function () { return window.Tesseract.createWorker('fra'); }).then(function (w) {
       var out = [];
       var suite = function (n) {
         if (n > Math.min(pdf.numPages, 5)) return w.terminate().then(function () { return out.join('\n'); });
         return pdf.getPage(n).then(function (pg) {
-          var vp = pg.getViewport({ scale: 2.2 }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
-          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { return w.recognize(cv); });
+          var vp = pg.getViewport({ scale: (opt && opt.echelle) || 2.2 }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { if (opt && opt.gris) griser(cv); return w.recognize(cv); });
         }).then(function (r) { out.push(r.data.text); return suite(n + 1); });
       };
       return suite(1);
     });
   }
-  function lireFichier(file) {
+  /** opt (facultatif) : { echelle: 3, gris: true } pour un scan de faible résolution (tableaux de prix). */
+  function lireFichier(file, opt) {
     return file.arrayBuffer().then(function (buf) { return lirePdfTexte(new Uint8Array(buf)); }).then(function (r) {
       if (vide(r.texte).length >= 40) return { texte: r.texte, source: 'pdf' };
-      return lireOcr(r.pdf).then(function (t) { return { texte: t, source: 'ocr' }; }); // PDF scanné : pas de texte, on lit l'image
+      return lireOcr(r.pdf, opt).then(function (t) { return { texte: t, source: 'ocr' }; }); // PDF scanné : pas de texte, on lit l'image
     });
   }
   function depuisFichier(file) { return lireFichier(file).then(function (l) { var r = analyser(l.texte); r.source = l.source; r.texte = l.texte; return r; }); }

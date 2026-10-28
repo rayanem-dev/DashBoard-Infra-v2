@@ -24,7 +24,7 @@ test('canevas d\'une région (prix unitaire seul, scan lu par OCR) : mode 1, mil
   const r = L.depuisTexte(fx('benchmark-region-hmd.txt'));
   assert.strictEqual(r.mode, 1); assert.deepStrictEqual(r.articles.map(a => a.n), ['01', '02', '03', '04', '05', '06']);
   assert.deepStrictEqual(r.articles.map(a => a.pu), [1200, 10000, 10500, 5600, 2000, 550]);
-  assert.deepStrictEqual(r.articles.map(a => a.u), ['M²', 'M²', 'M²', 'M²', 'U', 'M²']);
+  assert.deepStrictEqual(r.articles.map(a => a.u), ['M2', 'M2', 'M2', 'M2', 'U', 'M2']);
   assert.ok(/^Décapage/.test(r.articles[0].des) && /sujétions de mise en œuvre\.$/.test(r.articles[0].des));
   assert.ok(/^Fourniture et pose/.test(r.articles[3].des) && /1er choix\.$/.test(r.articles[3].des) && !/Gargouille/.test(r.articles[3].des));
 });
@@ -59,4 +59,26 @@ test('entrées vides ou illisibles : aucune erreur', () => {
   assert.deepStrictEqual(L.depuisTexte('').articles, []); assert.deepStrictEqual(L.depuisTexte(null).articles, []);
   assert.deepStrictEqual(L.depuisTableau([['rien', 'ici']]).articles, []); assert.deepStrictEqual(L.depuisTableau().articles, []);
   assert.deepStrictEqual(L.rapprocher([], []), []);
+});
+
+test('VRAIE sortie de l\'OCR (Tesseract fra) sur le scan du canevas de HMD : 6 articles, prix bruités signalés', () => {
+  const r = L.depuisTexte(fx('benchmark-region-hmd-ocr.txt'));
+  assert.strictEqual(r.articles.length, 6); assert.deepStrictEqual(r.articles.map(a => a.n), ['01', '02', '03', '04', '05', '06']);
+  assert.deepStrictEqual(r.articles.map(a => a.pu), [1200, 10000, 10500, 5800, '', 550]);              // 5 800 : l'OCR a lu 6 en 8 ; 05 : prix illisible
+  assert.deepStrictEqual(r.articles.map(a => a.verifier), [false, false, true, true, true, true]);     // les lignes bruitées sont signalées, jamais acceptées en silence
+  assert.ok(r.articles.every(a => !/[|‘’]/.test(a.des)) && /^Décapage/.test(r.articles[0].des) && !/me — ee/.test(r.articles[0].des));
+  assert.strictEqual(L.metadonnees(fx('benchmark-region-hmd-ocr.txt')).courrier, '225/SH/E&P/HMD/LOG/2026');
+});
+test('même scan lu à plus haute résolution (échelle 3, gris) : meilleurs chiffres, N° « 93 » corrigé en « 03 » par la suite 01, 02, 04', () => {
+  const r = L.depuisTexte(fx('benchmark-region-hmd-ocr3.txt'));
+  assert.deepStrictEqual(r.articles.map(a => a.n), ['01', '02', '03', '04', '05', '06']);
+  assert.deepStrictEqual(r.articles.map(a => a.pu), [1200, 10000, 10500, 5600, 5300.08, 550]);
+  assert.strictEqual(r.articles[4].verifier, true);   // 5 300,08 : décimales anormales → à vérifier
+});
+test('montants bruités par l\'OCR', () => {
+  const l = txt => L.depuisTexte('N° Désignations Unité P.U\n' + txt).articles[0];
+  assert.strictEqual(l('01 Décapage des anciens composants M 10:500;00').pu, 10500);
+  assert.strictEqual(l('02 Forme de pente en béton maigre M? 10 000.00').pu, 10000);
+  assert.strictEqual(l('03 Gargouille EPDM et compris crapaudine U | =\u2018000;06').pu, '');
+  assert.strictEqual(l('04 Protection lourde en gravier roulé M² 550,00').pu, 550);
 });

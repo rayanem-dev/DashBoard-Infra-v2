@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-232",
+    "date": "2026-10-28",
+    "title": "Version 6.17.1 — Banchy lit mieux les scans",
+    "changes": [
+      "Benchmark : Banchy lit désormais correctement le scan d'un canevas de région (testé sur la vraie sortie de l'OCR du canevas de HMD : les 6 articles et leurs prix sont retrouvés, au lieu de 2 lignes). Le scan est lu agrandi 3 fois, en niveaux de gris.",
+      "Les chiffres douteux d'un scan (prix illisible, décimales anormales, N° mal lu) sont signalés « ⚠ à vérifier » dans la fenêtre de contrôle : un prix mal lu par l'OCR doit toujours être confirmé à l'œil avant l'import."
+    ]
+  },
+  {
     "id": "2026-10-28-231",
     "date": "2026-10-28",
     "title": "Version 6.17.0 — Banchy lit les offres : PDF, scan et Excel",
