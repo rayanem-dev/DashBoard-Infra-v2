@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-235",
+    "date": "2026-10-28",
+    "title": "Version 6.19.0 — Banchy lit une offre scannée de plusieurs pages",
+    "changes": [
+      "Benchmark : une offre scannée de 7 pages (devis quantitatif avec nombre de chambres × quantité par chambre) est lue en entier : 45 articles avec quantité, prix unitaire et montant, au lieu de 11 lignes fausses. Le scan est lu jusqu'à 12 pages, avec l'avancement affiché (« page 3 sur 7 »).",
+      "Contrôle de la lecture : la page compare la somme des articles lus au total écrit dans le document et affiche l'écart en rouge (ici 6,2 millions sur 229 millions) pour inviter à comparer avec le papier. Les prix abîmés par l'OCR sont reconstitués à partir de la quantité et du montant, et signalés « à vérifier »."
+    ]
+  },
+  {
     "id": "2026-10-28-234",
     "date": "2026-10-28",
     "title": "Version 6.18.1 — Banchy lit vos 3 régions",
