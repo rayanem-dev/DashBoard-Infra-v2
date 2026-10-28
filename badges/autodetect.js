@@ -138,20 +138,30 @@ var AutoDetect = (function () {
     var montants = mots.filter(function (w) { return /^\d[\d.,:;']*[.,:;]\d{2}$/.test(w.text.replace(/\s/g, '')) && w.bbox.y1 - w.bbox.y0 < 90; }), cols = [];
     montants.forEach(function (w) { var c = cols.filter(function (k) { return Math.abs(k.x1 - w.bbox.x1) < 60; })[0]; if (!c) { c = { x0: w.bbox.x0, x1: w.bbox.x1, y0: w.bbox.y0, y1: w.bbox.y1, n: 0, ys: [] }; cols.push(c); } c.n += 1; c.ys.push((w.bbox.y0 + w.bbox.y1) / 2); c.x0 = Math.min(c.x0, w.bbox.x0); c.x1 = Math.max(c.x1, w.bbox.x1); c.y0 = Math.min(c.y0, w.bbox.y0); c.y1 = Math.max(c.y1, w.bbox.y1); });
     cols = cols.filter(function (c) { return c.n >= 3; }).sort(function (a, b) { return b.x1 - a.x1; }).slice(0, 3);
+    cols.forEach(function (c) { c.type = 'montant'; c.liste = '0123456789 ,.'; });
+    // colonne des unités (M², ML, U…) et colonne des N° d'article (I,1  1.2.5  01) : bandes étroites relues avec leur propre liste de caractères
+    var colonneDe = function (test, type, liste, gauche) {
+      var ws = mots.filter(function (w) { return w.bbox.y1 - w.bbox.y0 < 90 && test(w.text.replace(/[|\[\]\s]/g, '')) && (!gauche || w.bbox.x1 < cv.width * 0.3); }), g = [];
+      ws.forEach(function (w) { var xc = (w.bbox.x0 + w.bbox.x1) / 2, c = g.filter(function (k) { return Math.abs(k.xc - xc) < 45; })[0]; if (!c) { c = { xc: xc, x0: w.bbox.x0, x1: w.bbox.x1, y0: w.bbox.y0, y1: w.bbox.y1, n: 0, ys: [], type: type, liste: liste, voisine: null }; g.push(c); } c.n += 1; c.ys.push((w.bbox.y0 + w.bbox.y1) / 2); c.x0 = Math.min(c.x0, w.bbox.x0); c.x1 = Math.max(c.x1, w.bbox.x1); c.y0 = Math.min(c.y0, w.bbox.y0); c.y1 = Math.max(c.y1, w.bbox.y1); });
+      g = g.filter(function (c) { return c.n >= 3; }).sort(function (a, b) { return b.n - a.n; }); return g[0] ? [g[0]] : [];
+    };
+    cols = cols.concat(colonneDe(function (t) { return /^(m|m[?î²2³3]|ml|u|lot|ens|kg|ft|fft)$/i.test(t); }, 'unite', 'MLUTOKGEFNS²23', false), colonneDe(function (t) { return /^([IVXl1]{1,4}[.,]\d{1,2}|\d{1,3}|[IVX]{1,4})$/.test(t); }, 'num', 'IVXl0123456789.,', true));
     cols.forEach(function (c) { c.voisine = null; cols.forEach(function (o) { if (o !== c && o.x1 < c.x0 && (!c.voisine || o.x1 > c.voisine)) c.voisine = o.x1; }); });   // colonne de chiffres à gauche : la bande s'arrête contre elle
     if (!cols.length) return Promise.resolve(d);
     var remplacements = [];   // { ligne, x0, texte }
     var suite = function (k) {
       if (k >= cols.length) return Promise.resolve();
       var c = cols[k], x0 = Math.max(0, c.x0 - 130), x1 = Math.min(cv.width, c.x1 + 25), y0 = Math.max(0, c.y0 - 150), y1 = Math.min(cv.height, c.y1 + 150), h;
+      if (c.type !== 'montant') { x0 = Math.max(0, c.x0 - 10); x1 = Math.min(cv.width, c.x1 + 10); }
       if (c.voisine !== null) x0 = Math.max(x0, c.voisine + 8);
-      mots.forEach(function (w) { if (/[A-Za-zÀ-ÿ]/.test(w.text) && !/\d/.test(w.text) && w.bbox.x1 - w.bbox.x0 < 200 && w.bbox.x1 > x0 && w.bbox.x0 < c.x0 && c.ys.some(function (y) { return Math.abs(y - (w.bbox.y0 + w.bbox.y1) / 2) < 20; })) x0 = Math.max(x0, w.bbox.x1 + 3); });   // pas de lettres (unité) dans la bande : seuls comptent les mots à la hauteur d'un montant
+      if (c.type === 'montant') mots.forEach(function (w) { if (/[A-Za-zÀ-ÿ]/.test(w.text) && !/\d/.test(w.text) && w.bbox.x1 - w.bbox.x0 < 200 && w.bbox.x1 > x0 && w.bbox.x0 < c.x0 && c.ys.some(function (y) { return Math.abs(y - (w.bbox.y0 + w.bbox.y1) / 2) < 20; })) x0 = Math.max(x0, w.bbox.x1 + 3); });   // pas de lettres (unité) dans la bande : seuls comptent les mots à la hauteur d'un montant
       if (x1 - x0 < 40) return suite(k + 1);
       var bande = document.createElement('canvas'); bande.width = (x1 - x0) * 2; bande.height = (y1 - y0) * 2;
       bande.getContext('2d').drawImage(cv, x0, y0, x1 - x0, y1 - y0, 0, 0, bande.width, bande.height);
-      return lecteur().then(function (wd) { return wd.recognize(bande); }).then(function (r) {
+      return lecteur(c.liste).then(function (wd) { return wd.recognize(bande); }).then(function (r) {
         (r.data.lines || []).forEach(function (l2) {
-          var t = l2.text.replace(/[^\d ,.]/g, ' ').replace(/\s+/g, ' ').trim(); if (!/\d[\d ]*[.,]\d{2}$/.test(t)) return;
+          var t = c.type === 'montant' ? l2.text.replace(/[^\d ,.]/g, ' ').replace(/\s+/g, ' ').trim() : l2.text.replace(/[\s|]+/g, c.type === 'unite' ? '' : ' ').trim();
+          if (c.type === 'montant' ? !/\d[\d ]*[.,]\d{2}$/.test(t) : (c.type === 'unite' ? !/^[A-Z²23?]{1,4}$/.test(t) : !/^[IVXl\d.,]{1,8}$/.test(t))) return;
           var yc = y0 + (l2.bbox.y0 + l2.bbox.y1) / 4, meilleure = null;
           (d.lines || []).forEach(function (l1) { var h1 = l1.bbox.y1 - l1.bbox.y0, dy = Math.abs((l1.bbox.y0 + l1.bbox.y1) / 2 - yc); if (dy < Math.max(14, h1 * 0.8) && (!meilleure || dy < meilleure.dy)) meilleure = { l: l1, dy: dy }; });
           if (meilleure) remplacements.push({ ligne: meilleure.l, x0: x0, x1: x1, texte: t });
@@ -169,16 +179,65 @@ var AutoDetect = (function () {
       return d;
     });
   }
+  /**
+   * Grille d'un tableau à traits (offres, bordereaux, devis) lue sur l'IMAGE : les traits horizontaux et verticaux longs découpent la page en cellules, et chaque mot lu par l'OCR
+   * va dans la cellule qui contient son centre. On obtient ainsi, pour chaque rangée, le N°, la désignation (toutes ses lignes), l'unité et les nombres, sans décalage de lignes.
+   * Retourne { lignes: [[cellule, …], …] } ou null si la page n'a pas de tableau. cv : canvas de la page (en niveaux de gris), d : résultat de l'OCR de la page.
+   */
+  function grilleDePage(cv, d) {
+    var W = cv.width, H = cv.height, im = cv.getContext('2d').getImageData(0, 0, W, H).data, noir = function (x, y) { return im[(y * W + x) * 4] < 140; };
+    var hy = [], vx = [], y, x, run, best;
+    for (y = 0; y < H; y += 1) { run = 0; best = 0; for (x = 0; x < W; x += 1) { if (noir(x, y)) { run += 1; if (run > best) best = run; } else if (run && x + 2 < W && (noir(x + 1, y) || noir(x + 2, y))) { run += 1; } else run = 0; } if (best > W * 0.5) hy.push(y); }
+    for (x = 0; x < W; x += 1) { run = 0; best = 0; for (y = 0; y < H; y += 1) { if (noir(x, y)) { run += 1; if (run > best) best = run; } else if (run && y + 2 < H && (noir(x, y + 1) || noir(x, y + 2))) { run += 1; } else run = 0; } if (best > H * 0.12 && best > 250) vx.push(x); }
+    var fusion = function (a, e) { var o = []; a.forEach(function (v) { if (o.length && v - o[o.length - 1].fin <= e) o[o.length - 1].fin = v; else o.push({ deb: v, fin: v }); }); return o.map(function (g) { return (g.deb + g.fin) / 2; }); };
+    var L = fusion(hy, 6), C = fusion(vx, 6);
+    if (L.length < 4 || C.length < 4) return null;
+    var mots = []; (d.lines || []).forEach(function (l) { (l.words || []).forEach(function (w) { mots.push(w); }); });
+    var lignes = [], bandes = [];
+    for (var i = 0; i + 1 < L.length; i += 1) {
+      if (L[i + 1] - L[i] < 14) continue;
+      bandes.push([L[i], L[i + 1]]);
+      var rang = C.slice(0, -1).map(function () { return []; });
+      mots.forEach(function (w) { var yc = (w.bbox.y0 + w.bbox.y1) / 2, xc = (w.bbox.x0 + w.bbox.x1) / 2; if (yc <= L[i] || yc >= L[i + 1]) return; for (var k = 0; k + 1 < C.length; k += 1) if (xc > C[k] && xc < C[k + 1]) { rang[k].push(w); return; } });
+      lignes.push(rang.map(function (ws) { ws.sort(function (a, b) { return Math.abs((a.bbox.y0 + a.bbox.y1) / 2 - (b.bbox.y0 + b.bbox.y1) / 2) > 12 ? a.bbox.y0 - b.bbox.y0 : a.bbox.x0 - b.bbox.x0; }); return ws.map(function (w) { return w.text; }).join(' ').replace(/\s+/g, ' ').trim(); }));
+    }
+    return { lignes: lignes, bandes: bandes, colonnes: C, horizontales: L.length, verticales: C.length };
+  }
+  /** Colonnes de nombres de la grille relues à part, cellule par cellule (bande exacte entre deux traits, agrandie, liste « 0-9 , . espace ») : plus fiable que la lecture de la page entière. */
+  function relireColonnes(cv, g, lecteur) {
+    var nbCol = g.colonnes.length - 1, cibles = [];
+    for (var k = 0; k < nbCol; k += 1) {
+      var cells = g.lignes.map(function (r) { return r[k] || ''; }).filter(function (t) { return t; }), num = cells.filter(function (t) { return /^[\d\s.,:;'|SOIl]+$/.test(t) && /\d/.test(t); }).length;
+      if (cells.length >= 3 && num / cells.length >= 0.6) cibles.push(k);
+    }
+    var y0 = g.bandes[0][0] + 3, y1 = g.bandes[g.bandes.length - 1][1] - 3;
+    var suite = function (j) {
+      if (j >= cibles.length) return Promise.resolve();
+      var k = cibles[j], x0 = g.colonnes[k] + 3, x1 = g.colonnes[k + 1] - 3;
+      if (x1 - x0 < 30 || y1 - y0 < 30) return suite(j + 1);
+      var bande = document.createElement('canvas'); bande.width = (x1 - x0) * 2; bande.height = (y1 - y0) * 2;
+      bande.getContext('2d').drawImage(cv, x0, y0, x1 - x0, y1 - y0, 0, 0, bande.width, bande.height);
+      return lecteur().then(function (wd) { return wd.recognize(bande); }).then(function (r) {
+        var parRang = {};
+        (r.data.lines || []).forEach(function (l) { var yc = y0 + (l.bbox.y0 + l.bbox.y1) / 4, t = l.text.replace(/[^\d ,.]/g, ' ').replace(/\s+/g, ' ').trim(); if (!/\d/.test(t)) return; for (var i = 0; i < g.bandes.length; i += 1) if (yc > g.bandes[i][0] && yc < g.bandes[i][1]) { parRang[i] = (parRang[i] ? parRang[i] + ' ' : '') + t; return; } });
+        Object.keys(parRang).forEach(function (i) { g.lignes[i][k] = parRang[i]; });
+      }).then(function () { return suite(j + 1); });
+    };
+    return suite(0);
+  }
   function lireOcr(pdf, opt) {
     return charger(CDN.ocr).then(function () { return window.Tesseract.createWorker('fra'); }).then(function (w) {
-      var out = [], wd = null;
-      var lecteur = function () { return wd ? Promise.resolve(wd) : window.Tesseract.createWorker('fra').then(function (w2) { return w2.setParameters({ tessedit_char_whitelist: '0123456789 ,.', tessedit_pageseg_mode: '4' }).then(function () { wd = w2; return w2; }); }); };
+      var out = [], wds = {}, grilles = [];
+      var lecteur = function (liste) { liste = liste || '0123456789 ,.'; return wds[liste] ? Promise.resolve(wds[liste]) : window.Tesseract.createWorker('fra').then(function (w2) { return w2.setParameters({ tessedit_char_whitelist: liste, tessedit_pageseg_mode: '4' }).then(function () { wds[liste] = w2; return w2; }); }); };
       var suite = function (n) {
-        if (n > Math.min(pdf.numPages, (opt && opt.pages) || 5)) return Promise.all([w.terminate(), wd ? wd.terminate() : null]).then(function () { return out.join('\n'); });
+        if (n > Math.min(pdf.numPages, (opt && opt.pages) || 5)) return Promise.all([w.terminate()].concat(Object.keys(wds).map(function (k) { return wds[k].terminate(); }))).then(function () { return opt && opt.grille ? { texte: out.join('\n'), grille: grilles } : out.join('\n'); });
         if (opt && opt.progres) opt.progres(n, Math.min(pdf.numPages, opt.pages || 5));
         return pdf.getPage(n).then(function (pg) {
           var vp = pg.getViewport({ scale: (opt && opt.echelle) || 2.2 }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
-          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { if (opt && opt.gris) griser(cv); return w.recognize(cv).then(function (r) { return opt && opt.chiffres ? reprendreChiffres(cv, r.data, lecteur) : r.data; }); });
+          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { if (opt && opt.gris) griser(cv); return w.recognize(cv).then(function (r) {
+            var g = opt && opt.grille ? grilleDePage(cv, r.data) : null, p = g && opt.chiffres ? relireColonnes(cv, g, lecteur) : Promise.resolve();
+            return p.then(function () { return opt && opt.chiffres ? reprendreChiffres(cv, r.data, lecteur) : r.data; }).then(function (data) { if (g) g.lignes.forEach(function (l) { grilles.push(l); }); return data; });
+          }); });
         }).then(function (data) { out.push(opt && opt.interlignes ? texteOcrAvecEcarts(data) : (opt && opt.chiffres ? (data.lines || []).map(function (l) { return l.text.replace(/\s+$/, ''); }).join('\n') : data.text)); return suite(n + 1); });
       };
       return suite(1);
@@ -188,7 +247,7 @@ var AutoDetect = (function () {
   function lireFichier(file, opt) {
     return file.arrayBuffer().then(function (buf) { return lirePdfTexte(new Uint8Array(buf), opt); }).then(function (r) {
       if (vide(r.texte).length >= 40) return { texte: r.texte, source: 'pdf' };
-      return lireOcr(r.pdf, opt).then(function (t) { return { texte: t, source: 'ocr' }; }); // PDF scanné : pas de texte, on lit l'image
+      return lireOcr(r.pdf, opt).then(function (t) { return typeof t === 'string' ? { texte: t, source: 'ocr' } : { texte: t.texte, source: 'ocr', grille: t.grille }; }); // PDF scanné : pas de texte, on lit l'image
     });
   }
   function depuisFichier(file) { return lireFichier(file).then(function (l) { var r = analyser(l.texte); r.source = l.source; r.texte = l.texte; return r; }); }

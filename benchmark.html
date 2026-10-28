@@ -294,10 +294,19 @@
       var m = LE.metadonnees(best.d.entete || ''); return { articles: best.d.articles, offres: best.d.offres, meta: m, total: null, source: 'excel', nom: nom };
     });
     else if (/^(jpe?g|png|webp|bmp|tiff?)$/.test(ext) || /^image\//.test(file.type)) lire = script(CDN_OCR).then(function () { return window.Tesseract.recognize(file, 'fra'); }).then(function (r) { return deTexte(r.data.text, 'scan', nom); });
-    else lire = window.AutoDetect.lireFichier(file, { echelle: 3, gris: true, interlignes: true, chiffres: true, pages: 12, progres: function (n, t) { occupe('Lecture du scan : page ' + n + ' sur ' + t + '… (environ 20 secondes par page)'); } }).then(function (r) { return deTexte(r.texte, r.source === 'ocr' ? 'scan' : 'pdf', nom); });
+    else lire = window.AutoDetect.lireFichier(file, { echelle: 3, gris: true, interlignes: true, chiffres: true, grille: true, pages: 12, progres: function (n, t) { occupe('Lecture du scan : page ' + n + ' sur ' + t + '… (environ 20 secondes par page)'); } }).then(function (r) { return deTexte(r.texte, r.source === 'ocr' ? 'scan' : 'pdf', nom, r.grille); });
     return lire.then(function (r) { toast('Lecture terminée'); return r; }, function (e) { throw e; });
   }
-  function deTexte(texte, source, nom) { var d = LE.depuisTexte(texte); return { articles: d.articles, offres: [], meta: LE.metadonnees(texte), total: d.total, source: source, nom: nom, mode: d.mode, nature: LE.nature(texte) }; }
+  /** Un scan à traits est lu de deux façons : par lignes de texte et par cellules de tableau (grille). On garde celle dont la somme des articles est la plus proche du total du document. */
+  function meilleure(d, grille, texte) {
+    if (!grille || grille.length < 4) return d;
+    var g = LE.depuisGrille(grille, d.total); if (!g.articles.length) return d;
+    var ecart = function (x) { var v = LE.verifierTotal(x.articles, x.total); return v.ecart === null ? null : Math.abs(v.ecart); };
+    var eg = ecart(g), et = ecart(d);
+    if (et === null || eg === null) return g.articles.length >= d.articles.length * 0.8 ? g : d;
+    return eg <= et ? g : d;
+  }
+  function deTexte(texte, source, nom, grille) { var d0 = LE.depuisTexte(texte), d = meilleure(d0, grille, texte); d.vierge = d0.vierge; return { articles: d.articles, offres: [], meta: LE.metadonnees(texte), total: d.total, source: source, nom: nom, mode: d.mode, nature: LE.nature(texte) }; }
   var NATURES = { 'demande': 'Ce fichier est la <b>demande de prix envoyée aux régions</b> (lettre « Normativité des prix » et canevas vierge) : il ne contient aucun prix. Ouvrez plutôt la <b>réponse d\'une région</b> ou l\'offre chiffrée.', 'canevas-vierge': 'Ce fichier est un <b>canevas vierge</b> (articles sans prix) : rien à importer. Ouvrez la réponse d\'une région.', 'inconnu': 'Aucun article ni prix reconnu : le scan est peut-être trop flou. Collez les cellules depuis Excel.' };
   function refus(r) { var m = NATURES[r.nature] || NATURES.inconnu; $('toast').className = 'toast'; dlg2('Rien à importer', 'Fichier « ' + E(r.nom) + ' »', '<p style="font-size:14px">' + m + '</p>', null); $('d2-ok').style.display = 'none'; $('d2-non').textContent = 'Fermer'; $('dlg2').addEventListener('close', function () { $('d2-ok').style.display = ''; $('d2-non').textContent = 'Annuler'; }, { once: true }); }
   function dlg2(titre, aide, html, ok) { $('d2-t').textContent = titre; $('d2-a').innerHTML = aide; $('d2-c').innerHTML = html; $('d2-ok').onclick = function () { var f = ok; $('dlg2').close(); if (f) f(); }; $('d2-non').onclick = function () { $('dlg2').close(); }; $('dlg2').showModal(); }
