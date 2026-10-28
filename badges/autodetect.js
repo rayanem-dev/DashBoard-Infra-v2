@@ -128,16 +128,58 @@ var AutoDetect = (function () {
     l.forEach(function (x, i) { if (i > 0 && larges[i - 1]) out.push(''); out.push(x.text.replace(/\s+$/, '')); });
     return out.join('\n');
   }
+  /**
+   * Colonnes de montants relues à part : les chiffres d'un tableau scanné sont mieux lus quand la colonne est découpée, agrandie et lue avec la seule liste « 0-9 , . espace »
+   * (le « 5 » de « 5 600,00 » ou un prix sous un tampon, perdus par la lecture de la page entière). Les montants à 2 décimales sont regroupés par bord droit (jusqu'à 3 colonnes) ;
+   * pour chaque colonne, les mots de la page qui y figurent sont remplacés par la relecture, ligne par ligne (même hauteur). d = résultat de la lecture de la page.
+   */
+  function reprendreChiffres(cv, d, lecteur) {
+    var mots = []; (d.lines || []).forEach(function (l) { (l.words || []).forEach(function (w) { mots.push(w); }); });
+    var montants = mots.filter(function (w) { return /^\d[\d.,:;']*[.,:;]\d{2}$/.test(w.text.replace(/\s/g, '')) && w.bbox.y1 - w.bbox.y0 < 90; }), cols = [];
+    montants.forEach(function (w) { var c = cols.filter(function (k) { return Math.abs(k.x1 - w.bbox.x1) < 60; })[0]; if (!c) { c = { x0: w.bbox.x0, x1: w.bbox.x1, y0: w.bbox.y0, y1: w.bbox.y1, n: 0, ys: [] }; cols.push(c); } c.n += 1; c.ys.push((w.bbox.y0 + w.bbox.y1) / 2); c.x0 = Math.min(c.x0, w.bbox.x0); c.x1 = Math.max(c.x1, w.bbox.x1); c.y0 = Math.min(c.y0, w.bbox.y0); c.y1 = Math.max(c.y1, w.bbox.y1); });
+    cols = cols.filter(function (c) { return c.n >= 3; }).sort(function (a, b) { return b.x1 - a.x1; }).slice(0, 3);
+    cols.forEach(function (c) { c.voisine = null; cols.forEach(function (o) { if (o !== c && o.x1 < c.x0 && (!c.voisine || o.x1 > c.voisine)) c.voisine = o.x1; }); });   // colonne de chiffres à gauche : la bande s'arrête contre elle
+    if (!cols.length) return Promise.resolve(d);
+    var remplacements = [];   // { ligne, x0, texte }
+    var suite = function (k) {
+      if (k >= cols.length) return Promise.resolve();
+      var c = cols[k], x0 = Math.max(0, c.x0 - 130), x1 = Math.min(cv.width, c.x1 + 25), y0 = Math.max(0, c.y0 - 150), y1 = Math.min(cv.height, c.y1 + 150), h;
+      if (c.voisine !== null) x0 = Math.max(x0, c.voisine + 8);
+      mots.forEach(function (w) { if (/[A-Za-zÀ-ÿ]/.test(w.text) && !/\d/.test(w.text) && w.bbox.x1 - w.bbox.x0 < 200 && w.bbox.x1 > x0 && w.bbox.x0 < c.x0 && c.ys.some(function (y) { return Math.abs(y - (w.bbox.y0 + w.bbox.y1) / 2) < 20; })) x0 = Math.max(x0, w.bbox.x1 + 3); });   // pas de lettres (unité) dans la bande : seuls comptent les mots à la hauteur d'un montant
+      if (x1 - x0 < 40) return suite(k + 1);
+      var bande = document.createElement('canvas'); bande.width = (x1 - x0) * 2; bande.height = (y1 - y0) * 2;
+      bande.getContext('2d').drawImage(cv, x0, y0, x1 - x0, y1 - y0, 0, 0, bande.width, bande.height);
+      return lecteur().then(function (wd) { return wd.recognize(bande); }).then(function (r) {
+        (r.data.lines || []).forEach(function (l2) {
+          var t = l2.text.replace(/[^\d ,.]/g, ' ').replace(/\s+/g, ' ').trim(); if (!/\d[\d ]*[.,]\d{2}$/.test(t)) return;
+          var yc = y0 + (l2.bbox.y0 + l2.bbox.y1) / 4, meilleure = null;
+          (d.lines || []).forEach(function (l1) { var h1 = l1.bbox.y1 - l1.bbox.y0, dy = Math.abs((l1.bbox.y0 + l1.bbox.y1) / 2 - yc); if (dy < Math.max(14, h1 * 0.8) && (!meilleure || dy < meilleure.dy)) meilleure = { l: l1, dy: dy }; });
+          if (meilleure) remplacements.push({ ligne: meilleure.l, x0: x0, x1: x1, texte: t });
+        });
+      }).then(function () { return suite(k + 1); });
+    };
+    return suite(0).then(function () {
+      var parLigne = [];
+      remplacements.forEach(function (r) { var e = parLigne.filter(function (p) { return p.ligne === r.ligne; })[0]; if (!e) { e = { ligne: r.ligne, r: [] }; parLigne.push(e); } if (!e.r.some(function (z) { return z.x0 === r.x0; })) e.r.push(r); });
+      parLigne.forEach(function (e) {   // mots de la ligne hors des bandes relues + montants relus, dans l'ordre de gauche à droite
+        var items = (e.ligne.words || []).filter(function (w) { return !e.r.some(function (z) { return w.bbox.x0 >= z.x0 - 4 && w.bbox.x1 <= z.x1 + 4; }); }).map(function (w) { return { x: w.bbox.x0, t: w.text }; });
+        e.r.forEach(function (z) { items.push({ x: z.x0, t: z.texte }); });
+        e.ligne.text = items.sort(function (a, b) { return a.x - b.x; }).map(function (z) { return z.t; }).join(' ');
+      });
+      return d;
+    });
+  }
   function lireOcr(pdf, opt) {
     return charger(CDN.ocr).then(function () { return window.Tesseract.createWorker('fra'); }).then(function (w) {
-      var out = [];
+      var out = [], wd = null;
+      var lecteur = function () { return wd ? Promise.resolve(wd) : window.Tesseract.createWorker('fra').then(function (w2) { return w2.setParameters({ tessedit_char_whitelist: '0123456789 ,.', tessedit_pageseg_mode: '4' }).then(function () { wd = w2; return w2; }); }); };
       var suite = function (n) {
-        if (n > Math.min(pdf.numPages, (opt && opt.pages) || 5)) return w.terminate().then(function () { return out.join('\n'); });
+        if (n > Math.min(pdf.numPages, (opt && opt.pages) || 5)) return Promise.all([w.terminate(), wd ? wd.terminate() : null]).then(function () { return out.join('\n'); });
         if (opt && opt.progres) opt.progres(n, Math.min(pdf.numPages, opt.pages || 5));
         return pdf.getPage(n).then(function (pg) {
           var vp = pg.getViewport({ scale: (opt && opt.echelle) || 2.2 }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
-          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { if (opt && opt.gris) griser(cv); return w.recognize(cv); });
-        }).then(function (r) { out.push(opt && opt.interlignes ? texteOcrAvecEcarts(r.data) : r.data.text); return suite(n + 1); });
+          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { if (opt && opt.gris) griser(cv); return w.recognize(cv).then(function (r) { return opt && opt.chiffres ? reprendreChiffres(cv, r.data, lecteur) : r.data; }); });
+        }).then(function (data) { out.push(opt && opt.interlignes ? texteOcrAvecEcarts(data) : (opt && opt.chiffres ? (data.lines || []).map(function (l) { return l.text.replace(/\s+$/, ''); }).join('\n') : data.text)); return suite(n + 1); });
       };
       return suite(1);
     });

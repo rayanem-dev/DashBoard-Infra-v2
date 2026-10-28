@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-236",
+    "date": "2026-10-28",
+    "title": "Version 6.19.1 — Banchy relit les colonnes de prix des scans",
+    "changes": [
+      "Benchmark : les colonnes de prix d'un scan sont relues à part (colonne découpée, agrandie, lue avec les seuls chiffres). Les prix de HMD sont maintenant tous justes, dont 5 600,00 (le « 5 » était perdu) et 2 000,00 (sous le tampon) ; l'offre de GTL est lue en entier et la somme de ses articles égale exactement son total (38 370 000 DA).",
+      "Le total du document est lu même s'il est écrit sur deux lignes (« Montant total en TTC / hormis TVA 38 370 000,00 »)."
+    ]
+  },
+  {
     "id": "2026-10-28-235",
     "date": "2026-10-28",
     "title": "Version 6.19.0 — Banchy lit une offre scannée de plusieurs pages",

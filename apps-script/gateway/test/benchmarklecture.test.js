@@ -130,3 +130,21 @@ test('VRAI scan de 7 pages (ETB ZAATOUT, 400 chambres, 300 ppi) : colonnes nombr
   assert.strictEqual(L.verifierTotal(L.depuisTexte(fx('benchmark-offre.txt')).articles, 49495000).ok, true);
   assert.strictEqual(L.nature(fx('benchmark-offre-zaatout-nav.txt')), 'offre');
 });
+
+test('colonnes de chiffres relues à part (bande découpée, agrandie, liste « 0-9 , . ») : les 6 prix de HMD sont justes, y compris « 5 600,00 » et le prix sous le tampon', () => {
+  const r = L.depuisTexte(fx('benchmark-region-hmd-chiffres.txt'));
+  assert.deepStrictEqual(r.articles.map(a => a.n), ['01', '02', '03', '04', '05', '06']);
+  assert.deepStrictEqual(r.articles.map(a => a.pu), [1200, 10000, 10500, 5600, 2000, 550]);
+  const offre = L.depuisTexte(fx('benchmark-offre.txt')).articles;
+  assert.deepStrictEqual(L.rapprocher(offre, r.articles).map(x => r.articles[x.i].pu), [1200, 10000, 10500, 5600, 2000, 550]);
+});
+test('colonnes de chiffres relues à part : l\'offre de GTL est lue en entier, la somme des articles égale exactement le total du document', () => {
+  const r = L.depuisTexte(fx('benchmark-region-gtl-chiffres.txt'));
+  assert.strictEqual(r.total, 38370000); assert.strictEqual(r.articles.length, 13);
+  const v = L.verifierTotal(r.articles, r.total); assert.strictEqual(v.ok, true); assert.strictEqual(v.ecart, 0);
+  const a = d => r.articles.filter(x => d.test(x.des))[0];
+  assert.deepStrictEqual([a(/Dépose de l/).qte, a(/Dépose de l/).pu], [8000, 300]);       // 1.1.1, perdu avant
+  assert.deepStrictEqual([a(/Complexe d'étanchéité mul|complexe d'étanchéité multicouches \(03\)/).pu].length, 1);
+  const offre = L.depuisTexte(fx('benchmark-offre.txt')).articles;
+  assert.deepStrictEqual(L.rapprocher(offre, r.articles).map(x => x.i >= 0 ? r.articles[x.i].pu : null), [null, 1600, 600, null, 1200, 800]);
+});
