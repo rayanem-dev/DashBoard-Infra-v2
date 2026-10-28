@@ -257,7 +257,7 @@
       case 'contacts_confirmer': if (!demoState.user) throw erreur('Session expirée', 'SESSION'); demoState.rapproches = demoState.rapproches || {};
         if (p.email) demoState.rapproches[p.nom] = p.email; else delete demoState.rapproches[p.nom]; return { enregistre: true };
       case 'pointage_effectif': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
-        return { groupes: [{ t: 'Direction et services', l: [['DURAND Marc', 'CHEF Division Infrastructure'], ['MARTIN Hugo', 'CHEF SERVICE CONSTRUCTION']] }, { t: 'Génie civil et travaux', l: [['BERNARD Louis', 'INGÉNIEUR GÉNIE CIVIL'], ['LEROY Pierre Antoine', 'TECHNICIEN']] }, { t: 'Ateliers et techniciens (hors planning)', hp: true, l: [['RAHMANI Nadir', 'Chef d\'atelier électricité'], ['MILOUDI Kouider', 'Chef d\'équipe']] }] };
+        return { groupes: [{ t: 'Direction et services', l: [['DURAND Marc', 'CHEF Division Infrastructure'], ['MARTIN Hugo', 'CHEF SERVICE CONSTRUCTION']] }, { t: 'Génie civil et travaux', l: [['BERNARD Louis', 'INGÉNIEUR GÉNIE CIVIL'], ['LEROY Pierre Antoine', 'TECHNICIEN']] }] };
       case 'annuaire_fiches': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { groupes: ['Postes internes (4 chiffres)', 'Équipe Division Infrastructure — Collaborateurs & Bureaux › 🗒️ SECRÉTARIAT', 'Prestataires › MAINTENANCE'], rows: [
           [0, 'Réception', '📞 1000', 'Standard', ''], [0, 'Sûreté interne', '📞 1111', 'Poste de garde', ''],
@@ -499,7 +499,7 @@
         var tousP = demoState.user.role === 'chef_division', d0 = p.debut || plus(auj(), -7), n = Math.min(370, Math.max(7, Number(p.jours) || 35)), all = demoRots();
         return { aujourdhui: auj(), debut: d0, jours: n, peutVoirTous: tousP, peutModifier: tousP,
           lignes: DEMO_USERS.filter(function (x) { return tousP || x.email === demoState.user.email; }).map(function (x) {
-            var r = all[x.email], l = { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', email: x.email, configuree: !!r, hors_planning: /^(section )?(construction|[ée]lectricit[ée])$/i.test(x.section || ''), moi: x.email === demoState.user.email };
+            var r = all[x.email], l = { uid: x.uid, nom: x.nom, service: x.service, fonction: x.fonction || '', dependance: x.dependance || 'SONATRACH', email: x.email, configuree: !!r, moi: x.email === demoState.user.email };
             if (r) { l.rotation = r; l.situation = demoSituation(r); l.grille = demoGrilleDe(x.email, d0, n); }
             return l; }) }; }
       case 'profil_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');

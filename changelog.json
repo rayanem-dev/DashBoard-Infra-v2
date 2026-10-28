@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-28-227",
+    "date": "2026-10-28",
+    "title": "Version 6.15.0 — Feuille de pointage simplifiée : deux boutons d'import",
+    "changes": [
+      "La feuille de pointage ne garde que le choix de la semaine et deux boutons : « Importer l'effectif présent » (présents ou rentrants de la semaine d'après le planning, jours de présence cochés par défaut) et « Importer tout le personnel de la division » (cases vides). On peut ajouter ou retirer une personne à la main avant d'imprimer.",
+      "Retrait des options « hors planning », jours de présence et masquage : l'exclusion des ateliers (Électricité, Froid, Hydraulique) sera traitée à part."
+    ]
+  },
+  {
     "id": "2026-10-28-226",
     "date": "2026-10-28",
     "title": "Version 6.14.2 — Feuille de pointage : feuille vide, liste des présents et rentrants",
