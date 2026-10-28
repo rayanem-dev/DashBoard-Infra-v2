@@ -164,6 +164,8 @@ Banchy.Lecture = (function () {
   var UNITE = /^(m2|m²|m3|m³|ml|m\.l|u|un|unit[ée]|ens|ensemble|kg|t|l|ft|fft|forfait|h|j|jour|pce|pi[èe]ce|lot|km|m)$/i;
   var BRUIT = /montant\s+total|arr[êe]t[ée]|en\s+lettre|en\s+chiffre|^\s*page\s+\d|bordereau\s+des\s+prix|^\s*n°?\s*d[ée]signation|d[ée]signations?\s+unit[ée]|consultation\s+(nationale|de\s+fournisseurs)|^\s*annexe\s+\d+|(millions?|milliers?|mille)\b.*(dinars?|\bDA\b)/i;
 
+  /** Ligne sans chiffre dont moins de 40 % des mots ont 3 lettres et dont aucun mot n'a 6 lettres : traits de tableau, tampons ou taches lus comme du texte. */
+  function bruitOcr(l) { if (/\d/.test(l)) return false; var m = vide(l).split(' ').filter(Boolean); if (!m.length) return true; var vrais = m.filter(function (x) { return /[A-Za-zÀ-ÿ]{3}/.test(x); }).length, long = m.some(function (x) { return /[A-Za-zÀ-ÿ]{6}/.test(x); }); return vrais / m.length < 0.4 && !long; }
   // ---------- nombres français coupés en morceaux par les espaces des milliers ----------
   function segmentations(t) {
     var res = [];
@@ -182,19 +184,30 @@ Banchy.Lecture = (function () {
   }
   function coherent(n) { return n.length === 3 && Math.abs(n[0] * n[1] - n[2]) <= Math.max(1, n[2] * 0.02); }
 
-  /** Une ligne : { avant, unite, jetons } si elle se termine par une unité suivie de nombres ; null sinon. */
+  var NUM_ARTICLE = /^(\d{1,3}|[IVX]+(\.\d+)+|\d+(\.\d+)+|[A-Z]\d{1,3})$/;
+  var UNITE_OCR = /^(m|m[?î²2³3]|u|ml|m\.l|ens|ensemble|kg|t|l|ft|fft|forfait|lot)$/i;
+  /** Montant lu par l'OCR : « 10:500;00 », « 5.800,00 », « 10 000.00 » → 10500, 5800, 10000 (les 2 derniers chiffres après un séparateur sont les décimales). null si illisible (« 000;06 »). */
+  function montantOcr(entiers, decimales) { var v = Number(String(entiers).replace(/\D/g, '') + '.' + decimales); return v >= 1 ? v : null; }
+  /**
+   * Une ligne du tableau : { avant, unite, jetons } si elle se termine par une unité suivie de nombres (lecture propre) ;
+   * { avant, unite, ocr } si elle se termine par un montant à 2 décimales, éventuellement bruité par l'OCR, et porte un N° ou une unité ; null sinon.
+   */
   function ligneChiffree(txt) {
-    var t = vide(txt.replace(/\t/g, ' ')).split(' ');
+    var t = vide(txt.replace(/\t/g, ' ').replace(/[|‘’`´]/g, ' ')).split(' ');
     for (var u = 0; u < t.length - 1; u += 1) {
       if (!UNITE.test(t[u])) continue;
       var queue = t.slice(u + 1);
       if (queue.length > 9 || !queue.every(function (x) { return /^\d[\d.,]*$/.test(x); })) continue;
       if (!segmentations(queue).length) continue;
-      return { avant: t.slice(0, u), unite: t[u].replace(/^m2$/i, 'M2'), jetons: queue };
+      return { avant: t.slice(0, u), unite: /^m[?î²2³3]?$/i.test(t[u]) ? 'M2' : t[u], jetons: queue };
     }
-    return null;
+    var m = /(?:^|[\s=«"'])((?:\d{1,3}(?:[ .,:;']?\d{3})*|\d+))[.,:;]\s?(\d{2})\s*$/.exec(vide(txt.replace(/\t/g, ' ').replace(/[|‘’`´]/g, ' ')));
+    if (!m) return null;
+    var reste = vide(txt.replace(/\t/g, ' ').replace(/[|‘’`´]/g, ' ')).slice(0, m.index).split(' ').filter(function (x) { return /[A-Za-z0-9À-ÿ]/.test(x); }), unite = '';
+    if (reste.length && UNITE_OCR.test(reste[reste.length - 1])) unite = reste.pop();
+    if (!unite && !(reste.length && NUM_ARTICLE.test(reste[0]))) return null;
+    return { avant: reste, unite: /^m[?î²2³3]?$/i.test(unite) ? 'M2' : unite, ocr: montantOcr(m[1], m[2]) };
   }
-  var NUM_ARTICLE = /^(\d{1,3}|[IVX]+(\.\d+)+|\d+(\.\d+)+|[A-Z]\d{1,3})$/;
 
   /**
    * Texte d'un PDF / d'un scan → articles. Les lignes qui finissent par « unité + nombres » portent le N°, l'unité et les prix ; le reste du texte est la désignation
@@ -206,18 +219,23 @@ Banchy.Lecture = (function () {
     // tout ce qui précède l'en-tête du tableau (titre, intitulé de la consultation…) n'est pas une désignation
     for (var h = 0; h < Math.min(brut.length, 60); h += 1) if (/d[ée]signation/i.test(brut[h]) && /unit[ée]|p\.?u|prix/i.test(brut[h])) { brut = brut.slice(h + 1); break; }
     var lignes = [], sep = [], blanc = false;   // sep[i] : une ligne vide précède la ligne i (séparateur de lignes d'un tableau)
-    brut.forEach(function (l) { if (!vide(l)) { blanc = true; return; } if (BRUIT.test(vide(l))) return; lignes.push(l); sep.push(blanc); blanc = false; });
+    brut.forEach(function (l) { if (!vide(l)) { blanc = true; return; } if (BRUIT.test(vide(l)) || !/[A-Za-zÀ-ÿ]{3}|\d/.test(l) || bruitOcr(l)) return;   // lignes de bruit d'OCR (traits du tableau lus comme des lettres isolées)
+       lignes.push(l); sep.push(blanc); blanc = false; });
     var info = lignes.map(ligneChiffree);
-    var cand = info.map(function (x) { return x ? segmentations(x.jetons) : []; });
+    var cand = info.map(function (x) { return x && x.jetons ? segmentations(x.jetons) : []; });
     // mode du document : 3 si des lignes vérifient quantité × PU = montant ; 2 si une quantité à 4 chiffres ou plus apparaît seule ; sinon 1
     var mode = 1, trois = 0, deux = 0;
     cand.forEach(function (c, i) { if (!info[i]) return; if (c.some(coherent)) trois += 1; else if (c.some(function (r) { return r.length === 2 && r[0] >= 1000 && Number.isInteger(r[0]); })) deux += 1; });
-    var nb = info.filter(Boolean).length;
+    var nb = info.filter(function (x) { return x && x.jetons; }).length;
     if (trois && trois >= nb / 2) mode = 3; else if (deux && deux >= nb / 3) mode = 2;
     var arts = [];
     info.forEach(function (x, i) {
       if (!x) return;
       var c = cand[i], choix = null;
+      if (x.ocr !== undefined) {   // ligne lue par l'OCR : un seul prix, souvent bruité
+        var ar = { n: '', des: '', u: x.unite, qte: '', pu: x.ocr === null ? '' : x.ocr, montant: '', ligne: i, verifier: true }, av = x.avant.slice();
+        if (av.length && NUM_ARTICLE.test(av[0])) ar.n = av.shift(); ar.des = av.join(' '); arts.push(ar); return;
+      }
       if (mode === 3) choix = c.filter(coherent)[0] || c.filter(function (r) { return r.length === 3; })[0];
       else if (mode === 2) choix = c.filter(function (r) { return r.length === 2; })[0];
       else choix = c.filter(function (r) { return r.length === 1; }).sort(function (p, q) { return 0; })[0];
@@ -251,7 +269,14 @@ Banchy.Lecture = (function () {
     arts.forEach(function (a, k) {
       var avant = k > 0 ? arts[k - 1].avantNext : [];
       if (k === 0) { avant = []; for (var i = a.ligne - 1; i >= 0 && !info[i]; i -= 1) avant.unshift(texteLigne(i)); }
-      a.des = vide(avant.concat([a.des], a.suite).join(' '));
+      a.des = vide(avant.concat([a.des], a.suite).join(' ').replace(/[|‘’`´]+/g, ' ').replace(/\s+([.,;])/g, '$1'));
+    });
+    // l'OCR confond parfois un chiffre du N° (« 93 » pour « 03 ») : la suite 01, 02, ?, 04 corrige ; un prix dont les décimales ne sont pas « ,00 » est à vérifier
+    arts.forEach(function (a, k) {
+      var p = arts[k - 1], q = arts[k + 1], num = function (x) { return x && /^\d+$/.test(x.n) ? Number(x.n) : null; };
+      if (p && q && num(a) !== null && num(p) !== null && num(q) === num(p) + 2 && num(a) !== num(p) + 1) { var v = String(num(p) + 1); a.n = a.n.length > v.length ? ('000' + v).slice(-a.n.length) : v; a.verifier = true; }
+      if (a.pu !== '' && Math.round(a.pu * 100) % 100 !== 0) a.verifier = true;
+      if (a.pu === '') a.verifier = true;
     });
     arts.forEach(function (a) { delete a.ligne; delete a.suite; delete a.avantNext;  });
     var mt = String(texte || '').match(/montant\s+total[^\d\n]*([\d][\d  .,]*)/i);
@@ -304,7 +329,10 @@ Banchy.Lecture = (function () {
     var t = String(texte || ''), m, o = { reference: '', contrat: '', annee: '', courrier: '', region: '', date: '' };
     if ((m = /\b(CF|AO|AOON|AOOI|CN)\s*(?:n°|no|num[ée]ro)?\s*:?\s*(\d+\s*\/\s*[\w\-\/.&]+)/i.exec(t))) o.reference = m[1].toUpperCase() + ' N° ' + m[2].replace(/\s+/g, '').replace(/[.,;:]+$/, '');
     if ((m = /contrat[^\n]{0,40}?(?:n°|no|num[ée]ro)\s*:?\s*([0-9A-Z][\w\-.&]*(?:\s?\/\s?[\w\-.&]+)+)/i.exec(t))) { o.contrat = m[1].replace(/\s+/g, ''); var y = /(20\d\d)\s*$/.exec(o.contrat) || /\/(\d{2})$/.exec(o.contrat); if (y) o.annee = Number(y[1].length === 2 ? '20' + y[1] : y[1]); }
-    var cour = /\bN°\s*(\d{1,5}\s?\/\s?[A-Z][\w\-\/.&]*\/20\d\d)/.exec(t); if (cour) o.courrier = cour[1].replace(/\s+/g, '');
+    o.contrat = o.contrat.replace(/(?<=[A-Z])0(?=[A-Z])/g, 'O');   // OCR : « L0G-HMD » → « LOG-HMD »
+    var cours = [], rc = /\bN°\s*(\d{1,5})\s?[\/I1l|]\s?([A-Z][\w\-\/.&]*\/20\d\d)/g, mc;   // plusieurs N° dans un courrier : le nôtre (RNS / INFRA) est rappelé en référence
+    while ((mc = rc.exec(t))) cours.push(mc[1] + '/' + mc[2].replace(/^[I1l]?SH/, 'SH'));
+    var cour = cours.filter(function (x) { return !/RNS|INFRA/.test(x); })[0] || cours[0]; if (cour) o.courrier = cour.replace(/\s+/g, '');
     var re = /Direction\s+R[ée]gionale\s+([A-ZÉa-zé][\wÀ-ÿ'\- ]{2,30})/g, r;
     while ((r = re.exec(t))) { var nom = r[1].replace(/\s+(N°|Division|BP).*$/i, '').trim(); if (!/rhourde/i.test(nom)) { o.region = nom; break; } }
     if (!o.region && o.courrier) { var code = (o.courrier.split('/').filter(function (x) { return /^[A-Z]{3,4}$/.test(x); })[0] || ''); if (code) o.region = code; }
