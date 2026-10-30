@@ -81,11 +81,37 @@ function pecIdsDeLiens_(liens) {
   (liens || []).forEach(function (l) { var m = /\/d\/([A-Za-z0-9_\-]{10,})/.exec(String(l && l.url)) || /[?&]id=([A-Za-z0-9_\-]{10,})/.exec(String(l && l.url)); if (m && ids.indexOf(m[1]) === -1) ids.push(m[1]); });
   return ids;
 }
-function pecMesFichiers_(u) { try { return JSON.parse(CacheService.getScriptCache().get('PEC_MES_' + String(u.uid || u.email)) || '[]'); } catch (e) { return []; } }
+/** Pur : identifiants (les plus récents d'abord retenus, `max` au plus, sans doublon) des fichiers que cette personne a générés ; lignes = [{ email, id }] dans l'ordre d'écriture. */
+function pecIdsDe_(lignes, email, max) {
+  var m = String(email || '').toLowerCase(), ids = [];
+  (lignes || []).forEach(function (l) { if (String(l.email || '').toLowerCase() === m && l.id && ids.indexOf(String(l.id)) < 0) ids.push(String(l.id)); });
+  return ids.slice(-(max || 200));
+}
+var PEC_FICHIERS_ENTETES_ = ['email', 'id', 'le'];
+function pecFichiersLignes_() {
+  var v = cpmFeuille_('PecFichiers', PEC_FICHIERS_ENTETES_).getDataRange().getValues(), out = [];
+  for (var i = 1; i < v.length; i += 1) if (v[i][1]) out.push({ ligne: i + 1, email: String(v[i][0]), id: String(v[i][1]), le: String(v[i][2] || '') });
+  return out;
+}
+/** Documents générés par cette personne (gardés dans l'onglet « PecFichiers » : ils restent à sa disposition d'une session à l'autre, pour les ouvrir, les envoyer au secrétariat ou les supprimer). */
+function pecMesFichiers_(u) { try { return pecIdsDe_(pecFichiersLignes_(), u.email, 200); } catch (e) { return []; } }
 function pecRetenirFichiers_(u, ids) {
   if (!ids.length) return;
-  var l = pecMesFichiers_(u).concat(ids).filter(function (x, i, t) { return t.indexOf(x) === i; }).slice(-60);
-  try { CacheService.getScriptCache().put('PEC_MES_' + String(u.uid || u.email), JSON.stringify(l), 21600); } catch (e) { /* tant pis : il ne verra pas la liste, mais les liens restent affichés */ }
+  try {
+    var sh = cpmFeuille_('PecFichiers', PEC_FICHIERS_ENTETES_), deja = pecMesFichiers_(u), neufs = ids.filter(function (x, i, t) { return deja.indexOf(x) < 0 && t.indexOf(x) === i; });
+    if (!neufs.length) return;
+    var maintenant = new Date().toISOString(), rng = sh.getRange(sh.getLastRow() + 1, 1, neufs.length, 3); rng.setNumberFormat('@');
+    rng.setValues(neufs.map(function (id) { return [String(u.email).toLowerCase(), id, maintenant]; }));
+  } catch (e) { /* tant pis : les liens restent affichés */ }
+}
+/** « Tout supprimer » d'un prestataire : seulement ses propres documents (jamais ceux des autres). */
+function pecEffacerMesFichiers_(u) {
+  var ids = pecMesFichiers_(u), n = 0, f = pecGlobale_('pecw_supprimerFichierGenere');
+  if (typeof f !== 'function') throw new Error('Moteur de prise en charge indisponible');
+  ids.forEach(function (id) { try { var r = f(id); if (r && r.success) n += 1; } catch (e) { /* déjà supprimé */ } });
+  try { var sh = cpmFeuille_('PecFichiers', PEC_FICHIERS_ENTETES_), m = String(u.email).toLowerCase(), v = sh.getDataRange().getValues(); for (var i = v.length - 1; i >= 1; i -= 1) if (String(v[i][0]).toLowerCase() === m) sh.deleteRow(i + 1); } catch (e) { /* sans effet */ }
+  Store.journal('pec_efface_mes_fichiers', u.email, n + ' document(s)');
+  return { success: true, message: n + ' document(s) supprimé(s) (les vôtres seulement).' };
 }
 function pecGlobale_(nom) { var g = (typeof globalThis !== 'undefined') ? globalThis : this; return g[nom]; }
 
@@ -93,6 +119,7 @@ function pecGlobale_(nom) { var g = (typeof globalThis !== 'undefined') ? global
 function pecAppeler_(req) {
   var u = Auth.userFromToken(req.token), niveauModule = acces_(u)[PEC_MODULE_] || 0, def = PEC_APPELS_[String(req.fn)];
   if (!def) throw new Error('Action inconnue');
+  if (String(req.fn) === 'effacerToutWeb' && niveauModule >= 1 && badgesPortee_(u) !== null) return pecEffacerMesFichiers_(u);   // un prestataire supprime tous SES documents, pas ceux des autres
   if (niveauModule < def.niveau) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
   var portee = badgesPortee_(u), args = Array.isArray(req.args) ? req.args : [];
   if (portee !== null && def.admin) throw Object.assign(new Error('Réservé au personnel de la division'), { code: 'DROITS' });
@@ -144,7 +171,7 @@ function pecEntreprisesConfig_() {
     return Object.keys(noms);
   } catch (e) { return []; }
 }
-if (typeof module !== 'undefined') module.exports = { pecEntrepriseOption_: pecEntrepriseOption_, pecOptionsPourPortee_: pecOptionsPourPortee_, pecIdsDeLiens_: pecIdsDeLiens_, PEC_APPELS_: PEC_APPELS_ };
+if (typeof module !== 'undefined') module.exports = { pecIdsDe_: pecIdsDe_, pecEntrepriseOption_: pecEntrepriseOption_, pecOptionsPourPortee_: pecOptionsPourPortee_, pecIdsDeLiens_: pecIdsDeLiens_, PEC_APPELS_: PEC_APPELS_ };
 
 /** À lancer UNE FOIS dans l'éditeur Apps Script (▶ Exécuter) après activation de GATEWAY_SCOPES_PEC : fait demander les autorisations Docs et Drive. */
 function autoriserPriseEnCharge() {

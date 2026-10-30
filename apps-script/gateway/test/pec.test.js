@@ -33,8 +33,13 @@ test('aucun nom défini deux fois dans la passerelle (moteur, lecture, enquêtes
 });
 
 function monde(role, portee) {
-  const cache = {}, journal = [], appels = [];
+  const cache = {}, journal = [], appels = [], lignes = [['email', 'id', 'le']];
+  const feuille = {   // onglet « PecFichiers » en mémoire
+    getDataRange: () => ({ getValues: () => lignes.map(l => l.slice()) }), getLastRow: () => lignes.length, deleteRow: n => { lignes.splice(n - 1, 1); },
+    getRange: (l, c, nl) => ({ setNumberFormat() {}, setValues: v => v.forEach((r, i) => { lignes[l - 1 + i] = r.slice(); }) })
+  };
   const ctx = {
+    cpmFeuille_: () => feuille,
     console, Badges, Droits: require('../Droits.gs'),
     Auth: { userFromToken: () => ({ email: 'x@y.dz', uid: 'u1', role, portee }) },
     acces_: () => ({ logistique: 2 }),
@@ -77,7 +82,23 @@ test('prestataire : ne voit et ne supprime que les documents qu\'il a générés
   assert.deepStrictEqual(m.appeler('listerFichiersGeneres', []).fichiers.map(f => f.id), ['ABCDEFGHIJKL1234']);
   assert.throws(() => m.appeler('supprimerFichierGenere', ['AUTREFICHIER99999']), /ne fait pas partie de vos documents/);
   assert.strictEqual(m.appeler('supprimerFichierGenere', ['ABCDEFGHIJKL1234']).success, true);
-  ['effacerToutWeb', 'ajouterOrganisme', 'actualiserPrestatairesWeb', 'ouvrirDossierPDFWeb'].forEach(a => assert.throws(() => m.appeler(a, []), /Réservé au personnel/));
+  ['ajouterOrganisme', 'actualiserPrestatairesWeb', 'ouvrirDossierPDFWeb'].forEach(a => assert.throws(() => m.appeler(a, []), /Réservé au personnel/));
+});
+test('prestataire : ses documents restent à sa disposition (liste gardée), « tout supprimer » ne touche que les siens', () => {
+  const m = monde('prestataire', 'ETB Zatout Abdenacer');
+  m.appeler('soumettreFormulairePEC', [{ prestataire: '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement' }]);
+  m.appeler('soumettreFormulairePEC', [{ prestataire: '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement' }]);   // même fichier : pas de doublon
+  vm.runInContext('CacheService = { getScriptCache: () => ({ get: () => null, put() {} }) };', m.ctx);               // le cache n'est plus nécessaire : la liste vient de l'onglet
+  assert.deepStrictEqual(m.appeler('listerFichiersGeneres', []).fichiers.map(f => f.id), ['ABCDEFGHIJKL1234']);
+  assert.strictEqual(m.appeler('effacerToutWeb', []).success, true);
+  assert.deepStrictEqual(m.appels.filter(a => /^suppr|^efface/.test(a)), ['suppr ABCDEFGHIJKL1234']);              // jamais pecw_effacerToutWeb (tous les fichiers de la division)
+  assert.strictEqual(m.appeler('listerFichiersGeneres', []).fichiers.length, 0);
+  assert.ok(m.journal.some(j => j[0] === 'pec_efface_mes_fichiers'));
+});
+test('documents d\'une personne : identifiants sans doublon, adresse insensible à la casse, plafond', () => {
+  const m = monde('prestataire', 'X'), f = (l, e, n) => JSON.parse(vm.runInContext('JSON.stringify(pecIdsDe_(' + JSON.stringify(l) + ',' + JSON.stringify(e) + ',' + n + '))', m.ctx));
+  const l = [{ email: 'A@x.dz', id: '1' }, { email: 'b@x.dz', id: '2' }, { email: 'a@x.dz', id: '1' }, { email: 'a@x.dz', id: '3' }, { email: 'a@x.dz', id: '4' }];
+  assert.deepStrictEqual(f(l, 'a@X.dz', 10), ['1', '3', '4']); assert.deepStrictEqual(f(l, 'a@x.dz', 2), ['3', '4']); assert.deepStrictEqual(f(l, 'zz@x.dz', 5), []);
 });
 test('une action inconnue ou un droit insuffisant est refusé', () => {
   const m = monde('agent', '');

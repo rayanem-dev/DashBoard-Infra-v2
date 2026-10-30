@@ -674,7 +674,7 @@ window.google = { script: { run: (function () {
     }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).lireFichierPourImpression(id);
   }
   function supprimerTout() {
-    afficherConfirmationModale('Tout supprimer ?', 'Tous les fichiers générés (prises en charge, autorisations, macarons : PDF et documents) seront mis à la corbeille.', function() {
+    afficherConfirmationModale('Tout supprimer ?', 'Tous les documents de la liste ci-dessous (prises en charge, autorisations, macarons : PDF et documents) seront mis à la corbeille. Un prestataire ne supprime que les siens.', function() {
       const b = document.getElementById('btnToutSupprimer'); b.disabled = true;
       google.script.run.withSuccessHandler(function(res) { b.disabled = false; afficherAlerteModale(res.success ? 'Suppression terminée' : 'Erreur', res.message, res.success ? 'ok' : 'err'); chargerFichiers(); })
         .withFailureHandler(function(err) { b.disabled = false; afficherAlerteModale('Erreur', err.message, 'err'); }).effacerToutWeb();
