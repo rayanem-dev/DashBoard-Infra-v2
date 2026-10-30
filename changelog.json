@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-30-252",
+    "date": "2026-10-30",
+    "title": "Version 6.29.3 — Saisir mon rapport : tous les chantiers au clic, ou on tape",
+    "changes": [
+      "Le choix du chantier / prestataire affiche maintenant TOUS les chantiers dès qu'on touche la zone (le chantier en cours est en gras) ; en tapant, la liste se réduit. Liste faite par le portail (et non par le navigateur), donc identique sur téléphone et ordinateur ; flèches haut/bas + Entrée au clavier."
+    ]
+  },
+  {
     "id": "2026-10-30-251",
     "date": "2026-10-30",
     "title": "Version 6.29.2 — Photos et vidéos visibles dans la Synthèse du jour et le consolidé imprimé",
