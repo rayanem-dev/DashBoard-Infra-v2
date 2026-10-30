@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-30-250",
+    "date": "2026-10-30",
+    "title": "Version 6.29.1 — « Voir les destinataires » montre aussi les copies du soir",
+    "changes": [
+      "« Voir les destinataires » affiche maintenant deux listes : les destinataires du consolidé complet (groupes et personnes cochés) et, en dessous, les copies du soir à l'envoi automatique : les agents qui ont établi un rapport à la date choisie et leur vis-à-vis de travail, avec la raison et les chantiers concernés. Elle se calcule avec les rapports du moment ; la liste réelle est refaite à l'heure de l'envoi."
+    ]
+  },
+  {
     "id": "2026-10-30-249",
     "date": "2026-10-30",
     "title": "Version 6.29.0 — Envoi automatique du soir : copie aux agents et à leur vis-à-vis de travail",
