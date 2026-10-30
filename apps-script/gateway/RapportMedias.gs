@@ -5,7 +5,7 @@
  * Partie PURE (testée en Node : test/rapportmedias.test.js) puis les actions de la passerelle. Demande l'autorisation Google « Drive » (voir docs/PRISE-EN-CHARGE-PASSERELLE.md).
  */
 var RapportMedias = (function () {
-  var MAX_PAR_RAPPORT = 6, MAX_PHOTO = 2 * 1024 * 1024, MAX_VIDEO = 20 * 1024 * 1024, MAX_MORCEAU_B64 = 3 * 1024 * 1024, MAX_MORCEAUX = 20;
+  var MAX_PAR_RAPPORT = 20, MAX_PHOTO = 2 * 1024 * 1024, MAX_VIDEO = 20 * 1024 * 1024, MAX_MORCEAU_B64 = 3 * 1024 * 1024, MAX_MORCEAUX = 20;
   var TYPES = { 'image/jpeg': ['photo', 'jpg'], 'image/png': ['photo', 'png'], 'image/webp': ['photo', 'webp'], 'video/mp4': ['video', 'mp4'], 'video/quicktime': ['video', 'mov'], 'video/webm': ['video', 'webm'], 'video/3gpp': ['video', '3gp'] };
   function typeDe(mime) { var t = TYPES[String(mime || '').toLowerCase()]; return t ? { type: t[0], ext: t[1] } : null; }
   function texte(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u001F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n); }
@@ -20,7 +20,7 @@ var RapportMedias = (function () {
     return out;
   }
   function listeDe(valeur) { if (Array.isArray(valeur)) return nettoyerListe(valeur); try { return nettoyerListe(JSON.parse(String(valeur || '[]'))); } catch (e) { return []; } }
-  /** Identifiants demandés par la page : texte sûr, 6 au plus. */
+  /** Identifiants demandés par la page : texte sûr, 20 au plus. */
   function idsDemandes(l) { return (Array.isArray(l) ? l : []).map(function (x) { return String(x || ''); }).filter(function (x) { return ID.test(x); }).filter(function (x, i, t) { return t.indexOf(x) === i; }).slice(0, MAX_PAR_RAPPORT); }
   /** Contrôle d'un morceau reçu ; retourne { erreur } ou { ok, type, ext, premier, dernier }. */
   function controleMorceau(req) {

@@ -11,7 +11,7 @@ test('types acceptés : photos et vidéos usuelles seulement', () => {
 test('liste enregistrée : forme vérifiée, doublons et excédent écartés, texte illisible = liste vide', () => {
   const l = M.nettoyerListe([{ id: ID(1), type: 'video', nom: 'a\nb', taille: 12.7 }, { id: ID(1) }, { id: 'x' }, null, { id: ID(2), type: 'bizarre' }]);
   assert.deepStrictEqual(l.map(m => [m.id, m.type, m.nom, m.taille]), [[ID(1), 'video', 'a b', 13], [ID(2), 'photo', '', 0]]);
-  assert.strictEqual(M.nettoyerListe(Array.from({ length: 9 }, (_, i) => ({ id: ID(i) }))).length, M.MAX_PAR_RAPPORT);
+  assert.strictEqual(M.nettoyerListe(Array.from({ length: 25 }, (_, i) => ({ id: ID(i) }))).length, M.MAX_PAR_RAPPORT);
   assert.deepStrictEqual(M.listeDe('pas du json'), []); assert.strictEqual(M.listeDe(JSON.stringify([{ id: ID(3), type: 'photo' }]))[0].id, ID(3));
 });
 test('morceau : photo en une fois, vidéo par morceaux, tailles et caractères contrôlés', () => {
