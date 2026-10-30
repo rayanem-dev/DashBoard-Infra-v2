@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-30-249",
+    "date": "2026-10-30",
+    "title": "Version 6.29.0 — Envoi automatique du soir : copie aux agents et à leur vis-à-vis de travail",
+    "changes": [
+      "À l'envoi automatique du soir, chaque agent qui a établi un rapport dans la journée et son vis-à-vis de travail (déclaré dans l'organigramme) reçoivent une copie du consolidé limitée aux chantiers de l'agent, en e-mail et en PDF, avec photos et liens vidéo temporaires. Les personnes qui reçoivent déjà le consolidé complet n'en reçoivent pas deux. Cette copie n'existe pas pour « Envoyer maintenant ».",
+      "Nouveau réglage « Copie du soir aux agents qui ont rapporté » dans Paramètres (oui par défaut). L'envoi automatique du soir peut maintenant fonctionner même sans groupe coché, uniquement pour ces copies."
+    ]
+  },
+  {
     "id": "2026-10-30-248",
     "date": "2026-10-30",
     "title": "Version 6.28.0 — Consolidé : photos dans l'e-mail, vidéos par lien temporaire",

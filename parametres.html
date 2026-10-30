@@ -72,15 +72,16 @@
   function reglage(p) {
     var r = el('div', 'reglage'), id = 'r-' + p.id.replace(/\W/g, '_'); var l = el('label', 'l', p.libelle); l.setAttribute('for', id); r.appendChild(l); r.appendChild(el('p', 'aide', p.aide));
     var c = el('div', 'champ'), inp;
-    if (p.type === 'emails') { inp = el('textarea'); inp.rows = Math.max(3, String(p.valeur).split('\n').length + 1); inp.spellcheck = false; }
+    if (p.type === 'choix') { inp = el('select'); (p.choix || []).forEach(function (o) { var op = el('option', null, o === 'oui' ? 'Oui' : o === 'non' ? 'Non' : o); op.value = o; inp.appendChild(op); }); inp.style.cssText = 'padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark)'; }
+    else if (p.type === 'emails') { inp = el('textarea'); inp.rows = Math.max(3, String(p.valeur).split('\n').length + 1); inp.spellcheck = false; }
     else { inp = el('input'); inp.type = p.type === 'nombre' ? 'text' : p.type === 'email' ? 'email' : 'url'; inp.className = p.type === 'nombre' ? 'nb' : 'long'; if (p.type === 'nombre') inp.inputMode = 'decimal'; }
-    inp.id = id; inp.value = p.valeur; inp.maxLength = 3000; c.appendChild(inp);
+    inp.id = id; inp.value = p.valeur; if (p.type !== 'choix') inp.maxLength = 3000; c.appendChild(inp);
     if (p.unite) c.appendChild(el('span', 'unite', p.unite));
     var ok = el('button', 'btn-p', 'Enregistrer'); ok.type = 'button'; ok.disabled = true; c.appendChild(ok);
     var re = el('button', 'btn-s', 'Rétablir'); re.type = 'button'; re.title = 'Revenir à la valeur d\'origine'; re.hidden = p.source !== 'parametres'; c.appendChild(re);
     r.appendChild(c);
     var e = el('div', 'etat' + (p.source === 'parametres' ? ' mod' : ''), etatTexte(p)); r.appendChild(e);
-    inp.addEventListener('input', function () { ok.disabled = inp.value.trim() === String(p.valeur).trim(); if (!ok.disabled) { e.className = 'etat'; e.textContent = 'Non enregistré'; } });
+    inp.addEventListener(p.type === 'choix' ? 'change' : 'input', function () { ok.disabled = inp.value.trim() === String(p.valeur).trim(); if (!ok.disabled) { e.className = 'etat'; e.textContent = 'Non enregistré'; } });
     function envoyer(corps) {
       ok.disabled = true; re.disabled = true;
       return Api.call('parametres_enregistrer', corps).then(function (rep) { chargerListe(rep.parametres); toast('Réglage enregistré'); }).catch(function (x) {
