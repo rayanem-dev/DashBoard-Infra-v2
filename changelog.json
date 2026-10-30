@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-30-247",
+    "date": "2026-10-30",
+    "title": "Version 6.27.0 — Rapports : 20 médias, chantier / prestataire en saisie libre",
+    "changes": [
+      "Photos et vidéos : jusqu'à 20 par rapport (au lieu de 6).",
+      "Saisir mon rapport : le choix du chantier / prestataire devient une zone de saisie avec propositions : on tape une partie du nom du chantier ou de l'entreprise et la liste se filtre ; si un seul chantier correspond il est choisi, sinon la page indique combien correspondent. Un contrôle empêche d'enregistrer si le nom tapé ne correspond à aucun chantier.",
+      "La liste des chantiers et entreprises se recharge toute seule : à l'ouverture de l'onglet « Saisir mon rapport », quand on clique dans la zone de choix, en revenant sur la page, et toutes les 5 minutes. Un chantier hors contrat qu'on vient d'ouvrir est choisi directement."
+    ]
+  },
+  {
     "id": "2026-10-30-246",
     "date": "2026-10-30",
     "title": "Version 6.26.0 — Rapports journaliers : photos et vidéos",
