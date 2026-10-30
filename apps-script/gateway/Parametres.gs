@@ -16,6 +16,7 @@ var Parametres = (function () {
     { id: 'rapports.boites_chef_division', groupe: 'Rapports journaliers', libelle: 'Boîte du chef de division (envoi du consolidé)', aide: 'Adresses cochées par « Chef de division ». Une par ligne.', type: 'emails', defaut: BOITES_DIVISION },
     { id: 'rapports.photos_mo', groupe: 'Rapports journaliers', libelle: 'Poids total des photos jointes à l\'e-mail du consolidé', aide: 'Les photos (dans l\'ordre du consolidé) sont ajoutées à l\'e-mail et au PDF tant que ce total n\'est pas dépassé ; les suivantes restent à voir dans le portail. L\'e-mail pèse environ 2,5 fois ce chiffre (images dans le message et dans le PDF) : gardez-le sous 8 Mo.', type: 'nombre', min: 0.5, max: 12, unite: 'Mo', defaut: '6' },
     { id: 'rapports.lien_video_jours', groupe: 'Rapports journaliers', libelle: 'Durée du lien temporaire des vidéos', aide: 'Les vidéos ne sont pas jointes : l\'e-mail contient un lien (« toute personne disposant du lien ») qui est fermé automatiquement après ce nombre de jours.', type: 'nombre', min: 1, max: 30, unite: 'jour(s)', defaut: '7' },
+    { id: 'rapports.copie_agents', groupe: 'Rapports journaliers', libelle: 'Copie du soir aux agents qui ont rapporté', aide: 'À l\'envoi automatique du soir, chaque agent qui a établi un rapport ce jour-là et son vis-à-vis de travail reçoivent le consolidé limité aux chantiers de l\'agent (e-mail et PDF). N\'agit que sur l\'envoi automatique, jamais sur « Envoyer maintenant ».', type: 'choix', choix: ['oui', 'non'], defaut: 'oui' },
     { id: 'stats_st.heures', groupe: 'Statistiques', libelle: 'Heures travaillées par agent et par mois (sous-traitants)', aide: 'Les heures d\'un sous-traitant valent son effectif × cette valeur (12 h × 30 jours = 360). Les lignes déjà modifiées à la main ne changent pas.', type: 'nombre', min: 1, max: 744, unite: 'h', defaut: '360', legacy: 'STATS_ST_HEURES' },
     { id: 'reservation.destinataire', groupe: 'Réservation Vol', libelle: 'Adresse qui reçoit la demande de réservation', aide: 'Le bouton « Envoyer » de la demande écrit à cette adresse (jamais d\'envoi automatique).', type: 'email', defaut: 'Sec-INFRA.RNS@Sonatrach.dz', legacy: 'RESERVATION_DEST' },
     { id: 'cpm.rapport_extra', groupe: 'Suivi CPM', libelle: 'Destinataires supplémentaires du rapport des modifications', aide: 'En plus du chef de division et du secrétariat. Une adresse par ligne (vide = personne d\'autre).', type: 'emails', defaut: '', legacy: 'CPM_RAPPORT_DESTINATAIRES' },
@@ -48,6 +49,7 @@ var Parametres = (function () {
       if (n < d.min || n > d.max) return { erreur: 'La valeur doit être comprise entre ' + d.min + ' et ' + d.max };
       return { valeur: String(Math.round(n * 1000) / 1000) };
     }
+    if (d.type === 'choix') return d.choix.indexOf(t) >= 0 ? { valeur: t } : { erreur: 'Choix invalide' };
     if (d.type === 'email') return EMAIL.test(t) && t.length <= 120 ? { valeur: t } : { erreur: 'Adresse e-mail invalide' };
     if (d.type === 'url') return /^https:\/\/[^\s]+$/.test(t) && t.length <= 200 ? { valeur: t.slice(-1) === '/' ? t : t + '/' } : { erreur: 'Adresse invalide : elle doit commencer par https://' };
     if (d.type === 'emails') {
@@ -64,7 +66,7 @@ var Parametres = (function () {
       var v = vals[d.id], source = 'defaut', valeur = d.defaut;
       if (v !== undefined && v !== '' || (v === '' && d.type === 'emails' && !d.defaut)) { valeur = v; source = 'parametres'; }
       else if (d.legacy && legacy) { var p = String(legacy(d.legacy) || '').trim(); if (p) { valeur = p; source = 'ancien'; } }
-      return { id: d.id, groupe: d.groupe, libelle: d.libelle, aide: d.aide, type: d.type, min: d.min, max: d.max, unite: d.unite || '', defaut: d.defaut, valeur: valeur, source: source };
+      return { id: d.id, groupe: d.groupe, libelle: d.libelle, aide: d.aide, type: d.type, choix: d.choix, min: d.min, max: d.max, unite: d.unite || '', defaut: d.defaut, valeur: valeur, source: source };
     });
   }
   function valeurDe(lignes, legacy, id) { var e = etat(lignes, legacy).filter(function (x) { return x.id === id; })[0]; return e ? e.valeur : ''; }

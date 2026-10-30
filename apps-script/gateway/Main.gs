@@ -741,24 +741,45 @@ function niveauConsolide_(u) {
   return n;
 }
 /** Envoie par e-mail le consolidé enregistré d'un jour aux groupes choisis. Jamais appelée sans clic, ni sans l'option automatique cochée. */
-function consolideEnvoyerCore_(date, groupes, parEmail, personnes, toute) {
+function consolideEnvoyerCore_(date, groupes, parEmail, personnes, toute, copies) {
   var c = consolidesLignes_().filter(function (o) { return String(o.date) === date; }).pop();
   var cons = c ? consolideDe_(c) : null;
   if (!cons || !cons.donnees) throw new Error('Aucun consolidé enregistré pour le ' + date + ' : générez-le d\'abord.');
   var dest = consoDestinatairesTous_(groupes, personnes, toute).map(function (b) { return b.email; });
-  if (!dest.length) throw new Error('Aucun destinataire : cochez au moins un groupe ou une personne.');
+  var copiesActives = !!copies && parametre_('rapports.copie_agents') !== 'non';   // copies du soir : envoi automatique seulement, réglable dans Paramètres
+  if (!dest.length && !copiesActives) throw new Error('Aucun destinataire : cochez au moins un groupe ou une personne.');
   var quand = ''; try { quand = Utilities.formatDate(new Date(cons.genere_le), 'Africa/Algiers', 'dd/MM/yyyy HH:mm'); } catch (e) { quand = ''; }
-  var meta = { genere_par: cons.genere_par, genere_le: quand }, pieces = [], mm = { plan: { cid: {} }, blobs: {}, data: {}, liens: {} };
+  var meta = { genere_par: cons.genere_par, genere_le: quand }, mm = { plan: { cid: {} }, blobs: {}, data: {}, liens: {} };
   try { mm = mediasPourMail_(cons.donnees, parEmail); } catch (e) { Logger.log('Médias du consolidé : ' + e.message); }   // sans l'autorisation Drive, le consolidé part sans images
   var lien = function (id) { return mm.liens[id] || null; };
-  var m = Rapports.consolideMail(cons.donnees, cons.version, meta, { photo: function (id) { return mm.plan.cid[id] ? 'cid:' + mm.plan.cid[id] : ''; }, lien: lien });
-  try { var mp = Rapports.consolideMail(cons.donnees, cons.version, meta, { photo: function (id) { return mm.data[id] || ''; }, lien: lien });
-    pieces.push(Utilities.newBlob('<html><head><meta charset="utf-8"></head><body>' + mp.html + '</body></html>', 'text/html', 'consolide.html').getAs('application/pdf').setName('Rapport-consolide-' + date + '.pdf')); } catch (e) { /* le corps du message contient déjà tout le détail */ }
-  if (toute) {   // toute la division : envoi par paquets de 50 en copie cachée (les adresses ne sont pas exposées entre destinataires)
-    for (var k = 0; k < dest.length; k += 50) MailApp.sendEmail({ to: parEmail, bcc: dest.slice(k, k + 50).join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, inlineImages: mm.blobs, attachments: pieces });
-  } else MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, inlineImages: mm.blobs, attachments: pieces });
-  Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)' + (toute ? ' [TOUTE LA DIVISION]' : ''));
-  return { destinataires: dest.length, version: cons.version };
+  /** Message et PDF d'une synthèse (complète ou restreinte à quelques chantiers) ; les images inutiles ne sont pas jointes. */
+  function rendu(donnees) {
+    var m = Rapports.consolideMail(donnees, cons.version, meta, { photo: function (id) { return mm.plan.cid[id] ? 'cid:' + mm.plan.cid[id] : ''; }, lien: lien }), pieces = [], blobs = {};
+    (donnees.chantiers || []).forEach(function (ch) { (ch.rapports || []).forEach(function (r) { (r.medias || []).forEach(function (x) { var k = mm.plan.cid[x.id]; if (k && mm.blobs[k]) blobs[k] = mm.blobs[k]; }); }); });
+    try { var mp = Rapports.consolideMail(donnees, cons.version, meta, { photo: function (id) { return mm.data[id] || ''; }, lien: lien });
+      pieces.push(Utilities.newBlob('<html><head><meta charset="utf-8"></head><body>' + mp.html + '</body></html>', 'text/html', 'consolide.html').getAs('application/pdf').setName('Rapport-consolide-' + date + '.pdf')); } catch (e) { /* le corps du message contient déjà tout le détail */ }
+    return { m: m, pieces: pieces, blobs: blobs };
+  }
+  if (dest.length) {
+    var tout = rendu(cons.donnees);
+    if (toute) {   // toute la division : envoi par paquets de 50 en copie cachée (les adresses ne sont pas exposées entre destinataires)
+      for (var k = 0; k < dest.length; k += 50) MailApp.sendEmail({ to: parEmail, bcc: dest.slice(k, k + 50).join(','), name: 'Division Infrastructure RNS', subject: tout.m.sujet, htmlBody: tout.m.html, inlineImages: tout.blobs, attachments: tout.pieces });
+    } else MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: tout.m.sujet, htmlBody: tout.m.html, inlineImages: tout.blobs, attachments: tout.pieces });
+    Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)' + (toute ? ' [TOUTE LA DIVISION]' : ''));
+  }
+  var nbCopies = 0;
+  if (copiesActives) {
+    try {
+      var groupesCopie = Rapports.copiesAgents(cons.donnees, Store.table('Utilisateurs'), visavisCarte_(), dest), total = groupesCopie.reduce(function (n, g) { return n + g.emails.length; }, 0);
+      if (total && MailApp.getRemainingDailyQuota() < total) { Store.journal('consolide_copies_echec', parEmail, 'quota d\'e-mails insuffisant (' + total + ' copies)'); }
+      else groupesCopie.forEach(function (g) {
+        var sub = { date: cons.donnees.date, chantiers: cons.donnees.chantiers.filter(function (ch) { return g.chantiers.indexOf(ch.id) >= 0; }) }, r = rendu(sub);
+        g.emails.forEach(function (a) { MailApp.sendEmail({ to: a, name: 'Division Infrastructure RNS', subject: 'Copie de votre rapport — ' + r.m.sujet.replace(/^Rapport journalier consolidé — /, ''), htmlBody: r.m.html, inlineImages: r.blobs, attachments: r.pieces }); nbCopies += 1; });
+      });
+    } catch (e) { Store.journal('consolide_copies_echec', parEmail, e.message); }
+    if (nbCopies) Store.journal('consolide_copies', parEmail, date + ' → ' + nbCopies + ' copie(s) aux agents et à leurs vis-à-vis');
+  }
+  return { destinataires: dest.length, copies: nbCopies, version: cons.version };
 }
 /** Personnes (comptes actifs avec e-mail : secrétariat, chefs de service, chef de division) proposées à cocher en plus des boîtes. */
 function consoPersonnesListe_() {
@@ -830,7 +851,7 @@ function consoAutoTick() {
   if (heure < c.heure || c.dernier === auj) return;
   var maintenant = Utilities.formatDate(new Date(), 'Africa/Algiers', 'yyyy-MM-dd HH:mm');
   var r; try { r = consolideGenererCore_(auj, 'Envoi automatique', ''); } catch (e) { c.essai = maintenant; c.erreur = 'Génération : ' + e.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
-  try { consolideEnvoyerCore_(auj, c.groupes, 'auto', c.personnes); } catch (e2) { c.essai = maintenant; c.erreur = 'Envoi : ' + e2.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
+  try { consolideEnvoyerCore_(auj, c.groupes, 'auto', c.personnes, false, true); } catch (e2) { c.essai = maintenant; c.erreur = 'Envoi : ' + e2.message; consoAutoEnregistrer_(c); Store.journal('consolide_auto_echec', 'auto', c.erreur); return; }
   c.dernier = auj; c.essai = maintenant; c.erreur = ''; consoAutoEnregistrer_(c);
 }
 function rapportsConsolideLire_(req) {

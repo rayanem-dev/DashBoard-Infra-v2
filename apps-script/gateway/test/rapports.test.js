@@ -272,3 +272,13 @@ test('statistiques des rapports : remise, effectif, avancement, silences, diffic
   assert.strictEqual(s.kpi.tauxVisa, 0.2);
   assert.strictEqual(Rapports.statistiques([], ch, '2026-10-01', '2026-10-31', '2026-10-03').kpi.tauxRemise, null);
 });
+
+test('copies du soir : l\'agent qui a rapporté et son vis-à-vis de travail, limités à ses chantiers, sans doublon avec l\'envoi principal', () => {
+  const us = [{ uid: 'u1', email: 'a@x.dz', email_contact: 'A.Perso@x.dz', actif: 1 }, { uid: 'u2', email: 'b@x.dz', actif: 1 }, { uid: 'u3', email: 'c@x.dz', actif: 1 }, { uid: 'u4', email: 'd@x.dz', actif: 0 }, { uid: 'u5', email: 'e@x.dz', actif: 1 }];
+  const carte = { u1: { vis_travail: 'u2' }, u3: { vis_travail: 'u4' }, u5: { vis_travail: 'u1' } };
+  const d = { chantiers: [{ id: 'ch1', rapports: [{ auteur_email: 'a@x.dz' }, { auteur_email: 'c@x.dz' }] }, { id: 'ch2', rapports: [{ auteur_email: 'a@x.dz' }] }, { id: 'ch3', rapports: [] }, { id: 'ch4', rapports: [{ auteur_email: 'inconnu@x.dz' }] }] };
+  const g = Rapports.copiesAgents(d, us, carte, ['E@x.dz']);
+  assert.deepStrictEqual(g, [{ chantiers: ['ch1'], emails: ['c@x.dz'] }, { chantiers: ['ch1', 'ch2'], emails: ['a.perso@x.dz', 'b@x.dz'] }]);   // vis-à-vis inactif écarté ; adresse de contact préférée
+  assert.deepStrictEqual(Rapports.copiesAgents(d, us, carte, ['a.perso@x.dz', 'b@x.dz', 'c@x.dz']), []);
+  assert.deepStrictEqual(Rapports.copiesAgents({ chantiers: [] }, us, carte, []), []);
+});
