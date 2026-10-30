@@ -300,11 +300,12 @@ var Rapports = (function () {
     chef_division: [{ nom: 'Chef Division INFRA - RNS', email: 'cdd_infra.rns@sonatrach.dz' }]
   };
   var ROLES_BOITES = { secretariat: 'Secrétariat', chef_service: 'Boîte de service', chef_division: 'Chef de division' };
-  function boitesDestinataires(groupes) {
+  /** boites = { secretariat: [{ nom, email }], chef_service: […], chef_division: […] } (réglages de la page Paramètres) ; à défaut, les boîtes d'origine ci-dessus. */
+  function boitesDestinataires(groupes, boites) {
     var vus = {}, out = [];
     ['secretariat', 'chef_service', 'chef_division'].forEach(function (g) {
       if (!groupes || !groupes[g]) return;
-      BOITES[g].forEach(function (b) { if (vus[b.email]) return; vus[b.email] = 1; out.push({ nom: b.nom, email: b.email, role: g, libelle: ROLES_BOITES[g] }); });
+      ((boites && boites[g]) || BOITES[g]).forEach(function (b) { if (vus[b.email]) return; vus[b.email] = 1; out.push({ nom: b.nom, email: b.email, role: g, libelle: ROLES_BOITES[g] }); });
     });
     return out;
   }

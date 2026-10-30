@@ -178,7 +178,8 @@
   function nouvelId(p) { compteur += 1; return p + Date.now().toString(36).slice(-4) + compteur; }
   function marquer(v) { sale = v; $('etat').textContent = v ? '● non enregistré' : ''; }
 
-  function vide() { return { titre: '', reference: '', entreprise: '', objet: '', date: aujourdhui(), params: B.parametres({}), items: [], sources: [] }; }
+  var defauts = {};   // réglages proposés aux nouveaux benchmarks (page Paramètres du secrétariat)
+  function vide() { return { titre: '', reference: '', entreprise: '', objet: '', date: aujourdhui(), params: B.parametres(defauts), items: [], sources: [] }; }
   function exemple() {
     var it = [['01', 'Décapage et dépose des anciens composants de l\'étanchéité et de la chape en béton, y compris le gravier roulé, transfert vers une décharge située dans un rayon de 5 km, ainsi que le nettoyage de l\'assiette et l\'application d\'une couche de FLINTKOTE, y compris toutes sujétions de mise en œuvre', 'M2', 5000, 738],
       ['02', 'Réalisation d\'une forme de pente en béton maigre dosé à 250 kg/m³ CPA 325, et compris joint de fractionnement et de pontage périphérique en joint mou, et compris une chape au mortier de ciment et compris toutes sujétions de mise en œuvre', 'M2', 5000, 1000],
@@ -409,6 +410,7 @@
   function actualiserListe(choisir) {
     return Api.call('benchmark_liste', {}).then(function (r) {
       droits = { modifier: !!r.peut_modifier, supprimer: !!r.peut_supprimer };
+      if (r.defauts) { defauts = r.defauts; if (!idCourant && !S.titre && !(S.items || []).length && !sale) { S.params = B.parametres(defauts); versFormulaire(); } }
       $('liste').innerHTML = '<option value="">— Nouveau benchmark —</option>' + r.benchmarks.map(function (b) { return '<option value="' + E(b.id) + '">' + E(b.titre) + ' · ' + E((b.maj_le || '').slice(0, 10).split('-').reverse().join('/')) + '</option>'; }).join('');
       $('liste').value = choisir || idCourant || ''; $('b-enr').disabled = !droits.modifier; $('b-sup').hidden = !(droits.supprimer && idCourant);
       $('info').textContent = droits.modifier ? '' : 'Consultation seule : vous pouvez calculer et imprimer, mais pas enregistrer.';

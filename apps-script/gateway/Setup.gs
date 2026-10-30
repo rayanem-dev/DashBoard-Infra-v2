@@ -254,6 +254,7 @@ function preparerSimulation_() {
   if (typeof ajouterCarteStatsSt_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteStatsSt_();
   if (typeof ajouterRoleIngenieur_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterRoleIngenieur_();
   if (typeof ajouterCarteBenchmark_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteBenchmark_();
+  if (typeof ajouterCarteParametres_ === 'function' && props.getProperty('SIMU_PRET') === '1') ajouterCarteParametres_();
   if (typeof migrerIconeBanchy_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerIconeBanchy_();
   if (typeof migrerIconePriseEnCharge_ === 'function' && props.getProperty('SIMU_PRET') === '1') migrerIconePriseEnCharge_();
   if (typeof renommerReservationVol_ === 'function' && props.getProperty('SIMU_PRET') === '1') renommerReservationVol_();

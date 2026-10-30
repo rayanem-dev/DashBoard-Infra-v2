@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-30-245",
+    "date": "2026-10-30",
+    "title": "Version 6.25.0 — Page Paramètres (secrétariat) et préremplissage depuis les Enquêtes",
+    "changes": [
+      "Nouvelle page « Paramètres » (Administration), réservée au secrétariat : les petits réglages de plusieurs programmes au même endroit, avec recherche, enregistrement réglage par réglage, « Rétablir » la valeur d'origine et trace au journal. Réglages disponibles : boîtes d'envoi du consolidé des rapports (secrétariat, services, chef de division), heures par agent des statistiques sous-traitants, adresse de la Réservation Vol, destinataires supplémentaires du rapport CPM, taux / seuil / sources minimum / dispersion / couverture du Benchmark (proposés aux nouveaux benchmarks) et adresse du portail pour les e-mails.",
+      "Gestion des privilèges, « Ajouter un utilisateur » : en tapant le nom, les personnes des Enquêtes administratives sont proposées ; en choisissant l'une d'elles, la fonction, l'entreprise (et le rôle « prestataire » pour une entreprise externe) et le service sont repris. Seules ces informations non sensibles sont lues ; l'adresse e-mail reste à saisir."
+    ]
+  },
+  {
     "id": "2026-10-28-244",
     "date": "2026-10-28",
     "title": "Version 6.24.1 — Statistiques des rapports : retrait de la part des rapports visés",

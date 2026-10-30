@@ -10,6 +10,7 @@ var SEED_APPS = [
  ["affectation", "Affectation du personnel", "Changez le service d'une personne directement dans l'Organigramme (BDDORGA) et dans le portail, avec historique et e-mail à l'intéressé, au chef de division et au secrétariat.", "🔀", "affectation.html", 2],
  ["simulation", "Simulation de planning", "Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande de modification à signer.", "🧪", "simulation.html", 1],
  ["admin", "Contrôle de l'annuaire", "Compare les fiches contact avec BDDORGA et liste les divergences (téléphone, e-mail, matricule, identifiant SONA, employeur) pour les corriger.", "🔎", "divergences.html", 3, "secretariat"],
+ ["admin", "Paramètres", "Les petits réglages de tous les programmes au même endroit : destinataires des envois, heures par agent, taux et seuils du benchmark, adresse du portail. Réservé au secrétariat.", "⚙️", "parametres.html", 3, "secretariat"],
  ["admin", "Gestion des privilèges", "Rôles, droits par module, exceptions individuelles, comptes et codes de secours.", "🛡️", "privileges.html", 3, "secretariat"],
  [
   "logistique",
@@ -547,6 +548,13 @@ function ajouterCarteStatsSt_() {
   try { ajouterApplicationsManquantes(); props.setProperty('CARTE_STATS_ST_V1', '1'); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera à la requête suivante */ }
 }
 
+
+/** Une seule fois : ajoute au catalogue la carte « Paramètres » (SEED_APPS), visible du seul rôle « secrétariat ». */
+function ajouterCarteParametres_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('CARTE_PARAMETRES_V1') === '1') return;
+  try { ajouterApplicationsManquantes(); props.setProperty('CARTE_PARAMETRES_V1', '1'); try { CacheService.getScriptCache().remove('TBL_Applications'); } catch (e) {} } catch (e) { /* on réessaiera à la requête suivante */ }
+}
 
 /** Une seule fois : crée le module « benchmark » (droits par défaut des rangs 0 à 8), ajoute la carte « Benchmark des prix » et la range dans Marchés, visible du rang Ingénieur au Secrétariat. */
 function ajouterCarteBenchmark_() {

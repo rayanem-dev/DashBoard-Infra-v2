@@ -50,7 +50,11 @@ function benchmarkListe_(req) {
   var u = benchmarkDroit_(req, 1), niv = acces_(u).benchmark || 0;
   var l = benchmarkLignes_().map(function (x) { return { id: String(x.id), titre: String(x.titre), reference: String(x.reference), nb_articles: Number(x.nb_articles) || 0, nb_sources: Number(x.nb_sources) || 0, maj_par: String(x.maj_par), maj_le: String(x.maj_le) }; });
   l.sort(function (a, b) { return a.maj_le < b.maj_le ? 1 : a.maj_le > b.maj_le ? -1 : 0; });
-  return { benchmarks: l, peut_modifier: niv >= 2, peut_supprimer: niv >= 3 };
+  return { benchmarks: l, peut_modifier: niv >= 2, peut_supprimer: niv >= 3, defauts: benchmarkDefauts_() };
+}
+/** Réglages proposés aux nouveaux benchmarks (page Paramètres) : taux et seuil en fractions, couverture en fraction du marché. */
+function benchmarkDefauts_() {
+  return { taux: parametreNombre_('benchmark.taux', 9) / 100, seuil: parametreNombre_('benchmark.seuil', 20) / 100, nMin: parametreNombre_('benchmark.nmin', 2), dispersion: parametreNombre_('benchmark.dispersion', 3), couvertureMin: parametreNombre_('benchmark.couverture', 50) / 100 };
 }
 function benchmarkLire_(req) {
   benchmarkDroit_(req, 1);

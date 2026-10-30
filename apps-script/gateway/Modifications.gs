@@ -483,7 +483,7 @@ function simuEnvoyer_(req) {
     var ac = Annuaire.analyserEmail(cible.email_contact), ad = Annuaire.analyserEmail(cible.email);
     var adr = ac.valide ? ac.propre : ad.valide ? ad.propre : ''; if (adr) publics.agent[adr.toLowerCase()] = true;
   }
-  var d = simuDemandeDe_(r), site = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/', lien = site + 'demande.html?n=' + encodeURIComponent(d.numero), par = Annuaire.nomAffichable(u.nom, u.email);
+  var d = simuDemandeDe_(r), site = parametre_('portail.site_url'), lien = site + 'demande.html?n=' + encodeURIComponent(d.numero), par = Annuaire.nomAffichable(u.nom, u.email);
   var total = 0, objets = SIMU_OBJETS_[String(req.evenement)];
   if (objets) {
     var vus = {};   // une adresse ne reçoit qu'un message (priorité : agent, secrétariat, chef de service, chef de division)

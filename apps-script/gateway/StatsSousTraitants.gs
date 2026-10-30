@@ -85,7 +85,7 @@ if (typeof module !== 'undefined') module.exports = StatsST;
 
 // ---------- passerelle ----------
 var STATS_ST_ENTETES_ = ['id', 'mois', 'cle', 'prestataire', 'effectif', 'heures', 'observation', 'origine', 'modifie', 'supprime', 'maj_par', 'maj_le'];
-function statsStHeures_() { return Number(PropertiesService.getScriptProperties().getProperty('STATS_ST_HEURES')) || StatsST.HEURES_DEFAUT; }
+function statsStHeures_() { return parametreNombre_('stats_st.heures', StatsST.HEURES_DEFAUT) || StatsST.HEURES_DEFAUT; }
 function statsStFeuille_() { return cpmFeuille_('StatsSousTraitants', STATS_ST_ENTETES_); }
 function statsStLignes_() {
   var v = statsStFeuille_().getDataRange().getValues(), out = [];

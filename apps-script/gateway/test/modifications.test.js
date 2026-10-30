@@ -41,7 +41,7 @@ function monde() {
   };
   vm.createContext(ctx);
   const lire = f => fs.readFileSync(path.join(__dirname, f), 'utf8').replace(/if \(typeof module[^\n]*\n/g, '');
-  for (const f of ['Config.gs', 'Droits.gs', 'Annuaire.gs', 'Dates.gs', 'Cycle.gs', 'Planning.gs', '../../js/simulation.js', 'Mail.gs', 'Modifications.gs', 'Main.gs']) vm.runInContext(lire('../' + f), ctx, { filename: f });
+  for (const f of ['Config.gs', 'Droits.gs', 'Annuaire.gs', 'Dates.gs', 'Cycle.gs', 'Planning.gs', '../../js/simulation.js', 'Mail.gs', 'Parametres.gs', 'Modifications.gs', 'Main.gs']) vm.runInContext(lire('../' + f), ctx, { filename: f });
   vm.runInContext('acces_ = function (u) { return { simulation: __niv[u.email] || 0, planning: (__niv[u.email] || 0) >= 3 ? 3 : 1 }; };', Object.assign(ctx, { __niv: niveaux }));
   return { ctx, tables, mails, journal, run: code => vm.runInContext(code, ctx) };
 }

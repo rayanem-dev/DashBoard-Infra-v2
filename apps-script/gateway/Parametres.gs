@@ -1,0 +1,115 @@
+/**
+ * Paramètres (page parametres.html) : les petits réglages de tous les programmes, au même endroit, réservés au rôle « secrétariat » (rang 0).
+ * Chaque réglage a un identifiant, un groupe (le programme), un type, une valeur d'origine ; la valeur choisie est gardée dans l'onglet « Parametres ».
+ * Valeur utilisée = valeur enregistrée ici, sinon l'ancienne propriété de script (quand elle existait déjà), sinon la valeur d'origine.
+ * Partie PURE (testée en Node : test/parametres.test.js) puis les actions de la passerelle.
+ */
+var Parametres = (function () {
+  var BOITES_SECRETARIAT = 'Secrétariat Division INFRA <sec-infra.rns@sonatrach.dz>\nsec.infra.rns <sec.infra.rns@gmail.com>\nMadani Rayane <rayanem@gmail.com>';
+  var BOITES_SERVICES = 'Service Travaux Entretien INFRA - RNS <service_travaux_entretien_infra.rns@sonatrach.dz>\nService Construction INFRA - RNS <infra_constr.rns@sonatrach.dz>\n' +
+    'Service Électromécanique INFRA - RNS <infra_electromec.rns@sonatrach.dz>\nCPM INFRA RNS <rns.cpm_infra@sonatrach.dz>';
+  var BOITES_DIVISION = 'Chef Division INFRA - RNS <cdd_infra.rns@sonatrach.dz>';
+  /** type : nombre (min, max, unite, pas), email, emails (une adresse par ligne, « Nom <adresse> » accepté), url. legacy = ancienne propriété de script. */
+  var REGISTRE = [
+    { id: 'rapports.boites_secretariat', groupe: 'Rapports journaliers', libelle: 'Boîtes du secrétariat (envoi du consolidé)', aide: 'Adresses cochées par « Secrétariat » dans Synthèse du jour. Une par ligne : adresse seule ou « Nom <adresse> ».', type: 'emails', defaut: BOITES_SECRETARIAT },
+    { id: 'rapports.boites_chef_service', groupe: 'Rapports journaliers', libelle: 'Boîtes des services (envoi du consolidé)', aide: 'Adresses cochées par « Chefs de service ». Une par ligne.', type: 'emails', defaut: BOITES_SERVICES },
+    { id: 'rapports.boites_chef_division', groupe: 'Rapports journaliers', libelle: 'Boîte du chef de division (envoi du consolidé)', aide: 'Adresses cochées par « Chef de division ». Une par ligne.', type: 'emails', defaut: BOITES_DIVISION },
+    { id: 'stats_st.heures', groupe: 'Statistiques', libelle: 'Heures travaillées par agent et par mois (sous-traitants)', aide: 'Les heures d\'un sous-traitant valent son effectif × cette valeur (12 h × 30 jours = 360). Les lignes déjà modifiées à la main ne changent pas.', type: 'nombre', min: 1, max: 744, unite: 'h', defaut: '360', legacy: 'STATS_ST_HEURES' },
+    { id: 'reservation.destinataire', groupe: 'Réservation Vol', libelle: 'Adresse qui reçoit la demande de réservation', aide: 'Le bouton « Envoyer » de la demande écrit à cette adresse (jamais d\'envoi automatique).', type: 'email', defaut: 'Sec-INFRA.RNS@Sonatrach.dz', legacy: 'RESERVATION_DEST' },
+    { id: 'cpm.rapport_extra', groupe: 'Suivi CPM', libelle: 'Destinataires supplémentaires du rapport des modifications', aide: 'En plus du chef de division et du secrétariat. Une adresse par ligne (vide = personne d\'autre).', type: 'emails', defaut: '', legacy: 'CPM_RAPPORT_DESTINATAIRES' },
+    { id: 'benchmark.taux', groupe: 'Benchmark des prix (Banchy)', libelle: 'Taux d\'actualisation annuel', aide: 'Proposé aux nouveaux benchmarks ; chaque benchmark garde le sien. À valider.', type: 'nombre', min: 0, max: 100, unite: '%', defaut: '9' },
+    { id: 'benchmark.seuil', groupe: 'Benchmark des prix (Banchy)', libelle: 'Écart toléré avant de dire « élevé » ou « bas »', aide: 'Proposé aux nouveaux benchmarks. À valider.', type: 'nombre', min: 0, max: 1000, unite: '%', defaut: '20' },
+    { id: 'benchmark.nmin', groupe: 'Benchmark des prix (Banchy)', libelle: 'Nombre minimum de sources pour conclure sur un article', aide: 'Un article avec moins de sources n\'est jamais conclu. À valider.', type: 'nombre', min: 1, max: 20, unite: 'source(s)', defaut: '2' },
+    { id: 'benchmark.dispersion', groupe: 'Benchmark des prix (Banchy)', libelle: 'Dispersion maximale des prix d\'un article', aide: 'Au-delà de ce rapport entre le plus haut et le plus bas prix actualisés, l\'article est « à vérifier ». À valider.', type: 'nombre', min: 1.1, max: 1000, unite: '×', defaut: '3' },
+    { id: 'benchmark.couverture', groupe: 'Benchmark des prix (Banchy)', libelle: 'Part minimale du marché couverte pour un verdict global', aide: 'Si les articles fiables couvrent moins que cette part du montant, le verdict global est refusé. À valider.', type: 'nombre', min: 0, max: 100, unite: '%', defaut: '50' },
+    { id: 'portail.site_url', groupe: 'Portail', libelle: 'Adresse du portail (liens des e-mails)', aide: 'Utilisée dans les e-mails d\'invitation et de notification.', type: 'url', defaut: 'https://rayanem-dev.github.io/DashBoard-Infra-v2/', legacy: 'SITE_URL' }
+  ];
+  var MAX_ADRESSES = 30, EMAIL = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/;
+  function def(id) { return REGISTRE.filter(function (d) { return d.id === id; })[0] || null; }
+  /** « Nom <adresse> » ou adresse seule, une par ligne (virgules et points-virgules acceptés) → [{ nom, email }] ou { erreur }. */
+  function adresses(texte) {
+    var out = [], vus = {}, brut = String(texte == null ? '' : texte).split(/[\n;,]+/);
+    for (var i = 0; i < brut.length; i += 1) {
+      var l = brut[i].trim(); if (!l) continue;
+      var m = /^(.*?)\s*<([^<>]+)>$/.exec(l), nom = m ? m[1].trim() : '', mail = (m ? m[2] : l).trim();
+      if (!EMAIL.test(mail)) return { erreur: 'Adresse e-mail invalide : « ' + l.slice(0, 80) + ' »' };
+      var cle = mail.toLowerCase(); if (vus[cle]) continue; vus[cle] = 1; out.push({ nom: nom || mail, email: mail });
+      if (out.length > MAX_ADRESSES) return { erreur: 'Trop d\'adresses (' + MAX_ADRESSES + ' au plus)' };
+    }
+    return { liste: out };
+  }
+  /** Valide la saisie d'un réglage ; retourne { valeur } (texte normalisé) ou { erreur }. */
+  function valider(d, brut) {
+    var t = String(brut == null ? '' : brut).trim();
+    if (d.type === 'nombre') {
+      var n = Number(t.replace(/\s/g, '').replace(',', '.')); if (t === '' || !isFinite(n)) return { erreur: 'Entrez un nombre' };
+      if (n < d.min || n > d.max) return { erreur: 'La valeur doit être comprise entre ' + d.min + ' et ' + d.max };
+      return { valeur: String(Math.round(n * 1000) / 1000) };
+    }
+    if (d.type === 'email') return EMAIL.test(t) && t.length <= 120 ? { valeur: t } : { erreur: 'Adresse e-mail invalide' };
+    if (d.type === 'url') return /^https:\/\/[^\s]+$/.test(t) && t.length <= 200 ? { valeur: t.slice(-1) === '/' ? t : t + '/' } : { erreur: 'Adresse invalide : elle doit commencer par https://' };
+    if (d.type === 'emails') {
+      var a = adresses(t); if (a.erreur) return a;
+      if (!a.liste.length && d.defaut) return { erreur: 'Gardez au moins une adresse (ou utilisez « Rétablir »)' };
+      return { valeur: a.liste.map(function (x) { return x.nom && x.nom !== x.email ? x.nom + ' <' + x.email + '>' : x.email; }).join('\n') };
+    }
+    return { erreur: 'Réglage inconnu' };
+  }
+  /** lignes = [{ cle, valeur }] de l'onglet ; legacy = fonction (propriété) → texte ou '' ; retourne tous les réglages avec leur valeur utilisée et sa source. */
+  function etat(lignes, legacy) {
+    var vals = {}; (lignes || []).forEach(function (l) { if (l && l.cle) vals[String(l.cle)] = String(l.valeur == null ? '' : l.valeur); });
+    return REGISTRE.map(function (d) {
+      var v = vals[d.id], source = 'defaut', valeur = d.defaut;
+      if (v !== undefined && v !== '' || (v === '' && d.type === 'emails' && !d.defaut)) { valeur = v; source = 'parametres'; }
+      else if (d.legacy && legacy) { var p = String(legacy(d.legacy) || '').trim(); if (p) { valeur = p; source = 'ancien'; } }
+      return { id: d.id, groupe: d.groupe, libelle: d.libelle, aide: d.aide, type: d.type, min: d.min, max: d.max, unite: d.unite || '', defaut: d.defaut, valeur: valeur, source: source };
+    });
+  }
+  function valeurDe(lignes, legacy, id) { var e = etat(lignes, legacy).filter(function (x) { return x.id === id; })[0]; return e ? e.valeur : ''; }
+  return { REGISTRE: REGISTRE, def: def, adresses: adresses, valider: valider, etat: etat, valeurDe: valeurDe, MAX_ADRESSES: MAX_ADRESSES };
+})();
+if (typeof module !== 'undefined') module.exports = Parametres;
+
+// ---------- passerelle ----------
+var PARAMETRES_ENTETES_ = ['cle', 'valeur', 'maj_par', 'maj_le'];
+function parametresFeuille_() { return cpmFeuille_('Parametres', PARAMETRES_ENTETES_); }
+function parametresLignes_() {
+  var v = parametresFeuille_().getDataRange().getValues(), out = [];
+  for (var i = 1; i < v.length; i += 1) if (v[i][0]) out.push({ ligne: i + 1, cle: String(v[i][0]), valeur: String(v[i][1] == null ? '' : v[i][1]), maj_par: String(v[i][2] || ''), maj_le: String(v[i][3] || '') });
+  return out;
+}
+function parametresLegacy_(k) { try { return PropertiesService.getScriptProperties().getProperty(k) || ''; } catch (e) { return ''; } }
+/** Valeur utilisée d'un réglage (lue par les autres programmes). Si l'onglet est illisible, retombe sur la valeur d'origine ou l'ancienne propriété. */
+function parametre_(id) {
+  var lignes = []; try { lignes = parametresLignes_(); } catch (e) { lignes = []; }
+  return Parametres.valeurDe(lignes, parametresLegacy_, id);
+}
+/** Adresses d'un réglage de type « emails » : [{ nom, email }]. */
+function parametreAdresses_(id) { var a = Parametres.adresses(parametre_(id)); return a.liste || []; }
+function parametreNombre_(id, repli) { var n = Number(String(parametre_(id)).replace(',', '.')); return isFinite(n) ? n : repli; }
+function parametresSecretariat_(req) {
+  var u = Auth.userFromToken(req.token);
+  if (Droits.roleCanon(u.role) !== 'secretariat') throw Object.assign(new Error('Les paramètres sont réservés au secrétariat'), { code: 'DROITS' });
+  return u;
+}
+function parametresLire_(req) {
+  parametresSecretariat_(req);
+  var lignes = parametresLignes_(), meta = {}; lignes.forEach(function (l) { meta[l.cle] = { maj_par: l.maj_par, maj_le: l.maj_le }; });
+  return { parametres: Parametres.etat(lignes, parametresLegacy_).map(function (e) { var m = meta[e.id]; if (m && e.source === 'parametres') { e.maj_par = m.maj_par; e.maj_le = m.maj_le; } return e; }) };
+}
+function parametresEnregistrer_(req) {
+  var u = parametresSecretariat_(req), d = Parametres.def(String(req.id || ''));
+  if (!d) throw new Error('Réglage inconnu');
+  var retablir = req.retablir === true, v = retablir ? { valeur: '' } : Parametres.valider(d, req.valeur);
+  if (v.erreur) throw new Error(v.erreur);
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = parametresFeuille_(), ex = parametresLignes_().filter(function (l) { return l.cle === d.id; })[0], par = Annuaire.nomAffichable(u.nom, u.email), maintenant = new Date().toISOString();
+    if (retablir) { if (ex) sh.deleteRow(ex.ligne); }   // valeur d'origine (ou ancienne propriété) de nouveau utilisée
+    else {
+      var rng = ex ? sh.getRange(ex.ligne, 1, 1, 4) : sh.getRange(sh.getLastRow() + 1, 1, 1, 4); rng.setNumberFormat('@'); rng.setValues([[d.id, v.valeur, par, maintenant]]);
+    }
+    Store.journal(retablir ? 'parametre_retabli' : 'parametre_modifie', u.email, d.id + (retablir ? '' : ' = ' + String(v.valeur).replace(/\s+/g, ' ').slice(0, 120)));
+  } finally { lock.releaseLock(); }
+  return parametresLire_(req);
+}

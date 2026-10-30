@@ -27,4 +27,20 @@ function habilitationsDonnees_(req) {
   });
   return { colonnes: ok.map(function (c) { return { id: c.id, libelle: c.l, sensible: !!c.sensible }; }), lignes: rows, entreprises: Object.keys(ents).sort(), onglets: onglets, niveau: niveau, peut_exporter: exportAutorise_(u), fichier_url: exportAutorise_(u) ? enqClasseur_().getUrl() : '' };
 }
+/**
+ * Personnes des Enquêtes administratives (nom, prénom, fonction, structure, entreprise) pour préremplir « Ajouter un utilisateur » dans la Gestion des privilèges :
+ * aucune donnée personnelle sensible (ni naissance, NIN, adresse, téléphone). Réservé à qui peut ajouter un compte ; liste gardée 10 minutes en mémoire.
+ */
+function enquetesPersonnes_(req) {
+  admin_(req);
+  var cache = CacheService.getScriptCache(), c = null; try { c = cache.get('ENQ_PERSONNES'); } catch (e) { c = null; }
+  if (c) { try { return { personnes: JSON.parse(c) }; } catch (e) { /* recalcul */ } }
+  var out = [];
+  enqClasseur_().getSheets().forEach(function (sh) {
+    var a = Badges.analyserEnquetes(sh.getDataRange().getDisplayValues(), sh.getName()); if (a.erreur) return;
+    a.personnes.forEach(function (p) { if (p.nom || p.prenom) out.push([p.nom || '', p.prenom || '', p.fonction || '', p.structure || '', a.entreprise || '']); });
+  });
+  try { var j = JSON.stringify(out); if (j.length < 95000) cache.put('ENQ_PERSONNES', j, 600); } catch (e) { /* trop gros : pas de cache */ }
+  return { personnes: out };
+}
 if (typeof module !== 'undefined') module.exports = { habColonnesVisibles_: habColonnesVisibles_ };

@@ -206,6 +206,9 @@ function route_(req) {
     case 'menu_organisation_enregistrer': return menuOrgEnregistrer_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
+    case 'parametres_lire': return parametresLire_(req);
+    case 'parametres_enregistrer': return parametresEnregistrer_(req);
+    case 'enquetes_personnes': return enquetesPersonnes_(req);
     case 'stats_rapports_lire': return statsRapportsLire_(req);
     case 'rapport_corriger': return rapportCorriger_(req);
     case 'rapport_viser': return rapportViser_(req);
@@ -237,7 +240,7 @@ function route_(req) {
     case 'admin_inviter': {
       // Invitation par e-mail : lien, première connexion et applications accordées. { emails: [...] } ou { email }
       var ai = admin_(req), cibles = Array.isArray(req.emails) ? req.emails : (req.email ? [req.email] : []);
-      var lienSite = PropertiesService.getScriptProperties().getProperty('SITE_URL') || 'https://rayanem-dev.github.io/DashBoard-Infra-v2/';
+      var lienSite = parametre_('portail.site_url');
       lienSite = lienSite.replace(/\/?$/, '/') + 'connexion.html';
       var envoyes = [], echecs = [], quota = typeof MailApp !== 'undefined' && MailApp.getRemainingDailyQuota ? MailApp.getRemainingDailyQuota() : 100;
       cibles.slice(0, 60).forEach(function (em) {
@@ -760,11 +763,15 @@ function consoPersonnesListe_() {
 function personnesNettoyees_(l) { var o = [], vus = {}; (Array.isArray(l) ? l : []).forEach(function (e) { e = String(e || '').toLowerCase().trim(); if (e && e.length <= 120 && !vus[e]) { vus[e] = 1; o.push(e); } }); return o.slice(0, 60); }
 /** Boîtes des groupes cochés + personnes cochées (seulement celles qui sont bien dans la liste des comptes proposés : jamais une adresse libre). */
 function consoDestinatairesTous_(groupes, personnes, toute) {
-  var out = Rapports.boitesDestinataires(groupes), vus = {}; out.forEach(function (b) { vus[b.email] = 1; });
+  var out = Rapports.boitesDestinataires(groupes, boitesParametrees_()), vus = {}; out.forEach(function (b) { vus[b.email] = 1; });
   if (toute) Rapports.tousLesComptes(Store.table('Utilisateurs')).forEach(function (d) { if (!vus[d.email]) { vus[d.email] = 1; out.push({ nom: Annuaire.nomAffichable(d.nom, d.email), email: d.email, role: d.role, libelle: d.role + (d.service ? ', ' + d.service : '') }); } });
   var voulues = personnesNettoyees_(personnes);
   if (voulues.length) consoPersonnesListe_().forEach(function (p) { if (voulues.indexOf(p.email) >= 0 && !vus[p.email]) { vus[p.email] = 1; out.push({ nom: p.nom, email: p.email, role: p.role, libelle: p.role }); } });
   return out;
+}
+/** Boîtes des groupes d'envoi du consolidé, telles que réglées dans la page Paramètres (valeurs d'origine si rien n'est enregistré). */
+function boitesParametrees_() {
+  return { secretariat: parametreAdresses_('rapports.boites_secretariat'), chef_service: parametreAdresses_('rapports.boites_chef_service'), chef_division: parametreAdresses_('rapports.boites_chef_division') };
 }
 function consoPersonnes_(req) { var u = Auth.userFromToken(req.token); niveauConsolide_(u); return { personnes: consoPersonnesListe_() }; }
 /** Qui recevrait le consolidé avec les groupes cochés (aperçu, rien n'est envoyé). */

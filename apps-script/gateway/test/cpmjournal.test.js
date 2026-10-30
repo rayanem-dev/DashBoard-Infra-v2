@@ -43,6 +43,7 @@ function monde(opts = {}) {
   };
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'CpmJournal.gs'), 'utf8'), ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Parametres.gs'), 'utf8').replace(/if \(typeof module[^\n]*\n/g, ''), ctx);
   return { ctx, mails, props, feuilles, set: l => { source = feuille(l); }, run: c => vm.runInContext(c, ctx) };
 }
 const A = ligne({ 1: 'Dossier Appel Offre DAO', 2: 'D1', 3: 'Réhabilitation réseau', 8: 'Dossier en cours', 7: '10 %' });

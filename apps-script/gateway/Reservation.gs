@@ -95,10 +95,10 @@ function reservationOrga_(req) {
     return { nom: Annuaire.nomAffichable(x.nom, x.email), fonction: String(x.fonction || ''), societe: String(x.dependance || 'SONATRACH') || 'SONATRACH', service: String(x.service || '') };
   });
   l.sort(function (a, b) { return a.nom < b.nom ? -1 : a.nom > b.nom ? 1 : 0; });
-  return { personnes: l, trajets_table: resaTrajetsLire_(), destinataire: PropertiesService.getScriptProperties().getProperty('RESERVATION_DEST') || RESERVATION_DEST_DEFAUT_, mention: RESERVATION_MENTION_ };
+  return { personnes: l, trajets_table: resaTrajetsLire_(), destinataire: parametre_('reservation.destinataire') || RESERVATION_DEST_DEFAUT_, mention: RESERVATION_MENTION_ };
 }
 function reservationEnvoyer_(req) {
-  var u = resaDroit_(req), m = resaMail_(req.demande), dest = PropertiesService.getScriptProperties().getProperty('RESERVATION_DEST') || RESERVATION_DEST_DEFAUT_;
+  var u = resaDroit_(req), m = resaMail_(req.demande), dest = parametre_('reservation.destinataire') || RESERVATION_DEST_DEFAUT_;
   MailApp.sendEmail({ to: dest, subject: m.sujet, body: m.texte, htmlBody: m.html, replyTo: u.email, name: 'Division Infrastructure RNS' });
   try { var lock = LockService.getScriptLock(); lock.waitLock(10000); try { resaTrajetsEcrire_(resaApprendre_(resaTrajetsLire_(), m.trajet, String(req.demande.date))); } finally { lock.releaseLock(); } } catch (e) { /* le trajet sera appris la prochaine fois */ }
   Store.journal('reservation', u.email, m.sujet + ' · ' + m.nb + ' pers. · ' + String(req.demande.date));

@@ -160,7 +160,7 @@ function cpmEvenementsDepuis_(depuisIso) {
 }
 function cpmDestinataires_() {
   var mails = Store.table('Utilisateurs').filter(function (u) { return (u.role === 'chef_division' || u.role === 'secretariat') && String(u.actif) !== '0' && u.actif !== false && u.email; }).map(function (u) { return String(u.email).toLowerCase(); });
-  var extra = String(PropertiesService.getScriptProperties().getProperty('CPM_RAPPORT_DESTINATAIRES') || '').split(/[,;\s]+/).filter(Boolean);
+  var extra = parametreAdresses_('cpm.rapport_extra').map(function (a) { return String(a.email).toLowerCase(); });
   return mails.concat(extra).filter(function (m, i, t) { return t.indexOf(m) === i; });
 }
 function cpmJoursAvant_(n) { var d = new Date(); d.setDate(d.getDate() - n); return Utilities.formatDate(d, 'Africa/Algiers', 'yyyy-MM-dd'); }
