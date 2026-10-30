@@ -206,6 +206,8 @@ function route_(req) {
     case 'menu_organisation_enregistrer': return menuOrgEnregistrer_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
+    case 'rapport_media_envoyer': return rapportMediaEnvoyer_(req);
+    case 'rapport_media_lire': return rapportMediaLire_(req);
     case 'parametres_lire': return parametresLire_(req);
     case 'parametres_enregistrer': return parametresEnregistrer_(req);
     case 'enquetes_personnes': return enquetesPersonnes_(req);
@@ -523,12 +525,12 @@ function chantiersTous_() {
 function chantiersActifs_() { return chantiersTous_().filter(function (c) { return c.actif; }); }
 function lignesLues_(v) { if (Array.isArray(v)) return v; try { var l = JSON.parse(String(v || '[]')); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
 function rapportsLus_() {
-  assurerColonnes_('Rapports', ['lignes', 'corrige_par', 'corrige_le']);
+  assurerColonnes_('Rapports', ['lignes', 'corrige_par', 'corrige_le']); assurerColonnes_('Rapports', ['medias']);
   return Store.table('Rapports').map(function (r) {
     return { id: String(r.id), date: jour_(r.date), chantier: String(r.chantier).toLowerCase(), auteur_email: String(r.auteur_email), auteur_nom: r.auteur_nom, service: r.service,
       effectif: Number(r.effectif) || 0, travaux: String(r.travaux || ''), lignes: lignesLues_(r.lignes), difficultes: String(r.difficultes || ''), commentaire: String(r.commentaire || ''),
       avancement: r.avancement === '' || r.avancement == null ? '' : Number(r.avancement),
-      visa_par: String(r.visa_par || ''), visa_note: String(r.visa_note || ''), visa_le: String(r.visa_le || ''), corrige_par: String(r.corrige_par || ''), corrige_le: String(r.corrige_le || '') };
+      visa_par: String(r.visa_par || ''), visa_note: String(r.visa_note || ''), visa_le: String(r.visa_le || ''), corrige_par: String(r.corrige_par || ''), corrige_le: String(r.corrige_le || ''), medias: RapportMedias.listeDe(r.medias) };
   });
 }
 function rapportsChantiers_(req) {
@@ -564,14 +566,15 @@ function rapportChantierOuvrir_(req) {
 }
 function rapportEnregistrer_(req) {
   var u = Auth.userFromToken(req.token); var niv = niveauRapports_(u, 2);
-  assurerColonnes_('Utilisateurs', ['chantiers_sup']); u = Auth.userFromToken(req.token);
+  assurerColonnes_('Utilisateurs', ['chantiers_sup']); assurerColonnes_('Rapports', ['medias']); u = Auth.userFromToken(req.token);
   var ids = Rapports.chantiersVisibles(chantiersActifs_(), u, niv).map(function (c) { return c.id; }); // seulement les chantiers de son service
   var v = Rapports.valider(req, Dates.today(), niv, ids); if (v.erreur) throw new Error(v.erreur);
   var r = v.rapport; var id = Rapports.cle(r.date, r.chantier, u.email);
   var maintenant = new Date().toISOString();
-  var existe = Store.table('Rapports').some(function (x) { return String(x.id) === id; });
+  var ancien = Store.table('Rapports').filter(function (x) { return String(x.id) === id; })[0], existe = !!ancien;
   var valeurs = { date: r.date, chantier: r.chantier, auteur_email: u.email, auteur_nom: Annuaire.nomAffichable(u.nom, u.email), service: serviceDuRapport_(u, r.chantier), effectif: r.effectif, travaux: r.travaux, lignes: JSON.stringify(r.lignes || []),
                   difficultes: r.difficultes, commentaire: r.commentaire, avancement: r.avancement, modifie_le: maintenant };
+  if (req.medias !== undefined || (ancien && String(ancien.medias || '') !== '')) valeurs.medias = JSON.stringify(mediasDuRapport_(ancien ? ancien.medias : [], req.medias === undefined ? RapportMedias.listeDe(ancien && ancien.medias).map(function (m) { return m.id; }) : req.medias, u.email, r.date, r.chantier));   // pas de médias envoyés = on garde ceux déjà joints
   if (!existe) valeurs.cree_le = maintenant;
   Store.maj('Rapports', { id: id }, valeurs);
   Store.journal(existe ? 'rapport_modifie' : 'rapport_cree', u.email, id);

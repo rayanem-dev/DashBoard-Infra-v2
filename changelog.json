@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-30-246",
+    "date": "2026-10-30",
+    "title": "Version 6.26.0 — Rapports journaliers : photos et vidéos",
+    "changes": [
+      "Dans « Saisir mon rapport », nouveau bloc « Photos et vidéos » : jusqu'à 6 médias par rapport. Les photos sont réduites automatiquement (1 600 px) ; les vidéos font 20 Mo au plus (une trentaine de secondes) et partent par morceaux. L'envoi se fait à l'enregistrement du rapport, avec la progression sur le bouton ; un média se retire avec ✕.",
+      "Dans le Journal, chaque rapport avec médias affiche des boutons « Photo » / « Vidéo » qui les ouvrent dans une fenêtre. Les fichiers sont gardés dans Google Drive, sans lien public : seule la passerelle les sert, aux personnes qui peuvent lire le rapport.",
+      "À activer côté serveur : l'autorisation Google « Drive » de la passerelle (variable GATEWAY_SCOPES_PEC = 1, voir docs/RAPPORTS-MEDIAS.md). Sans elle, le rapport s'enregistre normalement et l'envoi d'un média indique que le stockage n'est pas autorisé."
+    ]
+  },
+  {
     "id": "2026-10-30-245",
     "date": "2026-10-30",
     "title": "Version 6.25.0 — Page Paramètres (secrétariat) et préremplissage depuis les Enquêtes",

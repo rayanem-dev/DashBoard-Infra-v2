@@ -54,6 +54,10 @@
     <button class="btn-s" id="ap-imp" type="button">🖨 Imprimer</button><button class="btn-s" id="ap-fermer" type="button">Fermer</button></div>
   <iframe id="ap-cadre" title="Aperçu du journal" style="width:100%;height:70vh;border:1px solid var(--border);border-radius:8px;background:#fff"></iframe>
 </dialog>
+<dialog id="dlg-media" style="margin:auto;border:0;border-radius:16px;padding:14px;width:min(900px,96vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><b id="dm-titre" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></b><button class="btn-s" id="dm-fermer" type="button">Fermer</button></div>
+  <div id="dm-zone" style="text-align:center;min-height:120px"></div>
+</dialog>
 <dialog id="dlg-hc" style="margin:auto;border:0;border-radius:16px;padding:20px;width:min(520px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
   <h3 style="margin:0 0 4px">Ouvrir un chantier hors contrat</h3>
   <p class="aide" style="margin:0 0 10px">Pour les travaux <b>avant</b> le contrat (préparation) ou <b>après</b> (levée des réserves). Les contrats du Suivi CPM (hors exécution et infructueux) sont proposés. Le chantier s'ouvre tout de suite et se ferme seul à la date de fin (6 mois par défaut).</p>
@@ -91,6 +95,11 @@
       <div class="champ"><label for="travaux">Travaux réalisés — texte libre <span class="aide" style="font-weight:400">(facultatif si des lignes sont remplies)</span></label><textarea id="travaux" maxlength="1000"></textarea><p class="aide" style="margin:3px 0 0">Le texte ne passe pas à la ligne tout seul : appuyez sur Entrée pour aller à la ligne et commencez par <b>*</b> chaque nouveau point (ex. <i>* Décoffrage du regard</i>).</p></div>
       <div class="champ"><label for="difficultes">Difficultés / incidents — facultatif</label><textarea id="difficultes" maxlength="1000"></textarea></div>
       <div class="champ"><label for="commentaire">Commentaire du jour — facultatif</label><textarea id="commentaire" maxlength="1000"></textarea></div>
+      <div class="champ"><label>Photos et vidéos — facultatif <span class="aide" style="font-weight:400">(6 au plus ; photos réduites automatiquement, vidéos de 20 Mo au plus, une trentaine de secondes)</span></label>
+        <div id="medias" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"></div>
+        <input type="file" id="m-fichiers" accept="image/*,video/*" multiple hidden>
+        <button class="btn-s" type="button" id="b-media">📷 Ajouter une photo ou une vidéo</button>
+        <p class="aide" id="m-info" style="margin-top:6px"></p></div>
       <button class="btn" id="b-save" type="submit" style="max-width:320px">Enregistrer le rapport</button>
       <p class="aide" id="deja" style="margin-top:10px"></p>
       <div class="msg" id="m" role="alert"></div>
@@ -191,6 +200,7 @@
     var d = $('date').value, c = $('chantier').value;
     var r = mesRapports.filter(function (x) { return x.date === d && x.chantier === c && x.le_mien; })[0];
     ['effectif', 'avancement', 'travaux', 'difficultes', 'commentaire'].forEach(function (k) { $(k).value = r ? (r[k] === '' ? '' : r[k]) : ''; });
+    mediasExistants = r && r.medias ? r.medias.slice() : []; mediasNouveaux.forEach(function (m) { if (m.apercu) URL.revokeObjectURL(m.apercu); }); mediasNouveaux = []; if (typeof dessinerMedias === 'function') dessinerMedias();
     $('deja').textContent = r ? 'Un rapport existe déjà pour ce chantier et ce jour : vous le modifiez.' : '';
     if (r && r.auteur_nom) { $('etabli-nom').textContent = r.auteur_nom; $('etabli-qual').textContent = '(rapport déjà enregistré)'; } else { $('etabli-nom').textContent = moi.nom || ''; $('etabli-qual').textContent = moi.qual || ''; }
     var p = dernierRapport(c, d); $('reprise').textContent = '';
@@ -219,6 +229,66 @@
   $('date').min = auj; $('date').max = auj; $('date').value = auj; $('date').readOnly = true; $('date').title = 'Un rapport s\'établit et se modifie le jour même seulement';
   $('chantier').addEventListener('change', prerempli); $('date').addEventListener('change', prerempli);
 
+  // ----- Photos et vidéos du rapport : photos réduites par la page, vidéos envoyées par morceaux ; l'envoi a lieu à l'enregistrement
+  var MAX_MEDIAS = 6, MAX_VIDEO = 20 * 1024 * 1024, MORCEAU = 1536 * 1024, mediasExistants = [], mediasNouveaux = [];
+  function octets(n) { return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(n / 1024)) + ' Ko'; }
+  function dessinerMedias() {
+    var z = $('medias'); z.textContent = '';
+    function carte(vignette, nom, taille, retirer) {
+      var c = el('div'); c.style.cssText = 'position:relative;width:96px;border:1px solid var(--border);border-radius:10px;padding:4px;font-size:11px;text-align:center;background:var(--surface)';
+      vignette.style.cssText = 'width:88px;height:66px;object-fit:cover;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--bg,#f3f4f6)'; c.appendChild(vignette);
+      c.appendChild(el('div', null, taille)); c.lastChild.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap'; c.lastChild.title = nom;
+      var x = el('button', null, '✕'); x.type = 'button'; x.title = 'Retirer'; x.style.cssText = 'position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#B42318;color:#fff;cursor:pointer;line-height:1'; x.onclick = retirer; c.appendChild(x); z.appendChild(c);
+    }
+    mediasExistants.forEach(function (m, i) {
+      var v = el('div', null, m.type === 'video' ? '🎬' : '🖼'); carte(v, m.nom, 'déjà joint · ' + octets(m.taille), function () { mediasExistants.splice(i, 1); dessinerMedias(); });
+    });
+    mediasNouveaux.forEach(function (m, i) {
+      var v; if (m.type === 'photo') { v = document.createElement('img'); v.src = m.apercu; v.alt = ''; } else v = el('div', null, '🎬');
+      carte(v, m.fichier.name, octets(m.fichier.size), function () { if (m.apercu) URL.revokeObjectURL(m.apercu); mediasNouveaux.splice(i, 1); dessinerMedias(); });
+    });
+    $('b-media').disabled = mediasExistants.length + mediasNouveaux.length >= MAX_MEDIAS;
+  }
+  $('b-media').addEventListener('click', function () { $('m-info').textContent = ''; $('m-fichiers').click(); });
+  $('m-fichiers').addEventListener('change', function () {
+    var refus = [];
+    Array.prototype.slice.call($('m-fichiers').files).forEach(function (f) {
+      var photo = /^image\/(jpeg|png|webp|heic|heif)$/i.test(f.type) || (/^image\//.test(f.type)), video = /^video\/(mp4|quicktime|webm|3gpp)$/i.test(f.type);
+      if (mediasExistants.length + mediasNouveaux.length >= MAX_MEDIAS) { refus.push(f.name + ' : 6 médias au plus'); return; }
+      if (video && f.size > MAX_VIDEO) { refus.push(f.name + ' : vidéo de ' + octets(f.size) + ' (20 Mo au plus, une trentaine de secondes : raccourcissez ou baissez la qualité)'); return; }
+      if (photo && /heic|heif/i.test(f.type)) { refus.push(f.name + ' : format HEIC non lisible, réglez l\'appareil sur « le plus compatible » (JPEG)'); return; }
+      if (!photo && !video) { refus.push(f.name + ' : format non accepté'); return; }
+      mediasNouveaux.push({ fichier: f, type: photo ? 'photo' : 'video', apercu: photo ? URL.createObjectURL(f) : '' });
+    });
+    $('m-fichiers').value = ''; $('m-info').textContent = refus.join(' · '); dessinerMedias();
+  });
+  function enBase64(blob) {
+    return new Promise(function (ok, ko) { var r = new FileReader(); r.onload = function () { ok(String(r.result).split(',')[1] || ''); }; r.onerror = function () { ko(new Error('Fichier illisible')); }; r.readAsDataURL(blob); });
+  }
+  /** Photo réduite à 1600 px de large au plus (JPEG) : une photo de téléphone de 4 Mo tient alors en 200 à 400 Ko. */
+  function reduirePhoto(f) {
+    return new Promise(function (ok, ko) {
+      var img = new Image(), u = URL.createObjectURL(f);
+      img.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        c.toBlob(function (b) { b ? ok(b) : ko(new Error('Photo illisible')); }, 'image/jpeg', 0.8);
+      };
+      img.onerror = function () { URL.revokeObjectURL(u); ko(new Error('Photo illisible : ' + f.name)); }; img.src = u;
+    });
+  }
+  function envoyerMedia(m, chantier, date, progres) {
+    var envoi = (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).replace(/[^a-z0-9]/g, '');
+    return (m.type === 'photo' ? reduirePhoto(m.fichier) : Promise.resolve(m.fichier)).then(function (blob) {
+      var mime = m.type === 'photo' ? 'image/jpeg' : (m.fichier.type || 'video/mp4'), total = Math.max(1, Math.ceil(blob.size / MORCEAU)), i = 0;
+      function suite() {
+        return enBase64(blob.slice(i * MORCEAU, (i + 1) * MORCEAU)).then(function (data) {
+          return Api.call('rapport_media_envoyer', { chantier: chantier, date: date, mime: mime, taille: blob.size, partie: i, total: total, envoi: envoi, data: data });
+        }).then(function (r) { i += 1; progres(i / total); if (r.media) return r.media; return suite(); });
+      }
+      return suite();
+    });
+  }
   $('f').addEventListener('submit', function (e) {
     e.preventDefault(); msg('');
     var p = { chantier: $('chantier').value, date: $('date').value, effectif: $('effectif').value, avancement: $('avancement').value,
@@ -227,8 +297,16 @@
     if (!p.travaux.trim() && !p.lignes.some(function (l) { return (l.texte || '').trim().length >= 3; })) return msg('Décrivez les travaux réalisés (au moins une ligne ou le texte libre).');
     if (p.effectif === '') return msg('Indiquez l\'effectif présent.');
     $('b-save').disabled = true;
-    Api.call('rapport_enregistrer', p).then(function (r) { toast(r.modifie ? 'Rapport modifié' : 'Rapport enregistré'); return chargerMesRapports(); })
-      .catch(function (err) { msg(err.message); }).then(function () { $('b-save').disabled = false; });
+    var avant = $('b-save').textContent, ids = mediasExistants.map(function (m) { return m.id; }), n = mediasNouveaux.length, fait = 0, suite = Promise.resolve();
+    mediasNouveaux.slice().forEach(function (m) {
+      suite = suite.then(function () {
+        return envoyerMedia(m, p.chantier, p.date, function (x) { $('b-save').textContent = 'Envoi du média ' + (fait + 1) + '/' + n + ' — ' + Math.round(x * 100) + ' %'; })
+          .then(function (media) { ids.push(media.id); mediasExistants.push(media); mediasNouveaux.splice(mediasNouveaux.indexOf(m), 1); if (m.apercu) URL.revokeObjectURL(m.apercu); fait += 1; dessinerMedias(); });
+      });
+    });
+    suite.then(function () { if (n || mediasExistants.length || (mesRapports.some(function (x) { return x.date === p.date && x.chantier === p.chantier && x.le_mien && (x.medias || []).length; }))) p.medias = ids; return Api.call('rapport_enregistrer', p); })
+      .then(function (r) { toast(r.modifie ? 'Rapport modifié' : 'Rapport enregistré'); return chargerMesRapports(); })
+      .catch(function (err) { msg(err.message); }).then(function () { $('b-save').disabled = false; $('b-save').textContent = avant; });
   });
 
   // ----- Journal
@@ -249,6 +327,22 @@
     var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px'; ls.forEach(function (l) { u.appendChild(el('li', null, (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''))); });
     b.appendChild(u); return b;
   }
+  /** Ouvre une photo ou une vidéo du rapport (lue par la passerelle, jamais par un lien public). */
+  var urlMedia = '';
+  function ouvrirMedia(m) {
+    var z = $('dm-zone'); $('dm-titre').textContent = m.nom || (m.type === 'video' ? 'Vidéo' : 'Photo'); z.textContent = 'Chargement…';
+    if (urlMedia) { URL.revokeObjectURL(urlMedia); urlMedia = ''; }
+    $('dlg-media').showModal();
+    Api.call('rapport_media_lire', { id: m.id }).then(function (r) {
+      var bin = atob(r.base64), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i += 1) a[i] = bin.charCodeAt(i);
+      urlMedia = URL.createObjectURL(new Blob([a], { type: r.mime })); z.textContent = '';
+      var x = document.createElement(r.type === 'video' ? 'video' : 'img'); x.src = urlMedia; x.style.cssText = 'max-width:100%;max-height:75vh;border-radius:8px';
+      if (r.type === 'video') { x.controls = true; x.playsInline = true; } else x.alt = r.nom || '';
+      z.appendChild(x);
+    }).catch(function (e) { z.textContent = e.message; });
+  }
+  $('dm-fermer').addEventListener('click', function () { $('dlg-media').close(); });
+  $('dlg-media').addEventListener('close', function () { $('dm-zone').textContent = ''; if (urlMedia) { URL.revokeObjectURL(urlMedia); urlMedia = ''; } });
   function fiche(r) {
     var f = el('div', 'fiche'); var h = el('header'); h.appendChild(el('h4', null, nomChantier(r.chantier)));
     h.appendChild(el('span', 'meta', Rotation.frDate(r.date) + ' · Établi par ' + (r.auteur_nom || r.auteur_email) + ' · effectif ' + r.effectif));
@@ -257,6 +351,12 @@
     if (r.lignes && r.lignes.length && /\S/.test(r.travaux) && r.travaux.indexOf('• ') !== 0) f.appendChild(ligne('Précisions', r.travaux));
     if (r.difficultes) f.appendChild(ligne('Difficultés', r.difficultes));
     if (r.commentaire) f.appendChild(ligne('Commentaire', r.commentaire));
+    if (r.medias && r.medias.length) {
+      var bm = el('div', 'bloc'); bm.appendChild(el('b', null, 'Photos et vidéos'));
+      var lm = el('div'); lm.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:4px';
+      r.medias.forEach(function (m) { var b = el('button', 'btn-s', (m.type === 'video' ? '🎬 ' : '🖼 ') + (m.type === 'video' ? 'Vidéo' : 'Photo') + ' · ' + octets(m.taille)); b.type = 'button'; b.title = m.nom; b.addEventListener('click', function () { ouvrirMedia(m); }); lm.appendChild(b); });
+      bm.appendChild(lm); f.appendChild(bm);
+    }
     if (r.corrige_par) f.appendChild(el('div', 'aide', '✎ Corrigé par ' + r.corrige_par + (r.corrige_le ? ' le ' + new Date(r.corrige_le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')));
     if (r.visa_par) f.appendChild(el('div', 'visa', 'Vu par ' + r.visa_par + (r.visa_note ? ' — ' + r.visa_note : '')));
     if (r.peut_corriger) {
