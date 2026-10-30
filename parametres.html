@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Paramètres – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .pa { max-width: 960px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .pa details.groupe { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); margin-bottom: 14px; }
+  .pa summary { cursor: pointer; padding: 13px 16px; font-size: 15px; font-weight: 800; display: flex; gap: 8px; align-items: center; }
+  .pa summary small { font-weight: 600; color: var(--text-muted); font-size: 12px; }
+  .reglage { padding: 12px 16px; border-top: 1px solid var(--border); }
+  .reglage label.l { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+  .reglage .aide { font-size: 12.5px; color: var(--text-muted); margin: 0 0 7px; }
+  .reglage .champ { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+  .pa input, .pa textarea { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); box-sizing: border-box; }
+  .pa input.nb { width: 120px; text-align: right; } .pa input.long, .pa textarea { flex: 1 1 360px; min-width: 0; } .pa textarea { min-height: 84px; resize: vertical; }
+  .unite { align-self: center; font-size: 13px; color: var(--text-muted); }
+  .etat { font-size: 12px; margin-top: 5px; color: var(--text-muted); } .etat.mod { color: #B94E00; font-weight: 700; } .etat.err { color: #B42318; font-weight: 700; }
+  .btn-p { padding: 8px 14px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; } .btn-p:disabled { opacity: .5; cursor: default; }
+  .filtre { width: 100%; max-width: 420px; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">⚙️</div>
+    <div class="logo-text"><h1>Paramètres</h1><p>Les petits réglages de tous les programmes · réservé au secrétariat</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="pa">
+  <div class="bloc">
+    <input type="search" id="filtre" class="filtre" placeholder="Chercher un réglage ou un programme…" aria-label="Chercher un réglage">
+    <p class="aide" style="font-size:12.5px;color:var(--text-muted);margin:8px 0 0">Chaque réglage s'enregistre seul. « Valeur d'origine » = celle prévue par le portail ; « Rétablir » y revient. Les changements servent tout de suite aux programmes concernés. Chaque modification est notée au journal.</p>
+  </div>
+  <div id="liste"><p class="aide">Chargement…</p></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var P = [];
+  function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function frDate(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
+  function chargerListe(l) { P = l; dessiner(); }
+  function etatTexte(p) {
+    if (p.source === 'parametres') return 'Modifié' + (p.maj_par ? ' par ' + p.maj_par : '') + (p.maj_le ? ' le ' + frDate(p.maj_le) : '');
+    if (p.source === 'ancien') return 'Valeur de l\'ancien réglage du serveur (pas encore enregistrée ici)';
+    return 'Valeur d\'origine';
+  }
+  function dessiner() {
+    var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [];
+    P.forEach(function (p) { var t = (p.groupe + ' ' + p.libelle + ' ' + p.aide).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (q && t.indexOf(q) < 0) return; if (!groupes[p.groupe]) { groupes[p.groupe] = []; ordre.push(p.groupe); } groupes[p.groupe].push(p); });
+    z.textContent = '';
+    if (!ordre.length) z.appendChild(el('p', 'aide', 'Aucun réglage ne correspond.'));
+    ordre.forEach(function (g) {
+      var d = el('details', 'groupe'); d.open = true; var s = el('summary', null, g); s.appendChild(el('small', null, ' · ' + groupes[g].length + ' réglage' + (groupes[g].length > 1 ? 's' : ''))); d.appendChild(s);
+      groupes[g].forEach(function (p) { d.appendChild(reglage(p)); }); z.appendChild(d);
+    });
+  }
+  function reglage(p) {
+    var r = el('div', 'reglage'), id = 'r-' + p.id.replace(/\W/g, '_'); var l = el('label', 'l', p.libelle); l.setAttribute('for', id); r.appendChild(l); r.appendChild(el('p', 'aide', p.aide));
+    var c = el('div', 'champ'), inp;
+    if (p.type === 'emails') { inp = el('textarea'); inp.rows = Math.max(3, String(p.valeur).split('\n').length + 1); inp.spellcheck = false; }
+    else { inp = el('input'); inp.type = p.type === 'nombre' ? 'text' : p.type === 'email' ? 'email' : 'url'; inp.className = p.type === 'nombre' ? 'nb' : 'long'; if (p.type === 'nombre') inp.inputMode = 'decimal'; }
+    inp.id = id; inp.value = p.valeur; inp.maxLength = 3000; c.appendChild(inp);
+    if (p.unite) c.appendChild(el('span', 'unite', p.unite));
+    var ok = el('button', 'btn-p', 'Enregistrer'); ok.type = 'button'; ok.disabled = true; c.appendChild(ok);
+    var re = el('button', 'btn-s', 'Rétablir'); re.type = 'button'; re.title = 'Revenir à la valeur d\'origine'; re.hidden = p.source !== 'parametres'; c.appendChild(re);
+    r.appendChild(c);
+    var e = el('div', 'etat' + (p.source === 'parametres' ? ' mod' : ''), etatTexte(p)); r.appendChild(e);
+    inp.addEventListener('input', function () { ok.disabled = inp.value.trim() === String(p.valeur).trim(); if (!ok.disabled) { e.className = 'etat'; e.textContent = 'Non enregistré'; } });
+    function envoyer(corps) {
+      ok.disabled = true; re.disabled = true;
+      return Api.call('parametres_enregistrer', corps).then(function (rep) { chargerListe(rep.parametres); toast('Réglage enregistré'); }).catch(function (x) {
+        if (x.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+        re.disabled = false; ok.disabled = false; e.className = 'etat err'; e.textContent = x.message;
+      });
+    }
+    ok.onclick = function () { envoyer({ id: p.id, valeur: inp.value }); };
+    re.onclick = function () { if (window.confirm('Revenir à la valeur d\'origine pour « ' + p.libelle + ' » ?')) envoyer({ id: p.id, retablir: true }); };
+    return r;
+  }
+  $('filtre').addEventListener('input', dessiner);
+  Api.call('parametres_lire', {}).then(function (r) { chargerListe(r.parametres); }).catch(function (e) {
+    if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+    document.querySelector('main').textContent = e.code === 'DROITS' ? 'Accès réservé au secrétariat.' : e.message;
+  });
+})();
+</script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

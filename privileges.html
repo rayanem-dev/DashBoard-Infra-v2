@@ -65,7 +65,7 @@
     <dialog id="dlg-ajout" style="border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <form method="dialog" id="f-ajout" novalidate style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
         <h2 style="grid-column:1/-1;margin:0;font-size:17px">Ajouter un utilisateur</h2>
-        <div style="grid-column:1/-1"><label for="n-nom">Nom et prénom *</label><input id="n-nom" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120"></div>
+        <div style="grid-column:1/-1"><label for="n-nom">Nom et prénom *</label><input id="n-nom" class="filtre" list="l-nom" autocomplete="off" style="width:100%;box-sizing:border-box" maxlength="120"><datalist id="l-nom"></datalist><div id="n-enq" class="aide" style="font-size:12px;margin-top:4px;min-height:1em"></div></div>
         <div style="grid-column:1/-1"><label for="n-email">Adresse e-mail *</label><input id="n-email" class="filtre" type="email" style="width:100%;box-sizing:border-box" maxlength="120"></div>
         <div><label for="n-role">Rôle *</label><select id="n-role" class="filtre" style="width:100%"></select></div>
         <div><label for="n-service">Service</label><input id="n-service" class="filtre" style="width:100%;box-sizing:border-box" maxlength="120" placeholder="Ex. Travaux Entretien"></div>
@@ -520,8 +520,36 @@
     // entreprises proposées : SONATRACH, puis tous les prestataires connus (Badges et Config de la prise en charge) ; on peut aussi en saisir une nouvelle
     function liste() { var dl = $('l-ent'); dl.textContent = ''; ['SONATRACH'].concat(choixEntreprises || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; dl.appendChild(o); }); }
     liste(); if (!choixEntreprises) Api.call('admin_portee_choix').then(function (r) { choixEntreprises = r.entreprises || []; liste(); }).catch(function () { choixEntreprises = []; });
+    $('n-enq').textContent = ''; $('l-nom').textContent = '';
+    if (!enqPersonnes) Api.call('enquetes_personnes').then(function (r) { enqPersonnes = (r.personnes || []).map(function (x) { return { nom: x[0], prenom: x[1], fonction: x[2], structure: x[3], entreprise: x[4], cle: normNom(x[0] + ' ' + x[1]), cle2: normNom(x[1] + ' ' + x[0]) }; }); }).catch(function () { enqPersonnes = []; });
     if ($('dlg-ajout').showModal) $('dlg-ajout').showModal(); else $('dlg-ajout').setAttribute('open', ''); $('n-nom').focus();
   });
+  // Prérempli depuis les Enquêtes administratives : à la saisie du nom, les personnes connues sont proposées ; en choisissant l'une d'elles, fonction, entreprise et service sont repris
+  var enqPersonnes = null;
+  function normNom(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function propositions() {
+    var q = normNom($('n-nom').value), dl = $('l-nom'); dl.textContent = '';
+    if (!enqPersonnes || q.length < 2) return;
+    var mots = q.split(' ');
+    enqPersonnes.filter(function (p) { return mots.every(function (m) { return p.cle.indexOf(m) >= 0; }); }).slice(0, 15).forEach(function (p) {
+      var o = document.createElement('option'); o.value = (p.nom + ' ' + p.prenom).trim(); o.label = [p.fonction, p.entreprise].filter(Boolean).join(' · '); dl.appendChild(o);
+    });
+  }
+  function reprendreEnquetes() {
+    var q = normNom($('n-nom').value), h = $('n-enq'); if (!enqPersonnes || !q) { h.textContent = ''; return; }
+    var t = enqPersonnes.filter(function (p) { return p.cle === q || p.cle2 === q; });
+    if (!t.length) { h.textContent = ''; return; }
+    var p = t[0];
+    function vide(i) { return !$(i).value.trim(); }
+    if (vide('n-fonction') && p.fonction) $('n-fonction').value = p.fonction;
+    if (vide('n-service') && p.structure) $('n-service').value = p.structure;
+    var externe = p.entreprise && !/sonatrach/i.test(p.entreprise);
+    if (p.entreprise && (vide('n-dep') || $('n-dep').value.toUpperCase() === 'SONATRACH')) $('n-dep').value = p.entreprise;
+    if (externe && $('n-role').value === 'agent') $('n-role').value = 'prestataire';
+    h.textContent = '✔ Retrouvé dans les Enquêtes : ' + [p.fonction, p.entreprise, p.structure].filter(Boolean).join(' · ') + (t.length > 1 ? ' (' + t.length + ' fiches de ce nom : la première est reprise, vérifiez)' : '') + ' — l\'adresse e-mail reste à saisir.';
+  }
+  $('n-nom').addEventListener('input', function () { propositions(); reprendreEnquetes(); });
+  $('n-nom').addEventListener('change', reprendreEnquetes);
   $('n-role').addEventListener('change', function () { if ($('n-role').value === 'prestataire' && $('n-dep').value.toUpperCase() === 'SONATRACH') { $('n-dep').value = ''; $('n-dep').focus(); } else if ($('n-role').value !== 'prestataire' && !$('n-dep').value) $('n-dep').value = 'SONATRACH'; });
   $('n-annuler').addEventListener('click', function () { if ($('dlg-ajout').close) $('dlg-ajout').close(); else $('dlg-ajout').removeAttribute('open'); });
   $('f-ajout').addEventListener('submit', function (ev) {
