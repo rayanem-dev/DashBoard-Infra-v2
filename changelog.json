@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-30-248",
+    "date": "2026-10-30",
+    "title": "Version 6.28.0 — Consolidé : photos dans l'e-mail, vidéos par lien temporaire",
+    "changes": [
+      "Le consolidé envoyé par e-mail (au clic ou automatiquement le soir) reprend maintenant les photos de chaque rapport, dans le message et dans le PDF joint, dans la limite d'un poids total (6 Mo par défaut, réglable dans Paramètres) ; les photos en trop sont signalées « à voir dans le portail ».",
+      "Les vidéos ne sont pas jointes : chacune a un lien temporaire (7 jours par défaut, réglable dans Paramètres) qui s'ouvre sans connexion et que le serveur ferme tout seul à l'échéance (contrôle chaque nuit et à chaque envoi). Si Google refuse le partage, la vidéo est signalée « à voir dans le portail ».",
+      "Les photos sont désormais réduites à 1 280 px à l'envoi (150 à 300 Ko) pour tenir dans les e-mails. À activer côté serveur : l'autorisation Google « Drive » (docs/RAPPORTS-MEDIAS.md)."
+    ]
+  },
+  {
     "id": "2026-10-30-247",
     "date": "2026-10-30",
     "title": "Version 6.27.0 — Rapports : 20 médias, chantier / prestataire en saisie libre",
