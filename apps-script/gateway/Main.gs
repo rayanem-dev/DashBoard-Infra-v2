@@ -806,7 +806,10 @@ function consoPersonnes_(req) { var u = Auth.userFromToken(req.token); niveauCon
 function consoDestinataires_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var l = consoDestinatairesTous_(groupesNettoyes_(req.groupes), req.personnes, req.toute_division === true).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
-  return { destinataires: l };
+  // copies du soir (envoi automatique) : agents qui ont rapporté ce jour-là et leurs vis-à-vis de travail, d'après les rapports actuels
+  var date = Dates.isDate(req.date) ? req.date : Dates.today(), actives = parametre_('rapports.copie_agents') !== 'non', copies = [];
+  if (actives) { try { copies = Rapports.copiesListe(Rapports.synthese(chantiersActifs_(), rapportsLus_(), date), Store.table('Utilisateurs'), visavisCarte_(), l.map(function (x) { return x.email; })).map(function (x) { return { nom: Annuaire.nomAffichable(x.nom, x.email), email: x.email, role: x.roles.join(' + '), chantiers: x.chantiers }; }); } catch (e) { copies = []; } }
+  return { destinataires: l, copies: copies, copies_actives: actives, date: date };
 }
 function rapportsConsolideEnvoyer_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);

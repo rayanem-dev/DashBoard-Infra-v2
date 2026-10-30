@@ -390,20 +390,32 @@ var Rapports = (function () {
    * donnees = synthèse du jour ; utilisateurs = comptes ; carte = { uid: { vis_travail } } ; deja = adresses qui reçoivent déjà le consolidé complet (écartées).
    * Retourne [{ chantiers: [ids], emails: [adresses] }] : une entrée par ensemble de chantiers identique (le message est préparé une fois par ensemble).
    */
-  function copiesAgents(donnees, utilisateurs, carte, deja) {
-    var parEmail = {}, parUid = {}, ecart = {}, destin = {};
-    (utilisateurs || []).forEach(function (u) { var m = norm(u.email_contact || u.email); if (!m || String(u.actif) === '0' || u.actif === false) return; parUid[String(u.uid)] = m; parEmail[norm(u.email)] = { uid: String(u.uid), mail: m }; });
+  function calculerCopies(donnees, utilisateurs, carte, deja) {
+    var parEmail = {}, parUid = {}, ecart = {}, destin = {}, info = {};
+    (utilisateurs || []).forEach(function (u) { var m = norm(u.email_contact || u.email); if (!m || String(u.actif) === '0' || u.actif === false) return; parUid[String(u.uid)] = { mail: m, nom: String(u.nom || '') }; parEmail[norm(u.email)] = { uid: String(u.uid), mail: m, nom: String(u.nom || '') }; });
     (deja || []).forEach(function (m) { ecart[norm(m)] = 1; });
     ((donnees && donnees.chantiers) || []).forEach(function (c) {
       (c.rapports || []).forEach(function (r) {
         var a = parEmail[norm(r.auteur_email)]; if (!a) return;
-        var cibles = [a.mail], vis = carte && carte[a.uid] && carte[a.uid].vis_travail; if (vis && parUid[String(vis)]) cibles.push(parUid[String(vis)]);
-        cibles.forEach(function (m) { if (ecart[m]) return; (destin[m] = destin[m] || {})[c.id] = 1; });
+        var cibles = [{ m: a.mail, nom: a.nom, role: 'a établi un rapport' }], vis = carte && carte[a.uid] && carte[a.uid].vis_travail;
+        if (vis && parUid[String(vis)]) cibles.push({ m: parUid[String(vis)].mail, nom: parUid[String(vis)].nom, role: 'vis-à-vis de travail de ' + (r.auteur_nom || a.nom) });
+        cibles.forEach(function (x) {
+          if (ecart[x.m]) return; (destin[x.m] = destin[x.m] || {})[c.id] = c.nom || c.id;
+          var f = info[x.m] = info[x.m] || { nom: x.nom, roles: [] }; if (f.roles.indexOf(x.role) < 0) f.roles.push(x.role);
+        });
       });
     });
-    var groupes = {};
-    Object.keys(destin).forEach(function (m) { var ids = Object.keys(destin[m]).sort(), k = ids.join('|'); (groupes[k] = groupes[k] || { chantiers: ids, emails: [] }).emails.push(m); });
+    return { destin: destin, info: info };
+  }
+  function copiesAgents(donnees, utilisateurs, carte, deja) {
+    var d = calculerCopies(donnees, utilisateurs, carte, deja).destin, groupes = {};
+    Object.keys(d).forEach(function (m) { var ids = Object.keys(d[m]).sort(), k = ids.join('|'); (groupes[k] = groupes[k] || { chantiers: ids, emails: [] }).emails.push(m); });
     return Object.keys(groupes).sort().map(function (k) { groupes[k].emails.sort(); return groupes[k]; });
+  }
+  /** Même calcul, personne par personne (aperçu « Voir les destinataires ») : [{ email, nom, roles, chantiers: [noms] }]. */
+  function copiesListe(donnees, utilisateurs, carte, deja) {
+    var c = calculerCopies(donnees, utilisateurs, carte, deja);
+    return Object.keys(c.destin).sort().map(function (m) { return { email: m, nom: c.info[m].nom, roles: c.info[m].roles, chantiers: Object.keys(c.destin[m]).map(function (k) { return c.destin[m][k]; }) }; });
   }
   /** Tous les comptes actifs avec e-mail (SH, ACOSCO, GTP…) : [{ nom, email, role, service }]. Usage exceptionnel (envoi « toute la division »). */
   function tousLesComptes(utilisateurs) {
@@ -430,7 +442,7 @@ var Rapports = (function () {
     return out;
   }
 
-  return { copiesAgents: copiesAgents, statistiques: statistiques, tousLesComptes: tousLesComptes, texteLibreHtml: texteLibreHtml, boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
+  return { copiesListe: copiesListe, copiesAgents: copiesAgents, statistiques: statistiques, tousLesComptes: tousLesComptes, texteLibreHtml: texteLibreHtml, boitesDestinataires: boitesDestinataires, BOITES: BOITES, destinatairesDetail: destinatairesDetail, peutCorriger: peutCorriger, corriger: corriger, idsSup: idsSup, consolideMail: consolideMail, destinataires: destinataires, tableau: tableau, valider: valider, lignesEnTexte: lignesEnTexte, cleService: cleService, servicePareil: servicePareil, chantiersVisibles: chantiersVisibles, chantiersDepuisCpm: chantiersDepuisCpm, PHASES: PHASES, horsExecution: horsExecution, jusquA: jusquA, ouvert: ouvert, etiquette: etiquette, ouvrirChantier: ouvrirChantier, slugContrat: slugContrat, filtrer: filtrer, synthese: synthese, peutViser: peutViser, dansLaPortee: dansLaPortee, cle: cle, nettoyer: nettoyer };
 })();
 
 if (typeof module !== 'undefined') module.exports = Rapports;

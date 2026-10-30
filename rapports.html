@@ -601,14 +601,19 @@
   }
   $('b-liste-dest').addEventListener('click', function () {
     var z = $('liste-dest'), g = groupesCoches(); z.hidden = false; z.textContent = 'Chargement…';
-    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length && !$('toute-div').checked) { z.textContent = 'Cochez au moins un groupe ou une personne.'; return; }
-    Api.call('rapports_conso_destinataires', { groupes: g, personnes: personnesCochees(), toute_division: $('toute-div').checked }).then(function (r) {
+    Api.call('rapports_conso_destinataires', { groupes: g, personnes: personnesCochees(), toute_division: $('toute-div').checked, date: $('s-date').value }).then(function (r) {
       z.textContent = '';
-      z.appendChild(el('b', null, r.destinataires.length + ' destinataire(s) :'));
-      if (!r.destinataires.length) { z.appendChild(document.createTextNode(' aucun compte actif avec e-mail dans ces groupes.')); return; }
-      var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px;padding:0';
-      r.destinataires.forEach(function (d) { u.appendChild(el('li', null, d.nom + ' — ' + d.email + ' (' + d.role + (d.service ? ', ' + d.service : '') + ')')); });
-      z.appendChild(u);
+      z.appendChild(el('b', null, r.destinataires.length + ' destinataire(s) du consolidé complet :'));
+      if (!r.destinataires.length) z.appendChild(document.createTextNode(' aucun (cochez un groupe ou une personne).'));
+      else { var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px;padding:0'; r.destinataires.forEach(function (d) { u.appendChild(el('li', null, d.nom + ' — ' + d.email + ' (' + d.role + (d.service ? ', ' + d.service : '') + ')')); }); z.appendChild(u); }
+      var t = el('div'); t.style.marginTop = '10px';
+      if (!r.copies_actives) t.appendChild(el('b', null, 'Copies du soir aux agents : désactivées (réglage dans Paramètres).'));
+      else {
+        t.appendChild(el('b', null, (r.copies || []).length + ' copie(s) du soir, à l\'envoi automatique, aux agents qui ont rapporté le ' + fr(r.date) + ' et à leur vis-à-vis de travail :'));
+        if (!(r.copies || []).length) t.appendChild(document.createTextNode(' aucune pour l\'instant (aucun rapport ce jour-là, ou ils reçoivent déjà le consolidé complet). La liste se calcule avec les rapports au moment de l\'envoi.'));
+        else { var u2 = el('ul'); u2.style.cssText = 'margin:4px 0 0 18px;padding:0'; r.copies.forEach(function (d) { u2.appendChild(el('li', null, d.nom + ' — ' + d.email + ' (' + d.role + ') · ' + d.chantiers.join(', '))); }); t.appendChild(u2); }
+      }
+      z.appendChild(t);
     }).catch(function (e) { z.hidden = true; toast(e.message, true); });
   });
   $('b-envoyer').addEventListener('click', function () {

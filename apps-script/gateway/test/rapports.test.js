@@ -282,3 +282,11 @@ test('copies du soir : l\'agent qui a rapporté et son vis-à-vis de travail, li
   assert.deepStrictEqual(Rapports.copiesAgents(d, us, carte, ['a.perso@x.dz', 'b@x.dz', 'c@x.dz']), []);
   assert.deepStrictEqual(Rapports.copiesAgents({ chantiers: [] }, us, carte, []), []);
 });
+
+test('aperçu des copies du soir : personne par personne, avec la raison et les chantiers', () => {
+  const us = [{ uid: 'u1', nom: 'Amine K', email: 'a@x.dz' }, { uid: 'u2', nom: 'Sofia M', email: 'b@x.dz' }];
+  const d = { chantiers: [{ id: 'ch1', nom: 'Forage', rapports: [{ auteur_email: 'a@x.dz', auteur_nom: 'Amine K' }] }, { id: 'ch2', nom: 'Piscines', rapports: [{ auteur_email: 'a@x.dz', auteur_nom: 'Amine K' }] }] };
+  assert.deepStrictEqual(Rapports.copiesListe(d, us, { u1: { vis_travail: 'u2' } }, []), [
+    { email: 'a@x.dz', nom: 'Amine K', roles: ['a établi un rapport'], chantiers: ['Forage', 'Piscines'] },
+    { email: 'b@x.dz', nom: 'Sofia M', roles: ['vis-à-vis de travail de Amine K'], chantiers: ['Forage', 'Piscines'] }]);
+});
