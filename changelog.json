@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-30-253",
+    "date": "2026-10-30",
+    "title": "Version 6.30.0 — Prise en charge : documents du prestataire gardés, envoi au secrétariat et suppression",
+    "changes": [
+      "Un prestataire retrouve maintenant ses documents générés (prises en charge, autorisations, macarons) d'une session à l'autre : la liste est gardée par le serveur au lieu de disparaître au bout de quelques heures. Il peut les ouvrir, les imprimer, les envoyer au secrétariat (seul choix proposé) et les supprimer.",
+      "« Tout supprimer » fonctionne pour un prestataire : il supprime tous SES documents, jamais ceux des autres ni ceux de la division. Le personnel de la division garde le comportement actuel."
+    ]
+  },
+  {
     "id": "2026-10-30-252",
     "date": "2026-10-30",
     "title": "Version 6.29.3 — Saisir mon rapport : tous les chantiers au clic, ou on tape",
