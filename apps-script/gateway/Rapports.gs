@@ -256,7 +256,27 @@ var Rapports = (function () {
    * travaux, difficultés, commentaire, visa ; chantiers sans rapport ; pied avec auteur, date, version et signatures). Styles en ligne (tableaux) pour les messageries.
    * meta (facultatif) = { genere_par, genere_le }.
    */
-  function consolideMail(s, version, meta) {
+  /**
+   * Photos et vidéos d'un rapport dans le consolidé : opts.photo(id) → source de l'image (cid: pour l'e-mail, data: pour le PDF) ou '' ;
+   * opts.lien(id) → { url, jusqua } du lien temporaire d'une vidéo ou null. Sans opts : simple mention.
+   */
+  function mediasHtml(r, opts) {
+    var ms = r.medias || []; if (!ms.length) return '';
+    var photos = ms.filter(function (m) { return m.type !== 'video'; }), videos = ms.filter(function (m) { return m.type === 'video'; }), h = '', omises = 0;
+    if (photos.length) {
+      var imgs = '';
+      photos.forEach(function (m) { var src = opts && opts.photo ? opts.photo(m.id) : ''; if (src) imgs += '<img src="' + esc(src) + '" alt="Photo du chantier" width="230" style="width:230px;max-width:100%;height:auto;border:1px solid #999;margin:2px 6px 2px 0;vertical-align:top">'; else omises += 1; });
+      if (imgs) h += '<div style="margin:4px 0">' + imgs + '</div>';
+      if (omises) h += '<p style="margin:3px 0;font-size:11px;color:#555">🖼 ' + omises + ' photo' + (omises > 1 ? 's' : '') + (opts && opts.photo ? ' non jointe' + (omises > 1 ? 's' : '') + ' (limite de taille de l\'e-mail)' : ' jointe' + (omises > 1 ? 's' : '') + ' au rapport') + ' : à voir dans le portail (Rapports journaliers, Journal).</p>';
+    }
+    videos.forEach(function (m, i) {
+      var l = opts && opts.lien ? opts.lien(m.id) : null;
+      h += l ? '<p style="margin:3px 0">🎬 <a href="' + esc(l.url) + '">Voir la vidéo' + (videos.length > 1 ? ' ' + (i + 1) : '') + '</a> <span style="font-size:11px;color:#555">(lien valable jusqu\'au ' + esc(l.jusqua) + ')</span></p>'
+        : '<p style="margin:3px 0;font-size:11px;color:#555">🎬 Vidéo jointe au rapport : à voir dans le portail (Rapports journaliers, Journal).</p>';
+    });
+    return h;
+  }
+  function consolideMail(s, version, meta, opts) {
     var avec = s.chantiers.filter(function (c) { return c.rapports.length; }), sans = s.chantiers.filter(function (c) { return !c.rapports.length && !c.phase; });
     var eff = avec.reduce(function (n, c) { return n + (Number(c.effectif) || 0); }, 0);
     var B = 'border:1px solid #999', G = '#f2f2f2';
@@ -278,6 +298,7 @@ var Rapports = (function () {
           if (r.travaux && !(r.lignes && r.lignes.length && String(r.travaux).indexOf('• ') === 0)) h += texteLibreHtml(r.travaux, 'margin:3px 0');
           if (r.difficultes) h += '<p style="margin:3px 0;color:#8a1c1c"><b>Difficultés :</b> ' + esc(r.difficultes) + '</p>';
           if (r.commentaire) h += '<p style="margin:3px 0"><b>Commentaire :</b> ' + esc(r.commentaire) + '</p>';
+          h += mediasHtml(r, opts);
           if (r.visa_par) h += '<p style="margin:3px 0;font-style:italic;font-size:11px">Vu par ' + esc(r.visa_par) + (r.visa_note ? ' — ' + esc(r.visa_note) : '') + '</p>';
           h += '</td></tr>';
         });

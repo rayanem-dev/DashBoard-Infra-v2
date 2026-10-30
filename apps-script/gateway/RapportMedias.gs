@@ -43,7 +43,20 @@ var RapportMedias = (function () {
     Object.keys(ex).forEach(function (id) { if (!gardes.some(function (g) { return g.id === id; })) retires.push(id); });
     return { gardes: nettoyerListe(gardes), retires: retires };
   }
-  return { MAX_PAR_RAPPORT: MAX_PAR_RAPPORT, MAX_PHOTO: MAX_PHOTO, MAX_VIDEO: MAX_VIDEO, typeDe: typeDe, nettoyerListe: nettoyerListe, listeDe: listeDe, idsDemandes: idsDemandes, controleMorceau: controleMorceau, nomFichier: nomFichier, fusion: fusion };
+  /** Choix des médias pour l'e-mail du consolidé : photos dans l'ordre du consolidé tant que le total reste sous le budget (octets), vidéos en lien. { cid: { id: 'photoN' }, videos: [id], omises } */
+  function planifier(donnees, budget) {
+    var cid = {}, videos = [], omises = 0, total = 0, n = 0;
+    ((donnees && donnees.chantiers) || []).forEach(function (c) {
+      (c.rapports || []).forEach(function (r) {
+        listeDe(r.medias).forEach(function (m) {
+          if (m.type === 'video') { videos.push(m.id); return; }
+          if (total + m.taille <= budget && m.taille > 0) { total += m.taille; n += 1; cid[m.id] = 'photo' + n; } else omises += 1;
+        });
+      });
+    });
+    return { cid: cid, videos: videos, omises: omises, octets: total };
+  }
+  return { planifier: planifier, MAX_PAR_RAPPORT: MAX_PAR_RAPPORT, MAX_PHOTO: MAX_PHOTO, MAX_VIDEO: MAX_VIDEO, typeDe: typeDe, nettoyerListe: nettoyerListe, listeDe: listeDe, idsDemandes: idsDemandes, controleMorceau: controleMorceau, nomFichier: nomFichier, fusion: fusion };
 })();
 if (typeof module !== 'undefined') module.exports = RapportMedias;
 
@@ -104,4 +117,48 @@ function rapportMediaLire_(req) {
   if (!r) throw Object.assign(new Error('Média introuvable ou hors de votre périmètre'), { code: 'DROITS' });
   var m = r.medias.filter(function (x) { return x.id === id; })[0], f = DriveApp.getFileById(id), b = f.getBlob();
   return { type: m.type, mime: b.getContentType(), nom: m.nom, base64: Utilities.base64Encode(b.getBytes()) };
+}
+
+// ---------- médias dans le consolidé envoyé par e-mail ----------
+var MEDIAS_LIENS_ENTETES_ = ['id', 'expire_le', 'cree_par', 'cree_le'];
+function mediasLiensFeuille_() { return cpmFeuille_('MediasLiens', MEDIAS_LIENS_ENTETES_); }
+function mediasDateFr_(d) { return Utilities.formatDate(d, 'Africa/Algiers', 'dd/MM/yyyy'); }
+/** Retire le partage des vidéos dont le lien a expiré (le fichier redevient privé, la ligne est supprimée). Appelée chaque nuit et à chaque envoi. Retourne le nombre de liens fermés. */
+function mediasLiensRevoquer_() {
+  var sh = mediasLiensFeuille_(), v = sh.getDataRange().getValues(), now = new Date().toISOString(), n = 0;
+  for (var i = v.length - 1; i >= 1; i -= 1) {
+    if (!v[i][0] || String(v[i][1]) > now) continue;
+    try { DriveApp.getFileById(String(v[i][0])).setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE); } catch (e) { /* fichier supprimé : rien à fermer */ }
+    sh.deleteRow(i + 1); n += 1;
+  }
+  return n;
+}
+function mediasLiensTick() { try { mediasLiensRevoquer_(); } catch (e) { Logger.log('Liens vidéo : ' + e.message); } }
+function mediasLiensAssurerDeclencheur_() {
+  if (ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'mediasLiensTick'; })) return;
+  ScriptApp.newTrigger('mediasLiensTick').timeBased().everyDays(1).atHour(3).create();
+}
+/** Ouvre le lien d'une vidéo pour `jours` jours (« toute personne disposant du lien » peut la voir) ; le délai repart d'aujourd'hui si le lien existait. Retourne { url, jusqua } ou null si Drive refuse le partage. */
+function mediasLienTemporaire_(id, jours, parEmail) {
+  try {
+    var f = DriveApp.getFileById(id); if (f.isTrashed()) return null;
+    f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var fin = new Date(Date.now() + jours * 86400000), sh = mediasLiensFeuille_(), v = sh.getDataRange().getValues(), ligne = 0;
+    for (var i = 1; i < v.length; i += 1) if (String(v[i][0]) === id) { ligne = i + 1; break; }
+    var rng = ligne ? sh.getRange(ligne, 1, 1, 4) : sh.getRange(sh.getLastRow() + 1, 1, 1, 4); rng.setNumberFormat('@'); rng.setValues([[id, fin.toISOString(), parEmail, new Date().toISOString()]]);
+    mediasLiensAssurerDeclencheur_();
+    return { url: 'https://drive.google.com/file/d/' + id + '/view', jusqua: mediasDateFr_(fin) };
+  } catch (e) { Logger.log('Lien vidéo impossible : ' + e.message); return null; }
+}
+/** Prépare les médias d'un envoi : images (blobs pour l'e-mail, adresses data: pour le PDF) et liens temporaires. */
+function mediasPourMail_(donnees, parEmail) {
+  var budget = Math.round((parametreNombre_('rapports.photos_mo', 6) || 6) * 1024 * 1024), jours = Math.round(parametreNombre_('rapports.lien_video_jours', 7)) || 7;
+  var plan = RapportMedias.planifier(donnees, budget), blobs = {}, data = {}, liens = {};
+  try { mediasLiensRevoquer_(); } catch (e) { /* sans effet sur l'envoi */ }
+  Object.keys(plan.cid).forEach(function (id) {
+    try { var f = DriveApp.getFileById(id); if (f.isTrashed()) { delete plan.cid[id]; return; } var b = f.getBlob(); blobs[plan.cid[id]] = b.setName(plan.cid[id] + '.jpg'); data[id] = 'data:' + (b.getContentType() || 'image/jpeg') + ';base64,' + Utilities.base64Encode(b.getBytes()); }
+    catch (e) { delete plan.cid[id]; }
+  });
+  plan.videos.forEach(function (id) { var l = mediasLienTemporaire_(id, jours, parEmail); if (l) liens[id] = l; });
+  return { plan: plan, blobs: blobs, data: data, liens: liens };
 }

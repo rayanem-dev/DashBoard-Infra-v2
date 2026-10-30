@@ -34,3 +34,21 @@ test('enregistrement du rapport : anciens médias gardés ou retirés, nouveaux 
   assert.deepStrictEqual(f.gardes.map(m => m.id), [ID(2), ID(3)]); assert.deepStrictEqual(f.retires, [ID(1)]);
   assert.deepStrictEqual(M.fusion(JSON.stringify(ex), [], verifie).retires, [ID(1), ID(2)]);
 });
+
+const Rapports = require('../Rapports.gs');
+test('e-mail du consolidé : photos dans la limite du poids, vidéos en lien, ordre du consolidé', () => {
+  const ph = (i, t) => ({ id: ID(i), type: 'photo', nom: 'p' + i, taille: t }), vd = i => ({ id: ID(i), type: 'video', nom: 'v' + i, taille: 5e6 });
+  const d = { chantiers: [{ rapports: [{ medias: [ph(1, 300000), vd(2), ph(3, 300000)] }] }, { rapports: [{ medias: [ph(4, 500000)] }, {}] }] };
+  const p = M.planifier(d, 700000);
+  assert.deepStrictEqual(p.cid, { [ID(1)]: 'photo1', [ID(3)]: 'photo2' }); assert.deepStrictEqual(p.videos, [ID(2)]); assert.strictEqual(p.omises, 1); assert.strictEqual(p.octets, 600000);
+  assert.strictEqual(M.planifier(d, 0).omises, 3);
+});
+test('consolidé : images, mention des photos omises, lien temporaire des vidéos, jamais de média sans opts', () => {
+  const r = { id: 'r1', auteur_nom: 'X', effectif: 3, travaux: 'T', lignes: [], medias: [{ id: ID(1), type: 'photo' }, { id: ID(2), type: 'photo' }, { id: ID(3), type: 'video' }] };
+  const s = { date: '2026-10-30', chantiers: [{ id: 'a', nom: 'A', service: 'S', effectif: 3, avancement: 10, rapports: [r] }] };
+  const avec = Rapports.consolideMail(s, 1, {}, { photo: id => id === ID(1) ? 'cid:photo1' : '', lien: id => id === ID(3) ? { url: 'https://drive.google.com/file/d/' + ID(3) + '/view', jusqua: '06/11/2026' } : null }).html;
+  assert.ok(avec.includes('<img src="cid:photo1"')); assert.ok(avec.includes('1 photo non jointe')); assert.ok(avec.includes('>Voir la vidéo</a>') && avec.includes('valable jusqu\'au 06/11/2026'));
+  const sans = Rapports.consolideMail(s, 1, {}).html;
+  assert.ok(!sans.includes('<img') && !sans.includes('<a href') && sans.includes('2 photos jointes au rapport') && sans.includes('Vidéo jointe au rapport'));
+  assert.ok(!Rapports.consolideMail({ date: '2026-10-30', chantiers: [{ id: 'a', nom: 'A', service: 'S', effectif: 1, rapports: [{ id: 'r', effectif: 1, travaux: 'T', lignes: [] }] }] }, 1, {}).html.includes('🎬'));
+});

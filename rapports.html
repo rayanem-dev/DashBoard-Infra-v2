@@ -136,6 +136,7 @@
         <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé avec les groupes cochés (rien n'est envoyé)">👁 Voir les destinataires</button>
         <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux groupes cochés">✉ Envoyer maintenant</button>
       </div>
+      <p class="aide" style="margin:0 0 8px;font-size:12.5px">📎 Les photos des rapports sont jointes au message et au PDF (poids total réglable dans Paramètres) ; chaque vidéo est envoyée par un <b>lien temporaire</b> qui se ferme tout seul au bout de quelques jours.</p>
       <details id="pers" style="margin:0 0 10px"><summary style="cursor:pointer;font-size:13px;font-weight:700">＋ Choisir des personnes (en plus des boîtes) <span id="pers-n" class="aide"></span></summary><div id="pers-liste" class="aide" style="margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 14px">Chargement…</div></details>
       <div id="liste-dest" class="aide" style="margin:0 0 10px" hidden></div>
       <div class="barre" style="gap:8px">
@@ -265,14 +266,14 @@
   function enBase64(blob) {
     return new Promise(function (ok, ko) { var r = new FileReader(); r.onload = function () { ok(String(r.result).split(',')[1] || ''); }; r.onerror = function () { ko(new Error('Fichier illisible')); }; r.readAsDataURL(blob); });
   }
-  /** Photo réduite à 1600 px de large au plus (JPEG) : une photo de téléphone de 4 Mo tient alors en 200 à 400 Ko. */
+  /** Photo réduite à 1280 px au plus (JPEG) : une photo de téléphone de 4 Mo tient alors en 150 à 300 Ko (elles sont aussi jointes au consolidé envoyé par e-mail). */
   function reduirePhoto(f) {
     return new Promise(function (ok, ko) {
       var img = new Image(), u = URL.createObjectURL(f);
       img.onload = function () {
-        var k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+        var k = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
-        c.toBlob(function (b) { b ? ok(b) : ko(new Error('Photo illisible')); }, 'image/jpeg', 0.8);
+        c.toBlob(function (b) { b ? ok(b) : ko(new Error('Photo illisible')); }, 'image/jpeg', 0.75);
       };
       img.onerror = function () { URL.revokeObjectURL(u); ko(new Error('Photo illisible : ' + f.name)); }; img.src = u;
     });

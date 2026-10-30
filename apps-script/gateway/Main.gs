@@ -748,11 +748,15 @@ function consolideEnvoyerCore_(date, groupes, parEmail, personnes, toute) {
   var dest = consoDestinatairesTous_(groupes, personnes, toute).map(function (b) { return b.email; });
   if (!dest.length) throw new Error('Aucun destinataire : cochez au moins un groupe ou une personne.');
   var quand = ''; try { quand = Utilities.formatDate(new Date(cons.genere_le), 'Africa/Algiers', 'dd/MM/yyyy HH:mm'); } catch (e) { quand = ''; }
-  var m = Rapports.consolideMail(cons.donnees, cons.version, { genere_par: cons.genere_par, genere_le: quand }), pieces = [];
-  try { pieces.push(Utilities.newBlob('<html><head><meta charset="utf-8"></head><body>' + m.html + '</body></html>', 'text/html', 'consolide.html').getAs('application/pdf').setName('Rapport-consolide-' + date + '.pdf')); } catch (e) { /* le corps du message contient déjà tout le détail */ }
+  var meta = { genere_par: cons.genere_par, genere_le: quand }, pieces = [], mm = { plan: { cid: {} }, blobs: {}, data: {}, liens: {} };
+  try { mm = mediasPourMail_(cons.donnees, parEmail); } catch (e) { Logger.log('Médias du consolidé : ' + e.message); }   // sans l'autorisation Drive, le consolidé part sans images
+  var lien = function (id) { return mm.liens[id] || null; };
+  var m = Rapports.consolideMail(cons.donnees, cons.version, meta, { photo: function (id) { return mm.plan.cid[id] ? 'cid:' + mm.plan.cid[id] : ''; }, lien: lien });
+  try { var mp = Rapports.consolideMail(cons.donnees, cons.version, meta, { photo: function (id) { return mm.data[id] || ''; }, lien: lien });
+    pieces.push(Utilities.newBlob('<html><head><meta charset="utf-8"></head><body>' + mp.html + '</body></html>', 'text/html', 'consolide.html').getAs('application/pdf').setName('Rapport-consolide-' + date + '.pdf')); } catch (e) { /* le corps du message contient déjà tout le détail */ }
   if (toute) {   // toute la division : envoi par paquets de 50 en copie cachée (les adresses ne sont pas exposées entre destinataires)
-    for (var k = 0; k < dest.length; k += 50) MailApp.sendEmail({ to: parEmail, bcc: dest.slice(k, k + 50).join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, attachments: pieces });
-  } else MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, attachments: pieces });
+    for (var k = 0; k < dest.length; k += 50) MailApp.sendEmail({ to: parEmail, bcc: dest.slice(k, k + 50).join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, inlineImages: mm.blobs, attachments: pieces });
+  } else MailApp.sendEmail({ to: dest.join(','), name: 'Division Infrastructure RNS', subject: m.sujet, htmlBody: m.html, inlineImages: mm.blobs, attachments: pieces });
   Store.journal('consolide_envoye', parEmail, date + ' v' + cons.version + ' → ' + dest.length + ' destinataire(s)' + (toute ? ' [TOUTE LA DIVISION]' : ''));
   return { destinataires: dest.length, version: cons.version };
 }
