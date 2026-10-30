@@ -82,7 +82,7 @@
     <form class="form" id="f" autocomplete="off">
       <p class="aide" id="etabli" style="margin:0 0 4px">Rapport établi par : <b id="etabli-nom">…</b> <span id="etabli-qual"></span></p>
       <div class="deux">
-        <div class="champ"><label for="chantier-q">Chantier / prestataire <span class="aide" style="font-weight:400">(tapez une partie du nom ou de l'entreprise)</span></label><input id="chantier-q" type="text" list="l-chantiers" autocomplete="off" placeholder="Tapez pour chercher un chantier ou une entreprise…" style="width:100%;box-sizing:border-box"><datalist id="l-chantiers"></datalist><select id="chantier" hidden></select><p class="aide" id="chantier-info" style="margin:4px 0 0;color:#B42318"></p><button class="btn-s" type="button" id="b-hc" hidden style="margin-top:6px" title="Préparation avant le contrat ou levée des réserves après le contrat">＋ Chantier hors contrat</button></div>
+        <div class="champ"><label for="chantier-q">Chantier / prestataire <span class="aide" style="font-weight:400">(tapez une partie du nom ou de l'entreprise)</span></label><div style="position:relative"><input id="chantier-q" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="chantier-liste" placeholder="Touchez pour voir tous les chantiers, ou tapez pour chercher…" style="width:100%;box-sizing:border-box"><div id="chantier-liste" role="listbox" hidden style="position:absolute;left:0;right:0;top:100%;z-index:30;max-height:min(55vh,320px);overflow:auto;margin-top:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)"></div></div><select id="chantier" hidden></select><p class="aide" id="chantier-info" style="margin:4px 0 0;color:#B42318"></p><button class="btn-s" type="button" id="b-hc" hidden style="margin-top:6px" title="Préparation avant le contrat ou levée des réserves après le contrat">＋ Chantier hors contrat</button></div>
         <div class="champ"><label for="date">Date <span class="aide" style="font-weight:400">(jour même seulement)</span></label><input type="date" id="date"></div>
       </div>
       <div class="deux">
@@ -675,7 +675,6 @@
   // Choix du chantier / prestataire : saisie libre avec propositions ; la liste (nouveaux contrats, chantiers ouverts) se recharge seule
   function norme(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
   function synchroChantier() {
-    var dl = $('l-chantiers'); dl.textContent = ''; chantiers.forEach(function (c) { var o = document.createElement('option'); o.value = c.nom; dl.appendChild(o); });
     var o = $('chantier').selectedOptions[0]; if (document.activeElement !== $('chantier-q')) $('chantier-q').value = o ? o.textContent : '';
   }
   function choisirChantier() {
@@ -687,8 +686,37 @@
   }
   $('chantier-q').addEventListener('input', choisirChantier);
   $('chantier-q').addEventListener('change', choisirChantier);
-  $('chantier-q').addEventListener('focus', function () { rechargerChantiers(); this.select(); });
-  $('chantier-q').addEventListener('blur', function () { synchroChantier(); $('chantier-info').textContent = ''; });
+  // Liste des chantiers : un clic dans la zone montre TOUS les chantiers ; en tapant, la liste se réduit
+  var listeActive = -1;
+  function afficherListeChantiers(tout) {
+    var z = $('chantier-liste'), q = norme($('chantier-q').value), sel = $('chantier').value;
+    var l = tout || !q ? chantiers : chantiers.filter(function (c) { return norme(c.nom).indexOf(q) >= 0; });
+    z.textContent = ''; listeActive = -1;
+    l.forEach(function (c, i) {
+      var it = el('div', null, c.nom); it.setAttribute('role', 'option'); it.dataset.id = c.id;
+      it.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--border);' + (c.id === sel ? 'font-weight:800;background:rgba(232,93,4,.12);' : '');
+      it.addEventListener('mousedown', function (e) { e.preventDefault(); choisirDansListe(c); });
+      it.addEventListener('touchend', function (e) { e.preventDefault(); choisirDansListe(c); });
+      z.appendChild(it);
+    });
+    if (!l.length) { var v = el('div', null, 'Aucun chantier ne correspond.'); v.style.cssText = 'padding:10px 12px;font-size:13px;color:var(--text-muted)'; z.appendChild(v); }
+    z.hidden = false; $('chantier-q').setAttribute('aria-expanded', 'true');
+  }
+  function fermerListeChantiers() { $('chantier-liste').hidden = true; $('chantier-q').setAttribute('aria-expanded', 'false'); listeActive = -1; }
+  function choisirDansListe(c) {
+    if ($('chantier').value !== c.id) { $('chantier').value = c.id; $('chantier').dispatchEvent(new Event('change')); }
+    $('chantier-q').value = c.nom; $('chantier-info').textContent = ''; fermerListeChantiers();
+  }
+  $('chantier-q').addEventListener('focus', function () { rechargerChantiers().then(function () { if (document.activeElement === $('chantier-q') && !$('chantier-liste').hidden) afficherListeChantiers(norme($('chantier-q').value) === norme((($('chantier').selectedOptions[0] || {}).textContent) || '')); }); afficherListeChantiers(true); this.select(); });
+  $('chantier-q').addEventListener('click', function () { if ($('chantier-liste').hidden) afficherListeChantiers(true); });
+  $('chantier-q').addEventListener('input', function () { afficherListeChantiers(false); });
+  $('chantier-q').addEventListener('blur', function () { setTimeout(function () { fermerListeChantiers(); synchroChantier(); $('chantier-info').textContent = ''; }, 120); });
+  $('chantier-q').addEventListener('keydown', function (e) {
+    var items = $('chantier-liste').querySelectorAll('[role=option]');
+    if (e.key === 'Escape') { fermerListeChantiers(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if ($('chantier-liste').hidden) afficherListeChantiers(true); items = $('chantier-liste').querySelectorAll('[role=option]'); if (!items.length) return; listeActive = (listeActive + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; items.forEach(function (x, i) { x.style.outline = i === listeActive ? '2px solid var(--orange-main)' : ''; }); items[listeActive].scrollIntoView({ block: 'nearest' }); return; }
+    if (e.key === 'Enter' && listeActive >= 0 && items[listeActive]) { e.preventDefault(); var c = chantiers.filter(function (x) { return x.id === items[listeActive].dataset.id; })[0]; if (c) choisirDansListe(c); }
+  });
   var dernierRechargement = 0;
   function rechargerChantiers(force) {
     var maintenant = Date.now(); if (!force && maintenant - dernierRechargement < 20000) return Promise.resolve();
