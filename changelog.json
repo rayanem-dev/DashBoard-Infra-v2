@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-30-251",
+    "date": "2026-10-30",
+    "title": "Version 6.29.2 — Photos et vidéos visibles dans la Synthèse du jour et le consolidé imprimé",
+    "changes": [
+      "Synthèse du jour : chaque rapport avec médias affiche ses boutons « Photo » / « Vidéo », qui s'ouvrent dans la fenêtre de lecture.",
+      "Consolidé imprimé depuis le portail (« Imprimer le consolidé » et la liste des consolidés enregistrés) : les photos sont maintenant chargées puis imprimées sous leur rapport ; les vidéos sont mentionnées (le lien temporaire figure dans l'e-mail du consolidé)."
+    ]
+  },
+  {
     "id": "2026-10-30-250",
     "date": "2026-10-30",
     "title": "Version 6.29.1 — « Voir les destinataires » montre aussi les copies du soir",

@@ -35,6 +35,7 @@
     #feuille-conso .chan { border: 1px solid #999; margin-bottom: 7px; break-inside: avoid; } #feuille-conso .chan-t { display: flex; justify-content: space-between; background: #f2f2f2; padding: 3px 6px; border-bottom: 1px solid #999; }
     #feuille-conso .rap { padding: 4px 8px; border-top: 1px dashed #bbb; } #feuille-conso .rap:first-of-type { border-top: 0; } #feuille-conso .par { font-size: 8.5pt; color: #333; margin-bottom: 2px; }
     #feuille-conso ul { margin: 2px 0 2px 16px; padding: 0; } #feuille-conso p { margin: 2px 0; } #feuille-conso .diff { color: #8a1c1c; } #feuille-conso .visa { font-style: italic; font-size: 8.5pt; }
+    #feuille-conso .photos { margin: 3px 0; } #feuille-conso .photos img { width: 58mm; height: auto; max-height: 60mm; object-fit: cover; margin: 0 2mm 2mm 0; border: 1px solid #999; break-inside: avoid; vertical-align: top; } #feuille-conso .video { font-size: 8.5pt; color: #333; }
     #feuille-conso .sans { color: #8a1c1c; } #feuille-conso .pied-c { margin-top: 14px; break-inside: avoid; } #feuille-conso .sig { display: flex; justify-content: space-between; margin-top: 30px; font-weight: bold; font-size: 9pt; }
   }
 </style>
@@ -346,6 +347,12 @@
   }
   $('dm-fermer').addEventListener('click', function () { $('dlg-media').close(); });
   $('dlg-media').addEventListener('close', function () { $('dm-zone').textContent = ''; if (urlMedia) { URL.revokeObjectURL(urlMedia); urlMedia = ''; } });
+  function blocMedias(r) {
+    var bm = el('div', 'bloc'); bm.appendChild(el('b', null, 'Photos et vidéos'));
+    var lm = el('div'); lm.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:4px';
+    r.medias.forEach(function (m) { var b = el('button', 'btn-s', (m.type === 'video' ? '🎬 ' : '🖼 ') + (m.type === 'video' ? 'Vidéo' : 'Photo') + ' · ' + octets(m.taille)); b.type = 'button'; b.title = m.nom; b.addEventListener('click', function () { ouvrirMedia(m); }); lm.appendChild(b); });
+    bm.appendChild(lm); return bm;
+  }
   function fiche(r) {
     var f = el('div', 'fiche'); var h = el('header'); h.appendChild(el('h4', null, nomChantier(r.chantier)));
     h.appendChild(el('span', 'meta', Rotation.frDate(r.date) + ' · Établi par ' + (r.auteur_nom || r.auteur_email) + ' · effectif ' + r.effectif));
@@ -354,12 +361,7 @@
     if (r.lignes && r.lignes.length && /\S/.test(r.travaux) && r.travaux.indexOf('• ') !== 0) f.appendChild(ligne('Précisions', r.travaux));
     if (r.difficultes) f.appendChild(ligne('Difficultés', r.difficultes));
     if (r.commentaire) f.appendChild(ligne('Commentaire', r.commentaire));
-    if (r.medias && r.medias.length) {
-      var bm = el('div', 'bloc'); bm.appendChild(el('b', null, 'Photos et vidéos'));
-      var lm = el('div'); lm.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:4px';
-      r.medias.forEach(function (m) { var b = el('button', 'btn-s', (m.type === 'video' ? '🎬 ' : '🖼 ') + (m.type === 'video' ? 'Vidéo' : 'Photo') + ' · ' + octets(m.taille)); b.type = 'button'; b.title = m.nom; b.addEventListener('click', function () { ouvrirMedia(m); }); lm.appendChild(b); });
-      bm.appendChild(lm); f.appendChild(bm);
-    }
+    if (r.medias && r.medias.length) f.appendChild(blocMedias(r));
     if (r.corrige_par) f.appendChild(el('div', 'aide', '✎ Corrigé par ' + r.corrige_par + (r.corrige_le ? ' le ' + new Date(r.corrige_le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')));
     if (r.visa_par) f.appendChild(el('div', 'visa', 'Vu par ' + r.visa_par + (r.visa_note ? ' — ' + r.visa_note : '')));
     if (r.peut_corriger) {
@@ -503,7 +505,7 @@
         f.appendChild(h);
         if (c.rapports.length) {
           f.appendChild(el('div', 'meta', 'Effectif cumulé : ' + c.effectif + (c.avancement != null ? ' · Avancement : ' + c.avancement + ' %' : '')));
-          c.rapports.forEach(function (r) { f.appendChild(ligne(r.auteur_nom || r.auteur_email, (r.lignes && r.lignes.length ? r.lignes.map(function (l) { return '• ' + (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''); }).join('\n') + (r.travaux && r.travaux.indexOf('• ') !== 0 ? '\n' + r.travaux : '') : r.travaux) + (r.difficultes ? '\n⚠ ' + r.difficultes : '') + (r.commentaire ? '\n💬 ' + r.commentaire : ''))); });
+          c.rapports.forEach(function (r) { f.appendChild(ligne(r.auteur_nom || r.auteur_email, (r.lignes && r.lignes.length ? r.lignes.map(function (l) { return '• ' + (l.routine ? '[Routine] ' : '') + (l.zone ? l.zone + ' : ' : '') + (l.texte || '') + (l.avancement !== '' && l.avancement != null ? ' — ' + l.avancement + ' %' : ''); }).join('\n') + (r.travaux && r.travaux.indexOf('• ') !== 0 ? '\n' + r.travaux : '') : r.travaux) + (r.difficultes ? '\n⚠ ' + r.difficultes : '') + (r.commentaire ? '\n💬 ' + r.commentaire : ''))); if (r.medias && r.medias.length) f.appendChild(blocMedias(r)); });
         }
         z.appendChild(f);
       });
@@ -513,6 +515,18 @@
 
   // Rapport journalier CONSOLIDÉ : tous les chantiers d'un jour dans un seul document (impression en un clic)
   function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  /** Charge les photos d'une zone (balises img[data-media]) par la passerelle, 3 à la fois ; résout quand tout est chargé (ou en échec). */
+  function chargerImages(zone) {
+    var imgs = Array.prototype.slice.call(zone.querySelectorAll('img[data-media]')), i = 0;
+    function une() {
+      var im = imgs[i++]; if (!im) return Promise.resolve();
+      return Api.call('rapport_media_lire', { id: im.getAttribute('data-media') }).then(function (r) {
+        var bin = atob(r.base64), a = new Uint8Array(bin.length); for (var k = 0; k < bin.length; k += 1) a[k] = bin.charCodeAt(k);
+        return new Promise(function (ok) { im.onload = im.onerror = function () { ok(); }; im.src = URL.createObjectURL(new Blob([a], { type: r.mime })); });
+      }).catch(function () { im.alt = 'Photo indisponible'; }).then(une);
+    }
+    return Promise.all([une(), une(), une()]);
+  }
   function consolide(s, meta) {
     var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'], p = s.date.split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
     var dateLongue = JOURS[d.getUTCDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0];
@@ -533,6 +547,9 @@
           if (r.travaux && !(r.lignes && r.lignes.length && r.travaux.indexOf('• ') === 0)) { var dt = decouperTexte(r.travaux); h += dt.puces ? '<ul>' + dt.lignes.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '<p>' + dt.lignes.map(esc).join('<br>') + '</p>'; }
           if (r.difficultes) h += '<p class="diff"><b>Difficultés :</b> ' + esc(r.difficultes) + '</p>';
           if (r.commentaire) h += '<p><b>Commentaire :</b> ' + esc(r.commentaire) + '</p>';
+          var phs = (r.medias || []).filter(function (m) { return m.type !== 'video'; }), vds = (r.medias || []).filter(function (m) { return m.type === 'video'; });
+          if (phs.length) h += '<div class="photos">' + phs.map(function (m) { return '<img data-media="' + esc(m.id) + '" alt="Photo du chantier">'; }).join('') + '</div>';
+          if (vds.length) h += '<p class="video">🎬 ' + vds.length + ' vidéo' + (vds.length > 1 ? 's' : '') + ' jointe' + (vds.length > 1 ? 's' : '') + ' au rapport (à voir dans le portail ; l\'e-mail du consolidé contient un lien temporaire).</p>';
           if (r.visa_par) h += '<p class="visa">Vu par ' + esc(r.visa_par) + (r.visa_note ? ' — ' + esc(r.visa_note) : '') + '</p>';
           h += '</div>';
         });
@@ -550,7 +567,9 @@
   function fr(iso) { var p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
   function imprimer(c) {
     var f = $('feuille-conso'); f.innerHTML = '<table class="cadre"><thead><tr><td><div class="esp"></div></td></tr></thead><tfoot><tr><td><div class="esp"></div></td></tr></tfoot><tbody><tr><td>' + consolide(c.donnees, c) + '</td></tr></tbody></table>';
-    document.body.classList.add('imprime-conso'); window.print();
+    var go = function () { document.body.classList.add('imprime-conso'); window.print(); };
+    if (!f.querySelector('img[data-media]')) { go(); return; }
+    toast('Chargement des photos…'); chargerImages(f).then(go);
   }
   function etatConsolide() {
     var j = $('s-date').value, z = $('conso-etat');
