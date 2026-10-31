@@ -163,14 +163,18 @@
       });
       if (manque > 12) lst.appendChild(el('span', 'tb-f-rouge', '+ ' + (manque - 12) + ' autres')); m.appendChild(lst);
     }
-    var man = f.faites.filter(function (x) { return x.manuelle; }), ign = f.ignorees || [];
-    if ((man.length && f.peut_manuelle) || (ign.length && f.peut_ignorer)) {   // masquées de la liste : repliées et discrètes, seulement pour pouvoir annuler
-      var det = el('details', 'tb-f-masque'); det.appendChild(el('summary', null, 'Masquées (' + (man.length + ign.length) + ')'));
+    var gen = f.faites.filter(function (x) { return !x.manuelle; }), man = f.faites.filter(function (x) { return x.manuelle; }), ign = f.ignorees || [];
+    function rubrique(titre, n) { var d = el('details', 'tb-f-masque'); d.appendChild(el('summary', null, titre + ' (' + n + ')')); m.appendChild(d); return d; }   // repliées : la liste à éditer reste seule visible
+    if (f.faites.length) {
+      var de = rubrique('✅ Fiches éditées', f.faites.length);
+      gen.forEach(function (x) { var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-gris', '✅ ' + libelle(x)); p.title = libelle(x) + (x.entreprise ? ' · ' + x.entreprise : '') + ' — éditée avec le générateur'; l.appendChild(p); de.appendChild(l); });
       man.forEach(function (x) { var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-gris', '✋ ' + libelle(x)); p.title = 'Éditée à la main' + (x.par ? ' par ' + x.par : ''); l.appendChild(p);
-        if (f.peut_manuelle) l.appendChild(bouton('↩ Annuler', 'La fiche redevient « non générée »', function (b) { manuelle(x, false, b); })); det.appendChild(l); });
+        if (f.peut_manuelle) l.appendChild(bouton('↩ Annuler', 'La fiche redevient « non générée »', function (b) { manuelle(x, false, b); })); de.appendChild(l); });
+    }
+    if (ign.length) {
+      var di = rubrique('🚫 Ignorées ce mois', ign.length);
       ign.forEach(function (x) { var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-gris', '🚫 ' + libelle(x)); p.title = 'Ignorée' + (x.par ? ' par ' + x.par : '') + (x.motif ? ' — ' + x.motif : ''); l.appendChild(p);
-        if (f.peut_ignorer) l.appendChild(bouton('↩ Rétablir', 'Remettre cette fiche dans la liste à éditer', function (b) { ignorer(x, false, b); })); det.appendChild(l); });
-      m.appendChild(det);
+        if (f.peut_ignorer) l.appendChild(bouton('↩ Rétablir', 'Remettre cette fiche dans la liste à éditer', function (b) { ignorer(x, false, b); })); di.appendChild(l); });
     }
     m.appendChild(etat);
     corps.appendChild(m); c.appendChild(corps);

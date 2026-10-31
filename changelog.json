@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-31-269",
+    "date": "2026-10-31",
+    "title": "Version 6.40.2 — Fiches d'évaluation : la liste des fiches éditées",
+    "changes": [
+      "Carte « Fiches d'évaluation » : les fiches déjà éditées (générateur ou à la main) se retrouvent dans une rubrique repliée « Fiches éditées (n) » ; les ignorées sont dans « Ignorées ce mois (n) ». Seules les fiches non éditées restent affichées."
+    ]
+  },
+  {
     "id": "2026-10-31-268",
     "date": "2026-10-31",
     "title": "Version 6.40.1 — En-tête : « Portail »",
