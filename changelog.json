@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-31-272",
+    "date": "2026-10-31",
+    "title": "Version 6.41.2 — Carte des fiches : affichage compact",
+    "changes": [
+      "Carte « Fiches d'évaluation » : une ligne par fiche, sur deux colonnes si la place le permet ; boutons plus courts (Relancer, À la main, Ignorer, Rétablir) ; le commentaire « fiche annulée par … » est retiré (il reste dans l'infobulle, la fiche annulée est repérée par ↩)."
+    ]
+  },
+  {
     "id": "2026-10-31-271",
     "date": "2026-10-31",
     "title": "Version 6.41.1 — Rapport hebdomadaire : sans les dossiers non démarrés",
