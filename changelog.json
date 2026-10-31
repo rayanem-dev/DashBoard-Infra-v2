@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-31-275",
+    "date": "2026-10-31",
+    "title": "Version 6.42.2 — Immatriculations lues avec des tirets",
+    "changes": [
+      "Une immatriculation lue sur un scan s'écrit avec des tirets : 00164/216/30 devient 00164-216-30 (une année seule, comme 2022, reste telle quelle)."
+    ]
+  },
+  {
     "id": "2026-10-31-274",
     "date": "2026-10-31",
     "title": "Version 6.42.1 — Prise en charge : 4 lignes au départ, lecture du formulaire véhicules corrigée",
