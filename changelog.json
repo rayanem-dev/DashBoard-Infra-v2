@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-273",
+    "date": "2026-10-31",
+    "title": "Version 6.42.0 — Autorisation d'accès : lecture du formulaire véhicules",
+    "changes": [
+      "Le scan d'un « Formulaire de demande autorisation d'accès de véhicule » est lu en entier : nom, prénom, fonction, type de véhicule et immatriculation (ou année des engins) remplissent chaque ligne du tableau. Avant, le titre (« dessablage manuel ») et les types de véhicule (« Camion hino ») étaient pris pour des personnes.",
+      "Le n° de contrat écrit à la main (« I 54 /RNS/INFRA 2025 ») est reconnu et choisit le prestataire ; le tableau s'agrandit tout seul jusqu'à 40 personnes lues.",
+      "Limite connue : un PDF qui contient deux contrats (une page par contrat) est lu d'un seul bloc ; le contrat retenu est le premier."
+    ]
+  },
+  {
     "id": "2026-10-31-272",
     "date": "2026-10-31",
     "title": "Version 6.41.2 — Carte des fiches : affichage compact",

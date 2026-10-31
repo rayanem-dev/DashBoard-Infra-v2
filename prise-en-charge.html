@@ -818,9 +818,12 @@ window.google = { script: { run: (function () {
             return;
           }
           // Remplit le tableau du formulaire avec les personnes extraites
+          while (corps.querySelectorAll('tr').length < Math.min(res.personnes.length, MAX_LIGNES)) ajouterLigne();   // autant de lignes que de personnes lues
           const lignes = corps.querySelectorAll('tr');
           res.personnes.forEach((p, i) => {
             if (!lignes[i]) return;
+            if (p.typeVehicule && lignes[i].querySelector('[data-champ="typeVehicule"]')) lignes[i].querySelector('[data-champ="typeVehicule"]').value = String(p.typeVehicule).toUpperCase();
+            if (p.immatriculation && lignes[i].querySelector('[data-champ="immatriculation"]')) lignes[i].querySelector('[data-champ="immatriculation"]').value = String(p.immatriculation).toUpperCase();
             lignes[i].querySelector('[data-champ="nom"]').value = p.nom || '';
             lignes[i].querySelector('[data-champ="prenom"]').value = p.prenom || '';
             if (p.fonction) lignes[i].querySelector('[data-champ="fonction"]').value = p.fonction;
