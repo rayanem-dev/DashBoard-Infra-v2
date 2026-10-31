@@ -1,13 +1,5 @@
 [
   {
-    "id": "2026-10-31-268",
-    "date": "2026-10-31",
-    "title": "Version 6.40.1 — En-tête : « Portail »",
-    "changes": [
-      "Le titre de l'en-tête (accueil et connexion) devient « Portail – Division Infrastructure » au lieu de « Tableau de Bord – Division Infrastructure » (traduit en anglais et en arabe)."
-    ]
-  },
-  {
     "id": "2026-10-31-267",
     "date": "2026-10-31",
     "title": "Version 6.40.0 — Vis-à-vis : confirmation par la personne choisie",

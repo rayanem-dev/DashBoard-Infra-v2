@@ -180,7 +180,7 @@
     ['Statut', 'Status', 'الحالة'], ['Structure de la division, à jour avec BDDORGA : services, responsables, employeurs, téléphones.', 'Division structure, up to date with BDDORGA: departments, managers, employers, phones.', 'هيكل القسم محدَّث مع BDDORGA: المصالح، المسؤولون، المستخدِمون، الهواتف.'],
     ['Suivi CPM', 'CPM Tracking', 'متابعة CPM'], ['Suivi Chantier', 'Site Tracking', 'متابعة الورشة'], ['Supprimer', 'Delete', 'حذف'], ['Synthèse du jour', 'Summary of the day', 'ملخص اليوم'],
     ['Sécurité & Accès', 'Security & Access', 'الأمن والوصول'],
-    ['Portail – Division Infrastructure', 'Portal – Infrastructure Division', 'البوابة – قسم البنى التحتية'],
+    ['Tableau de Bord – Division Infrastructure', 'Dashboard – Infrastructure Division', 'لوحة القيادة – قسم البنى التحتية'],
     ['Tapez votre nom ou votre prénom, choisissez-vous, puis saisissez votre mot de passe.', 'Type your last or first name, select yourself, then enter your password.', 'اكتب لقبك أو اسمك، اختر نفسك، ثم أدخل كلمة المرور.'],
     ['Technicien', 'Technician', 'تقني'], ['Technicienne', 'Technician', 'تقنية'], ['Technicien · Travaux Entretien', 'Technician · Maintenance Works', 'تقني · أشغال الصيانة'], ['Technicienne · Travaux Entretien', 'Technician · Maintenance Works', 'تقنية · أشغال الصيانة'],
     ['Testez une modification de rotation sans rien enregistrer, mettez deux agents en vis-à-vis, puis émettez la demande à signer.', 'Test a rotation change without saving anything, pair two agents face-to-face, then issue the request to sign.', 'جرّب تعديل نظام التناوب دون تسجيل أي شيء، اجعل عونين في تقابل، ثم أصدر الطلب للتوقيع.'],
