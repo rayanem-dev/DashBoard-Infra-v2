@@ -70,6 +70,7 @@ function mediasDossierJour_(date) { return mediasDossier_(date, mediasDossier_(M
 function rapportMediaEnvoyer_(req) {
   var u = Auth.userFromToken(req.token), niv = niveauRapports_(u, 2);
   assurerColonnes_('Utilisateurs', ['chantiers_sup']); u = Auth.userFromToken(req.token);
+  if (!optionPermise_(u, 'rapports.medias')) throw Object.assign(new Error('Joindre des photos ou vidéos n\'est pas ouvert à votre rôle (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
   var date = String(req.date || ''), chantier = String(req.chantier || '').toLowerCase();
   if (date !== Dates.today()) throw new Error('Les photos et vidéos se joignent au rapport du jour');
   if (Rapports.chantiersVisibles(chantiersActifs_(), u, niv).map(function (c) { return c.id; }).indexOf(chantier) < 0) throw new Error('Chantier inconnu');

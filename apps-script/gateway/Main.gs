@@ -544,7 +544,7 @@ function rapportsChantiers_(req) {
     var connus = {}; hors.forEach(function (h) { connus[h.id] = 1; });
     tous.forEach(function (c) { if (!c.actif && c.phase && !connus[c.id] && !ouverts[c.id]) hors.push({ id: c.id, nom: c.nom, contrat: c.contrat, entreprise: c.entreprise, statut: 'Période terminée', phase: c.phase }); });
   }
-  return { chantiers: vis.map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service, phase: c.phase }; }), niveau: niv, peut_ouvrir: peut, peut_envoyer: role === 'secretariat' && niv >= 3, hors_contrat: hors };
+  return { chantiers: vis.map(function (c) { return { id: c.id, nom: Rapports.etiquette(c), service: c.service, phase: c.phase }; }), niveau: niv, peut_ouvrir: peut, peut_envoyer: niv >= 3 && optionPermise_(u, 'rapports.envoi_consolide'), peut_toute_division: niv >= 3 && optionPermise_(u, 'rapports.envoi_consolide') && optionPermise_(u, 'rapports.toute_division'), peut_medias: niv >= 2 && optionPermise_(u, 'rapports.medias'), hors_contrat: hors };
 }
 /** Ouvre (ou rouvre) un chantier hors contrat : préparation avant le contrat, levée des réserves après ; chef de division, secrétariat et chefs de service, sans validation. */
 function rapportChantierOuvrir_(req) {
@@ -599,6 +599,7 @@ function rapportsListe_(req) {
 /** Statistiques des rapports journaliers sur une période (page « Statistiques », onglet Rapports journaliers) : mêmes droits de lecture que la liste des rapports. */
 function statsRapportsLire_(req) {
   var u = Auth.userFromToken(req.token), niv = niveauRapports_(u, 1), auj = Dates.today();
+  if (!optionPermise_(u, 'stats.rapports')) throw Object.assign(new Error('Les statistiques des rapports ne sont pas ouvertes à votre rôle (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
   var du = Dates.isDate(req.du) ? req.du : Dates.addDays(auj, -29), au = Dates.isDate(req.au) ? req.au : auj;
   if (du > au) throw new Error('La période est à l\'envers');
   if (Dates.diffDays(du, au) > 400) throw new Error('Période trop longue (400 jours au plus)');
@@ -737,7 +738,7 @@ function groupesNettoyes_(g) { var o = {}; CONSOLIDE_GROUPES_.forEach(function (
 /** Génération, aperçu, envoi et réglage automatique du consolidé : réservés au rôle secrétariat (décision du propriétaire). */
 function niveauConsolide_(u) {
   var n = niveauRapports_(u, 3);
-  if (Droits.roleCanon(u.role) !== 'secretariat') throw Object.assign(new Error('L\'envoi du consolidé est réservé au secrétariat'), { code: 'DROITS' });
+  if (!optionPermise_(u, 'rapports.envoi_consolide')) throw Object.assign(new Error('L\'envoi du consolidé n\'est pas ouvert à votre rôle (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
   return n;
 }
 /** Envoie par e-mail le consolidé enregistré d'un jour aux groupes choisis. Jamais appelée sans clic, ni sans l'option automatique cochée. */
@@ -801,10 +802,12 @@ function consoDestinatairesTous_(groupes, personnes, toute) {
 function boitesParametrees_() {
   return { secretariat: parametreAdresses_('rapports.boites_secretariat'), chef_service: parametreAdresses_('rapports.boites_chef_service'), chef_division: parametreAdresses_('rapports.boites_chef_division') };
 }
+function toutDivisionPermise_(u) { if (!optionPermise_(u, 'rapports.toute_division')) throw Object.assign(new Error('L\'envoi à toute la division n\'est pas ouvert à votre rôle (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' }); }
 function consoPersonnes_(req) { var u = Auth.userFromToken(req.token); niveauConsolide_(u); return { personnes: consoPersonnesListe_() }; }
 /** Qui recevrait le consolidé avec les groupes cochés (aperçu, rien n'est envoyé). */
 function consoDestinataires_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
+  if (req.toute_division === true) toutDivisionPermise_(u);
   var l = consoDestinatairesTous_(groupesNettoyes_(req.groupes), req.personnes, req.toute_division === true).map(function (b) { return { nom: b.nom, email: b.email, role: b.libelle }; });
   // copies du soir (envoi automatique) : agents qui ont rapporté ce jour-là et leurs vis-à-vis de travail, d'après les rapports actuels
   var date = Dates.isDate(req.date) ? req.date : Dates.today(), actives = parametre_('rapports.copie_agents') !== 'non', copies = [];
@@ -814,6 +817,7 @@ function consoDestinataires_(req) {
 function rapportsConsolideEnvoyer_(req) {
   var u = Auth.userFromToken(req.token); niveauConsolide_(u);
   var date = String(req.date || ''); if (!Dates.isDate(date)) throw new Error('Date invalide');
+  if (req.toute_division === true) toutDivisionPermise_(u);
   return consolideEnvoyerCore_(date, groupesNettoyes_(req.groupes), u.email, req.personnes, req.toute_division === true);
 }
 // ----- Envoi automatique du soir (option cochée dans Rapports journaliers ; désactivée par défaut)

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-255",
+    "date": "2026-10-31",
+    "title": "Version 6.32.0 — Paramètres : options et niveaux d'accès par option",
+    "changes": [
+      "La page « Paramètres » (rubrique Admin, réservée au secrétariat) regroupe maintenant, par programme, les réglages ET des options avec leur niveau d'accès : un interrupteur « Activée / Désactivée » et, quand l'option s'y prête, le rôle minimum autorisé (ce rôle et ceux au-dessus). Un seul « Enregistrer » par option ; « Rétablir » revient aux valeurs d'origine ; la recherche trouve aussi les options.",
+      "Options branchées : envoyer le consolidé / envoi automatique (secrétariat par défaut), envoi à toute la division (secrétariat par défaut), joindre des photos et vidéos à un rapport, statistiques des rapports journaliers, et pour les prestataires : envoi de leurs documents au secrétariat et suppression de leurs documents. Une option ne donne jamais plus que le droit du module : elle le restreint ou le coupe ; les boutons correspondants disparaissent des pages quand l'option est refusée.",
+      "La carte « Paramètres » est rangée dans la rubrique Admin du menu."
+    ]
+  },
+  {
     "id": "2026-10-31-254",
     "date": "2026-10-31",
     "title": "Version 6.31.0 — Prise en charge et autorisation d'accès : choix en deux boutons, saisie plus automatique",

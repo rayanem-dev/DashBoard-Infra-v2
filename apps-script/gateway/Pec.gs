@@ -123,10 +123,12 @@ function pecGlobale_(nom) { var g = (typeof globalThis !== 'undefined') ? global
 function pecAppeler_(req) {
   var u = Auth.userFromToken(req.token), niveauModule = acces_(u)[PEC_MODULE_] || 0, def = PEC_APPELS_[String(req.fn)];
   if (!def) throw new Error('Action inconnue');
-  if (String(req.fn) === 'effacerToutWeb' && niveauModule >= 1 && badgesPortee_(u) !== null) return pecEffacerMesFichiers_(u);   // un prestataire supprime tous SES documents, pas ceux des autres
+  if (String(req.fn) === 'effacerToutWeb' && niveauModule >= 1 && badgesPortee_(u) !== null) { if (!optionActive_('pec.prestataire_suppression')) throw Object.assign(new Error('La suppression de documents n\'est pas activée pour les prestataires (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' }); return pecEffacerMesFichiers_(u); }   // un prestataire supprime tous SES documents, pas ceux des autres
   if (niveauModule < def.niveau) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
   var portee = badgesPortee_(u), args = Array.isArray(req.args) ? req.args : [];
   if (portee !== null && def.admin) throw Object.assign(new Error('Réservé au personnel de la division'), { code: 'DROITS' });
+  if (portee !== null && req.fn === 'envoyerFichierParMail' && !optionActive_('pec.prestataire_envoi')) throw Object.assign(new Error('L\'envoi au secrétariat n\'est pas activé pour les prestataires (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
+  if (portee !== null && req.fn === 'supprimerFichierGenere' && !optionActive_('pec.prestataire_suppression')) throw Object.assign(new Error('La suppression de documents n\'est pas activée pour les prestataires (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
   var f = def.moteur ? pecGlobale_(def.moteur) : pecGlobale_(def.global);
   if (typeof f !== 'function') throw new Error('Moteur de prise en charge indisponible');
   // limite « prestataire = ses contrats »
@@ -154,7 +156,7 @@ function pecAppeler_(req) {
   if (req.fn === 'obtenirOptionsFormulaire' && r && Droits.roleCanon(u.role) === 'guest') r.sans_organisme = true;   // invité (lecture seule) : pas d'ajout d'organisme
   // filtres de sortie pour un prestataire
   if (portee !== null && r) {
-    if (req.fn === 'obtenirOptionsFormulaire') { r = pecOptionsPourPortee_(r, portee); r.imputation_fixe = true; r.sans_organisme = true; }
+    if (req.fn === 'obtenirOptionsFormulaire') { r = pecOptionsPourPortee_(r, portee); r.imputation_fixe = true; r.sans_organisme = true; r.peut_envoi = optionActive_('pec.prestataire_envoi'); r.peut_suppression = optionActive_('pec.prestataire_suppression'); }
     else if (req.fn === 'rechercherPersonnes' && r.personnes) r.personnes = r.personnes.filter(function (p) { return badgesDansPortee_(portee, p.entreprise); });
     else if (req.fn === 'listerFichiersGeneres' && r.fichiers) { var mes = pecMesFichiers_(u); r.fichiers = r.fichiers.filter(function (x) { return mes.indexOf(x.id) !== -1; }); }
     else if (req.fn === 'soumettreFormulairePEC' && r.liens) pecRetenirFichiers_(u, pecIdsDeLiens_(r.liens));

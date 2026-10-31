@@ -16,7 +16,7 @@ test('placements voulus', () => {
   assert.strictEqual(r('Statistiques Sous-traitants – Avril 2026'), 'marches'); assert.strictEqual(r('Fiche d\'évaluation'), 'marches');
   assert.strictEqual(r('Simulation de planning'), 'personnel'); assert.strictEqual(r('Vidéos Formation SAP'), 'personnel');
   assert.strictEqual(r('Veste en Cuir – Personnel Actif RNS'), 'logistique'); assert.strictEqual(r('Repas à emporter'), 'logistique');
-  assert.strictEqual(r('Contrôle de l\'annuaire'), 'it'); assert.strictEqual(r('Documents administratifs'), 'admin');
+  assert.strictEqual(r('Contrôle de l\'annuaire'), 'it'); assert.strictEqual(r('Documents administratifs'), 'admin'); assert.strictEqual(r('Paramètres'), 'admin');
   assert.strictEqual(R.rubriqueDe({ titre: 'x', rubrique: 'it' }), 'it', 'la colonne du catalogue a la priorité');
 });
 test('regroupement : aucune carte perdue ni doublée, ordre des rubriques fixe, carte inconnue sous son module', () => {

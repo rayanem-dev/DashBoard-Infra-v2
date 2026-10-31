@@ -43,3 +43,29 @@ test('boîtes d\'envoi du consolidé : réglées dans Paramètres, sinon d\'orig
   const origine = Rapports.boitesDestinataires({ chef_service: true }).map(x => x.email), param = P.adresses(P.def('rapports.boites_chef_service').defaut).liste.map(x => x.email);
   assert.deepStrictEqual(param, origine);   // les valeurs d'origine de la page reproduisent exactement les anciennes boîtes
 });
+
+const Droits = require('../Droits.gs');
+test('options : interrupteur + rôle minimum (ce rôle et ceux au-dessus), valeurs d\'origine = ce qui existait', () => {
+  const ok = (l, id, role) => P.optionPermise(l, null, id, role, Droits.rang);
+  assert.strictEqual(ok([], 'rapports.envoi_consolide', 'secretariat'), true);
+  assert.strictEqual(ok([], 'rapports.envoi_consolide', 'chef_division'), false, 'avant : « secrétariat seulement »');
+  assert.strictEqual(ok([{ cle: 'option.rapports.envoi_consolide.role', valeur: 'chef_division' }], 'rapports.envoi_consolide', 'chef_division'), true);
+  assert.strictEqual(ok([{ cle: 'option.rapports.envoi_consolide.role', valeur: 'chef_division' }], 'rapports.envoi_consolide', 'chef_service'), false);
+  assert.strictEqual(ok([{ cle: 'option.rapports.envoi_consolide.role', valeur: 'chef_service' }], 'rapports.envoi_consolide', 'secretariat'), true, 'les rangs plus élevés passent aussi');
+  assert.strictEqual(ok([{ cle: 'option.rapports.envoi_consolide.actif', valeur: 'non' }], 'rapports.envoi_consolide', 'secretariat'), false, 'interrupteur coupé : personne');
+  assert.strictEqual(ok([], 'rapports.medias', 'prestataire'), true, 'sans restriction par défaut : le droit du module décide');
+  assert.strictEqual(ok([{ cle: 'option.rapports.medias.role', valeur: 'conducteur' }], 'rapports.medias', 'agent'), false);
+  assert.strictEqual(ok([{ cle: 'option.rapports.medias.role', valeur: 'conducteur' }], 'rapports.medias', 'ingenieur'), true);
+  assert.strictEqual(ok([], 'option.inconnue', 'secretariat'), false, 'option inconnue : refusée');
+});
+test('options : interrupteur seul (prestataire), actives par défaut, coupables', () => {
+  const ok = l => P.optionPermise(l, null, 'pec.prestataire_envoi', 'secretariat', () => 0);
+  assert.strictEqual(ok([]), true); assert.strictEqual(ok([{ cle: 'option.pec.prestataire_envoi.actif', valeur: 'non' }]), false);
+  assert.ok(!P.def('option.pec.prestataire_envoi.role'), 'pas de niveau pour une option visant une catégorie fixe');
+});
+test('options : les entrées de la page se regroupent par option, les rôles sont dans l\'ordre des rangs', () => {
+  const e = P.etat([], null).filter(x => x.option === 'rapports.toute_division');
+  assert.deepStrictEqual(e.map(x => x.champ).sort(), ['actif', 'role']); assert.strictEqual(e.find(x => x.champ === 'role').valeur, 'secretariat');
+  const rangs = P.ROLES.map(r => Droits.rang(r[0])); assert.deepStrictEqual(rangs, rangs.slice().sort((a, b) => a - b));
+  assert.strictEqual(P.valider(P.def('option.rapports.medias.role'), 'chef_atelier').valeur, 'chef_atelier'); assert.ok(P.valider(P.def('option.rapports.medias.role'), 'pirate').erreur);
+});

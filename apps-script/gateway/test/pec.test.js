@@ -33,13 +33,13 @@ test('aucun nom défini deux fois dans la passerelle (moteur, lecture, enquêtes
 });
 
 function monde(role, portee) {
-  const cache = {}, journal = [], appels = [], lignes = [['email', 'id', 'le']];
+  const cache = {}, journal = [], appels = [], lignes = [['email', 'id', 'le']], coupees = [];
   const feuille = {   // onglet « PecFichiers » en mémoire
     getDataRange: () => ({ getValues: () => lignes.map(l => l.slice()) }), getLastRow: () => lignes.length, deleteRow: n => { lignes.splice(n - 1, 1); },
     getRange: (l, c, nl) => ({ setNumberFormat() {}, setValues: v => v.forEach((r, i) => { lignes[l - 1 + i] = r.slice(); }) })
   };
   const ctx = {
-    cpmFeuille_: () => feuille,
+    cpmFeuille_: () => feuille, optionActive_: id => coupees.indexOf(id) < 0,
     console, Badges, Droits: require('../Droits.gs'),
     Auth: { userFromToken: () => ({ email: 'x@y.dz', uid: 'u1', role, portee }) },
     acces_: () => ({ logistique: 2 }),
@@ -57,7 +57,7 @@ function monde(role, portee) {
   const b = fs.readFileSync(path.join(__dirname, '..', 'Badges.gs'), 'utf8');
   vm.runInContext(b.slice(b.indexOf('/** Entreprises d\'un compte prestataire'), b.indexOf('function badgesDroit_')), ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Pec.gs'), 'utf8'), ctx);
-  return { ctx, journal, appels, appeler: (fn, args) => vm.runInContext('pecAppeler_(' + JSON.stringify({ token: 't', fn, args }) + ')', ctx) };
+  return { ctx, journal, appels, couper: id => coupees.push(id), appeler: (fn, args) => vm.runInContext('pecAppeler_(' + JSON.stringify({ token: 't', fn, args }) + ')', ctx) };
 }
 test('personnel de la division : options et résultats inchangés', () => {
   const m = monde('chef_service', '');
@@ -158,4 +158,19 @@ test('prestataire et invité : pas d\'ajout d\'organisme hors Suivi CPM (indicat
   assert.strictEqual(monde('prestataire', 'ETB Zatout Abdenacer').appeler('obtenirOptionsFormulaire', []).sans_organisme, true);
   assert.strictEqual(monde('guest', '').appeler('obtenirOptionsFormulaire', []).sans_organisme, true);
   assert.strictEqual(monde('chef_service', '').appeler('obtenirOptionsFormulaire', []).sans_organisme, undefined);
+});
+
+test('options du secrétariat : un prestataire n\'envoie plus / ne supprime plus quand elles sont coupées (le personnel de la division n\'est pas concerné)', () => {
+  const m = monde('prestataire', 'ETB Zatout Abdenacer');
+  m.appeler('soumettreFormulairePEC', [{ prestataire: '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement' }]);
+  const o = m.appeler('obtenirOptionsFormulaire', []); assert.strictEqual(o.peut_envoi, true); assert.strictEqual(o.peut_suppression, true);
+  m.couper('pec.prestataire_suppression');
+  assert.throws(() => m.appeler('supprimerFichierGenere', ['ABCDEFGHIJKL1234']), /suppression de documents n'est pas activée/);
+  assert.throws(() => m.appeler('effacerToutWeb', []), /suppression de documents n'est pas activée/);
+  assert.strictEqual(m.appeler('obtenirOptionsFormulaire', []).peut_suppression, false);
+  m.couper('pec.prestataire_envoi');
+  assert.throws(() => m.appeler('envoyerFichierParMail', ['ABCDEFGHIJKL1234']), /envoi au secrétariat n'est pas activé/);
+  assert.strictEqual(m.appeler('obtenirOptionsFormulaire', []).peut_envoi, false);
+  const p = monde('chef_service', ''); p.couper('pec.prestataire_suppression'); p.couper('pec.prestataire_envoi');
+  assert.strictEqual(p.appeler('supprimerFichierGenere', ['ABCDEFGHIJKL1234']).success, true); assert.strictEqual(p.appeler('effacerToutWeb', []).success, true);
 });

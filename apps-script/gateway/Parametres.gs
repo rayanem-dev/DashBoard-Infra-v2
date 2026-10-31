@@ -9,6 +9,22 @@ var Parametres = (function () {
   var BOITES_SERVICES = 'Service Travaux Entretien INFRA - RNS <service_travaux_entretien_infra.rns@sonatrach.dz>\nService Construction INFRA - RNS <infra_constr.rns@sonatrach.dz>\n' +
     'Service Électromécanique INFRA - RNS <infra_electromec.rns@sonatrach.dz>\nCPM INFRA RNS <rns.cpm_infra@sonatrach.dz>';
   var BOITES_DIVISION = 'Chef Division INFRA - RNS <cdd_infra.rns@sonatrach.dz>';
+  /** Rôles par ordre de rang (0 = le plus élevé), comme Droits.RANGS ; « guest » = tout le monde (aucune restriction de rôle en plus du droit du module). */
+  var ROLES = [['secretariat', 'Secrétariat'], ['chef_division', 'Chef de division'], ['cadre_sup', 'Cadre supérieur'], ['chef_service', 'Chef de service'], ['interim_chef_service', 'Chef de service (intérim)'], ['cpm', 'Cellule Passation de marché'],
+    ['ordonnateur', 'Ordonnateur'], ['chef_atelier', 'Chef d\'atelier'], ['ingenieur', 'Ingénieur'], ['dessinateur', 'Dessinateur'], ['conducteur', 'Conducteur des travaux'], ['agent', 'Agent'], ['stagiaire', 'Stagiaire'], ['prestataire', 'Prestataire'], ['guest', 'Tout le monde']];
+  /**
+   * Options à interrupteur et niveau d'accès : « actif » (oui / non) et, quand `role` est défini, le rôle MINIMUM (ce rôle et ceux au-dessus). Une option ne donne jamais plus que le droit du module concerné :
+   * elle peut le restreindre ou le couper ; seules les règles qui étaient écrites « secrétariat seulement » dans le code sont remplacées par le réglage (valeur d'origine = ce qui existait).
+   * role: null = interrupteur seul (l'option vise une catégorie fixe de comptes).
+   */
+  var OPTIONS = [
+    { id: 'rapports.envoi_consolide', groupe: 'Rapports journaliers', libelle: 'Générer l\'envoi, envoyer le consolidé et régler l\'envoi automatique', aide: 'Boutons « Envoyer maintenant », « Voir les destinataires », envoi automatique du soir et ses destinataires. Il faut aussi le niveau 3 sur le module Rapports.', role: 'secretariat' },
+    { id: 'rapports.toute_division', groupe: 'Rapports journaliers', libelle: 'Envoyer le consolidé à « toute la division » (exceptionnel)', aide: 'La case rouge qui regroupe tous les comptes actifs avec e-mail. Il faut aussi avoir l\'option précédente.', role: 'secretariat' },
+    { id: 'rapports.medias', groupe: 'Rapports journaliers', libelle: 'Joindre des photos et vidéos à un rapport', aide: 'Le bloc « Photos et vidéos » de « Saisir mon rapport ». Les médias déjà joints restent visibles par ceux qui lisent le rapport. Il faut aussi le niveau 2 sur le module Rapports.', role: 'guest' },
+    { id: 'stats.rapports', groupe: 'Statistiques', libelle: 'Voir les statistiques des rapports journaliers', aide: 'L\'onglet « Rapports journaliers » de la page Statistiques ; chacun ne voit que ce que ses droits sur les rapports lui montrent.', role: 'guest' },
+    { id: 'pec.prestataire_envoi', groupe: 'Prise en charge et autorisation d\'accès', libelle: 'Un prestataire peut envoyer ses documents au secrétariat', aide: 'Bouton « Envoyer par email » de la liste de ses documents générés (le secrétariat est son seul destinataire).', role: null },
+    { id: 'pec.prestataire_suppression', groupe: 'Prise en charge et autorisation d\'accès', libelle: 'Un prestataire peut supprimer ses documents', aide: 'Boutons 🗑 et « Tout supprimer » de la liste de ses documents (jamais ceux des autres).', role: null }
+  ];
   /** type : nombre (min, max, unite, pas), email, emails (une adresse par ligne, « Nom <adresse> » accepté), url. legacy = ancienne propriété de script. */
   var REGISTRE = [
     { id: 'rapports.boites_secretariat', groupe: 'Rapports journaliers', libelle: 'Boîtes du secrétariat (envoi du consolidé)', aide: 'Adresses cochées par « Secrétariat » dans Synthèse du jour. Une par ligne : adresse seule ou « Nom <adresse> ».', type: 'emails', defaut: BOITES_SECRETARIAT },
@@ -27,6 +43,10 @@ var Parametres = (function () {
     { id: 'benchmark.couverture', groupe: 'Benchmark des prix (Banchy)', libelle: 'Part minimale du marché couverte pour un verdict global', aide: 'Si les articles fiables couvrent moins que cette part du montant, le verdict global est refusé. À valider.', type: 'nombre', min: 0, max: 100, unite: '%', defaut: '50' },
     { id: 'portail.site_url', groupe: 'Portail', libelle: 'Adresse du portail (liens des e-mails)', aide: 'Utilisée dans les e-mails d\'invitation et de notification.', type: 'url', defaut: 'https://rayanem-dev.github.io/DashBoard-Infra-v2/', legacy: 'SITE_URL' }
   ];
+  OPTIONS.forEach(function (o) {
+    REGISTRE.push({ id: 'option.' + o.id + '.actif', groupe: o.groupe, libelle: o.libelle, aide: o.aide, type: 'choix', choix: ['oui', 'non'], defaut: 'oui', option: o.id, champ: 'actif', optionLibelle: o.libelle });
+    if (o.role) REGISTRE.push({ id: 'option.' + o.id + '.role', groupe: o.groupe, libelle: o.libelle, aide: o.aide, type: 'choix', choix: ROLES.map(function (r) { return r[0]; }), choixLibelles: ROLES.reduce(function (m, r) { m[r[0]] = r[1]; return m; }, {}), defaut: o.role, option: o.id, champ: 'role', optionLibelle: o.libelle });
+  });
   var MAX_ADRESSES = 30, EMAIL = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/;
   function def(id) { return REGISTRE.filter(function (d) { return d.id === id; })[0] || null; }
   /** « Nom <adresse> » ou adresse seule, une par ligne (virgules et points-virgules acceptés) → [{ nom, email }] ou { erreur }. */
@@ -66,11 +86,19 @@ var Parametres = (function () {
       var v = vals[d.id], source = 'defaut', valeur = d.defaut;
       if (v !== undefined && v !== '' || (v === '' && d.type === 'emails' && !d.defaut)) { valeur = v; source = 'parametres'; }
       else if (d.legacy && legacy) { var p = String(legacy(d.legacy) || '').trim(); if (p) { valeur = p; source = 'ancien'; } }
-      return { id: d.id, groupe: d.groupe, libelle: d.libelle, aide: d.aide, type: d.type, choix: d.choix, min: d.min, max: d.max, unite: d.unite || '', defaut: d.defaut, valeur: valeur, source: source };
+      return { id: d.id, groupe: d.groupe, libelle: d.libelle, aide: d.aide, type: d.type, choix: d.choix, choixLibelles: d.choixLibelles, option: d.option, champ: d.champ, min: d.min, max: d.max, unite: d.unite || '', defaut: d.defaut, valeur: valeur, source: source };
     });
   }
   function valeurDe(lignes, legacy, id) { var e = etat(lignes, legacy).filter(function (x) { return x.id === id; })[0]; return e ? e.valeur : ''; }
-  return { REGISTRE: REGISTRE, def: def, adresses: adresses, valider: valider, etat: etat, valeurDe: valeurDe, MAX_ADRESSES: MAX_ADRESSES };
+  /** Accès à une option : interrupteur sur « oui » et, si l'option a un niveau, rôle de la personne au moins aussi élevé que le rôle minimum. rangDe = Droits.rang. */
+  function optionPermise(lignes, legacy, id, role, rangDe) {
+    var e = etat(lignes, legacy).filter(function (x) { return x.option === id; }), actif = e.filter(function (x) { return x.champ === 'actif'; })[0], niv = e.filter(function (x) { return x.champ === 'role'; })[0];
+    if (!actif) return false;
+    if (actif.valeur === 'non') return false;
+    if (!niv) return true;
+    return rangDe(role) <= rangDe(niv.valeur);
+  }
+  return { ROLES: ROLES, OPTIONS: OPTIONS, optionPermise: optionPermise, REGISTRE: REGISTRE, def: def, adresses: adresses, valider: valider, etat: etat, valeurDe: valeurDe, MAX_ADRESSES: MAX_ADRESSES };
 })();
 if (typeof module !== 'undefined') module.exports = Parametres;
 
@@ -89,6 +117,16 @@ function parametre_(id) {
   return Parametres.valeurDe(lignes, parametresLegacy_, id);
 }
 /** Adresses d'un réglage de type « emails » : [{ nom, email }]. */
+/** L'option est-elle ouverte à cette personne ? (interrupteur + niveau d'accès réglés dans Paramètres ; valeurs d'origine si rien n'est enregistré.) Sans l'onglet : valeurs d'origine. */
+function optionPermise_(u, id) {
+  var lignes = []; try { lignes = parametresLignes_(); } catch (e) { lignes = []; }
+  return Parametres.optionPermise(lignes, parametresLegacy_, id, Droits.roleCanon(u.role), Droits.rang);
+}
+/** Interrupteur seul (options sans niveau : celles qui visent une catégorie fixe de comptes, ex. les prestataires). */
+function optionActive_(id) {
+  var lignes = []; try { lignes = parametresLignes_(); } catch (e) { lignes = []; }
+  return Parametres.optionPermise(lignes, parametresLegacy_, id, 'secretariat', function () { return 0; });
+}
 function parametreAdresses_(id) { var a = Parametres.adresses(parametre_(id)); return a.liste || []; }
 function parametreNombre_(id, repli) { var n = Number(String(parametre_(id)).replace(',', '.')); return isFinite(n) ? n : repli; }
 function parametresSecretariat_(req) {
