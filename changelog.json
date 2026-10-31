@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-31-278",
+    "date": "2026-10-31",
+    "title": "Version 6.43.0 — Nouvelle application : Inventaire",
+    "changes": [
+      "Inventaire (module Logistique, chefs de service et au-dessus) : importez le fichier global puis la liste des écarts (articles non trouvés) ; les positions se mettent à jour sans jamais perdre l'ancienne (historique de chaque article, annulation d'un changement).",
+      "Les positions écrites de deux façons (« ATELIER TRAVAUX NEUFS BASE DE VIE CENTRALE » / « ATELIER N°1 TRAVAUX NEUFS BASE DE VIE ») sont proposées à la fusion ; deux lieux numérotés différents (PISCINE 1 / PISCINE 2, RNH 03 / RNH 08) ne sont jamais fusionnés tout seuls. Les anciennes écritures sont retenues pour les prochains imports.",
+      "Statistiques : nombre d'articles et valeur par position, structure, imputation, état, marque, désignation, statut (trouvé / non trouvé), avec filtre ; export Excel (Inventaire, Historique, Positions) et sauvegarde.",
+      "Les données restent dans le navigateur de la personne (sauvegarde à télécharger)."
+    ]
+  },
+  {
     "id": "2026-10-31-277",
     "date": "2026-10-31",
     "title": "Version 6.42.4 — Moteur de lecture des PDF mis à jour",

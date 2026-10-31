@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventaire – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .inv { max-width: 1250px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .barre { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .inv input, .inv select { padding: 7px 9px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 13.5px; background: var(--surface); color: var(--text-dark); }
+  .btn-p { padding: 9px 15px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .btn-s { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-s.petit { padding: 3px 8px; font-size: 12px; border-radius: 8px; }
+  .btn-p:disabled, .btn-s:disabled { opacity: .5; cursor: default; }
+  .onglets { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .onglets button { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .onglets button.actif { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; border-color: transparent; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 12px 14px; }
+  .kpi b { display: block; font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums; } .kpi span { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+  table.res { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.res th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 6px; border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--surface); }
+  table.res td { padding: 5px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.res td.n, table.res th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .note { font-size: 12px; color: var(--text-muted); margin: 6px 0; } .vide { padding: 22px; text-align: center; color: var(--text-muted); }
+  .pastille { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: rgba(220,38,38,.12); color: #B91C1C; }
+  .ancienne { color: var(--text-muted); font-size: 12px; }
+  .carte { border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; }
+  .carte select { min-width: 280px; max-width: 100%; } .coche { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; } .coche input { width: auto; }
+  .carte .ligne { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  .barre-n { display: inline-block; height: 8px; border-radius: 4px; background: var(--orange-main); vertical-align: middle; }
+  dialog { border: 0; border-radius: 16px; padding: 18px; max-width: min(640px, 94vw); width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.3); background: var(--surface); color: var(--text-dark); }
+  dialog::backdrop { background: rgba(0,0,0,.45); } dialog h3 { margin: 0 0 10px; font-size: 16px; } dialog input { width: 100%; box-sizing: border-box; }
+  .histo { border-left: 3px solid var(--border); padding: 4px 0 4px 10px; margin: 8px 0; font-size: 13px; } .histo.annule { opacity: .55; text-decoration: line-through; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1F2937; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; max-width: 92vw; }
+  .toast.on { opacity: 1; } .alerte-l { background: rgba(245,158,11,.12); border: 1.5px solid #F59E0B; border-radius: 10px; padding: 8px 12px; font-size: 12.5px; margin-bottom: 12px; }
+  .defile { overflow: auto; max-height: 68vh; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">📦</div>
+    <div class="logo-text"><h1>Inventaire</h1><p>Positions des articles · historique · écarts</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="inv">
+  <div class="alerte-l">Les données de cette page sont gardées <b>dans ce navigateur</b> (rien n'est envoyé ailleurs). Pensez à la <b>sauvegarde</b> (onglet Exporter) avant de changer d'ordinateur ou d'effacer les données du navigateur.</div>
+  <div class="onglets" role="tablist" id="onglets">
+    <button type="button" data-v="articles" class="actif">📋 Articles</button><button type="button" data-v="importer">📥 Importer</button><button type="button" data-v="positions">📍 Positions</button>
+    <button type="button" data-v="stats">📊 Statistiques</button><button type="button" data-v="exporter">⬇ Exporter</button>
+  </div>
+  <div class="kpis" id="kpis"></div>
+
+  <section id="v-articles">
+    <div class="bloc"><div class="barre">
+      <input type="search" id="a-q" placeholder="Rechercher : n° d'inventaire, désignation, série, position…" style="flex:1;min-width:220px" aria-label="Rechercher">
+      <select id="a-pos" aria-label="Position"><option value="">Toutes les positions</option></select>
+      <select id="a-st" aria-label="Statut"><option value="">Tous les articles</option><option value="nt">Non trouvés (écarts)</option><option value="ok">Sans écart</option></select>
+    </div><p class="note" id="a-info"></p></div>
+    <div class="bloc"><div class="defile"><table class="res"><thead><tr><th>N° Inv</th><th>Désignation</th><th>Position</th><th>Ancienne position</th><th></th></tr></thead><tbody id="a-corps"></tbody></table></div>
+      <div class="barre" style="margin-top:8px"><button class="btn-s" id="a-plus" type="button" hidden>Afficher plus</button></div></div>
+  </section>
+
+  <section id="v-importer" hidden>
+    <div class="bloc"><h2>1. Choisir le fichier Excel</h2>
+      <div class="barre">
+        <input type="file" id="i-fichier" accept=".xlsx,.xls,.xlsm,.csv">
+        <select id="i-feuille" aria-label="Feuille" hidden></select>
+        <select id="i-mode" aria-label="Type d'import">
+          <option value="positions">Mettre à jour les positions (fichier global, nouvel inventaire)</option>
+          <option value="ecarts">Liste d'écarts : articles NON TROUVÉS</option>
+        </select>
+        <label id="i-an-l" hidden>Année <input type="number" id="i-an" value="2026" style="width:90px"></label>
+        <button class="btn-p" id="i-analyser" type="button" disabled>Analyser</button>
+      </div>
+      <p class="note">Colonnes reconnues : N° Inv, Code SH, Désignation, Marque, Type, N° Série, Position, Structure, Imputation, État, Indice, Valeur. Rien n'est modifié avant le bouton « Appliquer ».</p>
+    </div>
+    <div class="bloc" id="i-plan" hidden></div>
+  </section>
+
+  <section id="v-positions" hidden>
+    <div class="bloc"><h2>Positions qui se ressemblent <span id="p-nsug"></span></h2>
+      <p class="note">Une position écrite de deux façons ? Fusionnez-les : les articles suivent, l'ancienne écriture est gardée (elle sera reconnue aux prochains imports) et chaque article garde la trace dans son historique.</p>
+      <div id="p-sug"></div></div>
+    <div class="bloc"><h2>Toutes les positions</h2>
+      <div class="barre" style="margin-bottom:8px"><input type="search" id="p-q" placeholder="Filtrer les positions…" style="flex:1;min-width:200px" aria-label="Filtrer"><button class="btn-s" id="p-fus" type="button" disabled>🔗 Fusionner la sélection</button></div>
+      <div class="defile"><table class="res"><thead><tr><th style="width:28px"></th><th>Position</th><th class="n">Articles</th><th>Autres écritures déjà vues</th><th></th></tr></thead><tbody id="p-corps"></tbody></table></div></div>
+  </section>
+
+  <section id="v-stats" hidden>
+    <div class="bloc"><div class="barre">
+      <label>Regrouper par <select id="s-champ"></select></label>
+      <label class="coche"><input type="checkbox" id="s-nt"> seulement les non trouvés</label>
+      <input type="search" id="s-q" placeholder="Filtrer les lignes…" style="flex:1;min-width:160px" aria-label="Filtrer">
+      <button class="btn-s" id="s-xl" type="button">⬇ Excel de ce tableau</button>
+    </div><p class="note" id="s-info"></p></div>
+    <div class="bloc"><div class="defile"><table class="res"><thead><tr><th id="s-th">Position</th><th class="n">Articles</th><th>Part</th><th class="n">Valeur (DA)</th></tr></thead><tbody id="s-corps"></tbody></table></div></div>
+  </section>
+
+  <section id="v-exporter" hidden>
+    <div class="bloc"><h2>Excel</h2>
+      <p class="note">Trois feuilles : <b>Inventaire</b> (position actuelle, ancienne position, date du dernier changement), <b>Historique</b> (tous les changements) et <b>Positions</b> (effectif de chaque position et ses autres écritures).</p>
+      <button class="btn-p" id="e-xl" type="button">⬇ Exporter en Excel</button></div>
+    <div class="bloc"><h2>Sauvegarde</h2>
+      <p class="note">Fichier de sauvegarde complet (articles, positions, historique). À garder : il permet de tout retrouver sur un autre ordinateur.</p>
+      <div class="barre"><button class="btn-s" id="e-json" type="button">💾 Télécharger la sauvegarde</button><button class="btn-s" id="e-rest" type="button">📂 Restaurer une sauvegarde</button><input type="file" id="e-fic" accept=".json,application/json" hidden>
+        <button class="btn-s" id="e-eff" type="button" style="margin-inline-start:auto;color:#B91C1C">🗑 Tout effacer</button></div></div>
+  </section>
+</main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status"></div>
+<script src="js/inventaire-moteur.js"></script>
+<script>
+(function () {
+  'use strict';
+  var M = window.InventaireMoteur, CLE = 'infra_inventaire_v1', CLE_IGN = 'infra_inventaire_ignorees', CDN_XLSX = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  var etat = M.nouvelEtat(), ignorees = {}, vue = 'articles', filtreArt = { q: '', pos: '', st: '' }, limite = 150, classeur = null, lignesFeuille = null;
+  function $(id) { return document.getElementById(id); }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function nf(n) { return Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove('on'); }, 3800); }
+  function charger() {
+    try { var s = localStorage.getItem(CLE); if (s) { var o = JSON.parse(s); if (o && o.articles) etat = o; } } catch (e) { /* stockage indisponible */ }
+    try { ignorees = JSON.parse(localStorage.getItem(CLE_IGN) || '{}'); } catch (e) { ignorees = {}; }
+  }
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify(etat)); localStorage.setItem(CLE_IGN, JSON.stringify(ignorees)); } catch (e) { toast('⚠ Enregistrement impossible dans ce navigateur : téléchargez la sauvegarde (onglet Exporter).'); } }
+  function valider(nouvel, message) { etat = nouvel; sauver(); rendre(); if (message) toast(message); }
+  function script(src) { return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { ko(new Error('Chargement impossible : ' + src)); }; document.head.appendChild(s); }); }
+  function telecharger(blob, nom) { var a = el('a'); a.href = URL.createObjectURL(blob); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  function aujourdhui() { return new Date().toISOString().slice(0, 10); }
+  function ancienne() { var d = {}; etat.historique.forEach(function (h) { if (h.de && !h.annule) d[M.invCle(h.inv)] = h; }); return d; }
+
+  /* ---------- fenêtres ---------- */
+  function fenetre(titre, corps, boutons) {
+    var d = $('dlg'); d.textContent = ''; d.appendChild(el('h3', null, titre)); d.appendChild(corps);
+    var b = el('div', 'barre'); b.style.marginTop = '12px'; (boutons || []).forEach(function (x) { var k = el('button', x.p ? 'btn-p' : 'btn-s', x.t); k.type = 'button'; k.addEventListener('click', function () { if (x.f && x.f() === false) return; d.close(); }); b.appendChild(k); });
+    d.appendChild(b); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  }
+  function listePositions() { var dl = $('dl-pos'); if (!dl) { dl = el('datalist'); dl.id = 'dl-pos'; document.body.appendChild(dl); } dl.textContent = ''; Object.keys(etat.positions).sort().forEach(function (n) { var o = el('option'); o.value = n; dl.appendChild(o); }); }
+
+  /* ---------- en-tête chiffres ---------- */
+  function kpis() {
+    var r = M.resume(etat), z = $('kpis'); z.textContent = '';
+    [['Articles', nf(r.articles)], ['Positions', nf(r.positions)], ['Non trouvés', nf(r.nonTrouves)], ['Valeur totale (DA)', nf(r.valeur)], ['Lignes d\'historique', nf(r.historique)]].forEach(function (k) { var d = el('div', 'kpi'); d.appendChild(el('span', null, k[0])); d.appendChild(el('b', null, k[1])); z.appendChild(d); });
+  }
+
+  /* ---------- articles ---------- */
+  function filtrer() {
+    var q = M.cle(filtreArt.q), anc = ancienne();
+    return Object.keys(etat.articles).sort().map(function (k) { return etat.articles[k]; }).filter(function (a) {
+      if (filtreArt.pos && a.position !== filtreArt.pos) return false;
+      var nt = Object.keys(a.nonTrouve || {}).length > 0;
+      if (filtreArt.st === 'nt' && !nt) return false; if (filtreArt.st === 'ok' && nt) return false;
+      if (q && M.cle([a.inv, a.designation, a.serie, a.codeSh, a.position, a.marque, a.type].join(' ')).indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+  function articles() {
+    var s = $('a-pos'), v = filtreArt.pos; s.textContent = ''; var o0 = el('option', null, 'Toutes les positions'); o0.value = ''; s.appendChild(o0);
+    var eff = M.effectifs(etat); Object.keys(etat.positions).sort().forEach(function (n) { var o = el('option', null, n + ' (' + (eff[n] || 0) + ')'); o.value = n; s.appendChild(o); }); s.value = v;
+    var liste = filtrer(), anc = ancienne(), c = $('a-corps'); c.textContent = '';
+    $('a-info').textContent = liste.length + ' article' + (liste.length > 1 ? 's' : '') + (filtreArt.pos ? ' dans « ' + filtreArt.pos + ' »' : '');
+    if (!liste.length) { var tr = el('tr'), td = el('td', 'vide', Object.keys(etat.articles).length ? 'Aucun article ne correspond.' : 'Aucun article : commencez par importer le fichier global (onglet Importer).'); td.colSpan = 5; tr.appendChild(td); c.appendChild(tr); $('a-plus').hidden = true; return; }
+    liste.slice(0, limite).forEach(function (a) {
+      var tr = el('tr'), nt = Object.keys(a.nonTrouve || {});
+      var d = el('td'); d.appendChild(el('b', null, a.inv)); if (a.serie) d.appendChild(el('div', 'ancienne', 'S/N ' + a.serie)); tr.appendChild(d);
+      var d2 = el('td', null, a.designation); if (a.marque || a.type) d2.appendChild(el('div', 'ancienne', [a.marque, a.type].filter(Boolean).join(' · '))); tr.appendChild(d2);
+      var d3 = el('td', null, a.position || '—'); if (nt.length) { d3.appendChild(document.createTextNode(' ')); d3.appendChild(el('span', 'pastille', 'non trouvé ' + nt.join(', '))); } tr.appendChild(d3);
+      var h = anc[M.invCle(a.inv)]; tr.appendChild(el('td', 'ancienne', h ? h.de + ' (' + String(h.date).slice(0, 10) + ')' : ''));
+      var ac = el('td'); ac.style.whiteSpace = 'nowrap';
+      var b1 = el('button', 'btn-s petit', '📍 Position'); b1.type = 'button'; b1.addEventListener('click', function () { dialogPosition(a, false); }); ac.appendChild(b1); ac.appendChild(document.createTextNode(' '));
+      var b2 = el('button', 'btn-s petit', '📜 Historique'); b2.type = 'button'; b2.addEventListener('click', function () { dialogHistorique(a); }); ac.appendChild(b2);
+      if (nt.length) { ac.appendChild(document.createTextNode(' ')); var b3 = el('button', 'btn-s petit', '✅ Trouvé'); b3.type = 'button'; b3.addEventListener('click', function () { dialogPosition(a, true); }); ac.appendChild(b3); }
+      tr.appendChild(ac); c.appendChild(tr);
+    });
+    $('a-plus').hidden = liste.length <= limite;
+  }
+  function dialogPosition(a, trouve) {
+    listePositions(); var c = el('div'), p = el('input'), m = el('input'); p.setAttribute('list', 'dl-pos'); p.value = trouve ? '' : a.position; p.placeholder = 'Position (choisir ou écrire)'; m.placeholder = 'Motif (facultatif) : ex. trouvé au hangar, erreur de saisie…'; m.style.marginTop = '8px';
+    c.appendChild(el('p', null, a.inv + ' — ' + a.designation)); c.appendChild(el('p', 'note', 'Position actuelle : ' + (a.position || '—') + '. L\'ancienne position est gardée dans l\'historique.')); c.appendChild(p); c.appendChild(m);
+    fenetre(trouve ? '✅ Article trouvé : où ?' : '📍 Changer la position', c, [{ t: 'Annuler' }, { t: 'Enregistrer', p: 1, f: function () {
+      var v = p.value.trim(); if (!v) { toast('Indiquez la position.'); return false; }
+      try {
+        var an = Object.keys(a.nonTrouve || {})[0], e = trouve ? M.marquerTrouve(etat, a.inv, v, an, new Date().toISOString()) : M.deplacer(etat, a.inv, v, m.value, new Date().toISOString());
+        if (trouve && m.value) e = M.deplacer(e, a.inv, e.articles[M.invCle(a.inv)].position, m.value, new Date().toISOString());
+        valider(e, trouve ? 'Article marqué trouvé.' : 'Position enregistrée.');
+      } catch (er) { toast(er.message); return false; }
+    } }]);
+    setTimeout(function () { p.focus(); }, 50);
+  }
+  function dialogHistorique(a) {
+    var c = el('div'), l = etat.historique.filter(function (h) { return M.invCle(h.inv) === M.invCle(a.inv); });
+    c.appendChild(el('p', null, a.inv + ' — ' + a.designation + ' · position actuelle : ' + (a.position || '—')));
+    var dernier = null; l.forEach(function (h) { if (!h.annule && h.vers === a.position) dernier = h; });
+    l.slice().reverse().forEach(function (h) {
+      var d = el('div', 'histo' + (h.annule ? ' annule' : '')); d.appendChild(el('div', null, String(h.date).slice(0, 10) + ' · ' + (h.de ? '« ' + h.de + ' » → ' : '') + '« ' + h.vers + ' »'));
+      d.appendChild(el('div', 'ancienne', h.source + (h.motif ? ' — ' + h.motif : '')));
+      if (h === dernier && h.de && !h.annule) { var b = el('button', 'btn-s petit', '↩ Annuler ce changement'); b.type = 'button'; b.addEventListener('click', function () { try { valider(M.annuler(etat, h.id, new Date().toISOString()), 'Changement annulé : ancienne position rétablie.'); $('dlg').close(); } catch (er) { toast(er.message); } }); d.appendChild(b); }
+      c.appendChild(d);
+    });
+    fenetre('📜 Historique', c, [{ t: 'Fermer' }]);
+  }
+
+  /* ---------- import ---------- */
+  function planImport() {
+    var z = $('i-plan'); z.textContent = ''; z.hidden = false;
+    var mode = $('i-mode').value, annee = Number($('i-an').value) || new Date().getFullYear(), lec = M.lireFeuille(lignesFeuille);
+    if (lec.erreur) { z.appendChild(el('p', 'note', '⚠ ' + lec.erreur)); return; }
+    var plan = M.analyserImport(etat, lec.articles), choix = {};
+    z.appendChild(el('h2', null, '2. Vérifier puis appliquer'));
+    var resume = lec.articles.length + ' ligne(s) lue(s) : ' + plan.nouveaux.length + ' nouvel(s) article(s)' + (mode === 'positions' ? ', ' + plan.changements.length + ' position(s) à mettre à jour, ' + plan.identiques + ' identique(s)' : ' ; ces articles seront marqués « non trouvés ' + annee + ' » (leur position n\'est pas modifiée)') + '.';
+    z.appendChild(el('p', null, resume));
+    if (mode === 'positions' && plan.changements.length) {
+      var det = el('details'); det.appendChild(el('summary', null, 'Voir les ' + plan.changements.length + ' changement(s) de position (l\'ancienne sera gardée dans l\'historique)'));
+      plan.changements.slice(0, 200).forEach(function (c) { det.appendChild(el('div', 'note', c.inv + ' : « ' + c.de + ' » → « ' + c.vers + ' »')); }); z.appendChild(det);
+    }
+    var aDemander = plan.positionsAConfirmer.filter(function (p) { return p.proche; }), seules = plan.positionsAConfirmer.length - aDemander.length;
+    if (seules) z.appendChild(el('p', 'note', seules + ' position(s) sans équivalent connu seront créées telles quelles (l\'onglet Positions proposera ensuite les fusions éventuelles).'));
+    if (aDemander.length) {
+      z.appendChild(el('h2', null, aDemander.length + ' position(s) ressemblent à une position connue : à confirmer')); z.appendChild(el('p', 'note', 'Si c\'est le même lieu écrit autrement, gardez « Même lieu » : les articles seront rangés au même endroit et l\'écriture sera retenue pour la prochaine fois. Sinon choisissez « Nouvelle position ».'));
+      listePositions();
+      aDemander.forEach(function (p) {
+        var k = M.cle(p.texte), card = el('div', 'carte'); card.appendChild(el('b', null, p.texte)); card.appendChild(el('span', 'ancienne', '  · ' + p.n + ' article' + (p.n > 1 ? 's' : '')));
+        var ligne = el('div', 'ligne'), sel = el('select'), saisie = el('input'); saisie.setAttribute('list', 'dl-pos'); saisie.style.width = '320px'; saisie.hidden = true;
+        [['nouvelle', '➕ Nouvelle position (telle quelle)']].concat(p.proche ? [['proche', '🔗 Même lieu que « ' + p.proche.nom + ' » (' + Math.round(p.proche.score * 100) + ' %)']] : []).concat([['autre', '🔗 Autre position existante…'], ['corriger', '✏️ Corriger le nom…']]).forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); });
+        sel.value = p.proche && p.proche.score >= 0.9 ? 'proche' : 'nouvelle'; choix[k] = { sel: sel, saisie: saisie, texte: p.texte, proche: p.proche };
+        sel.addEventListener('change', function () { saisie.hidden = !(sel.value === 'autre' || sel.value === 'corriger'); saisie.value = sel.value === 'corriger' ? p.texte : ''; if (!saisie.hidden) saisie.focus(); });
+        ligne.appendChild(sel); ligne.appendChild(saisie); card.appendChild(ligne); z.appendChild(card);
+      });
+    }
+    var b = el('button', 'btn-p', '✔ Appliquer l\'import'); b.type = 'button'; b.style.marginTop = '8px';
+    b.addEventListener('click', function () {
+      var res = {}, ok = true;
+      Object.keys(choix).forEach(function (k) {
+        var c = choix[k], v = c.sel.value;
+        if (v === 'proche') res[k] = c.proche.nom; else if (v === 'autre' || v === 'corriger') { var t = c.saisie.value.trim(); if (!t) ok = false; res[k] = t; } else res[k] = c.texte;
+      });
+      if (!ok) { toast('Complétez les positions choisies (nom vide).'); return; }
+      var r = M.appliquerImport(etat, lec.articles, res, { mode: mode, annee: annee, date: new Date().toISOString() });
+      valider(r.etat, mode === 'ecarts' ? r.resume.marques + ' article(s) marqué(s) non trouvé(s), ' + r.resume.crees + ' créé(s).' : r.resume.crees + ' créé(s), ' + r.resume.deplaces + ' position(s) mise(s) à jour.');
+      z.hidden = true; $('i-fichier').value = ''; $('i-analyser').disabled = true; lignesFeuille = null; classeur = null; $('i-feuille').hidden = true;
+      basculer('articles');
+    });
+    z.appendChild(b);
+  }
+  function lireFichier(f) {
+    $('i-plan').hidden = true; $('i-analyser').disabled = true; if (!f) return;
+    toast('Lecture du fichier…');
+    Promise.all([script(CDN_XLSX), f.arrayBuffer()]).then(function (r) {
+      classeur = window.XLSX.read(r[1], { type: 'array' }); var s = $('i-feuille'); s.textContent = '';
+      classeur.SheetNames.forEach(function (n) { var o = el('option', null, n); o.value = n; s.appendChild(o); });
+      var pref = classeur.SheetNames.filter(function (n) { return /2026/.test(n); })[0]; if (pref) s.value = pref;
+      s.hidden = classeur.SheetNames.length < 2; choisirFeuille();
+    }).catch(function (e) { toast('Lecture impossible : ' + e.message); });
+  }
+  function choisirFeuille() {
+    if (!classeur) return; var ws = classeur.Sheets[$('i-feuille').value];
+    lignesFeuille = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' }); $('i-analyser').disabled = false;
+    var nom = $('i-feuille').value; $('i-mode').value = /2025|2026|ecart|écart/i.test(nom) && !/glob/i.test(nom) ? 'ecarts' : 'positions'; $('i-an-l').hidden = $('i-mode').value !== 'ecarts';
+    var an = (nom.match(/20\d\d/) || [])[0]; if (an) $('i-an').value = an;
+    toast(lignesFeuille.length + ' ligne(s) dans « ' + nom + ' ».');
+  }
+
+  /* ---------- positions ---------- */
+  function positions() {
+    var eff = M.effectifs(etat), sug = M.suggestions(etat).filter(function (g) { return !ignorees[g.membres.map(function (m) { return m.nom; }).sort().join('|')]; }), z = $('p-sug'); z.textContent = '';
+    $('p-nsug').textContent = sug.length ? '(' + sug.length + ')' : '';
+    if (!sug.length) z.appendChild(el('p', 'note', 'Aucune position à fusionner pour l\'instant.'));
+    sug.forEach(function (g) {
+      var card = el('div', 'carte'); g.membres.forEach(function (m) { card.appendChild(el('div', null, '• ' + m.nom + '  (' + m.n + ' article' + (m.n > 1 ? 's' : '') + ')')); });
+      var ligne = el('div', 'ligne'), nom = el('input'); nom.value = g.propose; nom.style.width = '380px'; nom.setAttribute('aria-label', 'Nom final');
+      var f = el('button', 'btn-p', '🔗 Fusionner'), i = el('button', 'btn-s', 'Ce sont deux lieux différents'); f.type = i.type = 'button';
+      f.addEventListener('click', function () { if (!nom.value.trim()) return toast('Nom final vide.'); valider(M.fusionner(etat, g.membres.map(function (m) { return m.nom; }), nom.value, new Date().toISOString()), 'Positions fusionnées.'); });
+      i.addEventListener('click', function () { ignorees[g.membres.map(function (m) { return m.nom; }).sort().join('|')] = 1; sauver(); positions(); });
+      ligne.appendChild(nom); ligne.appendChild(f); ligne.appendChild(i); card.appendChild(ligne); z.appendChild(card);
+    });
+    var q = M.cle($('p-q').value), c = $('p-corps'); c.textContent = '';
+    Object.keys(etat.positions).sort().filter(function (n) { return !q || M.cle(n + ' ' + (etat.positions[n].alias || []).join(' ')).indexOf(q) >= 0; }).forEach(function (n) {
+      var tr = el('tr'), td0 = el('td'), cb = el('input'); cb.type = 'checkbox'; cb.dataset.nom = n; cb.addEventListener('change', majFus); td0.appendChild(cb); tr.appendChild(td0);
+      tr.appendChild(el('td', null, n)); tr.appendChild(el('td', 'n', String(eff[n] || 0))); tr.appendChild(el('td', 'ancienne', (etat.positions[n].alias || []).join(' | ')));
+      var ac = el('td'), v = el('button', 'btn-s petit', 'Voir'), r = el('button', 'btn-s petit', '✏️ Renommer'); v.type = r.type = 'button'; ac.style.whiteSpace = 'nowrap';
+      v.addEventListener('click', function () { filtreArt = { q: '', pos: n, st: '' }; $('a-q').value = ''; $('a-st').value = ''; basculer('articles'); });
+      r.addEventListener('click', function () { var t = window.prompt('Nouveau nom de la position :', n); if (t && t.trim() && t.trim() !== n) valider(M.renommer(etat, n, t, new Date().toISOString()), 'Position renommée (si le nom existait déjà, les deux sont fusionnées).'); });
+      ac.appendChild(v); ac.appendChild(document.createTextNode(' ')); ac.appendChild(r); tr.appendChild(ac); c.appendChild(tr);
+    });
+    majFus();
+  }
+  function majFus() { $('p-fus').disabled = document.querySelectorAll('#p-corps input:checked').length < 2; }
+  function fusionSelection() {
+    var noms = Array.prototype.map.call(document.querySelectorAll('#p-corps input:checked'), function (c) { return c.dataset.nom; }), eff = M.effectifs(etat);
+    noms.sort(function (a, b) { return (eff[b] || 0) - (eff[a] || 0); });
+    var t = window.prompt('Fusionner ces ' + noms.length + ' positions sous quel nom ?\n\n' + noms.join('\n'), noms[0]); if (!t || !t.trim()) return;
+    valider(M.fusionner(etat, noms, t, new Date().toISOString()), 'Positions fusionnées.');
+  }
+
+  /* ---------- statistiques ---------- */
+  function stats() {
+    var s = $('s-champ'); if (!s.options.length) { Object.keys(M.CHAMPS).concat(['statut']).forEach(function (k) { var o = el('option', null, k === 'statut' ? 'Statut (trouvé / non trouvé)' : M.CHAMPS[k]); o.value = k; s.appendChild(o); }); s.value = 'position'; }
+    var champ = s.value, nt = $('s-nt').checked, q = M.cle($('s-q').value);
+    var g = M.parChamp(etat, champ, function (a) { return !nt || Object.keys(a.nonTrouve || {}).length > 0; }).filter(function (x) { return !q || M.cle(x.valeur).indexOf(q) >= 0; });
+    var total = g.reduce(function (t, x) { return t + x.n; }, 0), max = g.length ? g[0].n : 1, c = $('s-corps'); c.textContent = '';
+    $('s-th').textContent = s.options[s.selectedIndex].textContent;
+    $('s-info').textContent = g.length + ' ligne(s) · ' + nf(total) + ' article(s)' + (nt ? ' non trouvé(s)' : '') + ' · valeur ' + nf(g.reduce(function (t, x) { return t + x.somme; }, 0)) + ' DA';
+    g.forEach(function (x) {
+      var tr = el('tr'), d = el('td', null, x.valeur); tr.appendChild(d); tr.appendChild(el('td', 'n', nf(x.n)));
+      var p = el('td'), b = el('span', 'barre-n'); b.style.width = Math.max(2, Math.round(120 * x.n / max)) + 'px'; p.appendChild(b); p.appendChild(document.createTextNode(' ' + (total ? Math.round(1000 * x.n / total) / 10 : 0) + ' %')); tr.appendChild(p); tr.appendChild(el('td', 'n', nf(x.somme)));
+      if (champ === 'position') { tr.style.cursor = 'pointer'; tr.title = 'Voir les articles'; tr.addEventListener('click', function () { filtreArt = { q: '', pos: x.valeur === '(vide)' ? '' : x.valeur, st: nt ? 'nt' : '' }; $('a-q').value = ''; $('a-st').value = filtreArt.st; basculer('articles'); }); }
+      c.appendChild(tr);
+    });
+    stats.g = g;
+  }
+  function excelStats() {
+    var g = stats.g || []; if (!g.length) return toast('Rien à exporter.');
+    var champ = $('s-champ').options[$('s-champ').selectedIndex].textContent, lignes = [[champ, 'Articles', 'Valeur (DA)']].concat(g.map(function (x) { return [x.valeur, x.n, x.somme]; }));
+    exporterXlsx([['Statistiques', lignes]], 'inventaire_statistiques_' + aujourdhui() + '.xlsx');
+  }
+
+  /* ---------- exports ---------- */
+  function exporterXlsx(feuilles, nom) {
+    script(CDN_XLSX).then(function () {
+      var wb = window.XLSX.utils.book_new();
+      feuilles.forEach(function (f) { var ws = window.XLSX.utils.aoa_to_sheet(f[1]); ws['!cols'] = f[1][0].map(function (_, i) { var w = 10; f[1].slice(0, 200).forEach(function (r) { w = Math.max(w, Math.min(60, String(r[i] == null ? '' : r[i]).length + 2)); }); return { wch: w }; }); window.XLSX.utils.book_append_sheet(wb, ws, f[0]); });
+      window.XLSX.writeFile(wb, nom);
+    }).catch(function (e) { toast('Export impossible : ' + e.message); });
+  }
+  function excelComplet() { var t = M.versTableaux(etat); exporterXlsx([['Inventaire', t.inventaire], ['Historique', t.historique], ['Positions', t.positions]], 'inventaire_' + aujourdhui() + '.xlsx'); }
+
+  /* ---------- navigation ---------- */
+  function basculer(v) {
+    vue = v; ['articles', 'importer', 'positions', 'stats', 'exporter'].forEach(function (k) { $('v-' + k).hidden = k !== v; });
+    Array.prototype.forEach.call($('onglets').children, function (b) { b.classList.toggle('actif', b.dataset.v === v); }); rendre();
+  }
+  function rendre() { kpis(); if (vue === 'articles') articles(); else if (vue === 'positions') positions(); else if (vue === 'stats') stats(); }
+
+  Array.prototype.forEach.call($('onglets').children, function (b) { b.addEventListener('click', function () { basculer(b.dataset.v); }); });
+  $('a-q').addEventListener('input', function () { filtreArt.q = this.value; limite = 150; articles(); });
+  $('a-pos').addEventListener('change', function () { filtreArt.pos = this.value; limite = 150; articles(); });
+  $('a-st').addEventListener('change', function () { filtreArt.st = this.value; limite = 150; articles(); });
+  $('a-plus').addEventListener('click', function () { limite += 300; articles(); });
+  $('i-fichier').addEventListener('change', function () { lireFichier(this.files && this.files[0]); });
+  $('i-feuille').addEventListener('change', choisirFeuille);
+  $('i-mode').addEventListener('change', function () { $('i-an-l').hidden = this.value !== 'ecarts'; });
+  $('i-analyser').addEventListener('click', planImport);
+  $('p-q').addEventListener('input', positions); $('p-fus').addEventListener('click', fusionSelection);
+  ['s-champ', 's-nt'].forEach(function (id) { $(id).addEventListener('change', stats); }); $('s-q').addEventListener('input', stats); $('s-xl').addEventListener('click', excelStats);
+  $('e-xl').addEventListener('click', excelComplet);
+  $('e-json').addEventListener('click', function () { telecharger(new Blob([JSON.stringify(etat)], { type: 'application/json' }), 'inventaire_sauvegarde_' + aujourdhui() + '.json'); });
+  $('e-rest').addEventListener('click', function () { $('e-fic').click(); });
+  $('e-fic').addEventListener('change', function () {
+    var f = this.files && this.files[0]; this.value = ''; if (!f) return;
+    f.text().then(function (t) { var o = JSON.parse(t); if (!o || !o.articles || !o.positions || !o.historique) throw new Error('Fichier de sauvegarde non reconnu.'); if (!window.confirm('Remplacer toutes les données de cette page par la sauvegarde (' + Object.keys(o.articles).length + ' articles) ?')) return; valider(o, 'Sauvegarde restaurée.'); basculer('articles'); }).catch(function (e) { toast(e.message); });
+  });
+  $('e-eff').addEventListener('click', function () { if (window.confirm('Effacer TOUTES les données de cette page (articles, positions, historique) ? Faites d\'abord la sauvegarde.')) { valider(M.nouvelEtat(), 'Données effacées.'); ignorees = {}; } });
+  charger(); basculer('articles');
+})();
+</script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>
