@@ -43,6 +43,35 @@
     g.appendChild(txt(W - p, 11, 'max ' + max, { 'text-anchor': 'end', opacity: .7 }));
     return g;
   }
+  function fr1(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+  function tendance(a, b, unite) {   // flèche de variation entre deux valeurs
+    if (!(b > 0) && !(a > 0)) return null; var d = Math.round((a - b) * 10) / 10, c = el('span', 'tb-var ' + (d > 0 ? 'hausse' : d < 0 ? 'baisse' : 'stable'), (d > 0 ? '▲ +' : d < 0 ? '▼ ' : '＝ ') + fr1(d) + (unite || ''));
+    return c;
+  }
+  /** Barres des rapports reçus par jour sur 4 semaines : une teinte par semaine (la semaine en cours en plein), séparateurs de semaine. */
+  function barresJours(d) {
+    var W = 320, H = 118, p = 12, n = d.jours.length, max = Math.max.apply(null, d.jours.map(function (j) { return j.n; }).concat([1])), bw = (W - 2 * p) / (7 * d.semaines.length);
+    var g = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': 'Rapports reçus par jour, quatre semaines' }), nbSem = d.semaines.length;
+    d.jours.forEach(function (j, i) {
+      var pos = j.semaine * 7 + Math.round((Date.parse(j.date) - Date.parse(d.semaines[j.semaine].debut)) / 86400000), x = p + pos * bw, h = j.n / max * (H - 44), op = 0.3 + 0.7 * (j.semaine + 1) / nbSem;
+      var r = sv('rect', { x: x + 1, y: H - 22 - h, width: Math.max(1, bw - 2), height: Math.max(h, j.n ? 2 : 0), rx: 2, fill: '#E85D04', opacity: op });
+      var t = sv('title'); t.textContent = jourCourt(j.date) + ' : ' + j.n + ' rapport' + (j.n > 1 ? 's' : ''); r.appendChild(t); g.appendChild(r);
+      if (!j.n) g.appendChild(sv('rect', { x: x + 1, y: H - 24, width: Math.max(1, bw - 2), height: 2, rx: 1, fill: 'currentColor', opacity: .18 }));
+    });
+    d.semaines.forEach(function (w, i) {
+      var x0 = p + i * 7 * bw;
+      if (i) g.appendChild(sv('line', { x1: x0, x2: x0, y1: 14, y2: H - 16, stroke: 'currentColor', 'stroke-dasharray': '2 3', opacity: .25 }));
+      g.appendChild(txt(x0 + 2, H - 6, jourCourt(w.debut), { 'font-size': 8.5, opacity: .75 }));
+    });
+    g.appendChild(txt(W - p, 10, 'max ' + max + '/jour', { 'text-anchor': 'end', opacity: .7 }));
+    return g;
+  }
+  /** Mini histogramme d'un chantier (une barre par semaine, la dernière en couleur pleine). */
+  function miniBarres(valeurs, max) {
+    var W = 64, H = 24, bw = W / valeurs.length, g = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: 64, height: 24, role: 'img', 'aria-label': 'Effectif par semaine' });
+    valeurs.forEach(function (v, i) { var h = v / max * (H - 3); g.appendChild(sv('rect', { x: i * bw + 2, y: H - h - 1, width: bw - 4, height: Math.max(h, v ? 2 : 0), rx: 2, fill: i === valeurs.length - 1 ? '#2563EB' : '#93C5FD' })); g.appendChild(sv('rect', { x: i * bw + 2, y: H - 2, width: bw - 4, height: 1, fill: 'currentColor', opacity: .15 })); });
+    return g;
+  }
   /** Anneau : parts = [{ n, couleur }] ; centre = texte. */
   function anneau(parts, centre, sousTitre) {
     var tot = parts.reduce(function (s, p) { return s + p.n; }, 0) || 1, R = 38, C = 2 * Math.PI * R, off = 0;
@@ -84,6 +113,42 @@
       c3.appendChild(gros(auj.total, 'personnes au rapport aujourd\'hui')); c3.appendChild(barresEmpilees(b.effectif));
       var lg = el('div', 'tb-legende'); b.effectif.services.forEach(function (s) { var x = el('span'); var p = el('i'); p.style.background = COUL[s.id]; x.appendChild(p); x.appendChild(document.createTextNode(' ' + s.nom)); lg.appendChild(x); }); c3.appendChild(lg); ajout(c3);
     }
+    if (b.rapports_semaines) {
+      var rs = b.rapports_semaines, W = rs.semaines, cur = W[W.length - 1], prec = W[W.length - 2], c6 = carte('Rapports par jour et par semaine', '🗓', 'rapports.html');
+      var g6 = gros(cur.rapports, cur.joursActifs ? 'rapports cette semaine · ' + cur.joursActifs + ' jour' + (cur.joursActifs > 1 ? 's' : '') + ' avec rapport' : 'rapport cette semaine (début de semaine)');
+      c6.appendChild(g6);
+      if (prec && cur.joursActifs > 0) { var v6 = tendance(cur.parJourActif, prec.parJourActif, ' /jour');   // sans jour d'activité cette semaine (début de semaine, week-end) : pas de comparaison trompeuse if (v6) { var l6 = el('div', 'tb-comp'); l6.appendChild(v6); l6.appendChild(document.createTextNode(' ' + fr1(cur.parJourActif) + ' rapports par jour d\'activité, contre ' + fr1(prec.parJourActif) + ' la semaine précédente')); c6.appendChild(l6); } }
+      c6.appendChild(barresJours(rs));
+      var ch6 = el('div', 'tb-sem');
+      W.forEach(function (w) { var x = el('div', 'tb-sem-i' + (w.enCours ? ' cours' : '')); x.appendChild(el('b', null, String(w.rapports))); x.appendChild(el('span', null, jourCourt(w.debut) + (w.enCours ? ' · en cours' : ''))); x.title = 'Semaine du ' + jourCourt(w.debut) + ' au ' + jourCourt(w.fin) + ' : ' + w.rapports + ' rapports, effectif moyen ' + fr1(w.effectifMoyen) + ' par jour, ' + w.difficultes + ' difficulté(s)'; ch6.appendChild(x); });
+      c6.appendChild(ch6); c6.appendChild(el('small', null, 'Semaine = samedi → vendredi · une barre par jour, une teinte par semaine')); ajout(c6);
+    }
+    if (b.effectif_chantiers && b.effectif_chantiers.chantiers.length) {
+      var ec = b.effectif_chantiers, c7 = carte('Ouvriers par chantier et par semaine', '👷', 'rapports.html'), lst7 = el('div', 'tb-ouv');
+      ec.chantiers.forEach(function (ch) {
+        var r7 = el('div', 'tb-ouv-l'), nm = el('span', 'tb-nom', ch.nom); nm.title = ch.nom + (ch.service ? ' · ' + ch.service : ''); r7.appendChild(nm); r7.appendChild(miniBarres(ch.valeurs, ec.max));
+        var der = ch.valeurs[ch.valeurs.length - 1], av = ch.valeurs[ch.valeurs.length - 2], b7 = el('b', null, fr1(der)); r7.appendChild(b7);
+        var tv = der > 0 || av > 0 ? tendance(der, av, '') : null; r7.appendChild(tv || el('span', 'tb-var stable', '—'));
+        r7.title = ec.semaines.map(function (w, i) { return jourCourt(w.debut) + ' : ' + fr1(ch.valeurs[i]); }).join('  ·  '); lst7.appendChild(r7);
+      });
+      c7.appendChild(lst7); c7.appendChild(el('small', null, 'Effectif moyen déclaré par jour de rapport · 4 semaines (la dernière en bleu foncé) · flèche = variation sur la semaine précédente')); ajout(c7);
+    }
+    if (b.classement && b.classement.rapporteurs.length) {
+      var cl = b.classement, c8 = carte('Classement des rapporteurs (30 jours)', '🏆', 'rapports.html'), max8 = cl.rapporteurs[0].rapports, med = ['🥇', '🥈', '🥉'], l8 = el('div', 'tb-barres');
+      cl.rapporteurs.forEach(function (rp, i) {
+        var r8 = el('div', 'tb-lig tb-rang'), nm8 = el('span', 'tb-nom', (med[i] || (i + 1) + '.') + ' ' + rp.nom); nm8.title = rp.nom + ' · ' + rp.jours + ' jour' + (rp.jours > 1 ? 's' : '') + ' · ' + rp.chantiers + ' chantier' + (rp.chantiers > 1 ? 's' : '') + ' · dernier rapport le ' + jourCourt(rp.dernier);
+        r8.appendChild(nm8); var bar8 = el('div', 'tb-bar'), i8 = el('i'); i8.style.width = Math.max(3, rp.rapports / max8 * 100) + '%'; i8.style.background = i === 0 ? '#F59E0B' : '#E85D04'; bar8.appendChild(i8); r8.appendChild(bar8); r8.appendChild(el('b', null, rp.rapports + ' · ' + rp.jours + ' j')); l8.appendChild(r8);
+      });
+      c8.appendChild(l8); c8.appendChild(el('small', null, cl.total + ' rapporteur' + (cl.total > 1 ? 's' : '') + ' sur 30 jours · rapports (nombre) · jours distincts avec rapport')); ajout(c8);
+    }
+    if (b.suivi_saisie && (b.suivi_saisie.nbSilencieux || b.suivi_saisie.nbDifficultes)) {
+      var ss = b.suivi_saisie, c9 = carte('Suivi de la saisie', '🔔', 'rapports.html'), l9 = el('div', 'tb-ligne');
+      var a1 = el('div', 'tb-col'); a1.appendChild(gros(ss.nbSilencieux, 'chantier' + (ss.nbSilencieux > 1 ? 's' : '') + ' sans rapport depuis 3 jours ou plus', ss.nbSilencieux ? '#DC2626' : '#16A34A')); l9.appendChild(a1);
+      var a2 = el('div', 'tb-col'); a2.appendChild(gros(ss.nbDifficultes, 'difficulté' + (ss.nbDifficultes > 1 ? 's' : '') + ' signalée' + (ss.nbDifficultes > 1 ? 's' : '') + ' (14 jours)', ss.nbDifficultes ? '#D97706' : '#16A34A')); l9.appendChild(a2); c9.appendChild(l9);
+      if (ss.silencieux.length) { var u9 = el('ul', 'tb-liste'); ss.silencieux.slice(0, 5).forEach(function (x) { u9.appendChild(el('li', null, x.nom + ' — ' + (x.jours === null ? 'aucun rapport récent' : x.jours + ' j sans rapport'))); }); c9.appendChild(u9); }
+      if (ss.difficultes.length) { c9.appendChild(el('small', null, 'Difficultés signalées :')); var d9 = el('ul', 'tb-liste'); ss.difficultes.slice(0, 3).forEach(function (x) { var li = el('li', null, x.nom + (x.n > 1 ? ' (' + x.n + ')' : '') + ' : ' + x.texte); li.title = x.texte; d9.appendChild(li); }); c9.appendChild(d9); }
+      ajout(c9);
+    }
     if (b.avancement && b.avancement.chantiers.length) {
       var a = b.avancement, c4 = carte('Avancement contre délai', '📈', 'Avancement_des_Chantiers.html');
       c4.appendChild(gros(a.en_retard, 'chantier' + (a.en_retard > 1 ? 's' : '') + ' en retard (> 15 points) sur ' + a.suivis + ' suivis', a.en_retard ? '#DC2626' : '#16A34A'));
@@ -113,6 +178,9 @@
     '.tb-barres{display:flex;flex-direction:column;gap:5px;margin-top:6px}.tb-lig{display:grid;grid-template-columns:minmax(70px,38%) 1fr auto;gap:8px;align-items:center;font-size:12px}.tb-nom{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
     '.tb-bar{position:relative;height:9px;border-radius:5px;background:rgba(148,163,184,.25)}.tb-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}.tb-bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#0F172A;text-decoration:none}' +
     '.tb-journal .syn-titre,.tb-journal h3{font-size:13px;margin:0 0 4px}.tb-journal .syn-sous{margin:0 0 4px}.tb-journal .syn-puces{font-size:12px}.tb-journal{overflow:auto;max-height:330px}' +
+    '.tb-var{font-size:11.5px;font-weight:700;white-space:nowrap}.tb-var.hausse{color:#16A34A}.tb-var.baisse{color:#DC2626}.tb-var.stable{color:var(--text-muted,#6B7280)}.tb-comp{font-size:12px;margin:0 0 2px;color:var(--text-muted,#6B7280)}' +
+    '.tb-sem{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}.tb-sem-i{text-align:center;border:1px solid var(--border,#E5E7EB);border-radius:9px;padding:4px 2px}.tb-sem-i.cours{border-color:#E85D04;background:rgba(232,93,4,.08)}.tb-sem-i b{display:block;font-size:16px}.tb-sem-i span{font-size:10.5px;color:var(--text-muted,#6B7280)}' +
+    '.tb-ouv{display:flex;flex-direction:column;gap:6px;margin-top:6px}.tb-ouv-l{display:grid;grid-template-columns:minmax(70px,1fr) 64px 38px 64px;gap:8px;align-items:center;font-size:12px}.tb-ouv-l b{text-align:right}.tb-rang{grid-template-columns:minmax(90px,42%) 1fr auto}' +
     '.tb-legende{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;margin-top:2px}.tb-legende i,.tb-pt i{display:inline-block;width:9px;height:9px;border-radius:2px}.tb-pt{font-size:12px;margin:2px 0}';
   function charger(zone, extras) {
     if (!document.getElementById('tb-css')) { var st = el('style'); st.id = 'tb-css'; st.textContent = CSS; document.head.appendChild(st); }

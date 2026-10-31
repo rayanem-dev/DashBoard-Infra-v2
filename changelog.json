@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-10-31-257",
+    "date": "2026-10-31",
+    "title": "Version 6.34.0 — Accueil : quatre nouvelles statistiques tirées des rapports journaliers",
+    "changes": [
+      "Rapports par jour et par semaine : nombre de rapports de la semaine en cours, comparaison par jour d'activité avec la semaine précédente (▲ / ▼), un histogramme des 4 dernières semaines (une barre par jour, une teinte par semaine) et le total de chaque semaine (semaine = samedi → vendredi, comme le rapport hebdomadaire du CPM).",
+      "Ouvriers par chantier et par semaine : pour les 6 chantiers les plus fournis, l'effectif moyen déclaré par jour de rapport sur 4 semaines (mini-histogramme) avec la variation sur la semaine précédente.",
+      "Classement des rapporteurs (30 jours, réservé aux responsables) : nombre de rapports et de jours avec rapport, médailles pour les trois premiers.",
+      "Suivi de la saisie : chantiers sans rapport depuis 3 jours ou plus (ou jamais) et difficultés signalées sur 14 jours, avec le dernier texte.",
+      "Les chiffres respectent le périmètre de chacun (comme la liste des rapports) et le réglage « Statistiques des rapports journaliers » de la page Paramètres."
+    ]
+  },
+  {
     "id": "2026-10-31-256",
     "date": "2026-10-31",
     "title": "Version 6.33.0 — Renommage : l'outil apprend ce que sait faire la page Documents de Sijil",
