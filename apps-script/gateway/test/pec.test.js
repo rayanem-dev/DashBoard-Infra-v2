@@ -137,3 +137,25 @@ test('mémoire de saisie : dernière saisie de chaque personne, véhicules connu
   const pr = f(brut, ['etb zatout abdenacer']);
   assert.deepStrictEqual(pr.personnes.map(p => p.nom), ['BENKHET']); assert.ok(!pr.vehicules.some(v => v.immat === '00437-216-30'));
 });
+
+test('mémoire : le chauffeur déjà saisi avec un véhicule et celui du tableau des véhicules remontent avec l\'immatriculation', () => {
+  const m = monde('chef_service', '');
+  const f = (brut, portee) => JSON.parse(vm.runInContext('JSON.stringify(pecMemoireDepuis_(' + JSON.stringify(brut) + ',' + JSON.stringify(portee) + '))', m.ctx));
+  const E = ['date', 'prestataire', 'base', 'documents', 'nom', 'prenom', 'fonction', 'vehicule', 'immatriculation'];
+  const brut = { valeurs: [E,
+    ['2026-09-01', '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement', 'B', 'PEC', 'ANCIEN', 'Paul', 'chauffeur', 'toyota hilux', '01307-316-30'],
+    ['2026-10-01', '53.INFRA.25 - ETB ZATOUT ABDENACER - Terrassement', 'B', 'PEC', 'BENKHET', 'Mohamed', 'chauffeur poids lourd', 'toyota hilux', '01307-316-30']],
+    vehicules: [{ immat: '00437-216-30', modele: 'Shacman', chauffeur: 'DERRADJI Abderrazak / MESSAI Ismail' }, { immat: '00999-216-30', modele: '', chauffeur: 'Vehicule Sonatrach' }, { immat: '01307-316-30', modele: 'Toyota', chauffeur: 'BENKHET Mohamed' }] };
+  const t = f(brut, null), v = im => t.vehicules.filter(x => x.immat === im)[0];
+  assert.deepStrictEqual(v('01307-316-30').conducteur, { nom: 'BENKHET', prenom: 'Mohamed', fonction: 'chauffeur poids lourd' });   // le plus récent
+  assert.strictEqual(v('01307-316-30').chauffeur, 'BENKHET Mohamed');
+  assert.strictEqual(v('00437-216-30').chauffeur, 'DERRADJI Abderrazak / MESSAI Ismail'); assert.strictEqual(v('00437-216-30').modele, 'SHACMAN');
+  assert.strictEqual(v('00999-216-30'), undefined, 'véhicule sans type ni chauffeur réel : ignoré');
+  const pr = f(brut, ['etb zatout abdenacer']);
+  assert.ok(pr.vehicules.every(x => x.chauffeur === undefined) && !pr.vehicules.some(x => x.immat === '00437-216-30'), 'un prestataire ne voit rien du tableau des véhicules');
+});
+test('prestataire et invité : pas d\'ajout d\'organisme hors Suivi CPM (indicateur renvoyé à la page)', () => {
+  assert.strictEqual(monde('prestataire', 'ETB Zatout Abdenacer').appeler('obtenirOptionsFormulaire', []).sans_organisme, true);
+  assert.strictEqual(monde('guest', '').appeler('obtenirOptionsFormulaire', []).sans_organisme, true);
+  assert.strictEqual(monde('chef_service', '').appeler('obtenirOptionsFormulaire', []).sans_organisme, undefined);
+});

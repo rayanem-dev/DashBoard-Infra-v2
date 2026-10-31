@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-10-31-254",
+    "date": "2026-10-31",
+    "title": "Version 6.31.0 — Prise en charge et autorisation d'accès : choix en deux boutons, saisie plus automatique",
+    "changes": [
+      "Le formulaire commence par deux grands boutons bien distincts : « Prise en charge » et « Autorisation d'accès » (on peut activer les deux). Les options de la prise en charge (hébergement, N° de chambre, restauration, remplacement, fonction dans Observations) ne s'affichent que si le bouton Prise en charge est actif.",
+      "La date d'arrivée est celle du jour par défaut (la date de départ suit : +28 jours), aussi après « Vider les champs ».",
+      "« Valable jusqu'à la fin du mois prochain » : la case est masquée et cochée d'office à partir du 20 du mois, sauf si la date de départ est choisie à la main ; le formulaire affiche seulement « Valable jusqu'à la fin du mois prochain (novembre 2026) » (ou la date choisie, ou la fin du mois en cours avant le 20).",
+      "Injection automatique, plus de case : la prise en charge alimente les Enquêtes administratives (les personnes déjà présentes ne sont pas rajoutées) et chaque autorisation alimente le Suivi des véhicules.",
+      "Saisie automatique : en tapant un agent, les personnes déjà saisies dans d'anciennes demandes sont proposées tout de suite, en plus des Enquêtes ; en choisir une remonte toute la ligne (fonction, et véhicule + immatriculation si l'autorisation est cochée). En tapant une immatriculation, les véhicules connus (demandes précédentes et Suivi des véhicules) sont proposés avec leur chauffeur ; en choisir un remonte le véhicule et le chauffeur déjà saisi.",
+      "Le bouton « ➕ Organisme hors Suivi CPM » est masqué pour les comptes prestataire et invité."
+    ]
+  },
+  {
     "id": "2026-10-30-253",
     "date": "2026-10-30",
     "title": "Version 6.30.0 — Prise en charge : documents du prestataire gardés, envoi au secrétariat et suppression",

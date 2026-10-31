@@ -52,7 +52,7 @@ function pecImputationFixee_(portee, demande, options) {
 /** Données brutes de la mémoire de saisie : le Journal_PEC (une ligne par personne et par demande) et les véhicules connus du tableau des véhicules. */
 function pecMemoireBrute_() {
   var sh = SpreadsheetApp.openById(PEC_SS_ID).getSheetByName('Journal_PEC'), vehicules = [];
-  try { if (typeof vhLireOnglet_ === 'function') vehicules = vhLireOnglet_().lignes.map(function (l) { return { immat: l.immat, modele: l.modele }; }); } catch (e) { /* tableau des véhicules indisponible */ }
+  try { if (typeof vhLireOnglet_ === 'function') vehicules = vhLireOnglet_().lignes.map(function (l) { return { immat: l.immat, modele: l.modele, chauffeur: l.chauffeur }; }); } catch (e) { /* tableau des véhicules indisponible */ }
   return { valeurs: sh && sh.getLastRow() > 1 ? sh.getDataRange().getDisplayValues() : [], vehicules: vehicules };
 }
 /**
@@ -70,9 +70,13 @@ function pecMemoireDepuis_(brut, portee) {
     var p = pers[k]; if (!p) { p = pers[k] = { nom: String(r[4] || '').trim(), prenom: String(r[5] || '').trim(), fonction: '', typeVehicule: '', immatriculation: '' }; ordre.push(k); }
     if (!p.fonction && f) p.fonction = f; if (!p.typeVehicule && t) p.typeVehicule = t; if (!p.immatriculation && im) p.immatriculation = im;
     if (f) fonctions[f] = true; if (t) types[t.toUpperCase()] = true;
-    var ic = immatCle(im); if (ic.length >= 5 && !veh[ic]) veh[ic] = { immat: im.toUpperCase(), modele: t.toUpperCase() };
+    var ic = immatCle(im); if (ic.length >= 5 && !veh[ic]) veh[ic] = { immat: im.toUpperCase(), modele: t.toUpperCase(), conducteur: { nom: String(r[4] || '').trim(), prenom: String(r[5] || '').trim(), fonction: f } };   // le plus récent : le chauffeur déjà saisi avec ce véhicule
   }
-  if (portee === null) ((brut && brut.vehicules) || []).forEach(function (x) { var ic = immatCle(x.immat); if (ic.length >= 5 && !veh[ic] && x.modele) veh[ic] = { immat: String(x.immat).toUpperCase(), modele: String(x.modele).toUpperCase() }; if (x.modele) types[String(x.modele).toUpperCase()] = true; });
+  if (portee === null) ((brut && brut.vehicules) || []).forEach(function (x) {   // tableau des véhicules (jamais pour un prestataire) : modèle et chauffeur(s) déjà notés
+    var ic = immatCle(x.immat), ch = /^vehicule\s/i.test(String(x.chauffeur || '')) ? '' : String(x.chauffeur || '').trim();
+    if (ic.length >= 5 && (x.modele || ch)) { if (!veh[ic]) veh[ic] = { immat: String(x.immat).toUpperCase(), modele: String(x.modele || '').toUpperCase() }; if (ch) veh[ic].chauffeur = ch; if (!veh[ic].modele && x.modele) veh[ic].modele = String(x.modele).toUpperCase(); }
+    if (x.modele) types[String(x.modele).toUpperCase()] = true;
+  });
   return { personnes: ordre.slice(0, 3000).map(function (k) { return pers[k]; }), vehicules: Object.keys(veh).slice(0, 3000).map(function (k) { return veh[k]; }), fonctions: Object.keys(fonctions).sort().slice(0, 500), types: Object.keys(types).sort().slice(0, 300) };
 }
 /** Pur : identifiants Drive contenus dans des liens « …/d/ID/… » ou « …?id=ID ». */
@@ -147,9 +151,10 @@ function pecAppeler_(req) {
     throw e;
   } finally { if (lock) lock.releaseLock(); }
   if (req.fn === 'memoirePEC') r = pecMemoireDepuis_(r, portee);   // saisie automatique depuis les anciens enregistrements (limitée aux contrats d'un prestataire)
+  if (req.fn === 'obtenirOptionsFormulaire' && r && Droits.roleCanon(u.role) === 'guest') r.sans_organisme = true;   // invité (lecture seule) : pas d'ajout d'organisme
   // filtres de sortie pour un prestataire
   if (portee !== null && r) {
-    if (req.fn === 'obtenirOptionsFormulaire') { r = pecOptionsPourPortee_(r, portee); r.imputation_fixe = true; }
+    if (req.fn === 'obtenirOptionsFormulaire') { r = pecOptionsPourPortee_(r, portee); r.imputation_fixe = true; r.sans_organisme = true; }
     else if (req.fn === 'rechercherPersonnes' && r.personnes) r.personnes = r.personnes.filter(function (p) { return badgesDansPortee_(portee, p.entreprise); });
     else if (req.fn === 'listerFichiersGeneres' && r.fichiers) { var mes = pecMesFichiers_(u); r.fichiers = r.fichiers.filter(function (x) { return mes.indexOf(x.id) !== -1; }); }
     else if (req.fn === 'soumettreFormulairePEC' && r.liens) pecRetenirFichiers_(u, pecIdsDeLiens_(r.liens));
