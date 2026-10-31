@@ -572,6 +572,7 @@ window.google = { script: { run: (function () {
   function dateArriveeDuJour() { const a = document.getElementById('dateArrivee'); a.value = ymd(new Date()); a.dispatchEvent(new Event('change')); }
   dateArriveeDuJour();
 
+  let peutEnvoi = true, peutSuppr = true;   // options du secrétariat (page Paramètres) pour un prestataire : envoi au secrétariat, suppression de ses documents
   let servicesParPrestataire = {}, basesParPrestataire = {}, imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
@@ -583,6 +584,7 @@ window.google = { script: { run: (function () {
   }
   function remplirDropdowns(opts) {
     servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire; imputationFixe = !!opts.imputation_fixe;
+    if (opts.peut_envoi !== undefined || opts.peut_suppression !== undefined) { const e = opts.peut_envoi !== false, d = opts.peut_suppression !== false; if (e !== peutEnvoi || d !== peutSuppr) { peutEnvoi = e; peutSuppr = d; if (typeof chargerFichiers === 'function') chargerFichiers(); } }
     if (opts.sans_organisme) { document.getElementById('zoneOrg').hidden = true; document.getElementById('formOrg').hidden = true; }   // prestataire ou invité : pas d'ajout d'organisme hors Suivi CPM
     basesParPrestataire = opts.basesParPrestataire || basesParPrestataire;
     const dlPrest = document.getElementById('listePrestataires');
@@ -721,7 +723,7 @@ window.google = { script: { run: (function () {
     const div = document.getElementById('historique'); div.innerHTML = '<div class="placeholder">Chargement…</div>';
     google.script.run.withSuccessHandler(function(res) {
       if (!res.success) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(res.error) + '</div>'; return; }
-      document.getElementById('btnToutSupprimer').hidden = !res.fichiers.length;
+      document.getElementById('btnToutSupprimer').hidden = !res.fichiers.length || !peutSuppr;
       if (!res.fichiers.length) { div.innerHTML = '<div class="placeholder">Aucun document généré pour le moment.</div>'; return; }
       div.innerHTML = '';
       res.fichiers.forEach(function(f) {
@@ -730,11 +732,11 @@ window.google = { script: { run: (function () {
           '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
           '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">📄 Ouvrir</a>' +
           '<button type="button" class="impr" data-id="' + echapper(f.id) + '">🖨️ Imprimer</button>' +
-          '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button></div>' +
-          '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>';
+          (peutEnvoi ? '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button>' : '') + '</div>' +
+          (peutSuppr ? '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>' : '');
         row.querySelector('button.impr').onclick = function() { imprimerDirect(this, f.id); };
-        row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
-        row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
+        if (peutEnvoi) row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
+        if (peutSuppr) row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
         div.appendChild(row);
       });
     }).withFailureHandler(function(err) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(err.message) + '</div>'; }).listerFichiersGeneres();

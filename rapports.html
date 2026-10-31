@@ -96,7 +96,7 @@
       <div class="champ"><label for="travaux">Travaux réalisés — texte libre <span class="aide" style="font-weight:400">(facultatif si des lignes sont remplies)</span></label><textarea id="travaux" maxlength="1000"></textarea><p class="aide" style="margin:3px 0 0">Le texte ne passe pas à la ligne tout seul : appuyez sur Entrée pour aller à la ligne et commencez par <b>*</b> chaque nouveau point (ex. <i>* Décoffrage du regard</i>).</p></div>
       <div class="champ"><label for="difficultes">Difficultés / incidents — facultatif</label><textarea id="difficultes" maxlength="1000"></textarea></div>
       <div class="champ"><label for="commentaire">Commentaire du jour — facultatif</label><textarea id="commentaire" maxlength="1000"></textarea></div>
-      <div class="champ"><label>Photos et vidéos — facultatif <span class="aide" style="font-weight:400">(20 au plus ; photos réduites automatiquement, vidéos de 20 Mo au plus, une trentaine de secondes)</span></label>
+      <div class="champ" id="bloc-medias"><label>Photos et vidéos — facultatif <span class="aide" style="font-weight:400">(20 au plus ; photos réduites automatiquement, vidéos de 20 Mo au plus, une trentaine de secondes)</span></label>
         <div id="medias" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"></div>
         <input type="file" id="m-fichiers" accept="image/*,video/*" multiple hidden>
         <button class="btn-s" type="button" id="b-media">📷 Ajouter une photo ou une vidéo</button>
@@ -671,6 +671,8 @@
     chantiers = r.chantiers; fermes = r.hors_contrat || [];
     [$('chantier'), $('f-chantier')].forEach(function (s) { var cur = s.value; s.textContent = ''; if (s.id === 'f-chantier') { var tous = el('option', null, 'Tous les chantiers'); tous.value = ''; s.appendChild(tous); } chantiers.forEach(function (c) { var o = el('option', null, c.nom); o.value = c.id; s.appendChild(o); }); if (cur) s.value = cur; });   // le filtre du journal garde « Tous les chantiers »
     $('b-hc').hidden = !r.peut_ouvrir; synchroChantier();
+    if (r.peut_medias !== undefined) $('bloc-medias').hidden = !r.peut_medias;   // option « Joindre des photos et vidéos » (Paramètres)
+    if (r.peut_toute_division !== undefined) $('toute-div').closest('label').hidden = !r.peut_toute_division;   // option « toute la division » (Paramètres)
   }
   // Choix du chantier / prestataire : saisie libre avec propositions ; la liste (nouveaux contrats, chantiers ouverts) se recharge seule
   function norme(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }

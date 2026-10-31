@@ -28,6 +28,7 @@
   .etat { font-size: 12px; margin-top: 5px; color: var(--text-muted); } .etat.mod { color: #B94E00; font-weight: 700; } .etat.err { color: #B42318; font-weight: 700; }
   .btn-p { padding: 8px 14px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; } .btn-p:disabled { opacity: .5; cursor: default; }
   .filtre { width: 100%; max-width: 420px; }
+  .sous-titre { padding: 10px 16px 4px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--orange-main); border-top: 1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -60,14 +61,54 @@
     return 'Valeur d\'origine';
   }
   function dessiner() {
-    var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [];
-    P.forEach(function (p) { var t = (p.groupe + ' ' + p.libelle + ' ' + p.aide).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (q && t.indexOf(q) < 0) return; if (!groupes[p.groupe]) { groupes[p.groupe] = []; ordre.push(p.groupe); } groupes[p.groupe].push(p); });
+    var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [], options = {};
+    function groupe(g) { if (!groupes[g]) { groupes[g] = []; ordre.push(g); } return groupes[g]; }
+    P.forEach(function (p) {
+      var t = (p.groupe + ' ' + p.libelle + ' ' + p.aide + (p.option ? ' option accès rôle niveau' : '')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (q && t.indexOf(q) < 0) return;
+      if (p.option) { var o = options[p.option]; if (!o) { o = options[p.option] = { option: true }; groupe(p.groupe).push(o); } o[p.champ] = p; return; }
+      groupe(p.groupe).push({ p: p });
+    });
     z.textContent = '';
     if (!ordre.length) z.appendChild(el('p', 'aide', 'Aucun réglage ne correspond.'));
     ordre.forEach(function (g) {
-      var d = el('details', 'groupe'); d.open = true; var s = el('summary', null, g); s.appendChild(el('small', null, ' · ' + groupes[g].length + ' réglage' + (groupes[g].length > 1 ? 's' : ''))); d.appendChild(s);
-      groupes[g].forEach(function (p) { d.appendChild(reglage(p)); }); z.appendChild(d);
+      var d = el('details', 'groupe'), nbOpt = groupes[g].filter(function (x) { return x.option; }).length, n = groupes[g].length; d.open = true;
+      var s = el('summary', null, g); s.appendChild(el('small', null, ' · ' + (n - nbOpt) + ' réglage' + (n - nbOpt > 1 ? 's' : '') + (nbOpt ? ' · ' + nbOpt + ' option' + (nbOpt > 1 ? 's' : '') + ' et accès' : ''))); d.appendChild(s);
+      groupes[g].filter(function (x) { return !x.option; }).forEach(function (x) { d.appendChild(reglage(x.p)); });
+      var os = groupes[g].filter(function (x) { return x.option; });
+      if (os.length) { var h = el('div', 'sous-titre', '🔐 Options et niveaux d\'accès'); d.appendChild(h); os.forEach(function (x) { d.appendChild(carteOption(x)); }); }
+      z.appendChild(d);
     });
+  }
+  /** Option à interrupteur et niveau d'accès : « Active » oui / non et, si elle en a un, le rôle minimum (ce rôle et ceux au-dessus). Un seul « Enregistrer » pour les deux. */
+  function carteOption(o) {
+    var a = o.actif, r = o.role, base = a || r, c = el('div', 'reglage');
+    c.appendChild(el('label', 'l', base.libelle)); c.appendChild(el('p', 'aide', base.aide));
+    var ligne = el('div', 'champ'); ligne.style.alignItems = 'flex-end';
+    function selecteur(titre, p, libelle) {
+      var w = el('label', null, titre); w.style.cssText = 'display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--text-muted);margin:0';
+      var s = el('select'); s.style.cssText = 'padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--text-dark);font-weight:600';
+      p.choix.forEach(function (v) { var op = el('option', null, libelle(v)); op.value = v; s.appendChild(op); }); s.value = p.valeur; w.appendChild(s); ligne.appendChild(w); return s;
+    }
+    var sa = selecteur('Option', a, function (v) { return v === 'oui' ? 'Activée' : 'Désactivée'; });
+    var sr = r ? selecteur('Réservée à partir du rôle', r, function (v) { return (r.choixLibelles && r.choixLibelles[v]) || v; }) : null;
+    var ok = el('button', 'btn-p', 'Enregistrer'); ok.type = 'button'; ok.disabled = true; ligne.appendChild(ok);
+    var re = el('button', 'btn-s', 'Rétablir'); re.type = 'button'; re.hidden = !((a && a.source === 'parametres') || (r && r.source === 'parametres')); ligne.appendChild(re);
+    c.appendChild(ligne);
+    var meta = (a && a.source === 'parametres' ? a : r && r.source === 'parametres' ? r : null);
+    var e = el('div', 'etat' + (meta ? ' mod' : ''), meta ? etatTexte(meta) : 'Valeur d\'origine'); c.appendChild(e);
+    if (r) c.appendChild(el('div', 'etat', 'Le rôle choisi et tous ceux d\'un rang plus élevé y ont accès. L\'option ne donne jamais plus de droits que le module concerné : elle le restreint ou le coupe.'));
+    function change() { ok.disabled = sa.value === a.valeur && (!sr || sr.value === r.valeur); if (!ok.disabled) { e.className = 'etat'; e.textContent = 'Non enregistré'; } }
+    sa.addEventListener('change', change); if (sr) sr.addEventListener('change', change);
+    function sequence(corps) {
+      ok.disabled = true; re.disabled = true;
+      return corps.reduce(function (p, x) { return p.then(function () { return Api.call('parametres_enregistrer', x); }); }, Promise.resolve()).then(function (rep) { chargerListe(rep.parametres); toast('Option enregistrée'); }).catch(function (x) {
+        if (x.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+        re.disabled = false; ok.disabled = false; e.className = 'etat err'; e.textContent = x.message;
+      });
+    }
+    ok.onclick = function () { var l = []; if (sa.value !== a.valeur) l.push({ id: a.id, valeur: sa.value }); if (sr && sr.value !== r.valeur) l.push({ id: r.id, valeur: sr.value }); sequence(l); };
+    re.onclick = function () { if (!window.confirm('Revenir aux valeurs d\'origine pour « ' + base.libelle + ' » ?')) return; var l = []; if (a && a.source === 'parametres') l.push({ id: a.id, retablir: true }); if (r && r.source === 'parametres') l.push({ id: r.id, retablir: true }); sequence(l); };
+    return c;
   }
   function reglage(p) {
     var r = el('div', 'reglage'), id = 'r-' + p.id.replace(/\W/g, '_'); var l = el('label', 'l', p.libelle); l.setAttribute('for', id); r.appendChild(l); r.appendChild(el('p', 'aide', p.aide));
