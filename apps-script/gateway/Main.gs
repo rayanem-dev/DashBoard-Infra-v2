@@ -60,7 +60,8 @@ function route_(req) {
       if (typeof preparerCarteBadges_ === 'function') preparerCarteBadges_();
       if (typeof preparerCartesNouvelles_ === 'function') preparerCartesNouvelles_();
       if (typeof preparerJournalCpm_ === 'function') preparerJournalCpm_();
-      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: peutOrganiser_(u) };
+      var usage = usagePourMenu_(u);   // « Mes applications » : compteurs de la personne (suivent son compte, pas son navigateur) et applications populaires de son rôle
+      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: peutOrganiser_(u), usages: usage.usages, populaires: usage.populaires };
     }
     case 'emettreCode': {
       var admin = Auth.userFromToken(req.token);
@@ -206,6 +207,7 @@ function route_(req) {
     case 'menu_organisation_enregistrer': return menuOrgEnregistrer_(req);
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
+    case 'usage_app': return usageEnregistrer_(req);
     case 'rapport_media_envoyer': return rapportMediaEnvoyer_(req);
     case 'rapport_media_lire': return rapportMediaLire_(req);
     case 'parametres_lire': return parametresLire_(req);
