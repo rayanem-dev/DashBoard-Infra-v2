@@ -14,7 +14,7 @@ var RapportDiapos = (function () {
 
   /**
    * rows : lignes du CSV « Suivi CPM » ; evenements : journal ; debut : samedi (aaaa-mm-jj) ; synthese : le module Synthese (groupeRapport, plusJours).
-   * Retourne { debut, fin, groupes: [{ cle, titre, dossiers: [{ numero, intitule, pct, commentaire, change }] }] } : seulement les dossiers à moins de 100 %.
+   * Retourne { debut, fin, groupes: [{ cle, titre, dossiers: [{ numero, intitule, pct, commentaire, change }] }] } : seulement les dossiers à moins de 100 % (hors dossiers « Non démarré »).
    */
   function preparer(rows, evenements, debut, synthese) {
     var h = rows.findIndex(function (r) { return r.some(function (c) { return norm(c) === 'statut'; }); }); if (h === -1) h = 1;
@@ -28,6 +28,7 @@ var RapportDiapos = (function () {
     var groupes = ['daocf', 'application', 'cadre', 'autres'].map(function (k) { return { cle: k, titre: titres[k], dossiers: [] }; });
     rows.slice(h + 1).forEach(function (r) {
       var intitule = (r[3] || '').trim(), statut = (r[8] || '').trim(); if (!intitule && !statut) return;
+      if (synthese.cleStatut(statut) === 'nondemarre') return;   // dossier non démarré : pas dans les diapositives du rapport hebdomadaire
       var pct = pctDe(r[7]); if (pct >= 100) return;
       var numero = (r[2] || '').trim();
       var g = groupes.filter(function (x) { return x.cle === synthese.groupeRapport(r[1]); })[0];
