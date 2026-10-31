@@ -215,6 +215,7 @@ function route_(req) {
     case 'fiches_relancer': return fichesRelancer_(req);
     case 'fiches_ignorer': return fichesIgnorer_(req);
     case 'fiches_manuelle': return fichesManuelle_(req);
+    case 'fiches_annuler': return fichesAnnuler_(req);
     case 'rapport_media_envoyer': return rapportMediaEnvoyer_(req);
     case 'rapport_media_lire': return rapportMediaLire_(req);
     case 'parametres_lire': return parametresLire_(req);

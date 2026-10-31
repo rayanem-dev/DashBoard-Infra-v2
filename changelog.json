@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-31-270",
+    "date": "2026-10-31",
+    "title": "Version 6.41.0 — Fiches d'évaluation : annuler une fiche éditée",
+    "changes": [
+      "Carte « Fiches d'évaluation » › « Fiches éditées » : chaque fiche (générateur ou à la main) a un bouton « Annuler ». Une fiche générée annulée redevient « non générée » et est relancée ; le PDF n'est jamais supprimé du Drive. Éditer une nouvelle fiche du contrat lève l'annulation toute seule, et « Rétablir la fiche » la lève à la main.",
+      "Nouvelle option dans Paramètres : « Annuler une fiche déjà éditée » (secrétariat et chefs de service par défaut)."
+    ]
+  },
+  {
     "id": "2026-10-31-269",
     "date": "2026-10-31",
     "title": "Version 6.40.2 — Fiches d'évaluation : la liste des fiches éditées",

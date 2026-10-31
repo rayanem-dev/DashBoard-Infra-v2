@@ -74,3 +74,14 @@ test('fiche faite à la main (hors générateur) : comptée comme éditée, jama
   const m = e.faites.find(x => x.contrat === '53.INFRA.25'), g = e.faites.find(x => x.contrat === '30.INFRA.24');
   assert.deepStrictEqual([m.manuelle, m.par, m.taux, m.projet], [true, 'RAYANE', null, 'Terrassement']); assert.strictEqual(g.manuelle, undefined, 'fiche du générateur : pas marquée manuelle');
 });
+
+test('fiche annulée à la main : redevient non générée ; une fiche plus récente lève l\'annulation', () => {
+  const contrats = [{ contrat: '53.INFRA.25', entreprise: 'E', projet: 'P' }];
+  const fiche = (ts) => [{ contrat: '53.INFRA.25', date: '2026-10-20', cree: ts.slice(0, 10), cree_ts: ts, taux: 80 }];
+  const ann = [{ cle: F.cle('53.INFRA.25'), par: 'X', le: '2026-10-26T10:00:00.000Z' }];
+  const e1 = F.etat('2026-10-26', contrats, fiche('2026-10-24T08:00:00.000Z'), [], [], ann);
+  assert.strictEqual(e1.manquantes.length, 1); assert.strictEqual(e1.manquantes[0].annulee, true); assert.strictEqual(e1.creees, 0);
+  const e2 = F.etat('2026-10-26', contrats, fiche('2026-10-26T11:00:00.000Z'), [], [], ann);   // régénérée après l'annulation
+  assert.strictEqual(e2.manquantes.length, 0); assert.strictEqual(e2.creees, 1);
+  assert.strictEqual(F.etat('2026-10-26', contrats, fiche('2026-10-24T08:00:00.000Z'), [], [], []).creees, 1);
+});

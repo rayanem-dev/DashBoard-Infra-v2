@@ -218,7 +218,7 @@
     { id: 'maintenance_electrique', nom: 'Maintenance des installations électriques', service: 'Électromécanique', actif: 1, contrat: '30.INFRA.24' }
   ];
   var NIV_RAP = { chef_division: 3, conducteur: 2, cpm: 1 };
-  function demoFiches() { try { var f = JSON.parse(sessionStorage.getItem('infra_v2_demo_fiches') || '{}'); return { rel: f.rel || {}, ign: f.ign || {}, man: f.man || {} }; } catch (e) { return { rel: {}, ign: {}, man: {} }; } }
+  function demoFiches() { try { var f = JSON.parse(sessionStorage.getItem('infra_v2_demo_fiches') || '{}'); return { rel: f.rel || {}, ign: f.ign || {}, man: f.man || {}, ann: f.ann || {} }; } catch (e) { return { rel: {}, ign: {}, man: {}, ann: {} }; } }
   function demoFichesSauver(f) { try { sessionStorage.setItem('infra_v2_demo_fiches', JSON.stringify(f)); } catch (e) { /* rien */ } }
   function demoRapports() {
     var d; try { d = JSON.parse(sessionStorage.getItem(CLE_RAP) || 'null'); } catch (e) { d = null; }
@@ -343,6 +343,7 @@
       case 'usage_app': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { usages: p.sync || {} }; }
       case 'fiches_relancer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var f1 = demoFiches(); if (f1.rel[p.contrat] && Date.now() - f1.rel[p.contrat].t < 6 * 36e5) return { envoye: false, raison: 'Déjà relancée il y a moins de 6 heures (démonstration).' };
         f1.rel[p.contrat] = { le: new Date().toISOString(), par: demoState.user.nom, t: Date.now() }; demoFichesSauver(f1); return { envoye: true, destinataires: ['Service Construction INFRA - RNS', 'KHELIFI Amine (conducteur)'], dernier: f1.rel[p.contrat].le }; }
+      case 'fiches_annuler': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var f4 = demoFiches(); if (p.annuler === false) delete f4.ann[p.contrat]; else f4.ann[p.contrat] = { par: demoState.user.nom }; demoFichesSauver(f4); return { annulee: p.annuler !== false }; }
       case 'fiches_manuelle': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var f3 = demoFiches(); if (p.editee === false) delete f3.man[p.contrat]; else f3.man[p.contrat] = { par: demoState.user.nom }; demoFichesSauver(f3); return { editee: p.editee !== false }; }
       case 'fiches_ignorer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var f2 = demoFiches(); if (p.ignorer === false) delete f2.ign[p.contrat]; else f2.ign[p.contrat] = { par: demoState.user.nom, motif: String(p.motif || '') }; demoFichesSauver(f2); return { ignoree: p.ignorer !== false }; }
       case 'tableau_bord': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var jd = [], dj = new Date(); for (var q = 13; q >= 0; q -= 1) { var x = new Date(dj.getTime() - q * 864e5); jd.push(x.toISOString().slice(0, 10)); }
@@ -363,6 +364,9 @@
           demoBlocs.fiches_eval = { mois: isoL(tj).slice(0, 7), jour: tj.getDate(), phase: ech ? 'echeance' : 'preparation', joursAvantLimite: ech ? 0 : 25 - tj.getDate(), joursAvantEnvoi: Math.round((env - tj) / 864e5), dateLimite: isoL(tj).slice(0, 8) + '25', dateEnvoi: isoL(env), attendues: 6 + man.length + faitesMain.length, creees: 6 + faitesMain.length, horsListe: 1, lecture: 'ok', message: '', url: 'https://script.google.com/macros/s/AKfycbzHk520IN5bl93shq4y1tArmIbWt3dvkITqvvx-qWUpkpS-lKA9R7z19BbTUAu-KZJd/exec', titre: 'Fiche d\'évaluation', emoji: '📝', sansContrats: false, peut_relancer: true, peut_ignorer: true, peut_manuelle: true,
             manquantes: man, ignorees: ig,
             faites: [{ contrat: '72.INFRA.25', entreprise: 'ENAGEO', projet: 'Forage trois puits', taux: 82.5 }, { contrat: '84.INFRA.26', entreprise: 'ETS MEHENNI', projet: 'Rénovation de deux piscines', taux: 71.53 }, { contrat: '12.INFRA.25', entreprise: 'ETS MEHDA', projet: 'Maint. froid & clim', taux: 90 }, { contrat: '61.INFRA.25', entreprise: 'SARL ACOSCO', projet: 'Rénovation clim bâtiments', taux: 77 }, { contrat: '22.INFRA.26', entreprise: 'EURL CFCE', projet: 'Aménagement station carburant', taux: 68 }, { contrat: '05.INFRA.26', entreprise: 'ETS MESSAI', projet: 'Réseau routier', taux: 85 }].concat(faitesMain) };
+          var fb = demoBlocs.fiches_eval, annD = fe.ann;   // fiches générées annulées : redeviennent « non générées »
+          fb.faites.filter(function (x) { return annD[x.contrat]; }).forEach(function (x) { fb.manquantes.push({ contrat: x.contrat, entreprise: x.entreprise, projet: x.projet, annulee: true, annulee_par: annD[x.contrat].par, relance: null }); });
+          fb.faites = fb.faites.filter(function (x) { return !annD[x.contrat]; }); fb.creees = fb.faites.length; fb.peut_annuler = true;
         }
         return { date: jd[13], blocs: Object.assign(demoBlocs, {
           presents: { total: sj[29].total, serie: sj, entreprises: [{ nom: 'ETB ZATOUT ABDENCER', n: 46 }, { nom: 'ENCC SPA UNITE HAMIZ', n: 31 }, { nom: 'EURL CFCE', n: 22 }, { nom: 'ETS MESSAI', n: 17 }, { nom: 'SARL ACOSCO', n: 12 }] },

@@ -19,22 +19,25 @@ var FichesEval = (function () {
    * manuelles = [{ cle, par, le }] : fiches faites À LA MAIN (hors générateur), déclarées « éditées » : comptées comme éditées (faites[].manuelle = true) tant qu'aucune fiche du générateur n'existe.
    * ignorees = [{ cle, par, motif }] : contrats écartés POUR CE MOIS (ils ne sont ni attendus ni manquants tant qu'aucune fiche n'existe).
    */
-  function etat(auj, contrats, fiches, ignorees, manuelles) {
+  function etat(auj, contrats, fiches, ignorees, manuelles, annulees) {
     var jour = Number(String(auj).slice(8, 10)); if (!(jour >= JOUR_DEBUT)) return null;
-    var mois = String(auj).slice(0, 7), vues = {}, horsListe = 0, par = {};
+    var mois = String(auj).slice(0, 7), vues = {}, horsListe = 0, par = {}, rec = {};
     (fiches || []).forEach(function (f) {
       var d = /^\d{4}-\d{2}/.test(String(f.date || '')) ? String(f.date).slice(0, 7) : String(f.cree || '').slice(0, 7);   // date de la fiche ; à défaut, date de création du fichier
       if (d !== mois) return;                                       // fiche d'un autre mois
-      var k = cle(f.contrat); if (k && par[k]) return;               // une seule fiche comptée par contrat
+      var k0 = cle(f.contrat); if (k0 && f.cree_ts && String(f.cree_ts) > String(rec[k0] || '')) rec[k0] = String(f.cree_ts);   // fiche la plus récente du contrat
+      var k = k0; if (k && par[k]) return;               // une seule fiche comptée par contrat
       if (k) par[k] = f; else horsListe += 1;
     });
-    var attendues = [], faites = [], manquantes = [], exemptees = [], ign = {}, man = {}; (ignorees || []).forEach(function (x) { ign[x.cle] = x; }); (manuelles || []).forEach(function (x) { man[x.cle] = x; });
+    var attendues = [], faites = [], manquantes = [], exemptees = [], ign = {}, man = {}, ann = {}; (annulees || []).forEach(function (x) { ann[x.cle] = x; }); (ignorees || []).forEach(function (x) { ign[x.cle] = x; }); (manuelles || []).forEach(function (x) { man[x.cle] = x; });
     (contrats || []).forEach(function (c) {
       var k = cle(c.contrat); if (!k || vues[k]) return; vues[k] = 1;
-      if (par[k]) { attendues.push(c); faites.push({ contrat: c.contrat, entreprise: c.entreprise, projet: c.projet || '', taux: par[k].taux == null ? null : par[k].taux }); return; }
+      var annulee = false;   // fiche annulée à la main : comptée comme non générée, sauf si une fiche plus récente a été éditée depuis
+      if (par[k] && ann[k] && !(rec[k] && rec[k] > String(ann[k].le || ''))) { annulee = true; }
+      if (par[k] && !annulee) { attendues.push(c); faites.push({ contrat: c.contrat, entreprise: c.entreprise, projet: c.projet || '', taux: par[k].taux == null ? null : par[k].taux }); return; }
       if (man[k]) { attendues.push(c); faites.push({ contrat: c.contrat, entreprise: c.entreprise, projet: c.projet || '', taux: null, manuelle: true, par: man[k].par || '', le: man[k].le || '' }); return; }   // faite à la main, hors générateur
       if (ign[k]) { exemptees.push({ contrat: c.contrat, entreprise: c.entreprise, projet: c.projet || '', par: ign[k].par || '', motif: ign[k].motif || '' }); return; }   // écartée ce mois-là par le secrétariat ou un chef de service : ni attendue ni manquante
-      attendues.push(c); manquantes.push({ contrat: c.contrat, entreprise: c.entreprise, projet: c.projet || '' });
+      attendues.push(c); manquantes.push({ contrat: c.contrat, entreprise: c.entreprise, projet: c.projet || '', annulee: annulee, annulee_par: annulee ? (ann[k].par || '') : '' });
     });
     Object.keys(par).forEach(function (k) { if (!vues[k]) horsListe += 1; });   // fiches du mois sans contrat en exécution (préparation, levée des réserves…)
     var limite = mois + '-' + (JOUR_LIMITE < 10 ? '0' : '') + JOUR_LIMITE, envoi = plusUn(finDeMois(auj));
@@ -94,7 +97,7 @@ function fichesEvalLire_() {
     var it = dossiers.next().getFilesByType(MimeType.PDF);
     while (it.hasNext()) {
       var f = it.next(), d = {}; try { d = JSON.parse(f.getDescription() || '{}'); } catch (e) { d = {}; }
-      var ch = d.c || {}; out.push({ contrat: String(ch.contrat || ''), entrepreneur: String(ch.entrepreneur || ''), date: String(ch.date || ''), taux: d.taux == null ? null : d.taux, cree: f.getDateCreated().toISOString().slice(0, 10) });
+      var ch = d.c || {}; out.push({ contrat: String(ch.contrat || ''), entrepreneur: String(ch.entrepreneur || ''), date: String(ch.date || ''), taux: d.taux == null ? null : d.taux, cree: f.getDateCreated().toISOString().slice(0, 10), cree_ts: f.getDateCreated().toISOString() });
     }
   }
   try { cache.put('FICHES_EVAL', JSON.stringify(out), 120); } catch (e) { /* trop gros : pas de cache */ }
@@ -111,6 +114,14 @@ function fichesRelancesLire_(mois) {
   try {
     var v = cpmFeuille_('FichesRelances', FICHES_RELANCES_ENTETES_).getDataRange().getValues(), out = [];
     for (var i = 1; i < v.length; i += 1) if (String(v[i][0]) === mois) out.push({ cle: String(v[i][1]), contrat: String(v[i][2]), par: String(v[i][3]), le: String(v[i][4]) });
+    return out;
+  } catch (e) { return []; }
+}
+var FICHES_ANNULEES_ENTETES_ = ['mois', 'cle', 'contrat', 'par', 'le'];
+function fichesAnnuleesLire_(mois) {
+  try {
+    var v = cpmFeuille_('FichesAnnulees', FICHES_ANNULEES_ENTETES_).getDataRange().getValues(), out = [];
+    for (var i = 1; i < v.length; i += 1) if (String(v[i][0]) === mois) out.push({ cle: String(v[i][1]), contrat: String(v[i][2]), par: String(v[i][3]), le: String(v[i][4] || '') });
     return out;
   } catch (e) { return []; }
 }
@@ -137,10 +148,10 @@ function fichesEvalBloc_(u, acces, auj, enr) {
   var contrats = enr ? FichesEval.contratsEnExecution(enr, TB.cleStatut) : [], fiches = [], lecture = 'ok', message = '';
   try { fiches = fichesEvalLire_(); }
   catch (e) { lecture = 'indisponible'; message = 'Lecture des fiches impossible : l\'autorisation Google « Drive » de la passerelle n\'est pas activée (docs/RAPPORTS-MEDIAS.md).'; }
-  var etat = FichesEval.etat(auj, contrats, fiches, fichesIgnoreesLire_(auj.slice(0, 7)), fichesManuellesLire_(auj.slice(0, 7))); if (!etat) return null;
+  var etat = FichesEval.etat(auj, contrats, fiches, fichesIgnoreesLire_(auj.slice(0, 7)), fichesManuellesLire_(auj.slice(0, 7)), fichesAnnuleesLire_(auj.slice(0, 7))); if (!etat) return null;
   etat.manquantes = FichesEval.avecRelances(etat.manquantes, fichesRelancesLire_(etat.mois));   // dernière relance de chaque fiche manquante
   etat.lecture = lecture; etat.message = message; etat.url = ac.carte ? String(ac.carte.url || '') : ''; etat.titre = ac.carte ? String(ac.carte.titre || '') : 'Fiche d\'évaluation'; etat.emoji = ac.carte ? String(ac.carte.emoji || '') : '📝'; etat.sansContrats = !enr;
-  etat.peut_relancer = lecture === 'ok' && optionPermise_(u, 'fiches.relance'); etat.peut_ignorer = lecture === 'ok' && optionPermise_(u, 'fiches.ignorer'); etat.peut_manuelle = lecture === 'ok' && optionPermise_(u, 'fiches.manuelle');
+  etat.peut_relancer = lecture === 'ok' && optionPermise_(u, 'fiches.relance'); etat.peut_ignorer = lecture === 'ok' && optionPermise_(u, 'fiches.ignorer'); etat.peut_manuelle = lecture === 'ok' && optionPermise_(u, 'fiches.manuelle'); etat.peut_annuler = lecture === 'ok' && optionPermise_(u, 'fiches.annuler');
   return etat;
 }
 /**
@@ -151,7 +162,7 @@ function fichesRelancer_(req) {
   var u = Auth.userFromToken(req.token), a = acces_(u), auj = Dates.today();
   if (!fichesEvalAcces_(a).ok || !optionPermise_(u, 'fiches.relance')) throw Object.assign(new Error('La relance des fiches n\'est pas ouverte à votre rôle (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
   var enr = null; try { enr = cpmEnregistrements_(lignesSource_('cpm')); } catch (e) { enr = null; }
-  var etat = FichesEval.etat(auj, enr ? FichesEval.contratsEnExecution(enr, TB.cleStatut) : [], fichesEvalLire_(), fichesIgnoreesLire_(auj.slice(0, 7)), fichesManuellesLire_(auj.slice(0, 7)));
+  var etat = FichesEval.etat(auj, enr ? FichesEval.contratsEnExecution(enr, TB.cleStatut) : [], fichesEvalLire_(), fichesIgnoreesLire_(auj.slice(0, 7)), fichesManuellesLire_(auj.slice(0, 7)), fichesAnnuleesLire_(auj.slice(0, 7)));
   if (!etat) throw new Error('La relance n\'est possible qu\'à partir du 22 du mois');
   var cle = FichesEval.cle(req.contrat), m = etat.manquantes.filter(function (x) { return FichesEval.cle(x.contrat) === cle; })[0];
   if (!m) return { envoye: false, raison: 'Cette fiche est déjà éditée (ou le contrat n\'est plus en exécution) : rien à relancer.' };
@@ -208,6 +219,28 @@ function fichesIgnorer_(req) {
  * « Rapport édité » : déclare qu'une fiche a été faite À LA MAIN (hors du générateur) pour ce contrat et ce mois : elle est alors comptée comme éditée et n'est plus relancée ;
  * la déclarer de nouveau en sens inverse (editee: false) la retire. Réservé par le réglage « Paramètres » (secrétariat et chefs de service par défaut). Tracé au journal.
  */
+/**
+ * Annule la fiche GÉNÉRÉE d'un contrat pour le mois (le PDF reste dans le Drive, jamais supprimé) : le contrat redevient « non généré » et est relancé de nouveau ;
+ * éditer une nouvelle fiche du contrat lève l'annulation toute seule. req.annuler = false : rétablit la fiche.
+ */
+function fichesAnnuler_(req) {
+  var u = Auth.userFromToken(req.token), a = acces_(u), auj = Dates.today();
+  if (!fichesEvalAcces_(a).ok || !optionPermise_(u, 'fiches.annuler')) throw Object.assign(new Error('Annuler une fiche n\'est pas ouvert à votre rôle (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
+  if (!(Number(auj.slice(8, 10)) >= FichesEval.JOUR_DEBUT)) throw new Error('Disponible à partir du 22 du mois');
+  var enr = null; try { enr = cpmEnregistrements_(lignesSource_('cpm')); } catch (e) { enr = null; }
+  var mois = auj.slice(0, 7), cle = FichesEval.cle(req.contrat), c = (enr ? FichesEval.contratsEnExecution(enr, TB.cleStatut) : []).filter(function (x) { return FichesEval.cle(x.contrat) === cle; })[0];
+  if (!cle || !c) throw new Error('Contrat inconnu parmi les contrats en exécution');
+  var lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    var sh = cpmFeuille_('FichesAnnulees', FICHES_ANNULEES_ENTETES_), v = sh.getDataRange().getValues();
+    for (var i = v.length - 1; i >= 1; i -= 1) if (String(v[i][0]) === mois && String(v[i][1]) === cle) sh.deleteRow(i + 1);
+    if (req.annuler === false) { Store.journal('fiche_annulation_retiree', u.email, c.contrat + ' (' + mois + ')'); return { annulee: false }; }
+    var r = sh.getRange(sh.getLastRow() + 1, 1, 1, 5); r.setNumberFormat('@'); r.setValues([[mois, cle, c.contrat, Annuaire.nomAffichable(u.nom, u.email), new Date().toISOString()]]);
+    try { CacheService.getScriptCache().remove('FICHES_EVAL'); } catch (e) { /* rien */ }
+    Store.journal('fiche_annulee', u.email, c.contrat + ' (' + mois + ')');
+    return { annulee: true };
+  } finally { lock.releaseLock(); }
+}
 function fichesManuelle_(req) {
   var u = Auth.userFromToken(req.token), a = acces_(u), auj = Dates.today();
   if (!fichesEvalAcces_(a).ok || !optionPermise_(u, 'fiches.manuelle')) throw Object.assign(new Error('Déclarer une fiche éditée à la main n\'est pas ouvert à votre rôle (réglage « Paramètres » du secrétariat)'), { code: 'DROITS' });
