@@ -68,10 +68,12 @@
     <div class="barre"><button class="btn-s" id="r-exp" type="button">Exporter les règles</button><button class="btn-s" id="r-imp" type="button">Importer…</button><input type="file" id="r-fic" accept="application/json,.json" hidden></div>
   </details>
 </main>
+<datalist id="dl-agents"></datalist>
 <div class="toast" id="toast" role="status"></div>
 <script src="js/autodetect-renommage.js"></script>
 <script src="js/renomi-moteur.js"></script>
 <script src="js/renomi-pec.js"></script>
+<script src="js/renomi-doc.js"></script>
 <script src="js/donnees.js"></script>
 <script src="js/synthese.js"></script>
 <script>
@@ -80,7 +82,7 @@
   if (window.Api && Api.demo) $('demo').hidden = false;
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 4000); }
-  var items = [], regles = [], dossierChoisi = null, CLE = 'renomi_regles';
+  var items = [], regles = [], dossierChoisi = null, CLE = 'renomi_regles', agents = [], compteurId = 0;   // agents : personnes de l'annuaire (BDDORGA), pour reconnaître le titulaire d'un document du personnel
   try { regles = JSON.parse(localStorage.getItem(CLE) || '[]'); } catch (e) { regles = []; }
   function sauver() { try { localStorage.setItem(CLE, JSON.stringify(regles)); } catch (e) { /* stockage indisponible */ } dessinerRegles(); }
 
@@ -114,6 +116,21 @@
     it.origine = p.regle ? 'appris' : 'defaut'; it.propose = it.nom;
     var pec = !p.regle && window.RenomiPec ? RenomiPec.reconnaitre(it.texte || '') : null;       // prise en charge reconnue : PEC_<ENTREPRISE>_<date> (une règle apprise garde la priorité)
     if (pec) { it.nom = Renomi.nettoyer(pec.nom) + '.' + e; it.origine = 'pec'; it.pec = pec; it.propose = it.nom; if (!pec.entreprise && pec.contrat) entrepriseDuCpm(it, e); }
+    it.doc = null;
+    if (!p.regle && !pec) docPersonnel(it, e);       // document du personnel (titre de congé, fiche de paie, contrat, attestations…) : comme la page « Documents » de Sijil
+  }
+  /**
+   * Reconnaissance d'un document du personnel (moteur de Sijil) : type, agent et dates lus d'abord dans le NOM du fichier puis dans le CONTENU lu ; nom final selon les règles fixes
+   * (TC_NOM_Prenom_date, NOM_Prenom_FDP_Mars2026…). Un type choisi à la main (it.docType) ou un agent choisi (it.docAgent) l'emporte.
+   */
+  function docPersonnel(it, e) {
+    if (!window.AutoDetectDoc || !window.RenomiDoc) return;
+    var r = AutoDetectDoc.detecter({ nom: it.f.name }, { agents: agents, type: it.docType || '', agent: it.docAgent || null, ocr: function () { return it.texte || ''; } });
+    if (r.type === 'autre' && !it.docType) return;   // rien de reconnu : le nom proposé reste celui de l'outil
+    if (it.docChamps) r.champs = AutoDetectDoc.merge(it.docChamps, {});
+    var ag = it.docAgent || (r.candidats.length === 1 ? r.candidats[0] : null);
+    it.doc = { type: r.type, source: r.source, champs: r.champs, avertissement: r.avertissement, candidats: r.candidats, flou: r.flou, agent: ag };
+    if (ag) { it.nom = Renomi.nettoyer(AutoDetectDoc.nomFinal(r.type, ag, r.champs, '', it.f.name)) + '.' + e; it.origine = 'doc'; it.propose = it.nom; }
   }
   /** Entreprise absente du texte lu : on la retrouve par le n° de contrat dans le Suivi CPM (le nom n'est changé que si l'utilisateur n'y a pas touché). */
   function entrepriseDuCpm(it, e) {
@@ -123,7 +140,12 @@
       it.pec.entreprise = ent; it.nom = Renomi.nettoyer(RenomiPec.nomAvec(it.pec, ent)) + '.' + e; it.propose = it.nom; dessiner();
     }).catch(function () { /* hors connexion ou sans droit sur le Suivi CPM : le nom reste PEC_date */ });
   }
+  var dups = {};
+  function calculerDoublons() {
+    dups = RenomiDoc.doublons(items.map(function (it) { return { id: it.id, nom: it.f.name, hash: it.hash || '', type: it.doc ? it.doc.type : '', agentId: it.doc && it.doc.agent ? it.doc.agent.id : '', champs: it.doc ? it.doc.champs : null }; }), AutoDetectDoc.periodeOf);
+  }
   function dessiner() {
+    calculerDoublons();
     var c = $('corps'); c.textContent = ''; $('b-liste').hidden = !items.length;
     var restants = items.filter(function (it) { return !it.fait; }).length; $('b-tous').textContent = '✔ Renommer tous les fichiers (' + restants + ')'; $('b-tous').disabled = !restants;
     items.forEach(function (it, i) {
@@ -132,17 +154,47 @@
       if (it.origine === 'appris') t0.appendChild(el('div', 'ok', '🧠 Règle apprise appliquée'));
       if (it.texte) { var dt = document.createElement('details'); dt.style.cssText = 'font-size:11.5px;color:var(--text-muted);margin-top:2px'; dt.appendChild(el('summary', null, 'Texte lu')); var pre = el('pre', null, it.texte.replace(/\n{2,}/g, '\n').slice(0, 1500)); pre.style.cssText = 'white-space:pre-wrap;max-height:160px;overflow:auto;margin:4px 0'; dt.appendChild(pre); t0.appendChild(dt); }
       if (it.origine === 'pec') t0.appendChild(el('div', 'ok', '📄 Prise en charge reconnue' + (it.pec && it.pec.entreprise ? ' · ' + it.pec.entreprise : '') + (it.pec && it.pec.date ? ' · ' + it.pec.date.split('-').reverse().join('/') : '')));
+      if (it.doc) t0.appendChild(blocDoc(it));
+      (dups[it.id] || []).forEach(function (d) { t0.appendChild(el('div', d.niveau === 'exact' ? 'err' : 'ok', d.niveau === 'exact' ? '🔁 Même fichier que « ' + d.avec + ' » : à retirer de la liste ?' : '⚠ Même agent, même type et même période que « ' + d.avec + ' »')); });
       var t3 = el('td'), n = el('input'); n.value = it.nom; n.disabled = !!it.fait; n.oninput = function () { it.nom = n.value; }; t3.appendChild(n);
       var t4 = el('td'); t4.style.whiteSpace = 'nowrap';
       if (it.fait) t4.appendChild(el('span', 'ok', '✔ Renommé'));
       else if (window.showDirectoryPicker) { var b = el('button', 'btn-s', 'Remplacer le nom'); b.type = 'button'; b.title = 'Renomme ce fichier directement dans son dossier'; b.onclick = function () { renommer([it]); }; t4.appendChild(b); }
+      if (!it.fait) { var br = el('button', 'btn-s', '✕'); br.type = 'button'; br.title = 'Retirer ce fichier de la liste'; br.style.marginLeft = '6px'; br.onclick = function () { items.splice(items.indexOf(it), 1); dessiner(); }; t4.appendChild(br); }
       if (!it.fait) { var bd = el('button', 'btn-s', '⬇ Télécharger'); bd.type = 'button'; bd.style.marginLeft = '6px'; bd.title = 'Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)'; bd.onclick = function () { telechargerUn(it); }; t4.appendChild(bd); }
       [t0, t3, t4].forEach(function (x) { tr.appendChild(x); }); c.appendChild(tr);
     });
   }
+  /** Bloc « document du personnel » d'une ligne : type, agent et période reconnus, corrigeables ; chaque correction recalcule le nom. */
+  function blocDoc(it) {
+    var d = el('div'), D = it.doc; d.style.cssText = 'margin-top:6px;padding:7px 9px;border:1px dashed var(--border);border-radius:9px;font-size:12px';
+    d.appendChild(el('div', 'ok', '📋 Document du personnel reconnu (' + (D.source === 'choix' ? 'type choisi' : D.source === 'contenu' ? 'lu dans le contenu' : 'lu dans le nom du fichier') + ')'));
+    var l = el('div'); l.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:5px';
+    function champ(titre, noeud) { var w = el('label', null, titre); w.style.cssText = 'display:flex;flex-direction:column;gap:2px;font-weight:700;color:var(--text-muted)'; w.appendChild(noeud); l.appendChild(w); return noeud; }
+    var st = champ('Type', el('select')); RenomiDoc.TYPES.forEach(function (t) { var o = el('option', null, t[1]); o.value = t[0]; st.appendChild(o); }); st.value = D.type;
+    st.onchange = function () { it.docType = st.value; it.docChamps = null; analyser(it); dessiner(); };
+    var sa = champ('Agent', el('input')); sa.setAttribute('list', 'dl-agents'); sa.placeholder = 'Nom Prénom'; sa.value = D.agent ? D.agent.nom : ''; sa.style.minWidth = '190px';
+    sa.onchange = function () { var a = RenomiDoc.agentParNom(agents, sa.value); if (!a) { toast('Agent inconnu : choisissez-le dans la liste proposée.', true); return; } it.docAgent = a; analyser(it); dessiner(); };
+    if (D.type !== 'autre') {
+      var sp = champ('Période / date', el('input')); sp.value = String(AutoDetectDoc.periodeOf(D.type, D.champs) || '').replace(/([A-Za-z])(20\d{2})/g, '$1 $2');   // « Fevrier2026 » s'affiche « Fevrier 2026 » (relisible par la correction) sp.placeholder = D.type === 'fiche_emolument' ? 'mars 2026' : (D.type === 'maj_cnas' || D.type === 'attestation_emoluments') ? 'janvier 2026 à mars 2026' : 'jj/mm/aaaa'; sp.style.width = '170px';
+      sp.onchange = function () { try { it.docChamps = AutoDetectDoc.merge(AutoDetectDoc.parsePeriode(D.type, sp.value), { nss: D.champs.nss }); analyser(it); dessiner(); } catch (er) { toast(er.message, true); } };
+    }
+    [].forEach.call(l.querySelectorAll('select,input'), function (x) { x.style.cssText += ';padding:5px 7px;border:1.5px solid var(--border);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surface);color:var(--text-dark)'; });
+    d.appendChild(l);
+    var av = [];
+    if (!D.agent) av.push(D.candidats.length > 1 ? D.candidats.length + ' personnes correspondent : choisissez l\'agent.' : agents.length ? 'Agent non reconnu : choisissez-le (le nom proposé reste provisoire).' : 'Liste des agents indisponible : saisissez l\'agent.');
+    else if (D.flou) av.push('Agent proposé d\'après une orthographe proche : à vérifier.');
+    if (D.avertissement) av.push(D.avertissement);
+    if (av.length) d.appendChild(el('div', 'err', '⚠ ' + av.join(' ')));
+    return d;
+  }
+  function empreinte(it) {
+    if (!(window.crypto && crypto.subtle)) return Promise.resolve();
+    return it.f.arrayBuffer().then(function (b) { return crypto.subtle.digest('SHA-256', b); }).then(function (h) { it.hash = Array.prototype.map.call(new Uint8Array(h), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }).catch(function () { /* sans empreinte : pas de détection du même fichier */ });
+  }
   function ajouter(liste) {
     var fs = Array.prototype.slice.call(liste).filter(function (f) { return /\.(pdf|jpe?g|png)$/i.test(f.name); }); if (!fs.length) { toast('Aucun PDF, JPG ou PNG dans la sélection.', true); return; }
-    var nouveaux = fs.map(function (f) { return { f: f, type: '', texte: '' }; }); items = items.concat(nouveaux); $('b-liste').hidden = false;
+    var nouveaux = fs.map(function (f) { compteurId += 1; return { id: 'f' + compteurId, f: f, type: '', texte: '' }; }); nouveaux.forEach(function (n) { empreinte(n).then(function () { dessiner(); }); }); items = items.concat(nouveaux); $('b-liste').hidden = false;
     var i = 0; $('etat').textContent = '';
     (function suite() {
       if (i >= nouveaux.length) { $('etat').textContent = ''; dessiner(); return; }
@@ -157,7 +209,7 @@
   // ---------- apprentissage ----------
   function apprendre() {
     var avant = JSON.stringify(regles), n = 0; items.forEach(function (it) {
-      if (it.origine === 'pec') return;                 // prise en charge : la règle intégrée PEC_ENTREPRISE_date s'applique déjà ; mémoriser un nom d'entreprise précis la ferait appliquer à toutes les autres
+      if (it.origine === 'pec' || it.origine === 'doc') return;                 // prise en charge : la règle intégrée PEC_ENTREPRISE_date s'applique déjà ; mémoriser un nom d'entreprise précis la ferait appliquer à toutes les autres
       if (it.nom && it.nom !== it.propose) { regles = Renomi.apprendre({ nom: it.f.name, texte: it.texte }, it.nom, regles); n += 1; }
     });
     if (JSON.stringify(regles) !== avant) { sauver(); toast('🧠 Correction(s) apprise(s).'); }
@@ -254,6 +306,11 @@
   $('r-imp').onclick = function () { $('r-fic').click(); };
   $('r-fic').onchange = function () { var f = $('r-fic').files[0]; if (!f) return; f.text().then(function (t) { var l = JSON.parse(t); if (!Array.isArray(l)) throw new Error('Fichier de règles invalide'); l.forEach(function (r) { if (r && r.modele && !regles.some(function (x) { return x.modele === r.modele && String(x.mots) === String(r.mots); })) regles.push(r); }); sauver(); toast('Règles importées.'); }).catch(function (e) { toast(e.message, true); }); $('r-fic').value = ''; };
   ['o-pdf'].forEach(function (id) { $(id).onchange = function () { items.forEach(function (it) { if (!it.fait) analyser(it); }); dessiner(); }; });
+  /** Agents = personnes de l'annuaire (BDDORGA) : proposés pour reconnaître le titulaire d'un document du personnel. */
+  if (window.Api) Api.call('annuaire_personnes').then(function (r) {
+    agents = RenomiDoc.agentsDe(r && r.personnes); var dl = $('dl-agents'); agents.forEach(function (a) { var o = document.createElement('option'); o.value = a.nom; dl.appendChild(o); });
+    items.forEach(function (it) { if (!it.fait && (!it.doc || !it.doc.agent) && it.nom === it.propose) analyser(it); }); dessiner();
+  }).catch(function () { /* hors connexion : le type est reconnu, l'agent est à saisir */ });
   dessinerRegles();
 })();
 </script>

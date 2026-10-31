@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-256",
+    "date": "2026-10-31",
+    "title": "Version 6.33.0 — Renommage : l'outil apprend ce que sait faire la page Documents de Sijil",
+    "changes": [
+      "Documents du personnel : titre de congé, fiche de paie, contrat, attestation CNAS, mise à jour CNAS, attestation de travail, certificat de travail (nouveau), attestation d'émoluments, ATS. L'outil reconnaît le type, l'agent (parmi les personnes de l'annuaire) et les dates dans le nom du fichier puis dans le texte lu, et propose le nom de Sijil (TC_NOM_Prenom_date, NOM_Prenom_FDP_Mars2026…). Sous chaque fichier, le type, l'agent et la période se corrigent et recalculent le nom ; les avertissements « À compléter », « agent à vérifier » s'affichent.",
+      "Doublons signalés dans la liste : même fichier (empreinte) ou même agent + même type + même période ; bouton ✕ pour retirer une ligne.",
+      "Le moteur est celui de la brique lib/_autodetect-renommage, mis à jour à la version 3.43.0 de Sijil, accompagné d'une fiche de connaissance (SIJIL-DOCUMENTS.md) qui décrit tout ce que sait faire la page Documents de Sijil, ce qui est repris, les écarts et comment la tenir à jour."
+    ]
+  },
+  {
     "id": "2026-10-31-255",
     "date": "2026-10-31",
     "title": "Version 6.32.0 — Paramètres : options et niveaux d'accès par option",

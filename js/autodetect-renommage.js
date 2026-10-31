@@ -1,12 +1,12 @@
 /**
  * _autodetect-renommage — reconnaissance et renommage de documents (PDF, images) : type, agent, dates, nom final.
- * Extrait de Sijil (Documents.gs, v3.37.0). Sans dépendance : navigateur, Node et Apps Script (fichier unique).
+ * Extrait de Sijil (Documents.gs, v3.43.0). Sans dépendance : navigateur, Node et Apps Script (fichier unique).
  *
  *   var r = AutoDetectDoc.detecter({ nom: 'titre de conge DUPONT Jean 2026-10-25.pdf' }, { agents: [{ id: 'A1', nom: 'DUPONT Jean' }] });
  *   // r = { type, source, champs: { date, mois, mois2, nss }, avertissement, candidats: [agents], flou }
  *   AutoDetectDoc.nomFinal(r.type, r.candidats[0], r.champs, 'pdf')   // → « TC_DUPONT_Jean_2026-10-25.pdf »
  *
- * Types : titre_conge, fiche_emolument, contrat, attestation_cnas, maj_cnas, attestation_travail, attestation_emoluments, ats, autre.
+ * Types : titre_conge, fiche_emolument, contrat, attestation_cnas, maj_cnas, attestation_travail, certificat_travail, attestation_emoluments, ats, autre.
  * Le contenu d'un scan est lu par une fonction FOURNIE par le projet (options.ocr(donnees) → texte) : ce module n'en impose aucune.
  */
 (function (root, factory) {
@@ -19,7 +19,7 @@
   var _today = null;
   function today() { return _today || new Date().toISOString().slice(0, 10); }
   var Format = { norm: norm };
-  var CODES = { titre_conge: 'TC', fiche_emolument: 'FDP', contrat: 'CONTRAT', attestation_cnas: 'ACNAS', maj_cnas: 'MAJCNAS', attestation_travail: 'AT', attestation_emoluments: 'AE', ats: 'ATS', autre: 'DOC' };
+  var CODES = { titre_conge: 'TC', fiche_emolument: 'FDP', contrat: 'CONTRAT', attestation_cnas: 'ACNAS', maj_cnas: 'MAJCNAS', attestation_travail: 'AT', certificat_travail: 'CT', attestation_emoluments: 'AE', ats: 'ATS', autre: 'DOC' };
   var MOIS = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
   var MOIS_AFF = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'];
   // Noms de mois acceptés : complets ou abrégés (janv, fevr, avr, juil, sept, dec…), année sur 4 ou 2 chiffres (« FEVR 26 » = février 2026).
@@ -28,7 +28,7 @@
   var ALIAS = { jan: 1, janv: 1, janvier: 1, fev: 2, fevr: 2, fevrier: 2, mar: 3, mars: 3, avr: 4, avril: 4, mai: 5, juin: 6, juil: 7, juillet: 7, aou: 8, aout: 8, sep: 9, sept: 9, septembre: 9, oct: 10, octobre: 10, nov: 11, novembre: 11, dec: 12, decembre: 12 };
   function an4(y) { return String(y).length === 2 ? '20' + y : String(y); }
   // Champs obligatoires pour nommer chaque type ; « autre » n'en demande aucun.
-  var REQUIS = { titre_conge: ['date'], fiche_emolument: ['mois'], contrat: ['date'], attestation_cnas: ['date'], maj_cnas: ['mois', 'mois2'], attestation_travail: ['date'], attestation_emoluments: ['mois', 'mois2'], ats: ['date'], autre: [] };
+  var REQUIS = { titre_conge: ['date'], fiche_emolument: ['mois'], contrat: ['date'], attestation_cnas: ['date'], maj_cnas: ['mois', 'mois2'], attestation_travail: ['date'], certificat_travail: ['date'], attestation_emoluments: ['mois', 'mois2'], ats: ['date'], autre: [] };
   function n(s) { return norm(s); }
   function frDot(iso) { return iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) + '.' + iso.slice(0, 4) : ''; }
   function isoOf(d, m, y) { var iso = y + '-' + (Number(m) < 10 ? '0' : '') + Number(m) + '-' + (Number(d) < 10 ? '0' : '') + Number(d); return isDate(iso) ? iso : ''; }
@@ -88,7 +88,8 @@
     if (/attestation d.?affiliation|attestation.{0,10}cnas|\bcnas\b|caisse nationale des assurances sociales/.test(t)) return 'attestation_cnas';
     if (/attestations? (?:d|des|de)[^a-z]{0,3}emoluments?|attestations? de salaire/.test(t)) return 'attestation_emoluments';
     if (/fiche de paie|bulletin de paie|bulletin de salaire|fiche de salaire|fiche d.?emoluments?|\bfdp\b/.test(t)) return 'fiche_emolument';
-    if (/attestation de travail|certificat de travail/.test(t)) return 'attestation_travail';
+    if (/certificat de travail/.test(t)) return 'certificat_travail';
+    if (/attestation de travail/.test(t)) return 'attestation_travail';
     if (/contrat de travail|contrat a duree|\bcontrat\b/.test(t)) return 'contrat';
     return '';
   }
@@ -97,7 +98,7 @@
     var f = { date: '', mois: '', mois2: '', nss: '' }; var first = allDates(t)[0]; first = first ? first.iso : '';
     if (type === 'titre_conge') f.date = dateAfter(t, /(a compter du|a partir du|depart le|debut(?: du conge)?\s*:?|du)\s*/) || first;
     else if (type === 'contrat') f.date = dateAfter(t, /(a compter du|prenant effet le|debut(?:ant)? le|date d.?effet|effet le|du)\s*/) || first;
-    else if (type === 'attestation_travail') f.date = dateAfter(t, /(fait a [a-z ]{2,30},? le|delivree? le|etablie? le|alger,? le|le)\s*/) || first;
+    else if (type === 'attestation_travail' || type === 'certificat_travail') f.date = dateAfter(t, /(fait a [a-z ]{2,30},? le|delivree? le|etablie? le|alger,? le|le)\s*/) || first;
     else if (type === 'attestation_cnas') { f.date = dateAfter(t, /(fait a [a-z ]{2,30},? le|delivree? le|etablie? le|edition le|date d.?edition|le)\s*/) || first; f.nss = nssOf(t); }
     else if (type === 'ats') f.date = first;
     else if (type === 'fiche_emolument') f.mois = moisSeul(t);
@@ -135,6 +136,7 @@
       case 'attestation_cnas': return who + '_AttestationCNAS_' + (f.nss ? f.nss + '_' : '') + date;
       case 'maj_cnas': return who + '_MAJCNAS_' + m1 + '_' + m2;
       case 'attestation_travail': return who + '_AttestationTravail_' + date;
+      case 'certificat_travail': return who + '_CertificatTravail_' + date;
       case 'attestation_emoluments': return who + '_AttestationEmoluments_' + m1 + '_' + m2;
       case 'ats': return who + '_ATS_' + date;
       default: return who + '_' + (stem || 'Document');
