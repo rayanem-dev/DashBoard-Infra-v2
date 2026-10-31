@@ -31,7 +31,7 @@ var Droits = (function () {
     'prestataire': 'prestataire', 'invite': 'guest', 'guest': 'guest', 'visiteur': 'guest'
   };
   // Un prestataire ne voit que les applications qui limitent leurs données à ses entreprises / contrats (règle appliquée côté serveur).
-  var APPS_PRESTATAIRE = ['badges.html', 'prise-en-charge.html'];
+  var APPS_PRESTATAIRE = ['badges.html', 'prise-en-charge.html', 'planning.html', 'simulation.html', 'organigramme.html'];
   // Plafonds de sécurité : quoi qu'on configure, ces rôles ne dépassent jamais ce niveau ni n'ouvrent ces modules.
   var PLAFOND = { guest: 1, stagiaire: 1, prestataire: 2 };
   var INTERDITS = {

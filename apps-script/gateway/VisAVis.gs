@@ -83,4 +83,99 @@ function visavisEnregistrer_(req) {
   Store.journal('visavis', u.email, c.email + ' : travail=' + (req.vis_travail || '—') + ' chambre=' + (req.vis_chambre || '—'));
   return { enregistres: r.plan.length };
 }
-if (typeof module !== 'undefined') module.exports = { visavisPlan_: visavisPlan_ };
+
+// ---------- Libre-service : chaque agent déclare SON vis-à-vis de travail, SON vis-à-vis de chambre et SA chambre ----------
+function coordNorm_(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toLowerCase(); }
+/** Numéro / nom de chambre : 20 caractères (lettres, chiffres, espace, - / . #) ou vide. { valeur } ou { erreur }. */
+function chambreValider_(x) {
+  var v = String(x == null ? '' : x).replace(/\s+/g, ' ').trim();
+  if (v.length > 20 || (v && !/^[A-Za-z0-9\u00C0-\u017F \-\/.#]+$/.test(v))) return { erreur: 'Chambre : 20 caractères au plus (lettres, chiffres, espace, - / . #).' };
+  return { valeur: v };
+}
+/** Personnes que l'agent peut choisir comme vis-à-vis : tous les comptes actifs sauf lui ; un PRESTATAIRE ne choisit que parmi les gens de sa propre entreprise (même « dépendance »). */
+function candidatsVisAVis_(moi, utilisateurs) {
+  var presta = Droits.roleCanon(moi.role) === 'prestataire', ent = coordNorm_(moi.dependance);
+  return utilisateurs.filter(function (x) {
+    if (!x.uid || !x.email || String(x.actif) === '0' || String(x.uid) === String(moi.uid)) return false;
+    return !presta || (!!ent && coordNorm_(x.dependance) === ent);
+  });
+}
+/** Valeurs à porter dans BDDORGA : { chambre, vis_travail, vis_chambre } (noms) ; `lien` = { vis_travail, vis_chambre } (uid) et `nomDe` = uid → nom. */
+function coordChamps_(chambre, lien, nomDe) {
+  lien = lien || {};
+  return { chambre: String(chambre || '').trim(), vis_travail: lien.vis_travail ? String(nomDe[lien.vis_travail] || '') : '', vis_chambre: lien.vis_chambre ? String(nomDe[lien.vis_chambre] || '') : '' };
+}
+function coordEmpreinte_(champs) { return [champs.chambre, champs.vis_travail, champs.vis_chambre].join('|'); }
+/** Faut-il écrire dans BDDORGA ? Oui si l'empreinte a changé depuis la dernière écriture réussie (ou s'il y a quelque chose à écrire la première fois). */
+function coordAEcrire_(champs, derniere) {
+  var emp = coordEmpreinte_(champs), d = String(derniere || ''); if (d === '-') d = '||';   // « - » = tout effacé, déjà reporté
+  if (emp === d) return false;
+  return !!(champs.chambre || champs.vis_travail || champs.vis_chambre || d);
+}
+
+function coordLibreService_(u) {
+  if (!optionActive_('planning.libre_service')) throw Object.assign(new Error('Cette fonction est désactivée par le secrétariat.'), { code: 'DROITS' });
+  if ((acces_(u).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
+}
+function visavisMoi_(req) {
+  var u = Auth.userFromToken(req.token); visavisPrets_(); profilsPrets_();
+  var actif = optionActive_('planning.libre_service'), tous = Store.table('Utilisateurs'), nomDe = {};
+  tous.forEach(function (x) { if (x.uid) nomDe[String(x.uid)] = Annuaire.nomAffichable(x.nom, x.email); });
+  var l = visavisCarte_()[String(u.uid)] || {}, o = profilDe_(u.email) || {};
+  var cands = actif ? candidatsVisAVis_(u, tous).map(function (x) { return { uid: String(x.uid), nom: nomDe[String(x.uid)], fonction: x.fonction || '', service: String(x.service || '').replace(/\s+/g, ' ').trim() }; }) : [];
+  cands.sort(function (a, b) { return a.nom < b.nom ? -1 : 1; });
+  return { actif: actif, chambre: String(o.chambre || ''), vis_travail: l.vis_travail || '', vis_chambre: l.vis_chambre || '', candidats: cands, restreint: Droits.roleCanon(u.role) === 'prestataire' };
+}
+function visavisMoiEnregistrer_(req) {
+  var u = Auth.userFromToken(req.token); visavisPrets_(); profilsPrets_(); coordLibreService_(u);
+  var tous = Store.table('Utilisateurs'), cands = {}; candidatsVisAVis_(u, tous).forEach(function (x) { cands[String(x.uid)] = true; });
+  var carte = visavisCarte_(), cur = carte[String(u.uid)] || {};
+  var travail = req.vis_travail === undefined ? (cur.vis_travail || '') : String(req.vis_travail || ''), chambreV = req.vis_chambre === undefined ? (cur.vis_chambre || '') : String(req.vis_chambre || '');
+  // un lien déjà en place (posé par le chef de service) reste valable même s'il sort de la liste proposée ; un nouveau lien doit venir de la liste
+  if (travail && travail !== (cur.vis_travail || '') && !cands[travail]) throw new Error('Vis-à-vis de travail : personne non autorisée.');
+  if (chambreV && chambreV !== (cur.vis_chambre || '') && !cands[chambreV]) throw new Error('Vis-à-vis de chambre : personne non autorisée.');
+  var champs = { maj_le: new Date().toISOString() };
+  if (req.chambre !== undefined) { var c = chambreValider_(req.chambre); if (c.erreur) throw new Error(c.erreur); champs.chambre = c.valeur; }
+  var connus = {}; tous.forEach(function (x) { if (x.uid && String(x.actif) !== '0') connus[String(x.uid)] = true; });
+  var r = visavisPlan_(carte, u.uid, travail, chambreV, connus);
+  if (r.erreur) throw new Error(r.erreur);
+  r.plan.forEach(function (m) {
+    var v = {}; Object.keys(m).forEach(function (k) { if (k !== 'uid') v[k] = m[k]; });
+    v.maj_par = u.email; v.maj_le = new Date().toISOString();
+    Store.maj('VisAVis', { uid: m.uid }, v);
+  });
+  if (champs.chambre !== undefined || r.plan.length) { champs.coord_orga = ''; Store.maj('Profils', { email: String(u.email).toLowerCase() }, champs); }   // vide l'empreinte : BDDORGA sera mis à jour à la prochaine connexion
+  Store.journal('visavis_moi', u.email, 'travail=' + (travail || '—') + ' chambre=' + (chambreV || '—') + (champs.chambre !== undefined ? ' n° chambre=' + (champs.chambre || '—') : ''));
+  return visavisMoi_(req);
+}
+/**
+ * À la connexion : reporte dans BDDORGA le numéro de chambre et les vis-à-vis de l'agent s'ils ont changé depuis la dernière écriture réussie.
+ * Ne bloque JAMAIS la connexion : toute erreur est seulement notée au journal et sera retentée à la connexion suivante.
+ */
+function coordSynchroniser_(u) {
+  try {
+    if (!optionActive_('planning.sync_bddorga')) return;
+    profilsPrets_(); assurerColonnes_('Profils', ['chambre', 'coord_orga']);
+    var o = profilDe_(u.email) || {}, tous = Store.table('Utilisateurs'), nomDe = {};
+    tous.forEach(function (x) { if (x.uid) nomDe[String(x.uid)] = Annuaire.nomAffichable(x.nom, x.email); });
+    var champs = coordChamps_(o.chambre, visavisCarte_()[String(u.uid)], nomDe);
+    if (!coordAEcrire_(champs, o.coord_orga)) return;
+    var n = ecrireDansBddorga_(u.email, champs, false, true);
+    Store.maj('Profils', { email: String(u.email).toLowerCase() }, { coord_orga: coordEmpreinte_(champs) || '-' });
+    Store.journal('coord_bddorga', u.email, n + ' cellule(s) écrite(s) dans BDDORGA (chambre, vis-à-vis)');
+  } catch (err) { try { Store.journal('coord_bddorga_echec', u.email, String(err && err.message || err)); } catch (e2) { /* rien */ } }
+}
+
+/** Cellule CPM : rôle « cpm » ou service dont le nom contient « CPM » / « passation ». */
+function estCpm_(x) { return Droits.roleCanon(x.role) === 'cpm' || /cpm|passation/i.test(String(x.service || '')); }
+/**
+ * Planning niveau 2 : qui l'utilisateur voit. Chef de service / intérim : les gens de SON service + la cellule CPM ;
+ * rôle CPM : les gens de la cellule (son service et les membres CPM). Fonction pure (testée en Node) ; `moi` et `x` = { role, service }.
+ */
+function planningPortee_(moi, x) {
+  var sv = function (s) { return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); };
+  if (sv(moi.service) && sv(moi.service) === sv(x.service)) return true;
+  return estCpm_(x);
+}
+
+if (typeof module !== 'undefined') module.exports = { estCpm_: estCpm_, planningPortee_: planningPortee_, visavisPlan_: visavisPlan_, chambreValider_: chambreValider_, candidatsVisAVis_: candidatsVisAVis_, coordChamps_: coordChamps_, coordEmpreinte_: coordEmpreinte_, coordAEcrire_: coordAEcrire_ };

@@ -42,6 +42,7 @@ function profilFusion_(pub, o) {
   if (String(o.date_integration || '').trim()) p.date_integration = String(o.date_integration).trim();
   p.nom_affiche = String(o.nom_affiche || '').trim() || p.nom;
   p.photo = !!String(o.photo_mini || '').trim();
+  p.chambre = String(o.chambre || '').trim();
   return p;
 }
 function profilsParEmail_() {

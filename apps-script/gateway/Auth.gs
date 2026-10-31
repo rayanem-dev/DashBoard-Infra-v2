@@ -120,11 +120,20 @@ var Auth = (function () {
     if (mdp.length < CFG.MDP_MIN) throw erreur_('Mot de passe : ' + CFG.MDP_MIN + ' caractères minimum');
   }
 
+  /** Installe le mot de passe par défaut (provisoire, sans expiration : 2) d'un compte qui n'en a pas encore ; retourne la ligne de secret. */
+  function installerMdpDefaut_(email, l) {
+    var e = empreinteDe(CFG.MDP_DEFAUT), ligne = [email, e.sel, e.empreinte, '', '', '', 2];
+    if (l) l.sh.getRange(l.ligne, 1, 1, 7).setValues([ligne]); else secrets_().appendRow(ligne);
+    noter_('mdp_defaut_auto', email, 'mot de passe par défaut installé à la première connexion');
+    return ligneSecret_(email);
+  }
+
   function login(ident, mdp, remember) {
     var u0 = resoudre_(ident); if (!u0) { noter_('connexion_echec', '', 'identifiant inconnu ou compte désactivé (' + String(ident || '').slice(0, 40) + ')'); throw erreur_('Identifiant ou mot de passe incorrect'); }
     var email = String(u0.email || '').trim().toLowerCase();
     var echec = limiter_(email);
     var l = ligneSecret_(email);
+    if ((!l || !l.row[1]) && String(mdp || '') === String(CFG.MDP_DEFAUT) && typeof mdpDefautAutorise_ === 'function' && mdpDefautAutorise_(u0)) l = installerMdpDefaut_(email, l);   // jamais connecté : « 0000 » (provisoire, sans expiration) ouvre le compte
     if (!l || !l.row[1] || hash(String(mdp || ''), l.row[1]) !== l.row[2]) { echec(); noter_('connexion_echec', email, !l || !l.row[1] ? 'aucun mot de passe défini (première connexion à faire)' : 'mot de passe incorrect'); throw erreur_('Identifiant ou mot de passe incorrect'); }
     // doit_changer : 0 = mot de passe choisi · 2 = provisoire SANS expiration (jusqu'à ce que la personne le change) · > 2 = provisoire jusqu'à cette date (ms).
     var exp = Number(l.row[6]) || 0;

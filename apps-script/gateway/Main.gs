@@ -60,6 +60,7 @@ function route_(req) {
       if (typeof preparerCarteBadges_ === 'function') preparerCarteBadges_();
       if (typeof preparerCartesNouvelles_ === 'function') preparerCartesNouvelles_();
       if (typeof preparerJournalCpm_ === 'function') preparerJournalCpm_();
+      if (typeof coordSynchroniser_ === 'function' && !Auth.estUsurpation(req.token)) coordSynchroniser_(u);   // chambre et vis-à-vis de l'agent → BDDORGA, à sa connexion (jamais bloquant ; pas en mode support)
       var usage = usagePourMenu_(u);   // « Mes applications » : compteurs de la personne (suivent son compte, pas son navigateur) et applications populaires de son rôle
       return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: peutOrganiser_(u), usages: usage.usages, populaires: usage.populaires };
     }
@@ -85,6 +86,8 @@ function route_(req) {
     case 'organigramme': return organigramme_(req);
     case 'visavis_liste': return visavisListe_(req);
     case 'visavis_enregistrer': return visavisEnregistrer_(req);
+    case 'visavis_moi': return visavisMoi_(req);
+    case 'visavis_moi_enregistrer': return visavisMoiEnregistrer_(req);
     case 'aff_personnes': return affPersonnes_(req);
     case 'aff_changer': return affChanger_(req);
     case 'aff_historique': return affHistorique_(req);
@@ -345,7 +348,7 @@ function route_(req) {
     default: throw new Error('Action inconnue');
   }
 }
-var ACTIONS_PRESTATAIRE_ = /^(changer_mdp|me|menu|profil_moi|profil_enregistrer|profil_maj|profil_photo|photos_mini|acces_demander|profil_correction|email_contact_\w+|badges_donnees|badges_numeroter|badges_personnes_sauver|badges_entreprises_sauver|badges_enquetes_saisir|pec)$/;
+var ACTIONS_PRESTATAIRE_ = /^(changer_mdp|me|menu|profil_moi|profil_enregistrer|profil_maj|profil_photo|photos_mini|acces_demander|profil_correction|email_contact_\w+|badges_donnees|badges_numeroter|badges_personnes_sauver|badges_entreprises_sauver|badges_enquetes_saisir|pec|planning\w*|situation|rotation_enregistrer|reliquat_enregistrer|modif_\w+|simu_\w+|visavis_\w+)$/;
 var RUBRIQUES_IDS_ = ['pilotage', 'marches', 'acces', 'personnel', 'logistique', 'admin', 'it'];
 
 function acces_(user) { return Droits.resolve(user, Store.table('DroitsRole'), Store.table('Exceptions')); }
@@ -420,12 +423,12 @@ function planning_(req) {
   var auj = Dates.today();
   var debut = Dates.isDate(req.debut) ? req.debut : Dates.addDays(auj, -7);
   var n = Math.max(7, Math.min(370, Number(req.jours) || 35));
-  var tous = niv >= 2; // 1 = son propre planning seulement ; 2 = tout le monde ; 3 = tout le monde + modification
+  var tous = niv >= 3; // 1 = son planning + ses vis-à-vis ; 2 = son service + la cellule CPM (le CPM : les gens de la cellule) ; 3 = tout le monde + modification
   var moi = String(u.email).toLowerCase();
   var mods = correctionsParEmail_(); // demandes de modification approuvées
-  var vis = tous ? null : visibilitePlanning_(u);   // niveau 1 : son planning + ses vis-à-vis (travail et chambre) quand ils existent
+  var vis = tous ? null : visibilitePlanning_(u);   // niveau 1 et 2 : son planning + ses vis-à-vis (travail et chambre) quand ils existent
   var lignes = Store.table('Utilisateurs').filter(function (x) {
-    return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi || (vis && vis[String(x.uid)]));
+    return String(x.actif) !== '0' && x.email && (tous || String(x.email).toLowerCase() === moi || (vis && vis[String(x.uid)]) || (niv >= 2 && planningPortee_(u, x)));
   }).map(function (x) {
     var l = { uid: String(x.uid || ''), nom: Annuaire.nomAffichable(x.nom, x.email), service: x.service, fonction: x.fonction, dependance: x.dependance || '', configuree: false, moi: String(x.email).toLowerCase() === moi };
     if (niv >= 3) l.email = x.email;
@@ -437,9 +440,8 @@ function planning_(req) {
     l.situation = s; l.grille = Planning.grille(rot, corr, debut, n);
     return l;
   });
-  return { aujourdhui: auj, debut: debut, jours: n, peutVoirTous: tous, peutModifier: niv >= 3, lignes: lignes };
+  return { aujourdhui: auj, debut: debut, jours: n, peutVoirTous: niv >= 2, portee: niv >= 3 ? 'division' : niv >= 2 ? 'equipe' : 'moi', peutModifier: niv >= 3, lignes: lignes };
 }
-
 // ---------- Rôles modifiables (onglet « Roles ») ----------
 var ROLES_INFO_ = [];
 

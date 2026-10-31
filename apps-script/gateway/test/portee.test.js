@@ -31,6 +31,6 @@ test('portée : une entreprise hors liste est refusée, la sienne passe (casse e
 test('passerelle : un prestataire n\'atteint que les actions prévues pour lui', () => {
   const main = fs.readFileSync(path.join(__dirname, '..', 'Main.gs'), 'utf8');
   const re = new RegExp(/var ACTIONS_PRESTATAIRE_ = (\/.*\/);/.exec(main)[1].slice(1, -1));
-  ['menu', 'badges_donnees', 'badges_numeroter', 'changer_mdp'].forEach(a => assert.ok(re.test(a), a));
-  ['badges_fiche', 'badges_enquetes_chercher', 'badges_enquetes_export', 'cpm_journal', 'vivier_liste', 'admin_etat', 'habilitations_donnees', 'planning', 'admin_portee'].forEach(a => assert.ok(!re.test(a), a));
+  ['menu', 'badges_donnees', 'badges_numeroter', 'changer_mdp', 'planning', 'visavis_moi', 'visavis_moi_enregistrer', 'simu_agents'].forEach(a => assert.ok(re.test(a), a));
+  ['badges_fiche', 'badges_enquetes_chercher', 'badges_enquetes_export', 'cpm_journal', 'vivier_liste', 'admin_etat', 'habilitations_donnees', 'admin_portee', 'aff_personnes', 'rapports_envoyer'].forEach(a => assert.ok(!re.test(a), a));
 });

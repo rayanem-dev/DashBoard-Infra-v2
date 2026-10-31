@@ -239,6 +239,17 @@ var Annuaire = (function () {
       var e = { col: col + 1, valeur: v }; if (neuf) { e.entete = k === 'nin' ? 'NIN' : 'Matricule SAP'; e.ligneEntete = c.ligne + 1; }
       ecritures.push(e);
     });
+    if (options && options.coord) { // chambre et vis-à-vis de l'agent : colonnes créées à droite si besoin ; la valeur est REMPLACÉE si elle a changé (ces colonnes appartiennent à l'agent)
+      var hdr = (valeurs[c.ligne] || []).map(n);
+      [['chambre', 'Chambre'], ['vis_travail', 'Vis-à-vis travail'], ['vis_chambre', 'Vis-à-vis chambre']].forEach(function (p) {
+        if (!champs || champs[p[0]] === undefined) return;
+        var v = t(champs[p[0]]), col = hdr.indexOf(n(p[1])), neuf = false;
+        if (col < 0) { if (!v) return; col = largeur; neuf = true; largeur += 1; hdr[col] = n(p[1]); }
+        else if (t(valeurs[ligne][col]) === v) return;
+        var e = { col: col + 1, valeur: v }; if (neuf) { e.entete = p[1]; e.ligneEntete = c.ligne + 1; }
+        ecritures.push(e);
+      });
+    }
     return { ligne: ligne + 1, ecritures: ecritures };
   }
 

@@ -599,6 +599,16 @@
         return { services: sv2, total: DEMO_USERS.length }; }
       case 'visavis_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var vl = demoVav();
         return { personnes: DEMO_USERS.map(function (x) { var l = vl[x.uid] || {}; return { uid: x.uid, nom: x.nom, fonction: x.fonction || '', service: demoService(x), dependance: x.dependance || '', telephone: '0555 00 00 0' + x.uid.slice(1), vis_travail: l.vis_travail || '', vis_chambre: l.vis_chambre || '', modifiable: true }; }) }; }
+      case 'visavis_moi': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var vmo = demoVav()[demoState.user.uid] || {}, presta = demoState.user.role === 'prestataire', ent = String(demoState.user.dependance || '');
+        return { actif: true, restreint: presta, chambre: (demoProfil[demoState.user.email] || {}).chambre || '', vis_travail: vmo.vis_travail || '', vis_chambre: vmo.vis_chambre || '',
+          candidats: DEMO_USERS.filter(function (x) { return x.uid !== demoState.user.uid && (!presta || (ent && String(x.dependance || '') === ent)); }).map(function (x) { return { uid: x.uid, nom: x.nom, fonction: x.fonction || '', service: demoService(x) }; }) }; }
+      case 'visavis_moi_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var vm2 = demoVav(), me = demoState.user.uid, chm = String(p.chambre == null ? '' : p.chambre).trim();
+        if (chm.length > 20 || (chm && !/^[A-Za-z0-9\u00C0-\u017F \-\/.#]+$/.test(chm))) throw erreur('Chambre : 20 caractères au plus (lettres, chiffres, espace, - / . #).');
+        [['vis_travail', p.vis_travail], ['vis_chambre', p.vis_chambre]].forEach(function (c) { var v = c[1] || '', cur = (vm2[me] || {})[c[0]] || ''; if (v === me) throw erreur('Un agent ne peut pas être son propre vis-à-vis'); if (cur === v) return;
+          (vm2[me] = vm2[me] || {})[c[0]] = v; if (v) { if (!(vm2[v] || {})[c[0]]) (vm2[v] = vm2[v] || {})[c[0]] = me; } else if (cur && (vm2[cur] || {})[c[0]] === me) vm2[cur][c[0]] = ''; });
+        sessionStorage.setItem('infra_v2_demo_vav', JSON.stringify(vm2)); (demoProfil[demoState.user.email] = demoProfil[demoState.user.email] || {}).chambre = chm; return { ok: true }; }
       case 'visavis_enregistrer': { exigerAdmin(); var vm = demoVav(), vu = DEMO_USERS.map(function (x) { return x.uid; });
         if (vu.indexOf(p.uid) < 0) throw erreur('Personne inconnue');
         [['vis_travail', p.vis_travail], ['vis_chambre', p.vis_chambre]].forEach(function (c) { var v = c[1] || ''; if (v && vu.indexOf(v) < 0) throw erreur('Vis-à-vis inconnu'); if (v === p.uid) throw erreur('Un agent ne peut pas être son propre vis-à-vis');

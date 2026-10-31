@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-10-31-265",
+    "date": "2026-10-31",
+    "title": "Version 6.39.0 — Planning pour tous, équipes par service + CPM, chambre et vis-à-vis en libre-service",
+    "changes": [
+      "Planning et Simulation sont ouverts à tous les rôles, prestataires compris (cartes Planning, Simulation et Organigramme visibles ; chacun voit son planning et ses vis-à-vis). L'invité (lecture seule) reste sans planning. Migration automatique : elle ajoute ou relève les droits, jamais ne les baisse.",
+      "Planning des équipes : chef de division et secrétariat voient tout ; chef de service et intérim voient leur service + la cellule CPM ; le CPM voit les gens de la cellule ; les autres ne voient que leur planning et leurs vis-à-vis.",
+      "Mon profil › « Ma chambre et mes vis-à-vis » : chaque agent (prestataire : parmi les gens de son entreprise) déclare son vis-à-vis de travail, son vis-à-vis de chambre et son numéro de chambre. À sa connexion suivante, ces informations sont reportées dans BDDORGA (colonnes Chambre, Vis-à-vis travail, Vis-à-vis chambre, valeur remplacée si elle a changé ; jamais bloquant).",
+      "Mot de passe par défaut : un compte qui ne s'est jamais connecté entre avec « 0000 » (provisoire, sans expiration), y compris les comptes ajoutés plus tard ; jamais pour le secrétariat, le chef de division, les chefs de service (et intérims) ni les comptes ayant accès à la sécurité.",
+      "Paramètres : trois nouveaux interrupteurs — libre-service chambre / vis-à-vis, report dans BDDORGA, mot de passe par défaut automatique."
+    ]
+  },
+  {
     "id": "2026-10-31-264",
     "date": "2026-10-31",
     "title": "Version 6.38.1 — Carte des fiches : s'ouvre dans le portail",

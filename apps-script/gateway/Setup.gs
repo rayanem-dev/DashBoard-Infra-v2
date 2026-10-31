@@ -37,7 +37,7 @@ function ajouterDroitsParDefaut() {
 // Module « simulation » : niveau 2 = pour son service (chef de service, intérim) ; 3 = pour tous (chef de division, secrétariat).
 // Niveau 1 (tous les autres rôles) : l'agent simule et consulte son propre planning et ses vis-à-vis seulement.
 var DROITS_SIMULATION_ = [['chef_service', 'simulation', 2], ['interim_chef_service', 'simulation', 2], ['chef_division', 'simulation', 3], ['secretariat', 'simulation', 3],
-  ['agent', 'simulation', 1], ['conducteur', 'simulation', 1], ['dessinateur', 'simulation', 1], ['chef_atelier', 'simulation', 1], ['ingenieur', 'simulation', 1], ['cadre_sup', 'simulation', 1], ['ordonnateur', 'simulation', 1], ['cpm', 'simulation', 1]];
+  ['agent', 'simulation', 1], ['conducteur', 'simulation', 1], ['dessinateur', 'simulation', 1], ['chef_atelier', 'simulation', 1], ['ingenieur', 'simulation', 1], ['cadre_sup', 'simulation', 1], ['ordonnateur', 'simulation', 1], ['cpm', 'simulation', 1], ['stagiaire', 'simulation', 1], ['prestataire', 'simulation', 1]];
 /** Crée le module « simulation » et ses droits par défaut s'ils n'existent pas (ne touche jamais aux réglages existants). */
 function ajouterModuleSimulation() {
   var db = SpreadsheetApp.openById(prop_('DB_ID'));
@@ -244,8 +244,49 @@ function preparerVisibilite_() {
     ['TBL_Modules', 'TBL_DroitsRole', 'TBL_Applications'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
   } catch (e) { /* on réessaiera à la requête suivante */ }
 }
+/**
+ * Migration (une fois) : planning et simulation ouverts à TOUS les rôles, prestataires compris. N'ajoute ou n'augmente que (jamais d'abaissement) ;
+ * l'invité (lecture seule) garde l'interdiction du planning. Les cartes Planning, Simulation et Organigramme sont ouvertes au niveau 1.
+ */
+function ouvrirPlanningATous_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('PLANNING_TOUS_V1') === '1') return;
+  try {
+    var db = SpreadsheetApp.openById(prop_('DB_ID')), dr = db.getSheetByName('DroitsRole'), v = dr.getDataRange().getValues();
+    var voulu = [];
+    Object.keys(PLANNING_NIVEAUX_).forEach(function (r) { voulu.push([r, 'planning', PLANNING_NIVEAUX_[r]]); });
+    DROITS_SIMULATION_.forEach(function (x) { voulu.push([x[0], 'simulation', x[2]]); });
+    var ajout = [];
+    voulu.forEach(function (w) {
+      var trouve = false;
+      for (var i = 1; i < v.length; i += 1) {
+        if (Droits.roleCanon(v[i][0]) === w[0] && String(v[i][1]).toLowerCase() === w[1]) {
+          trouve = true;
+          if ((Number(v[i][2]) || 0) < w[2]) dr.getRange(i + 1, 3).setValue(w[2]);
+        }
+      }
+      if (!trouve) ajout.push(w);
+    });
+    if (ajout.length) dr.getRange(dr.getLastRow() + 1, 1, ajout.length, 3).setValues(ajout);
+    var ap = db.getSheetByName('Applications'), a = ap.getDataRange().getValues(), h = a[0].map(String), iU = h.indexOf('url'), iN = h.indexOf('niveau_min');
+    for (var j = 1; j < a.length; j += 1) if (['planning.html', 'simulation.html', 'organigramme.html'].indexOf(String(a[j][iU])) !== -1 && (Number(a[j][iN]) || 1) > 1) ap.getRange(j + 1, iN + 1).setValue(1);
+    props.setProperty('PLANNING_TOUS_V1', '1');
+    ['TBL_DroitsRole', 'TBL_Applications'].forEach(function (k) { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+  } catch (e) { /* on réessaiera à la requête suivante */ }
+}
+/** Le mot de passe par défaut (« 0000 ») est-il offert à ce compte à sa première connexion ? Actif, jamais de large visibilité (comme definirMotDePasseParDefaut), et option « securite.mdp_defaut_auto » active. */
+function mdpDefautAutorise_(u) {
+  try {
+    if (!u || String(u.actif) === '0' || !optionActive_('securite.mdp_defaut_auto')) return false;
+    chargerRoles_();
+    var role = Droits.roleCanon(u.role);
+    if (['secretariat', 'chef_division', 'chef_service', 'interim_chef_service'].indexOf(role) !== -1) return false;
+    return (Droits.resolve(u, Store.table('DroitsRole'), Store.table('Exceptions')).securite || 0) < 1;
+  } catch (e) { return false; }
+}
 function preparerSimulation_() {
   var props = PropertiesService.getScriptProperties();
+  if (typeof ouvrirPlanningATous_ === 'function' && props.getProperty('SIMU_PRET') === '1') ouvrirPlanningATous_();
   if (typeof preparerVisibilite_ === 'function' && props.getProperty('SIMU_PRET') === '1') preparerVisibilite_();
   if (typeof fusionnerVivier_ === 'function' && props.getProperty('SIMU_PRET') === '1') fusionnerVivier_();
   if (typeof retirerCartesEnquetes_ === 'function' && props.getProperty('SIMU_PRET') === '1') retirerCartesEnquetes_();
@@ -335,7 +376,7 @@ var SCHEMA_ = {
   Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire', 'reliquat', 'reliquat_net'],
   Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
   VisAVis: ['uid', 'vis_travail', 'vis_chambre', 'maj_par', 'maj_le'],
-  Profils: ['email', 'nom_affiche', 'civilite', 'telephone', 'date_integration', 'wifi_user', 'photo_mini', 'photo', 'maj_le'],
+  Profils: ['email', 'nom_affiche', 'civilite', 'telephone', 'date_integration', 'wifi_user', 'photo_mini', 'photo', 'maj_le', 'chambre', 'coord_orga'],
   DemandesAcces: ['numero', 'email', 'titre', 'motif', 'statut', 'cree_le', 'traite_par', 'traite_le'],
   Journal: ['date', 'action', 'email', 'detail']
 };
@@ -423,10 +464,10 @@ function ajouterChantiersParDefaut_installation_(db) {
 // ---------------------------------------------------------------------------------------------
 // Planning : droits, carte du menu
 // ---------------------------------------------------------------------------------------------
-// 1 = voit SON planning · 2 = voit tout le monde (filtre par service) · 3 = + modifie la rotation de chacun.
+// 1 = voit SON planning (+ ses vis-à-vis) · 2 = voit SON service + la cellule CPM (le CPM voit les gens de la cellule) · 3 = voit tout le monde + modifie la rotation de chacun.
 var PLANNING_NIVEAUX_ = {
-  agent: 1, conducteur: 1, dessinateur: 1, chef_atelier: 1, ingenieur: 1, cadre_sup: 1, ordonnateur: 1, cpm: 1,
-  chef_service: 2, interim_chef_service: 2,
+  agent: 1, conducteur: 1, dessinateur: 1, chef_atelier: 1, ingenieur: 1, cadre_sup: 1, ordonnateur: 1, stagiaire: 1, prestataire: 1,
+  cpm: 2, chef_service: 2, interim_chef_service: 2,
   chef_division: 3, secretariat: 3
 };
 

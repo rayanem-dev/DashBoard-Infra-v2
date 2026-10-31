@@ -65,6 +65,16 @@
       <div class="champs" id="champs"></div>
       <div class="actions" style="justify-content:flex-start"><button class="btn-p" id="b-enreg" type="button">💾 Enregistrer</button></div><div class="msg" id="m-enreg"></div>
     </div>
+    <div class="bloc" id="bloc-coord" hidden>
+      <h2>🛏️ Ma chambre et mes vis-à-vis</h2>
+      <p class="aide" style="margin:0 0 8px;font-size:12px;color:var(--text-muted)">Votre vis-à-vis de travail tient votre poste pendant votre repos ; votre vis-à-vis de chambre partage votre chambre. À votre prochaine connexion, ces informations sont reportées dans BDDORGA.</p>
+      <div class="champs" style="grid-template-columns:1fr">
+        <div><label for="c-chambre">N° de chambre <span class="cad">(si une chambre vous est affectée)</span></label><input id="c-chambre" maxlength="20" autocomplete="off"></div>
+        <div><label for="c-vt">Vis-à-vis de travail</label><select id="c-vt"></select></div>
+        <div><label for="c-vc">Vis-à-vis de chambre</label><select id="c-vc"></select></div>
+      </div>
+      <div class="actions" style="justify-content:flex-start"><button class="btn-p" id="b-coord" type="button">💾 Enregistrer</button></div><div class="msg" id="m-coord"></div>
+    </div>
     <div class="bloc">
       <h2>🔑 Mes accès</h2>
       <details class="liste" open><summary id="s-acc"></summary><div id="l-acc"></div></details>
@@ -191,7 +201,26 @@
     var suivies = dem.filter(function (d) { return d.statut !== 'en_attente'; }).slice(0, 5);
     if (suivies.length) { var h = el('div', 'msg', 'Dernières demandes traitées : ' + suivies.map(function (d) { return d.titre + ' (' + (d.statut === 'accordee' ? 'accordée' : 'refusée') + ')'; }).join(', ')); la.appendChild(h); }
   }
+  // ---------- chambre et vis-à-vis (libre-service) ----------
+  function remplir(sel, liste, val) {
+    sel.textContent = ''; var o0 = el('option', null, '— aucun —'); o0.value = ''; sel.appendChild(o0);
+    liste.forEach(function (c) { var o = el('option', null, c.nom + (c.fonction ? ' · ' + c.fonction : '')); o.value = c.uid; sel.appendChild(o); });
+    if (val && !liste.some(function (c) { return c.uid === val; })) { var o2 = el('option', null, '(lien existant)'); o2.value = val; sel.appendChild(o2); }
+    sel.value = val || '';
+  }
+  function chargerCoord() {
+    return Api.call('visavis_moi').then(function (r) {
+      $('bloc-coord').hidden = !r.actif; if (!r.actif) return;
+      $('c-chambre').value = r.chambre || ''; remplir($('c-vt'), r.candidats, r.vis_travail); remplir($('c-vc'), r.candidats, r.vis_chambre);
+    }).catch(function () { $('bloc-coord').hidden = true; });
+  }
+  $('b-coord').addEventListener('click', function () {
+    msg('m-coord', 'Enregistrement…', true);
+    Api.call('visavis_moi_enregistrer', { chambre: $('c-chambre').value, vis_travail: $('c-vt').value, vis_chambre: $('c-vc').value })
+      .then(function () { msg('m-coord', 'Enregistré. BDDORGA sera mis à jour à votre prochaine connexion.', true); return chargerCoord(); }).catch(function (e) { msg('m-coord', e.message); });
+  });
   function charger() {
+    chargerCoord();
     return Api.call('profil_moi').then(function (r) { U = r.user; photo = r.photo || ''; dessinerTete(); dessinerChamps(); dessinerAcces(r.acces, r.demandes || []); });
   }
   charger().then(function () { if (location.hash === '#mdp') { $('bloc-mdp').scrollIntoView(); $('m-anc').focus(); } }).catch(function (e) { msg('m-enreg', e.message); });

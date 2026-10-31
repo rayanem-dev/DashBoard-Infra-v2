@@ -77,11 +77,11 @@ function interdireEcritureNIN() { PropertiesService.getScriptProperties().delete
  * Ne bloque jamais l'agent : en cas d'échec, la valeur reste dans la passerelle et on le signale dans le journal.
  * Le NIN n'est recopié que si ORGA_ECRIRE_NIN = 1 (voir autoriserEcritureNIN) : à n'activer qu'une fois le partage du fichier restreint.
  */
-function ecrireDansBddorga_(email, champs, etendu) {
+function ecrireDansBddorga_(email, champs, etendu, coord) {
   var props = PropertiesService.getScriptProperties(); var id = props.getProperty('ORGA_ID') || ORGA_ID_DEFAUT;
   var sh = SpreadsheetApp.openById(id).getSheetByName('BDDORGA');
   if (!sh) throw new Error('Onglet BDDORGA introuvable');
-  var plan = Annuaire.planEcriture(sh.getDataRange().getValues(), email, champs, { nin: props.getProperty('ORGA_ECRIRE_NIN') === '1', etendu: etendu === true });
+  var plan = Annuaire.planEcriture(sh.getDataRange().getValues(), email, champs, { nin: props.getProperty('ORGA_ECRIRE_NIN') === '1', etendu: etendu === true, coord: coord === true });
   if (plan.erreur) throw new Error(plan.erreur);
   plan.ecritures.forEach(function (e) {
     if (e.entete) sh.getRange(e.ligneEntete, e.col).setValue(e.entete);
