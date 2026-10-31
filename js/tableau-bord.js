@@ -146,6 +146,11 @@
       bouton.disabled = true; var lg = bouton.parentNode; if (lg) lg.hidden = true;   // la ligne disparaît tout de suite
       return Api.call('fiches_manuelle', { contrat: x.contrat, editee: editee }).then(function () { return recharger(); }).catch(function (e) { dire(e.message, true); bouton.disabled = false; if (lg) lg.hidden = false; });
     }
+    function annuler(x, annuler_, bouton) {
+      if (annuler_ && !window.confirm('Annuler la fiche du contrat ' + x.contrat + (x.projet ? ' (' + x.projet + ')' : '') + ' ?\nLe PDF reste dans le Drive, mais la fiche redevient « non générée » et sera relancée. En éditer une nouvelle remet tout en ordre.')) return Promise.resolve();
+      bouton.disabled = true; var lg = bouton.parentNode; if (lg) lg.hidden = true;
+      return Api.call('fiches_annuler', { contrat: x.contrat, annuler: annuler_ }).then(function () { return recharger(); }).catch(function (e) { dire(e.message, true); bouton.disabled = false; if (lg) lg.hidden = false; });
+    }
     function dateCourte(iso) { var d = new Date(iso); return isNaN(d) ? '' : ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
     if (manque && f.lecture === 'ok') {
       var tete2 = el('div', 'tb-f-sous', 'Fiches non générées (' + manque + ') :');
@@ -156,6 +161,7 @@
       var lst = el('div', 'tb-f-lignes');
       f.manquantes.slice(0, 12).forEach(function (x) {
         var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-rouge', libelle(x)); p.title = libelle(x) + (x.entreprise ? ' · ' + x.entreprise : '') + ' — fiche à éditer'; l.appendChild(p);
+        if (x.annulee) { var tg = el('small', 'tb-f-motif', '↩ fiche annulée' + (x.annulee_par ? ' par ' + x.annulee_par : '')); l.appendChild(tg); if (f.peut_annuler) l.appendChild(bouton('↩ Rétablir la fiche', 'Remettre la fiche éditée comme éditée', function (b) { annuler(x, false, b); })); }
         if (f.peut_relancer) l.appendChild(bouton(x.relance ? '🔔 Relancée le ' + dateCourte(x.relance.le) + ' · relancer encore' : '🔔 Relancer', 'E-mail au service concerné et au conducteur affecté à ce chantier' + (x.relance ? ' (dernière relance : ' + x.relance.par + ')' : ''), function (b) { relancer(x, b); }));
         if (f.peut_manuelle) l.appendChild(bouton('✔ Éditée à la main', 'La fiche a été faite hors du générateur : la compter comme éditée (et ne plus la relancer)', function (b) { manuelle(x, true, b); }));
         if (f.peut_ignorer) l.appendChild(bouton('🚫 Ignorer ce mois', 'Ne plus attendre ni relancer cette fiche pour ce projet ce mois-ci', function (b) { ignorer(x, true, b); }));
@@ -167,7 +173,8 @@
     function rubrique(titre, n) { var d = el('details', 'tb-f-masque'); d.appendChild(el('summary', null, titre + ' (' + n + ')')); m.appendChild(d); return d; }   // repliées : la liste à éditer reste seule visible
     if (f.faites.length) {
       var de = rubrique('✅ Fiches éditées', f.faites.length);
-      gen.forEach(function (x) { var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-gris', '✅ ' + libelle(x)); p.title = libelle(x) + (x.entreprise ? ' · ' + x.entreprise : '') + ' — éditée avec le générateur'; l.appendChild(p); de.appendChild(l); });
+      gen.forEach(function (x) { var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-gris', '✅ ' + libelle(x)); p.title = libelle(x) + (x.entreprise ? ' · ' + x.entreprise : '') + ' — éditée avec le générateur'; l.appendChild(p);
+        if (f.peut_annuler) l.appendChild(bouton('↩ Annuler', 'Annuler cette fiche : elle redevient « non générée » (le PDF reste dans le Drive)', function (b) { annuler(x, true, b); })); de.appendChild(l); });
       man.forEach(function (x) { var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-gris', '✋ ' + libelle(x)); p.title = 'Éditée à la main' + (x.par ? ' par ' + x.par : ''); l.appendChild(p);
         if (f.peut_manuelle) l.appendChild(bouton('↩ Annuler', 'La fiche redevient « non générée »', function (b) { manuelle(x, false, b); })); de.appendChild(l); });
     }
