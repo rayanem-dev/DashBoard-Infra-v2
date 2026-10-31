@@ -108,6 +108,17 @@ window.google = { script: { run: (function () {
   .form-row .field { display: flex; flex-direction: column; }
   @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; gap: 0; } }
 
+  /* Choix du document : deux grands boutons en haut du formulaire (les deux peuvent être actifs) */
+  .choix-doc { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 6px; }
+  .choix-btn { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 16px 12px; border-radius: 16px; border: 2px dashed #C9CDD4; background: #fff; color: var(--text-dark); font-family: inherit; cursor: pointer; text-align: center; transition: transform .12s, box-shadow .2s, background .2s; min-height: 108px; }
+  .choix-btn .ic { font-size: 30px; line-height: 1; } .choix-btn b { font-size: 15.5px; font-weight: 800; } .choix-btn small { font-size: 11.5px; color: var(--text-muted); font-weight: 500; }
+  .choix-btn .coche { position: absolute; top: 8px; right: 10px; width: 24px; height: 24px; border-radius: 50%; background: #E5E7EB; color: transparent; font-style: normal; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .choix-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
+  .choix-btn.actif { border: 2px solid var(--orange-main); background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; box-shadow: var(--shadow-hover); }
+  .choix-btn.actif small { color: rgba(255,255,255,.88); } .choix-btn.actif .coche { background: #fff; color: var(--orange-main); }
+  .bloc-doc { border: 1.5px solid var(--border); border-radius: 14px; margin-top: 12px; padding: 10px 14px 12px; background: rgba(232,93,4,.04); }
+  .bloc-doc-t { font-weight: 800; font-size: 13px; color: var(--orange-main); text-transform: uppercase; letter-spacing: .4px; } .bloc-doc-t span { font-weight: 500; font-size: 11px; color: var(--text-muted); text-transform: none; letter-spacing: 0; margin-left: 6px; }
+  .info-valable { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--text-dark); } .info-injection { margin: 12px 0 0; font-size: 12px; color: var(--text-muted); }
   fieldset { border: 1.5px solid var(--border); border-radius: 14px; margin-top: 18px; padding: 4px 14px 14px; }
   legend { font-weight: 700; color: var(--orange-main); padding: 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; }
 
@@ -189,6 +200,7 @@ window.google = { script: { run: (function () {
     #btnOrg { margin-top: 10px; }
     #btnOrg, .btn-s { min-height: 44px; padding: 10px 14px; font-size: 14px !important; }
     fieldset { padding: 4px 10px 12px; } legend { font-size: 12px; }
+    .choix-doc { gap: 8px; } .choix-btn { min-height: 96px; padding: 12px 8px; } .choix-btn b { font-size: 14px; }
     .ligne-check { min-height: 40px; } .ligne-check input { width: 22px; height: 22px; }
     /* personnes / véhicules : une carte par personne */
     table, tbody { display: block; width: 100%; } thead { display: none; }
@@ -234,10 +246,16 @@ window.google = { script: { run: (function () {
 
   <div class="form-card">
 
+    <div class="choix-doc" role="group" aria-label="Documents à générer">
+      <button type="button" class="choix-btn actif" id="choixPEC" aria-pressed="true"><span class="ic">🏨</span><b>Prise en charge</b><small>Hébergement · restauration</small><i class="coche">✓</i></button>
+      <button type="button" class="choix-btn" id="choixAuto" aria-pressed="false"><span class="ic">🚗</span><b>Autorisation d'accès</b><small>Véhicule · accès au site</small><i class="coche">✓</i></button>
+    </div>
+    <p style="font-size:11.5px;color:var(--text-muted);margin:0 0 14px;text-align:center" id="aideChoix">Touchez pour activer ou retirer ; vous pouvez choisir les deux.</p>
+
     <label>Prestataire</label>
     <input type="text" id="prestataire" list="listePrestataires" placeholder="Tapez pour chercher, ou ouvrez la liste ▾" autocomplete="off">
     <datalist id="listePrestataires"></datalist>
-    <div style="margin:-4px 0 10px"><button type="button" id="btnOrg" class="btn-s" style="font-size:12px">➕ Organisme hors Suivi CPM</button>
+    <div style="margin:-4px 0 10px" id="zoneOrg"><button type="button" id="btnOrg" class="btn-s" style="font-size:12px">➕ Organisme hors Suivi CPM</button>
       <div id="formOrg" hidden style="margin-top:8px;padding:10px;border:1.5px dashed #bbb;border-radius:10px">
         <p style="margin:0 0 6px;font-size:12px;color:#666">Un organisme qui n'est pas dans le Suivi CPM (ex. une division Sonatrach). Il est enregistré à part : le Suivi CPM n'est pas touché.</p>
         <input type="text" id="orgNom" placeholder="Organisme (ex. SONATRACH | Division Laboratoires)" autocomplete="off" style="width:100%;margin-bottom:6px">
@@ -266,14 +284,10 @@ window.google = { script: { run: (function () {
       </div>
     </div>
 
-    <fieldset>
-      <legend>Documents à générer</legend>
-      <div class="ligne-check" style="flex-wrap:wrap;">
-        <input type="checkbox" id="genererPEC" checked>
-        <label>Prise en charge</label>
-        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">un fichier par base de vie, 8 personnes au plus par fichier</span>
-      </div>
-      <div id="sousOptionsPEC" style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:8px 0 12px 28px;">
+    <input type="checkbox" id="genererPEC" checked hidden><input type="checkbox" id="genererAuto" hidden><input type="checkbox" id="valable2Mois" hidden>
+    <div class="bloc-doc" id="blocPEC">
+      <div class="bloc-doc-t">🏨 Prise en charge <span>un fichier par base de vie, 8 personnes au plus par fichier</span></div>
+      <div id="sousOptionsPEC" style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:10px 0 0 0;">
         <div class="ligne-check" style="margin-top:0;">
           <input type="checkbox" id="hebergement" checked>
           <label>Hébergement</label>
@@ -295,20 +309,12 @@ window.google = { script: { run: (function () {
           <label>Fonction dans Observations</label>
         </div>
       </div>
-      <div class="ligne-check">
-        <input type="checkbox" id="genererAuto">
-        <label>Autorisation d'accès</label>
-      </div>
-      <div class="ligne-check" id="ligneValable2Mois" style="display:none;">
-        <input type="checkbox" id="valable2Mois">
-        <label for="valable2Mois" id="libValable">Valable jusqu'à la fin du mois prochain</label>
-      </div>
-      <div class="ligne-check">
-        <input type="checkbox" id="injecterEnquetes" checked>
-        <label>Injecter dans les Enquêtes administratives</label>
-        <span style="font-size:11px;color:var(--text-muted);font-weight:500;">seules les personnes absentes des Enquêtes sont ajoutées</span>
-      </div>
-    </fieldset>
+    </div>
+    <div class="bloc-doc" id="blocAuto" hidden>
+      <div class="bloc-doc-t">🚗 Autorisation d'accès <span>un véhicule par ligne (type et immatriculation)</span></div>
+      <p class="info-valable" id="libValable"></p>
+    </div>
+    <p class="info-injection" id="infoInjection"></p>
 
     <label style="margin-top:20px;">Personnes / Véhicules</label>
     <table>
@@ -377,7 +383,7 @@ window.google = { script: { run: (function () {
       <td data-label="Fonction"><input data-champ="fonction" placeholder="auto" list="dl-fonctions" autocomplete="off" aria-label="Fonction"></td>
       <td class="col-base" data-label="Base de vie"><select data-champ="base" aria-label="Base de vie"></select></td>
       <td class="col-veh" data-label="Type véhicule"><input data-champ="typeVehicule" list="dl-types" autocomplete="off" style="text-transform:uppercase" aria-label="Type de véhicule"></td>
-      <td class="col-veh" data-label="Immatriculation"><input data-champ="immatriculation" list="dl-immat" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" aria-label="Immatriculation"></td>`;
+      <td class="col-veh" data-label="Immatriculation"><input data-champ="immatriculation" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" aria-label="Immatriculation"></td>`;
     const sel = tr.querySelector('select'); optionsBase(sel, document.getElementById('base').value);
     sel.addEventListener('change', () => {
       sel.dataset.manuel = '1';   // une base choisie à la main n'est plus écrasée par la base par défaut
@@ -401,30 +407,82 @@ window.google = { script: { run: (function () {
   let minuteurRecherche = null, derniereRecherche = '';
   function fermerSugg() { sugg.style.display = 'none'; sugg.innerHTML = ''; }
   function ligneDe(el) { return el.closest('tr'); }
-  function proposer(input, personnes) {
+  /** Affiche une liste de propositions sous le champ : entrees = [{ html, choisir() }]. */
+  function afficherSugg(input, entrees) {
     sugg.innerHTML = '';
-    if (!personnes.length) { fermerSugg(); return; }
-    personnes.forEach(function(p) {
+    if (!entrees.length) { fermerSugg(); return; }
+    entrees.forEach(function(e) {
       const d = document.createElement('div');
       d.style.cssText = 'padding:7px 11px;cursor:pointer;border-bottom:1px solid #eee';
-      d.innerHTML = '<b>' + p.nom.replace(/</g, '&lt;') + ' ' + p.prenom.replace(/</g, '&lt;') + '</b> <span style="color:#6b7280">— ' + (p.fonction || 'fonction non renseignée').replace(/</g, '&lt;') + ' · ' + (p.entreprise || '').replace(/</g, '&lt;') + '</span>';
-      d.onmousedown = function(ev) {
-        ev.preventDefault();
-        const tr = ligneDe(input);
-        tr.querySelector('[data-champ=nom]').value = p.nom;
-        tr.querySelector('[data-champ=prenom]').value = p.prenom;
-        if (p.fonction) tr.querySelector('[data-champ=fonction]').value = p.fonction;
-        tr.dataset.connu = '1';
-        marquer(tr);
-        fermerSugg();
-        if (typeof remplirDepuisMemoire === 'function') setTimeout(() => remplirDepuisMemoire(tr), 0);
-      };
+      d.innerHTML = e.html;
+      d.onmousedown = function(ev) { ev.preventDefault(); e.choisir(); fermerSugg(); };
       sugg.appendChild(d);
     });
     const r = input.getBoundingClientRect();
     sugg.style.left = (r.left + window.scrollX) + 'px';
     sugg.style.top = (r.bottom + window.scrollY + 2) + 'px';
     sugg.style.display = 'block';
+  }
+  const esc1 = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  function proposer(input, personnes) {
+    afficherSugg(input, personnes.map(function(p) {
+      return {
+        html: '<b>' + esc1(p.nom) + ' ' + esc1(p.prenom) + '</b> <span style="color:#6b7280">— ' + esc1(p.fonction || 'fonction non renseignée') + ' · ' + esc1(p.entreprise || '') + (p.immatriculation ? ' · 🚗 ' + esc1(p.immatriculation) : '') + '</span>',
+        choisir: function() {
+          const tr = ligneDe(input);
+          tr.querySelector('[data-champ=nom]').value = p.nom;
+          tr.querySelector('[data-champ=prenom]').value = p.prenom;
+          if (p.fonction) tr.querySelector('[data-champ=fonction]').value = p.fonction;
+          tr.dataset.connu = '1';
+          marquer(tr);
+          if (typeof remplirDepuisMemoire === 'function') setTimeout(() => remplirDepuisMemoire(tr), 0);   // toute la ligne remonte : fonction, véhicule et immatriculation déjà saisis
+        }
+      };
+    }));
+  }
+  /** Personnes déjà saisies dans d'anciennes demandes (mémoire) qui correspondent au texte tapé. */
+  function personnesMemoire(texte) {
+    const mots = cleP(texte).split(' ').filter(Boolean); if (!mots.length) return [];
+    return memoire.personnes.filter(p => { const c = cleP(p.nom + ' ' + p.prenom); return mots.every(m => c.indexOf(m) !== -1); }).slice(0, 8).map(p => ({ nom: p.nom, prenom: p.prenom, fonction: p.fonction, entreprise: 'déjà saisi', immatriculation: p.immatriculation }));
+  }
+  /** « NOM Prénom » d'une case chauffeur du tableau des véhicules : les mots tout en majuscules forment le nom, le reste le prénom. */
+  function separerNom(t) {
+    const m = String(t || '').trim().split(/\s+/).filter(Boolean); if (!m.length) return null;
+    let k = 0; while (k < m.length && m[k].length > 1 && m[k] === m[k].toLocaleUpperCase('fr') && /[A-ZÀ-Ý]/.test(m[k])) k++;
+    if (k === 0) k = 1;
+    return { nom: m.slice(0, k).join(' '), prenom: m.slice(k).join(' '), fonction: '' };
+  }
+  /** Chauffeurs connus d'un véhicule : celui déjà saisi dans une demande (mémoire) puis ceux notés dans le tableau des véhicules. */
+  function chauffeursDe(v) {
+    const l = []; const ajouter = c => { if (c && (c.nom || c.prenom) && !l.some(x => cleP(x.nom + ' ' + x.prenom) === cleP(c.nom + ' ' + c.prenom))) l.push(c); };
+    ajouter(v.conducteur);
+    String(v.chauffeur || '').split(' / ').forEach(t => ajouter(separerNom(t)));
+    return l;
+  }
+  /** Saisie de l'immatriculation : les véhicules connus (demandes précédentes et tableau des véhicules) sont proposés avec leur chauffeur ; en choisir un remonte le véhicule ET le chauffeur déjà saisi. */
+  function proposerVehicules(input) {
+    const q = cleI(input.value); if (q.length < 2) { fermerSugg(); return; }
+    const entrees = [];
+    memoire.vehicules.filter(v => cleI(v.immat).indexOf(q) !== -1).slice(0, 8).forEach(function(v) {
+      const chs = chauffeursDe(v).slice(0, 3);
+      (chs.length ? chs : [null]).forEach(function(c) {
+        entrees.push({
+          html: '<b>' + esc1(v.immat) + '</b> <span style="color:#6b7280">— ' + esc1(v.modele || 'type non renseigné') + (c ? ' · 👤 ' + esc1((c.nom + ' ' + c.prenom).trim()) : '') + '</span>',
+          choisir: function() {
+            const tr = ligneDe(input), val = n => tr.querySelector('[data-champ=' + n + ']');
+            val('immatriculation').value = majVeh(v.immat);
+            if (!val('typeVehicule').value.trim() && v.modele) val('typeVehicule').value = majVeh(v.modele);
+            if (c && !val('nom').value.trim() && !val('prenom').value.trim()) {
+              val('nom').value = majNom(c.nom); val('prenom').value = capPrenom(c.prenom);
+              if (c.fonction && !val('fonction').value.trim()) val('fonction').value = capFonction(c.fonction);
+              marquer(tr);
+              setTimeout(() => remplirDepuisMemoire(tr), 0);   // complète la fonction d'après les anciennes demandes
+            }
+          }
+        });
+      });
+    });
+    afficherSugg(input, entrees);
   }
   function marquer(tr) {
     const nom = tr.querySelector('[data-champ=nom]').value.trim();
@@ -433,16 +491,21 @@ window.google = { script: { run: (function () {
   }
   corps.addEventListener('input', function(ev) {
     const input = ev.target;
+    if (input.matches('[data-champ=immatriculation]')) { proposerVehicules(input); return; }
     if (!input.matches('[data-champ=nom],[data-champ=prenom]')) return;
     const tr = ligneDe(input); delete tr.dataset.connu; marquer(tr);
     const texte = (tr.querySelector('[data-champ=nom]').value + ' ' + tr.querySelector('[data-champ=prenom]').value).trim();
     clearTimeout(minuteurRecherche);
     if (texte.replace(/\s+/g, '').length < 3) { fermerSugg(); return; }
+    const locales = personnesMemoire(texte), cle = p => cleP(p.nom) + '|' + cleP(p.prenom);
+    if (locales.length) proposer(input, locales);   // réponse immédiate : personnes déjà saisies
     minuteurRecherche = setTimeout(function() {
       derniereRecherche = texte;
       google.script.run.withSuccessHandler(function(r) {
-        if (texte !== derniereRecherche || !r || !r.ok) { if (r && !r.ok) fermerSugg(); return; }
-        proposer(input, r.personnes);
+        if (texte !== derniereRecherche || !r || !r.ok) { if (r && !r.ok && !locales.length) fermerSugg(); return; }
+        const vus = {}, liste = [];   // Enquêtes d'abord, puis les personnes déjà saisies qui n'y figurent pas
+        r.personnes.concat(locales).forEach(p => { const k = cle(p); if (!vus[k]) { vus[k] = 1; const m = memoire.personnes.filter(x => cle(x) === k)[0]; liste.push(m && !p.immatriculation ? Object.assign({}, p, { immatriculation: m.immatriculation }) : p); } });
+        proposer(input, liste.slice(0, 10));
       }).rechercherPersonnes(texte);
     }, 300);
   });
@@ -458,15 +521,38 @@ window.google = { script: { run: (function () {
     document.querySelectorAll('.col-veh').forEach(e => { e.style.display = (auto || !pec) ? '' : 'none'; });
     document.querySelectorAll('.col-base').forEach(e => { e.style.display = seuleAuto ? 'none' : ''; });
   }
-  document.getElementById('genererAuto').addEventListener('change', majChampsSelonDocuments);
-  majChampsSelonDocuments();
-  document.getElementById('genererPEC').addEventListener('change', majChampsSelonDocuments);
-  document.getElementById('genererAuto').addEventListener('change', function() {
-    document.getElementById('ligneValable2Mois').style.display = this.checked ? 'flex' : 'none';
-  });
-
-  document.getElementById('genererPEC').addEventListener('change', function() {
-  });
+  // ---- Choix du document : deux grands boutons en haut (les cases d'origine, cachées, gardent la logique) ----
+  const MOIS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const frDate = iso => String(iso || '').split('-').reverse().join('/');
+  /** Même règle que le serveur : la date de départ est « choisie » si elle diffère de l'arrivée + 28 jours (ou s'il n'y a pas d'arrivée) ; une visite sur site est toujours à date choisie. */
+  function departChoisi() {
+    const a = document.getElementById('dateArrivee').value, d = document.getElementById('dateDepart').value; if (!d) return false; if (!a) return true;
+    const v0 = document.getElementById('prestataire').value.trim(); if (v0.startsWith('Visite sur site') || v0.startsWith('ORGANISME - ')) return true;
+    const x = new Date(a + 'T00:00:00'); x.setDate(x.getDate() + 28); return ymd(x) !== d;
+  }
+  /** « Valable jusqu'à la fin du mois prochain » : case cachée, cochée d'office à partir du 20 du mois sauf date de départ choisie à la main ; seul le libellé est affiché. */
+  function majValable() {
+    const auto = document.getElementById('genererAuto').checked, n = new Date(), manuel = departChoisi();
+    const actif = auto && n.getDate() >= 20 && !manuel, p = new Date(n.getFullYear(), n.getMonth() + 1, 1);
+    document.getElementById('valable2Mois').checked = actif;
+    document.getElementById('libValable').textContent = actif ? 'Valable jusqu\'à la fin du mois prochain (' + MOIS_FR[p.getMonth()] + ' ' + p.getFullYear() + ')'
+      : manuel ? 'Valable jusqu\'au ' + frDate(document.getElementById('dateDepart').value) + ' (date de départ choisie)'
+      : 'Valable jusqu\'à la fin du mois (' + MOIS_FR[n.getMonth()] + ' ' + n.getFullYear() + ')';
+  }
+  function majChoixDocs() {
+    const pec = document.getElementById('genererPEC').checked, auto = document.getElementById('genererAuto').checked;
+    [['choixPEC', pec], ['choixAuto', auto]].forEach(([id, on]) => { const b = document.getElementById(id); b.classList.toggle('actif', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+    document.getElementById('blocPEC').hidden = !pec; document.getElementById('blocAuto').hidden = !auto;
+    document.getElementById('aideChoix').textContent = (!pec && !auto) ? '⚠ Choisissez au moins un document.' : 'Touchez pour activer ou retirer ; vous pouvez choisir les deux.';
+    document.getElementById('aideChoix').style.color = (!pec && !auto) ? 'var(--red)' : '';
+    const inj = []; if (pec) inj.push('Enquêtes administratives (les personnes déjà présentes ne sont pas rajoutées)'); if (auto) inj.push('Suivi des véhicules');
+    document.getElementById('infoInjection').textContent = inj.length ? '🔄 Injection automatique : ' + inj.join(' · ') + '.' : '';
+    majChampsSelonDocuments(); majValable();
+  }
+  [['choixPEC', 'genererPEC'], ['choixAuto', 'genererAuto']].forEach(([b, c]) => document.getElementById(b).addEventListener('click', () => { const cb = document.getElementById(c); cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); majChoixDocs(); }));
+  ['genererPEC', 'genererAuto'].forEach(c => document.getElementById(c).addEventListener('change', majChoixDocs));
+  majChoixDocs();
 
   // Date de départ = date d'arrivée + 28 jours par défaut, recalculée à chaque changement —
   // SAUF pour une "Visite sur site" (durée généralement courte et limitée) : dans ce cas
@@ -477,15 +563,15 @@ window.google = { script: { run: (function () {
     if (estVisiteSurSite) return;
     const d = new Date(this.value + 'T00:00:00');
     d.setDate(d.getDate() + 28);
-    document.getElementById('dateDepart').value = d.toISOString().split('T')[0];
+    document.getElementById('dateDepart').value = ymd(d);
+    majValable();
   });
+  document.getElementById('dateDepart').addEventListener('change', majValable);
+  document.getElementById('prestataire').addEventListener('change', majValable);
+  /** Date d'arrivée proposée : aujourd'hui (la date de départ suit : +28 jours). */
+  function dateArriveeDuJour() { const a = document.getElementById('dateArrivee'); a.value = ymd(new Date()); a.dispatchEvent(new Event('change')); }
+  dateArriveeDuJour();
 
-  // « Valable jusqu'à la fin du mois prochain » : le mois suivant est détecté et écrit (ex. « fin de novembre 2026 »)
-  (function () {
-    const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-    const n = new Date(); const p = new Date(n.getFullYear(), n.getMonth() + 1, 1);
-    const l = document.getElementById('libValable'); if (l) l.textContent = 'Valable jusqu\'à la fin du mois prochain (' + MOIS[p.getMonth()] + ' ' + p.getFullYear() + ')';
-  })();
   let servicesParPrestataire = {}, basesParPrestataire = {}, imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
@@ -497,6 +583,7 @@ window.google = { script: { run: (function () {
   }
   function remplirDropdowns(opts) {
     servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire; imputationFixe = !!opts.imputation_fixe;
+    if (opts.sans_organisme) { document.getElementById('zoneOrg').hidden = true; document.getElementById('formOrg').hidden = true; }   // prestataire ou invité : pas d'ajout d'organisme hors Suivi CPM
     basesParPrestataire = opts.basesParPrestataire || basesParPrestataire;
     const dlPrest = document.getElementById('listePrestataires');
     dlPrest.innerHTML = '';
@@ -622,7 +709,7 @@ window.google = { script: { run: (function () {
     });
     corps.querySelectorAll('tr').forEach(marquer);
     appliquerBaseDefaut(true);
-    majChampsSelonDocuments();
+    dateArriveeDuJour(); majChoixDocs();
     const res = document.getElementById('resultat'); res.innerHTML = ''; res.className = '';
     const toast = document.getElementById('toast'); toast.style.display = 'none'; toast.innerHTML = '';
     afficherToast({ success: true, message: 'Champs vidés : vous pouvez saisir une autre prise en charge.' });
@@ -825,6 +912,10 @@ window.google = { script: { run: (function () {
       if (p.nom || p.prenom || p.typeVehicule || p.immatriculation) personnes.push(p);
     });
 
+    if (!document.getElementById('genererPEC').checked && !document.getElementById('genererAuto').checked) {
+      afficherResultat({ success: false, message: "Choisis au moins un document : « Prise en charge » et/ou « Autorisation d'accès » (les deux grands boutons en haut du formulaire)." });
+      return;
+    }
     // Plus de 8 personnes ou plusieurs bases : le serveur crée une prise en charge par base et par tranche de 8
     if (document.getElementById('genererPEC').checked) {
       if (!document.getElementById('hebergement').checked && !document.getElementById('restauration').checked) {
@@ -855,7 +946,7 @@ window.google = { script: { run: (function () {
       restauration: document.getElementById('restauration').checked,
       genererAuto: document.getElementById('genererAuto').checked,
       valable2Mois: document.getElementById('valable2Mois').checked,
-      injecterEnquetes: document.getElementById('injecterEnquetes').checked,
+      injecterEnquetes: document.getElementById('genererPEC').checked,   // injection automatique : Enquêtes pour la prise en charge ; le suivi des véhicules est alimenté par le serveur pour chaque autorisation
       fonctionObservation: document.getElementById('fonctionObs').checked,
       personnes: personnes
     };

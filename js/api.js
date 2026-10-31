@@ -333,7 +333,7 @@
         if (fnp === 'rechercherPersonnes') return { ok: true, personnes: [] };
         if (fnp === 'listerFichiersGeneres') return { success: true, fichiers: [] };
         if (fnp === 'historiquePEC') return { ok: true, demandes: [] };
-        if (fnp === 'memoirePEC') return { personnes: [{ nom: 'BENKHET', prenom: 'Mohamed', fonction: 'chauffeur poids lourd', typeVehicule: 'TOYOTA HILUX', immatriculation: '01307-316-30' }], vehicules: [{ immat: '00437-216-30', modele: 'SHACMAN' }], fonctions: ['chauffeur poids lourd', 'électricien'], types: ['TOYOTA HILUX', 'SHACMAN'] };
+        if (fnp === 'memoirePEC') return { personnes: [{ nom: 'BENKHET', prenom: 'Mohamed', fonction: 'chauffeur poids lourd', typeVehicule: 'TOYOTA HILUX', immatriculation: '01307-316-30' }], vehicules: [{ immat: '00437-216-30', modele: 'SHACMAN', chauffeur: 'DERRADJI Abderrazak / MESSAI Ismail' }, { immat: '01307-316-30', modele: 'TOYOTA HILUX', conducteur: { nom: 'BENKHET', prenom: 'Mohamed', fonction: 'chauffeur poids lourd' } }], fonctions: ['chauffeur poids lourd', 'électricien'], types: ['TOYOTA HILUX', 'SHACMAN'] };
         if (fnp === 'verifierEnquetes') return { ok: true, deja: [] };
         if (fnp === 'soumettreFormulairePEC') return { success: true, message: 'Démonstration : aucun document généré.', liens: [] };
         if (fnp === 'envoyerFichierParMail') return { success: true, destinataires: (ap[1] && ap[1].secretariat ? ['Secrétariat Division INFRA'] : []).concat(ap[1] && ap[1].service ? ['Service Construction INFRA - RNS'] : []) };
