@@ -36,3 +36,34 @@ test('contrats en exécution du Suivi CPM : statut « En exécution », n° de c
   assert.deepStrictEqual(F.contratsEnExecution(enr, TB.cleStatut).map(c => [c.contrat, c.entreprise]), [['53.INFRA.25', 'ETB ZATOUT'], ['47.INFRA.26', 'GCB']]);
   assert.deepStrictEqual(F.contratsEnExecution(null, TB.cleStatut), []);
 });
+
+// ----- ignorer une fiche pour un projet et un mois ; relance du service et du conducteur affecté -----
+test('contrat ignoré pour le mois : ni attendu ni manquant ; une fiche existante reste comptée', () => {
+  const e = F.etat('2026-10-26', contrats, [fiche('I/30/RNS/INFRA/2024', '2026-10-05')], [{ cle: '53-25', par: 'RAYANE', motif: 'Contrat suspendu' }, { cle: '30-24', par: 'X' }]);
+  assert.deepStrictEqual([e.attendues, e.creees], [2, 1]);                                                // 53 écarté ; 30 écarté mais sa fiche existe : comptée ; 47 attendu
+  assert.deepStrictEqual(e.manquantes.map(m => m.contrat), ['47.INFRA.26']); assert.deepStrictEqual(e.ignorees.map(i => [i.contrat, i.par, i.motif]), [['53.INFRA.25', 'RAYANE', 'Contrat suspendu']]);
+  const tout = F.etat('2026-10-26', contrats, [], contrats.map(c => ({ cle: F.cle(c.contrat) })));
+  assert.deepStrictEqual([tout.attendues, tout.manquantes.length, tout.ignorees.length], [0, 0, 3]);
+});
+const U = (nom, email, role, service, extra) => Object.assign({ nom, email, role, service, actif: 1 }, extra || {});
+const roleDe = r => String(r || '').toLowerCase();
+test('relance : boîte du service du chantier + conducteurs de ce service ou affectés à ce chantier ; sans doublon ni inactif', () => {
+  const users = [U('KHELIFI Amine', 'a@x.dz', 'conducteur', 'Service Construction'), U('MEZIANE Sofia', 'b@x.dz', 'conducteur', 'Travaux Entretien', { chantiers_sup: 'terrassement_rns ; autre' }), U('DERRADJI', 'c@x.dz', 'conducteur', 'Travaux Entretien'),
+    U('INACTIF', 'd@x.dz', 'conducteur', 'Service Construction', { actif: 0 }), U('Chef Constr', 'e@x.dz', 'chef_service', 'Service Construction'), U('Agent', 'f@x.dz', 'agent', 'Service Construction')];
+  const boites = [{ nom: 'Service Travaux Entretien INFRA - RNS', email: 'entretien@x.dz' }, { nom: 'Service Construction INFRA - RNS', email: 'constr@x.dz' }, { nom: 'Service Électromécanique INFRA - RNS', email: 'electro@x.dz' }];
+  const r = F.destinatairesRelance({ id: 'terrassement_rns', service: 'Construction' }, users, boites, [], roleDe, TB.cleService);
+  assert.deepStrictEqual(r.service.map(x => x.email), ['constr@x.dz']);
+  assert.deepStrictEqual(r.conducteurs.map(x => x.email), ['a@x.dz', 'b@x.dz']);                         // KHELIFI (même service) + MEZIANE (chantier ajouté à ses projets) ; ni l'inactif, ni l'agent, ni DERRADJI
+  const e = F.destinatairesRelance({ id: 'x', service: 'Électromécanique' }, users, boites, [], roleDe, TB.cleService);
+  assert.deepStrictEqual(e.service.map(x => x.email), ['electro@x.dz']); assert.deepStrictEqual(e.conducteurs, []);
+});
+test('relance : sans boîte de service, les chefs de ce service ; sans conducteur affecté, ceux qui ont rapporté sur le chantier', () => {
+  const users = [U('Chef Constr', 'e@x.dz', 'chef_service', 'Service Construction'), U('Chef Elec', 'g@x.dz', 'chef_service', 'Service Électromécanique'), U('Rapporteur', 'r@x.dz', 'agent', 'Service Construction'), U('Autre', 'z@x.dz', 'agent', 'X')];
+  const r = F.destinatairesRelance({ id: 'c1', service: 'Service Construction' }, users, [], ['R@x.dz', 'inconnu@x.dz', 'r@x.dz'], roleDe, TB.cleService);
+  assert.deepStrictEqual(r.service.map(x => x.email), ['e@x.dz']); assert.deepStrictEqual(r.conducteurs.map(x => x.email), ['r@x.dz']);
+  assert.deepStrictEqual(F.destinatairesRelance(null, users, [], [], roleDe, TB.cleService), { service: [], conducteurs: [] });
+});
+test('dernière relance de chaque fiche manquante', () => {
+  const m = F.avecRelances([{ contrat: '53.INFRA.25' }, { contrat: '47.INFRA.26' }], [{ cle: '53-25', le: '2026-10-26T08:00:00Z', par: 'A' }, { cle: '53-25', le: '2026-10-27T09:00:00Z', par: 'B' }]);
+  assert.deepStrictEqual(m.map(x => x.relance), [{ le: '2026-10-27T09:00:00Z', par: 'B' }, null]);
+});

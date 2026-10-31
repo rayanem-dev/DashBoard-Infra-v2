@@ -176,7 +176,7 @@
         const bimp = el('button', 'sec petit', '🖨 Imprimer'); bimp.type = 'button'; bimp.style.marginLeft = '10px'; bimp.addEventListener('click', () => imprimerDirect(r.fileId, bimp)); $('liens').appendChild(bimp);
         const bsec = el('button', 'sec petit', '✉️ Envoyer au secrétariat'); bsec.type = 'button'; bsec.style.marginLeft = '10px'; bsec.addEventListener('click', () => envoyerSec(r.fileId, r.fileName, bsec)); $('liens').appendChild(bsec);
         const bsv = el('button', 'sec petit', '✉️ Envoyer au service'); bsv.type = 'button'; bsv.style.marginLeft = '10px'; bsv.addEventListener('click', () => envoyerService(r.fileId, r.fileName, bsv)); $('liens').appendChild(bsv);
-        dire('✅ Fiche générée et archivée (taux : ' + tauxFr(r.taux) + '). Elle est dans l’onglet Archive.'); $('resultat').scrollIntoView({ behavior: 'smooth' });
+        dire('✅ Fiche générée et archivée (taux : ' + tauxFr(r.taux) + '). Elle est dans l’onglet Archive.' + (r.remplacees ? ' ♻ ' + r.remplacees + ' fiche' + (r.remplacees > 1 ? 's' : '') + ' du même contrat et du même mois remplacée' + (r.remplacees > 1 ? 's' : '') + ' : une seule fiche par contrat et par mois est gardée (la dernière).' : '')); $('resultat').scrollIntoView({ behavior: 'smooth' });
       })
       .withFailureHandler(e => { b.disabled = false; b.textContent = '📄 Générer la fiche (PDF)'; dire('❌ ' + e.message, true); })
       .genererFiche({ cartouche: cartouche, notes: notes, suggestion: $('suggestion').value }, editionId);

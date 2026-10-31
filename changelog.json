@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-262",
+    "date": "2026-10-31",
+    "title": "Version 6.37.0 — Fiches d'évaluation : une seule fiche par contrat et par mois, relance et « ignorer ce mois »",
+    "changes": [
+      "Fiche d'évaluation : une seule fiche par contrat et par mois. Quand l'agent génère une fiche pour un contrat et un mois déjà faits, la nouvelle remplace l'ancienne (la dernière à jour est gardée, comme pour le rapport journalier) ; l'écran l'indique. Ainsi le suivi de l'échéance du 25 compte une fiche par contrat.",
+      "Carte « Fiches d'évaluation » de l'accueil : chaque fiche non générée a un bouton « 🔔 Relancer » (et « Relancer toutes ») qui envoie, au clic seulement, un e-mail au service concerné et au conducteur affecté au chantier ; la dernière relance est affichée (« Relancée le 31/10 »), une nouvelle relance de la même fiche n'est possible qu'après 6 heures.",
+      "Bouton « 🚫 Ignorer ce mois » (secrétariat et chefs de service) : la fiche d'un projet n'est plus attendue ni relancée pour ce mois (motif facultatif) ; les contrats ignorés sont listés avec « ↩ Rétablir ». Les deux boutons se règlent dans Paramètres (options « Relancer… » et « Ignorer… », chef de service et au-dessus par défaut) et sont tracés au journal."
+    ]
+  },
+  {
     "id": "2026-10-31-261",
     "date": "2026-10-31",
     "title": "Version 6.36.0 — « Mes applications » : le classement suit chaque compte, sur tous les appareils",

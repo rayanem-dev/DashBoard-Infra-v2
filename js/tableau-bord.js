@@ -101,7 +101,7 @@
    */
   function carteFiches(f) {
     var manque = f.manquantes.length, ok = !manque && f.lecture === 'ok', ton = ok ? 'ok' : (f.phase === 'echeance' || f.lecture !== 'ok') ? 'alerte' : 'prep';
-    var c = el(f.url ? 'a' : 'div', 'tb-carte tb-fiches ' + ton); if (f.url) c.href = f.url;
+    var c = el('div', 'tb-carte tb-fiches ' + ton);   // pas un lien : la carte porte des boutons (relancer, ignorer) ; le lien d'édition est en bas
     var mois = MOIS_FR[+f.mois.slice(5, 7) - 1] + ' ' + f.mois.slice(0, 4), envoi = dateFr(f.dateEnvoi), limite = dateFr(f.dateLimite).slice(0, 5);
     var tete = el('div', 'tb-f-tete'); tete.appendChild(el('span', 'tb-f-ic', ok ? '✅' : ton === 'alerte' ? '🚨' : '⏳'));
     var tt = el('div', 'tb-f-titre'); tt.appendChild(el('b', null, 'Fiches d\'évaluation — ' + mois));
@@ -118,18 +118,55 @@
     else if (f.phase === 'echeance') msg = 'L\'échéance du ' + limite + ' est dépassée : ' + manque + ' fiche' + (manque > 1 ? 's' : '') + ' non générée' + (manque > 1 ? 's' : '') + '. Sans elle' + (manque > 1 ? 's' : '') + ', les deux parties ne peuvent pas signer avant l\'envoi du ' + envoi + ' (dans ' + f.joursAvantEnvoi + ' jour' + (f.joursAvantEnvoi > 1 ? 's' : '') + ').';
     else msg = 'Il reste ' + f.joursAvantLimite + ' jour' + (f.joursAvantLimite > 1 ? 's' : '') + ' pour éditer ' + manque + ' fiche' + (manque > 1 ? 's' : '') + ' : toutes doivent être générées le ' + limite + ' pour laisser le temps de la signature des deux parties avant l\'envoi du ' + envoi + '.';
     m.appendChild(el('p', 'tb-f-msg', msg));
+    var etat = el('div', 'tb-f-etat'); etat.setAttribute('role', 'status');
+    function dire(t, err) { etat.textContent = t; etat.className = 'tb-f-etat' + (err ? ' err' : ' ok'); }
+    function recharger() { return Api.call('tableau_bord').then(function (d) { if (ZONE) monter(ZONE, d, EXTRAS); }).catch(function () { /* l'affichage actuel reste */ }); }
+    function relancer(x, bouton) {
+      if (!window.confirm('Envoyer un e-mail de relance pour le contrat ' + x.contrat + (x.entreprise ? ' (' + x.entreprise + ')' : '') + ' au service concerné et au conducteur affecté à ce chantier ?')) return Promise.resolve();
+      bouton.disabled = true;
+      return Api.call('fiches_relancer', { contrat: x.contrat }).then(function (r) { if (r.envoye) { dire('✉ Relance envoyée pour ' + x.contrat + ' à : ' + r.destinataires.join(', ') + '.'); return recharger(); } dire(r.raison || 'Relance non envoyée.', true); bouton.disabled = false; })
+        .catch(function (e) { dire(e.message, true); bouton.disabled = false; });
+    }
+    function ignorer(x, ignorer_, bouton) {
+      var motif = '';
+      if (ignorer_) { motif = window.prompt('Ignorer la fiche du contrat ' + x.contrat + (x.entreprise ? ' (' + x.entreprise + ')' : '') + ' pour CE MOIS ?\nMotif (facultatif : contrat suspendu, évaluation reportée…) :', ''); if (motif === null) return Promise.resolve(); }
+      bouton.disabled = true;
+      return Api.call('fiches_ignorer', { contrat: x.contrat, ignorer: ignorer_, motif: motif }).then(function () { return recharger(); }).catch(function (e) { dire(e.message, true); bouton.disabled = false; });
+    }
+    function bouton(texte, titre, fn) { var b = el('button', 'tb-f-btn', texte); b.type = 'button'; b.title = titre; b.addEventListener('click', function (ev) { ev.preventDefault(); fn(b); }); return b; }
+    function dateCourte(iso) { var d = new Date(iso); return isNaN(d) ? '' : ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
     if (manque && f.lecture === 'ok') {
-      m.appendChild(el('div', 'tb-f-sous', 'Fiches non générées (' + manque + ') :'));
-      var ch = el('div', 'tb-f-puces'); f.manquantes.slice(0, 12).forEach(function (x) { var p = el('span', 'tb-f-rouge', x.contrat + (x.entreprise ? ' · ' + x.entreprise : '')); p.title = (x.projet || x.contrat) + ' — fiche à éditer'; ch.appendChild(p); });
-      if (manque > 12) ch.appendChild(el('span', 'tb-f-rouge', '+ ' + (manque - 12) + ' autres')); m.appendChild(ch);
+      var tete2 = el('div', 'tb-f-sous', 'Fiches non générées (' + manque + ') :');
+      if (f.peut_relancer && manque > 1) { var tous = bouton('🔔 Relancer toutes (' + manque + ')', 'Un e-mail par contrat, au service concerné et au conducteur affecté', function (b) {
+        if (!window.confirm('Relancer les ' + manque + ' fiches non générées (un e-mail par contrat, au service concerné et au conducteur affecté) ?')) return; b.disabled = true;
+        f.manquantes.reduce(function (p, x) { return p.then(function () { return Api.call('fiches_relancer', { contrat: x.contrat }).catch(function () { return { envoye: false }; }); }); }, Promise.resolve()).then(function () { dire('✉ Relances envoyées (celles déjà faites depuis moins de 6 h sont ignorées).'); return recharger(); }); }); tous.style.marginLeft = '10px'; tete2.appendChild(tous); }
+      m.appendChild(tete2);
+      var lst = el('div', 'tb-f-lignes');
+      f.manquantes.slice(0, 12).forEach(function (x) {
+        var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-rouge', x.contrat + (x.entreprise ? ' · ' + x.entreprise : '')); p.title = (x.projet || x.contrat) + ' — fiche à éditer'; l.appendChild(p);
+        if (f.peut_relancer) l.appendChild(bouton(x.relance ? '🔔 Relancée le ' + dateCourte(x.relance.le) + ' · relancer encore' : '🔔 Relancer', 'E-mail au service concerné et au conducteur affecté à ce chantier' + (x.relance ? ' (dernière relance : ' + x.relance.par + ')' : ''), function (b) { relancer(x, b); }));
+        if (f.peut_ignorer) l.appendChild(bouton('🚫 Ignorer ce mois', 'Ne plus attendre ni relancer cette fiche pour ce projet ce mois-ci', function (b) { ignorer(x, true, b); }));
+        lst.appendChild(l);
+      });
+      if (manque > 12) lst.appendChild(el('span', 'tb-f-rouge', '+ ' + (manque - 12) + ' autres')); m.appendChild(lst);
     }
     if (f.faites.length && manque) { var fa = el('div', 'tb-f-sous', 'Déjà éditées : ' + f.faites.slice(0, 6).map(function (x) { return x.contrat; }).join(' · ') + (f.faites.length > 6 ? ' …' : '')); fa.style.color = '#16A34A'; m.appendChild(fa); }
+    if (f.ignorees && f.ignorees.length) {
+      m.appendChild(el('div', 'tb-f-sous', 'Ignorées ce mois (' + f.ignorees.length + ') :'));
+      var li = el('div', 'tb-f-lignes');
+      f.ignorees.forEach(function (x) { var l = el('div', 'tb-f-ligne'), p = el('span', 'tb-f-gris', x.contrat + (x.entreprise ? ' · ' + x.entreprise : '')); p.title = 'Ignorée' + (x.par ? ' par ' + x.par : '') + (x.motif ? ' — ' + x.motif : ''); l.appendChild(p);
+        if (x.motif) l.appendChild(el('small', 'tb-f-motif', x.motif));
+        if (f.peut_ignorer) l.appendChild(bouton('↩ Rétablir', 'Remettre cette fiche dans la liste à éditer', function (b) { ignorer(x, false, b); })); li.appendChild(l); });
+      m.appendChild(li);
+    }
+    m.appendChild(etat);
     corps.appendChild(m); c.appendChild(corps);
-    if (f.url) c.appendChild(el('div', 'tb-f-lien', ok ? 'Ouvrir la Fiche d\'évaluation →' : 'Éditer les fiches maintenant →'));
+    if (f.url) { var lien = el('a', 'tb-f-lien', ok ? 'Ouvrir la Fiche d\'évaluation →' : 'Éditer les fiches maintenant →'); lien.href = f.url; c.appendChild(lien); }
     return c;
   }
+  var ZONE = null, EXTRAS = [];
   function monter(zone, d, extras) {
-    zone.textContent = ''; var b = d.blocs || {}, n = 0, grille = el('div', 'tb-grille');
+    ZONE = zone; EXTRAS = extras || []; zone.textContent = ''; var b = d.blocs || {}, n = 0, grille = el('div', 'tb-grille');
     function ajout(c) { grille.appendChild(c); n += 1; }
     if (b.fiches_eval) ajout(carteFiches(b.fiches_eval));   // en tête et pleine largeur : échéance à ne pas manquer
     if (b.presents) {
@@ -222,7 +259,7 @@
     '.tb-f-tete{display:flex;align-items:center;gap:12px;margin-bottom:10px}.tb-f-ic{font-size:34px;line-height:1}.tb-f-titre{display:flex;flex-direction:column;gap:3px}.tb-f-titre b{font-size:17px}.tb-f-badge{display:inline-block;align-self:flex-start;font-size:12px;font-weight:800;letter-spacing:.3px;padding:3px 10px;border-radius:999px;color:#fff}' +
     '.alerte .tb-f-badge{background:#DC2626}.prep .tb-f-badge{background:#D97706}.ok .tb-f-badge{background:#16A34A}.tb-f-corps{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}.tb-f-gauche{display:flex;align-items:center;gap:12px}.tb-f-nombres b{font-size:34px;line-height:1;display:block}.tb-f-nombres span{font-size:12.5px;display:block;max-width:190px}' +
     '.tb-f-droite{flex:1;min-width:260px}.tb-f-msg{margin:0 0 8px;font-size:14px;font-weight:600;line-height:1.45}.alerte .tb-f-msg{color:#DC2626}.tb-f-sous{font-size:12px;font-weight:700;margin:6px 0 4px;color:var(--text-muted,#6B7280)}.tb-f-puces{display:flex;flex-wrap:wrap;gap:6px}' +
-    '.tb-f-rouge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(220,38,38,.14);color:#DC2626;border:1px solid rgba(220,38,38,.45)}.tb-f-lien{margin-top:10px;font-size:13px;font-weight:800;color:#E85D04}' +
+    '.tb-f-rouge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(220,38,38,.14);color:#DC2626;border:1px solid rgba(220,38,38,.45)}.tb-f-lignes{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}.tb-f-ligne{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.tb-f-btn{font:inherit;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px;border:1.5px solid var(--border,#E5E7EB);background:var(--surface,#fff);color:inherit;cursor:pointer}.tb-f-btn:hover{border-color:#E85D04}.tb-f-btn:disabled{opacity:.5;cursor:default}.tb-f-gris{font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(148,163,184,.18);color:var(--text-muted,#6B7280);border:1px dashed rgba(148,163,184,.7)}.tb-f-motif{color:var(--text-muted,#6B7280);font-style:italic}.tb-f-etat{margin-top:8px;font-size:12.5px;font-weight:700;min-height:1em}.tb-f-etat.ok{color:#16A34A}.tb-f-etat.err{color:#DC2626}.tb-f-lien{display:inline-block;text-decoration:none;margin-top:10px;font-size:13px;font-weight:800;color:#E85D04}' +
     '.tb-legende{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;margin-top:2px}.tb-legende i,.tb-pt i{display:inline-block;width:9px;height:9px;border-radius:2px}.tb-pt{font-size:12px;margin:2px 0}';
   function charger(zone, extras) {
     if (!document.getElementById('tb-css')) { var st = el('style'); st.id = 'tb-css'; st.textContent = CSS; document.head.appendChild(st); }

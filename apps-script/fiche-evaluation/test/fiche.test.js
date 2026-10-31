@@ -1,5 +1,5 @@
 const test = require('node:test'), assert = require('node:assert');
-const { tauxGlobal_, contratsDepuis_, numeroLong_, montantFr_, delaiFr_, ficheHtml_, criteres_, POURCENTS, tauxFr_ } = require('../Code.js');
+const { cleContrat_, fichesRemplacees_, tauxGlobal_, contratsDepuis_, numeroLong_, montantFr_, delaiFr_, ficheHtml_, criteres_, POURCENTS, tauxFr_ } = require('../Code.js');
 
 test('taux global : moyenne des cases cochées, tronquée — fiche ETB ZATOUT ABDENACER = 71,53 %', () => {
   const notes = {}, c = criteres_(), idDe = t => c.filter(x => x.texte.indexOf(t) === 0)[0].id;
@@ -75,4 +75,12 @@ test('phases des contrats : exécution, préparation avant, levée des réserves
   const { phaseDe_ } = require('../Code.js');
   assert.deepStrictEqual(['Contrat en exécution', 'Non démarré', 'Dossier en cours', 'Attribué', 'Bloqué', 'Contrat échu', 'Terminé', 'infructueux', ''].map(phaseDe_),
     ['execution', 'preparation', 'preparation', 'preparation', 'preparation', 'reserves', 'reserves', '', '']);
+});
+
+test('une seule fiche par contrat et par mois : la dernière remplace les autres du même contrat et du même mois', () => {
+  assert.strictEqual(cleContrat_('53.INFRA.25'), '53-25'); assert.strictEqual(cleContrat_('I/53/RNS/INFRA/2025'), '53-25'); assert.strictEqual(cleContrat_('Visite sur site'), '');
+  const d = [{ id: 'a', contrat: 'I/53/RNS/INFRA/2025', mois: '2026-10' }, { id: 'b', contrat: '53.INFRA.25', mois: '2026-10' }, { id: 'c', contrat: 'I/53/RNS/INFRA/2025', mois: '2026-09' }, { id: 'd', contrat: 'I/47/RNS/INFRA/2026', mois: '2026-10' }, { id: 'n', contrat: 'I/53/RNS/INFRA/2025', mois: '2026-10' }, { id: 'e', contrat: '', mois: '2026-10' }];
+  assert.deepStrictEqual(fichesRemplacees_(d, 'n', 'I/53/RNS/INFRA/2025', '2026-10'), ['a', 'b']);          // même contrat (écrit de deux façons) et même mois ; pas septembre, pas un autre contrat, pas la nouvelle
+  assert.deepStrictEqual(fichesRemplacees_(d, 'n', 'Visite sur site', '2026-10'), [], 'sans n° de contrat lisible : rien n\'est remplacé');
+  assert.deepStrictEqual(fichesRemplacees_(d, 'n', 'I/53/RNS/INFRA/2025', ''), []);
 });

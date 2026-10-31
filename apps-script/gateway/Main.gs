@@ -208,6 +208,8 @@ function route_(req) {
     case 'rapport_enregistrer': return rapportEnregistrer_(req);
     case 'rapports_liste': return rapportsListe_(req);
     case 'usage_app': return usageEnregistrer_(req);
+    case 'fiches_relancer': return fichesRelancer_(req);
+    case 'fiches_ignorer': return fichesIgnorer_(req);
     case 'rapport_media_envoyer': return rapportMediaEnvoyer_(req);
     case 'rapport_media_lire': return rapportMediaLire_(req);
     case 'parametres_lire': return parametresLire_(req);
