@@ -391,7 +391,7 @@ window.google = { script: { run: (function () {
     });
     corps.appendChild(tr);
   }
-  for (let i = 0; i < (window.matchMedia && window.matchMedia('(max-width: 700px)').matches ? 4 : 12); i++) ajouterLigne();   // téléphone : 4 personnes d'abord (« + Ajouter 4 lignes » en donne d'autres)
+  for (let i = 0; i < 4; i++) ajouterLigne();   // toujours 4 lignes d'abord, partout (« + Ajouter 4 lignes » en donne d'autres) : page courte et homogène)
   document.getElementById('btnPlusLignes').addEventListener('click', () => { for (let i = 0; i < 4 && corps.querySelectorAll('tr').length < MAX_LIGNES; i++) ajouterLigne(); majChampsSelonDocuments(); });
   /** La base par défaut change : les lignes dont la base n'a pas été choisie à la main la suivent. */
   function appliquerBaseDefaut(toutes) {
@@ -828,6 +828,8 @@ window.google = { script: { run: (function () {
             lignes[i].querySelector('[data-champ="prenom"]').value = p.prenom || '';
             if (p.fonction) lignes[i].querySelector('[data-champ="fonction"]').value = p.fonction;
           });
+          lignes.forEach((tr, i) => { if (i < res.personnes.length) appliquerReglesLigne(tr); });   // mêmes règles que la saisie à la main (majuscules, fonction, mémoire des anciens enregistrements)
+          majChampsSelonDocuments();
           // Contrat cité dans le document : le prestataire correspondant est choisi tout seul (puis service et base)
           if (res.contrat) {
             const cc = cleContrat(res.contrat), ch = Array.from(document.getElementById('listePrestataires').options).map(o => o.value).filter(v => cleContrat(v.split(' - ')[0]) === cc);
@@ -895,6 +897,13 @@ window.google = { script: { run: (function () {
     }
     const im = cleI(v('immatriculation').value);
     if (auto && im.length >= 5 && !v('typeVehicule').value.trim()) { const x = memoire.vehicules.filter(q => cleI(q.immat) === im)[0]; if (x && x.modele) v('typeVehicule').value = majVeh(x.modele); }
+  }
+  /** Les règles de la saisie (appliquées à la sortie de chaque case) sur une ligne remplie par la lecture d'un PDF. */
+  function appliquerReglesLigne(tr) {
+    const v = n => tr.querySelector('[data-champ=' + n + ']'); if (!v('nom')) return;
+    v('nom').value = majNom(v('nom').value); v('prenom').value = capPrenom(v('prenom').value); v('fonction').value = capFonction(v('fonction').value);
+    ['typeVehicule', 'immatriculation'].forEach(c => { if (v(c)) v(c).value = majVeh(v(c).value); });
+    remplirDepuisMemoire(tr);
   }
   document.addEventListener('focusout', e => {
     const c = e.target && e.target.dataset ? e.target.dataset.champ : '';

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-274",
+    "date": "2026-10-31",
+    "title": "Version 6.42.1 — Prise en charge : 4 lignes au départ, lecture du formulaire véhicules corrigée",
+    "changes": [
+      "Le tableau commence toujours par 4 lignes, sur ordinateur comme sur téléphone (« + Ajouter 4 lignes » en donne 4 de plus) : page plus courte et identique pour tous.",
+      "Quand la lecture d'un PDF trouve plus de personnes, des lignes s'ajoutent en bas, et les règles de saisie s'appliquent à chacune (majuscules, fonction, reprise des anciens enregistrements).",
+      "Formulaire véhicules : le titre, le prénom collé à la fonction (« Mohamed amine chauffeur ») et le type collé à l'immatriculation (« Camion hyundai 00270/217/30 ») ne décalent plus les lignes."
+    ]
+  },
+  {
     "id": "2026-10-31-273",
     "date": "2026-10-31",
     "title": "Version 6.42.0 — Autorisation d'accès : lecture du formulaire véhicules",
