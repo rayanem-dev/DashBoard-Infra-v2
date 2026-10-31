@@ -1,5 +1,31 @@
 [
   {
+    "id": "2026-10-31-268",
+    "date": "2026-10-31",
+    "title": "Version 6.40.1 — En-tête : « Portail »",
+    "changes": [
+      "Le titre de l'en-tête (accueil et connexion) devient « Portail – Division Infrastructure » au lieu de « Tableau de Bord – Division Infrastructure » (traduit en anglais et en arabe)."
+    ]
+  },
+  {
+    "id": "2026-10-31-267",
+    "date": "2026-10-31",
+    "title": "Version 6.40.0 — Vis-à-vis : confirmation par la personne choisie",
+    "changes": [
+      "Quand un agent choisit un vis-à-vis qui en a déjà un, le lien de cette personne n'est plus laissé de côté en silence : elle reçoit une proposition (bannière sur l'accueil + bloc « Ma chambre et mes vis-à-vis » du profil) et choisit : accepter (remplace l'actuel), garder l'actuel, ou n'avoir aucun vis-à-vis.",
+      "Si la personne est libre, le lien réciproque reste posé automatiquement. Quand un agent change de vis-à-vis, l'ancien perd son lien."
+    ]
+  },
+  {
+    "id": "2026-10-31-266",
+    "date": "2026-10-31",
+    "title": "Version 6.39.1 — Fiches d'évaluation : la ligne disparaît au clic",
+    "changes": [
+      "Carte « Fiches d'évaluation » : « Éditée à la main » et « Ignorer ce mois » font disparaître la ligne immédiatement ; seules les fiches non éditées restent affichées.",
+      "Plus de lignes vertes : les fiches déjà éditées, éditées à la main ou ignorées sont rangées dans une rubrique repliée « Masquées (n) », juste pour pouvoir annuler."
+    ]
+  },
+  {
     "id": "2026-10-31-265",
     "date": "2026-10-31",
     "title": "Version 6.39.0 — Planning pour tous, équipes par service + CPM, chambre et vis-à-vis en libre-service",

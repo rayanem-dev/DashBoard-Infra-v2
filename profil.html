@@ -68,6 +68,7 @@
     <div class="bloc" id="bloc-coord" hidden>
       <h2>🛏️ Ma chambre et mes vis-à-vis</h2>
       <p class="aide" style="margin:0 0 8px;font-size:12px;color:var(--text-muted)">Votre vis-à-vis de travail tient votre poste pendant votre repos ; votre vis-à-vis de chambre partage votre chambre. À votre prochaine connexion, ces informations sont reportées dans BDDORGA.</p>
+      <div id="z-prop"></div>
       <div class="champs" style="grid-template-columns:1fr">
         <div><label for="c-chambre">N° de chambre <span class="cad">(si une chambre vous est affectée)</span></label><input id="c-chambre" maxlength="20" autocomplete="off"></div>
         <div><label for="c-vt">Vis-à-vis de travail</label><select id="c-vt"></select></div>
@@ -208,9 +209,24 @@
     if (val && !liste.some(function (c) { return c.uid === val; })) { var o2 = el('option', null, '(lien existant)'); o2.value = val; sel.appendChild(o2); }
     sel.value = val || '';
   }
+  function dessinerProps(liste) {
+    var z = $('z-prop'); z.textContent = '';
+    liste.forEach(function (x) {
+      var lib = x.champ === 'vis_travail' ? 'vis-à-vis de travail' : 'vis-à-vis de chambre', d = el('div', 'msg'); d.style.cssText = 'display:block;margin:0 0 10px;padding:10px;border:1.5px solid #F59E0B;border-radius:10px;background:rgba(245,158,11,.1)';
+      d.appendChild(el('div', null, '🔔 ' + x.nom + ' vous a choisi comme ' + lib + (x.actuel_nom ? ' (vous avez déjà ' + x.actuel_nom + ').' : '.')));
+      var bt = el('div', 'actions'); bt.style.cssText = 'justify-content:flex-start;margin-top:8px;flex-wrap:wrap';
+      [['accepter', '✔ Accepter' + (x.actuel_nom ? ' (remplace ' + x.actuel_nom + ')' : ''), 'btn-p'], ['garder', x.actuel_nom ? '↩ Garder ' + x.actuel_nom : '✖ Refuser', 'btn-s'], ['aucun', '🚫 Pas de vis-à-vis', 'btn-s']].forEach(function (c) {
+        if (c[0] === 'garder' && !x.actuel_nom) return;
+        var b = el('button', c[2], c[1]); b.type = 'button'; b.addEventListener('click', function () {
+          bt.querySelectorAll('button').forEach(function (k) { k.disabled = true; });
+          Api.call('visavis_moi_repondre', { champ: x.champ, choix: c[0] }).then(function () { msg('m-coord', 'Réponse enregistrée.', true); return chargerCoord(); }).catch(function (e) { msg('m-coord', e.message); chargerCoord(); }); });
+        bt.appendChild(b); });
+      d.appendChild(bt); z.appendChild(d); });
+  }
   function chargerCoord() {
     return Api.call('visavis_moi').then(function (r) {
       $('bloc-coord').hidden = !r.actif; if (!r.actif) return;
+      dessinerProps(r.propositions || []);
       $('c-chambre').value = r.chambre || ''; remplir($('c-vt'), r.candidats, r.vis_travail); remplir($('c-vc'), r.candidats, r.vis_chambre);
     }).catch(function () { $('bloc-coord').hidden = true; });
   }
@@ -223,7 +239,7 @@
     chargerCoord();
     return Api.call('profil_moi').then(function (r) { U = r.user; photo = r.photo || ''; dessinerTete(); dessinerChamps(); dessinerAcces(r.acces, r.demandes || []); });
   }
-  charger().then(function () { if (location.hash === '#mdp') { $('bloc-mdp').scrollIntoView(); $('m-anc').focus(); } }).catch(function (e) { msg('m-enreg', e.message); });
+  charger().then(function () { if (location.hash === '#coord' && !$('bloc-coord').hidden) $('bloc-coord').scrollIntoView(); if (location.hash === '#mdp') { $('bloc-mdp').scrollIntoView(); $('m-anc').focus(); } }).catch(function (e) { msg('m-enreg', e.message); });
 })();
 </script>
 <script src="js/pied.js"></script>

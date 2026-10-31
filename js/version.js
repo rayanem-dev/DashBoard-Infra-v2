@@ -1,2 +1,2 @@
 // Version publiée du portail (affichée dans le pied de page ; version.json est généré à la publication à partir de ce nombre).
-window.PORTAIL_VERSION = '6.39.0';
+window.PORTAIL_VERSION = '6.40.1';
