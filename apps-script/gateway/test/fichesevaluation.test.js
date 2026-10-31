@@ -67,3 +67,10 @@ test('dernière relance de chaque fiche manquante', () => {
   const m = F.avecRelances([{ contrat: '53.INFRA.25' }, { contrat: '47.INFRA.26' }], [{ cle: '53-25', le: '2026-10-26T08:00:00Z', par: 'A' }, { cle: '53-25', le: '2026-10-27T09:00:00Z', par: 'B' }]);
   assert.deepStrictEqual(m.map(x => x.relance), [{ le: '2026-10-27T09:00:00Z', par: 'B' }, null]);
 });
+
+test('fiche faite à la main (hors générateur) : comptée comme éditée, jamais manquante ; la fiche du générateur l\'emporte', () => {
+  const e = F.etat('2026-10-26', contrats, [fiche('I/30/RNS/INFRA/2024', '2026-10-05')], [], [{ cle: '53-25', par: 'RAYANE', le: '2026-10-25T10:00:00Z' }, { cle: '30-24', par: 'X' }]);
+  assert.deepStrictEqual([e.attendues, e.creees, e.manquantes.length], [3, 2, 1]);
+  const m = e.faites.find(x => x.contrat === '53.INFRA.25'), g = e.faites.find(x => x.contrat === '30.INFRA.24');
+  assert.deepStrictEqual([m.manuelle, m.par, m.taux, m.projet], [true, 'RAYANE', null, 'Terrassement']); assert.strictEqual(g.manuelle, undefined, 'fiche du générateur : pas marquée manuelle');
+});

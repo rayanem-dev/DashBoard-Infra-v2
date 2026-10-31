@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-31-263",
+    "date": "2026-10-31",
+    "title": "Version 6.38.0 — Fiches d'évaluation : projet + n° de contrat, « éditée à la main »",
+    "changes": [
+      "Carte « Fiches d'évaluation » : chaque fiche s'affiche par nom du projet suivi du numéro de contrat (« Terrassement — 53.INFRA.25 ») ; l'entreprise est dans l'infobulle.",
+      "Nouveau bouton « ✔ Éditée à la main » (secrétariat et chefs de service) pour les fiches faites manuellement, hors générateur : la fiche est comptée comme éditée et n'est plus relancée ; elles sont listées à part (« ✋ Éditées à la main ») avec « ↩ Annuler ». Une fiche du générateur l'emporte toujours. Réglable et tracé comme les autres boutons (Paramètres : « Déclarer une fiche éditée à la main »)."
+    ]
+  },
+  {
     "id": "2026-10-31-262",
     "date": "2026-10-31",
     "title": "Version 6.37.0 — Fiches d'évaluation : une seule fiche par contrat et par mois, relance et « ignorer ce mois »",
