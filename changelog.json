@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-10-31-281",
+    "date": "2026-10-31",
+    "title": "Version 6.44.0 — Nouvelle application : Dotation EPI et vestes en cuir",
+    "changes": [
+      "Chaque agent renseigne ses tailles (haut, pantalon ou tour de taille et jambe, pointure, gants, veste en cuir en taille UK avec la table de correspondance, tour de tête seulement pour un bonnet ou un sous-casque) depuis « Mon profil » ou la page « Dotation EPI » : c'est le même fichier.",
+      "Page Dotation EPI pour les responsables : agents groupés par organisme ou prestataire, tailles manquantes en rouge, tout voir et tout modifier, récapitulatif à commander (pièces par article et taille). Chef de service : son service ; chef de division et secrétariat : tout le monde.",
+      "Exports mis en forme : Excel (feuille des agents par organisme et feuille « À commander » par organisme) et PDF / impression A4 paysage.",
+      "L'ancienne carte « Veste en Cuir – Personnel Actif RNS » est masquée : sa liste (matricule, nom, taille) s'importe dans la nouvelle application, sans écraser une taille déjà saisie."
+    ]
+  },
+  {
     "id": "2026-10-31-280",
     "date": "2026-10-31",
     "title": "Version 6.43.2 — Chacun ne voit que ses cartes",

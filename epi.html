@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dotation EPI – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .epi { max-width: 1150px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { font-size: 14px; margin: 0 0 8px; }
+  .barre { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .epi input, .epi select, .epi textarea { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); box-sizing: border-box; }
+  .btn-p { padding: 9px 15px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .btn-s { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-s.petit { padding: 3px 8px; font-size: 12px; border-radius: 8px; } .btn-p:disabled, .btn-s:disabled { opacity: .5; cursor: default; }
+  .onglets { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .onglets button { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .onglets button.actif { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; border-color: transparent; }
+  .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .grille label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+  .grille input, .grille select, .grille textarea { width: 100%; } .grille .aide { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; text-transform: none; font-weight: 400; letter-spacing: 0; }
+  .large { grid-column: 1 / -1; } .coche { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; text-transform: none !important; letter-spacing: 0 !important; color: var(--text-dark) !important; } .coche input { width: auto; padding: 0; margin: 0; flex: none; }
+  .manque { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: rgba(220,38,38,.12); color: #B91C1C; margin: 1px 2px; } .complet { background: rgba(22,163,74,.14); color: #166534; }
+  table.res { width: 100%; border-collapse: collapse; font-size: 13px; } table.res th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 6px; border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--surface); }
+  table.res td { padding: 5px 6px; border-bottom: 1px solid var(--border); vertical-align: top; } .note { font-size: 12px; color: var(--text-muted); margin: 6px 0; } .defile { overflow: auto; max-height: 64vh; }
+  .puces { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; } .puce { background: var(--bg, #F5F5F0); border: 1.5px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; } .puce b { color: var(--orange-main); }
+  dialog { border: 0; border-radius: 16px; padding: 18px; max-width: min(760px, 94vw); width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.3); background: var(--surface); color: var(--text-dark); } dialog::backdrop { background: rgba(0,0,0,.45); } dialog h3 { margin: 0 0 10px; font-size: 16px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1F2937; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; max-width: 92vw; } .toast.on { opacity: 1; }
+  tr.org td { background: var(--bg, #F5F5F0); font-weight: 800; padding: 8px 8px; border-left: 6px solid var(--c, #E85D04); }
+  #feuille { display: none; }
+  @media print {
+    html, body { background: #fff !important; margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(#feuille) { display: none !important; } #feuille { display: block !important; font-family: Inter, Arial, sans-serif; color: #111; }
+    @page { size: A4 landscape; margin: 9mm; }
+  }
+  .guide td, .guide th { padding: 4px 10px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🦺</div>
+    <div class="logo-text"><h1>Dotation EPI</h1><p>Tailles · vestes en cuir · récapitulatif à commander</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="epi">
+  <div class="onglets" id="onglets"><button type="button" data-v="moi" class="actif">🧍 Mes tailles</button><button type="button" data-v="equipe" id="t-equipe" hidden>👥 Mon équipe et la commande</button></div>
+
+  <section id="v-moi">
+    <div class="bloc"><h2 id="m-titre">Mes tailles</h2><p class="note" id="m-etat"></p><div id="m-form"></div></div>
+    <div class="bloc"><details><summary style="cursor:pointer;font-weight:700">📏 Comment choisir ma taille ? (table de correspondance des vestes)</summary>
+      <table class="guide" style="margin-top:8px"><thead><tr><th>Taille internationale</th><th>Tour de poitrine (cm)</th><th>Taille UK</th></tr></thead><tbody id="g-corps"></tbody></table>
+      <p class="note">Mesurez le tour de poitrine sous les bras, à plat. Entre deux tailles, prenez la plus grande. Pantalon : donnez la taille numérique, ou le tour de taille et la longueur de jambe. Le casque de sécurité est réglable : le tour de tête ne sert que pour un bonnet ou un sous-casque.</p></details></div>
+  </section>
+
+  <section id="v-equipe" hidden>
+    <div class="bloc"><div class="barre">
+      <input type="search" id="e-q" placeholder="Rechercher un agent…" style="flex:1;min-width:200px" aria-label="Rechercher">
+      <select id="e-org" aria-label="Organisme ou prestataire"><option value="">Tous les organismes / prestataires</option></select>
+      <select id="e-service" aria-label="Service"><option value="">Tous les services</option></select>
+      <label class="coche"><input type="checkbox" id="e-inc"> tailles manquantes seulement</label>
+      <button class="btn-s" id="e-xl" type="button">⬇ Excel</button><button class="btn-p" id="e-pdf" type="button">🖨 PDF / Imprimer</button>
+    </div><p class="note" id="e-info"></p></div>
+    <div class="bloc"><h2>À commander <span class="note" id="r-sous"></span></h2><div id="e-recap"></div></div>
+    <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Gants</th><th>Tête</th><th>Veste cuir (UK)</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
+    <div class="bloc" id="i-bloc" hidden><h2>Importer l'ancienne liste « Veste en cuir »</h2>
+      <p class="note">Choisissez le fichier Excel de l'ancienne liste (colonnes : Matricule, Nom &amp; Prénom, Taille). Les tailles sont rapprochées des comptes par matricule puis par nom ; une taille de veste déjà saisie n'est jamais écrasée.</p>
+      <div class="barre"><input type="file" id="i-fic" accept=".xlsx,.xls,.xlsm,.csv"><span id="i-res" class="note"></span></div></div>
+  </section>
+</main>
+<dialog id="dlg"></dialog><div id="feuille" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="js/epi-form.js"></script>
+<script>
+(function () {
+  'use strict';
+  var CDN_XLSX = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', TABLE = [], NIV = 0, LISTE = null;
+  var HAUTS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'], GANTS = ['S', 'M', 'L', 'XL', 'XXL'];
+  function $(id) { return document.getElementById(id); }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove('on'); }, 3800); }
+  function script(src) { return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { ko(new Error('Chargement impossible : ' + src)); }; document.head.appendChild(s); }); }
+  function lettreDe(uk) { var x = TABLE.filter(function (r) { return String(r.uk) === String(uk); })[0]; return x ? x.lettre : ''; }
+  function ukDe(l) { var x = TABLE.filter(function (r) { return r.lettre === String(l || '').toUpperCase(); })[0]; return x ? x.uk : ''; }
+
+  /* Mes tailles */
+  function moi() {
+    Api.call('epi_moi').then(function (r) {
+      TABLE = r.table || []; NIV = r.niveau || 1; $('m-titre').textContent = 'Mes tailles — ' + r.nom;
+      $('g-corps').textContent = ''; TABLE.forEach(function (x) { var tr = el('tr'); [x.lettre, x.poitrine + ' cm', 'UK ' + x.uk].forEach(function (v) { tr.appendChild(el('td', null, v)); }); $('g-corps').appendChild(tr); });
+      etatMoi(r); $('t-equipe').hidden = NIV < 2;
+      var z = $('m-form'); z.textContent = ''; z.appendChild(EpiForm.formulaire(r.tailles || {}, TABLE, function (v) { return Api.call('epi_enregistrer', v).then(function (x) { etatMoi(x); toast('Tailles enregistrées.'); }).catch(function (e) { toast(e.message); throw e; }); }));
+    }).catch(function (e) { toast(e.message); });
+  }
+  function etatMoi(r) {
+    var m = r.manquants || [], z = $('m-etat'); z.textContent = '';
+    if (!m.length) { z.appendChild(el('span', 'manque complet', '✓ Dossier complet')); z.appendChild(document.createTextNode(' Merci : vos tailles sont enregistrées.')); }
+    else { z.appendChild(document.createTextNode('Il manque : ')); m.forEach(function (x) { z.appendChild(el('span', 'manque', x)); }); }
+  }
+
+  /* Équipe */
+  function charger() {
+    Api.call('epi_liste').then(function (r) { LISTE = r; TABLE = r.table || TABLE; NIV = r.niveau; $('i-bloc').hidden = NIV < 3; services(); dessiner(); }).catch(function (e) { toast(e.message); });
+  }
+  var PALETTE = ['E85D04', '7C3AED', '16A34A', '0EA5E9', 'DB2777', 'CA8A04', '0D9488', '64748B'], CONNUES = { SONATRACH: 'E85D04', ACOSCO: '7C3AED', GTP: '16A34A' };
+  function couleur(n) { var k = String(n || '').toUpperCase(); if (CONNUES[k]) return CONNUES[k]; var h = 0; for (var i = 0; i < k.length; i += 1) h = (h * 31 + k.charCodeAt(i)) >>> 0; return PALETTE[h % PALETTE.length]; }
+  function services() {
+    var s = $('e-service'), v = s.value, o = $('e-org'), ov = o.value, vus = {}, ovs = {}; s.textContent = ''; o.textContent = '';
+    var a0 = el('option', null, 'Tous les services'); a0.value = ''; s.appendChild(a0); var b0 = el('option', null, 'Tous les organismes / prestataires'); b0.value = ''; o.appendChild(b0);
+    (LISTE.agents || []).forEach(function (a) { if (a.service) vus[a.service] = 1; ovs[a.organisme] = 1; });
+    Object.keys(vus).sort().forEach(function (n) { var p = el('option', null, n); p.value = n; s.appendChild(p); }); Object.keys(ovs).sort().forEach(function (n) { var p = el('option', null, n); p.value = n; o.appendChild(p); }); s.value = v; o.value = ov;
+  }
+  function filtres() { var q = $('e-q').value.toLowerCase(), sv = $('e-service').value, og = $('e-org').value, inc = $('e-inc').checked; return (LISTE.agents || []).filter(function (a) { return (!sv || a.service === sv) && (!og || a.organisme === og) && (!inc || a.manquants.length) && (!q || (a.nom + ' ' + a.matricule + ' ' + a.service + ' ' + a.organisme).toLowerCase().indexOf(q) >= 0); }); }
+  /* Les agents groupés par organisme ou prestataire (SONATRACH d'abord) : [{ nom, agents, couleur }] */
+  function groupes(liste) {
+    var g = {}; liste.forEach(function (a) { (g[a.organisme] = g[a.organisme] || []).push(a); });
+    return Object.keys(g).sort(function (x, y) { return x === 'SONATRACH' ? -1 : y === 'SONATRACH' ? 1 : x < y ? -1 : 1; }).map(function (n) { return { nom: n, agents: g[n], couleur: couleur(n) }; });
+  }
+  function recapDe(agents) {
+    var out = { haut: {}, pantalon: {}, chaussures: {}, gants: {}, tete: {}, veste_cuir: {} }, complets = 0;
+    agents.forEach(function (a) { if (!a.manquants.length) complets += 1; ['haut', 'pantalon', 'chaussures', 'gants', 'veste_cuir'].forEach(function (k) { if (a[k]) out[k][a[k]] = (out[k][a[k]] || 0) + 1; }); if (a.bonnet === '1' && a.tete) out.tete[a.tete] = (out.tete[a.tete] || 0) + 1; });
+    return { articles: out, agents: agents.length, complets: complets };
+  }
+  var LIB = { haut: 'T-shirt · veste · combinaison', pantalon: 'Pantalon', chaussures: 'Chaussures de sécurité (pointure)', gants: 'Gants', tete: 'Bonnet / sous-casque (tour de tête)', veste_cuir: 'Veste en cuir (UK)' };
+  function ordre(a, b) { var x = Number(a), y = Number(b); if (!isNaN(x) && !isNaN(y)) return x - y; var i = HAUTS.indexOf(a), j = HAUTS.indexOf(b); if (i >= 0 && j >= 0) return i - j; return a < b ? -1 : 1; }
+  function cellules(a) { return [a.haut, a.pantalon + (a.jambe ? ' / ' + a.jambe : ''), a.chaussures, a.gants, a.bonnet === '1' ? a.tete : '', a.veste_cuir ? a.veste_cuir + ' (' + lettreDe(a.veste_cuir) + ')' : '']; }
+  function dessiner() {
+    var liste = filtres(), r = recapDe(liste), gr = groupes(liste);
+    $('e-info').textContent = liste.length + ' agent(s) dans ' + gr.length + ' organisme(s) / prestataire(s) · ' + r.complets + ' dossier(s) complet(s) · ' + (liste.length - r.complets) + ' avec des tailles manquantes';
+    $('r-sous').textContent = '(' + liste.length + ' agent(s) affiché(s))';
+    var z = $('e-recap'); z.textContent = '';
+    Object.keys(LIB).forEach(function (k) {
+      var tailles = Object.keys(r.articles[k]).sort(ordre); if (!tailles.length) return;
+      z.appendChild(el('div', 'note', LIB[k] + ' — ' + tailles.reduce(function (n, t) { return n + r.articles[k][t]; }, 0) + ' pièce(s)'));
+      var p = el('div', 'puces'); tailles.forEach(function (t) { var c = el('span', 'puce'); c.appendChild(document.createTextNode(t + ' × ')); c.appendChild(el('b', null, String(r.articles[k][t]))); p.appendChild(c); }); z.appendChild(p);
+    });
+    if (!z.childNodes.length) z.appendChild(el('p', 'note', 'Aucune taille renseignée pour l\'instant.'));
+    var c = $('e-corps'); c.textContent = '';
+    gr.forEach(function (g) {
+      var rg = recapDe(g.agents), th = el('tr', 'org'), td = el('td', null, g.nom + ' — ' + g.agents.length + ' agent(s) · ' + rg.complets + ' complet(s)'); td.colSpan = 9; td.style.setProperty('--c', '#' + g.couleur); th.appendChild(td); c.appendChild(th);
+      g.agents.forEach(function (a) {
+        var tr = el('tr'), d = el('td'); d.appendChild(el('b', null, a.nom)); d.appendChild(el('div', 'note', [a.matricule, a.service, a.prestataire ? 'prestataire' : ''].filter(Boolean).join(' · '))); tr.appendChild(d);
+        cellules(a).forEach(function (v) { tr.appendChild(el('td', null, v || '—')); });
+        var m = el('td'); if (!a.manquants.length) m.appendChild(el('span', 'manque complet', '✓')); else a.manquants.forEach(function (x) { m.appendChild(el('span', 'manque', x)); }); tr.appendChild(m);
+        var ac = el('td'), b = el('button', 'btn-s petit', '✏️ Tailles'); b.type = 'button'; b.addEventListener('click', function () { dialogue(a); }); ac.appendChild(b); tr.appendChild(ac); c.appendChild(tr);
+      });
+    });
+  }
+  function dialogue(a) {
+    var d = $('dlg'); d.textContent = ''; d.appendChild(el('h3', null, 'Tailles de ' + a.nom));
+    d.appendChild(EpiForm.formulaire(a, TABLE, function (v) { v.email = a.email; return Api.call('epi_enregistrer', v).then(function () { toast('Tailles enregistrées.'); d.close(); charger(); }).catch(function (e) { toast(e.message); throw e; }); }, { toast: toast, prefixe: 'd' }));
+    var f = el('button', 'btn-s', 'Fermer'); f.type = 'button'; f.style.marginTop = '8px'; f.addEventListener('click', function () { d.close(); }); d.appendChild(f); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  }
+  var ENTETES = ['Matricule', 'Nom', 'Fonction', 'Service', 'Haut', 'Pantalon', 'Jambe (cm)', 'Pointure', 'Gants', 'Tour de tête', 'Veste cuir (UK)', 'Veste (lettre)', 'Remarque', 'Dossier'];
+  function ligneAgent(a) { return [a.matricule, a.nom, a.fonction, a.service, a.haut, a.pantalon, a.jambe, a.chaussures, a.gants, a.bonnet === '1' ? a.tete : '', a.veste_cuir, lettreDe(a.veste_cuir), a.remarque, a.manquants.length ? 'Manque : ' + a.manquants.join(', ') : 'Complet']; }
+  function telecharger(blob, nom) { var a = el('a'); a.href = URL.createObjectURL(blob); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  /* Excel mis en forme (ExcelJS) : titre, bandeau par organisme, lignes alternées, cases manquantes en rouge, feuille « À commander » par organisme */
+  function excel() {
+    var liste = filtres(), gr = groupes(liste), r = recapDe(liste), date = new Date().toLocaleDateString('fr-FR');
+    script('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js').then(function () {
+      var wb = new window.ExcelJS.Workbook(); wb.creator = 'Division Infrastructure RNS';
+      var ws = wb.addWorksheet('Dotation EPI', { views: [{ state: 'frozen', ySplit: 4 }], pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } }), n = ENTETES.length;
+      var fine = { style: 'thin', color: { argb: 'FFD1D5DB' } }, bord = { top: fine, left: fine, bottom: fine, right: fine };
+      ws.mergeCells(1, 1, 1, n); var t = ws.getCell(1, 1); t.value = 'DIVISION INFRASTRUCTURE RNS — DOTATION EPI : TAILLES DES AGENTS'; t.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }; t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } }; t.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }; ws.getRow(1).height = 30;
+      ws.mergeCells(2, 1, 2, n); var u = ws.getCell(2, 1); u.value = 'Édité le ' + date + ' · ' + liste.length + ' agent(s) · ' + gr.length + ' organisme(s) / prestataire(s) · ' + r.complets + ' dossier(s) complet(s) · ' + (liste.length - r.complets) + ' avec des tailles manquantes'; u.font = { name: 'Calibri', size: 10.5, italic: true, color: { argb: 'FF6B7280' } }; u.alignment = { indent: 1 };
+      var hr = ws.getRow(4); ENTETES.forEach(function (h, i) { var c = hr.getCell(i + 1); c.value = h; c.font = { name: 'Calibri', bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE85D04' } }; c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; c.border = bord; }); hr.height = 26;
+      var ligne = 5;
+      gr.forEach(function (g) {
+        var rg = recapDe(g.agents); ws.mergeCells(ligne, 1, ligne, n); var b = ws.getCell(ligne, 1); b.value = g.nom + ' — ' + g.agents.length + ' agent(s) · ' + rg.complets + ' dossier(s) complet(s)';
+        b.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FFFFFFFF' } }; b.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + g.couleur } }; b.alignment = { vertical: 'middle', indent: 1 }; ws.getRow(ligne).height = 22; ligne += 1;
+        g.agents.forEach(function (a, i) {
+          var row = ws.getRow(ligne), v = ligneAgent(a); v.forEach(function (x, k) {
+            var c = row.getCell(k + 1); c.value = x === '' ? null : (/^\d+$/.test(String(x)) && k >= 4 && k <= 10 ? Number(x) : x); c.border = bord; c.font = { name: 'Calibri', size: 10.5 }; c.alignment = { vertical: 'middle', horizontal: k >= 4 && k <= 11 ? 'center' : 'left', wrapText: k === 12 };
+            if (i % 2) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F5F1' } };
+            if (k === 13) { c.font = { name: 'Calibri', size: 10.5, bold: true, color: { argb: a.manquants.length ? 'FFB91C1C' : 'FF166534' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: a.manquants.length ? 'FFFEE2E2' : 'FFDCFCE7' } }; }
+          });
+          [['haut', 4], ['pantalon', 5], ['chaussures', 7], ['gants', 8]].forEach(function (m) { if (a.manquants.indexOf(m[0]) >= 0) { var c = row.getCell(m[1] + 1); c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFECACA' } }; } });
+          ligne += 1;
+        });
+      });
+      [12, 26, 28, 24, 9, 11, 10, 9, 8, 10, 11, 10, 28, 20].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
+      /* À commander : une ligne par article et taille, une colonne par organisme + total */
+      var wc = wb.addWorksheet('À commander', { views: [{ state: 'frozen', ySplit: 3 }] }), noms = gr.map(function (g) { return g.nom; }), rec = {}; gr.forEach(function (g) { rec[g.nom] = recapDe(g.agents).articles; });
+      wc.mergeCells(1, 1, 1, noms.length + 3); var tc = wc.getCell(1, 1); tc.value = 'À COMMANDER — par article, taille et organisme / prestataire'; tc.font = { name: 'Calibri', size: 15, bold: true, color: { argb: 'FFFFFFFF' } }; tc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } }; tc.alignment = { indent: 1, vertical: 'middle' }; wc.getRow(1).height = 28;
+      var h2 = wc.getRow(3); ['Article', 'Taille'].concat(noms, ['TOTAL']).forEach(function (h, i) { var c = h2.getCell(i + 1); c.value = h; c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i < 2 || i === noms.length + 2 ? 'FF1A1A2E' : 'FF' + gr[i - 2].couleur } }; c.alignment = { horizontal: 'center', wrapText: true }; c.border = bord; });
+      var lc = 4, total = 0; Object.keys(LIB).forEach(function (k) {
+        var tailles = Object.keys(r.articles[k]).sort(ordre); tailles.forEach(function (tl, i) {
+          var row = wc.getRow(lc), vals = [LIB[k], tl].concat(noms.map(function (nm) { return (rec[nm][k] || {})[tl] || null; }), [r.articles[k][tl]]); total += r.articles[k][tl];
+          vals.forEach(function (x, j) { var c = row.getCell(j + 1); c.value = x; c.border = bord; c.alignment = { horizontal: j < 1 ? 'left' : 'center' }; if (i % 2) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F5F1' } }; if (j === vals.length - 1) c.font = { bold: true }; });
+          lc += 1;
+        });
+      });
+      var rt = wc.getRow(lc + 1); rt.getCell(1).value = 'Total de pièces'; rt.getCell(1).font = { bold: true }; rt.getCell(noms.length + 3).value = total; rt.getCell(noms.length + 3).font = { bold: true };
+      wc.getColumn(1).width = 36; wc.getColumn(2).width = 10; noms.forEach(function (_, i) { wc.getColumn(i + 3).width = 16; }); wc.getColumn(noms.length + 3).width = 12;
+      return wb.xlsx.writeBuffer();
+    }).then(function (buf) { telecharger(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'dotation_epi_' + new Date().toISOString().slice(0, 10) + '.xlsx'); }).catch(function (e) { toast('Export impossible : ' + e.message); });
+  }
+  /* PDF : feuille A4 paysage mise en page (le navigateur propose « Enregistrer au format PDF ») */
+  function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function pdf() {
+    var liste = filtres(), gr = groupes(liste), r = recapDe(liste), date = new Date().toLocaleDateString('fr-FR');
+    var h = '<div style="background:#1A1A2E;color:#fff;padding:12px 16px;border-radius:8px;border-bottom:4px solid #E85D04"><div style="font-size:11px;letter-spacing:1px;color:#F59E0B;font-weight:700">SONATRACH · DIVISION INFRASTRUCTURE RNS</div><div style="font-size:20px;font-weight:800;margin-top:2px">Dotation EPI — tailles des agents</div>' +
+      '<div style="font-size:11px;opacity:.85;margin-top:3px">Édité le ' + esc(date) + ' · ' + liste.length + ' agent(s) · ' + gr.length + ' organisme(s) / prestataire(s) · ' + r.complets + ' dossier(s) complet(s), ' + (liste.length - r.complets) + ' avec des tailles manquantes</div></div>';
+    var th = 'style="background:#F3F4F6;text-align:left;padding:4px 6px;font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;color:#374151;border-bottom:2px solid #D1D5DB"', td = 'style="padding:3px 6px;border-bottom:1px solid #E5E7EB;font-size:10.5px"';
+    gr.forEach(function (g) {
+      var rg = recapDe(g.agents);
+      h += '<div style="margin-top:12px;break-inside:avoid-page"><div style="background:#' + g.couleur + ';color:#fff;padding:5px 10px;border-radius:6px 6px 0 0;font-weight:800;font-size:12px">' + esc(g.nom) + ' <span style="font-weight:600;opacity:.9">— ' + g.agents.length + ' agent(s) · ' + rg.complets + ' complet(s)</span></div>' +
+        '<table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Agent', 'Haut', 'Pantalon', 'Pointure', 'Gants', 'Tête', 'Veste cuir (UK)', 'Dossier'].map(function (x) { return '<th ' + th + '>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        g.agents.map(function (a, i) {
+          var bg = i % 2 ? 'background:#FAF7F2;' : '';
+          return '<tr style="' + bg + 'break-inside:avoid"><td ' + td + '><b>' + esc(a.nom) + '</b><div style="font-size:9px;color:#6B7280">' + esc([a.matricule, a.service].filter(Boolean).join(' · ')) + '</div></td>' + cellules(a).map(function (v) { return '<td ' + td + '>' + (esc(v) || '<span style="color:#B91C1C">—</span>') + '</td>'; }).join('') +
+            '<td ' + td + '>' + (a.manquants.length ? '<span style="color:#B91C1C;font-weight:700">Manque : ' + esc(a.manquants.join(', ')) + '</span>' : '<span style="color:#166534;font-weight:700">✓ Complet</span>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    });
+    h += '<div style="margin-top:14px;break-before:page"><div style="font-size:15px;font-weight:800;border-left:6px solid #E85D04;padding-left:8px">À commander</div>';
+    Object.keys(LIB).forEach(function (k) {
+      var tailles = Object.keys(r.articles[k]).sort(ordre); if (!tailles.length) return;
+      h += '<div style="margin-top:8px;font-weight:700;font-size:11.5px">' + esc(LIB[k]) + ' — ' + tailles.reduce(function (n, t) { return n + r.articles[k][t]; }, 0) + ' pièce(s)</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:3px">' +
+        tailles.map(function (t) { return '<span style="border:1.5px solid #D1D5DB;border-radius:999px;padding:2px 10px;font-size:11px">' + esc(t) + ' × <b style="color:#E85D04">' + r.articles[k][t] + '</b></span>'; }).join('') + '</div>';
+    });
+    h += '</div>';
+    $('feuille').innerHTML = h; setTimeout(function () { window.print(); }, 60);
+  }
+  function importer(f) {
+    if (!f) return; var z = $('i-res'); z.textContent = 'Lecture du fichier…';
+    Promise.all([script(CDN_XLSX), f.arrayBuffer()]).then(function (x) {
+      var wb = window.XLSX.read(x[1], { type: 'array' }), rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' });
+      var h = -1, c = {}; rows.slice(0, 10).forEach(function (r, i) { if (h >= 0) return; var e = {}; r.forEach(function (v, k) { var s = String(v).toLowerCase(); if (/matricule/.test(s)) e.matricule = k; else if (/nom/.test(s)) e.nom = k; else if (/taille/.test(s)) e.taille = k; }); if (e.taille !== undefined && (e.matricule !== undefined || e.nom !== undefined)) { h = i; c = e; } });
+      if (h < 0) throw new Error('Colonnes introuvables : « Matricule » ou « Nom » et « Taille » attendues.');
+      var lignes = rows.slice(h + 1).map(function (r) { return { matricule: c.matricule === undefined ? '' : r[c.matricule], nom: c.nom === undefined ? '' : r[c.nom], taille: r[c.taille] }; }).filter(function (l) { return l.taille !== '' && (l.matricule || l.nom); });
+      return Api.call('epi_importer_vestes', { lignes: lignes });
+    }).then(function (r) {
+      z.textContent = r.importes + ' taille(s) importée(s), ' + r.deja + ' déjà renseignée(s)' + (r.inconnus.length ? ', ' + r.inconnus.length + ' non rapprochée(s) : ' + r.inconnus.slice(0, 8).map(function (i) { return (i.nom || i.matricule) + ' (' + i.raison + ')'; }).join(' ; ') + (r.inconnus.length > 8 ? '…' : '') : '') + '.'; charger();
+    }).catch(function (e) { z.textContent = ''; toast(e.message); }); $('i-fic').value = '';
+  }
+  Array.prototype.forEach.call($('onglets').children, function (b) { b.addEventListener('click', function () { var v = b.dataset.v; $('v-moi').hidden = v !== 'moi'; $('v-equipe').hidden = v !== 'equipe'; Array.prototype.forEach.call($('onglets').children, function (x) { x.classList.toggle('actif', x === b); }); if (v === 'equipe') charger(); }); });
+  ['e-q'].forEach(function (i) { $(i).addEventListener('input', dessiner); }); ['e-service', 'e-org', 'e-inc'].forEach(function (i) { $(i).addEventListener('change', dessiner); });
+  $('e-xl').addEventListener('click', excel); $('e-pdf').addEventListener('click', pdf); $('i-fic').addEventListener('change', function () { importer(this.files && this.files[0]); });
+  moi();
+})();
+</script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>
