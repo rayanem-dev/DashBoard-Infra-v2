@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-31-266",
+    "date": "2026-10-31",
+    "title": "Version 6.39.1 — Fiches d'évaluation : la ligne disparaît au clic",
+    "changes": [
+      "Carte « Fiches d'évaluation » : « Éditée à la main » et « Ignorer ce mois » font disparaître la ligne immédiatement ; seules les fiches non éditées restent affichées.",
+      "Plus de lignes vertes : les fiches déjà éditées, éditées à la main ou ignorées sont rangées dans une rubrique repliée « Masquées (n) », juste pour pouvoir annuler."
+    ]
+  },
+  {
     "id": "2026-10-31-265",
     "date": "2026-10-31",
     "title": "Version 6.39.0 — Planning pour tous, équipes par service + CPM, chambre et vis-à-vis en libre-service",
