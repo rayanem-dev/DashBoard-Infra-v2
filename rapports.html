@@ -743,6 +743,12 @@
       .then(function (o) { return Api.call('rapports_chantiers').then(function (r) { remplirChantiers(r); $('chantier').value = o.id; synchroChantier(); $('chantier').dispatchEvent(new Event('change')); $('dlg-hc').close(); toast('Chantier ouvert jusqu\'au ' + o.jusqu.split('-').reverse().join('/')); }); })
       .catch(function (e) { $('hc-err').textContent = e.message; }).then(function () { b.disabled = false; });
   };
+  /** Lien depuis l'accueil : rapports.html#journal ouvre directement le Journal (et #synthese la Synthèse du jour), au lieu de « Saisir mon rapport ». */
+  function ouvrirOngletDuLien() {
+    var cible = { '#journal': 'p-journal', '#synthese': 'p-synth', '#saisie': 'p-saisie' }[location.hash]; var b = cible && document.querySelector('[data-p=' + cible + ']');
+    if (b && !b.hidden && !b.disabled) b.click();
+  }
+  window.addEventListener('hashchange', ouvrirOngletDuLien);
   // ----- Démarrage
   $('du').value = auj; $('au').value = auj; $('s-date').value = auj; $('s-date').max = auj;
   Api.call('me').then(function (m) { var u = (m && m.user) || {}; moi.nom = u.nom || u.email || ''; moi.qual = [u.fonction, u.service].filter(Boolean).join(' · '); $('etabli-nom').textContent = moi.nom; $('etabli-qual').textContent = moi.qual; }).catch(function () { /* le nom s'affichera à l'enregistrement */ });
@@ -752,6 +758,7 @@
   }).then(function (r) {
     niveau = r.niveau; mesRapports = r.rapports; prerempli();
     if (niveau < 2) { $('o-saisie').hidden = true; $('p-saisie').hidden = true; document.querySelector('[data-p=p-journal]').click(); }
+    ouvrirOngletDuLien();
     if (niveau >= 3) { $('o-synth').hidden = false; }
     if (peutEnvoyer) { $('envoi').hidden = false; Api.call('rapports_conso_auto_lire').then(etatAuto).catch(function () { /* indisponible */ }); }
   }).catch(function (e) {

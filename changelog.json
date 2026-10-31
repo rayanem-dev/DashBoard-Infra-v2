@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-31-260",
+    "date": "2026-10-31",
+    "title": "Version 6.35.1 — Accueil : les statistiques de rapports ouvrent le Journal",
+    "changes": [
+      "Un clic sur une carte de statistiques des rapports (Rapports du jour, Effectif, Rapports par jour et par semaine, Ouvriers par chantier, Classement, Suivi de la saisie) ouvre maintenant l'onglet « Journal » des rapports journaliers, au lieu de « Saisir mon rapport ». Le lien rapports.html#journal (ou #synthese) ouvre directement l'onglet voulu."
+    ]
+  },
+  {
     "id": "2026-10-31-259",
     "date": "2026-10-31",
     "title": "Version 6.35.0 — Accueil : carte d'échéance des fiches d'évaluation (du 22 à la fin du mois)",
