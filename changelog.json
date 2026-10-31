@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-31-264",
+    "date": "2026-10-31",
+    "title": "Version 6.38.1 — Carte des fiches : s'ouvre dans le portail",
+    "changes": [
+      "Le lien « Éditer les fiches maintenant » de la carte « Fiches d'évaluation » ouvrait l'adresse Google brute (page nue, bandeau « application créée par un utilisateur de Google Apps Script »). Il passe maintenant par le portail, comme les autres cartes : même en-tête et bouton « Retour au portail »."
+    ]
+  },
+  {
     "id": "2026-10-31-263",
     "date": "2026-10-31",
     "title": "Version 6.38.0 — Fiches d'évaluation : projet + n° de contrat, « éditée à la main »",
