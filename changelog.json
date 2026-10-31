@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-31-280",
+    "date": "2026-10-31",
+    "title": "Version 6.43.2 — Chacun ne voit que ses cartes",
+    "changes": [
+      "Cartes de l'accueil : l'effectif et les rapports du jour exigent l'accès aux Rapports ; l'avancement contre délai exige le Pilotage ou le CPM ; l'état des contrats exige le CPM. Avant, un simple accès aux rapports suffisait à voir les contrats et l'avancement des chantiers.",
+      "Prestataire : ses deux applications (Badges, Prise en charge) plus son planning et sa simulation ; l'organigramme complet ne lui est jamais ouvert."
+    ]
+  },
+  {
     "id": "2026-10-31-279",
     "date": "2026-10-31",
     "title": "Version 6.43.1 — Menus et raccourcis : chacun ne voit que les siens",
