@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-31-258",
+    "date": "2026-10-31",
+    "title": "Version 6.34.1 — Correction : le tableau de bord de l'accueil s'affiche de nouveau",
+    "changes": [
+      "Une erreur d'écriture dans js/tableau-bord.js (version 6.34.0) empêchait tout le fichier de se charger : aucune carte du tableau de bord ne s'affichait, anciennes comprises. Corrigé ; les cartes (présence, rapports du jour, effectif, rapports par semaine, ouvriers par chantier, classement, suivi de la saisie, avancement, contrats) reviennent.",
+      "Nouveau contrôle automatique : tout le JavaScript du site (fichiers js/ et scripts des pages) doit compiler avant de pouvoir être publié."
+    ]
+  },
+  {
     "id": "2026-10-31-257",
     "date": "2026-10-31",
     "title": "Version 6.34.0 — Accueil : quatre nouvelles statistiques tirées des rapports journaliers",

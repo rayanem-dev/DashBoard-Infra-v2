@@ -117,7 +117,8 @@
       var rs = b.rapports_semaines, W = rs.semaines, cur = W[W.length - 1], prec = W[W.length - 2], c6 = carte('Rapports par jour et par semaine', '🗓', 'rapports.html');
       var g6 = gros(cur.rapports, cur.joursActifs ? 'rapports cette semaine · ' + cur.joursActifs + ' jour' + (cur.joursActifs > 1 ? 's' : '') + ' avec rapport' : 'rapport cette semaine (début de semaine)');
       c6.appendChild(g6);
-      if (prec && cur.joursActifs > 0) { var v6 = tendance(cur.parJourActif, prec.parJourActif, ' /jour');   // sans jour d'activité cette semaine (début de semaine, week-end) : pas de comparaison trompeuse if (v6) { var l6 = el('div', 'tb-comp'); l6.appendChild(v6); l6.appendChild(document.createTextNode(' ' + fr1(cur.parJourActif) + ' rapports par jour d\'activité, contre ' + fr1(prec.parJourActif) + ' la semaine précédente')); c6.appendChild(l6); } }
+      // sans jour d'activité cette semaine (début de semaine, week-end) : pas de comparaison trompeuse
+      if (prec && cur.joursActifs > 0) { var v6 = tendance(cur.parJourActif, prec.parJourActif, ' /jour'); if (v6) { var l6 = el('div', 'tb-comp'); l6.appendChild(v6); l6.appendChild(document.createTextNode(' ' + fr1(cur.parJourActif) + ' rapports par jour d\'activité, contre ' + fr1(prec.parJourActif) + ' la semaine précédente')); c6.appendChild(l6); } }
       c6.appendChild(barresJours(rs));
       var ch6 = el('div', 'tb-sem');
       W.forEach(function (w) { var x = el('div', 'tb-sem-i' + (w.enCours ? ' cours' : '')); x.appendChild(el('b', null, String(w.rapports))); x.appendChild(el('span', null, jourCourt(w.debut) + (w.enCours ? ' · en cours' : ''))); x.title = 'Semaine du ' + jourCourt(w.debut) + ' au ' + jourCourt(w.fin) + ' : ' + w.rapports + ' rapports, effectif moyen ' + fr1(w.effectifMoyen) + ' par jour, ' + w.difficultes + ' difficulté(s)'; ch6.appendChild(x); });
