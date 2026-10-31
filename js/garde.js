@@ -20,8 +20,9 @@
   function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
   var LIBRES = ['profil.html'];   // pages personnelles : ouvertes à tout compte connecté (une session valide suffit, la connexion est vérifiée par menu)
   function autorise(r) { return LIBRES.indexOf(page) !== -1 || pagesDe(r).indexOf(page) !== -1; }
-  function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return !!(o && Date.now() - o.t < TTL_MENU && o.f.indexOf(page) !== -1); } catch (e) { return false; } }
-  function retenir(r) { try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), f: pagesDe(r) })); } catch (e) { /* stockage indisponible */ } }
+  function sess() { try { return String(Api.token() || '').slice(-12); } catch (e) { return ''; } }   /* le cache n'appartient qu'à la session qui l'a écrit */
+  function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return !!(o && o.k === sess() && sess() && Date.now() - o.t < TTL_MENU && o.f.indexOf(page) !== -1); } catch (e) { return false; } }
+  function retenir(r) { try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), k: sess(), f: pagesDe(r) })); } catch (e) { /* stockage indisponible */ } }
   function oublier() { try { sessionStorage.removeItem(CLE_MENU); } catch (e) { /* rien */ } }
   var affichee = connu(); if (affichee) afficher(); // accès déjà vérifié il y a peu : la page s'affiche tout de suite, la vérification se refait en arrière-plan
   // Un « non » n'est cru qu'après une seconde lecture (le menu peut être incomplet un instant quand Google est lent)

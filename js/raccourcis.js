@@ -26,7 +26,8 @@
   var LIENS = [CHANTIERS, PLANNING, ENQUETES].filter(function (g) { return g.some(function (l) { return l.f === page; }); })[0] || [];   // la famille de la page courante
   function fichier(u) { return String(u || '').split(/[?#]/)[0].split('/').pop().toLowerCase(); }
   function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
-  function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE) || 'null'); return o && Date.now() - o.t < 600000 ? o.f : null; } catch (e) { return null; } }
+  function sess() { try { return String((window.Api && Api.token && Api.token()) || '').slice(-12); } catch (e) { return ''; } }   /* le cache n'appartient qu'à la session qui l'a écrit */
+  function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE) || 'null'); return o && o.k === sess() && sess() && Date.now() - o.t < 600000 ? o.f : null; } catch (e) { return null; } }
   var derniers = null, nbAttente = 0;   // demandes de modification de planning qui attendent la décision de l'utilisateur
   window.addEventListener('hashchange', function () { var n = document.getElementById('raccourcis'); if (n && derniers) { n.remove(); dessiner(derniers); } });
   function dessiner(fichiers) {
@@ -54,5 +55,5 @@
   window.addEventListener('demandes-maj', compter);
   var f0 = connu(); if (f0) { dessiner(f0); compter(); }
   if (!window.Api) return;
-  Api.call('menu').then(function (r) { var f = pagesDe(r); try { sessionStorage.setItem(CLE, JSON.stringify({ t: Date.now(), f: f })); } catch (e) { /* rien */ } if (!f0) { dessiner(f); compter(); } }).catch(function () { /* pas de session : pas de raccourcis */ });
+  Api.call('menu').then(function (r) { var f = pagesDe(r); try { sessionStorage.setItem(CLE, JSON.stringify({ t: Date.now(), k: sess(), f: f })); } catch (e) { /* rien */ } if (!f0 || JSON.stringify(f0) !== JSON.stringify(f)) { var anc = document.getElementById('raccourcis'); if (anc) anc.remove(); dessiner(f); compter(); } }).catch(function () { /* pas de session : pas de raccourcis */ });
 })();

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-10-31-279",
+    "date": "2026-10-31",
+    "title": "Version 6.43.1 — Menus et raccourcis : chacun ne voit que les siens",
+    "changes": [
+      "Quand une personne se déconnecte et qu'une autre se connecte dans le même onglet, elle ne retrouve plus le menu latéral, les raccourcis ni les accès gardés par la personne précédente : ces mémoires sont maintenant liées à la session et vidées à chaque connexion et déconnexion.",
+      "Les raccourcis se mettent à jour si le menu change (droits modifiés) au lieu de garder l'ancien affichage."
+    ]
+  },
+  {
     "id": "2026-10-31-278",
     "date": "2026-10-31",
     "title": "Version 6.43.0 — Nouvelle application : Inventaire",

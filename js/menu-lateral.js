@@ -110,7 +110,8 @@
     window.addEventListener('resize', function () { var large = !etroit(); if (document.body.classList.contains('ml-large') !== large) { tiroir = false; appliquer(); } });
     dessiner(''); appliquer();
   }
-  function lireCache() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return o && Date.now() - o.t < TTL ? o : null; } catch (e) { return null; } }
+  function sess() { try { return String((window.Api && Api.token && Api.token()) || '').slice(-12); } catch (e) { return ''; } }   /* le menu gardé n'appartient qu'à la session qui l'a écrit */
+  function lireCache() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return o && o.k === sess() && sess() && Date.now() - o.t < TTL ? o : null; } catch (e) { return null; } }
   /** Éditeur d'organisation (secrétariat) : chargé seulement au clic, puis le menu et l'accueil sont rechargés. */
   function ouvrirOrganisation() {
     var go = function () { window.MenuOrganiser.ouvrir(); };
@@ -124,7 +125,7 @@
   }
   function charger() {
     var c = lireCache(); if (c) { avecRubriques(function () { monter(c.menu, c.rubriques, c.organiser); }); return; }
-    Api.call('menu').then(function (r) { var m = r && r.menu || [], rb = r && r.rubriques || [], og = !!(r && r.organiser); try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), menu: m, rubriques: rb, organiser: og })); } catch (e) { /* rien */ } avecRubriques(function () { monter(m, rb, og); }); }).catch(function () { /* sans menu : pas de barre */ });
+    Api.call('menu').then(function (r) { var m = r && r.menu || [], rb = r && r.rubriques || [], og = !!(r && r.organiser); try { sessionStorage.setItem(CLE_MENU, JSON.stringify({ t: Date.now(), k: sess(), menu: m, rubriques: rb, organiser: og })); } catch (e) { /* rien */ } avecRubriques(function () { monter(m, rb, og); }); }).catch(function () { /* sans menu : pas de barre */ });
   }
   window.MenuLateral = { charger: charger };
   if (document.body) charger(); else document.addEventListener('DOMContentLoaded', charger);

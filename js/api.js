@@ -785,7 +785,7 @@
       return this._reprise;
     },
     token: function () { try { return sessionStorage.getItem(CLE) || ''; } catch (e) { return ''; } },
-    setToken: function (t) { try { t ? sessionStorage.setItem(CLE, t) : sessionStorage.removeItem(CLE); } catch (e) { /* stockage indisponible */ } },
+    setToken: function (t) { try { sessionStorage.removeItem('gm_pages'); sessionStorage.removeItem('ml_menu'); sessionStorage.removeItem('ml_menu2'); t ? sessionStorage.setItem(CLE, t) : sessionStorage.removeItem(CLE); } catch (e) { /* stockage indisponible */ } },
     call: function (action, params, dejaRepris) {
       params = params || {};
       var self = this;
