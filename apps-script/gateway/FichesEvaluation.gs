@@ -139,7 +139,7 @@ function fichesEvalBloc_(u, acces, auj, enr) {
   catch (e) { lecture = 'indisponible'; message = 'Lecture des fiches impossible : l\'autorisation Google « Drive » de la passerelle n\'est pas activée (docs/RAPPORTS-MEDIAS.md).'; }
   var etat = FichesEval.etat(auj, contrats, fiches, fichesIgnoreesLire_(auj.slice(0, 7)), fichesManuellesLire_(auj.slice(0, 7))); if (!etat) return null;
   etat.manquantes = FichesEval.avecRelances(etat.manquantes, fichesRelancesLire_(etat.mois));   // dernière relance de chaque fiche manquante
-  etat.lecture = lecture; etat.message = message; etat.url = ac.carte ? String(ac.carte.url || '') : ''; etat.sansContrats = !enr;
+  etat.lecture = lecture; etat.message = message; etat.url = ac.carte ? String(ac.carte.url || '') : ''; etat.titre = ac.carte ? String(ac.carte.titre || '') : 'Fiche d\'évaluation'; etat.emoji = ac.carte ? String(ac.carte.emoji || '') : '📝'; etat.sansContrats = !enr;
   etat.peut_relancer = lecture === 'ok' && optionPermise_(u, 'fiches.relance'); etat.peut_ignorer = lecture === 'ok' && optionPermise_(u, 'fiches.ignorer'); etat.peut_manuelle = lecture === 'ok' && optionPermise_(u, 'fiches.manuelle');
   return etat;
 }

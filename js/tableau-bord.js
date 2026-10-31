@@ -93,6 +93,11 @@
     return l;
   }
 
+  /** Lien d'une carte du catalogue : une application Apps Script s'ouvre DANS le portail (app.html : même en-tête, « Retour au portail »), jamais sur l'adresse Google brute ; les autres pages telles quelles. */
+  function lienApp(url, titre, emoji) {
+    var u = String(url || '');
+    return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_\-]+\/exec$/.test(u) ? 'app.html?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(titre || '') + '&e=' + encodeURIComponent(String(emoji || '').slice(0, 8)) : u;
+  }
   var MOIS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
   function dateFr(iso) { return String(iso).slice(8, 10) + '/' + String(iso).slice(5, 7) + '/' + String(iso).slice(0, 4); }
   /**
@@ -177,7 +182,7 @@
     }
     m.appendChild(etat);
     corps.appendChild(m); c.appendChild(corps);
-    if (f.url) { var lien = el('a', 'tb-f-lien', ok ? 'Ouvrir la Fiche d\'évaluation →' : 'Éditer les fiches maintenant →'); lien.href = f.url; c.appendChild(lien); }
+    if (f.url) { var lien = el('a', 'tb-f-lien', ok ? 'Ouvrir la Fiche d\'évaluation →' : 'Éditer les fiches maintenant →'); lien.href = lienApp(f.url, f.titre || 'Fiche d\'évaluation', f.emoji || '📝'); c.appendChild(lien); }
     return c;
   }
   var ZONE = null, EXTRAS = [];
