@@ -137,7 +137,7 @@
       if (b.presents.entreprises.length) c.appendChild(barresH(b.presents.entreprises, b.presents.entreprises[0].n, '#E85D04')); ajout(c);
     }
     if (b.rapports_jour) {
-      var r = b.rapports_jour, pc = r.total ? Math.round(r.recus / r.total * 100) : 0, c2 = carte('Rapports du jour', '📝', 'rapports.html'), ligne = el('div', 'tb-ligne');
+      var r = b.rapports_jour, pc = r.total ? Math.round(r.recus / r.total * 100) : 0, c2 = carte('Rapports du jour', '📝', 'rapports.html#journal'), ligne = el('div', 'tb-ligne');
       ligne.appendChild(anneau([{ n: r.recus, couleur: '#16A34A' }, { n: r.total - r.recus, couleur: '#F59E0B' }], pc + '%', r.recus + ' rapports reçus sur ' + r.total));
       var t = el('div', 'tb-col'); t.appendChild(gros(r.recus + ' / ' + r.total, 'chantiers avec rapport', pc >= 80 ? '#16A34A' : '#D97706'));
       if (r.manquants.length) { t.appendChild(el('small', null, 'Sans rapport :')); var u = el('ul', 'tb-liste'); r.manquants.slice(0, 5).forEach(function (m) { u.appendChild(el('li', null, m.nom)); }); if (r.manquants.length > 5) u.appendChild(el('li', null, '… +' + (r.manquants.length - 5))); t.appendChild(u); }
@@ -145,12 +145,12 @@
       ligne.appendChild(t); c2.appendChild(ligne); ajout(c2);
     }
     if (b.effectif) {
-      var c3 = carte('Effectif des chantiers (14 jours)', '👷', 'rapports.html'), auj = b.effectif.jours[b.effectif.jours.length - 1];
+      var c3 = carte('Effectif des chantiers (14 jours)', '👷', 'rapports.html#journal'), auj = b.effectif.jours[b.effectif.jours.length - 1];
       c3.appendChild(gros(auj.total, 'personnes au rapport aujourd\'hui')); c3.appendChild(barresEmpilees(b.effectif));
       var lg = el('div', 'tb-legende'); b.effectif.services.forEach(function (s) { var x = el('span'); var p = el('i'); p.style.background = COUL[s.id]; x.appendChild(p); x.appendChild(document.createTextNode(' ' + s.nom)); lg.appendChild(x); }); c3.appendChild(lg); ajout(c3);
     }
     if (b.rapports_semaines) {
-      var rs = b.rapports_semaines, W = rs.semaines, cur = W[W.length - 1], prec = W[W.length - 2], c6 = carte('Rapports par jour et par semaine', '🗓', 'rapports.html');
+      var rs = b.rapports_semaines, W = rs.semaines, cur = W[W.length - 1], prec = W[W.length - 2], c6 = carte('Rapports par jour et par semaine', '🗓', 'rapports.html#journal');
       var g6 = gros(cur.rapports, cur.joursActifs ? 'rapports cette semaine · ' + cur.joursActifs + ' jour' + (cur.joursActifs > 1 ? 's' : '') + ' avec rapport' : 'rapport cette semaine (début de semaine)');
       c6.appendChild(g6);
       // sans jour d'activité cette semaine (début de semaine, week-end) : pas de comparaison trompeuse
@@ -161,7 +161,7 @@
       c6.appendChild(ch6); c6.appendChild(el('small', null, 'Semaine = samedi → vendredi · une barre par jour, une teinte par semaine')); ajout(c6);
     }
     if (b.effectif_chantiers && b.effectif_chantiers.chantiers.length) {
-      var ec = b.effectif_chantiers, c7 = carte('Ouvriers par chantier et par semaine', '👷', 'rapports.html'), lst7 = el('div', 'tb-ouv');
+      var ec = b.effectif_chantiers, c7 = carte('Ouvriers par chantier et par semaine', '👷', 'rapports.html#journal'), lst7 = el('div', 'tb-ouv');
       ec.chantiers.forEach(function (ch) {
         var r7 = el('div', 'tb-ouv-l'), nm = el('span', 'tb-nom', ch.nom); nm.title = ch.nom + (ch.service ? ' · ' + ch.service : ''); r7.appendChild(nm); r7.appendChild(miniBarres(ch.valeurs, ec.max));
         var der = ch.valeurs[ch.valeurs.length - 1], av = ch.valeurs[ch.valeurs.length - 2], b7 = el('b', null, fr1(der)); r7.appendChild(b7);
@@ -171,7 +171,7 @@
       c7.appendChild(lst7); c7.appendChild(el('small', null, 'Effectif moyen déclaré par jour de rapport · 4 semaines (la dernière en bleu foncé) · flèche = variation sur la semaine précédente')); ajout(c7);
     }
     if (b.classement && b.classement.rapporteurs.length) {
-      var cl = b.classement, c8 = carte('Classement des rapporteurs (30 jours)', '🏆', 'rapports.html'), max8 = cl.rapporteurs[0].rapports, med = ['🥇', '🥈', '🥉'], l8 = el('div', 'tb-barres');
+      var cl = b.classement, c8 = carte('Classement des rapporteurs (30 jours)', '🏆', 'rapports.html#journal'), max8 = cl.rapporteurs[0].rapports, med = ['🥇', '🥈', '🥉'], l8 = el('div', 'tb-barres');
       cl.rapporteurs.forEach(function (rp, i) {
         var r8 = el('div', 'tb-lig tb-rang'), nm8 = el('span', 'tb-nom', (med[i] || (i + 1) + '.') + ' ' + rp.nom); nm8.title = rp.nom + ' · ' + rp.jours + ' jour' + (rp.jours > 1 ? 's' : '') + ' · ' + rp.chantiers + ' chantier' + (rp.chantiers > 1 ? 's' : '') + ' · dernier rapport le ' + jourCourt(rp.dernier);
         r8.appendChild(nm8); var bar8 = el('div', 'tb-bar'), i8 = el('i'); i8.style.width = Math.max(3, rp.rapports / max8 * 100) + '%'; i8.style.background = i === 0 ? '#F59E0B' : '#E85D04'; bar8.appendChild(i8); r8.appendChild(bar8); r8.appendChild(el('b', null, rp.rapports + ' · ' + rp.jours + ' j')); l8.appendChild(r8);
@@ -179,7 +179,7 @@
       c8.appendChild(l8); c8.appendChild(el('small', null, cl.total + ' rapporteur' + (cl.total > 1 ? 's' : '') + ' sur 30 jours · rapports (nombre) · jours distincts avec rapport')); ajout(c8);
     }
     if (b.suivi_saisie && (b.suivi_saisie.nbSilencieux || b.suivi_saisie.nbDifficultes)) {
-      var ss = b.suivi_saisie, c9 = carte('Suivi de la saisie', '🔔', 'rapports.html'), l9 = el('div', 'tb-ligne');
+      var ss = b.suivi_saisie, c9 = carte('Suivi de la saisie', '🔔', 'rapports.html#journal'), l9 = el('div', 'tb-ligne');
       var a1 = el('div', 'tb-col'); a1.appendChild(gros(ss.nbSilencieux, 'chantier' + (ss.nbSilencieux > 1 ? 's' : '') + ' sans rapport depuis 3 jours ou plus', ss.nbSilencieux ? '#DC2626' : '#16A34A')); l9.appendChild(a1);
       var a2 = el('div', 'tb-col'); a2.appendChild(gros(ss.nbDifficultes, 'difficulté' + (ss.nbDifficultes > 1 ? 's' : '') + ' signalée' + (ss.nbDifficultes > 1 ? 's' : '') + ' (14 jours)', ss.nbDifficultes ? '#D97706' : '#16A34A')); l9.appendChild(a2); c9.appendChild(l9);
       if (ss.silencieux.length) { var u9 = el('ul', 'tb-liste'); ss.silencieux.slice(0, 5).forEach(function (x) { u9.appendChild(el('li', null, x.nom + ' — ' + (x.jours === null ? 'aucun rapport récent' : x.jours + ' j sans rapport'))); }); c9.appendChild(u9); }
