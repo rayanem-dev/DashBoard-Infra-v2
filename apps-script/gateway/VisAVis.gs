@@ -20,7 +20,7 @@ function visavisPrets_() {
 function visavisCarte_() {
   visavisPrets_();
   var m = {};
-  try { Store.table('VisAVis').forEach(function (r) { if (r.uid) m[String(r.uid)] = { vis_travail: String(r.vis_travail || ''), vis_chambre: String(r.vis_chambre || '') }; }); } catch (e) { /* onglet pas encore créé */ }
+  try { Store.table('VisAVis').forEach(function (r) { if (r.uid) m[String(r.uid)] = { vis_travail: String(r.vis_travail || ''), vis_chambre: String(r.vis_chambre || ''), prop_vis_travail: String(r.prop_vis_travail || ''), prop_vis_chambre: String(r.prop_vis_chambre || '') }; }); } catch (e) { /* onglet pas encore créé */ }
   return m;
 }
 /** Plan d'écriture PUR (testé en Node) : [{ uid, vis_travail?, vis_chambre? }]. `carte` = état actuel, `connus` = { uid: true }. Erreur → { erreur }. */
@@ -34,12 +34,50 @@ function visavisPlan_(carte, uid, travail, chambre, connus) {
     var cur = (carte[uid] || {})[c[0]] || ''; if (cur === v) return;
     var mod = { uid: uid }; mod[c[0]] = v; plan.push(mod);
     // réciprocité : posée chez le vis-à-vis seulement s'il n'en a pas déjà un ; le lien retiré chez lui aussi s'il pointait vers cet agent
-    if (v) { if (!((carte[v] || {})[c[0]])) { var r = { uid: v }; r[c[0]] = uid; plan.push(r); } }
-    else if (cur && (carte[cur] || {})[c[0]] === uid) { var r2 = { uid: cur }; r2[c[0]] = ''; plan.push(r2); }
+    if (v) {
+      var autre = (carte[v] || {})[c[0]];
+      if (!autre) { var r = { uid: v }; r[c[0]] = uid; plan.push(r); }
+      else if (autre !== uid) { var rp = { uid: v }; rp['prop_' + c[0]] = uid; plan.push(rp); }   // il a déjà quelqu'un : il doit confirmer (accepter, garder l'actuel ou n'avoir aucun vis-à-vis)
+    }
+    if (cur && cur !== v) {   // l'ancien vis-à-vis perd son lien vers l'agent et toute proposition en attente venant de lui
+      var anc = carte[cur] || {}, r2 = { uid: cur };
+      if (anc[c[0]] === uid) r2[c[0]] = '';
+      if (anc['prop_' + c[0]] === uid) r2['prop_' + c[0]] = '';
+      if (Object.keys(r2).length > 1) plan.push(r2);
+    }
   });
   [['vis_travail', travail], ['vis_chambre', chambre]].forEach(function (c) { if (c[1] && !connus[c[1]]) plan.erreur = 'Vis-à-vis inconnu'; });
   if (plan.erreur) return { erreur: plan.erreur };
   return { plan: plan };
+}
+
+/**
+ * Réponse d'un agent à une proposition (un autre agent l'a choisi comme vis-à-vis alors qu'il en avait déjà un). PURE (testée en Node).
+ * choix : 'accepter' (le proposant remplace l'actuel) · 'garder' (on garde l'actuel, le lien du proposant est retiré) · 'aucun' (plus de vis-à-vis du tout).
+ */
+function visavisReponse_(carte, uid, champ, choix) {
+  var moi = carte[uid] || {}, p = moi['prop_' + champ];
+  if (!p) return { erreur: 'Aucune proposition en attente.' };
+  var valide = (carte[p] || {})[champ] === uid, actuel = moi[champ] || '', plan = [], propre = { uid: uid }; propre['prop_' + champ] = '';
+  if (choix === 'accepter') {
+    if (!valide) return { erreur: 'Cette proposition n\'est plus valable.' };
+    propre[champ] = p;
+    if (actuel && actuel !== p && (carte[actuel] || {})[champ] === uid) { var o = { uid: actuel }; o[champ] = ''; plan.push(o); }
+  } else if (choix === 'aucun') {
+    propre[champ] = '';
+    if (actuel && (carte[actuel] || {})[champ] === uid) { var o2 = { uid: actuel }; o2[champ] = ''; plan.push(o2); }
+    if (valide && p !== actuel) { var q = { uid: p }; q[champ] = ''; plan.push(q); }
+  } else if (choix === 'garder') {
+    if (valide) { var q2 = { uid: p }; q2[champ] = ''; plan.push(q2); }
+  } else return { erreur: 'Choix inconnu.' };
+  plan.unshift(propre);
+  return { plan: plan };
+}
+/** Propositions en attente pour l'agent : [{ champ, uid, actuel }] (le proposant pointe toujours vers lui). */
+function visavisPropositions_(carte, uid) {
+  var out = [], moi = carte[uid] || {};
+  ['vis_travail', 'vis_chambre'].forEach(function (c) { var p = moi['prop_' + c]; if (p && (carte[p] || {})[c] === uid) out.push({ champ: c, uid: p, actuel: moi[c] || '' }); });
+  return out;
 }
 
 /**
@@ -68,7 +106,7 @@ function visavisListe_(req) {
 }
 
 function visavisEnregistrer_(req) {
-  var u = Auth.userFromToken(req.token); visavisPrets_();
+  var u = Auth.userFromToken(req.token); visavisPrets_(); assurerColonnes_('VisAVis', ['prop_vis_travail', 'prop_vis_chambre']);
   var c = Store.parUid(req.uid);
   if (!c || String(c.actif) === '0') throw new Error('Personne inconnue');
   if (affNiveau_(u) < 2 || !affDansPortee_(u, c)) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
@@ -118,16 +156,17 @@ function coordLibreService_(u) {
   if ((acces_(u).planning || 0) < 1) throw Object.assign(new Error('Droits insuffisants'), { code: 'DROITS' });
 }
 function visavisMoi_(req) {
-  var u = Auth.userFromToken(req.token); visavisPrets_(); profilsPrets_();
+  var u = Auth.userFromToken(req.token); visavisPrets_(); profilsPrets_(); assurerColonnes_('VisAVis', ['prop_vis_travail', 'prop_vis_chambre']);
   var actif = optionActive_('planning.libre_service'), tous = Store.table('Utilisateurs'), nomDe = {};
   tous.forEach(function (x) { if (x.uid) nomDe[String(x.uid)] = Annuaire.nomAffichable(x.nom, x.email); });
   var l = visavisCarte_()[String(u.uid)] || {}, o = profilDe_(u.email) || {};
   var cands = actif ? candidatsVisAVis_(u, tous).map(function (x) { return { uid: String(x.uid), nom: nomDe[String(x.uid)], fonction: x.fonction || '', service: String(x.service || '').replace(/\s+/g, ' ').trim() }; }) : [];
   cands.sort(function (a, b) { return a.nom < b.nom ? -1 : 1; });
-  return { actif: actif, chambre: String(o.chambre || ''), vis_travail: l.vis_travail || '', vis_chambre: l.vis_chambre || '', candidats: cands, restreint: Droits.roleCanon(u.role) === 'prestataire' };
+  var props = visavisPropositions_(visavisCarte_(), String(u.uid)).map(function (x) { return { champ: x.champ, uid: x.uid, nom: nomDe[x.uid] || '', actuel: x.actuel, actuel_nom: nomDe[x.actuel] || '' }; });
+  return { propositions: props, actif: actif, chambre: String(o.chambre || ''), vis_travail: l.vis_travail || '', vis_chambre: l.vis_chambre || '', candidats: cands, restreint: Droits.roleCanon(u.role) === 'prestataire' };
 }
 function visavisMoiEnregistrer_(req) {
-  var u = Auth.userFromToken(req.token); visavisPrets_(); profilsPrets_(); coordLibreService_(u);
+  var u = Auth.userFromToken(req.token); visavisPrets_(); profilsPrets_(); coordLibreService_(u); assurerColonnes_('VisAVis', ['prop_vis_travail', 'prop_vis_chambre']);
   var tous = Store.table('Utilisateurs'), cands = {}; candidatsVisAVis_(u, tous).forEach(function (x) { cands[String(x.uid)] = true; });
   var carte = visavisCarte_(), cur = carte[String(u.uid)] || {};
   var travail = req.vis_travail === undefined ? (cur.vis_travail || '') : String(req.vis_travail || ''), chambreV = req.vis_chambre === undefined ? (cur.vis_chambre || '') : String(req.vis_chambre || '');
@@ -146,6 +185,20 @@ function visavisMoiEnregistrer_(req) {
   });
   if (champs.chambre !== undefined || r.plan.length) { champs.coord_orga = ''; Store.maj('Profils', { email: String(u.email).toLowerCase() }, champs); }   // vide l'empreinte : BDDORGA sera mis à jour à la prochaine connexion
   Store.journal('visavis_moi', u.email, 'travail=' + (travail || '—') + ' chambre=' + (chambreV || '—') + (champs.chambre !== undefined ? ' n° chambre=' + (champs.chambre || '—') : ''));
+  return visavisMoi_(req);
+}
+function visavisMoiRepondre_(req) {
+  var u = Auth.userFromToken(req.token); visavisPrets_(); coordLibreService_(u);
+  var champ = String(req.champ); if (champ !== 'vis_travail' && champ !== 'vis_chambre') throw new Error('Champ inconnu');
+  var r = visavisReponse_(visavisCarte_(), String(u.uid), champ, String(req.choix));
+  if (r.erreur) throw new Error(r.erreur);
+  r.plan.forEach(function (m) {
+    var v = {}; Object.keys(m).forEach(function (k) { if (k !== 'uid') v[k] = m[k]; });
+    v.maj_par = u.email; v.maj_le = new Date().toISOString();
+    Store.maj('VisAVis', { uid: m.uid }, v);
+    var c = Store.parUid(m.uid); if (c && c.email) { try { Store.maj('Profils', { email: String(c.email).toLowerCase() }, { coord_orga: '' }); } catch (e) { /* profil absent */ } }   // BDDORGA mis à jour à leur prochaine connexion
+  });
+  Store.journal('visavis_reponse', u.email, champ + ' : ' + req.choix);
   return visavisMoi_(req);
 }
 /**
@@ -178,4 +231,4 @@ function planningPortee_(moi, x) {
   return estCpm_(x);
 }
 
-if (typeof module !== 'undefined') module.exports = { estCpm_: estCpm_, planningPortee_: planningPortee_, visavisPlan_: visavisPlan_, chambreValider_: chambreValider_, candidatsVisAVis_: candidatsVisAVis_, coordChamps_: coordChamps_, coordEmpreinte_: coordEmpreinte_, coordAEcrire_: coordAEcrire_ };
+if (typeof module !== 'undefined') module.exports = { visavisReponse_: visavisReponse_, visavisPropositions_: visavisPropositions_, estCpm_: estCpm_, planningPortee_: planningPortee_, visavisPlan_: visavisPlan_, chambreValider_: chambreValider_, candidatsVisAVis_: candidatsVisAVis_, coordChamps_: coordChamps_, coordEmpreinte_: coordEmpreinte_, coordAEcrire_: coordAEcrire_ };

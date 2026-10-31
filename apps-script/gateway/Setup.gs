@@ -375,7 +375,7 @@ var SCHEMA_ = {
   Rapports: ['id', 'date', 'chantier', 'auteur_email', 'auteur_nom', 'service', 'effectif', 'travaux', 'difficultes', 'commentaire', 'avancement', 'cree_le', 'modifie_le', 'visa_par', 'visa_note', 'visa_le', 'lignes', 'corrige_par', 'corrige_le'],
   Modifications: ['numero', 'cree_le', 'email', 'emetteur', 'motif', 'debut', 'periodes', 'reprise', 'partenaire', 'actuel', 'modifie', 'statut', 'decide_par', 'decide_le', 'commentaire', 'reliquat', 'reliquat_net'],
   Affectations: ['id', 'date', 'email', 'ancien', 'nouveau', 'par', 'motif', 'date_effet'],
-  VisAVis: ['uid', 'vis_travail', 'vis_chambre', 'maj_par', 'maj_le'],
+  VisAVis: ['uid', 'vis_travail', 'vis_chambre', 'maj_par', 'maj_le', 'prop_vis_travail', 'prop_vis_chambre'],
   Profils: ['email', 'nom_affiche', 'civilite', 'telephone', 'date_integration', 'wifi_user', 'photo_mini', 'photo', 'maj_le', 'chambre', 'coord_orga'],
   DemandesAcces: ['numero', 'email', 'titre', 'motif', 'statut', 'cree_le', 'traite_par', 'traite_le'],
   Journal: ['date', 'action', 'email', 'detail']

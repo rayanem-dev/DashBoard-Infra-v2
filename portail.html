@@ -68,6 +68,7 @@
         <button class="btn-s" id="mes-apps-plus" type="button" hidden></button>
       </aside>
     </div>
+    <div class="alerte" id="alerte-vis" hidden><span>🔔 Un collègue vous a choisi comme vis-à-vis : confirmez ou refusez dans votre profil.</span><a class="btn-s" href="profil.html#coord">Répondre</a></div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
     <div class="agent-actions"><button class="lien" id="b-mdp" type="button">🔒 Changer mon mot de passe</button></div>
   </section>
@@ -273,7 +274,7 @@
     try { raccourcis(r.menu); } catch (e) { if (window.console) console.error(e); }
     mesApps(r.menu); synchroUsage(r.menu);
     Synthese.monterModifs($('syn-modifs')); // demandes de modification de planning à décider
-    $('alerte-mdp').hidden = !r.mdp_par_defaut;
+    $('alerte-mdp').hidden = !r.mdp_par_defaut; $('alerte-vis').hidden = !(r.vis_propositions > 0);
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
     var groupes = window.Rubriques ? Rubriques.regrouper(r.menu, r.rubriques).filter(function (g) { return g.apps.length; }) : r.menu;
     var zone = $('modules'); zone.textContent = ''; outilsAccueil(groupes);

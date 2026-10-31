@@ -62,7 +62,7 @@ function route_(req) {
       if (typeof preparerJournalCpm_ === 'function') preparerJournalCpm_();
       if (typeof coordSynchroniser_ === 'function' && !Auth.estUsurpation(req.token)) coordSynchroniser_(u);   // chambre et vis-à-vis de l'agent → BDDORGA, à sa connexion (jamais bloquant ; pas en mode support)
       var usage = usagePourMenu_(u);   // « Mes applications » : compteurs de la personne (suivent son compte, pas son navigateur) et applications populaires de son rôle
-      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: peutOrganiser_(u), usages: usage.usages, populaires: usage.populaires };
+      return { user: pubUser_(u), mdp_par_defaut: Auth.estParDefaut(u.email), vis_propositions: (function () { try { return visavisPropositions_(visavisCarte_(), String(u.uid)).length; } catch (e) { return 0; } })(), menu: Droits.menu(acces_(u), Store.table('Modules'), Store.table('Applications'), u.role), rubriques: orgRubriques_(), organiser: peutOrganiser_(u), usages: usage.usages, populaires: usage.populaires };
     }
     case 'emettreCode': {
       var admin = Auth.userFromToken(req.token);
@@ -88,6 +88,7 @@ function route_(req) {
     case 'visavis_enregistrer': return visavisEnregistrer_(req);
     case 'visavis_moi': return visavisMoi_(req);
     case 'visavis_moi_enregistrer': return visavisMoiEnregistrer_(req);
+    case 'visavis_moi_repondre': return visavisMoiRepondre_(req);
     case 'aff_personnes': return affPersonnes_(req);
     case 'aff_changer': return affChanger_(req);
     case 'aff_historique': return affHistorique_(req);
