@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-31-277",
+    "date": "2026-10-31",
+    "title": "Version 6.42.4 — Moteur de lecture des PDF mis à jour",
+    "changes": [
+      "Badges › Importer des personnes : le moteur de lecture des PDF (brique partagée) reconnaît maintenant aussi le formulaire d'autorisation d'accès de véhicule : nom, prénom, fonction, type de véhicule et immatriculation (avec tirets), et le n° de contrat écrit à la main."
+    ]
+  },
+  {
     "id": "2026-10-31-276",
     "date": "2026-10-31",
     "title": "Version 6.42.3 — Autorisation d'accès : plus de page blanche en trop",

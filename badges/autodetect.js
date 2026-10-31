@@ -5,6 +5,7 @@
  *
  *   AutoDetect.lireFichier(file, opt?)    → Promise<{ texte, source: 'pdf' | 'ocr' }>   (texte avec une tabulation entre les cellules d'une ligne)
  *   AutoDetect.analyser(texte)            → { entreprise, contrat, intitule, date, personnes: [{ nom, prenom, fonction, verifier }], avertissements: [] }
+ *                                          (formulaire d'autorisation d'accès de véhicule : chaque personne porte aussi typeVehicule et immatriculation « 00164-216-30 »)
  *   AutoDetect.depuisFichier(file)        → Promise<analyser(...) + { source }>
  *   AutoDetect.versTsv(resultat)          → texte « Nom ⇥ Prénom ⇥ Fonction ⇥ Entreprise ⇥ Contrat » à coller dans un import
  *
@@ -33,12 +34,77 @@ var AutoDetect = (function () {
   function cellules(ligne) { return String(ligne).split(/\t| {3,}| \| /).map(vide).filter(function (c) { return c !== ''; }); }
   function estEnteteNom(c) { var n = norm(c); return /^(nom( et| &)? prenom|nom prenom|nom et prenoms?|noms? et prenoms?|agent|personne)$/.test(n) || n === 'nom'; }
 
+  // ---------- formulaire d'autorisation d'accès de véhicule (2026-10-31) ----------
+  // Colonnes : nom · prénom · fonction · type de véhicule · immatriculation · accompagné. Une immatriculation (00164/216/30) ou une année (engins : 2022) clôt chaque rangée.
+  // L'OCR rend ce tableau de trois façons : une rangée par ligne, une cellule par ligne, ou colonne après colonne ; il colle parfois deux cellules (« Mohamed amine chauffeur »,
+  // « Camion hyundai 00270/217/30 ») ; le titre (« Formulaire… », entreprise, n° du contrat) se retrouve en vrac avant le tableau.
+  var RE_IMMAT = /^\d{2,6}\s*[\/\-.]\s*\d{3}\s*[\/\-.]\s*\d{2}$/, RE_ANNEE = /^(?:19|20)\d{2}$/;
+  var RE_FONCTIONS = /^(chauffeur|conducteur|mecanicien|electricien|soudeur|macon|manoeuvre|operateur|technicien|gardien|peintre|plombier|ferrailleur|coffreur|grutier|pelliste|cariste|aide)/;
+  /** 00164/216/30 → 00164-216-30 (une année seule reste telle quelle). */
+  function immatTexte(t) { return String(t || '').replace(/\s+/g, '').replace(/[\/.]/g, '-'); }
+  function estImmat(t) { return RE_IMMAT.test(t) || RE_ANNEE.test(t); }
+  function estFormulaireVehicules(texte) { var t = norm(texte); return t.indexOf('immatricul') >= 0 && (t.indexOf('type de v') >= 0 || t.indexOf('vehicule') >= 0); }
+  function enteteStricte(l) { var n = norm(l); return !!n && n.split(' ').every(function (w) { return /^(nom|prenom|prenoms|fonction|type|de|du|vehicule|vehicules|immatriculation|immat|accompagne|accompagnes)$/.test(w); }); }
+  function enteteVehicule(l) { var n = norm(l); if (!n) return true; if (/formulaire|autorisation|entreprise|contrat|demande/.test(n)) return true; return enteteStricte(l); }
+  function rangee(nom, prenom, fonction, type) {
+    nom = vide(nom); prenom = vide(prenom);
+    if (!/[A-Za-zÀ-ÿ]{2}/.test(nom) || !/[A-Za-zÀ-ÿ]{2}/.test(prenom)) return null;
+    return { nom: nom, prenom: prenom, fonction: vide(fonction), typeVehicule: vide(type), immatriculation: '', verifier: false };
+  }
+  function rangeeDeCellules(c) {
+    c = c.map(vide).filter(Boolean); if (c.length < 3) return null;
+    if (c.length >= 5) return rangee(c[0], c[1], c[2], c.slice(3).join(' '));
+    if (c.length === 4) return rangee(c[0], c[1], c[2], c[3]);
+    return rangee(c[0], c[1], '', c[2]);
+  }
+  function lireVehicules(lignes) {
+    var cellules = [], titre = false, out = [], i;
+    lignes.forEach(function (l) {
+      var ligne = vide(String(l).replace(/\t/g, ' ')).replace(/(\d{2,6})\s*([\/\-.])\s*(\d{3})\s*\2\s*(\d{2})\b/g, '$1/$3/$4');   // « 00164 / 216 / 30 » → « 00164/216/30 »
+      if (!ligne) return;
+      if (/formulaire/.test(norm(ligne))) { titre = true; return; }   // titre, entreprise, n° du contrat : ignorés jusqu'à l'en-tête du tableau (chaque page recommence par son titre)
+      if (enteteStricte(ligne)) { titre = false; return; }
+      if (titre || enteteVehicule(ligne)) return;
+      cellules.push(ligne);
+    });
+    var run = false; for (i = 0; i + 1 < cellules.length; i += 1) if (estImmat(cellules[i]) && estImmat(cellules[i + 1])) run = true;
+    if (run) {   // colonne après colonne : 4 colonnes de même longueur, puis les immatriculations
+      i = 0;
+      while (i < cellules.length) {
+        var j = i; while (j < cellules.length && !estImmat(cellules[j])) j += 1;
+        var k = j; while (k < cellules.length && estImmat(cellules[k])) k += 1;
+        var n = k - j; if (n < 1) break;
+        var avant = cellules.slice(i, j);
+        if (n >= 2 && avant.length >= 4 * n) {
+          var b = avant.slice(avant.length - 4 * n);
+          for (var q = 0; q < n; q += 1) { var rc = rangee(b[q], b[n + q], b[2 * n + q], b[3 * n + q]); if (rc) { rc.immatriculation = immatTexte(cellules[j + q]); out.push(rc); } }
+        } else if (n === 1) { var r1 = rangeeDeCellules(avant); if (r1) { r1.immatriculation = immatTexte(cellules[j]); out.push(r1); } }
+        i = k;
+      }
+      return out;
+    }
+    var seg = [];   // flot de mots : chaque rangée finit à son immatriculation ; la fonction (premier mot connu après nom + prénom) sépare le prénom du type de véhicule
+    cellules.join(' ').split(' ').filter(Boolean).forEach(function (t) {
+      if (!(RE_IMMAT.test(t) || (RE_ANNEE.test(t) && seg.length >= 3))) { seg.push(t); return; }
+      var f = -1; for (var x = 2; x < seg.length && f < 0; x += 1) if (RE_FONCTIONS.test(norm(seg[x]))) f = x;
+      var r = f > 0 ? rangee(seg[0], seg.slice(1, f).join(' '), seg[f], seg.slice(f + 1).join(' ')) : (seg.length >= 3 ? rangee(seg[0], seg[1], seg[2], seg.slice(3).join(' ')) : null);
+      if (r) { r.immatriculation = immatTexte(t); out.push(r); }
+      seg = [];
+    });
+    return out;
+  }
+  /** Contrat écrit à la main : « N du contrat I 54 /RNS/INFRA 2025 » → « 54.INFRA.25 » (forme du portail). */
+  function contratManuscrit(plein) {
+    var v = /contrat\s*:?\s*[A-Z]?\s*(\d{1,3})\s*\/\s*RNS\s*\/\s*INFRA\s*\/?\s*(\d{4})/i.exec(String(plein).replace(/\s*\n\s*/g, ' '));
+    return v ? v[1] + '.INFRA.' + v[2].slice(2) : '';
+  }
+
   function analyser(texte) {
     var lignes = String(texte || '').replace(/\r/g, '').split('\n').map(function (l) { return l.replace(/ /g, ' ').replace(/[ ]+$/, ''); }).filter(function (l) { return vide(l) !== ''; });
     var res = { entreprise: '', contrat: '', intitule: '', date: '', personnes: [], avertissements: [] };
     var plein = lignes.join('\n');
 
-    var mc = plein.match(RE_CONTRAT); if (mc) res.contrat = mc[1].replace(/\s+/g, '');
+    var mc = plein.match(RE_CONTRAT); if (mc) res.contrat = mc[1].replace(/\s+/g, ''); else res.contrat = contratManuscrit(plein);
     var md = plein.match(/(?:à compter du|a compter du|du|le)\s*:?\s*(\d{2}[\/\-.]\d{2}[\/\-.]\d{4})/i) || plein.match(RE_DATE); if (md) res.date = md[1].replace(/[-.]/g, '/');
 
     // entreprise : « Entreprise : XXX », sinon une ligne qui porte une forme juridique (hors Sonatrach)
@@ -52,9 +118,11 @@ var AutoDetect = (function () {
     // intitulé : la ligne qui suit le n° de contrat quand elle n'est pas un en-tête
     if (res.contrat) { for (i = 0; i < lignes.length; i += 1) { if (lignes[i].replace(/\s/g, '').indexOf(res.contrat) >= 0 && lignes[i + 1] && !/nom|pr[ée]nom|fonction/i.test(lignes[i + 1]) && vide(lignes[i + 1]).length < 120) { res.intitule = vide(lignes[i + 1]); break; } } }
 
+    // personnes — 0) formulaire d'autorisation d'accès de véhicule (type et immatriculation en plus)
+    if (estFormulaireVehicules(plein)) res.personnes = lireVehicules(lignes);
     // personnes — 1) tableau avec en-têtes
     var idxEnt = -1, col = null;
-    for (i = 0; i < lignes.length; i += 1) {
+    for (i = 0; i < lignes.length && !res.personnes.length; i += 1) {
       var cs = cellules(lignes[i]); if (cs.length < 2) { if (!(cs.length === 1 && estEnteteNom(cs[0]) && /prenom/.test(norm(cs[0])))) continue; }
       var c = { nom: -1, prenom: -1, fonction: -1, nomPrenom: -1 };
       cs.forEach(function (x, k) {
@@ -92,7 +160,8 @@ var AutoDetect = (function () {
     return res;
   }
   function versTsv(r) {
-    return (r.personnes || []).map(function (p) { return [p.nom, p.prenom, p.fonction || '', r.entreprise || '', r.contrat || ''].join('\t'); }).join('\n');
+    var veh = (r.personnes || []).some(function (p) { return p.immatriculation || p.typeVehicule; });   // formulaire véhicules : deux colonnes en plus (type, immatriculation)
+    return (r.personnes || []).map(function (p) { var l = [p.nom, p.prenom, p.fonction || '', r.entreprise || '', r.contrat || '']; if (veh) l.push(p.typeVehicule || '', p.immatriculation || ''); return l.join('\t'); }).join('\n');
   }
 
   // ---------- lecture du fichier (navigateur) ----------
@@ -252,7 +321,7 @@ var AutoDetect = (function () {
   }
   function depuisFichier(file) { return lireFichier(file).then(function (l) { var r = analyser(l.texte); r.source = l.source; r.texte = l.texte; return r; }); }
 
-  var api = { analyser: analyser, versTsv: versTsv, separerNom: separerNom, lireFichier: lireFichier, depuisFichier: depuisFichier };
+  var api = { analyser: analyser, versTsv: versTsv, separerNom: separerNom, lireVehicules: lireVehicules, immatTexte: immatTexte, lireFichier: lireFichier, depuisFichier: depuisFichier };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   return api;
 })();
