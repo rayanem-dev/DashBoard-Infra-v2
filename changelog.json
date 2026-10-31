@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-261",
+    "date": "2026-10-31",
+    "title": "Version 6.36.0 — « Mes applications » : le classement suit chaque compte, sur tous les appareils",
+    "changes": [
+      "Les 9 applications les plus utilisées de « Mes applications » étaient comptées dans le navigateur : le classement n'existait que sur l'appareil où l'on avait cliqué (d'où un résultat visible seulement sur le compte du secrétariat). Les compteurs sont maintenant gardés par compte sur le serveur (onglet UsageApps) : à l'ouverture de l'accueil, l'historique de l'appareil est envoyé au compte, et le classement suit la personne partout.",
+      "Pour quelqu'un qui n'a encore rien ouvert, les applications mises en tête sont celles que les personnes de son rôle ouvrent le plus, au lieu du seul ordre du menu ; ses propres ouvertures prennent ensuite le dessus.",
+      "Fiabilité : si la fiche de l'agent ou les raccourcis rencontrent un problème (profil incomplet…), « Mes applications » et le reste de l'accueil s'affichent quand même."
+    ]
+  },
+  {
     "id": "2026-10-31-260",
     "date": "2026-10-31",
     "title": "Version 6.35.1 — Accueil : les statistiques de rapports ouvrent le Journal",

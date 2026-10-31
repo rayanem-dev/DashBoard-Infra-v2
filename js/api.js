@@ -338,6 +338,7 @@
         if (fnp === 'soumettreFormulairePEC') return { success: true, message: 'Démonstration : aucun document généré.', liens: [] };
         if (fnp === 'envoyerFichierParMail') return { success: true, destinataires: (ap[1] && ap[1].secretariat ? ['Secrétariat Division INFRA'] : []).concat(ap[1] && ap[1].service ? ['Service Construction INFRA - RNS'] : []) };
         return { success: true, message: 'Démonstration' }; }
+      case 'usage_app': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { usages: p.sync || {} }; }
       case 'tableau_bord': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var jd = [], dj = new Date(); for (var q = 13; q >= 0; q -= 1) { var x = new Date(dj.getTime() - q * 864e5); jd.push(x.toISOString().slice(0, 10)); }
         var pj = function (i, f) { return Math.round(f * (1 + Math.sin(i * 1.3) * .25)); }, sj = []; for (var q2 = 29; q2 >= 0; q2 -= 1) sj.push({ date: new Date(dj.getTime() - q2 * 864e5).toISOString().slice(0, 10), total: 120 + Math.round(40 * Math.sin(q2 / 4) + (30 - q2) * 1.5) });
         var tj = new Date(dj.getFullYear(), dj.getMonth(), dj.getDate()), isoL = function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
