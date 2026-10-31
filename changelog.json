@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-10-31-276",
+    "date": "2026-10-31",
+    "title": "Version 6.42.3 — Autorisation d'accès : plus de page blanche en trop",
+    "changes": [
+      "Les autorisations d'accès et les macarons ne se terminent plus par une page blanche : le paragraphe vide que Google Docs impose après le tableau du modèle est réduit à 1 pt, et les paragraphes vides sont retirés avant chaque saut de page entre deux véhicules."
+    ]
+  },
+  {
     "id": "2026-10-31-275",
     "date": "2026-10-31",
     "title": "Version 6.42.2 — Immatriculations lues avec des tirets",
