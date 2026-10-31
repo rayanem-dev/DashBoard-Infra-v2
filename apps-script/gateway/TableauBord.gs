@@ -139,17 +139,19 @@ var TB = (function () {
   }
   /** Présence par jour (total de prestataires hébergés) : calculer(date) → { total }. */
   function serieAvecFonction(listeJours, calculer) { return listeJours.map(function (d) { return { date: d, total: calculer(d).total }; }); }
-  return { debutSemaine: debutSemaine, rapportsParSemaine: rapportsParSemaine, classementRapporteurs: classementRapporteurs, effectifParChantier: effectifParChantier, suiviSaisie: suiviSaisie, jours: jours, cleService: cleService, serieEffectif: serieEffectif, rapportsDuJour: rapportsDuJour, avancementDelai: avancementDelai, echeances: echeances, contratsParStatut: contratsParStatut, serieAvecFonction: serieAvecFonction, cleStatut: cleStatut };
+  return { cleStatut: cleStatut, debutSemaine: debutSemaine, rapportsParSemaine: rapportsParSemaine, classementRapporteurs: classementRapporteurs, effectifParChantier: effectifParChantier, suiviSaisie: suiviSaisie, jours: jours, cleService: cleService, serieEffectif: serieEffectif, rapportsDuJour: rapportsDuJour, avancementDelai: avancementDelai, echeances: echeances, contratsParStatut: contratsParStatut, serieAvecFonction: serieAvecFonction, cleStatut: cleStatut };
 })();
 if (typeof module !== 'undefined') module.exports = TB;
 
 /** Action « tableau_bord » : lecture seule ; chaque bloc n'est fourni que si le compte a accès au module concerné. */
 function tableauBord_(req) {
   var u = Auth.userFromToken(req.token), a = acces_(u), auj = Dates.today(), res = { date: auj, blocs: {} };
-  var chantiersOk = (a.pilotage || 0) >= 1 || (a.rapports || 0) >= 1;
+  var chantiersOk = (a.pilotage || 0) >= 1 || (a.rapports || 0) >= 1, enr = null;
+  try { enr = cpmEnregistrements_(lignesSource_('cpm')); } catch (e) { enr = null; }
+  // Échéance des fiches d'évaluation (carte visible du 22 à la fin du mois) : indépendante des rapports, selon l'accès à l'application « Fiche d'évaluation »
+  try { var fe = fichesEvalBloc_(u, a, auj, enr); if (fe) res.blocs.fiches_eval = fe; } catch (e) { /* sans cette carte, le reste du tableau de bord s'affiche quand même */ }
   if (chantiersOk) {
-    var rapports = rapportsLus_(), chantiers = chantiersActifs_(), enr = null;
-    try { enr = cpmEnregistrements_(lignesSource_('cpm')); } catch (e) { enr = null; }
+    var rapports = rapportsLus_(), chantiers = chantiersActifs_();
     var j14 = TB.jours(Dates.addDays(auj, -13), auj);
     res.blocs.effectif = TB.serieEffectif(rapports, j14, function (r) { return r.service || (chantiers.filter(function (c) { return c.id === r.chantier; })[0] || {}).service; });
     res.blocs.rapports_jour = TB.rapportsDuJour(Rapports.synthese(chantiers, rapports, auj));

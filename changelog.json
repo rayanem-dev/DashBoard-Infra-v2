@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-259",
+    "date": "2026-10-31",
+    "title": "Version 6.35.0 — Accueil : carte d'échéance des fiches d'évaluation (du 22 à la fin du mois)",
+    "changes": [
+      "À partir du 22 de chaque mois, une grande carte pleine largeur apparaît en tête du tableau de bord : « Fiches d'évaluation — <mois> ». Elle compte les fiches éditées (générées) sur les contrats en exécution du Suivi CPM et liste en ROUGE celles qui ne sont pas encore générées.",
+      "Règle : toutes les fiches doivent être éditées au plus tard le 25 pour que les deux parties puissent signer avant l'envoi du 1er du mois suivant. Du 22 au 24 la carte est orange avec le compte à rebours (J-3, J-2, J-1) ; dès le 25, elle passe au rouge « ÉCHÉANCE DÉPASSÉE » tant qu'il manque une fiche, avec les jours restants avant l'envoi ; elle devient verte quand toutes les fiches sont éditées. Un clic ouvre la Fiche d'évaluation.",
+      "Visible par les comptes qui ont accès à la carte « Fiche d'évaluation ». Les fiches sont lues dans l'archive de l'application (dossier Drive « Fiches d’évaluation ») : nécessite l'autorisation Google « Drive » de la passerelle, sinon la carte l'indique en rouge au lieu de compter."
+    ]
+  },
+  {
     "id": "2026-10-31-258",
     "date": "2026-10-31",
     "title": "Version 6.34.1 — Correction : le tableau de bord de l'accueil s'affiche de nouveau",
