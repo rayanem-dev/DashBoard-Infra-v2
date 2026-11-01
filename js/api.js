@@ -605,7 +605,7 @@
         return { services: sv2, total: DEMO_USERS.length }; }
       case 'visavis_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var vl = demoVav();
         return { personnes: DEMO_USERS.map(function (x) { var l = vl[x.uid] || {}; return { uid: x.uid, nom: x.nom, fonction: x.fonction || '', service: demoService(x), dependance: x.dependance || '', telephone: '0555 00 00 0' + x.uid.slice(1), vis_travail: l.vis_travail || '', vis_chambre: l.vis_chambre || '', modifiable: true }; }) }; }
-      case 'epi_moi': case 'epi_enregistrer': case 'epi_liste': case 'epi_importer_vestes': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+      case 'epi_moi': case 'epi_enregistrer': case 'epi_liste': case 'epi_importer_vestes': case 'epi_envoyer_lien': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         var TB = [[ 'XS', '85–90', 36 ], [ 'S', '90–96', 38 ], [ 'M', '96–102', 40 ], [ 'L', '102–108', 42 ], [ 'XL', '108–114', 44 ], [ 'XXL', '114–120', 46 ], [ '3XL', '120–126', 48 ]].map(function (x) { return { lettre: x[0], poitrine: x[1], uk: x[2] }; });
         var sto = {}; try { sto = JSON.parse(sessionStorage.getItem('infra_v2_demo_epi') || '{}'); } catch (e) { sto = {}; }
         var niv = ['chef_division', 'secretariat'].indexOf(demoState.user.role) >= 0 ? 3 : (demoState.user.role === 'chef_service' ? 2 : 1);
@@ -613,6 +613,7 @@
         if (action === 'epi_moi') { var mo = sto[demoState.user.email] || {}; return { niveau: niv, nom: demoState.user.nom, tailles: mo, manquants: manq(mo), table: TB }; }
         if (action === 'epi_enregistrer') { var cible = p.email || demoState.user.email, ex = sto[cible] || {}; ['haut', 'pantalon', 'jambe', 'chaussures', 'gants', 'bonnet', 'tete', 'veste_cuir', 'remarque'].forEach(function (k) { if (p[k] !== undefined) ex[k] = String(p[k]); }); sto[cible] = ex; sessionStorage.setItem('infra_v2_demo_epi', JSON.stringify(sto)); return { tailles: ex, manquants: manq(ex) }; }
         if (action === 'epi_importer_vestes') return { importes: 0, deja: 0, inconnus: [] };
+        if (action === 'epi_envoyer_lien') return { envoyes: (p.emails || []).length, sans_adresse: 0, restant: 90 };
         if (niv < 2) throw erreur('Droits insuffisants', 'DROITS');
         var orgs = ['SONATRACH', 'SONATRACH', 'ACOSCO', 'GTP'];
         var ag = DEMO_USERS.map(function (x, i) { var l = sto[x.email] || {}, o = { email: x.email, nom: x.nom, matricule: '9' + (1000 + i) + 'X', organisme: orgs[i % 4], prestataire: false, service: demoService(x), fonction: x.fonction || '' };

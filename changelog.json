@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-10-31-282",
+    "date": "2026-11-01",
+    "title": "Version 6.44.1 — Dotation EPI : lien à envoyer et rappel",
+    "changes": [
+      "Dotation EPI : « 🔗 Copier le lien » (à coller dans WhatsApp ou une messagerie) et « ✉ Envoyer le lien aux incomplets » (un e-mail par agent affiché dont les tailles sont incomplètes, au clic seulement, après confirmation).",
+      "Quelqu'un qui ouvre le lien sans être connecté arrive sur la page après sa connexion.",
+      "Accueil : une bannière « Vos tailles de dotation EPI sont incomplètes » tant que le dossier n'est pas complet (désactivable dans Paramètres › Dotation EPI)."
+    ]
+  },
+  {
     "id": "2026-10-31-281",
     "date": "2026-10-31",
     "title": "Version 6.44.0 — Nouvelle application : Dotation EPI et vestes en cuir",
