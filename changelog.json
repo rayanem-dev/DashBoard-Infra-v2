@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-01-283",
+    "date": "2026-11-01",
+    "title": "Version 6.44.2 — Traductions : Dotation EPI, Inventaire, profil, accueil et pages récentes",
+    "changes": [
+      "Anglais et arabe : Dotation EPI, Inventaire, Mon profil (chambre, vis-à-vis, tailles EPI), tableau de bord de l'accueil, Paramètres, et les libellés des pages Réservation, Requête de transport, Prise en charge hôtel, Pointage, Habilitations, Véhicules, Vivier, Benchmark, Statistiques sous-traitants.",
+      "Les traductions déjà choisies ne sont jamais écrasées ; les noms, dates et données restent tels quels."
+    ]
+  },
+  {
     "id": "2026-10-31-282",
     "date": "2026-11-01",
     "title": "Version 6.44.1 — Dotation EPI : lien à envoyer et rappel",

@@ -95,5 +95,7 @@ var I18n = (function () {
     }
     var res = out.filter(function (k) { langue = 'en'; var a = t(k) === k; langue = 'ar'; var b = t(k) === k; return a || b; }); langue = save; return res;   // sans traduction en anglais OU en arabe
   }
-  return { t: t, appliquer: appliquer, dico: dico, manquants: manquants, langue: function () { return langue; } };
+  /** Le texte a-t-il déjà une traduction exacte dans cette langue ? (pour ne jamais écraser un choix de traduction existant) */
+  function existe(l, k) { return !!(DICO[l] && Object.prototype.hasOwnProperty.call(DICO[l], cle(k))); }
+  return { t: t, existe: existe, appliquer: appliquer, dico: dico, manquants: manquants, langue: function () { return langue; } };
 })();
