@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-11-02-288",
+    "date": "2026-11-02",
+    "title": "Version 6.48.0 — Inventaire par exercice, partagé et injecté dans le fichier global",
+    "changes": [
+      "Inventaire : les données ne sont plus gardées dans le navigateur mais partagées sur le serveur, par exercice (2026…). Un administrateur charge le fichier des écarts de l'année ; ensuite tout compte du portail (hors prestataires) recherche son article et indique « ✅ Trouvé : où ? » avec son emplacement actuel ; l'historique garde qui, quand et l'ancienne position.",
+      "Inventaire : l'administrateur (désigné dans Paramètres › Adresses e-mail › « Administrateur(s) de l'inventaire ») et le secrétariat chargent ou rechargent un exercice, corrigent les erreurs (position, historique, fusion de positions), sauvegardent (JSON et Excel), suppriment, clôturent / rouvrent un exercice.",
+      "Inventaire : injection à la clôture dans le fichier global amortissable (Google Sheets chargé dans Paramètres › onglet 📁 Fichiers) : aperçu d'abord, copie de sauvegarde dans le Drive, mise à jour de la colonne Position des articles retrouvés et nouvelle colonne « Inventaire AAAA » (Trouvé le … / Non trouvé) ; les articles absents du global sont listés, jamais ajoutés.",
+      "Paramètres : nouvel onglet « 📁 Fichiers » (chargement du fichier global depuis un Excel) et réglage de l'administrateur de l'inventaire.",
+      "E-mail aux utilisateurs (FR + AR) avec captures numérotées et vidéo : docs/emails/email-saisie-inventaire.html ; M. Fekhar Abdelmadjid y est présenté comme coordinateur principal.",
+      "À redéployer : la passerelle (nouveaux onglets InvExercices, InvArticles, InvPositions, InvHisto créés à la première utilisation)."
+    ]
+  },
+  {
     "id": "2026-11-02-287",
     "date": "2026-11-02",
     "title": "Version 6.47.0 — Paramètres en onglets, prise en charge modifiable, visite périodique des véhicules",

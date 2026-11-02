@@ -55,7 +55,7 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.']], onglet = 'adresses';
+  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['fichiers', '📁 Fichiers', 'Fichiers de référence de la division chargés dans le portail : le fichier global amortissable, dans lequel l\'inventaire injecte les emplacements retrouvés à la clôture d\'un exercice.']], onglet = 'adresses';
   try { var memo = sessionStorage.getItem('pa_onglet'); if (memo) onglet = memo; } catch (e) { /* mémoire indisponible */ }
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -69,7 +69,7 @@
   function dessinerOnglets(q) {
     var z = $('onglets'); z.textContent = '';
     ONGLETS.forEach(function (o) {
-      var n = P.filter(function (p) { return p.onglet === o[0] && (p.option ? p.champ === 'actif' : true); }).length, b = el('button', null, o[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(!q && onglet === o[0]));
+      var n = o[0] === 'fichiers' ? 1 : P.filter(function (p) { return p.onglet === o[0] && (p.option ? p.champ === 'actif' : true); }).length, b = el('button', null, o[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(!q && onglet === o[0]));
       b.appendChild(el('small', null, '· ' + n)); b.onclick = function () { onglet = o[0]; try { sessionStorage.setItem('pa_onglet', onglet); } catch (e) { /* tant pis */ } $('filtre').value = ''; dessiner(); }; z.appendChild(b);
     });
     var cur = ONGLETS.filter(function (o) { return o[0] === onglet; })[0]; $('noteOnglet').textContent = q ? 'Résultats de la recherche dans tous les onglets.' : (cur ? cur[2] : '');
@@ -78,6 +78,7 @@
     var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [], options = {};
     function groupe(g) { if (!groupes[g]) { groupes[g] = []; ordre.push(g); } return groupes[g]; }
     dessinerOnglets(q);
+    if (!q && onglet === 'fichiers') { z.textContent = ''; z.appendChild(carteGlobal()); return; }
     P.forEach(function (p) {
       if (!q && p.onglet !== onglet) return;
       var t = (p.groupe + ' ' + p.libelle + ' ' + p.aide + (p.option ? ' option accès rôle niveau' : '')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (q && t.indexOf(q) < 0) return;
@@ -96,6 +97,42 @@
     });
   }
   /** Option à interrupteur et niveau d'accès : « Active » oui / non et, si elle en a un, le rôle minimum (ce rôle et ceux au-dessus). Un seul « Enregistrer » pour les deux. */
+  /** Fichier global amortissable : chargé depuis un Excel, devient un Google Sheets du Drive ; l'inventaire y écrit à la clôture d'un exercice (une sauvegarde est faite avant chaque injection). */
+  function carteGlobal() {
+    var c = el('div', 'bloc'); c.appendChild(el('h3', null, '📦 Fichier global amortissable de la division')); c.style.fontSize = '13.5px';
+    var etat = el('p', 'aide', 'Chargement…'); c.appendChild(etat);
+    var lien = el('a'); lien.target = '_blank'; lien.rel = 'noopener'; lien.hidden = true; c.appendChild(lien);
+    c.appendChild(el('p', 'aide', 'Choisissez l\'Excel (.xlsx) du fichier global : toutes ses feuilles sont recopiées dans un Google Sheets du Drive du portail. Il doit comporter les colonnes « N° Inv » et « Position » (ou « Emplacement »). Le fichier précédent reste dans le Drive. Les mises en forme Excel (couleurs, formules) ne sont pas reprises, seules les valeurs.'));
+    var f = el('input'); f.type = 'file'; f.accept = '.xlsx,.xlsm,.xls'; var b = el('button', 'btn-p', 'Charger ce fichier'); b.type = 'button'; b.disabled = true; var m = el('p', 'etat'); 
+    var ligne = el('div', 'champ'); ligne.appendChild(f); ligne.appendChild(b); c.appendChild(ligne); c.appendChild(m);
+    function maj(r) {
+      if (!r.charge) { etat.textContent = r.erreur || 'Aucun fichier global chargé pour l\'instant : l\'injection de l\'inventaire est impossible.'; lien.hidden = true; return; }
+      etat.textContent = 'Fichier chargé : ' + (r.nom || '(sans nom)') + (r.charge_le ? ' · le ' + frDate(r.charge_le) : '') + (r.charge_par ? ' · par ' + r.charge_par : ''); lien.href = r.url; lien.textContent = '↗ Ouvrir le Google Sheets global'; lien.hidden = false;
+    }
+    Api.call('inv_global_lire', {}).then(maj).catch(function (e) { etat.textContent = e.message; });
+    f.onchange = function () { b.disabled = !f.files || !f.files[0]; };
+    b.onclick = function () {
+      var fic = f.files[0]; if (!fic) return; if (!window.confirm('Charger « ' + fic.name + ' » comme nouveau fichier global ?')) return; b.disabled = true; m.className = 'etat'; m.textContent = 'Lecture du fichier…';
+      var cdn = new Promise(function (ok, ko) { if (window.XLSX) return ok(); var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload = ok; sc.onerror = function () { ko(new Error('Chargement du lecteur Excel impossible')); }; document.head.appendChild(sc); });
+      Promise.all([cdn, fic.arrayBuffer()]).then(function (r) {
+        var wb = window.XLSX.read(r[1], { type: 'array', cellDates: true }), morceaux = [];
+        wb.SheetNames.forEach(function (n) {
+          var lignes = window.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' }).map(function (l) { return l.map(function (x) { return x instanceof Date ? x.toISOString().slice(0, 10) : x; }); });
+          for (var d = 0; d < lignes.length; d += 1500) morceaux.push({ nom: n, debut: d, lignes: lignes.slice(d, d + 1500) });
+        });
+        if (!morceaux.length) throw new Error('Fichier vide');
+        var suite = null, i = 0;
+        function suivant() {
+          m.textContent = 'Envoi… ' + Math.round(100 * i / morceaux.length) + ' %';
+          var dernier = i === morceaux.length - 1;
+          return Api.call('inv_global_charger', { nom: fic.name, feuilles: [morceaux[i]], suite: suite, fin: dernier }).then(function (rep) { suite = rep.suite; i += 1; if (i < morceaux.length) return suivant(); return rep; });
+        }
+        return suivant();
+      }).then(function (rep) { maj(rep); m.className = 'etat mod'; m.textContent = '✅ Fichier global chargé.'; toast('Fichier global chargé'); f.value = ''; })
+        .catch(function (e) { m.className = 'etat err'; m.textContent = e.message; b.disabled = false; });
+    };
+    return c;
+  }
   function carteOption(o) {
     var a = o.actif, r = o.role, base = a || r, c = el('div', 'reglage');
     c.appendChild(el('label', 'l', base.libelle)); c.appendChild(el('p', 'aide', base.aide));
