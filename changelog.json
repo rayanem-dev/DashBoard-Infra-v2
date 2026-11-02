@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-02-285",
+    "date": "2026-11-02",
+    "title": "Version 6.45.1 — Badges : réglages par défaut enregistrés",
+    "changes": [
+      "Les réglages de l'onglet Réglages des badges (base, structure, titre, format du numéro, dimensions, pas, échelle 0,877, calage recto -0,5 mm, police Berlin Sans FB 11, QR code et photo oui, nom arabe non) sont maintenant ceux du fichier config.js, donc ceux de tout le monde par défaut.",
+      "Quelqu'un qui a déjà enregistré ses propres réglages dans son navigateur les garde ; « Revenir au fichier config.js » applique les réglages par défaut."
+    ]
+  },
+  {
     "id": "2026-11-02-284",
     "date": "2026-11-02",
     "title": "Version 6.45.0 — Prise en charge : l'entreprise se souvient de ses habitudes",
