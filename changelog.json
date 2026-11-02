@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-02-297",
+    "date": "2026-11-02",
+    "title": "Version 6.49.6 — Rapports : retour à la liste déroulante des chantiers",
+    "changes": [
+      "Saisir mon rapport : le choix du chantier / prestataire redevient une simple liste déroulante (sans recherche), comme avant ; le bouton « Chantier hors contrat » et le rechargement automatique de la liste sont conservés."
+    ]
+  },
+  {
     "id": "2026-11-02-296",
     "date": "2026-11-02",
     "title": "Version 6.49.5 — Prestataire : envoi direct au secrétariat",

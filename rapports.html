@@ -82,7 +82,7 @@
     <form class="form" id="f" autocomplete="off">
       <p class="aide" id="etabli" style="margin:0 0 4px">Rapport établi par : <b id="etabli-nom">…</b> <span id="etabli-qual"></span></p>
       <div class="deux">
-        <div class="champ"><label for="chantier-q">Chantier / prestataire <span class="aide" style="font-weight:400">(tapez une partie du nom ou de l'entreprise)</span></label><div style="position:relative"><input id="chantier-q" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="chantier-liste" placeholder="Touchez pour voir tous les chantiers, ou tapez pour chercher…" style="width:100%;box-sizing:border-box"><div id="chantier-liste" role="listbox" hidden style="position:absolute;left:0;right:0;top:100%;z-index:30;max-height:min(55vh,320px);overflow:auto;margin-top:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)"></div></div><select id="chantier" hidden></select><p class="aide" id="chantier-info" style="margin:4px 0 0;color:#B42318"></p><button class="btn-s" type="button" id="b-hc" hidden style="margin-top:6px" title="Préparation avant le contrat ou levée des réserves après le contrat">＋ Chantier hors contrat</button></div>
+        <div class="champ"><label for="chantier">Chantier / prestataire</label><select id="chantier" style="width:100%;box-sizing:border-box"></select><p class="aide" id="chantier-info" style="margin:4px 0 0;color:#B42318"></p><button class="btn-s" type="button" id="b-hc" hidden style="margin-top:6px" title="Préparation avant le contrat ou levée des réserves après le contrat">＋ Chantier hors contrat</button></div>
         <div class="champ"><label for="date">Date <span class="aide" style="font-weight:400">(jour même seulement)</span></label><input type="date" id="date"></div>
       </div>
       <div class="deux">
@@ -298,7 +298,7 @@
               travaux: $('travaux').value, difficultes: $('difficultes').value, commentaire: $('commentaire').value,
               lignes: lignes.filter(function (l) { return (l.zone || '').trim() || (l.texte || '').trim() || (l.avancement !== '' && l.avancement != null); }).map(function (l) { return { zone: l.zone, texte: l.texte, avancement: l.avancement, routine: !!l.routine }; }) };
     if (!p.travaux.trim() && !p.lignes.some(function (l) { return (l.texte || '').trim().length >= 3; })) return msg('Décrivez les travaux réalisés (au moins une ligne ou le texte libre).');
-    var oc = $('chantier').selectedOptions[0]; if (!oc || norme($('chantier-q').value) !== norme(oc.textContent)) return msg('Choisissez un chantier dans la liste (tapez une partie de son nom ou de l\'entreprise).');
+    if (!$('chantier').value) return msg('Choisissez un chantier dans la liste.');
     if (p.effectif === '') return msg('Indiquez l\'effectif présent.');
     $('b-save').disabled = true;
     var avant = $('b-save').textContent, ids = mediasExistants.map(function (m) { return m.id; }), n = mediasNouveaux.length, fait = 0, suite = Promise.resolve();
@@ -674,51 +674,9 @@
     if (r.peut_medias !== undefined) $('bloc-medias').hidden = !r.peut_medias;   // option « Joindre des photos et vidéos » (Paramètres)
     if (r.peut_toute_division !== undefined) $('toute-div').closest('label').hidden = !r.peut_toute_division;   // option « toute la division » (Paramètres)
   }
-  // Choix du chantier / prestataire : saisie libre avec propositions ; la liste (nouveaux contrats, chantiers ouverts) se recharge seule
+  // Choix du chantier / prestataire : simple liste déroulante (la liste se recharge seule : nouveaux contrats, chantiers ouverts)
   function norme(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
-  function synchroChantier() {
-    var o = $('chantier').selectedOptions[0]; if (document.activeElement !== $('chantier-q')) $('chantier-q').value = o ? o.textContent : '';
-  }
-  function choisirChantier() {
-    var q = norme($('chantier-q').value), info = $('chantier-info'); info.textContent = '';
-    if (!q) return;
-    var exact = chantiers.filter(function (c) { return norme(c.nom) === q; }), part = chantiers.filter(function (c) { return norme(c.nom).indexOf(q) >= 0; }), t = exact.length ? exact : part.length === 1 ? part : [];
-    if (t.length === 1) { if ($('chantier').value !== t[0].id) { $('chantier').value = t[0].id; $('chantier').dispatchEvent(new Event('change')); } if (exact.length || document.activeElement !== $('chantier-q')) $('chantier-q').value = t[0].nom; }
-    else info.textContent = part.length > 1 ? part.length + ' chantiers correspondent : continuez à taper ou choisissez dans la liste.' : 'Aucun chantier ne correspond : vérifiez le nom (ou ouvrez un chantier hors contrat).';
-  }
-  $('chantier-q').addEventListener('input', choisirChantier);
-  $('chantier-q').addEventListener('change', choisirChantier);
-  // Liste des chantiers : un clic dans la zone montre TOUS les chantiers ; en tapant, la liste se réduit
-  var listeActive = -1;
-  function afficherListeChantiers(tout) {
-    var z = $('chantier-liste'), q = norme($('chantier-q').value), sel = $('chantier').value;
-    var l = tout || !q ? chantiers : chantiers.filter(function (c) { return norme(c.nom).indexOf(q) >= 0; });
-    z.textContent = ''; listeActive = -1;
-    l.forEach(function (c, i) {
-      var it = el('div', null, c.nom); it.setAttribute('role', 'option'); it.dataset.id = c.id;
-      it.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--border);' + (c.id === sel ? 'font-weight:800;background:rgba(232,93,4,.12);' : '');
-      it.addEventListener('mousedown', function (e) { e.preventDefault(); choisirDansListe(c); });
-      it.addEventListener('touchend', function (e) { e.preventDefault(); choisirDansListe(c); });
-      z.appendChild(it);
-    });
-    if (!l.length) { var v = el('div', null, 'Aucun chantier ne correspond.'); v.style.cssText = 'padding:10px 12px;font-size:13px;color:var(--text-muted)'; z.appendChild(v); }
-    z.hidden = false; $('chantier-q').setAttribute('aria-expanded', 'true');
-  }
-  function fermerListeChantiers() { $('chantier-liste').hidden = true; $('chantier-q').setAttribute('aria-expanded', 'false'); listeActive = -1; }
-  function choisirDansListe(c) {
-    if ($('chantier').value !== c.id) { $('chantier').value = c.id; $('chantier').dispatchEvent(new Event('change')); }
-    $('chantier-q').value = c.nom; $('chantier-info').textContent = ''; fermerListeChantiers();
-  }
-  $('chantier-q').addEventListener('focus', function () { rechargerChantiers().then(function () { if (document.activeElement === $('chantier-q') && !$('chantier-liste').hidden) afficherListeChantiers(norme($('chantier-q').value) === norme((($('chantier').selectedOptions[0] || {}).textContent) || '')); }); afficherListeChantiers(true); this.select(); });
-  $('chantier-q').addEventListener('click', function () { if ($('chantier-liste').hidden) afficherListeChantiers(true); });
-  $('chantier-q').addEventListener('input', function () { afficherListeChantiers(false); });
-  $('chantier-q').addEventListener('blur', function () { setTimeout(function () { fermerListeChantiers(); synchroChantier(); $('chantier-info').textContent = ''; }, 120); });
-  $('chantier-q').addEventListener('keydown', function (e) {
-    var items = $('chantier-liste').querySelectorAll('[role=option]');
-    if (e.key === 'Escape') { fermerListeChantiers(); return; }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if ($('chantier-liste').hidden) afficherListeChantiers(true); items = $('chantier-liste').querySelectorAll('[role=option]'); if (!items.length) return; listeActive = (listeActive + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; items.forEach(function (x, i) { x.style.outline = i === listeActive ? '2px solid var(--orange-main)' : ''; }); items[listeActive].scrollIntoView({ block: 'nearest' }); return; }
-    if (e.key === 'Enter' && listeActive >= 0 && items[listeActive]) { e.preventDefault(); var c = chantiers.filter(function (x) { return x.id === items[listeActive].dataset.id; })[0]; if (c) choisirDansListe(c); }
-  });
+  function synchroChantier() { /* liste déroulante : rien à synchroniser */ }
   var dernierRechargement = 0;
   function rechargerChantiers(force) {
     var maintenant = Date.now(); if (!force && maintenant - dernierRechargement < 20000) return Promise.resolve();
@@ -726,7 +684,7 @@
     return Api.call('rapports_chantiers').then(function (r) { remplirChantiers(r); }).catch(function () { /* on garde la liste affichée */ });
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden && !$('p-saisie').hidden) rechargerChantiers(); });
-  setInterval(function () { if (!document.hidden && !$('p-saisie').hidden && document.activeElement !== $('chantier-q')) rechargerChantiers(true); }, 300000);   // toutes les 5 minutes tant que la saisie est ouverte
+  setInterval(function () { if (!document.hidden && !$('p-saisie').hidden && document.activeElement !== $('chantier')) rechargerChantiers(true); }, 300000);   // toutes les 5 minutes tant que la saisie est ouverte
   var fermes = [], peutEnvoyer = false;
   function dateDans(mois) { var d = new Date(); d.setMonth(d.getMonth() + mois); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function majHc() { var o = $('hc-id').selectedOptions[0]; $('hc-neuf').hidden = !!$('hc-id').value; if ($('hc-id').value && o && o.dataset.phase) $('hc-phase').value = o.dataset.phase; }
