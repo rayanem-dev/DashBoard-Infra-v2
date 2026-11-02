@@ -739,13 +739,13 @@ window.google = { script: { run: (function () {
         const row = document.createElement('div'); row.className = 'histo-item';
         row.innerHTML = '<span class="histo-tag ' + echapper(f.type.toLowerCase()) + '">' + echapper(f.type) + '</span>' +
           '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
-          '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">📄 Ouvrir</a>' +
+          '<div class="histo-links">' +
           '<button type="button" class="impr" data-id="' + echapper(f.id) + '">🖨️ Imprimer</button>' +
-          (peutDoc ? '<button type="button" class="modif" data-id="' + echapper(f.id) + '" title="Ouvre le document Google pour le corriger">✏️ Modifier</button><button type="button" class="majpdf" data-id="' + echapper(f.id) + '" title="Refait le PDF à partir du document corrigé">🔄 Mettre à jour le PDF</button>' : '') +
+          (peutDoc ? '<button type="button" class="modif" data-id="' + echapper(f.id) + '" title="Ouvre le document Google pour le corriger">✏️ Modifier</button>' : '') +
           (peutEnvoi ? '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button>' : '') + '</div>' +
           (peutSuppr ? '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>' : '');
         row.querySelector('button.impr').onclick = function() { imprimerDirect(this, f.id); };
-        if (peutDoc) { row.querySelector('button.modif').onclick = function() { modifierDoc(this, f.id); }; row.querySelector('button.majpdf').onclick = function() { majPdf(this, f.id); }; }
+        if (peutDoc) { row.querySelector('button.modif').onclick = function() { modifierDoc(this, f.id); }; }
         if (peutEnvoi) row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
         if (peutSuppr) row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
         div.appendChild(row);
@@ -780,7 +780,7 @@ window.google = { script: { run: (function () {
       btn.disabled = false; btn.textContent = txt;
       if (!res || !res.success) { if (w) w.close(); afficherAlerteModale('Erreur', String((res && res.error) || 'Ouverture impossible'), 'err'); return; }
       if (w) w.location.href = res.url; else window.open(res.url, '_blank');
-      afficherAlerteModale('Document ouvert', 'Corrigez le document dans Google Docs (l\'enregistrement est automatique), puis revenez ici et cliquez sur « 🔄 Mettre à jour le PDF » pour refaire le PDF à imprimer.', 'ok');
+      afficherAlerteModale('Document ouvert', 'Corrigez le document dans Google Docs (l\'enregistrement est automatique), puis revenez ici : « 🖨️ Imprimer » et « ✉️ Envoyer par email » utilisent toujours la dernière version corrigée.', 'ok');
     }).withFailureHandler(function(err) { if (w) w.close(); btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).ouvrirDocPourModification(id);
   }
   function majPdf(btn, id) {

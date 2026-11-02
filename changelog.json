@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-02-293",
+    "date": "2026-11-02",
+    "title": "Version 6.49.2 — Prise en charge : modifier puis imprimer / envoyer, boîtes de copie",
+    "changes": [
+      "Liste des documents générés : boutons « Ouvrir » et « Mettre à jour le PDF » retirés. Après « ✏️ Modifier » (Google Docs, enregistrement automatique), « 🖨️ Imprimer » et « ✉️ Envoyer par email » exportent toujours la dernière version corrigée.",
+      "Paramètres : nouvelle liste « Boîtes qui reçoivent aussi la copie des documents générés (en plus du créateur) » (onglet Adresses e-mail)."
+    ]
+  },
+  {
     "id": "2026-11-02-292",
     "date": "2026-11-02",
     "title": "Version 6.49.1 — Macaron d'un contrat échu",
