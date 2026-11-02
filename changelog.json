@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-02-296",
+    "date": "2026-11-02",
+    "title": "Version 6.49.5 — Prestataire : envoi direct au secrétariat",
+    "changes": [
+      "Prise en charge : un prestataire n'a plus de fenêtre de choix ; « Envoyer par email » demande une simple confirmation puis écrit au secrétariat (imposé aussi côté serveur)."
+    ]
+  },
+  {
     "id": "2026-11-02-295",
     "date": "2026-11-02",
     "title": "Version 6.49.4 — Prestataire : envoi des prises en charge par e-mail",

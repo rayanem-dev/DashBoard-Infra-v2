@@ -572,7 +572,7 @@ window.google = { script: { run: (function () {
   function dateArriveeDuJour() { const a = document.getElementById('dateArrivee'); a.value = ymd(new Date()); a.dispatchEvent(new Event('change')); }
   dateArriveeDuJour();
 
-  let peutEnvoi = true, peutSuppr = true, peutDoc = false;   // options du secrétariat (page Paramètres) pour un prestataire : envoi au secrétariat, suppression de ses documents
+  let peutEnvoi = true, peutSuppr = true, peutDoc = false, estPrestataire = false;   // options du secrétariat (page Paramètres) pour un prestataire : envoi au secrétariat, suppression de ses documents
   let servicesParPrestataire = {}, basesParPrestataire = {}, habitudesParPrestataire = {}, derniereHab = '', imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
@@ -591,7 +591,7 @@ window.google = { script: { run: (function () {
     const sel = document.getElementById('emputation'); if (Array.from(sel.options).some(o => o.value === emp || o.text === emp)) { sel.value = emp; if (imputationFixe) sel.disabled = true; }   // prestataire : imputation = service du contrat, pas de choix
   }
   function remplirDropdowns(opts) {
-    servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire; imputationFixe = !!opts.imputation_fixe;
+    servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire; imputationFixe = !!opts.imputation_fixe; estPrestataire = imputationFixe;
     if (opts.peut_doc !== undefined && opts.peut_doc !== peutDoc) { peutDoc = !!opts.peut_doc; if (typeof chargerFichiers === 'function') chargerFichiers(); }
     if (opts.peut_envoi !== undefined || opts.peut_suppression !== undefined) { const e = opts.peut_envoi !== false, d = opts.peut_suppression !== false; if (e !== peutEnvoi || d !== peutSuppr) { peutEnvoi = e; peutSuppr = d; if (typeof chargerFichiers === 'function') chargerFichiers(); } }
     if (opts.sans_organisme) { document.getElementById('zoneOrg').hidden = true; document.getElementById('formOrg').hidden = true; }   // prestataire ou invité : pas d'ajout d'organisme hors Suivi CPM
@@ -801,7 +801,7 @@ window.google = { script: { run: (function () {
   function ouvrirAide() { const b = document.querySelector('.aide-btn'); if (b) b.click(); }
   function envoyerParMail(btn, id) {
     // au clic seulement : la fenêtre propose le secrétariat (coché par défaut) et/ou la boîte du service de l'agent
-    Diffusion.choisir({ titre: '✉ Envoyer ce document' }).then(function(ch) {
+    (estPrestataire ? Promise.resolve(window.confirm('Envoyer ce document au secrétariat de la division ?') ? { secretariat: true, service: false } : null) : Diffusion.choisir({ titre: '✉ Envoyer ce document' })).then(function(ch) {
       if (!ch) return;
       const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Envoi…';
       google.script.run.withSuccessHandler(function(res) {
