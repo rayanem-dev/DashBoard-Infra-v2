@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-02-294",
+    "date": "2026-11-02",
+    "title": "Version 6.49.3 — Prestataire : choisir ses entreprises dans « Modifier »",
+    "changes": [
+      "Privilèges › Utilisateurs › Modifier : pour un compte prestataire, le champ « Dépendance / entreprise » devient une liste d'entreprises (choix dans la liste du Suivi CPM / Badges ou saisie du seul nom de l'entreprise, plusieurs possibles). Ce choix met à jour ce que le prestataire voit (ses contrats) et le champ affiché.",
+      "Correction : modifier la dépendance d'un prestataire met aussi à jour son périmètre (« portée »), qui restait sur l'ancienne écriture et lui faisait perdre l'accès à ses contrats."
+    ]
+  },
+  {
     "id": "2026-11-02-293",
     "date": "2026-11-02",
     "title": "Version 6.49.2 — Prise en charge : modifier puis imprimer / envoyer, boîtes de copie",

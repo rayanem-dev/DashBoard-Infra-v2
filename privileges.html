@@ -381,14 +381,33 @@
 
   // ---- Modifier tous les champs d'un compte, ou le supprimer carrément ----
   var CHAMPS = [['nom', 'Nom et prénom'], ['service', 'Service'], ['section', 'Section'], ['fonction', 'Fonction'], ['dependance', 'Dépendance / entreprise'], ['telephone', 'Téléphone'], ['matricule', 'Matricule'], ['sap', 'Matricule SAP'], ['sona', 'Identifiant SONA'], ['civilite', 'Civilité'], ['wifi_user', 'Identifiant Wi-Fi'], ['date_integration', 'Date d\'intégration (AAAA-MM-JJ)']];
+  /** Entreprise(s) d'un compte prestataire : on choisit dans la liste (Suivi CPM, Badges) ou on écrit le NOM de l'entreprise seul (jamais un numéro de contrat : elle couvre tous ses contrats). */
+  function selecteurEntreprises(u, surChange) {
+    var liste = String(u.portee || u.dependance || '').split(/[;\n]+/).map(function (x) { return x.trim(); }).filter(Boolean), w = el('div'), puces = el('div'), ligne = el('div');
+    puces.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:4px 0'; ligne.style.cssText = 'display:flex;gap:6px';
+    var champ = el('input'); champ.setAttribute('list', 'l-ent-modif'); champ.placeholder = 'Choisir ou écrire le nom de l\'entreprise…'; champ.style.cssText = 'flex:1;box-sizing:border-box'; champ.maxLength = 120;
+    var dl = el('datalist'); dl.id = 'l-ent-modif'; var plus = el('button', 'btn-s', '+ Ajouter'); plus.type = 'button';
+    function rem() { dl.textContent = ''; (choixEntreprises || []).forEach(function (n) { var o = el('option'); o.value = n; dl.appendChild(o); }); }
+    if (choixEntreprises) rem(); else Api.call('admin_portee_choix').then(function (r) { choixEntreprises = r.entreprises || []; rem(); }).catch(function () { choixEntreprises = []; });
+    function dessiner() {
+      puces.textContent = ''; surChange(liste.slice());
+      if (!liste.length) puces.appendChild(el('span', 'aide', 'Aucune entreprise : ce prestataire ne verra aucun contrat.'));
+      liste.forEach(function (n, i) { var p = el('span', null, n + ' ✕'); p.style.cssText = 'background:#FFE9D2;border-radius:999px;padding:3px 10px;font-weight:700;font-size:12.5px;cursor:pointer'; p.title = 'Retirer'; p.onclick = function () { liste.splice(i, 1); dessiner(); }; puces.appendChild(p); });
+    }
+    function ajouter() { var v = champ.value.replace(/\s+/g, ' ').trim(); if (!v) return; if (liste.map(function (x) { return x.toLowerCase(); }).indexOf(v.toLowerCase()) < 0) liste.push(v); champ.value = ''; dessiner(); }
+    plus.onclick = ajouter; champ.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ajouter(); } }); champ.addEventListener('change', function () { if ((choixEntreprises || []).indexOf(champ.value) >= 0) ajouter(); });
+    ligne.appendChild(champ); ligne.appendChild(plus); w.appendChild(puces); w.appendChild(ligne); w.appendChild(dl); dessiner(); return w;
+  }
   function modifierCompte(u) {
     var d = document.createElement('dialog'); d.style.cssText = 'margin:auto;width:min(640px,94vw);max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)';
     d.appendChild(el('h3', null, 'Modifier ' + u.nom)).style.margin = '0 0 2px';
     d.appendChild(el('p', 'aide', u.email + (u.hors ? '' : ' · inscrit dans BDDORGA : les champs que BDDORGA impose (ex. le nom) se changent dans BDDORGA'))).style.margin = '0 0 12px';
-    var g = el('div'); g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px'; var inp = {};
+    var g = el('div'); g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px'; var inp = {}, portee = null;
     CHAMPS.forEach(function (c) {
       var w = el('div'); if (c[0] === 'nom') w.style.gridColumn = '1/-1'; w.appendChild(el('label', null, c[1]));
-      var i = el('input'); i.value = u[c[0]] || ''; i.style.cssText = 'width:100%;box-sizing:border-box'; i.maxLength = 120; inp[c[0]] = i; w.appendChild(i); g.appendChild(w);
+      var i = el('input'); i.value = u[c[0]] || ''; i.style.cssText = 'width:100%;box-sizing:border-box'; i.maxLength = 120; inp[c[0]] = i;
+      if (c[0] === 'dependance' && u.role === 'prestataire') { w.replaceChildren(el('label', null, 'Entreprise(s) du prestataire (ses contrats)')); w.appendChild(selecteurEntreprises(u, function (l) { portee = l; })); w.style.gridColumn = '1/-1'; delete inp.dependance; g.appendChild(w); return; }
+      w.appendChild(i); g.appendChild(w);
     });
     d.appendChild(g);
     var er = el('p'); er.style.cssText = 'color:#B42318;font-weight:700;margin:8px 0 0'; d.appendChild(er);
@@ -402,7 +421,8 @@
     var an = el('button', 'btn-s', 'Annuler'); an.type = 'button'; an.onclick = function () { d.close(); d.remove(); };
     var ok = el('button', 'btn-p', 'Enregistrer'); ok.type = 'button';
     ok.onclick = function () {
-      var champs = {}; CHAMPS.forEach(function (c) { if ((inp[c[0]].value || '').trim() !== (u[c[0]] || '')) champs[c[0]] = inp[c[0]].value; });
+      var champs = {}; CHAMPS.forEach(function (c) { if (inp[c[0]] && (inp[c[0]].value || '').trim() !== (u[c[0]] || '')) champs[c[0]] = inp[c[0]].value; });
+      if (portee && portee.join(' ; ') !== String(u.portee || '').split(/[;\n]+/).map(function (x) { return x.trim(); }).filter(Boolean).join(' ; ')) champs.portee = portee;
       if (!Object.keys(champs).length) { d.close(); d.remove(); return; }
       ok.disabled = true; er.textContent = '';
       Api.call('admin_utilisateur_modifier', { email: u.email, champs: champs }).then(function (r) {
