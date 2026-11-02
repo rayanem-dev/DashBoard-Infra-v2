@@ -169,7 +169,7 @@
   function valider(nouvel, message, vider) {
     if (!annee) { toast('Choisissez ou créez d\'abord un exercice.'); return; }
     var d = diff(vider ? M.nouvelEtat() : etat, nouvel); occupe = true;
-    envoyer(d, vider).then(function () { etat = nouvel; rendre(); if (message) toast(message); }).catch(function (e) { if (!session(e)) { toast('⚠ Non enregistré : ' + e.message); return recharger(true); } }).then(function () { occupe = false; });
+    envoyer(d, vider).then(function () { etat = nouvel; rendre(); if (message) toast(message); return recharger(true); }).catch(function (e) { if (!session(e)) { toast('⚠ Non enregistré : ' + e.message); return recharger(true); } }).then(function () { occupe = false; });
   }
   function sauver() { try { localStorage.setItem(CLE_IGN, JSON.stringify(ignorees)); } catch (e) { /* préférence locale seulement */ } }
   function charger() {
@@ -222,14 +222,14 @@
   function articles() {
     var s = $('a-pos'), v = filtreArt.pos; s.textContent = ''; var o0 = el('option', null, 'Toutes les positions'); o0.value = ''; s.appendChild(o0);
     var eff = M.effectifs(etat); Object.keys(etat.positions).sort().forEach(function (n) { var o = el('option', null, n + ' (' + (eff[n] || 0) + ')'); o.value = n; s.appendChild(o); }); s.value = v;
-    var liste = filtrer(), anc = ancienne(), c = $('a-corps'); c.textContent = '';
+    var liste = filtrer(), anc = ancienne(), c = $('a-corps'), trouvePar = {}; etat.historique.forEach(function (h) { if (h.source === 'Article retrouvé' && !h.annule) trouvePar[M.invCle(h.inv)] = h; }); c.textContent = '';
     $('a-info').textContent = liste.length + ' article' + (liste.length > 1 ? 's' : '') + (filtreArt.pos ? ' dans « ' + filtreArt.pos + ' »' : '');
     if (!liste.length) { var tr = el('tr'), td = el('td', 'vide', Object.keys(etat.articles).length ? 'Aucun article ne correspond.' : 'Aucun article dans cet exercice : l\'administrateur doit charger le fichier des écarts (onglet Importer).'); td.colSpan = 5; tr.appendChild(td); c.appendChild(tr); $('a-plus').hidden = true; return; }
     liste.slice(0, limite).forEach(function (a) {
       var tr = el('tr'), nt = Object.keys(a.nonTrouve || {});
       var d = el('td'); d.appendChild(el('b', null, a.inv)); if (a.serie) d.appendChild(el('div', 'ancienne', 'S/N ' + a.serie)); tr.appendChild(d);
       var d2 = el('td', null, a.designation); if (a.marque || a.type) d2.appendChild(el('div', 'ancienne', [a.marque, a.type].filter(Boolean).join(' · '))); tr.appendChild(d2);
-      var d3 = el('td', null, a.position || '—'); if (nt.length) { d3.appendChild(document.createTextNode(' ')); d3.appendChild(el('span', 'pastille', 'non trouvé ' + nt.join(', '))); } tr.appendChild(d3);
+      var d3 = el('td', null, a.position || '—'); var tr0 = trouvePar[M.invCle(a.inv)]; if (!nt.length && tr0) d3.appendChild(el('div', 'ancienne', '✅ Trouvé par ' + (tr0.par || 'un utilisateur') + ' le ' + String(tr0.date).slice(8, 10) + '/' + String(tr0.date).slice(5, 7) + '/' + String(tr0.date).slice(0, 4))); if (nt.length) { d3.appendChild(document.createTextNode(' ')); d3.appendChild(el('span', 'pastille', 'non trouvé ' + nt.join(', '))); } tr.appendChild(d3);
       var h = anc[M.invCle(a.inv)]; tr.appendChild(el('td', 'ancienne', h ? h.de + ' (' + String(h.date).slice(0, 10) + ')' : ''));
       var ac = el('td'); ac.style.whiteSpace = 'nowrap';
       if (admin && peutSaisir()) { var b1 = el('button', 'btn-s petit', '📍 Corriger'); b1.type = 'button'; b1.addEventListener('click', function () { dialogPosition(a, false); }); ac.appendChild(b1); ac.appendChild(document.createTextNode(' ')); }

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-02-289",
+    "date": "2026-11-02",
+    "title": "Version 6.48.1 — Inventaire : qui a trouvé l'article",
+    "changes": [
+      "Inventaire : sous la position d'un article trouvé, un petit message indique « ✅ Trouvé par … le … » (l'auteur est noté par le serveur)."
+    ]
+  },
+  {
     "id": "2026-11-02-288",
     "date": "2026-11-02",
     "title": "Version 6.48.0 — Inventaire par exercice, partagé et injecté dans le fichier global",
