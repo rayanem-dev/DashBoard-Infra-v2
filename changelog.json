@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-02-284",
+    "date": "2026-11-02",
+    "title": "Version 6.45.0 — Prise en charge : l'entreprise se souvient de ses habitudes",
+    "changes": [
+      "À chaque génération, le portail retient pour l'entreprise : sa base de vie, les documents demandés (prise en charge, autorisation d'accès) et, pour la prise en charge, hébergement et / ou restauration.",
+      "À la prochaine demande, dès que l'entreprise est choisie (ou reconnue dans un PDF), le formulaire se règle tout seul ; tout reste modifiable, et ce que vous réglez ensuite n'est plus écrasé. La dernière demande fait foi."
+    ]
+  },
+  {
     "id": "2026-11-01-283",
     "date": "2026-11-01",
     "title": "Version 6.44.2 — Traductions : Dotation EPI, Inventaire, profil, accueil et pages récentes",

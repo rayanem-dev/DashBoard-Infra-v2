@@ -573,12 +573,20 @@ window.google = { script: { run: (function () {
   dateArriveeDuJour();
 
   let peutEnvoi = true, peutSuppr = true;   // options du secrétariat (page Paramètres) pour un prestataire : envoi au secrétariat, suppression de ses documents
-  let servicesParPrestataire = {}, basesParPrestataire = {}, imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
+  let servicesParPrestataire = {}, basesParPrestataire = {}, habitudesParPrestataire = {}, derniereHab = '', imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
     const emp = servicesParPrestataire[document.getElementById('prestataire').value];
     const bh = basesParPrestataire[document.getElementById('prestataire').value], sb = document.getElementById('base');
     if (bh && Array.from(sb.options).some(o => o.value === bh || o.text === bh)) sb.value = bh;   // dernière base désignée pour cette entreprise
+    const choisi = document.getElementById('prestataire').value, hab = habitudesParPrestataire[choisi];
+    if (!choisi) derniereHab = '';
+    if (hab && choisi !== derniereHab) {   // une seule fois par entreprise choisie : ce que l'agent règle ensuite (ou avant un import de PDF) n'est plus écrasé
+      derniereHab = choisi;   // documents et type (hébergement / restauration) demandés la dernière fois pour cette entreprise : préréglés, toujours modifiables
+      document.getElementById('genererPEC').checked = !!hab.pec; document.getElementById('genererAuto').checked = !!hab.auto;
+      if (hab.pec) { document.getElementById('hebergement').checked = !!hab.heb; document.getElementById('restauration').checked = !!hab.rest; }
+      document.getElementById('genererPEC').dispatchEvent(new Event('change')); majChoixDocs();
+    }
     if (!emp) return;
     const sel = document.getElementById('emputation'); if (Array.from(sel.options).some(o => o.value === emp || o.text === emp)) { sel.value = emp; if (imputationFixe) sel.disabled = true; }   // prestataire : imputation = service du contrat, pas de choix
   }
@@ -586,7 +594,7 @@ window.google = { script: { run: (function () {
     servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire; imputationFixe = !!opts.imputation_fixe;
     if (opts.peut_envoi !== undefined || opts.peut_suppression !== undefined) { const e = opts.peut_envoi !== false, d = opts.peut_suppression !== false; if (e !== peutEnvoi || d !== peutSuppr) { peutEnvoi = e; peutSuppr = d; if (typeof chargerFichiers === 'function') chargerFichiers(); } }
     if (opts.sans_organisme) { document.getElementById('zoneOrg').hidden = true; document.getElementById('formOrg').hidden = true; }   // prestataire ou invité : pas d'ajout d'organisme hors Suivi CPM
-    basesParPrestataire = opts.basesParPrestataire || basesParPrestataire;
+    basesParPrestataire = opts.basesParPrestataire || basesParPrestataire; habitudesParPrestataire = opts.habitudesParPrestataire || habitudesParPrestataire;
     const dlPrest = document.getElementById('listePrestataires');
     dlPrest.innerHTML = '';
     opts.prestataires.forEach(p => { const o = document.createElement('option'); o.value = p; dlPrest.appendChild(o); });
@@ -983,6 +991,10 @@ window.google = { script: { run: (function () {
   function envoyerPEC(data) {
     google.script.run
       .withSuccessHandler(function(res) {
+        if (res && res.success && (data.genererPEC || data.genererAuto)) {   // documents et type habituels de l'entreprise (sans attendre le rechargement)
+          const cle0 = p => normPrest(String(p || '').split(' - ')[1] || p);
+          Array.from(document.getElementById('listePrestataires').options).forEach(o => { if (cle0(o.value) === cle0(data.prestataire)) habitudesParPrestataire[o.value] = { pec: !!data.genererPEC, auto: !!data.genererAuto, heb: !!data.hebergement, rest: !!data.restauration }; });
+        }
         if (res && res.success && data.genererPEC && data.base) {   // la base désignée devient celle par défaut de l'entreprise (sans attendre le rechargement)
           const cle = p => normPrest(String(p || '').split(' - ')[1] || p);
           Array.from(document.getElementById('listePrestataires').options).forEach(o => { if (cle(o.value) === cle(data.prestataire)) basesParPrestataire[o.value] = data.base; });
