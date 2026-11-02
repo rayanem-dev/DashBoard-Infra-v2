@@ -28,6 +28,9 @@
   .etat { font-size: 12px; margin-top: 5px; color: var(--text-muted); } .etat.mod { color: #B94E00; font-weight: 700; } .etat.err { color: #B42318; font-weight: 700; }
   .btn-p { padding: 8px 14px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; } .btn-p:disabled { opacity: .5; cursor: default; }
   .filtre { width: 100%; max-width: 420px; }
+  .onglets { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; } .onglets button { padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 11px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .onglets button[aria-selected="true"] { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; border-color: transparent; } .onglets small { font-weight: 600; opacity: .85; margin-left: 4px; }
+  .note-onglet { font-size: 12.5px; color: var(--text-muted); margin: 0 0 12px; }
   .sous-titre { padding: 10px 16px 4px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--orange-main); border-top: 1px solid var(--border); }
 </style>
 </head>
@@ -43,6 +46,8 @@
     <input type="search" id="filtre" class="filtre" placeholder="Chercher un réglage ou un programme…" aria-label="Chercher un réglage">
     <p class="aide" style="font-size:12.5px;color:var(--text-muted);margin:8px 0 0">Chaque réglage s'enregistre seul. « Valeur d'origine » = celle prévue par le portail ; « Rétablir » y revient. Les changements servent tout de suite aux programmes concernés. Chaque modification est notée au journal.</p>
   </div>
+  <div class="onglets" id="onglets" role="tablist" aria-label="Catégories de paramètres"></div>
+  <p class="note-onglet" id="noteOnglet"></p>
   <div id="liste"><p class="aide">Chargement…</p></div>
 </main>
 <div class="toast" id="toast" role="status"></div>
@@ -50,7 +55,8 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var P = [];
+  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.']], onglet = 'adresses';
+  try { var memo = sessionStorage.getItem('pa_onglet'); if (memo) onglet = memo; } catch (e) { /* mémoire indisponible */ }
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function frDate(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
@@ -60,10 +66,20 @@
     if (p.source === 'ancien') return 'Valeur de l\'ancien réglage du serveur (pas encore enregistrée ici)';
     return 'Valeur d\'origine';
   }
+  function dessinerOnglets(q) {
+    var z = $('onglets'); z.textContent = '';
+    ONGLETS.forEach(function (o) {
+      var n = P.filter(function (p) { return p.onglet === o[0] && (p.option ? p.champ === 'actif' : true); }).length, b = el('button', null, o[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(!q && onglet === o[0]));
+      b.appendChild(el('small', null, '· ' + n)); b.onclick = function () { onglet = o[0]; try { sessionStorage.setItem('pa_onglet', onglet); } catch (e) { /* tant pis */ } $('filtre').value = ''; dessiner(); }; z.appendChild(b);
+    });
+    var cur = ONGLETS.filter(function (o) { return o[0] === onglet; })[0]; $('noteOnglet').textContent = q ? 'Résultats de la recherche dans tous les onglets.' : (cur ? cur[2] : '');
+  }
   function dessiner() {
     var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [], options = {};
     function groupe(g) { if (!groupes[g]) { groupes[g] = []; ordre.push(g); } return groupes[g]; }
+    dessinerOnglets(q);
     P.forEach(function (p) {
+      if (!q && p.onglet !== onglet) return;
       var t = (p.groupe + ' ' + p.libelle + ' ' + p.aide + (p.option ? ' option accès rôle niveau' : '')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (q && t.indexOf(q) < 0) return;
       if (p.option) { var o = options[p.option]; if (!o) { o = options[p.option] = { option: true }; groupe(p.groupe).push(o); } o[p.champ] = p; return; }
       groupe(p.groupe).push({ p: p });
@@ -113,7 +129,7 @@
   function reglage(p) {
     var r = el('div', 'reglage'), id = 'r-' + p.id.replace(/\W/g, '_'); var l = el('label', 'l', p.libelle); l.setAttribute('for', id); r.appendChild(l); r.appendChild(el('p', 'aide', p.aide));
     var c = el('div', 'champ'), inp;
-    if (p.type === 'choix') { inp = el('select'); (p.choix || []).forEach(function (o) { var op = el('option', null, o === 'oui' ? 'Oui' : o === 'non' ? 'Non' : o); op.value = o; inp.appendChild(op); }); inp.style.cssText = 'padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark)'; }
+    if (p.type === 'choix') { inp = el('select'); (p.choix || []).forEach(function (o) { var op = el('option', null, o === 'oui' ? 'Oui' : o === 'non' ? 'Non' : (p.choixLibelles && p.choixLibelles[o]) || o); op.value = o; inp.appendChild(op); }); inp.style.cssText = 'padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark)'; }
     else if (p.type === 'emails') { inp = el('textarea'); inp.rows = Math.max(3, String(p.valeur).split('\n').length + 1); inp.spellcheck = false; }
     else { inp = el('input'); inp.type = p.type === 'nombre' ? 'text' : p.type === 'email' ? 'email' : 'url'; inp.className = p.type === 'nombre' ? 'nb' : 'long'; if (p.type === 'nombre') inp.inputMode = 'decimal'; }
     inp.id = id; inp.value = p.valeur; if (p.type !== 'choix') inp.maxLength = 3000; c.appendChild(inp);

@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-11-02-287",
+    "date": "2026-11-02",
+    "title": "Version 6.47.0 — Paramètres en onglets, prise en charge modifiable, visite périodique des véhicules",
+    "changes": [
+      "Paramètres : trois onglets (✉️ Adresses e-mail · 🔐 Options et accès · ⚙️ Réglages). Les adresses d'envoi du secrétariat et des boîtes de service (Construction, Électromécanique, Entretien, CPM, chef de division), utilisées par « Envoyer » dans prise en charge, repas à emporter, ordre de travail…, sont désormais réglables ; avec le consolidé, la réservation de vol et le rapport CPM, tout se change au même endroit. Chaque envoi reste déclenché au clic.",
+      "Prise en charge : boutons « ✏️ Modifier » (ouvre le document Google pour correction) et « 🔄 Mettre à jour le PDF » (refait le PDF avec le même nom). Accès réglable : par compte Google ou toute personne ayant le lien. Option de niveau d'accès dans Paramètres.",
+      "Prise en charge : une copie PDF est envoyée à la personne qui a créé le document (et à celle qui le modifie), après chaque génération et chaque mise à jour (option désactivable). Le créateur est maintenant noté pour tous les profils.",
+      "Prise en charge : suppression automatique de tous les documents générés, une fois par jour à l'heure choisie (heure d'Alger) ; désactivée par défaut, réglable dans Paramètres.",
+      "Suivi des véhicules : nouvelle colonne « Visite périodique » pour les véhicules Sonatrach — échéance saisie à la main, chauffeur, service, couleurs (rouge / orange / vert selon des seuils réglables dans Paramètres), bandeau d'alarmes cliquable, filtre, et bouton « 📧 Relancer » (e-mail au chauffeur, au service et aux copies, au clic seulement).",
+      "Suivi des véhicules : impression des états refaite (A4 paysage, en-tête et filtres rappelés, en-tête de tableau répété, pied de page) avec trois états : liste filtrée, visites périodiques, véhicules par entreprise avec sous-totaux ; export Excel mis en forme (véhicules + visites périodiques).",
+      "À redéployer : la passerelle (nouvelles actions et réglages) ; la visite périodique crée l'onglet « VisitesVH » à la première utilisation."
+    ]
+  },
+  {
     "id": "2026-11-02-286",
     "date": "2026-11-02",
     "title": "Version 6.46.0 — Statistiques : export Excel ; prise en charge : plus de doublons",

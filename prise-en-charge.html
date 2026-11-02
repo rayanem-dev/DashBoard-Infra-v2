@@ -572,7 +572,7 @@ window.google = { script: { run: (function () {
   function dateArriveeDuJour() { const a = document.getElementById('dateArrivee'); a.value = ymd(new Date()); a.dispatchEvent(new Event('change')); }
   dateArriveeDuJour();
 
-  let peutEnvoi = true, peutSuppr = true;   // options du secrétariat (page Paramètres) pour un prestataire : envoi au secrétariat, suppression de ses documents
+  let peutEnvoi = true, peutSuppr = true, peutDoc = false;   // options du secrétariat (page Paramètres) pour un prestataire : envoi au secrétariat, suppression de ses documents
   let servicesParPrestataire = {}, basesParPrestataire = {}, habitudesParPrestataire = {}, derniereHab = '', imputationFixe = false;   // imputationFixe : compte prestataire, l'imputation vient du contrat
   /** Le projet (prestataire) choisi donne son service dans le Suivi CPM : l'émputation se règle toute seule. */
   function appliquerService() {
@@ -592,6 +592,7 @@ window.google = { script: { run: (function () {
   }
   function remplirDropdowns(opts) {
     servicesParPrestataire = opts.servicesParPrestataire || servicesParPrestataire; imputationFixe = !!opts.imputation_fixe;
+    if (opts.peut_doc !== undefined && opts.peut_doc !== peutDoc) { peutDoc = !!opts.peut_doc; if (typeof chargerFichiers === 'function') chargerFichiers(); }
     if (opts.peut_envoi !== undefined || opts.peut_suppression !== undefined) { const e = opts.peut_envoi !== false, d = opts.peut_suppression !== false; if (e !== peutEnvoi || d !== peutSuppr) { peutEnvoi = e; peutSuppr = d; if (typeof chargerFichiers === 'function') chargerFichiers(); } }
     if (opts.sans_organisme) { document.getElementById('zoneOrg').hidden = true; document.getElementById('formOrg').hidden = true; }   // prestataire ou invité : pas d'ajout d'organisme hors Suivi CPM
     basesParPrestataire = opts.basesParPrestataire || basesParPrestataire; habitudesParPrestataire = opts.habitudesParPrestataire || habitudesParPrestataire;
@@ -740,9 +741,11 @@ window.google = { script: { run: (function () {
           '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
           '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">📄 Ouvrir</a>' +
           '<button type="button" class="impr" data-id="' + echapper(f.id) + '">🖨️ Imprimer</button>' +
+          (peutDoc ? '<button type="button" class="modif" data-id="' + echapper(f.id) + '" title="Ouvre le document Google pour le corriger">✏️ Modifier</button><button type="button" class="majpdf" data-id="' + echapper(f.id) + '" title="Refait le PDF à partir du document corrigé">🔄 Mettre à jour le PDF</button>' : '') +
           (peutEnvoi ? '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button>' : '') + '</div>' +
           (peutSuppr ? '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>' : '');
         row.querySelector('button.impr').onclick = function() { imprimerDirect(this, f.id); };
+        if (peutDoc) { row.querySelector('button.modif').onclick = function() { modifierDoc(this, f.id); }; row.querySelector('button.majpdf').onclick = function() { majPdf(this, f.id); }; }
         if (peutEnvoi) row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
         if (peutSuppr) row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
         div.appendChild(row);
@@ -769,6 +772,24 @@ window.google = { script: { run: (function () {
         setTimeout(function() { cadre.remove(); URL.revokeObjectURL(url); }, 180000);
       } catch (e) { afficherAlerteModale('Erreur', 'Impression impossible : ' + e.message, 'err'); }
     }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).lireFichierPourImpression(id);
+  }
+  /** Ouvre le document Google du PDF dans un nouvel onglet (la fenêtre est ouverte tout de suite pour ne pas être bloquée, puis dirigée vers le document). */
+  function modifierDoc(btn, id) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Ouverture…'; const w = window.open('', '_blank');
+    google.script.run.withSuccessHandler(function(res) {
+      btn.disabled = false; btn.textContent = txt;
+      if (!res || !res.success) { if (w) w.close(); afficherAlerteModale('Erreur', String((res && res.error) || 'Ouverture impossible'), 'err'); return; }
+      if (w) w.location.href = res.url; else window.open(res.url, '_blank');
+      afficherAlerteModale('Document ouvert', 'Corrigez le document dans Google Docs (l\'enregistrement est automatique), puis revenez ici et cliquez sur « 🔄 Mettre à jour le PDF » pour refaire le PDF à imprimer.', 'ok');
+    }).withFailureHandler(function(err) { if (w) w.close(); btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).ouvrirDocPourModification(id);
+  }
+  function majPdf(btn, id) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Mise à jour…';
+    google.script.run.withSuccessHandler(function(res) {
+      btn.disabled = false; btn.textContent = txt;
+      if (!res || !res.success) { afficherAlerteModale('Erreur', String((res && res.error) || 'Mise à jour impossible'), 'err'); return; }
+      afficherAlerteModale('PDF mis à jour', '✅ Le PDF a été refait à partir du document corrigé.' + (res.copie_envoyee ? ' Une copie vous a été envoyée par e-mail.' : ''), 'ok'); chargerFichiers();
+    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).actualiserPdfDepuisDoc(id);
   }
   function supprimerTout() {
     afficherConfirmationModale('Tout supprimer ?', 'Tous les documents de la liste ci-dessous (prises en charge, autorisations, macarons : PDF et documents) seront mis à la corbeille. Un prestataire ne supprime que les siens.', function() {
