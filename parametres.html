@@ -55,7 +55,7 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['fichiers', '📁 Fichiers', 'Fichiers de référence de la division chargés dans le portail : le fichier global amortissable, dans lequel l\'inventaire injecte les emplacements retrouvés à la clôture d\'un exercice.']], onglet = 'adresses';
+  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['fichiers', '📦 Inventaire', 'Exercices d\'inventaire (création, clôture, injection, suppression) et fichier global amortissable dans lequel l\'injection écrit les emplacements retrouvés. Les administrateurs de l\'inventaire se désignent dans l\'onglet Adresses e-mail.']], onglet = 'adresses';
   try { var memo = sessionStorage.getItem('pa_onglet'); if (memo) onglet = memo; } catch (e) { /* mémoire indisponible */ }
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -78,7 +78,7 @@
     var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [], options = {};
     function groupe(g) { if (!groupes[g]) { groupes[g] = []; ordre.push(g); } return groupes[g]; }
     dessinerOnglets(q);
-    if (!q && onglet === 'fichiers') { z.textContent = ''; z.appendChild(carteGlobal()); return; }
+    if (!q && onglet === 'fichiers') { z.textContent = ''; z.appendChild(carteExercices()); z.appendChild(carteGlobal()); return; }
     P.forEach(function (p) {
       if (!q && p.onglet !== onglet) return;
       var t = (p.groupe + ' ' + p.libelle + ' ' + p.aide + (p.option ? ' option accès rôle niveau' : '')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (q && t.indexOf(q) < 0) return;
@@ -98,6 +98,40 @@
   }
   /** Option à interrupteur et niveau d'accès : « Active » oui / non et, si elle en a un, le rôle minimum (ce rôle et ceux au-dessus). Un seul « Enregistrer » pour les deux. */
   /** Fichier global amortissable : chargé depuis un Excel, devient un Google Sheets du Drive ; l'inventaire y écrit à la clôture d'un exercice (une sauvegarde est faite avant chaque injection). */
+  /** Exercices d'inventaire : création, clôture / réouverture, injection dans le fichier global, suppression. La saisie et les corrections se font dans la page Inventaire. */
+  function carteExercices() {
+    var c = el('div', 'bloc'); c.appendChild(el('h3', null, '📅 Exercices d\'inventaire')); var liste = el('div'); c.appendChild(liste);
+    var nouveau = el('button', 'btn-p', '➕ Nouvel exercice'); nouveau.type = 'button'; c.appendChild(nouveau);
+    c.appendChild(el('p', 'aide', 'Après la création, ouvrez l\'application Inventaire (onglet Importer) pour charger le fichier des écarts. « Clôturer » : plus personne ne saisit. « Injecter » : écrit les emplacements retrouvés dans le fichier global (chargé ci-dessous) après un aperçu et une copie de sauvegarde.'));
+    function dialogue(titre, lignes, ok) {
+      var d = document.getElementById('dlg-inv'); if (!d) { d = el('dialog'); d.id = 'dlg-inv'; d.style.cssText = 'border:0;border-radius:14px;padding:18px;max-width:min(560px,94vw)'; document.body.appendChild(d); }
+      d.textContent = ''; d.appendChild(el('h3', null, titre)); lignes.forEach(function (t) { var p = el('p', 'aide', t); d.appendChild(p); });
+      var b = el('div', 'champ'), an = el('button', 'btn-s', 'Annuler'), go = el('button', 'btn-p', 'Injecter maintenant'); an.type = go.type = 'button'; an.onclick = function () { d.close(); }; go.onclick = function () { d.close(); ok(); }; b.appendChild(an); b.appendChild(go); d.appendChild(b); d.showModal();
+    }
+    function dessiner(r) {
+      liste.textContent = ''; if (!r.exercices.length) liste.appendChild(el('p', 'aide', 'Aucun exercice pour l\'instant.'));
+      r.exercices.forEach(function (x) {
+        var l = el('div', 'reglage'), t = el('label', 'l', 'Exercice ' + x.annee + ' — ' + (x.statut === 'ouvert' ? '🟢 ouvert à la saisie' : '🔒 clôturé') + ' · ' + x.articles + ' article(s)'); l.appendChild(t);
+        if (x.injecte_le) l.appendChild(el('p', 'aide', 'Injecté dans le fichier global le ' + frDate(x.injecte_le) + (x.injecte_par ? ' par ' + x.injecte_par : '')));
+        var b = el('div', 'champ'), clo = el('button', 'btn-s', x.statut === 'ouvert' ? '🔒 Clôturer' : '🔓 Rouvrir'), inj = el('button', 'btn-p', '🧬 Injecter dans le fichier global'), del = el('button', 'btn-s', '🗑 Supprimer'); del.style.color = '#B42318';
+        [clo, inj, del].forEach(function (k) { k.type = 'button'; b.appendChild(k); }); l.appendChild(b); liste.appendChild(l);
+        function erreur(e) { toast(e.message, true); }
+        clo.onclick = function () { if (window.confirm(x.statut === 'ouvert' ? 'Clôturer l\'exercice ' + x.annee + ' ? Plus personne ne pourra saisir.' : 'Rouvrir l\'exercice ' + x.annee + ' à la saisie ?')) Api.call('inv_cloturer', { annee: x.annee, rouvrir: x.statut !== 'ouvert' }).then(dessiner).catch(erreur); };
+        del.onclick = function () { var t2 = window.prompt('Supprimer DÉFINITIVEMENT l\'exercice ' + x.annee + ' (articles, positions, historique) ?\nFaites d\'abord une sauvegarde depuis l\'application Inventaire (onglet Exporter).\n\nRetapez l\'année pour confirmer :'); if (t2 !== null) Api.call('inv_supprimer', { annee: x.annee, confirmer: t2.trim() }).then(function (r2) { dessiner(r2); toast('Exercice supprimé'); }).catch(erreur); };
+        inj.onclick = function () {
+          if (x.statut === 'ouvert') { toast('Clôturez d\'abord l\'exercice : plus personne ne doit saisir pendant l\'injection.', true); return; }
+          Api.call('inv_injecter', { annee: x.annee, essai: true }).then(function (r2) {
+            var v = r2.resume; dialogue('🧬 Injection de l\'exercice ' + x.annee, ['Fichier global, feuille « ' + v.feuille + ' » :', '• ' + v.trouves + ' article(s) trouvé(s), dont ' + v.positions_a_mettre_a_jour + ' avec un nouvel emplacement à écrire (' + v.identiques + ' inchangé(s))', '• ' + v.nonTrouves + ' article(s) encore non trouvé(s) : marqués « Non trouvé », position intacte', '• ' + v.absents + ' article(s) absent(s) du fichier global (non ajoutés)' + (v.absents_liste.length ? ' : ' + v.absents_liste.slice(0, 8).join(', ') : ''), 'Une colonne « Inventaire ' + x.annee + ' » est ajoutée et une copie de sauvegarde est faite dans le Drive avant l\'écriture.'], function () {
+              Api.call('inv_injecter', { annee: x.annee }).then(function (r3) { toast('Injection terminée : ' + r3.resume.positions_a_mettre_a_jour + ' position(s) écrite(s)'); return Api.call('inv_exercices', {}).then(dessiner); }).catch(erreur);
+            });
+          }).catch(erreur);
+        };
+      });
+    }
+    nouveau.onclick = function () { var t = window.prompt('Année du nouvel exercice :', String(new Date().getFullYear())); if (t) Api.call('inv_creer', { annee: t.trim() }).then(function (r) { dessiner(r); toast('Exercice créé : ouvrez Inventaire › Importer pour charger le fichier des écarts'); }).catch(function (e) { toast(e.message, true); }); };
+    Api.call('inv_exercices', {}).then(dessiner).catch(function (e) { liste.textContent = e.message; });
+    return c;
+  }
   function carteGlobal() {
     var c = el('div', 'bloc'); c.appendChild(el('h3', null, '📦 Fichier global amortissable de la division')); c.style.fontSize = '13.5px';
     var etat = el('p', 'aide', 'Chargement…'); c.appendChild(etat);

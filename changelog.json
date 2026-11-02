@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-02-290",
+    "date": "2026-11-02",
+    "title": "Version 6.48.2 — Exercices d'inventaire gérés dans Paramètres",
+    "changes": [
+      "Paramètres › onglet « 📦 Inventaire » : création d'un exercice, clôture / réouverture, injection dans le fichier global (aperçu puis confirmation) et suppression, avec le chargement du fichier global. La page Inventaire ne garde que la saisie, l'import du fichier des écarts, les corrections et la sauvegarde."
+    ]
+  },
+  {
     "id": "2026-11-02-289",
     "date": "2026-11-02",
     "title": "Version 6.48.1 — Inventaire : qui a trouvé l'article",

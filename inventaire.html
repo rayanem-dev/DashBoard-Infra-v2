@@ -59,10 +59,6 @@
     <div class="barre">
       <label>Exercice <select id="x-ex" aria-label="Exercice"></select></label><span id="x-statut" class="pastille" style="background:#DCFCE7;color:#166534"></span>
       <button class="btn-s" id="x-act" type="button" title="Recharger les données partagées">↻ Actualiser</button>
-      <span id="x-admin" class="barre" hidden>
-        <button class="btn-s" id="x-new" type="button">➕ Nouvel exercice</button><button class="btn-s" id="x-clo" type="button">🔒 Clôturer</button>
-        <button class="btn-p" id="x-inj" type="button">🧬 Injecter dans le fichier global</button><button class="btn-s" id="x-del" type="button" style="color:#B91C1C">🗑 Supprimer l'exercice</button>
-      </span>
     </div>
     <p class="note" id="x-info"></p>
   </div>
@@ -183,9 +179,8 @@
   function barre() {
     var s = $('x-ex'); s.textContent = ''; exercices.forEach(function (x) { var o = el('option', null, x.annee + (x.statut === 'ouvert' ? '' : ' (clôturé)')); o.value = x.annee; s.appendChild(o); }); s.value = annee;
     var p = $('x-statut'); p.textContent = !exercice ? '' : exercice.statut === 'ouvert' ? '🟢 Ouvert à la saisie' : '🔒 Clôturé'; p.className = 'pastille';
-    $('x-admin').hidden = !admin; $('x-clo').textContent = exercice && exercice.statut !== 'ouvert' ? '🔓 Rouvrir' : '🔒 Clôturer'; $('x-clo').disabled = $('x-inj').disabled = $('x-del').disabled = !exercice;
-    $('x-info').textContent = !exercices.length ? (admin ? 'Aucun exercice : cliquez sur « Nouvel exercice », puis chargez le fichier des écarts (onglet Importer).' : 'Aucun exercice ouvert pour l\'instant : l\'administrateur de l\'inventaire doit en créer un.')
-      : 'Données partagées : ' + (admin ? 'vous êtes administrateur (chargement, corrections, sauvegarde, clôture, injection). ' : 'cherchez votre article et indiquez où il se trouve (« ✅ Trouvé »). ') + (exercice && exercice.injecte_le ? 'Injecté dans le fichier global le ' + exercice.injecte_le.slice(0, 10) + '.' : '');
+    $('x-info').textContent = !exercices.length ? (admin ? 'Aucun exercice : le secrétariat le crée dans Paramètres › 📦 Inventaire, puis vous chargez le fichier des écarts (onglet Importer).' : 'Aucun exercice ouvert pour l\'instant : l\'administrateur de l\'inventaire doit en créer un.')
+      : 'Données partagées : ' + (admin ? 'vous êtes administrateur (chargement du fichier des écarts, corrections, sauvegarde). La création, la clôture et l\'injection se font dans Paramètres › 📦 Inventaire. ' : 'cherchez votre article et indiquez où il se trouve (« ✅ Trouvé »). ') + (exercice && exercice.injecte_le ? 'Injecté dans le fichier global le ' + exercice.injecte_le.slice(0, 10) + '.' : '');
     Array.prototype.forEach.call($('onglets').children, function (b) { if (b.dataset.v === 'importer') b.hidden = !admin; });
     ['e-json', 'e-rest', 'e-eff'].forEach(function (id) { $(id).hidden = !admin; });
   }
@@ -419,33 +414,6 @@
   function majListe(r) { exercices = r.exercices; admin = r.admin; }
   $('x-ex').addEventListener('change', function () { choisirExercice(this.value); });
   $('x-act').addEventListener('click', function () { Api.call('inv_exercices', {}).then(majListe).then(function () { return recharger(false); }).then(function () { toast('Données actualisées.'); }); });
-  $('x-new').addEventListener('click', function () {
-    var t = window.prompt('Année du nouvel exercice (ex. ' + (new Date().getFullYear()) + ') :', String(new Date().getFullYear())); if (!t) return;
-    Api.call('inv_creer', { annee: t.trim() }).then(function (r) { majListe(r); return choisirExercice(t.trim()); }).then(function () { toast('Exercice créé : chargez maintenant le fichier des écarts (onglet Importer).'); basculer('importer'); }).catch(function (e) { toast('⚠ ' + e.message); });
-  });
-  $('x-clo').addEventListener('click', function () {
-    var rouvrir = exercice && exercice.statut !== 'ouvert';
-    if (!window.confirm(rouvrir ? 'Rouvrir l\'exercice ' + annee + ' à la saisie de tous ?' : 'Clôturer l\'exercice ' + annee + ' ? Plus personne ne pourra saisir (l\'administrateur peut encore corriger).')) return;
-    Api.call('inv_cloturer', { annee: annee, rouvrir: !!rouvrir }).then(function (r) { majListe(r); return recharger(false); }).then(function () { toast(rouvrir ? 'Exercice rouvert.' : 'Exercice clôturé.'); }).catch(function (e) { toast('⚠ ' + e.message); });
-  });
-  $('x-del').addEventListener('click', function () {
-    var t = window.prompt('Supprimer DÉFINITIVEMENT l\'exercice ' + annee + ' (articles, positions, historique) ?\nFaites d\'abord la sauvegarde (onglet Exporter).\n\nRetapez l\'année pour confirmer :'); if (t === null) return;
-    Api.call('inv_supprimer', { annee: annee, confirmer: t.trim() }).then(function (r) { majListe(r); annee = ''; exercice = null; etat = M.nouvelEtat(); return choisirExercice((exercices[0] || {}).annee || ''); }).then(function () { barre(); rendre(); toast('Exercice supprimé.'); }).catch(function (e) { toast('⚠ ' + e.message); });
-  });
-  $('x-inj').addEventListener('click', function () {
-    if (exercice && exercice.statut === 'ouvert') { toast('Clôturez d\'abord l\'exercice : plus personne ne doit saisir pendant l\'injection.'); return; }
-    $('x-inj').disabled = true;
-    Api.call('inv_injecter', { annee: annee, essai: true }).then(function (r) {
-      var x = r.resume, c = el('div');
-      c.appendChild(el('p', null, 'Fichier global, feuille « ' + x.feuille + ' » :'));
-      [x.trouves + ' article(s) trouvé(s), dont ' + x.positions_a_mettre_a_jour + ' avec un nouvel emplacement à écrire (' + x.identiques + ' inchangé(s))', x.nonTrouves + ' article(s) encore non trouvé(s) : marqués « Non trouvé », position intacte', x.absents + ' article(s) absent(s) du fichier global (non ajoutés)' + (x.absents_liste.length ? ' : ' + x.absents_liste.slice(0, 8).join(', ') + (x.absents > 8 ? '…' : '') : '')].forEach(function (t) { c.appendChild(el('div', 'note', '• ' + t)); });
-      x.exemples.slice(0, 6).forEach(function (m) { c.appendChild(el('div', 'ancienne', 'ligne ' + m.ligne + ' : « ' + m.de + ' » → « ' + m.vers + ' »')); });
-      c.appendChild(el('p', 'note', 'Une colonne « Inventaire ' + annee + ' » est ajoutée au fichier global et une copie de sauvegarde est faite dans le Drive avant l\'écriture.'));
-      fenetre('🧬 Injection dans le fichier global', c, [{ t: 'Annuler' }, { t: 'Injecter maintenant', p: 1, f: function () {
-        Api.call('inv_injecter', { annee: annee }).then(function (r2) { toast('Injection terminée : ' + r2.resume.positions_a_mettre_a_jour + ' position(s) écrite(s). Sauvegarde dans le Drive.'); return recharger(false).then(function () { return Api.call('inv_exercices', {}).then(majListe); }).then(barre); }).catch(function (e) { toast('⚠ ' + e.message); });
-      } }]);
-    }).catch(function (e) { toast('⚠ ' + e.message); }).then(function () { $('x-inj').disabled = false; });
-  });
   setInterval(function () { if (!occupe && !document.hidden && !$('dlg').open && annee) recharger(true); }, 90000);
   charger().then(function () { basculer('articles'); });
 })();
