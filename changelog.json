@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-02-295",
+    "date": "2026-11-02",
+    "title": "Version 6.49.4 — Prestataire : envoi des prises en charge par e-mail",
+    "changes": [
+      "Correction : le bouton « Envoyer par email » d'un prestataire affichait « Droits insuffisants » (la fenêtre de choix des destinataires était refusée aux comptes prestataires). Elle s'ouvre maintenant ; le prestataire n'y voit que « Secrétariat de la division » et l'envoi reste réservé aux documents qu'il a lui-même générés, tant que l'option est active dans Paramètres."
+    ]
+  },
+  {
     "id": "2026-11-02-294",
     "date": "2026-11-02",
     "title": "Version 6.49.3 — Prestataire : choisir ses entreprises dans « Modifier »",
