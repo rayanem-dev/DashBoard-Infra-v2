@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-02-292",
+    "date": "2026-11-02",
+    "title": "Version 6.49.1 — Macaron d'un contrat échu",
+    "changes": [
+      "Autorisation d'accès : quand le contrat est échu (accepté dans les délais de préparation de chantier ou de levée des réserves), le macaron suit la même règle que l'autorisation : fin du mois, ou fin du mois suivant à partir du 20 (case « valable 2 mois »). Un contrat non échu garde l'échéance du contrat sur le macaron."
+    ]
+  },
+  {
     "id": "2026-11-02-291",
     "date": "2026-11-02",
     "title": "Version 6.49.0 — Point de situation de l'inventaire dans le rapport journalier",
