@@ -81,7 +81,8 @@
       <button class="btn-s" id="m-suiv" type="button" aria-label="Mois suivant">▶</button>
       <button class="btn-s" id="b-calc" type="button" title="Recompte les agents pris en charge ce mois-là ; les lignes modifiées à la main ou supprimées ne sont pas touchées">🔄 Recalculer depuis les prises en charge</button>
       <button class="btn-s" id="b-ajout" type="button">+ Ajouter une ligne</button>
-      <button class="btn-p" id="b-imp" type="button" style="margin-inline-start:auto">🖨 Imprimer / PDF</button>
+      <button class="btn-s" id="b-xl" type="button" style="margin-inline-start:auto" title="Tableau du mois en fichier Excel mis en forme">⬇ Excel</button>
+      <button class="btn-p" id="b-imp" type="button">🖨 Imprimer / PDF</button>
     </div>
     <p class="note" id="info"></p>
   </div>
@@ -92,7 +93,8 @@
   <div class="bloc"><div class="barre">
     <label>Du <input type="date" id="r-du"></label><label>au <input type="date" id="r-au"></label>
     <button class="btn-s" id="r-30" type="button">30 derniers jours</button><button class="btn-s" id="r-mois" type="button">Ce mois</button><button class="btn-s" id="r-mprec" type="button">Mois précédent</button>
-    <button class="btn-p" id="r-imp" type="button" style="margin-inline-start:auto">🖨 Imprimer / PDF</button>
+    <button class="btn-s" id="r-xl" type="button" style="margin-inline-start:auto" title="Statistiques de la période en fichier Excel (synthèse, chantiers, jours, difficultés)">⬇ Excel</button>
+    <button class="btn-p" id="r-imp" type="button">🖨 Imprimer / PDF</button>
   </div><p class="note" id="r-info"></p></div>
   <div class="kpis" id="r-kpis"></div>
   <div class="bloc"><h2>Effectif déclaré et rapports reçus, jour par jour</h2><div id="graphe"></div></div>
@@ -177,7 +179,13 @@
     var n = window.prompt('Effectif présent :', '0'); if (n === null) return;
     Api.call('stats_st_ajouter', { mois: D.mois, prestataire: nom, effectif: n }).then(function (r) { D = r; dessiner(); toast('Ligne ajoutée'); }).catch(function (e) { toast(e.message, true); });
   };
-  $('b-imp').onclick = function () { window.print(); };   // impression en un clic ; « Enregistrer au format PDF » dans la fenêtre d'impression
+  $('b-imp').onclick = function () { window.print(); };
+  $('b-xl').onclick = function () {   // Excel mis en forme : le tableau du mois, tel qu'il est à l'écran
+    var tE = 0, tH = 0; D.lignes.forEach(function (l) { tE += Number(l.effectif) || 0; tH += Number(l.heures) || 0; });
+    ExportExcel.telecharger({ fichier: 'statistiques_soustraitants_' + D.mois + '.xlsx', titre: 'STATISTIQUES DES SOUS-TRAITANTS — ' + libMois(D.mois).toUpperCase(), sousTitre: 'Division Infrastructures · RNS · édité le ' + iso().split('-').reverse().join('/') + (moi ? ' par ' + moi : '') + ' · ' + D.heures_par_agent + ' h par agent et par mois',
+      feuilles: [{ nom: 'Sous-traitants', colonnes: [{ titre: 'N°', largeur: 6, centre: true }, { titre: 'Sous-traitant', largeur: 44 }, { titre: 'Effectif présent sur site', largeur: 18, nombre: true }, { titre: 'Heures travaillées / mois', largeur: 20, nombre: true }, { titre: 'Observation', largeur: 40, retour: true }],
+        lignes: D.lignes.map(function (l, i) { return [i + 1, l.prestataire, Number(l.effectif) || 0, Number(l.heures) || 0, l.observation]; }), total: ['', 'TOTAL', tE, tH, ''] }] }).catch(function (e) { toast('Export impossible : ' + e.message, true); });
+  };   // impression en un clic ; « Enregistrer au format PDF » dans la fenêtre d'impression
 
   // ----- Onglet « Rapports journaliers » : statistiques calculées par le serveur sur une période (même droits de lecture que la liste des rapports)
   var mode = 'st', R = null;
@@ -250,10 +258,22 @@
   $('r-mois').onclick = function () { periode(iso().slice(0, 8) + '01', iso()); };
   $('r-mprec').onclick = function () { var m = decaler(iso().slice(0, 7), -1), p = m.split('-'), fin = new Date(+p[0], +p[1], 0).getDate(); periode(m + '-01', m + '-' + ('0' + fin).slice(-2)); };
   $('r-imp').onclick = function () { window.print(); };
+  $('r-xl').onclick = function () {
+    if (!R) return toast('Aucune statistique à exporter.', true);
+    var k = R.kpi, nomCh = function (id) { var c = R.chantiers.filter(function (l) { return l.id === id; })[0]; return c ? c.nom : id; };
+    ExportExcel.telecharger({ fichier: 'statistiques_rapports_' + R.du + '_' + R.au + '.xlsx', titre: 'STATISTIQUES DES RAPPORTS JOURNALIERS — du ' + jjj(R.du) + ' au ' + jjj(R.au), sousTitre: 'Division Infrastructures · RNS · édité le ' + iso().split('-').reverse().join('/') + (moi ? ' par ' + moi : ''),
+      feuilles: [
+        { nom: 'Synthèse', colonnes: [{ titre: 'Indicateur', largeur: 38 }, { titre: 'Valeur', largeur: 18, centre: true }], lignes: [['Rapports reçus', k.rapports], ['Jours d\'activité', k.joursActifs], ['Taux de remise', pct(k.tauxRemise)], ['Chantiers ayant rapporté', k.chantiersAvecRapport + ' / ' + k.chantiersSuivis], ['Effectif moyen par jour', k.effectifMoyenJour == null ? '—' : k.effectifMoyenJour], ['Avancement moyen', k.avancementMoyen == null ? '—' : k.avancementMoyen + ' %'], ['Difficultés signalées', k.difficultes]] },
+        { nom: 'Chantiers', colonnes: [{ titre: 'N°', largeur: 6, centre: true }, { titre: 'Chantier', largeur: 40 }, { titre: 'Service', largeur: 22 }, { titre: 'Rapports', largeur: 11, nombre: true }, { titre: 'Remise', largeur: 10, centre: true }, { titre: 'Effectif moyen', largeur: 14, nombre: true }, { titre: 'Avancement', largeur: 16, centre: true }, { titre: 'Difficultés', largeur: 12, nombre: true }],
+          lignes: R.chantiers.map(function (l, i) { return [i + 1, l.nom, l.service, l.rapports, pct(l.taux), l.effectifMoyen == null ? '' : l.effectifMoyen, l.avFin == null ? '—' : (l.avDebut !== l.avFin ? l.avDebut + ' → ' : '') + l.avFin + ' %', l.difficultes || 0]; }) },
+        { nom: 'Jours', colonnes: [{ titre: 'Date', largeur: 14, centre: true }, { titre: 'Effectif', largeur: 12, nombre: true }, { titre: 'Rapports', largeur: 12, nombre: true }], lignes: R.jours.map(function (j) { return [jjj(j.date), j.effectif, j.rapports]; }) },
+        { nom: 'Difficultés', colonnes: [{ titre: 'Date', largeur: 14, centre: true }, { titre: 'Chantier', largeur: 40 }, { titre: 'Difficulté signalée', largeur: 70, retour: true }], lignes: R.difficultes.map(function (d) { return [jjj(d.date), nomCh(d.chantier), d.texte]; }) }] }).catch(function (e) { toast('Export impossible : ' + e.message, true); });
+  };
   if (window.Api) Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; if (mode === 'rap') { if (R) feuilleRap(); } else { apercu(0, 0); if (D.lignes) dessiner(); } }).catch(function () { /* rien */ });
   charger(decaler(iso().slice(0, 7), -0));
 })();
 </script>
+<script src="js/export-excel.js"></script>
 <script src="js/raccourcis.js"></script>
 <script src="js/pied.js"></script>
 </body>

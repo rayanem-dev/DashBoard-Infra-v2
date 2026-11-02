@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-02-286",
+    "date": "2026-11-02",
+    "title": "Version 6.46.0 — Statistiques : export Excel ; prise en charge : plus de doublons",
+    "changes": [
+      "Page Statistique sous-traitants : bouton « ⬇ Excel » (tableau du mois : sous-traitants, effectif, heures, observation et total) et, dans l'onglet Rapports journaliers, un Excel de la période (synthèse, chantiers, jours, difficultés), mis en forme.",
+      "L'ancienne carte « Statistiques Sous-traitants – Avril 2026 » (fichier Google Sheets) est masquée : la page Statistique sous-traitants la remplace (réversible depuis « Organiser le menu »).",
+      "Prise en charge : une personne saisie deux fois (même nom et prénom, accents et casse indifférents, ordre inversé compris) n'est prise en charge qu'une fois ; le message de fin liste les doublons ignorés. Les autorisations d'accès gardent leur règle : un chauffeur peut figurer sur plusieurs véhicules."
+    ]
+  },
+  {
     "id": "2026-11-02-285",
     "date": "2026-11-02",
     "title": "Version 6.45.1 — Badges : réglages par défaut enregistrés",
