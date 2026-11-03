@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-03-300",
+    "date": "2026-11-03",
+    "title": "Version 6.50.1 — Note d'intérim : fonctionne avec le modèle d'origine",
+    "changes": [
+      "Note d'intérim : le modèle d'origine de la division (sans zones {{…}}) est maintenant accepté : la valeur située après chaque libellé est remplacée en gardant la mise en page ; l'ancien « Édité par : HAMZA LOUCIF » devient la personne qui part en congé. Testé sur les 4 modèles fournis. Le modèle à zones {{…}} reste possible.",
+      "Nom de fichier : le nom de famille composé est gardé (« Note d'intérim BEN MESSAOUD 2026-10-27 » et non « BEN »)."
+    ]
+  },
+  {
     "id": "2026-11-03-299",
     "date": "2026-11-03",
     "title": "Version 6.50.0 — Application « Note d'intérim »",
