@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-03-298",
+    "date": "2026-11-03",
+    "title": "Version 6.49.7 — Jauge d'inventaire visible dans le PDF du consolidé",
+    "changes": [
+      "Rapport journalier consolidé : dans le PDF joint, la jauge d'avancement de l'inventaire était vide (le convertisseur PDF ignore les couleurs de fond des cellules). Elle est désormais faite de carrés colorés ■■■□□ dans le PDF ; le message garde la barre graphique."
+    ]
+  },
+  {
     "id": "2026-11-02-297",
     "date": "2026-11-02",
     "title": "Version 6.49.6 — Rapports : retour à la liste déroulante des chantiers",
