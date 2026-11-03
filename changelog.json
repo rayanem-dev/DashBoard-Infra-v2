@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-03-303",
+    "date": "2026-11-03",
+    "title": "Version 6.51.1 — Documents reçus au secrétariat : qui a envoyé",
+    "changes": [
+      "Encadré « Activité du secrétariat » : sous « Documents reçus au secrétariat », une ligne par expéditeur (nom et service pour le personnel de la division, nom et entreprise pour un prestataire) avec le type de document et l'entreprise concernée, lue dans le nom du fichier."
+    ]
+  },
+  {
     "id": "2026-11-03-302",
     "date": "2026-11-03",
     "title": "Version 6.51.0 — Rapport journalier : activité du secrétariat",
