@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-03-301",
+    "date": "2026-11-03",
+    "title": "Version 6.50.2 — Note d'intérim : plus de « Édité par »",
+    "changes": [
+      "Note d'intérim : la mention « Édité par » est retirée de la page et du PDF (le nom de l'ancien éditeur est effacé à la création ; le nouveau modèle fourni n'a plus de pied de page)."
+    ]
+  },
+  {
     "id": "2026-11-03-300",
     "date": "2026-11-03",
     "title": "Version 6.50.1 — Note d'intérim : fonctionne avec le modèle d'origine",

@@ -42,7 +42,7 @@
 <main class="ni">
   <div class="bloc">
     <h2>Établir une note d'intérim</h2>
-    <p class="note" id="n-info">La note reprend le format de la division. Le code fonction se déduit du poste ; « Édité par » est la personne qui part en congé.</p>
+    <p class="note" id="n-info">La note reprend le format de la division. Le code fonction se déduit du poste.</p>
     <div class="grille">
       <div class="plein"><label for="poste">Poste dont l'intérim est assuré</label><select id="poste"></select></div>
       <div class="titre-col">Durant l'absence de Monsieur (la personne qui part en congé)</div>
@@ -84,8 +84,8 @@
   function session(e) { if (e && (e.code === 'SESSION' || (!Api.token() && !Api.demo))) { Api.setToken(''); location.replace('connexion.html'); return true; } return false; }
   function personne(nom) { var k = cle(nom); return (O.personnes || []).filter(function (p) { return cle(p.nom) === k; })[0] || null; }
   function majApercu() {
-    var p = (O.postes || []).filter(function (x) { return x.cle === $('poste').value; })[0], a = $('a-nom').value.trim();
-    $('apercu').textContent = p ? 'Est chargé d\'assurer l\'intérim du poste : ' + p.libelle + ' · Code fonction : ' + p.code + ' · Édité par : ' + (a ? a.toUpperCase() : '…') : '';
+    var p = (O.postes || []).filter(function (x) { return x.cle === $('poste').value; })[0];
+    $('apercu').textContent = p ? 'Est chargé d\'assurer l\'intérim du poste : ' + p.libelle + ' · Code fonction : ' + p.code + '' : '';
   }
   function remplir(prefixe, nom) { var p = personne(nom); if (p) { $(prefixe + '-fonc').value = p.fonction || $(prefixe + '-fonc').value; } }
   $('a-nom').addEventListener('input', function () { remplir('a', this.value); majApercu(); }); $('i-nom').addEventListener('input', function () { remplir('i', this.value); });
