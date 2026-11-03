@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-11-03-299",
+    "date": "2026-11-03",
+    "title": "Version 6.50.0 — Application « Note d'intérim »",
+    "changes": [
+      "Nouvelle application « Note d'intérim » (séparée des documents administratifs) : poste, personne qui part en congé, personne qui assure l'intérim, dates ; le code fonction est appris des modèles de la division (Chef division 4300045000, Électromécanique 4300045100, Travaux entretien 4300045200, Construction 4300045300) et le format est celui du modèle.",
+      "« Édité par » du pied de page devient la personne qui part en congé (et non plus la personne du secrétariat).",
+      "En bas de chaque note : ✏️ Modifier (Google Docs), 🖨️ Imprimer (PDF refait au clic, corrections comprises), ✉️ Envoyer au secrétariat, 🗑 Supprimer.",
+      "Droits : chacun établit sa propre note ; le secrétariat et le chef de division voient et établissent toutes les notes ; jamais de prestataire.",
+      "À faire une fois : déposer docs/modeles/modele-note-interim.docx dans le Drive, l'ouvrir avec Google Docs et coller son identifiant dans Paramètres › Réglages › Note d'intérim ; redéployer la passerelle.",
+      "Aide de l'Inventaire mise à jour (données partagées, plus gardées dans le navigateur)."
+    ]
+  },
+  {
     "id": "2026-11-03-298",
     "date": "2026-11-03",
     "title": "Version 6.49.7 — Jauge d'inventaire visible dans le PDF du consolidé",

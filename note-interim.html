@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Note d'intérim – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .ni { max-width: 980px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { margin: 0 0 4px; font-size: 16px; } .note { font-size: 12.5px; color: var(--text-muted); margin: 0 0 10px; }
+  .grille { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; } .plein { grid-column: 1 / -1; }
+  @media (max-width: 700px) { .grille { grid-template-columns: 1fr; } }
+  .ni label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 0 0 3px; }
+  .ni input, .ni select { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .ni input[readonly] { background: rgba(0,0,0,.04); }
+  .titre-col { grid-column: 1 / -1; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--orange-main); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px; }
+  .apercu { background: #FFF4EA; border-left: 4px solid var(--orange-main); border-radius: 8px; padding: 9px 12px; font-size: 13.5px; margin-top: 10px; }
+  .btn-p { padding: 10px 18px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; } .btn-p:disabled { opacity: .55; cursor: default; }
+  .err { color: #B42318; font-weight: 700; font-size: 13px; margin: 8px 0 0; }
+  .ligne-note { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--border); }
+  .ligne-note:first-of-type { border-top: 0; } .ligne-note .infos { flex: 1 1 260px; min-width: 0; } .ligne-note .nom { font-weight: 800; font-size: 14px; } .ligne-note .sous { font-size: 12.5px; color: var(--text-muted); }
+  .ligne-note .actions { display: flex; gap: 6px; flex-wrap: wrap; } .ligne-note button { padding: 7px 11px; border-radius: 9px; border: 1.5px solid var(--border); background: var(--surface); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text-dark); }
+  .ligne-note button.sup { color: #B42318; } .ligne-note button:disabled { opacity: .55; cursor: default; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1F2937; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; max-width: 92vw; } .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">📝</div>
+    <div class="logo-text"><h1>Note d'intérim</h1><p>Établir, modifier, imprimer et envoyer au secrétariat</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="ni">
+  <div class="bloc">
+    <h2>Établir une note d'intérim</h2>
+    <p class="note" id="n-info">La note reprend le format de la division. Le code fonction se déduit du poste ; « Édité par » est la personne qui part en congé.</p>
+    <div class="grille">
+      <div class="plein"><label for="poste">Poste dont l'intérim est assuré</label><select id="poste"></select></div>
+      <div class="titre-col">Durant l'absence de Monsieur (la personne qui part en congé)</div>
+      <div class="plein"><label for="a-nom">Nom et prénom</label><input id="a-nom" list="l-pers" maxlength="120" autocomplete="off"></div>
+      <div><label for="a-fonc">Fonction</label><input id="a-fonc" maxlength="120"></div>
+      <div><label for="a-str">Structure</label><input id="a-str" maxlength="120" value="INFRASTRUCTURES"></div>
+      <div class="titre-col">Monsieur (la personne qui assure l'intérim)</div>
+      <div class="plein"><label for="i-nom">Nom et prénom</label><input id="i-nom" list="l-pers" maxlength="120" autocomplete="off" placeholder="Choisissez dans la liste ou écrivez le nom…"></div>
+      <div><label for="i-fonc">Fonction</label><input id="i-fonc" maxlength="120"></div>
+      <div><label for="i-str">Structure</label><input id="i-str" maxlength="120" value="INFRASTRUCTURES"></div>
+      <div class="titre-col">Période</div>
+      <div><label for="du">Du</label><input type="date" id="du"></div>
+      <div><label for="au">Au</label><input type="date" id="au"></div>
+      <div><label for="fait">Fait à Rhourde-Nouss le</label><input type="date" id="fait"></div>
+    </div>
+    <datalist id="l-pers"></datalist>
+    <div class="apercu" id="apercu"></div>
+    <p class="err" id="err"></p>
+    <div style="margin-top:12px"><button class="btn-p" id="b-gen" type="button">📝 Établir la note</button></div>
+  </div>
+  <div class="bloc">
+    <h2 id="t-liste">Mes notes</h2>
+    <p class="note">Après une correction dans Google Docs (✏️ Modifier), « 🖨️ Imprimer » et « ✉️ Envoyer au secrétariat » utilisent toujours la dernière version.</p>
+    <div id="liste"><p class="note">Chargement…</p></div>
+  </div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var O = null;
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove('on'); }, 4200); }
+  function fr(i) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(i || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : (i || ''); }
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function cle(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').sort().join(' '); }
+  function session(e) { if (e && (e.code === 'SESSION' || (!Api.token() && !Api.demo))) { Api.setToken(''); location.replace('connexion.html'); return true; } return false; }
+  function personne(nom) { var k = cle(nom); return (O.personnes || []).filter(function (p) { return cle(p.nom) === k; })[0] || null; }
+  function majApercu() {
+    var p = (O.postes || []).filter(function (x) { return x.cle === $('poste').value; })[0], a = $('a-nom').value.trim();
+    $('apercu').textContent = p ? 'Est chargé d\'assurer l\'intérim du poste : ' + p.libelle + ' · Code fonction : ' + p.code + ' · Édité par : ' + (a ? a.toUpperCase() : '…') : '';
+  }
+  function remplir(prefixe, nom) { var p = personne(nom); if (p) { $(prefixe + '-fonc').value = p.fonction || $(prefixe + '-fonc').value; } }
+  $('a-nom').addEventListener('input', function () { remplir('a', this.value); majApercu(); }); $('i-nom').addEventListener('input', function () { remplir('i', this.value); });
+  $('poste').addEventListener('change', majApercu);
+  function charger() {
+    return Api.call('ni_options', {}).then(function (o) {
+      O = o; var s = $('poste'); s.textContent = ''; var v0 = el('option', null, 'Choisir le poste…'); v0.value = ''; s.appendChild(v0); o.postes.forEach(function (p) { var x = el('option', null, p.libelle + ' (' + p.code + ')'); x.value = p.cle; s.appendChild(x); });
+      var dl = $('l-pers'); dl.textContent = ''; o.personnes.forEach(function (p) { var x = el('option'); x.value = p.nom; x.label = p.fonction; dl.appendChild(x); });
+      $('a-nom').value = o.moi.nom; $('a-fonc').value = o.moi.fonction || ''; $('a-nom').readOnly = o.niveau < 2; s.value = o.poste_moi || '';
+      $('fait').value = iso(new Date()); $('t-liste').textContent = o.niveau >= 2 ? 'Toutes les notes' : 'Mes notes';
+      if (!o.modele) $('n-info').textContent = '⚠ Le modèle de la note n\'est pas encore chargé : le secrétariat doit le déposer dans Paramètres › Réglages › Note d\'intérim.';
+      majApercu(); return liste();
+    }).catch(function (e) { if (!session(e)) { if (e.code === 'DROITS') document.querySelector('main').textContent = e.message; else toast('⚠ ' + e.message); } });
+  }
+  function liste() {
+    return Api.call('ni_liste', {}).then(function (r) {
+      var z = $('liste'); z.textContent = ''; if (!r.notes.length) { z.appendChild(el('p', 'note', 'Aucune note pour l\'instant.')); return; }
+      r.notes.forEach(function (n) {
+        var l = el('div', 'ligne-note'), i = el('div', 'infos'); i.appendChild(el('div', 'nom', n.nom)); i.appendChild(el('div', 'sous', n.interim + ' assure l\'intérim de ' + n.absent + ' · du ' + fr(n.du) + ' au ' + fr(n.au) + (r.niveau >= 2 ? ' · établie par ' + n.cree_par : ''))); l.appendChild(i);
+        var a = el('div', 'actions');
+        function bouton(txt, cls, f) { var b = el('button', cls, txt); b.type = 'button'; b.onclick = function () { var t = b.textContent; b.disabled = true; b.textContent = '⏳'; f(b).catch(function (e) { if (!session(e)) toast('⚠ ' + e.message); }).then(function () { b.disabled = false; b.textContent = t; }); }; a.appendChild(b); }
+        bouton('✏️ Modifier', '', function () { var w = window.open('', '_blank'); return Api.call('ni_ouvrir', { id: n.id }).then(function (r2) { if (w) w.location.href = r2.url; else window.open(r2.url, '_blank'); toast('Corrigez dans Google Docs (enregistrement automatique), puis imprimez ou envoyez : la dernière version est utilisée.'); }).catch(function (e) { if (w) w.close(); throw e; }); });
+        bouton('🖨️ Imprimer', '', function () { return Api.call('ni_imprimer', { id: n.id }).then(function (r2) { imprimer(r2.base64); }); });
+        bouton('✉️ Envoyer au secrétariat', '', function () { if (!window.confirm('Envoyer cette note d\'intérim au secrétariat ?')) return Promise.resolve(); return Api.call('ni_envoyer', { id: n.id }).then(function (r2) { toast('✅ Envoyée à : ' + (r2.destinataires || []).join(', ')); }); });
+        bouton('🗑', 'sup', function () { if (!window.confirm('Supprimer cette note (document Google et PDF) ?')) return Promise.resolve(); return Api.call('ni_supprimer', { id: n.id }).then(function () { toast('Note supprimée'); return liste(); }); });
+        l.appendChild(a); z.appendChild(l);
+      });
+    }).catch(function (e) { if (!session(e)) toast('⚠ ' + e.message); });
+  }
+  /** Impression en un clic : la fenêtre d'impression du navigateur s'ouvre directement sur le PDF. */
+  function imprimer(base64) {
+    try {
+      var bin = atob(base64), o = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i);
+      var url = URL.createObjectURL(new Blob([o], { type: 'application/pdf' })), c = document.createElement('iframe');
+      c.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+      c.onload = function () { try { c.contentWindow.focus(); c.contentWindow.print(); } catch (e) { window.open(url, '_blank'); } };
+      c.src = url; document.body.appendChild(c); setTimeout(function () { c.remove(); URL.revokeObjectURL(url); }, 180000);
+    } catch (e) { toast('Impression impossible : ' + e.message); }
+  }
+  $('b-gen').addEventListener('click', function () {
+    $('err').textContent = ''; var b = $('b-gen'); b.disabled = true;
+    Api.call('ni_generer', { note: { poste: $('poste').value, absent_nom: $('a-nom').value, absent_fonction: $('a-fonc').value, absent_structure: $('a-str').value, interim_nom: $('i-nom').value, interim_fonction: $('i-fonc').value, interim_structure: $('i-str').value, du: $('du').value, au: $('au').value, date_fait: $('fait').value } })
+      .then(function (r) { toast('✅ Note établie : ' + r.note.nom); $('i-nom').value = ''; $('i-fonc').value = ''; $('du').value = ''; $('au').value = ''; return liste(); })
+      .catch(function (e) { if (!session(e)) $('err').textContent = e.message; }).then(function () { b.disabled = false; });
+  });
+  charger();
+})();
+</script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

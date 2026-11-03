@@ -64,6 +64,7 @@
         { titre: 'Ordre de travail', description: 'Ordre de travail de la division, imprimable en un clic, avec historique.', emoji: '🛠', url: 'ordre-travail.html' },
         { titre: 'Prise en charge hôtel', description: 'Demande de prise en charge à l\'hôtel pour un agent en mission, imprimable en un clic, avec historique.', emoji: '🏨', url: 'hotel-prise-en-charge.html' },
         { titre: 'Inventaire', description: 'Positions des articles de l\'inventaire : import, historique, fusion de positions, statistiques et export Excel.', emoji: '📦', url: 'inventaire.html' },
+        { titre: 'Note d\'intérim', description: 'Établissez votre note d\'intérim avant un congé : modifier, imprimer, envoyer au secrétariat.', emoji: '📝', url: 'note-interim.html' },
         { titre: 'Dotation EPI et vestes en cuir : mes tailles', description: 'Vos tailles (haut, pantalon, chaussures, gants, veste en cuir) pour la dotation en EPI.', emoji: '🦺', url: 'epi.html' },
         { titre: 'Prises en Charge + Autorisation d\'Accès', description: 'Prises en charge et autorisations d\'accès des prestataires.', emoji: 'img/icones/pec-96.png', url: 'prise-en-charge.html' },
         { titre: 'Affectation Véhicule – Division Infra', description: 'Recherche rapide des véhicules par personne, immatriculation, entreprise ou date d\'autorisation.', emoji: '🚗', url: 'vehicules.html' },
@@ -335,6 +336,18 @@
           if (p.essai) return { essai: true, resume: resu }; if (e4.statut === 'ouvert') throw erreur('Clôturez d\'abord l\'exercice'); e4.injecte_le = new Date().toISOString(); sv(); return { essai: false, resume: resu, sauvegarde: '#', url: '#' }; }
         if (action === 'inv_global_lire') { adm(); return { charge: true, url: '#demo', nom: 'Fichier global amortissable 2026.xlsx', charge_le: '2026-10-28T09:30:00Z', charge_par: 'Madani Rayane' }; }
         return { suite: 'demo', charge: true, url: '#demo', nom: p.nom, charge_le: new Date().toISOString(), charge_par: demoState.user.nom }; }
+      case 'ni_options': case 'ni_liste': case 'ni_generer': case 'ni_ouvrir': case 'ni_imprimer': case 'ni_envoyer': case 'ni_supprimer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        var cn = 'infra_v2_demo_ni', nl; try { nl = JSON.parse(sessionStorage.getItem(cn) || '[]'); } catch (e) { nl = []; }
+        var POSTES_NI = [{ cle: 'division', libelle: 'CHEF DIVISION INFRASTRUCTURE', code: '4300045000' }, { cle: 'electromecanique', libelle: 'CHEF SERVICE ELECTROMECANIQUE', code: '4300045100' }, { cle: 'entretien', libelle: 'CHEF SERVICE TRAVAUX ENTRETIEN', code: '4300045200' }, { cle: 'construction', libelle: 'CHEF SERVICE CONSTRUCTION', code: '4300045300' }];
+        var niv = demoState.user.role === 'chef_division' || demoState.user.role === 'secretariat' ? 2 : 1;
+        if (action === 'ni_options') return { niveau: niv, moi: { nom: demoState.user.nom, fonction: 'Chef Service Construction', service: demoState.user.service || '' }, poste_moi: 'construction', postes: POSTES_NI, modele: true, personnes: DEMO_USERS.filter(function (x) { return x.role !== 'prestataire'; }).map(function (x) { return { nom: x.nom, fonction: x.fonction || '', service: x.service || '' }; }) };
+        if (action === 'ni_liste') return { niveau: niv, notes: nl.slice().reverse() };
+        if (action === 'ni_generer') { var n = p.note || {}; if (!n.poste) throw erreur('Choisissez le poste dont l\'intérim est assuré'); if (!n.interim_nom) throw erreur('Indiquez la personne qui assure l\'intérim'); if (!n.du || !n.au) throw erreur('Dates « Du » et « Au » : AAAA-MM-JJ'); if (n.au < n.du) throw erreur('La date « Au » doit être égale ou postérieure à la date « Du »');
+          var nom = 'Note d\'intérim ' + String(n.absent_nom || '').split(' ')[0].toUpperCase() + ' ' + n.du, rec = { id: 'n' + (nl.length + 1), nom: nom, absent: n.absent_nom, interim: n.interim_nom, poste: n.poste, du: n.du, au: n.au, cree_par: demoState.user.nom, cree_le: new Date().toISOString() }; nl.push(rec); try { sessionStorage.setItem(cn, JSON.stringify(nl)); } catch (e) { /* rien */ } return { note: rec }; }
+        if (action === 'ni_ouvrir') return { url: 'about:blank#demo-note', nom: 'Note de démonstration' };
+        if (action === 'ni_imprimer') return { nom: 'Note de démonstration', base64: '' };
+        if (action === 'ni_envoyer') return { destinataires: ['Secrétariat de la division'] };
+        nl = nl.filter(function (x) { return x.id !== p.id; }); try { sessionStorage.setItem(cn, JSON.stringify(nl)); } catch (e) { /* rien */ } return { ok: true }; }
       case 'transport_telephone': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ecrit: true, tel: String(p.tel || '').replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1 ') }; }
       case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { remplace: ['DURAND Marc', 'MARTIN Hugo', 'BERNARD Louis'], personnes: [
