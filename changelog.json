@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-03-302",
+    "date": "2026-11-03",
+    "title": "Version 6.51.0 — Rapport journalier : activité du secrétariat",
+    "changes": [
+      "Rapport journalier consolidé : encadré « 🗂️ Activité du secrétariat — aujourd'hui », envoyé au secrétariat seulement (e-mail et PDF) : prises en charge établies avec le détail par entreprise, autorisations d'accès (demandes et véhicules), documents reçus au secrétariat (prestataires / division, par type). Toujours affiché, même à zéro.",
+      "Paramètres › Options, groupe « Rapport journalier — secrétariat » : un interrupteur pour l'encadré et un par ligne.",
+      "À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-03-301",
     "date": "2026-11-03",
     "title": "Version 6.50.2 — Note d'intérim : plus de « Édité par »",
