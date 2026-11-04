@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-05-308",
+    "date": "2026-11-05",
+    "title": "Version 6.53.0 — Inventaire : photo facultative d'un article trouvé",
+    "changes": [
+      "Inventaire : en marquant un article « Trouvé : où ? », on peut joindre une photo (facultatif, jamais obligatoire) prise avec l'appareil du téléphone ; elle est réduite dans le navigateur (JPEG, 1000 px) puis rangée dans le Drive du portail (dossier « Inventaire — photos / année »). Une icône 📷 apparaît sur la ligne de l'article ; un clic la rouvre, et on peut en ajouter ou remplacer une plus tard. L'administrateur peut la retirer. Les photos sont supprimées avec l'exercice.",
+      "À redéployer : la passerelle (nouvel onglet InvPhotos créé à la première utilisation)."
+    ]
+  },
+  {
     "id": "2026-11-04-307",
     "date": "2026-11-04",
     "title": "Version 6.52.1 — Point de situation de l'inventaire sur l'accueil, pour tous",
