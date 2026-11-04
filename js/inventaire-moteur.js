@@ -247,9 +247,12 @@
     });
     return Object.keys(g).map(function (v) { return g[v]; }).sort(function (p, q) { return q.n - p.n || (p.valeur < q.valeur ? -1 : 1); });
   }
-  function resume(etat) {
-    var arts = Object.keys(etat.articles).map(function (k) { return etat.articles[k]; });
-    return { articles: arts.length, positions: Object.keys(etat.positions).length, historique: etat.historique.length, nonTrouves: arts.filter(function (a) { return Object.keys(a.nonTrouve || {}).length; }).length,
+  /** Chiffres de l'exercice. annee (facultatif) : permet de compter les articles trouvés = « non trouvé AAAA » levé (même règle que le rapport journalier) ; les articles venus du seul fichier global n'en font pas partie. */
+  function resume(etat, annee) {
+    var arts = Object.keys(etat.articles).map(function (k) { return etat.articles[k]; }), glob = {}, ret = {};
+    etat.historique.forEach(function (h) { if (h.source === 'Article retrouvé' && !h.annule) ret[invCle(h.inv)] = 1; else if (/^Import positions/i.test(String(h.source || '')) && h.motif === 'Article créé') glob[invCle(h.inv)] = 1; });
+    var trouves = annee ? arts.filter(function (a) { return !(a.nonTrouve && a.nonTrouve[annee]) && (ret[invCle(a.inv)] || !glob[invCle(a.inv)]); }).length : 0;
+    return { articles: arts.length, positions: Object.keys(etat.positions).length, historique: etat.historique.length, nonTrouves: arts.filter(function (a) { return Object.keys(a.nonTrouve || {}).length; }).length, trouves: trouves,
       valeur: arts.reduce(function (s, a) { return s + (Number(a.valeur) || 0); }, 0) };
   }
 

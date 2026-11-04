@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-04-305",
+    "date": "2026-11-04",
+    "title": "Version 6.51.3 — Inventaire : case « Trouvés »",
+    "changes": [
+      "Inventaire : nouvelle case « Trouvés » (nombre et pourcentage) à côté de « Non trouvés », avec la même règle de calcul que le rapport journalier."
+    ]
+  },
+  {
     "id": "2026-11-04-304",
     "date": "2026-11-04",
     "title": "Version 6.51.2 — Inventaire : articles trouvés à la même position bien comptés",

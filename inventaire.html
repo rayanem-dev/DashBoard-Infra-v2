@@ -199,8 +199,8 @@
 
   /* ---------- en-tête chiffres ---------- */
   function kpis() {
-    var r = M.resume(etat), z = $('kpis'); z.textContent = '';
-    [['Articles', nf(r.articles)], ['Positions', nf(r.positions)], ['Non trouvés', nf(r.nonTrouves)], ['Valeur totale (DA)', nf(r.valeur)], ['Lignes d\'historique', nf(r.historique)]].forEach(function (k) { var d = el('div', 'kpi'); d.appendChild(el('span', null, k[0])); d.appendChild(el('b', null, k[1])); z.appendChild(d); });
+    var r = M.resume(etat, annee), z = $('kpis'); z.textContent = '';
+    [['Articles', nf(r.articles)], ['Positions', nf(r.positions)], ['Trouvés', nf(r.trouves) + (r.trouves + r.nonTrouves ? ' (' + Math.round(1000 * r.trouves / (r.trouves + r.nonTrouves)) / 10 + ' %)' : '')], ['Non trouvés', nf(r.nonTrouves)], ['Valeur totale (DA)', nf(r.valeur)], ['Lignes d\'historique', nf(r.historique)]].forEach(function (k) { var d = el('div', 'kpi'); d.appendChild(el('span', null, k[0])); d.appendChild(el('b', null, k[1])); z.appendChild(d); });
   }
 
   /* ---------- articles ---------- */
