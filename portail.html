@@ -68,6 +68,7 @@
         <button class="btn-s" id="mes-apps-plus" type="button" hidden></button>
       </aside>
     </div>
+    <div class="alerte" id="alerte-inv" hidden style="display:block;color:var(--text-dark)"><div style="font-weight:800" id="inv-titre"></div><div style="height:12px;border-radius:6px;background:#E5E7EB;margin:7px 0 5px;overflow:hidden"><div id="inv-barre" style="height:100%;background:#2E9E5B;width:0"></div></div><div id="inv-texte" style="font-size:13px"></div><div id="inv-resp" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div><a class="btn-s" id="inv-lien" href="inventaire.html" hidden style="margin-top:6px;display:inline-block">Ouvrir l'inventaire</a></div>
     <div class="alerte" id="alerte-epi" hidden><span>🦺 Vos tailles de dotation EPI sont incomplètes : complétez-les (2 minutes).</span><a class="btn-s" href="epi.html">Renseigner mes tailles</a></div>
     <div class="alerte" id="alerte-vis" hidden><span>🔔 Un collègue vous a choisi comme vis-à-vis : confirmez ou refusez dans votre profil.</span><a class="btn-s" href="profil.html#coord">Répondre</a></div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
@@ -276,6 +277,11 @@
     mesApps(r.menu); synchroUsage(r.menu);
     Synthese.monterModifs($('syn-modifs')); // demandes de modification de planning à décider
     $('alerte-mdp').hidden = !r.mdp_par_defaut; $('alerte-vis').hidden = !(r.vis_propositions > 0); $('alerte-epi').hidden = !(r.epi_manquants > 0);
+    (function () { var z = r.inventaire, ok = !!(z && z.total); $('alerte-inv').hidden = !ok; if (!ok) return;
+      var pc = Math.max(0, Math.min(100, Number(z.pct) || 0)); $('inv-titre').textContent = '📦 Point de situation — Inventaire ' + z.annee + ' (opération en cours)'; $('inv-barre').style.width = pc + '%';
+      $('inv-texte').textContent = z.trouves + ' article(s) retrouvé(s) sur ' + z.total + ' (' + String(pc).replace('.', ',') + ' %) · ' + z.restants + ' restant(s) à retrouver · ' + (z.ce_jour || 0) + ' retrouvé(s) ce jour';
+      $('inv-resp').textContent = z.responsable ? 'Responsable de l\'opération : ' + z.responsable + ', coordinateur principal' : '';
+      var acces = (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return /inventaire\.html/.test(a.url || ''); }); }); $('inv-lien').hidden = !acces; })();
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
     var groupes = window.Rubriques ? Rubriques.regrouper(r.menu, r.rubriques).filter(function (g) { return g.apps.length; }) : r.menu;
     var zone = $('modules'); zone.textContent = ''; outilsAccueil(groupes);

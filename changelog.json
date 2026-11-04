@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-04-307",
+    "date": "2026-11-04",
+    "title": "Version 6.52.1 — Point de situation de l'inventaire sur l'accueil, pour tous",
+    "changes": [
+      "Accueil du portail : le « 📦 Point de situation — Inventaire (opération en cours) » (jauge, retrouvés / restants, retrouvés ce jour, responsable de l'opération) s'affiche pour tous les comptes (hors prestataires) tant qu'un exercice est ouvert : il apparaît tout seul à l'ouverture d'un exercice et disparaît à sa clôture.",
+      "Paramètres › Options, groupe Inventaire : interrupteur « Point de situation de l'inventaire sur l'accueil du portail, pour tous » (à côté de celui du rapport journalier).",
+      "À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-04-306",
     "date": "2026-11-04",
     "title": "Version 6.52.0 — Fiche de dépôt des déchets industriels",
