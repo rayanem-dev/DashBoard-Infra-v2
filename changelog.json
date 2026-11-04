@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-04-304",
+    "date": "2026-11-04",
+    "title": "Version 6.51.2 — Inventaire : articles trouvés à la même position bien comptés",
+    "changes": [
+      "Correction du point de situation de l'inventaire (rapport journalier) : un article marqué « trouvé » à sa position actuelle (donc sans changement de position) passait en « sans écart » mais n'était pas compté comme trouvé. Il l'est désormais, y compris ceux déjà saisis ; seuls les articles venus d'un import du fichier global (jamais marqués non trouvés) restent en dehors du décompte.",
+      "Inventaire : « trouvé à la même position » garde maintenant une ligne d'historique (qui, quand), donc « Trouvé par … le … » s'affiche aussi pour ces articles et ils comptent dans « retrouvés ce jour »."
+    ]
+  },
+  {
     "id": "2026-11-03-303",
     "date": "2026-11-03",
     "title": "Version 6.51.1 — Documents reçus au secrétariat : qui a envoyé",

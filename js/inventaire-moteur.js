@@ -226,8 +226,13 @@
   }
   /** Marque l'article trouvé : il prend la position indiquée (historique) et n'est plus « non trouvé » pour l'année. */
   function marquerTrouve(etat, inv, position, annee, date) {
-    var e = deplacer(etat, inv, position, 'Trouvé à cette position' + (annee ? ' (écart ' + annee + ')' : ''), date, 'Article retrouvé');
-    var a = e.articles[invCle(inv)]; if (a && a.nonTrouve && annee) delete a.nonTrouve[annee]; return e;
+    var avant = etat.historique.length, e = deplacer(etat, inv, position, 'Trouvé à cette position' + (annee ? ' (écart ' + annee + ')' : ''), date, 'Article retrouvé');
+    var a = e.articles[invCle(inv)];
+    if (a && e.historique.length === avant) {   // trouvé à la MÊME position : on garde quand même la trace (qui l'a retrouvé, quand), sans « ancienne position »
+      var d = date || new Date().toISOString(); a.maj = d;
+      e.historique.push({ id: idLigne(d), date: d, inv: a.inv, de: '', vers: a.position, source: 'Article retrouvé', motif: 'Trouvé à la même position' + (annee ? ' (écart ' + annee + ')' : '') });
+    }
+    if (a && a.nonTrouve && annee) delete a.nonTrouve[annee]; return e;
   }
 
   // ---------- statistiques ----------
