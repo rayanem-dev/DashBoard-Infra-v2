@@ -64,6 +64,7 @@
         { titre: 'Ordre de travail', description: 'Ordre de travail de la division, imprimable en un clic, avec historique.', emoji: '🛠', url: 'ordre-travail.html' },
         { titre: 'Prise en charge hôtel', description: 'Demande de prise en charge à l\'hôtel pour un agent en mission, imprimable en un clic, avec historique.', emoji: '🏨', url: 'hotel-prise-en-charge.html' },
         { titre: 'Inventaire', description: 'Positions des articles de l\'inventaire : import, historique, fusion de positions, statistiques et export Excel.', emoji: '📦', url: 'inventaire.html' },
+        { titre: 'Fiche de dépôt des déchets industriels', description: 'Fiche de la cellule Environnement à remplir avant un dépôt de déchets : imprimer ou envoyer au secrétariat.', emoji: '♻️', url: 'fiche-dechets.html' },
         { titre: 'Note d\'intérim', description: 'Établissez votre note d\'intérim avant un congé : modifier, imprimer, envoyer au secrétariat.', emoji: '📝', url: 'note-interim.html' },
         { titre: 'Dotation EPI et vestes en cuir : mes tailles', description: 'Vos tailles (haut, pantalon, chaussures, gants, veste en cuir) pour la dotation en EPI.', emoji: '🦺', url: 'epi.html' },
         { titre: 'Prises en Charge + Autorisation d\'Accès', description: 'Prises en charge et autorisations d\'accès des prestataires.', emoji: 'img/icones/pec-96.png', url: 'prise-en-charge.html' },

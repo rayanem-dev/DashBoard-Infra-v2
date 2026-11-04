@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fiche de dépôt des déchets industriels – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .fd { max-width: 900px; margin: 0 auto; padding: 16px 16px 40px; }
+  .barre-act { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; } .barre-act p { margin: 0; flex: 1 1 260px; font-size: 12.5px; color: var(--text-muted); }
+  .btn-p { padding: 10px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-s2 { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  /* La fiche : reproduction de la fiche papier de la cellule Environnement (A4 portrait) */
+  .fiche-zone { overflow-x: auto; }
+  #feuille { width: 794px; margin: 0 auto; background: #fff; color: #111; font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif; padding: 28px 34px 30px; box-sizing: border-box; box-shadow: var(--shadow-card); }
+  #feuille .entete { display: flex; gap: 12px; align-items: flex-start; font-style: italic; font-size: 13.5px; line-height: 1.45; margin-bottom: 14px; } #feuille .entete img { width: 70px; height: auto; }
+  #feuille table.cadre { width: 100%; border-collapse: collapse; border: 2.2px solid #111; }
+  #feuille td, #feuille th { border: 1.3px solid #111; padding: 6px 10px; vertical-align: middle; font-size: 15px; }
+  #feuille .titre { text-align: center; font-size: 27px; font-weight: 800; font-style: italic; padding: 18px 10px; }
+  #feuille .types { font-style: italic; font-size: 12.5px; font-weight: 600; line-height: 1.7; } #feuille .types small { font-weight: 400; }
+  #feuille .types label { display: inline !important; margin: 0 14px 0 0 !important; white-space: nowrap; } #feuille .types small { display: inline !important; } #feuille .types input[type=checkbox] { display: inline-block !important; width: 22px !important; height: 14px !important; min-width: 0; vertical-align: middle; accent-color: #111; margin: 0 0 0 3px !important; padding: 0 !important; }
+  #feuille .gras { font-weight: 800; } #feuille .reserve { font-style: italic; font-size: 12px; display: block; }
+  #feuille input[type=text], #feuille input[type=date], #feuille textarea { border: 0; border-bottom: 1px dotted #888; background: transparent; font: inherit; color: #111; padding: 2px 3px; box-sizing: border-box; outline: none; border-radius: 0; }
+  #feuille input[type=text]:focus, #feuille input[type=date]:focus, #feuille textarea:focus { background: #FFF4EA; border-bottom-color: #E85D04; }
+  #feuille textarea { width: 100%; resize: none; overflow: hidden; border: 0; line-height: 1.35; display: block; }
+  #feuille .lignes th { font-weight: 500; text-align: center; font-size: 15px; padding: 9px 4px; } #feuille .lignes td { padding: 0; height: 40px; vertical-align: top; } #feuille .lignes td textarea { padding: 6px 7px; min-height: 40px; height: 40px; }
+  #feuille .signature th { font-weight: 600; text-align: center; font-size: 15px; padding: 8px; } #feuille .signature td { height: 54px; padding: 4px 7px; }
+  #feuille .distrib { margin: 26px 0 0 34px; font-size: 14.5px; line-height: 1.9; } #feuille .distrib div:last-child { margin-left: 74px; }
+  .ajout { display: inline-block; margin-top: 6px; }
+  @media (max-width: 860px) { #feuille { zoom: .75; } } @media (max-width: 640px) { #feuille { zoom: .5; } }
+  @media print {
+    @page { size: A4 portrait; margin: 8mm; }
+    html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(main) { display: none !important; } .fd { padding: 0 !important; max-width: none !important; } .fd > *:not(.fiche-zone) { display: none !important; } .fiche-zone { overflow: visible !important; }
+    #feuille { zoom: 1 !important; width: 100% !important; min-height: 0 !important; font-size: 14px; margin: 0 !important; box-shadow: none !important; padding: 4px 6px !important; }
+    #feuille input[type=text], #feuille input[type=date], #feuille textarea { border-bottom: 0 !important; background: transparent !important; } .noprint { display: none !important; } #feuille input[type=date]::-webkit-calendar-picker-indicator { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">♻️</div>
+    <div class="logo-text"><h1>Fiche de dépôt des déchets industriels</h1><p>Sonatrach · RNS · à remplir, imprimer ou envoyer</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="fd">
+  <div class="barre-act">
+    <button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s2" id="b-mail" type="button">✉ Envoyer au secrétariat</button><button class="btn-s2" id="b-vider" type="button">🧹 Nouvelle fiche</button>
+    <p>La fiche reproduit le modèle de la cellule Environnement. Les cases « réservées à la Div HSE » (type de déchet, n° de fiche) se laissent vides ou se remplissent à la main après impression.</p>
+  </div>
+  <div class="fiche-zone"><div id="feuille">
+    <div class="entete"><img src="img/sonatrach-logo.jpeg" alt="Sonatrach"><div>Activité E &amp; P<br>Division Production<br>Direction Régionale Rhourde Nouss<br>Division HSE<br>Cellule Environnement</div></div>
+    <table class="cadre">
+      <tr><td colspan="2" class="titre">-Fiche de Dépôt des Déchets Industriels-</td></tr>
+      <tr><td colspan="2" class="types"><span class="gras" style="font-weight:700">Types de Déchets :</span> <small>-Déchets Inds Banals (DIB)</small> <label><input type="checkbox" id="t-dib" aria-label="DIB"></label> <small>-Déchets Inds Spéciaux (DIS)</small> <label><input type="checkbox" id="t-dis" aria-label="DIS"></label> <small>- Déchets Inds Spéciaux Dangereux (DISD)</small> <label><input type="checkbox" id="t-disd" aria-label="DISD"></label><span class="reserve">(Case réservée à la Div HSE)</span></td></tr>
+      <tr><td style="width:50%"><span class="gras">Fiche N° : </span><input type="text" id="f-num" style="width:90px" maxlength="20" aria-label="Numéro de fiche"> <span class="gras" style="font-weight:600">DP/RN/HSE/Env.</span><span class="reserve">(Case réservée à la Div HSE)</span></td><td><span class="gras">Date :</span> <input type="date" id="f-date" aria-label="Date"></td></tr>
+      <tr><td style="height:56px"><span class="gras">Expéditeur/ : Division</span> <input type="text" id="f-div" style="width:120px" maxlength="60" aria-label="Division"> <span class="gras">/Ser</span> <input type="text" id="f-ser" style="width:140px" maxlength="60" aria-label="Service"></td><td><span class="gras">Destinataire</span> : Parc de Stockage des Déchets</td></tr>
+    </table>
+    <table class="cadre lignes" id="lignes" style="border-top:0"><thead><tr><th style="width:30%">Désignation du Déchet</th><th style="width:22%">Origine du déchet</th><th style="width:12%">Quantité</th><th style="width:12%">Poids</th><th>Obs</th></tr></thead><tbody></tbody></table>
+    <button class="btn-s2 ajout noprint" id="b-ligne" type="button" style="padding:5px 12px;font-size:13px">+ Ajouter une ligne</button>
+    <table class="cadre signature" style="border-top:0"><tr><th colspan="2" style="width:50%">Structure Génératrice du déchet</th><th colspan="2">Réception / H S E</th></tr>
+      <tr><th style="font-weight:500;width:25%">Nom</th><th style="font-weight:500;width:25%">Visa</th><th style="font-weight:500;width:25%">Nom</th><th style="font-weight:500">Visa</th></tr>
+      <tr><td><input type="text" id="s-nom" style="width:100%" maxlength="60" aria-label="Nom de la structure génératrice"></td><td></td><td><input type="text" id="r-nom" style="width:100%" maxlength="60" aria-label="Nom réception HSE"></td><td></td></tr></table>
+    <div class="distrib"><div>DISTRIBUTION /: Ex. 1-Cédant</div><div>Ex. 2- Cellule Environnement/HSE</div></div>
+  </div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); }, CLE = 'infra_fiche_dechets_v1', NB = 8;
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.className = 'toast show'; clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = 'toast'; }, 3800); }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function fr(i) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(i || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : (i || ''); }
+  var COLS = ['des', 'ori', 'qte', 'poi', 'obs'];
+  function ajusterTous() { Array.prototype.forEach.call(document.querySelectorAll('#lignes textarea'), function (t) { t.style.height = 'auto'; t.style.height = Math.max(40, t.scrollHeight) + 'px'; }); }
+  function ligne(v) {
+    var tr = document.createElement('tr'); COLS.forEach(function (c, i) { var td = document.createElement('td'), t = document.createElement('textarea'); t.rows = 1; t.dataset.c = c; t.maxLength = 400; t.value = (v && v[i]) || ''; t.setAttribute('aria-label', c); t.addEventListener('input', function () { t.style.height = 'auto'; t.style.height = Math.max(40, t.scrollHeight) + 'px'; garder(); }); td.appendChild(t); tr.appendChild(td); });
+    $('lignes').querySelector('tbody').appendChild(tr);
+  }
+  function lire() {
+    return { t: [$('t-dib').checked, $('t-dis').checked, $('t-disd').checked], num: $('f-num').value, date: $('f-date').value, div: $('f-div').value, ser: $('f-ser').value, sn: $('s-nom').value, rn: $('r-nom').value,
+      lignes: Array.prototype.map.call($('lignes').querySelectorAll('tbody tr'), function (tr) { return Array.prototype.map.call(tr.querySelectorAll('textarea'), function (t) { return t.value; }); }) };
+  }
+  function ecrire(d) {
+    $('t-dib').checked = !!(d.t && d.t[0]); $('t-dis').checked = !!(d.t && d.t[1]); $('t-disd').checked = !!(d.t && d.t[2]); $('f-num').value = d.num || ''; $('f-date').value = d.date || iso(); $('f-div').value = d.div || ''; $('f-ser').value = d.ser || ''; $('s-nom').value = d.sn || ''; $('r-nom').value = d.rn || '';
+    $('lignes').querySelector('tbody').textContent = ''; var l = d.lignes && d.lignes.length ? d.lignes : []; while (l.length < NB) l.push(['', '', '', '', '']); l.forEach(ligne); ajusterTous();
+  }
+  function garder() { try { localStorage.setItem(CLE, JSON.stringify(lire())); } catch (e) { /* brouillon local indisponible */ } }
+  function brouillon() { try { var d = JSON.parse(localStorage.getItem(CLE) || 'null'); return d && d.lignes ? d : null; } catch (e) { return null; } }
+  Array.prototype.forEach.call(document.querySelectorAll('#feuille input'), function (i) { i.addEventListener('input', garder); i.addEventListener('change', garder); });
+  $('b-ligne').onclick = function () { ligne(); garder(); };
+  $('b-vider').onclick = function () { if (!window.confirm('Commencer une nouvelle fiche vide ?')) return; var moi = nomMoi; ecrire({ date: iso(), div: divMoi, ser: serMoi, sn: moi }); garder(); };
+  $('b-imp').onclick = function () { garder(); ajusterTous(); window.print(); };
+  $('b-mail').onclick = function () {
+    var v = lire(); if (!v.lignes.some(function (l) { return l.some(function (x) { return x.trim(); }); })) { toast('Remplissez au moins une ligne de déchet.'); return; }
+    garder(); var b = $('b-mail'); b.disabled = true;
+    // Le texte saisi est recopié dans la page envoyée (les champs deviennent du texte)
+    var f = $('feuille').cloneNode(true), src = $('feuille').querySelectorAll('input, textarea'), cop = f.querySelectorAll('input, textarea');
+    Array.prototype.forEach.call(cop, function (c, i) { var s = src[i], t; if (c.type === 'checkbox') { t = document.createElement('span'); t.textContent = s.checked ? '☒' : '☐'; } else { t = document.createElement('div'); t.style.cssText = 'white-space:pre-wrap;min-height:18px;padding:3px 3px'; t.textContent = c.type === 'date' ? fr(s.value) : s.value; } c.replaceWith(t); });
+    Array.prototype.forEach.call(f.querySelectorAll('.noprint'), function (n) { n.remove(); });
+    var css = Array.prototype.map.call(document.querySelectorAll('style'), function (s) { return s.textContent; }).join('\n').replace(/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
+    var logo = f.querySelector('img'); if (logo) logo.remove();
+    Diffusion.envoyerHtml({ titre: '✉ Envoyer la fiche de dépôt des déchets', sujet: 'Fiche de dépôt des déchets industriels — ' + (v.ser || v.div || 'Division Infrastructure') + ' — ' + fr(v.date), nom: 'fiche-depot-dechets-' + (v.date || iso()),
+      html: '<style>' + css + '</style><div id="feuille" style="width:auto;box-shadow:none;min-height:0">' + f.innerHTML + '</div>' })
+      .then(function (r) { if (r) toast('✅ Envoyée à : ' + r.destinataires.join(', ')); }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+  };
+  var nomMoi = '', divMoi = 'Infrastructures', serMoi = '';
+  var d0 = brouillon(); ecrire(d0 || { date: iso(), div: divMoi });
+  Api.call('me', {}).then(function (r) {
+    var u = (r && (r.user || r)) || {}; nomMoi = u.nom || ''; serMoi = u.service || '';
+    if (!d0) { if (!$('s-nom').value) $('s-nom').value = nomMoi; if (!$('f-ser').value) $('f-ser').value = serMoi; garder(); }
+  }).catch(function () { /* champs laissés vides */ });
+})();
+</script>
+<script src="js/diffusion.js"></script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

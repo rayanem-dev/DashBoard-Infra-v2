@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-04-306",
+    "date": "2026-11-04",
+    "title": "Version 6.52.0 — Fiche de dépôt des déchets industriels",
+    "changes": [
+      "Nouvelle application « Fiche de dépôt des déchets industriels » (module Logistique) : la fiche de la cellule Environnement (HSE) reproduite à l'identique, vierge, à remplir en ligne (types de déchets, date, expéditeur, lignes désignation / origine / quantité / poids / observations, noms), puis 🖨 Imprimer (une page A4) ou ✉ Envoyer au secrétariat (avec copie PDF). Brouillon gardé sur l'ordinateur ; « Nouvelle fiche » remet à zéro.",
+      "À redéployer : la passerelle (pour que la carte apparaisse au catalogue)."
+    ]
+  },
+  {
     "id": "2026-11-04-305",
     "date": "2026-11-04",
     "title": "Version 6.51.3 — Inventaire : case « Trouvés »",
