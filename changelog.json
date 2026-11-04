@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-05-311",
+    "date": "2026-11-05",
+    "title": "Version 6.54.1 — Consolidé complet pour cadres, CPM, ordonnateurs et intérims",
+    "changes": [
+      "Rapport journalier : nouvelle case « Cadres, CPM, ordonnateurs, intérims » parmi les destinataires du consolidé complet (envoi manuel et automatique) : cadres supérieurs, cellule passation de marché, ordonnateurs et chefs de service par intérim, à l'adresse de leur compte. Cochée par défaut dans l'envoi automatique déjà enregistré.",
+      "Confirmé : les stagiaires reçoivent la copie de leur service ; un compte sans service renseigné ne reçoit que ce qu'il a écrit."
+    ]
+  },
+  {
     "id": "2026-11-05-310",
     "date": "2026-11-05",
     "title": "Version 6.54.0 — Rapport journalier : règle d'envoi par service",
