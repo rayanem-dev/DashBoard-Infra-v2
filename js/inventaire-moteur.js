@@ -260,18 +260,29 @@
   function derniereAncienne(etat) {
     var d = {}; etat.historique.forEach(function (h) { if (h.de && !h.annule) { var k = invCle(h.inv); d[k] = { de: h.de, date: h.date }; } }); return d;
   }
-  function versTableaux(etat) {
-    var anc = derniereAncienne(etat), eff = effectifs(etat);
-    var inv = [['N° Inv', 'Code SH', 'Désignation', 'Marque', 'Type', 'N° Série', 'Position actuelle', 'Ancienne position', 'Date du dernier changement', 'Structure', 'Imputation', 'État', 'Indice', 'Valeur (DA)', 'Non trouvé']];
-    Object.keys(etat.articles).sort().forEach(function (k) {
-      var a = etat.articles[k], p = anc[k] || {};
-      inv.push([a.inv, a.codeSh, a.designation, a.marque, a.type, a.serie, a.position, p.de || '', p.date ? String(p.date).slice(0, 10) : '', a.structure, a.imputation, a.etat, a.indice, a.valeur, Object.keys(a.nonTrouve || {}).join(', ')]);
+  /** Statut de chaque article pour l'export : trouvé = « non trouvé AAAA » levé (même règle que les chiffres de la page et du rapport journalier) ; par / le = dernière ligne « Article retrouvé » ; articles du seul fichier global : « hors liste ». */
+  function statuts(etat, annee) {
+    var ret = {}, glob = {}, out = {};
+    etat.historique.forEach(function (h) { var k = invCle(h.inv); if (h.source === 'Article retrouvé' && !h.annule) ret[k] = h; else if (/^Import positions/i.test(String(h.source || '')) && h.motif === 'Article créé') glob[k] = 1; });
+    Object.keys(etat.articles).forEach(function (k) {
+      var a = etat.articles[k], c = invCle(a.inv), nt = annee ? !!(a.nonTrouve && a.nonTrouve[annee]) : Object.keys(a.nonTrouve || {}).length > 0;
+      out[k] = nt ? { s: 'NON', par: '', le: '' } : (annee && glob[c] && !ret[c]) ? { s: 'HORS LISTE', par: '', le: '' } : { s: 'OUI', par: ret[c] ? (ret[c].par || '') : '', le: ret[c] ? String(ret[c].date).slice(0, 10) : '' };
     });
-    var his = [['Date', 'N° Inv', 'De', 'Vers', 'Source', 'Motif', 'Annulé']];
-    etat.historique.forEach(function (h) { his.push([String(h.date).slice(0, 19).replace('T', ' '), h.inv, h.de, h.vers, h.source, h.motif, h.annule ? 'oui' : '']); });
+    return out;
+  }
+  function versTableaux(etat, annee, photos) {
+    var anc = derniereAncienne(etat), eff = effectifs(etat), st = statuts(etat, annee), n = { OUI: 0, NON: 0, 'HORS LISTE': 0 };
+    var inv = [['N° Inv', 'Code SH', 'Désignation', 'Objet trouvé', 'Trouvé par', 'Trouvé le', 'Photo', 'Marque', 'Type', 'N° Série', 'Position actuelle', 'Ancienne position', 'Date du dernier changement', 'Structure', 'Imputation', 'État', 'Indice', 'Valeur (DA)', 'Non trouvé']];
+    Object.keys(etat.articles).sort().forEach(function (k) {
+      var a = etat.articles[k], p = anc[k] || {}, s = st[k]; n[s.s] += 1;
+      inv.push([a.inv, a.codeSh, a.designation, s.s, s.par, s.le, photos && photos[k] ? 'OUI' : '', a.marque, a.type, a.serie, a.position, p.de || '', p.date ? String(p.date).slice(0, 10) : '', a.structure, a.imputation, a.etat, a.indice, a.valeur, Object.keys(a.nonTrouve || {}).join(', ')]);
+    });
+    var his = [['Date', 'N° Inv', 'De', 'Vers', 'Source', 'Motif', 'Par', 'Annulé']];
+    etat.historique.forEach(function (h) { his.push([String(h.date).slice(0, 19).replace('T', ' '), h.inv, h.de, h.vers, h.source, h.motif, h.par || '', h.annule ? 'oui' : '']); });
     var pos = [['Position', 'Nombre d\'articles', 'Autres écritures déjà vues']];
-    Object.keys(etat.positions).sort().forEach(function (n) { pos.push([n, eff[n] || 0, (etat.positions[n].alias || []).join(' | ')]); });
-    return { inventaire: inv, historique: his, positions: pos };
+    Object.keys(etat.positions).sort().forEach(function (nm) { pos.push([nm, eff[nm] || 0, (etat.positions[nm].alias || []).join(' | ')]); });
+    var tot = n.OUI + n.NON, res = [['Exercice ' + (annee || ''), 'Nombre'], ['Articles dans l\'exercice', Object.keys(etat.articles).length], ['Objets trouvés (colonne « Objet trouvé » = OUI)', n.OUI], ['Objets non trouvés (= NON)', n.NON], ['Hors liste des écarts (fichier global seul)', n['HORS LISTE']], ['Avancement (trouvés / à retrouver)', tot ? Math.round(1000 * n.OUI / tot) / 10 + ' %' : '0 %']];
+    return { inventaire: inv, historique: his, positions: pos, resume: res };
   }
 
   var API = { cle: cle, ressemblance: ressemblance, nouvelEtat: nouvelEtat, suggestions: suggestions, plusProche: plusProche, effectifs: effectifs, lireFeuille: lireFeuille, nombreFr: nombreFr,

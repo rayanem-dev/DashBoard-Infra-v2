@@ -406,7 +406,7 @@
       window.XLSX.writeFile(wb, nom);
     }).catch(function (e) { toast('Export impossible : ' + e.message); });
   }
-  function excelComplet() { var t = M.versTableaux(etat); exporterXlsx([['Inventaire', t.inventaire], ['Historique', t.historique], ['Positions', t.positions]], 'inventaire_' + annee + '_' + aujourdhui() + '.xlsx'); }
+  function excelComplet() { var t = M.versTableaux(etat, annee, photos); exporterXlsx([['Résumé', t.resume], ['Inventaire', t.inventaire], ['Historique', t.historique], ['Positions', t.positions]], 'inventaire_' + annee + '_' + aujourdhui() + '.xlsx'); }
 
   /* ---------- navigation ---------- */
   function basculer(v) {

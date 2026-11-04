@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-05-309",
+    "date": "2026-11-05",
+    "title": "Version 6.53.1 — Export de l'inventaire : colonne « Objet trouvé »",
+    "changes": [
+      "Export Excel de l'inventaire : nouvelles colonnes « Objet trouvé » (OUI / NON), « Trouvé par », « Trouvé le » et « Photo » juste après la désignation, et nouvelle feuille « Résumé » (articles, trouvés, non trouvés, avancement) calculée avec la même règle que la page et le rapport journalier. La feuille Historique indique aussi qui a fait chaque ligne (« Par »)."
+    ]
+  },
+  {
     "id": "2026-11-05-308",
     "date": "2026-11-05",
     "title": "Version 6.53.0 — Inventaire : photo facultative d'un article trouvé",
