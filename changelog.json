@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-05-312",
+    "date": "2026-11-05",
+    "title": "Version 6.55.0 — Renommer les applications ; envois des applications séparées comptés",
+    "changes": [
+      "Organiser les applications : chaque application a maintenant son nom modifiable (cliquez sur le nom, vide = nom d'origine). Le nouveau nom s'affiche dans le menu, sur l'accueil et partout ; le nom d'origine reste visible au survol et en grisé dans la case. Réservé au secrétariat.",
+      "Rapport journalier, encadré « Activité du secrétariat » : les documents envoyés au secrétariat par les applications séparées (requête de transport, dotation, bon de sortie, fiche d'évaluation) sont maintenant comptés, avec leur type. Chaque application prévient le portail à chaque envoi (une clé partagée est à saisir dans Paramètres › Réglages › « Clé de notification des applications séparées » et dans la propriété de script ENVOI_CLE de chaque application).",
+      "À redéployer : la passerelle, le site ET les 4 applications séparées (requête de transport : nouvelle autorisation d'accès réseau à accepter)."
+    ]
+  },
+  {
     "id": "2026-11-05-311",
     "date": "2026-11-05",
     "title": "Version 6.54.1 — Consolidé complet pour cadres, CPM, ordonnateurs et intérims",

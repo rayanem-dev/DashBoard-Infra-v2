@@ -62,7 +62,7 @@
         li.addEventListener('dragover', function (e) { if (glisse && glisse.app && glisse.app !== a.titre) { e.preventDefault(); e.stopPropagation(); li.classList.add('sur'); } });
         li.addEventListener('dragleave', function () { li.classList.remove('sur'); });
         li.addEventListener('drop', function (e) { li.classList.remove('sur'); if (glisse && glisse.app) { e.preventDefault(); e.stopPropagation(); deplacerApp(glisse.app, c.id, a.titre); } });
-        li.appendChild(el('span', 'mo-poi', '⠿')); var ic = el('span'); if (/^img\/[\w\/.-]+\.(png|svg|webp)$/i.test(String(a.emoji || ''))) { var im = el('img'); im.src = a.emoji; im.alt = ''; im.style.cssText = 'width:20px;height:20px;object-fit:contain;vertical-align:middle'; ic.appendChild(im); } else ic.textContent = a.emoji || '📄'; li.appendChild(ic); var t = el('span', 'mo-t', a.titre); t.title = a.titre + (a.module_titre ? ' — module ' + a.module_titre : ''); li.appendChild(t);
+        li.appendChild(el('span', 'mo-poi', '⠿')); var ic = el('span'); if (/^img\/[\w\/.-]+\.(png|svg|webp)$/i.test(String(a.emoji || ''))) { var im = el('img'); im.src = a.emoji; im.alt = ''; im.style.cssText = 'width:20px;height:20px;object-fit:contain;vertical-align:middle'; ic.appendChild(im); } else ic.textContent = a.emoji || '📄'; li.appendChild(ic); var t = el('input', 'mo-t'); t.value = a.nom || a.titre; t.maxLength = 60; t.placeholder = a.titre; t.setAttribute('aria-label', 'Nom affiché de l\'application'); t.title = 'Nom affiché — modifiable (vide = nom d\'origine : ' + a.titre + ')' + (a.module_titre ? ' · module ' + a.module_titre : ''); t.style.cssText = 'flex:1;min-width:0;border:1.5px solid transparent;border-radius:7px;background:transparent;font:inherit;font-weight:600;padding:3px 6px;color:inherit'; t.addEventListener('focus', function () { t.style.borderColor = 'var(--orange-main,#E85D04)'; t.style.background = 'var(--surface,#fff)'; }); t.addEventListener('blur', function () { t.style.borderColor = 'transparent'; t.style.background = 'transparent'; }); t.addEventListener('input', function () { a.nom = t.value.trim() === a.titre ? '' : t.value; }); t.addEventListener('mousedown', function (e) { e.stopPropagation(); }); t.draggable = false; li.appendChild(t);
         var h2 = el('button', 'mo-b', '▲'); h2.type = 'button'; h2.disabled = ai === 0; h2.title = 'Monter'; h2.addEventListener('click', function () { bougerApp(c, ai, -1); });
         var b2 = el('button', 'mo-b', '▼'); b2.type = 'button'; b2.disabled = ai >= c.apps.length - 1; b2.title = 'Descendre'; b2.addEventListener('click', function () { bougerApp(c, ai, 1); });
         var sel = el('select'); sel.setAttribute('aria-label', 'Déplacer vers une autre catégorie'); var o0 = el('option', null, '↪ Déplacer…'); o0.value = ''; sel.appendChild(o0);
@@ -92,7 +92,7 @@
     msg.textContent = '';
     var vraies = cats.filter(function (c) { return !fige(c); });
     for (var i = 0; i < vraies.length; i += 1) if (String(vraies[i].titre).trim().length < 2) { msg.textContent = 'Chaque catégorie doit avoir un nom (2 caractères au moins).'; return; }
-    var apps = []; cats.forEach(function (c) { c.apps.forEach(function (a, i) { apps.push({ titre: a.titre, rubrique: fige(c) ? '' : c.id, ordre: (i + 1) * 10, actif: masq(c) ? 0 : 1, vision: a.vision == null ? null : a.vision }); }); });
+    var apps = []; cats.forEach(function (c) { c.apps.forEach(function (a, i) { apps.push({ titre: a.titre, nom: String(a.nom || '').trim(), rubrique: fige(c) ? '' : c.id, ordre: (i + 1) * 10, actif: masq(c) ? 0 : 1, vision: a.vision == null ? null : a.vision }); }); });
     bouton.disabled = true;
     Api.call('menu_organisation_enregistrer', { rubriques: vraies.map(function (c) { return { id: c.id, titre: String(c.titre).trim(), icone: String(c.icone || '').trim() || '📁' }; }), apps: apps })
       .then(function () { try { sessionStorage.removeItem('ml_menu'); sessionStorage.removeItem('ml_menu2'); sessionStorage.removeItem('gm_pages'); } catch (e) { /* rien */ } location.reload(); })
@@ -102,7 +102,7 @@
   function construire(d) {
     // applications rangées comme elles s'affichent aujourd'hui (mêmes règles que la barre et les cartes) ; les masquées (actif = 0) vont dans leur groupe
     niveaux = d.niveaux || []; rangDe = {}; niveaux.forEach(function (n) { rangDe[n.id] = n.rang; });
-    var cartes = function (a) { return { titre: a.titre, description: a.description, emoji: a.emoji, url: a.url, rubrique: a.rubrique, ordre: a.ordre, module_titre: a.module_titre, vision: a.vision == null ? null : a.vision }; };
+    var cartes = function (a) { return { nom: a.nom || '', titre: a.titre, description: a.description, emoji: a.emoji, url: a.url, rubrique: a.rubrique, ordre: a.ordre, module_titre: a.module_titre, vision: a.vision == null ? null : a.vision }; };
     var visibles = d.apps.filter(function (a) { return a.actif !== 0; }).map(cartes), cachees = d.apps.filter(function (a) { return a.actif === 0; }).map(cartes);
     var cfg = d.rubriques && d.rubriques.length ? d.rubriques : null, groupes = Rubriques.regrouper([{ id: 'tout', titre: 'Tout', icone: '', apps: visibles }], cfg);
     cats = groupes.map(function (g) { return { id: g.id, titre: g.titre, icone: g.icone, apps: g.apps.slice() }; });
@@ -155,7 +155,7 @@
       dlg = el('dialog'); dlg.id = 'mo';
       var inn = el('div', 'mo-in'), tete = el('div', 'mo-tete');
       tete.appendChild(el('h3', null, 'Organiser les applications'));
-      tete.appendChild(el('p', 'mo-aide', 'Glissez une application dans une catégorie (ou utilisez ▲ ▼ et « Déplacer… »), renommez les catégories, ajoutez-en. Le menu de gauche et les cartes de l\'accueil suivent. Le niveau de vision de chaque application (liste « ≤ N ») restreint qui la voit, en plus des droits du module ; « Voir comme » montre l\'effet.'));
+      tete.appendChild(el('p', 'mo-aide', 'Glissez une application dans une catégorie (ou utilisez ▲ ▼ et « Déplacer… »), renommez les catégories (et les applications : cliquez sur leur nom), ajoutez-en. Le menu de gauche et les cartes de l\'accueil suivent. Le niveau de vision de chaque application (liste « ≤ N ») restreint qui la voit, en plus des droits du module ; « Voir comme » montre l\'effet.'));
       var sim = el('div'); sim.style.cssText = 'margin-top:8px;display:flex;gap:8px;align-items:center;font-size:12.5px;flex-wrap:wrap';
       var simSel = el('select'); simSel.style.cssText = 'font-size:12.5px;padding:4px'; var s0 = el('option', null, '— aucune —'); s0.value = ''; simSel.appendChild(s0);
       niveaux.forEach(function (n) { var o = el('option', null, n.nom); o.value = String(n.rang); simSel.appendChild(o); });
