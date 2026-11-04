@@ -133,6 +133,7 @@
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="secretariat" style="width:auto;min-width:0"> Secrétariat</label>
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_service" style="width:auto;min-width:0"> Chefs de service</label>
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_division" style="width:auto;min-width:0"> Chef de division</label>
+        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_atelier" style="width:auto;min-width:0"> Chefs d'atelier</label>
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:#8a1c1c" title="Exceptionnel, pour tester : tous les comptes actifs de la division (SH, ACOSCO, GTP…). Envoi manuel uniquement, jamais automatique."><input type="checkbox" id="toute-div" style="width:auto;min-width:0"> Toute la division (exceptionnel)</label>
         <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé avec les groupes cochés (rien n'est envoyé)">👁 Voir les destinataires</button>
         <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux groupes cochés">✉ Envoyer maintenant</button>
@@ -145,7 +146,7 @@
         <input type="number" id="auto-heure" min="0" max="23" step="1" value="20" style="width:70px;min-width:0" aria-label="Heure d'envoi"> h
         <button class="btn-s" id="b-auto" type="button">Enregistrer</button>
       </div>
-      <p class="aide" style="margin:6px 0 0;font-size:12.5px">👥 À l'envoi automatique du soir, chaque agent qui a rapporté dans la journée et son <b>vis-à-vis de travail</b> reçoivent aussi une copie (limitée à ses chantiers). Réglable dans Paramètres.</p>
+      <p class="aide" style="margin:6px 0 0;font-size:12.5px">👥 À l'envoi automatique du soir, chaque inscrit de la division (ingénieur, dessinateur, conducteur, agent, stagiaire), présent ou en congé, reçoit le <b>rapport de son service</b> ; celui qui a rapporté reçoit aussi ce qu'il a écrit. Réglable dans Paramètres.</p>
       <p class="aide" id="auto-etat" style="margin:6px 0 0">Désactivé par défaut. Quand il est coché, le consolidé du jour est régénéré (il écrase l'ancien) puis envoyé aux groupes cochés ci-dessus, une fois par jour, à l'heure réglée ; sans rapport ce jour-là, rien n'est envoyé.</p>
     </div>
     <h3 style="margin:22px 0 8px;font-size:15px">Rapports consolidés enregistrés</h3>
@@ -628,8 +629,8 @@
       var t = el('div'); t.style.marginTop = '10px';
       if (!r.copies_actives) t.appendChild(el('b', null, 'Copies du soir aux agents : désactivées (réglage dans Paramètres).'));
       else {
-        t.appendChild(el('b', null, (r.copies || []).length + ' copie(s) du soir, à l\'envoi automatique, aux agents qui ont rapporté le ' + fr(r.date) + ' et à leur vis-à-vis de travail :'));
-        if (!(r.copies || []).length) t.appendChild(document.createTextNode(' aucune pour l\'instant (aucun rapport ce jour-là, ou ils reçoivent déjà le consolidé complet). La liste se calcule avec les rapports au moment de l\'envoi.'));
+        t.appendChild(el('b', null, (r.copies || []).length + ' copie(s) du soir, à l\'envoi automatique (rapport de leur service, ou de ce qu\'ils ont écrit), pour le ' + fr(r.date) + ' :'));
+        if (!(r.copies || []).length) t.appendChild(document.createTextNode(' aucune pour l\'instant (aucun rapport ce jour-là, ou les inscrits reçoivent déjà le consolidé complet). La liste se calcule avec les rapports au moment de l\'envoi.'));
         else { var u2 = el('ul'); u2.style.cssText = 'margin:4px 0 0 18px;padding:0'; r.copies.forEach(function (d) { u2.appendChild(el('li', null, d.nom + ' — ' + d.email + ' (' + d.role + ') · ' + d.chantiers.join(', '))); }); t.appendChild(u2); }
       }
       z.appendChild(t);
@@ -638,7 +639,7 @@
   $('b-envoyer').addEventListener('click', function () {
     var j = $('s-date').value, g = groupesCoches();
     var toute = $('toute-div').checked;
-    if (!g.secretariat && !g.chef_service && !g.chef_division && !personnesCochees().length && !toute) { toast('Cochez au moins un destinataire', true); return; }
+    if (!g.secretariat && !g.chef_service && !g.chef_division && !g.chef_atelier && !personnesCochees().length && !toute) { toast('Cochez au moins un destinataire', true); return; }
     if (!consolideDuJour) { toast('Générez d\'abord le consolidé du ' + fr(j), true); return; }
     if (!confirm(toute ? '⚠ ENVOI À TOUTE LA DIVISION : le consolidé du ' + fr(j) + ' sera envoyé à TOUS les comptes actifs (SH, ACOSCO, GTP…). Utilisez « Voir les destinataires » avant. Confirmer ?' : 'Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux destinataires cochés ?')) return;
     var b = $('b-envoyer'); b.disabled = true;

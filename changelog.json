@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-05-310",
+    "date": "2026-11-05",
+    "title": "Version 6.54.0 — Rapport journalier : règle d'envoi par service",
+    "changes": [
+      "Copies du soir (envoi automatique) : tous les inscrits de la division — ingénieurs, dessinateurs, conducteurs, agents et stagiaires, présents ou en congé — reçoivent le rapport de LEUR service (le service du chantier décide). Celui qui a établi un rapport reçoit aussi ce qu'il a écrit sur un autre service, et le conducteur d'un chantier reçoit ce que l'aidant d'un autre service y a fait. Prestataires, DSP et invités : jamais. Pas d'e-mail si le service n'a aucun rapport ce jour-là. La règle du vis-à-vis de travail est supprimée.",
+      "Nouvelle case « Chefs d'atelier » parmi les destinataires du consolidé complet (envoi manuel et automatique), au même titre que les chefs de service et le chef de division.",
+      "Envoi des copies par lots de 40 en copie cachée, avec garde de quota : si le quota quotidien de Google ne suffit pas, les premières copies partent, le reste est noté au journal (le consolidé de la direction part toujours en premier).",
+      "À redéployer : la passerelle et le site."
+    ]
+  },
+  {
     "id": "2026-11-05-309",
     "date": "2026-11-05",
     "title": "Version 6.53.1 — Export de l'inventaire : colonne « Objet trouvé »",
