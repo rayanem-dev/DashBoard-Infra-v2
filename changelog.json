@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-320",
+    "date": "2026-11-06",
+    "title": "Version 6.59.1 — Privilèges : tous les champs à l'ajout d'un utilisateur",
+    "changes": [
+      "Privilèges › Ajouter un utilisateur : en plus de nom, e-mail, rôle, service, dépendance, section et fonction, on peut renseigner dès la création la civilité, le téléphone, le matricule, le matricule SAP, l'identifiant SONA, l'identifiant Wi-Fi et la date d'intégration (mêmes champs et mêmes contrôles que « Modifier »)."
+    ]
+  },
+  {
     "id": "2026-11-06-319",
     "date": "2026-11-06",
     "title": "Version 6.59.0 — Privilèges › Utilisateurs : extraction complète",
