@@ -105,17 +105,44 @@
     var c = el('div', 'bloc'), par = {}; P.forEach(function (p) { par[p.id] = p; });
     c.appendChild(el('h3', null, '📨 Rapport journalier : qui reçoit quoi'));
     c.appendChild(el('p', 'aide', 'Choisissez, pour chaque rôle : « Consolidé complet » (tous les chantiers), « Rapport de son service » (les chantiers de son service, plus ce qu\'il a écrit) ou « Ne reçoit rien ». Les valeurs affichées sont celles en vigueur. Le bouton « Voir les destinataires » de Rapports › Synthèse du jour montre le résultat avec les noms.'));
-    var controles = [];
+    var controles = [], resultat = el('div'); resultat.style.cssText = 'margin:10px 0;font-size:13px;line-height:1.5';
+    var btnStyle = 'padding:5px 9px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text-dark);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer';
+    /** 👁 : à qui irait l'envoi, concrètement (noms et adresses), selon le tableau ENREGISTRÉ. roles = un rôle, ou rien pour tous. */
+    function voir(roles, titre) {
+      resultat.hidden = false; resultat.textContent = 'Chargement…';
+      return Api.call('rapports_conso_destinataires', { roles: roles, copies: true }).then(function (r) {
+        resultat.textContent = ''; var bloc = el('div'); bloc.style.cssText = 'border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.02)';
+        bloc.appendChild(el('b', null, '👁 ' + titre + ' — à qui irait l\'envoi (tableau enregistré)'));
+        var d = r.destinataires || [], k = r.copies || [];
+        bloc.appendChild(el('div', null, d.length + ' personne(s)/boîte(s) en consolidé complet' + (d.length ? ' :' : '.')));
+        if (d.length) { var u = el('ul'); u.style.cssText = 'margin:4px 0 6px 18px;padding:0'; d.forEach(function (x) { u.appendChild(el('li', null, x.nom + ' — ' + x.email + ' (' + x.role + (x.service ? ', ' + x.service : '') + ')')); }); bloc.appendChild(u); }
+        bloc.appendChild(el('div', null, k.length + ' copie(s) « rapport de son service »' + (k.length ? ' (selon les rapports du jour) :' : ' : aucune pour l\'instant (aucun rapport aujourd\'hui dans leur service, ou ce rôle n\'est pas réglé sur « Rapport de son service »).')));
+        if (k.length) { var u2 = el('ul'); u2.style.cssText = 'margin:4px 0 0 18px;padding:0'; k.forEach(function (x) { u2.appendChild(el('li', null, x.nom + ' — ' + x.email + ' · ' + (x.chantiers || []).join(', '))); }); bloc.appendChild(u2); }
+        if (r.copies_actives === false) bloc.appendChild(el('div', 'aide', 'Les copies par service sont coupées (onglet Options › « Copie du soir… »).'));
+        resultat.appendChild(bloc);
+      }).catch(function (e) { resultat.textContent = e.message; });
+    }
+    /** ✉ : envoi manuel immédiat selon le tableau enregistré (le consolidé du jour est régénéré avec les derniers rapports, puis envoyé). */
+    function envoyer(roles, titre, bouton) {
+      if (!window.confirm('Envoyer maintenant : ' + titre + ' ?\n\nLe consolidé du jour est régénéré avec les derniers rapports, puis envoyé selon le tableau enregistré (consolidé complet et/ou rapport de leur service). Rien ne part si aucun rapport n\'a été saisi aujourd\'hui.')) return;
+      var txt = bouton.textContent; bouton.disabled = true; bouton.textContent = '⏳';
+      Api.call('rapports_consolide_envoyer', { roles: roles, copies: true, generer: true }).then(function (r) { toast('✅ Envoyé : ' + r.destinataires + ' destinataire(s) du consolidé complet, ' + (r.copies || 0) + ' copie(s) par service'); })
+        .catch(function (e) { toast(e.message, true); }).then(function () { bouton.disabled = false; bouton.textContent = txt; });
+    }
+    function boutonVoir(role, libelle) { var b = el('button', null, '👁'); b.type = 'button'; b.title = 'Voir à qui irait l\'envoi pour : ' + libelle; b.style.cssText = btnStyle; b.onclick = function () { voir([role], libelle); }; return b; }
+    function boutonEnvoyer(role, libelle) { var b = el('button', null, '✉ Envoyer maintenant'); b.type = 'button'; b.title = 'Envoi manuel immédiat pour : ' + libelle; b.style.cssText = btnStyle; b.onclick = function () { envoyer([role], libelle, b); }; return b; }
     function selecteur(p) {
       var s = el('select'); s.style.cssText = 'padding:7px 9px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--text-dark)';
       (p.choix || []).forEach(function (v) { var o = el('option', null, (p.choixLibelles && p.choixLibelles[v]) || (v === 'oui' ? 'Oui' : v === 'non' ? 'Non' : v)); o.value = v; s.appendChild(o); }); s.value = p.valeur; return s;
     }
     var t = el('table'); t.style.cssText = 'width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:13.5px';
-    var th = el('tr'); ['Rôle', 'Ce qu\'il reçoit'].forEach(function (x) { var h = el('th', null, x); h.style.cssText = 'text-align:left;padding:7px 8px;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)'; th.appendChild(h); }); t.appendChild(th);
+    var th = el('tr'); ['Rôle', 'Ce qu\'il reçoit', 'Actions'].forEach(function (x) { var h = el('th', null, x); h.style.cssText = 'text-align:left;padding:7px 8px;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)'; th.appendChild(h); }); t.appendChild(th);
     P.filter(function (p) { return p.id.indexOf('rapport_envoi.role.') === 0; }).forEach(function (p) {
       var tr = el('tr'), td1 = el('td'), td2 = el('td'); td1.style.cssText = td2.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle';
       td1.appendChild(el('b', null, p.libelle)); if (p.aide) { var a = el('div', null, p.aide); a.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; td1.appendChild(a); }
-      var s = selecteur(p); if ((p.choix || []).length < 2) s.disabled = true; td2.appendChild(s); tr.appendChild(td1); tr.appendChild(td2); t.appendChild(tr); controles.push({ p: p, lire: function () { return s.value; } });
+      var s = selecteur(p); if ((p.choix || []).length < 2) s.disabled = true; td2.appendChild(s); tr.appendChild(td1); tr.appendChild(td2);
+      var td3 = el('td'); td3.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap'; var role = p.id.slice('rapport_envoi.role.'.length);
+      if (role !== 'prestataire' && role !== 'guest') { td3.appendChild(boutonVoir(role, p.libelle)); td3.appendChild(document.createTextNode(' ')); td3.appendChild(boutonEnvoyer(role, p.libelle)); } tr.appendChild(td3); t.appendChild(tr); controles.push({ p: p, lire: function () { return s.value; } });
     });
     c.appendChild(t);
     var bloc2 = el('div'); bloc2.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px';
@@ -126,7 +153,12 @@
     }
     c.appendChild(bloc2);
     if (pe) { var w3 = el('label', null, 'Adresses supplémentaires (consolidé complet) — une par ligne'); w3.style.cssText = 'display:block;font-size:12px;font-weight:700;color:var(--text-muted)'; var ta = el('textarea'); ta.rows = 3; ta.value = pe.valeur; ta.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark);margin-top:3px'; w3.appendChild(ta); c.appendChild(w3); controles.push({ p: pe, lire: function () { return ta.value; } }); }
-    c.appendChild(el('p', 'aide', 'Les adresses des boîtes (secrétariat, chef de division, services) se règlent dans l\'onglet « Adresses e-mail ». Les copies du soir par service ne partent qu\'à l\'envoi automatique ; l\'option « Copie du soir… » de l\'onglet Options peut les couper.'));
+    c.appendChild(el('p', 'aide', 'Les adresses des boîtes (secrétariat, chef de division, services) se règlent dans l\'onglet « Adresses e-mail ». Les copies par service partent à l\'envoi automatique du soir et avec les boutons « Envoyer maintenant » de cet onglet ; l\'option « Copie du soir… » de l\'onglet Options peut les couper.'));
+    var barre = el('div'); barre.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:6px 0';
+    var bv = el('button', null, '👁 Voir tous les destinataires'); bv.type = 'button'; bv.style.cssText = btnStyle; bv.onclick = function () { voir(null, 'Tous les rôles'); };
+    var be = el('button', null, '✉ Envoyer maintenant à tous selon les règles'); be.type = 'button'; be.style.cssText = btnStyle + ';background:linear-gradient(135deg,var(--orange-main),var(--orange-light));color:#fff;border-color:transparent'; be.onclick = function () { envoyer(null, 'tous les rôles du tableau (et les adresses supplémentaires)', be); };
+    barre.appendChild(bv); barre.appendChild(be); c.appendChild(barre); c.appendChild(resultat);
+    c.appendChild(el('p', 'aide', 'Les boutons 👁 et ✉ utilisent le tableau ENREGISTRÉ : enregistrez d\'abord vos changements.'));
     var msg = el('div', 'etat'); var ok = el('button', 'btn-p', 'Enregistrer le tableau'); ok.type = 'button'; c.appendChild(ok); c.appendChild(msg);
     ok.onclick = function () {
       var changes = controles.filter(function (x) { return String(x.lire()).trim() !== String(x.p.valeur).trim(); }); if (!changes.length) { msg.className = 'etat'; msg.textContent = 'Rien à enregistrer.'; return; }

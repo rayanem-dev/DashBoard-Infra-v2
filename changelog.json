@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-314",
+    "date": "2026-11-06",
+    "title": "Version 6.56.1 — Rapport journalier : œil et envoi manuel par rôle",
+    "changes": [
+      "Paramètres › Rapport journalier : à côté de chaque rôle, un 👁 (voir concrètement à qui irait l'envoi : noms, adresses, services, chantiers) et un « ✉ Envoyer maintenant » (envoi manuel pour ce rôle seulement) ; en dessous, « 👁 Voir tous les destinataires » et « ✉ Envoyer maintenant à tous selon les règles ». L'envoi manuel régénère le consolidé du jour avec les derniers rapports, puis envoie selon le tableau enregistré (consolidé complet et copies par service). Chaque envoi manuel est noté au journal.",
+      "À redéployer : la passerelle et le site."
+    ]
+  },
+  {
     "id": "2026-11-06-313",
     "date": "2026-11-06",
     "title": "Version 6.56.0 — Rapport journalier : règles d'envoi dans Paramètres",
