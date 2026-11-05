@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-332",
+    "date": "2026-11-06",
+    "title": "Version 6.67.1 — Paramètres : quota d'e-mails restant",
+    "changes": [
+      "Paramètres : bouton « ✉ Quota d'e-mails restant » : nombre de destinataires que la passerelle peut encore atteindre aujourd'hui (le rapport journalier, les invitations et les copies le consomment)."
+    ]
+  },
+  {
     "id": "2026-11-06-331",
     "date": "2026-11-06",
     "title": "Version 6.67.0 — Titre de congé : enregistrement, demande d'injection au planning, validation",

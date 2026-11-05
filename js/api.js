@@ -474,6 +474,7 @@
         return { du: sdu, au: sau, kpi: { rapports: snr, joursActifs: sj.length, chantiersSuivis: sl.length, chantiersAvecRapport: sl.length, tauxRemise: sj.length ? snr / (sj.length * sl.length) : null, effectifMoyenJour: sj.length ? Math.round(sef / sj.length * 10) / 10 : null, avancementMoyen: Math.round(sl.reduce(function (n, l) { return n + l.avFin; }, 0) / sl.length * 10) / 10, difficultes: 7, tauxVisa: 0.7 },
           jours: sx, chantiers: sl, sansRapport: [], auteurs: [{ nom: 'KHELIFI Amine', n: 24 }, { nom: 'MEZIANE Sofia', n: 19 }, { nom: 'BENALI Karim', n: 11 }],
           difficultes: [{ date: sj[sj.length - 1] || sau, chantier: 'c3', texte: 'Retard de livraison du béton (démo)' }, { date: sj[Math.max(0, sj.length - 4)] || sau, chantier: 'c1', texte: 'Engin en panne, intervention prévue (démo)' }] }; }
+      case 'mail_quota': { exigerAdmin(); return { restant: 87, heure: '10:30' }; }
       case 'parametres_lire': case 'parametres_enregistrer': { exigerAdmin();
         var pk = 'infra_v2_demo_param', pv; try { pv = JSON.parse(sessionStorage.getItem(pk) || '{}'); } catch (e) { pv = {}; }
         var preg = [['rapports.boites_secretariat', 'Rapports journaliers', 'Boîtes du secrétariat (envoi du consolidé)', 'Adresses cochées par « Secrétariat » dans Synthèse du jour. Une par ligne.', 'emails', 'Secrétariat Division INFRA <sec-infra.rns@exemple.dz>', '', 0, 0],
