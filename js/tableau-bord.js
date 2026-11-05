@@ -10,6 +10,13 @@
   function sv(t, a, enfants) { var e = document.createElementNS(NS, t); Object.keys(a || {}).forEach(function (k) { e.setAttribute(k, a[k]); }); (enfants || []).forEach(function (c) { e.appendChild(c); }); return e; }
   function txt(x, y, s, a) { var t = sv('text', Object.assign({ x: x, y: y, 'font-size': 10, fill: 'currentColor' }, a || {})); t.textContent = s; return t; }
   function jourCourt(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7); }
+  function plusJours(iso, n) { var x = new Date(iso + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
+  /** Petites barres (une par valeur), la plus récente / la première du jour marquée ; infobulle par barre. */
+  function petitesBarres(valeurs, couleur, infobulle, zoom) {
+    var W = 280, H = 34, bw = W / valeurs.length, max = Math.max.apply(null, valeurs.concat([1])), base = zoom ? Math.max(0, Math.min.apply(null, valeurs) - Math.max(1, (max - Math.min.apply(null, valeurs)))) : 0, g = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', height: H, role: 'img', 'aria-label': 'Évolution sur 14 jours', preserveAspectRatio: 'none' });
+    valeurs.forEach(function (v, i) { var h = Math.max(v ? 3 : 1.5, (v - base) / Math.max(1, max - base) * (H - 3)), r = sv('rect', { x: i * bw + 1.5, y: H - h, width: bw - 3, height: h, rx: 2, fill: couleur, opacity: v ? 1 : 0.3 }); var ti = sv('title'); ti.textContent = infobulle(v, i); r.appendChild(ti); g.appendChild(r); });
+    var z = el('div'); z.style.margin = '6px 0 0'; z.appendChild(g); return z;
+  }
   function carte(titre, icone, lien) {
     var c = el(lien ? 'a' : 'div', 'tb-carte'); if (lien) c.href = lien;
     var h = el('div', 'tb-titre'); h.appendChild(el('span', null, icone + ' ' + titre)); c.appendChild(h); return c;
@@ -196,6 +203,24 @@
     if (b.presents) {
       var c = carte('Présence sur site', '🏕', null); c.appendChild(gros(b.presents.total, 'prestataires hébergés aujourd\'hui', '#E85D04')); c.appendChild(aire(b.presents.serie, '#E85D04'));
       if (b.presents.entreprises.length) c.appendChild(barresH(b.presents.entreprises, b.presents.entreprises[0].n, '#E85D04')); ajout(c);
+    }
+    if (b.planning) {
+      var pl = b.planning, cp = carte('Planning de ' + pl.portee, '🗓', 'planning.html'), pn = el('div', 'tb-ligne'), g1 = el('div', 'tb-col');
+      g1.appendChild(gros(pl.travail, 'en poste', '#E85D04')); g1.appendChild(el('small', null, pl.repos + ' à la maison' + (pl.retours ? ' · ' + pl.retours + ' reprennent cette semaine' : ''))); pn.appendChild(g1); cp.appendChild(pn);
+      cp.appendChild(petitesBarres(pl.serie, '#E85D04', function (n, i) { return jourCourt(plusJours(pl.debut, i)) + ' : ' + n + ' en poste'; }, true));
+      cp.appendChild(el('small', null, 'Effectif en poste, 14 prochains jours (aujourd\'hui à gauche)')); ajout(cp);
+    }
+    if (b.inventaire) {
+      var iv = b.inventaire, st = iv.stats, ci = carte('Inventaire ' + iv.annee, '📦', 'inventaire.html'), pc = Math.max(0, Math.min(100, Number(iv.pct) || 0));
+      ci.appendChild(gros(fr1(pc) + ' %', iv.trouves + ' retrouvés sur ' + iv.total + ' · ' + iv.restants + ' restants', '#16A34A'));
+      var bi = el('div', 'tb-bar'), ii = el('i'); ii.style.width = Math.max(2, pc) + '%'; ii.style.background = '#16A34A'; bi.appendChild(ii); ci.appendChild(bi);
+      if (st) {
+        ci.appendChild(petitesBarres(st.serie, '#16A34A', function (n, i) { return jourCourt(plusJours(d.date, i - 13)) + ' : ' + n + ' retrouvé(s)'; }));
+        var t = ['rythme ' + fr1(st.rythme) + '/jour']; if (st.meilleur) t.push('record ' + st.meilleur.n + ' le ' + jourCourt(st.meilleur.date)); if (st.fin) t.push('fin vers le ' + jourCourt(st.fin));
+        ci.appendChild(el('small', null, t.join(' · ')));
+        if ((st.podium || []).length) ci.appendChild(el('small', null, st.podium.map(function (p, i) { return ['🥇', '🥈', '🥉'][i] + ' ' + p.nom + ' (' + p.n + ')'; }).join('  ')));
+      }
+      ajout(ci);
     }
     if (b.rapports_jour) {
       var r = b.rapports_jour, pc = r.total ? Math.round(r.recus / r.total * 100) : 0, c2 = carte('Rapports du jour', '📝', 'rapports.html#journal'), ligne = el('div', 'tb-ligne');

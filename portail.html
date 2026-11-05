@@ -68,17 +68,8 @@
         <button class="btn-s" id="mes-apps-plus" type="button" hidden></button>
       </aside>
     </div>
-    <div class="alerte" id="alerte-inv" hidden style="display:block;color:var(--text-dark)"><div style="font-weight:800" id="inv-titre"></div><div style="height:12px;border-radius:6px;background:#E5E7EB;margin:7px 0 5px;overflow:hidden"><div id="inv-barre" style="height:100%;background:#2E9E5B;width:0"></div></div><div id="inv-texte" style="font-size:13px"></div><div id="inv-resp" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div><div id="inv-stats" hidden style="margin-top:8px"><div id="inv-spark" style="display:flex;gap:3px;align-items:flex-end;height:38px" aria-label="Articles retrouvés par jour sur 14 jours"></div><div id="inv-stats-txt" style="font-size:12.5px;margin-top:4px"></div><div id="inv-podium" style="font-size:12.5px;margin-top:2px"></div></div><a class="btn-s" id="inv-lien" href="inventaire.html" hidden style="margin-top:6px;display:inline-block">Ouvrir l'inventaire</a></div>
+    <div class="alerte" id="alerte-inv" hidden style="display:block;color:var(--text-dark)"><div style="font-weight:800" id="inv-titre"></div><div style="height:12px;border-radius:6px;background:#E5E7EB;margin:7px 0 5px;overflow:hidden"><div id="inv-barre" style="height:100%;background:#2E9E5B;width:0"></div></div><div id="inv-texte" style="font-size:13px"></div><div id="inv-resp" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div><a class="btn-s" id="inv-lien" href="inventaire.html" hidden style="margin-top:6px;display:inline-block">Ouvrir l'inventaire</a></div>
     <div class="alerte" id="alerte-msg" hidden style="display:block"><span id="msg-texte"></span></div>
-    <div class="alerte" id="alerte-plan" hidden style="display:block;color:var(--text-dark)">
-      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-        <div id="pl-anneau" style="width:74px;height:74px;border-radius:50%;flex:none;display:grid;place-items:center" aria-hidden="true"><div style="width:56px;height:56px;border-radius:50%;background:var(--surface,#fff);display:grid;place-items:center;text-align:center;line-height:1.05"><div><b id="pl-jour" style="font-size:19px"></b><div id="pl-sur" style="font-size:10.5px;color:var(--text-muted)"></div></div></div></div>
-        <div style="flex:1;min-width:220px"><div style="font-weight:800" id="pl-titre"></div><div id="pl-texte" style="font-size:13.5px;margin-top:2px"></div><div id="pl-equipe" style="font-size:12.5px;color:var(--text-muted);margin-top:3px"></div></div>
-        <a class="btn-s" id="pl-lien" href="planning.html" hidden>Voir mon planning</a>
-      </div>
-      <div id="pl-ruban" style="display:flex;gap:3px;margin-top:10px" aria-label="28 prochains jours"></div>
-      <div id="pl-legende" style="font-size:11.5px;color:var(--text-muted);margin-top:4px"></div>
-    </div>
     <div class="alerte" id="alerte-epi" hidden><span>🦺 Vos tailles de dotation EPI sont incomplètes : complétez-les (2 minutes).</span><a class="btn-s" href="epi.html">Renseigner mes tailles</a></div>
     <div class="alerte" id="alerte-vis" hidden><span>🔔 Un collègue vous a choisi comme vis-à-vis : confirmez ou refusez dans votre profil.</span><a class="btn-s" href="profil.html#coord">Répondre</a></div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
@@ -291,29 +282,8 @@
       var pc = Math.max(0, Math.min(100, Number(z.pct) || 0)); $('inv-titre').textContent = '📦 Point de situation — Inventaire ' + z.annee + ' (opération en cours)'; $('inv-barre').style.width = pc + '%';
       $('inv-texte').textContent = z.trouves + ' article(s) retrouvé(s) sur ' + z.total + ' (' + String(pc).replace('.', ',') + ' %) · ' + z.restants + ' restant(s) à retrouver · ' + (z.ce_jour || 0) + ' retrouvé(s) ce jour';
       $('inv-resp').textContent = z.responsable ? 'Responsable de l\'opération : ' + z.responsable + ', coordinateur principal' : '';
-      (function () { var st = z.stats; $('inv-stats').hidden = !st; if (!st) return;
-        var sp = $('inv-spark'); sp.textContent = ''; var mx = Math.max.apply(null, st.serie.concat([1]));
-        st.serie.forEach(function (n, i) { var b = el('span'); b.title = n + ' retrouvé(s)'; b.style.cssText = 'flex:1;border-radius:3px 3px 0 0;background:#2E9E5B;height:' + Math.max(3, Math.round(34 * n / mx)) + 'px;opacity:' + (n ? 1 : .25) + (i === st.serie.length - 1 ? ';outline:2px solid var(--text-dark);outline-offset:1px' : ''); sp.appendChild(b); });
-        var fr = function (d) { var x = String(d || '').split('-'); return x.length === 3 ? x[2] + '/' + x[1] : ''; }, t = [];
-        t.push('Rythme de la semaine : ' + String(st.rythme).replace('.', ',') + ' article(s) par jour');
-        if (st.meilleur) t.push('meilleur jour : ' + st.meilleur.n + ' le ' + fr(st.meilleur.date));
-        if (st.fin) t.push('à ce rythme, terminé vers le ' + fr(st.fin));
-        $('inv-stats-txt').textContent = t.join(' · ') + '.';
-        $('inv-podium').textContent = (st.podium || []).length ? 'Podium : ' + st.podium.map(function (p, i) { return ['🥇', '🥈', '🥉'][i] + ' ' + p.nom + ' (' + p.n + ')'; }).join('  ') : ''; })();
       var acces = (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return /inventaire\.html/.test(a.url || ''); }); }); $('inv-lien').hidden = !acces; })();
     $('alerte-msg').hidden = !r.accueil_message; $('msg-texte').textContent = r.accueil_message || '';
-    (function () {
-      var z = r.planning_stat, ok = !!(z && z.statut); $('alerte-plan').hidden = !ok; if (!ok) return;
-      var T = z.statut === 'T', coul = T ? '#F0A030' : '#2E9E5B', pc = Math.max(3, Math.min(100, z.pct || 0)), j = function (d) { var x = String(d || '').split('-'); return x.length === 3 ? x[2] + '/' + x[1] : ''; };
-      $('pl-anneau').style.background = 'conic-gradient(' + coul + ' ' + pc + '%, #E5E7EB 0)'; $('pl-jour').textContent = z.jour; $('pl-sur').textContent = 'sur ' + z.total;
-      $('pl-titre').textContent = z.titre || ((T ? '🏗️ En poste' : '🏡 À la maison') + ' · jour ' + z.jour + ' sur ' + z.total);
-      $('pl-texte').textContent = z.texte !== undefined ? z.texte : z.prochain ? (T ? 'Plus que ' + z.restants + ' jour' + (z.restants > 1 ? 's' : '') + ' avant votre repos (retour à la maison le ' + j(z.prochain.date) + ').' : 'Reprise du travail dans ' + z.restants + ' jour' + (z.restants > 1 ? 's' : '') + ' (le ' + j(z.prochain.date) + ').') : '';
-      $('pl-equipe').textContent = z.equipe ? 'Dans ' + z.equipe.portee + ' aujourd\'hui : ' + z.equipe.travail + ' en poste · ' + z.equipe.repos + ' à la maison' + (z.equipe.retours ? ' · ' + z.equipe.retours + ' reprennent cette semaine' : '') + '.' : '';
-      var rb = $('pl-ruban'); rb.textContent = '';
-      String(z.ruban || '').split('').forEach(function (c, i) { var s = el('span'); s.title = c === 'T' ? 'Travail' : c === 'R' ? 'Repos' : c === 'A' ? 'Absence' : ''; s.style.cssText = 'flex:1;height:14px;border-radius:4px;background:' + (c === 'T' ? '#F0A030' : c === 'R' ? '#2E9E5B' : c === 'A' ? '#9CA3AF' : '#E5E7EB') + (i < 6 ? ';opacity:.45' : '') + (i === 6 ? ';outline:2px solid var(--text-dark);outline-offset:1px' : ''); rb.appendChild(s); });
-      $('pl-legende').textContent = '■ travail  ■ repos · aujourd\'hui encadré' + (z.annee_travail !== undefined ? ' · ' + z.annee + ' : ' + z.annee_travail + ' jours sur site, ' + z.annee_repos + ' à la maison (~ ' + Math.round(100 * z.annee_travail / Math.max(1, z.annee_travail + z.annee_repos)) + ' % de présence).' : '');
-      var acces = (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return /planning\.html/.test(a.url || ''); }); }); $('pl-lien').hidden = !acces;
-    })();
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
     var groupes = window.Rubriques ? Rubriques.regrouper(r.menu, r.rubriques).filter(function (g) { return g.apps.length; }) : r.menu;
     var zone = $('modules'); zone.textContent = ''; outilsAccueil(groupes);

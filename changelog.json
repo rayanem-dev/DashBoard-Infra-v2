@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-325",
+    "date": "2026-11-06",
+    "title": "Version 6.64.0 — Accueil : deux cartes discrètes dans le tableau de bord",
+    "changes": [
+      "Tableau de bord de l'accueil : nouvelle carte « Planning de la division » (en poste / à la maison aujourd'hui, reprises de la semaine, effectif en poste des 14 prochains jours) et carte « Inventaire » (avancement, retrouvés par jour, rythme, fin estimée, podium), au même format que les autres cartes.",
+      "L'encadré « Mon planning » et les stats ajoutées sous la jauge de l'inventaire sont retirés de l'accueil (la jauge d'origine reste). Paramètres › Page d'accueil : interrupteurs des deux cartes et message d'annonce."
+    ]
+  },
+  {
     "id": "2026-11-06-324",
     "date": "2026-11-06",
     "title": "Version 6.63.0 — Documents administratifs : Titre de congé",
