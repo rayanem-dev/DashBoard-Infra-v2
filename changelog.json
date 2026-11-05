@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-323",
+    "date": "2026-11-06",
+    "title": "Version 6.62.0 — Accueil : stats d'animation de l'inventaire",
+    "changes": [
+      "Accueil, sous la jauge de l'inventaire : barres des articles retrouvés par jour (14 jours), rythme de la semaine, meilleur jour, fin estimée à ce rythme et podium des 3 personnes qui ont le plus retrouvé d'articles. S'active ou se coupe dans Paramètres › Page d'accueil (« Stats d'animation de l'inventaire »)."
+    ]
+  },
+  {
     "id": "2026-11-06-322",
     "date": "2026-11-06",
     "title": "Version 6.61.0 — Accueil : stat de planning et onglet Paramètres « Page d'accueil »",

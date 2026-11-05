@@ -68,7 +68,7 @@
         <button class="btn-s" id="mes-apps-plus" type="button" hidden></button>
       </aside>
     </div>
-    <div class="alerte" id="alerte-inv" hidden style="display:block;color:var(--text-dark)"><div style="font-weight:800" id="inv-titre"></div><div style="height:12px;border-radius:6px;background:#E5E7EB;margin:7px 0 5px;overflow:hidden"><div id="inv-barre" style="height:100%;background:#2E9E5B;width:0"></div></div><div id="inv-texte" style="font-size:13px"></div><div id="inv-resp" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div><a class="btn-s" id="inv-lien" href="inventaire.html" hidden style="margin-top:6px;display:inline-block">Ouvrir l'inventaire</a></div>
+    <div class="alerte" id="alerte-inv" hidden style="display:block;color:var(--text-dark)"><div style="font-weight:800" id="inv-titre"></div><div style="height:12px;border-radius:6px;background:#E5E7EB;margin:7px 0 5px;overflow:hidden"><div id="inv-barre" style="height:100%;background:#2E9E5B;width:0"></div></div><div id="inv-texte" style="font-size:13px"></div><div id="inv-resp" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div><div id="inv-stats" hidden style="margin-top:8px"><div id="inv-spark" style="display:flex;gap:3px;align-items:flex-end;height:38px" aria-label="Articles retrouvés par jour sur 14 jours"></div><div id="inv-stats-txt" style="font-size:12.5px;margin-top:4px"></div><div id="inv-podium" style="font-size:12.5px;margin-top:2px"></div></div><a class="btn-s" id="inv-lien" href="inventaire.html" hidden style="margin-top:6px;display:inline-block">Ouvrir l'inventaire</a></div>
     <div class="alerte" id="alerte-msg" hidden style="display:block"><span id="msg-texte"></span></div>
     <div class="alerte" id="alerte-plan" hidden style="display:block;color:var(--text-dark)">
       <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
@@ -291,6 +291,15 @@
       var pc = Math.max(0, Math.min(100, Number(z.pct) || 0)); $('inv-titre').textContent = '📦 Point de situation — Inventaire ' + z.annee + ' (opération en cours)'; $('inv-barre').style.width = pc + '%';
       $('inv-texte').textContent = z.trouves + ' article(s) retrouvé(s) sur ' + z.total + ' (' + String(pc).replace('.', ',') + ' %) · ' + z.restants + ' restant(s) à retrouver · ' + (z.ce_jour || 0) + ' retrouvé(s) ce jour';
       $('inv-resp').textContent = z.responsable ? 'Responsable de l\'opération : ' + z.responsable + ', coordinateur principal' : '';
+      (function () { var st = z.stats; $('inv-stats').hidden = !st; if (!st) return;
+        var sp = $('inv-spark'); sp.textContent = ''; var mx = Math.max.apply(null, st.serie.concat([1]));
+        st.serie.forEach(function (n, i) { var b = el('span'); b.title = n + ' retrouvé(s)'; b.style.cssText = 'flex:1;border-radius:3px 3px 0 0;background:#2E9E5B;height:' + Math.max(3, Math.round(34 * n / mx)) + 'px;opacity:' + (n ? 1 : .25) + (i === st.serie.length - 1 ? ';outline:2px solid var(--text-dark);outline-offset:1px' : ''); sp.appendChild(b); });
+        var fr = function (d) { var x = String(d || '').split('-'); return x.length === 3 ? x[2] + '/' + x[1] : ''; }, t = [];
+        t.push('Rythme de la semaine : ' + String(st.rythme).replace('.', ',') + ' article(s) par jour');
+        if (st.meilleur) t.push('meilleur jour : ' + st.meilleur.n + ' le ' + fr(st.meilleur.date));
+        if (st.fin) t.push('à ce rythme, terminé vers le ' + fr(st.fin));
+        $('inv-stats-txt').textContent = t.join(' · ') + '.';
+        $('inv-podium').textContent = (st.podium || []).length ? 'Podium : ' + st.podium.map(function (p, i) { return ['🥇', '🥈', '🥉'][i] + ' ' + p.nom + ' (' + p.n + ')'; }).join('  ') : ''; })();
       var acces = (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return /inventaire\.html/.test(a.url || ''); }); }); $('inv-lien').hidden = !acces; })();
     $('alerte-msg').hidden = !r.accueil_message; $('msg-texte').textContent = r.accueil_message || '';
     (function () {
