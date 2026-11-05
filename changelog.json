@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-316",
+    "date": "2026-11-06",
+    "title": "Version 6.57.1 — Rapport journalier : envoi manuel ciblé pour un jour choisi",
+    "changes": [
+      "Paramètres › Rapport journalier : un sélecteur « Rapport du jour » (aujourd'hui, hier ou une date) s'applique aux boutons 👁 (voir à qui) et ✉ (envoyer) de chaque rôle et de « tous ». Exemple : envoyer le rapport d'hier au seul rôle « Chefs de service ».",
+      "Rapports › Synthèse : le bloc d'envoi en double est retiré (il n'y a plus qu'un seul endroit pour envoyer) ; un lien mène vers Paramètres."
+    ]
+  },
+  {
     "id": "2026-11-06-315",
     "date": "2026-11-06",
     "title": "Version 6.57.0 — Paramètres : onglet Utilisateurs",

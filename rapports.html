@@ -128,18 +128,6 @@
     <div class="barre" style="gap:8px"><button class="btn-p" id="b-gen" type="button" title="Enregistre le rapport consolidé du jour à partir des rapports de chantier (remplace la version précédente)">📄 Générer le consolidé du jour</button><button class="btn-s" id="b-conso" type="button" disabled title="Imprime la version enregistrée">🖨 Imprimer le consolidé</button><span id="conso-etat" class="aide"></span></div>
     <p class="aide" id="regles-lien" hidden style="margin:2px 0 10px">📨 Qui reçoit le rapport journalier ? <a id="regles-a" href="rapport-regles.html" style="font-weight:700">Voir les règles d'envoi</a></p>
     <div class="grille-synthese" id="synth"></div>
-    <div class="bloc" id="envoi" hidden style="margin-top:16px">
-      <b>✉ Envoyer le consolidé</b>
-      <p class="aide" style="margin:6px 0 8px;font-size:12.5px">L'envoi suit le tableau « qui reçoit quoi » (consolidé complet pour la direction, le secrétariat, les chefs de service, les cadres et les chefs d'atelier ; rapport de son service pour les ingénieurs, dessinateurs, conducteurs, agents et stagiaires, à l'envoi automatique du soir). <a id="lien-regles" href="parametres.html#rapport" style="font-weight:700">⚙ Régler l'envoi du rapport (Paramètres)</a></p>
-      <div class="barre" style="gap:14px;margin:8px 0">
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:#8a1c1c" title="Exceptionnel, pour tester : tous les comptes actifs de la division (SH, ACOSCO, GTP…). Envoi manuel uniquement, jamais automatique."><input type="checkbox" id="toute-div" style="width:auto;min-width:0"> Toute la division (exceptionnel)</label>
-        <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé selon les règles en vigueur (rien n'est envoyé)">👁 Voir les destinataires</button>
-        <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux destinataires du consolidé complet">✉ Envoyer maintenant</button>
-      </div>
-      <p class="aide" style="margin:0 0 8px;font-size:12.5px">📎 Les photos des rapports sont jointes au message et au PDF (poids total réglable dans Paramètres) ; chaque vidéo est envoyée par un <b>lien temporaire</b> qui se ferme tout seul au bout de quelques jours.</p>
-      <div id="liste-dest" class="aide" style="margin:0 0 10px" hidden></div>
-      <p class="aide" id="auto-etat" style="margin:6px 0 0">Envoi automatique : chargement…</p>
-    </div>
     <h3 style="margin:22px 0 8px;font-size:15px">Rapports consolidés enregistrés</h3>
     <div id="conso-liste"></div>
   </section>
@@ -586,36 +574,7 @@
     }).catch(function () { /* liste indisponible */ });
   }
   // ----- Envoi du consolidé par e-mail (au clic) et envoi automatique du soir (option)
-  Api.call('rapport_regles_lire', {}).then(function (r) { $('regles-lien').hidden = false; var h = r.peut_modifier ? 'parametres.html#rapport' : 'rapport-regles.html'; $('regles-a').href = h; $('regles-a').textContent = r.peut_modifier ? 'Régler les règles d\'envoi (Paramètres)' : 'Voir les règles d\'envoi'; }).catch(function () { /* réservé aux chefs de service et au-dessus */ });
-  function etatAuto(c) {
-    $('auto-etat').textContent = c.actif ? 'Envoi automatique actif : chaque jour à partir de ' + c.heure + ' h' + (c.dernier ? ' (dernier envoi : ' + fr(c.dernier) + ')' : '') + '. Il se règle dans Paramètres › Rapport journalier.' : 'Envoi automatique désactivé (à activer dans Paramètres › Rapport journalier).';
-    if (c.actif && c.erreur) $('auto-etat').textContent += ' ⚠ Dernier essai (' + c.essai + ') : ' + c.erreur;
-  }
-  $('b-liste-dest').addEventListener('click', function () {
-    var z = $('liste-dest'); z.hidden = false; z.textContent = 'Chargement…';
-    Api.call('rapports_conso_destinataires', { toute_division: $('toute-div').checked, date: $('s-date').value }).then(function (r) {
-      z.textContent = '';
-      z.appendChild(el('b', null, r.destinataires.length + ' destinataire(s) du consolidé complet :'));
-      if (!r.destinataires.length) z.appendChild(document.createTextNode(' aucun (voir le tableau dans Paramètres › Rapport journalier).'));
-      else { var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px;padding:0'; r.destinataires.forEach(function (d) { u.appendChild(el('li', null, d.nom + ' — ' + d.email + ' (' + d.role + (d.service ? ', ' + d.service : '') + ')')); }); z.appendChild(u); }
-      var t = el('div'); t.style.marginTop = '10px';
-      if (!r.copies_actives) t.appendChild(el('b', null, 'Copies du soir aux agents : désactivées (réglage dans Paramètres).'));
-      else {
-        t.appendChild(el('b', null, (r.copies || []).length + ' copie(s) du soir, à l\'envoi automatique (rapport de leur service, ou de ce qu\'ils ont écrit), pour le ' + fr(r.date) + ' :'));
-        if (!(r.copies || []).length) t.appendChild(document.createTextNode(' aucune pour l\'instant (aucun rapport ce jour-là, ou les inscrits reçoivent déjà le consolidé complet). La liste se calcule avec les rapports au moment de l\'envoi.'));
-        else { var u2 = el('ul'); u2.style.cssText = 'margin:4px 0 0 18px;padding:0'; r.copies.forEach(function (d) { u2.appendChild(el('li', null, d.nom + ' — ' + d.email + ' (' + d.role + ') · ' + d.chantiers.join(', '))); }); t.appendChild(u2); }
-      }
-      z.appendChild(t);
-    }).catch(function (e) { z.hidden = true; toast(e.message, true); });
-  });
-  $('b-envoyer').addEventListener('click', function () {
-    var j = $('s-date').value;
-    var toute = $('toute-div').checked;
-    if (!consolideDuJour) { toast('Générez d\'abord le consolidé du ' + fr(j), true); return; }
-    if (!confirm(toute ? '⚠ ENVOI À TOUTE LA DIVISION : le consolidé du ' + fr(j) + ' sera envoyé à TOUS les comptes actifs (SH, ACOSCO, GTP…). Utilisez « Voir les destinataires » avant. Confirmer ?' : 'Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux destinataires cochés ?')) return;
-    var b = $('b-envoyer'); b.disabled = true;
-    Api.call('rapports_consolide_envoyer', { date: j, toute_division: toute }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
-  });
+  Api.call('rapport_regles_lire', {}).then(function (r) { $('regles-lien').hidden = false; var h = r.peut_modifier ? 'parametres.html#rapport' : 'rapport-regles.html'; $('regles-a').href = h; $('regles-a').textContent = r.peut_modifier ? 'Régler les règles et envoyer à un rôle précis, pour hier ou un autre jour (Paramètres)' : 'Voir les règles d\'envoi'; }).catch(function () { /* réservé aux chefs de service et au-dessus */ });
   $('b-gen').addEventListener('click', function () {
     var b = $('b-gen'), j = $('s-date').value;
     if (consolideDuJour && !confirm('Un consolidé existe déjà pour le ' + fr(j) + ' (version ' + consolideDuJour.version + '). Le régénérer le remplace. Continuer ?')) return;
@@ -640,7 +599,6 @@
     [$('chantier'), $('f-chantier')].forEach(function (s) { var cur = s.value; s.textContent = ''; if (s.id === 'f-chantier') { var tous = el('option', null, 'Tous les chantiers'); tous.value = ''; s.appendChild(tous); } chantiers.forEach(function (c) { var o = el('option', null, c.nom); o.value = c.id; s.appendChild(o); }); if (cur) s.value = cur; });   // le filtre du journal garde « Tous les chantiers »
     $('b-hc').hidden = !r.peut_ouvrir; synchroChantier();
     if (r.peut_medias !== undefined) $('bloc-medias').hidden = !r.peut_medias;   // option « Joindre des photos et vidéos » (Paramètres)
-    if (r.peut_toute_division !== undefined) $('toute-div').closest('label').hidden = !r.peut_toute_division;   // option « toute la division » (Paramètres)
   }
   // Choix du chantier / prestataire : simple liste déroulante (la liste se recharge seule : nouveaux contrats, chantiers ouverts)
   function norme(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -653,7 +611,7 @@
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden && !$('p-saisie').hidden) rechargerChantiers(); });
   setInterval(function () { if (!document.hidden && !$('p-saisie').hidden && document.activeElement !== $('chantier')) rechargerChantiers(true); }, 300000);   // toutes les 5 minutes tant que la saisie est ouverte
-  var fermes = [], peutEnvoyer = false;
+  var fermes = [];
   function dateDans(mois) { var d = new Date(); d.setMonth(d.getMonth() + mois); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function majHc() { var o = $('hc-id').selectedOptions[0]; $('hc-neuf').hidden = !!$('hc-id').value; if ($('hc-id').value && o && o.dataset.phase) $('hc-phase').value = o.dataset.phase; }
   $('b-hc').onclick = function () {
@@ -679,14 +637,13 @@
   $('du').value = auj; $('au').value = auj; $('s-date').value = auj; $('s-date').max = auj;
   Api.call('me').then(function (m) { var u = (m && m.user) || {}; moi.nom = u.nom || u.email || ''; moi.qual = [u.fonction, u.service].filter(Boolean).join(' · '); $('etabli-nom').textContent = moi.nom; $('etabli-qual').textContent = moi.qual; }).catch(function () { /* le nom s'affichera à l'enregistrement */ });
   Api.call('rapports_chantiers').then(function (r) {
-    remplirChantiers(r); peutEnvoyer = !!r.peut_envoyer;
+    remplirChantiers(r);
     return Api.call('rapports_liste', { du: plus(auj, -60), au: auj });
   }).then(function (r) {
     niveau = r.niveau; mesRapports = r.rapports; prerempli();
     if (niveau < 2) { $('o-saisie').hidden = true; $('p-saisie').hidden = true; document.querySelector('[data-p=p-journal]').click(); }
     ouvrirOngletDuLien();
     if (niveau >= 3) { $('o-synth').hidden = false; }
-    if (peutEnvoyer) { $('envoi').hidden = false; Api.call('rapports_conso_auto_lire').then(function (c) { etatAuto(c); }).catch(function () { /* indisponible */ }); }
   }).catch(function (e) {
     if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
     if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : le module « Rapports journaliers » n\'est pas activé pour votre compte.'; return; }
