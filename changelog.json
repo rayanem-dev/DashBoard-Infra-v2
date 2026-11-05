@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-336",
+    "date": "2026-11-06",
+    "title": "Version 6.69.0 — Rapport journalier : tout rôle « Rapport de son service » reçoit quelque chose",
+    "changes": [
+      "Tout compte dont le rôle est réglé « Rapport de son service » reçoit désormais un rapport dès qu'il y en a eu ce jour-là : celui de son service, sinon (aucun rapport dans son service, ou service non renseigné) le rapport de la division, pour voir ce que font ses collègues. Plus personne n'est oublié parce que son service n'a pas rédigé de rapport."
+    ]
+  },
+  {
     "id": "2026-11-06-335",
     "date": "2026-11-06",
     "title": "Version 6.68.1 — Rapport journalier : les copies par service repartent",

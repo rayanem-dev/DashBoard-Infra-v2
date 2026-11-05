@@ -105,7 +105,7 @@
   function carteRapport() {
     var c = el('div', 'bloc'), par = {}; P.forEach(function (p) { par[p.id] = p; });
     c.appendChild(el('h3', null, '📨 Rapport journalier : qui reçoit quoi'));
-    c.appendChild(el('p', 'aide', 'Choisissez, pour chaque rôle : « Consolidé complet » (tous les chantiers), « Rapport de son service » (les chantiers de son service, plus ce qu\'il a écrit) ou « Ne reçoit rien ». Les valeurs affichées sont celles en vigueur. Envoi manuel ciblé : choisissez le jour du rapport (aujourd\'hui, hier ou une autre date), puis 👁 pour voir qui le recevrait et ✉ pour l\'envoyer.'));
+    c.appendChild(el('p', 'aide', 'Choisissez, pour chaque rôle : « Consolidé complet » (tous les chantiers), « Rapport de son service » (les chantiers de son service, plus ce qu\'il a écrit ; s\'il n\'y a aucun rapport dans son service ce jour-là, le rapport de la division pour qu\'il voie ce que font ses collègues) ou « Ne reçoit rien ». Les valeurs affichées sont celles en vigueur. Envoi manuel ciblé : choisissez le jour du rapport (aujourd\'hui, hier ou une autre date), puis 👁 pour voir qui le recevrait et ✉ pour l\'envoyer.'));
     var controles = [], resultat = el('div');
     function jourLocal(n) { var x = new Date(); x.setDate(x.getDate() + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
     var champJour = el('input'); champJour.type = 'date'; champJour.value = jourLocal(0); champJour.max = jourLocal(0); champJour.style.cssText = 'padding:7px 9px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--text-dark)';
