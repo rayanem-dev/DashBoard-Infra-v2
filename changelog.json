@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-315",
+    "date": "2026-11-06",
+    "title": "Version 6.57.0 — Paramètres : onglet Utilisateurs",
+    "changes": [
+      "Paramètres › 👥 Utilisateurs : liste filtrable des comptes (service, section, rôle, statut), regroupement par service, section ou rôle, extraction Excel par service (global), par section ou par rôle, et bouton « ＋ Ajouter un utilisateur » (invitation possible ensuite depuis Privilèges). Réservé au niveau sécurité 3."
+    ]
+  },
+  {
     "id": "2026-11-06-314",
     "date": "2026-11-06",
     "title": "Version 6.56.1 — Rapport journalier : œil et envoi manuel par rôle",

@@ -55,9 +55,9 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['rapport', '📨 Rapport journalier', 'Qui reçoit le rapport journalier consolidé, et ce qu\'il reçoit : le consolidé complet, seulement le rapport de son service, ou rien. L\'envoi automatique du soir et l\'envoi manuel suivent ce tableau.'], ['fichiers', '📦 Inventaire', 'Exercices d\'inventaire (création, clôture, injection, suppression) et fichier global amortissable dans lequel l\'injection écrit les emplacements retrouvés. Les administrateurs de l\'inventaire se désignent dans l\'onglet Adresses e-mail.']], onglet = 'adresses';
+  var UTIL = [], ROLES_U = [], P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['utilisateurs', '👥 Utilisateurs', 'Tous les comptes du portail : recherche, regroupement par service, par section ou par rôle, extraction Excel et ajout d\'un utilisateur. Les droits fins de chacun se règlent dans Privilèges.'], ['rapport', '📨 Rapport journalier', 'Qui reçoit le rapport journalier consolidé, et ce qu\'il reçoit : le consolidé complet, seulement le rapport de son service, ou rien. L\'envoi automatique du soir et l\'envoi manuel suivent ce tableau.'], ['fichiers', '📦 Inventaire', 'Exercices d\'inventaire (création, clôture, injection, suppression) et fichier global amortissable dans lequel l\'injection écrit les emplacements retrouvés. Les administrateurs de l\'inventaire se désignent dans l\'onglet Adresses e-mail.']], onglet = 'adresses';
   try { var memo = sessionStorage.getItem('pa_onglet'); if (memo) onglet = memo; } catch (e) { /* mémoire indisponible */ }
-  if (/^#rapport/.test(location.hash)) onglet = 'rapport';
+  if (/^#rapport/.test(location.hash)) onglet = 'rapport'; else if (/^#utilisateurs/.test(location.hash)) onglet = 'utilisateurs';
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function frDate(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
@@ -70,7 +70,7 @@
   function dessinerOnglets(q) {
     var z = $('onglets'); z.textContent = '';
     ONGLETS.forEach(function (o) {
-      var n = o[0] === 'fichiers' ? 1 : o[0] === 'rapport' ? P.filter(function (p) { return p.onglet === 'rapport' && p.id.indexOf('rapport_envoi.role.') === 0; }).length : P.filter(function (p) { return p.onglet === o[0] && (p.option ? p.champ === 'actif' : true); }).length, b = el('button', null, o[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(!q && onglet === o[0]));
+      var n = o[0] === 'utilisateurs' ? (UTIL.length || '…') : o[0] === 'fichiers' ? 1 : o[0] === 'rapport' ? P.filter(function (p) { return p.onglet === 'rapport' && p.id.indexOf('rapport_envoi.role.') === 0; }).length : P.filter(function (p) { return p.onglet === o[0] && (p.option ? p.champ === 'actif' : true); }).length, b = el('button', null, o[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(!q && onglet === o[0]));
       b.appendChild(el('small', null, '· ' + n)); b.onclick = function () { onglet = o[0]; try { sessionStorage.setItem('pa_onglet', onglet); } catch (e) { /* tant pis */ } $('filtre').value = ''; dessiner(); }; z.appendChild(b);
     });
     var cur = ONGLETS.filter(function (o) { return o[0] === onglet; })[0]; $('noteOnglet').textContent = q ? 'Résultats de la recherche dans tous les onglets.' : (cur ? cur[2] : '');
@@ -79,6 +79,7 @@
     var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [], options = {};
     function groupe(g) { if (!groupes[g]) { groupes[g] = []; ordre.push(g); } return groupes[g]; }
     dessinerOnglets(q);
+    if (!q && onglet === 'utilisateurs') { z.textContent = ''; z.appendChild(carteUtilisateurs()); return; }
     if (!q && onglet === 'rapport') { z.textContent = ''; z.appendChild(carteRapport()); return; }
     if (!q && onglet === 'fichiers') { z.textContent = ''; z.appendChild(carteExercices()); z.appendChild(carteGlobal()); return; }
     P.forEach(function (p) {
@@ -100,6 +101,83 @@
   }
   /** Option à interrupteur et niveau d'accès : « Active » oui / non et, si elle en a un, le rôle minimum (ce rôle et ceux au-dessus). Un seul « Enregistrer » pour les deux. */
   /** Fichier global amortissable : chargé depuis un Excel, devient un Google Sheets du Drive ; l'inventaire y écrit à la clôture d'un exercice (une sauvegarde est faite avant chaque injection). */
+  /** Utilisateurs : recherche et filtres, regroupement par service / section / rôle, extraction Excel (récapitulatif + liste + une feuille par groupe) et ajout d'un compte. */
+  function carteUtilisateurs() {
+    var c = el('div', 'bloc'), etat = { q: '', service: '', section: '', role: '', actifs: true, groupe: 'service', limite: 100 };
+    c.appendChild(el('h3', null, '👥 Utilisateurs du portail')); var info = el('p', 'aide', 'Chargement…'); c.appendChild(info);
+    var barre = el('div'); barre.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 10px';
+    var STYLE = 'padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--text-dark)', BTN = 'padding:8px 12px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text-dark);font:inherit;font-size:13px;font-weight:700;cursor:pointer';
+    function sel(titre, cle) { var w = el('label', null, titre); w.style.cssText = 'display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase'; var x = el('select'); x.style.cssText = STYLE + ';text-transform:none;font-weight:600'; x.onchange = function () { etat[cle] = x.value; etat.limite = 100; dessiner(); }; w.appendChild(x); barre.appendChild(w); return x; }
+    var rech = el('input'); rech.type = 'search'; rech.placeholder = 'Chercher un nom, e-mail, fonction…'; rech.style.cssText = STYLE + ';flex:1;min-width:200px'; rech.oninput = function () { etat.q = rech.value; etat.limite = 100; dessiner(); }; barre.appendChild(rech);
+    var sS = sel('Service', 'service'), sC = sel('Section', 'section'), sR = sel('Rôle', 'role'), sA = sel('Statut', 'actifs');
+    c.appendChild(barre);
+    var barre2 = el('div'); barre2.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px';
+    var gl = el('label', null, 'Regrouper par '); gl.style.cssText = 'font-size:13px;font-weight:700'; var sg = el('select'); sg.style.cssText = STYLE; [['service', 'Service'], ['section', 'Section'], ['role', 'Rôle']].forEach(function (o) { var x = el('option', null, o[1]); x.value = o[0]; sg.appendChild(x); }); sg.onchange = function () { etat.groupe = sg.value; dessiner(); }; gl.appendChild(sg); barre2.appendChild(gl);
+    var bx = [['service', '⬇ Excel par service (global)'], ['section', '⬇ Excel par section'], ['role', '⬇ Excel par rôle']].map(function (o) { var b = el('button', null, o[1]); b.type = 'button'; b.style.cssText = BTN; b.onclick = function () { exporter(o[0], b); }; barre2.appendChild(b); return b; });
+    var add = el('button', null, '＋ Ajouter un utilisateur'); add.type = 'button'; add.style.cssText = BTN + ';background:linear-gradient(135deg,var(--orange-main),var(--orange-light));color:#fff;border-color:transparent;margin-left:auto'; add.onclick = function () { dialogAjout(); }; barre2.appendChild(add);
+    c.appendChild(barre2);
+    var resume = el('div'); resume.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px'; c.appendChild(resume);
+    var tab = el('table'); tab.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px'; c.appendChild(tab);
+    var plus = el('button', null, 'Afficher plus'); plus.type = 'button'; plus.style.cssText = BTN + ';margin-top:8px'; plus.hidden = true; plus.onclick = function () { etat.limite += 200; dessiner(); }; c.appendChild(plus);
+    var libRole = function (id) { var r = ROLES_U.filter(function (x) { return x.id === id; })[0]; return r ? r.libelle : id; };
+    var norm = function (t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+    var valeurGroupe = function (u, g) { return g === 'role' ? libRole(u.role) : (g === 'section' ? u.section : u.service) || '(non renseigné)'; };
+    function filtrés() { var q = norm(etat.q); return UTIL.filter(function (u) { return (!etat.actifs || u.actif) && (!etat.service || (u.service || '(non renseigné)') === etat.service) && (!etat.section || (u.section || '(non renseigné)') === etat.section) && (!etat.role || u.role === etat.role) && (!q || norm([u.nom, u.email, u.fonction, u.service, u.section, u.dependance].join(' ')).indexOf(q) >= 0); }); }
+    function remplir(x, vals, tous) { var cur = x.value; x.textContent = ''; var o0 = el('option', null, tous); o0.value = ''; x.appendChild(o0); vals.forEach(function (v) { var o = el('option', null, v[1]); o.value = v[0]; x.appendChild(o); }); x.value = cur; }
+    function uniques(g) { var m = {}; UTIL.forEach(function (u) { m[g === 'role' ? u.role : (g === 'section' ? u.section : u.service) || '(non renseigné)'] = 1; }); return Object.keys(m).sort(function (a, b) { return a.localeCompare(b, 'fr'); }).map(function (v) { return [v, g === 'role' ? libRole(v) : v]; }); }
+    function dessiner() {
+      remplir(sS, uniques('service'), 'Tous les services'); remplir(sC, uniques('section'), 'Toutes les sections'); remplir(sR, uniques('role'), 'Tous les rôles');
+      if (!sA.options.length) { [['1', 'Actifs seulement'], ['', 'Tous (désactivés compris)']].forEach(function (o) { var x = el('option', null, o[1]); x.value = o[0]; sA.appendChild(x); }); sA.onchange = function () { etat.actifs = sA.value === '1'; etat.limite = 100; dessiner(); }; sA.value = '1'; }
+      var l = filtrés(); info.textContent = l.length + ' compte(s) affiché(s) sur ' + UTIL.length + ' · ' + UTIL.filter(function (u) { return u.actif; }).length + ' actif(s).';
+      var g = {}; l.forEach(function (u) { var k = valeurGroupe(u, etat.groupe); g[k] = (g[k] || 0) + 1; }); resume.textContent = '';
+      Object.keys(g).sort(function (a, b) { return g[b] - g[a] || a.localeCompare(b, 'fr'); }).forEach(function (k) { var b = el('button', null, k + ' · ' + g[k]); b.type = 'button'; b.style.cssText = 'padding:4px 10px;border:1.5px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text-dark);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer'; b.onclick = function () { var cle = etat.groupe === 'role' ? 'role' : etat.groupe; var v = etat.groupe === 'role' ? (UTIL.filter(function (u) { return libRole(u.role) === k; })[0] || {}).role : (k === '(non renseigné)' ? k : k); etat[cle] = v || ''; var x = { service: sS, section: sC, role: sR }[cle]; if (x) x.value = etat[cle]; dessiner(); }; resume.appendChild(b); });
+      tab.textContent = ''; var th = el('tr'); ['Nom', 'E-mail', 'Service', 'Section', 'Fonction', 'Rôle', 'Statut'].forEach(function (h) { var e = el('th', null, h); e.style.cssText = 'text-align:left;padding:6px 7px;border-bottom:2px solid var(--border);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)'; th.appendChild(e); }); tab.appendChild(th);
+      var tri = l.slice().sort(function (a, b) { return valeurGroupe(a, etat.groupe).localeCompare(valeurGroupe(b, etat.groupe), 'fr') || String(a.nom).localeCompare(String(b.nom), 'fr'); }), dernier = null;
+      tri.slice(0, etat.limite).forEach(function (u) {
+        var vg = valeurGroupe(u, etat.groupe); if (vg !== dernier) { dernier = vg; var t0 = el('tr'), d0 = el('td', null, vg + ' (' + g[vg] + ')'); d0.colSpan = 7; d0.style.cssText = 'background:#FFE9D2;font-weight:800;padding:5px 7px'; t0.appendChild(d0); tab.appendChild(t0); }
+        var tr = el('tr'); [u.nom, u.email, u.service, u.section, u.fonction, libRole(u.role), u.actif ? 'Actif' : 'Désactivé'].forEach(function (v) { var td = el('td', null, v || ''); td.style.cssText = 'padding:5px 7px;border-bottom:1px solid var(--border);vertical-align:top'; tr.appendChild(td); }); tab.appendChild(tr);
+      });
+      plus.hidden = tri.length <= etat.limite;
+    }
+    function exporter(g, bouton) {
+      var l = filtrés().slice().sort(function (a, b) { return valeurGroupe(a, g).localeCompare(valeurGroupe(b, g), 'fr') || String(a.nom).localeCompare(String(b.nom), 'fr'); }), lib = { service: 'service', section: 'section', role: 'rôle' }[g];
+      if (!l.length) { toast('Aucun compte à exporter avec ces filtres.', true); return; }
+      var groupes = {}, ordre = []; l.forEach(function (u) { var k = valeurGroupe(u, g); if (!groupes[k]) { groupes[k] = []; ordre.push(k); } groupes[k].push(u); });
+      var ligne = function (u) { return [valeurGroupe(u, g), u.nom, u.email, u.fonction, u.service, u.section, libRole(u.role), u.dependance, u.actif ? 'Actif' : 'Désactivé']; };
+      var cols = [{ titre: lib.charAt(0).toUpperCase() + lib.slice(1), largeur: 26 }, { titre: 'Nom et prénom', largeur: 30 }, { titre: 'E-mail', largeur: 34 }, { titre: 'Fonction', largeur: 26 }, { titre: 'Service', largeur: 26 }, { titre: 'Section', largeur: 18 }, { titre: 'Rôle', largeur: 24 }, { titre: 'Dépendance / entreprise', largeur: 26 }, { titre: 'Statut', largeur: 12, centre: true }];
+      var feuilles = [{ nom: 'Récapitulatif', colonnes: [{ titre: lib.charAt(0).toUpperCase() + lib.slice(1), largeur: 34 }, { titre: 'Effectif', largeur: 12, nombre: true }, { titre: 'Dont actifs', largeur: 12, nombre: true }], lignes: ordre.map(function (k) { return [k, groupes[k].length, groupes[k].filter(function (u) { return u.actif; }).length]; }), total: ['Total', l.length, l.filter(function (u) { return u.actif; }).length] },
+        { nom: 'Liste complète', colonnes: cols, lignes: l.map(ligne), total: ['Total : ' + l.length + ' compte(s)'] }];
+      if (ordre.length <= 25) ordre.forEach(function (k, i) { feuilles.push({ nom: (String(k).replace(/[\[\]*?:\/\\]/g, ' ').slice(0, 26) + ' ' + (i + 1)).slice(0, 31), colonnes: cols, lignes: groupes[k].map(ligne), total: ['Total : ' + groupes[k].length] }); });
+      var txt = bouton.textContent; bouton.disabled = true; bouton.textContent = '⏳';
+      ExportExcel.telecharger({ fichier: 'utilisateurs_par_' + lib.replace('ô', 'o') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx', titre: 'Utilisateurs du portail — par ' + lib, sousTitre: 'Division Infrastructure RNS · ' + l.length + ' compte(s)' + (etat.actifs ? ' actif(s)' : ''), feuilles: feuilles })
+        .catch(function (e) { toast('Export impossible : ' + e.message, true); }).then(function () { bouton.disabled = false; bouton.textContent = txt; });
+    }
+    function dialogAjout() {
+      var d = el('dialog'); d.style.cssText = 'border:0;border-radius:16px;padding:18px 20px;width:min(560px,94vw)'; var f = el('div'); f.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px 12px';
+      f.appendChild(el('h3', null, 'Ajouter un utilisateur')).style.cssText = 'grid-column:1/-1;margin:0';
+      function champ(titre, large, el0) { var w = el('div'); if (large) w.style.gridColumn = '1/-1'; var l = el('label', null, titre); l.style.cssText = 'display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:3px'; w.appendChild(l); el0.style.cssText = STYLE + ';width:100%;box-sizing:border-box'; w.appendChild(el0); f.appendChild(w); return el0; }
+      var nom = champ('Nom et prénom *', true, el('input')), mail = champ('Adresse e-mail *', true, el('input')), role = champ('Rôle *', false, el('select')), serv = champ('Service', false, el('input')), dep = champ('Dépendance / entreprise', false, el('input')), sec = champ('Section (facultatif)', false, el('input')), fonc = champ('Fonction', true, el('input'));
+      mail.type = 'email'; [nom, mail, serv, dep, sec, fonc].forEach(function (x) { x.maxLength = 120; }); ROLES_U.forEach(function (r) { var o = el('option', null, r.libelle); o.value = r.id; role.appendChild(o); }); role.value = 'agent';
+      var ls = el('datalist'); ls.id = 'dl-serv-u'; uniques('service').forEach(function (v) { var o = el('option'); o.value = v[0]; ls.appendChild(o); }); serv.setAttribute('list', 'dl-serv-u'); f.appendChild(ls);
+      var lc = el('datalist'); lc.id = 'dl-sec-u'; uniques('section').forEach(function (v) { var o = el('option'); o.value = v[0]; lc.appendChild(o); }); sec.setAttribute('list', 'dl-sec-u'); f.appendChild(lc);
+      var er = el('p'); er.style.cssText = 'grid-column:1/-1;margin:0;color:#B42318;font-weight:700;font-size:13px'; f.appendChild(er);
+      var bar = el('div'); bar.style.cssText = 'grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end'; var an = el('button', null, 'Annuler'), ok = el('button', null, 'Créer le compte'); an.type = ok.type = 'button'; an.style.cssText = BTN; ok.style.cssText = BTN + ';background:linear-gradient(135deg,var(--orange-main),var(--orange-light));color:#fff;border-color:transparent';
+      an.onclick = function () { d.close(); d.remove(); };
+      ok.onclick = function () {
+        er.textContent = ''; ok.disabled = true;
+        Api.call('admin_utilisateur_ajouter', { nom: nom.value, email: mail.value, role: role.value, service: serv.value, dependance: dep.value, section: sec.value, fonction: fonc.value })
+          .then(function (r) { d.close(); d.remove(); toast('Compte créé : ' + r.email + ' (invitation possible depuis Privilèges)'); return charger(true); })
+          .catch(function (e) { er.textContent = e.message; }).then(function () { ok.disabled = false; });
+      };
+      bar.appendChild(an); bar.appendChild(ok); f.appendChild(bar); d.appendChild(f); document.body.appendChild(d); d.showModal(); nom.focus();
+    }
+    function charger(force) {
+      if (UTIL.length && !force) { dessiner(); return Promise.resolve(); }
+      return Api.call('admin_etat', {}).then(function (r) { UTIL = r.utilisateurs || []; ROLES_U = (r.roles || []).slice().sort(function (a, b) { return (a.rang || 0) - (b.rang || 0); }); dessiner(); dessinerOnglets(''); })
+        .catch(function (e) { info.textContent = e.code === 'DROITS' ? 'Cette liste demande le droit « sécurité » (niveau 3).' : e.message; });
+    }
+    charger(false); return c;
+  }
   /** Rapport journalier : tableau « qui reçoit quoi » (un choix par rôle), envoi automatique (activé, heure) et adresses supplémentaires, enregistrés d'un seul clic. */
   function carteRapport() {
     var c = el('div', 'bloc'), par = {}; P.forEach(function (p) { par[p.id] = p; });
@@ -298,6 +376,7 @@
   });
 })();
 </script>
+<script src="js/export-excel.js"></script>
 <script src="js/raccourcis.js"></script>
 <script src="js/pied.js"></script>
 </body>
