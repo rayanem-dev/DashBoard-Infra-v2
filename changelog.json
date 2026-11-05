@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-322",
+    "date": "2026-11-06",
+    "title": "Version 6.61.0 — Accueil : stat de planning et onglet Paramètres « Page d'accueil »",
+    "changes": [
+      "Accueil : nouvelle stat « Mon planning » : anneau « jour X sur N », jours avant le repos (ou la reprise), ruban de 28 jours (travail / repos, aujourd'hui encadré), bilan de l'année (jours sur site / à la maison) et, pour ceux qui ont le droit équipes, la photo du périmètre (en poste, à la maison, reprises de la semaine).",
+      "Paramètres › 🏠 Page d'accueil : activer / désactiver la stat de planning, la photo du périmètre, le bilan de l'année et le point de situation de l'inventaire ; modifier les 4 textes de la stat ({jour} {total} {restants} {date}) ; message d'annonce affiché en haut de l'accueil pour tous (vide = rien)."
+    ]
+  },
+  {
     "id": "2026-11-06-321",
     "date": "2026-11-06",
     "title": "Version 6.60.0 — NIN : écriture dans BDDORGA activée, saisie dans Privilèges",
