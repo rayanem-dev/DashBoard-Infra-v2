@@ -125,6 +125,29 @@
         '<div class="odm-sign"><b><u>' + E(v.signataire || 'Le Chef De Division Infrastructures') + '</u></b></div></div>' + PIED_ODM;
     });
   M[M.length - 1].opts = { _titre: 'REQUETE DE TRANSPORT DE PERSONNEL', _sansNum: true, _division: 'Division Infrastructures' };
+
+  /** Titre de congé (modèle de la Division Infrastructures) : nom, prénom, fonction, structure, nombre de jours, dates de départ et de retour, destination relève. Même en-tête et même pied que l'ordre de mission. */
+  function scinderNom(complet) {   // « SAHEB Abd Erraouf » → { nom: 'SAHEB', prenom: 'Abd Erraouf' } : le nom de famille est écrit en majuscules, le prénom ensuite
+    var m = String(complet || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean), i = 0;
+    while (i < m.length - 1 && m[i] === m[i].toUpperCase() && /[A-ZÀ-Ý]/.test(m[i])) i += 1;
+    if (!i && m.length > 1) i = 1;
+    return { nom: m.slice(0, i).join(' '), prenom: m.slice(i).join(' ') };
+  }
+  modele('titre_conge', 'divers', 'Titre de congé', 'Autorise un agent à partir en congé : nom, prénom, fonction, structure, nombre de jours, dates de départ et de retour, destination relève.',
+    [L.date, L.agent, L.fonction, { k: 'structure', l: 'Structure', def: 'INFRASTRUCTURES' }, { k: 'depart', l: 'Date de départ', t: 'date' }, { k: 'retour', l: 'Date de retour', t: 'date' },
+      { k: 'jours', l: 'Nombre de jours de congé (calculé depuis les dates si vide)', t: 'number' }, { k: 'destination', l: 'Destination relève', def: 'OUARGLA' },
+      { k: 'signataire', l: 'Signataire', def: 'LE CHEF DE DIVISION INFRASTRUCTURES' }], 'odm',
+    function (v) {
+      var n = scinderNom(v.agent), nb = String(v.jours == null ? '' : v.jours).trim(), calc = ecart(v.depart, v.retour);
+      if (!nb && calc !== null && calc >= 0) nb = String(calc);
+      var nbTxt = nb !== '' && /^\d+$/.test(nb) ? '(' + ('0' + nb).slice(-2) + ') Jours' : '';
+      var ligne = function (l, x) { return '<tr><th>' + l + '</th><td>' + x + '</td></tr>'; };
+      return '<div class="odm-num">&nbsp;</div><table class="odm-t">' + ligne('Nom :', n.nom ? '<span class="val">' + E(n.nom) + '</span>' : pts(18)) + ligne('Prénom :', n.prenom ? '<span class="val">' + E(n.prenom) + '</span>' : pts(18)) +
+        ligne('Fonction :', V(v, 'fonction')) + ligne('Structure :', V(v, 'structure')) + ligne('Nombre de jours de congé :', nbTxt ? '<span class="val">' + nbTxt + '</span>' : pts(8)) +
+        ligne('Date de Départ :', V(v, 'depart')) + ligne('Date de retour :', V(v, 'retour')) + ligne('Destination relève :', V(v, 'destination')) + '</table>' +
+        '<div class="odm-sign"><b>' + E(v.signataire || 'LE CHEF DE DIVISION INFRASTRUCTURES') + '</b></div>' + PIED_ODM;
+    });
+  M[M.length - 1].opts = { _titre: 'Titre de Congé', _sansNum: true, _division: 'Division Infrastructure' };
   M[M.length - 1].cache = true;   // modèle de la page « Requête de transport de personnel » (requete-transport.html), pas de la liste des documents administratifs
 
   modele('demande-mission', 'missions', 'Demande de mission', 'Demande au Directeur Régional d\'autoriser une mission de travail.',
@@ -435,6 +458,6 @@
     if (/division|infrastructure|cpm|passation|secretariat|cellule/.test(t)) return IMPUTATIONS[0];
     return null;
   }
-  var API = { IMPUTATIONS: IMPUTATIONS, imputationDe: imputationDe, categories: CATEGORIES, modeles: M, trouver: trouver, valeursInitiales: valeursInitiales, rendre: rendre, css: CSS, frDate: frDate, echapper: E };
+  var API = { scinderNom: scinderNom, IMPUTATIONS: IMPUTATIONS, imputationDe: imputationDe, categories: CATEGORIES, modeles: M, trouver: trouver, valeursInitiales: valeursInitiales, rendre: rendre, css: CSS, frDate: frDate, echapper: E };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.Documents = API;
 })(typeof window !== 'undefined' ? window : this);

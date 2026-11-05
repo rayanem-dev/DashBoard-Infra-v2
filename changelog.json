@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-324",
+    "date": "2026-11-06",
+    "title": "Version 6.63.0 — Documents administratifs : Titre de congé",
+    "changes": [
+      "Documents administratifs › Attestations & divers : nouveau modèle « Titre de congé », à l'identique du document fourni (en-tête Sonatrach, titre à droite sous le trait orange, tableau Nom / Prénom / Fonction / Structure / Nombre de jours / Date de départ / Date de retour / Destination relève, signature du chef de division, pied de page). Le nom et le prénom se séparent tout seuls à partir de la fiche BDDORGA choisie, et le nombre de jours se calcule depuis les dates (« (03) Jours »). Impression en un clic comme les autres documents."
+    ]
+  },
+  {
     "id": "2026-11-06-323",
     "date": "2026-11-06",
     "title": "Version 6.62.0 — Accueil : stats d'animation de l'inventaire",
