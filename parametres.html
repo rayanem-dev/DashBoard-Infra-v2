@@ -55,8 +55,9 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['fichiers', '📦 Inventaire', 'Exercices d\'inventaire (création, clôture, injection, suppression) et fichier global amortissable dans lequel l\'injection écrit les emplacements retrouvés. Les administrateurs de l\'inventaire se désignent dans l\'onglet Adresses e-mail.']], onglet = 'adresses';
+  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['rapport', '📨 Rapport journalier', 'Qui reçoit le rapport journalier consolidé, et ce qu\'il reçoit : le consolidé complet, seulement le rapport de son service, ou rien. L\'envoi automatique du soir et l\'envoi manuel suivent ce tableau.'], ['fichiers', '📦 Inventaire', 'Exercices d\'inventaire (création, clôture, injection, suppression) et fichier global amortissable dans lequel l\'injection écrit les emplacements retrouvés. Les administrateurs de l\'inventaire se désignent dans l\'onglet Adresses e-mail.']], onglet = 'adresses';
   try { var memo = sessionStorage.getItem('pa_onglet'); if (memo) onglet = memo; } catch (e) { /* mémoire indisponible */ }
+  if (/^#rapport/.test(location.hash)) onglet = 'rapport';
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function frDate(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
@@ -69,7 +70,7 @@
   function dessinerOnglets(q) {
     var z = $('onglets'); z.textContent = '';
     ONGLETS.forEach(function (o) {
-      var n = o[0] === 'fichiers' ? 1 : P.filter(function (p) { return p.onglet === o[0] && (p.option ? p.champ === 'actif' : true); }).length, b = el('button', null, o[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(!q && onglet === o[0]));
+      var n = o[0] === 'fichiers' ? 1 : o[0] === 'rapport' ? P.filter(function (p) { return p.onglet === 'rapport' && p.id.indexOf('rapport_envoi.role.') === 0; }).length : P.filter(function (p) { return p.onglet === o[0] && (p.option ? p.champ === 'actif' : true); }).length, b = el('button', null, o[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(!q && onglet === o[0]));
       b.appendChild(el('small', null, '· ' + n)); b.onclick = function () { onglet = o[0]; try { sessionStorage.setItem('pa_onglet', onglet); } catch (e) { /* tant pis */ } $('filtre').value = ''; dessiner(); }; z.appendChild(b);
     });
     var cur = ONGLETS.filter(function (o) { return o[0] === onglet; })[0]; $('noteOnglet').textContent = q ? 'Résultats de la recherche dans tous les onglets.' : (cur ? cur[2] : '');
@@ -78,6 +79,7 @@
     var q = $('filtre').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), z = $('liste'), groupes = {}, ordre = [], options = {};
     function groupe(g) { if (!groupes[g]) { groupes[g] = []; ordre.push(g); } return groupes[g]; }
     dessinerOnglets(q);
+    if (!q && onglet === 'rapport') { z.textContent = ''; z.appendChild(carteRapport()); return; }
     if (!q && onglet === 'fichiers') { z.textContent = ''; z.appendChild(carteExercices()); z.appendChild(carteGlobal()); return; }
     P.forEach(function (p) {
       if (!q && p.onglet !== onglet) return;
@@ -98,6 +100,42 @@
   }
   /** Option à interrupteur et niveau d'accès : « Active » oui / non et, si elle en a un, le rôle minimum (ce rôle et ceux au-dessus). Un seul « Enregistrer » pour les deux. */
   /** Fichier global amortissable : chargé depuis un Excel, devient un Google Sheets du Drive ; l'inventaire y écrit à la clôture d'un exercice (une sauvegarde est faite avant chaque injection). */
+  /** Rapport journalier : tableau « qui reçoit quoi » (un choix par rôle), envoi automatique (activé, heure) et adresses supplémentaires, enregistrés d'un seul clic. */
+  function carteRapport() {
+    var c = el('div', 'bloc'), par = {}; P.forEach(function (p) { par[p.id] = p; });
+    c.appendChild(el('h3', null, '📨 Rapport journalier : qui reçoit quoi'));
+    c.appendChild(el('p', 'aide', 'Choisissez, pour chaque rôle : « Consolidé complet » (tous les chantiers), « Rapport de son service » (les chantiers de son service, plus ce qu\'il a écrit) ou « Ne reçoit rien ». Les valeurs affichées sont celles en vigueur. Le bouton « Voir les destinataires » de Rapports › Synthèse du jour montre le résultat avec les noms.'));
+    var controles = [];
+    function selecteur(p) {
+      var s = el('select'); s.style.cssText = 'padding:7px 9px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--text-dark)';
+      (p.choix || []).forEach(function (v) { var o = el('option', null, (p.choixLibelles && p.choixLibelles[v]) || (v === 'oui' ? 'Oui' : v === 'non' ? 'Non' : v)); o.value = v; s.appendChild(o); }); s.value = p.valeur; return s;
+    }
+    var t = el('table'); t.style.cssText = 'width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:13.5px';
+    var th = el('tr'); ['Rôle', 'Ce qu\'il reçoit'].forEach(function (x) { var h = el('th', null, x); h.style.cssText = 'text-align:left;padding:7px 8px;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)'; th.appendChild(h); }); t.appendChild(th);
+    P.filter(function (p) { return p.id.indexOf('rapport_envoi.role.') === 0; }).forEach(function (p) {
+      var tr = el('tr'), td1 = el('td'), td2 = el('td'); td1.style.cssText = td2.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle';
+      td1.appendChild(el('b', null, p.libelle)); if (p.aide) { var a = el('div', null, p.aide); a.style.cssText = 'font-size:11.5px;color:var(--text-muted)'; td1.appendChild(a); }
+      var s = selecteur(p); if ((p.choix || []).length < 2) s.disabled = true; td2.appendChild(s); tr.appendChild(td1); tr.appendChild(td2); t.appendChild(tr); controles.push({ p: p, lire: function () { return s.value; } });
+    });
+    c.appendChild(t);
+    var bloc2 = el('div'); bloc2.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px';
+    var pa = par['rapport_envoi.actif'], ph = par['rapport_envoi.heure'], pe = par['rapport_envoi.extra'];
+    if (pa && ph) {
+      var w1 = el('label', null, 'Envoi automatique chaque soir'); w1.style.cssText = 'display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--text-muted)'; var sa = selecteur(pa); w1.appendChild(sa); bloc2.appendChild(w1); controles.push({ p: pa, lire: function () { return sa.value; } });
+      var w2 = el('label', null, 'À partir de (h, heure d\'Alger)'); w2.style.cssText = w1.style.cssText; var ih = el('input'); ih.type = 'text'; ih.inputMode = 'numeric'; ih.value = ph.valeur; ih.style.cssText = 'width:80px;padding:7px 9px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark)'; w2.appendChild(ih); bloc2.appendChild(w2); controles.push({ p: ph, lire: function () { return ih.value; } });
+    }
+    c.appendChild(bloc2);
+    if (pe) { var w3 = el('label', null, 'Adresses supplémentaires (consolidé complet) — une par ligne'); w3.style.cssText = 'display:block;font-size:12px;font-weight:700;color:var(--text-muted)'; var ta = el('textarea'); ta.rows = 3; ta.value = pe.valeur; ta.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark);margin-top:3px'; w3.appendChild(ta); c.appendChild(w3); controles.push({ p: pe, lire: function () { return ta.value; } }); }
+    c.appendChild(el('p', 'aide', 'Les adresses des boîtes (secrétariat, chef de division, services) se règlent dans l\'onglet « Adresses e-mail ». Les copies du soir par service ne partent qu\'à l\'envoi automatique ; l\'option « Copie du soir… » de l\'onglet Options peut les couper.'));
+    var msg = el('div', 'etat'); var ok = el('button', 'btn-p', 'Enregistrer le tableau'); ok.type = 'button'; c.appendChild(ok); c.appendChild(msg);
+    ok.onclick = function () {
+      var changes = controles.filter(function (x) { return String(x.lire()).trim() !== String(x.p.valeur).trim(); }); if (!changes.length) { msg.className = 'etat'; msg.textContent = 'Rien à enregistrer.'; return; }
+      ok.disabled = true; msg.className = 'etat'; msg.textContent = 'Enregistrement…'; var i = 0, derniere = null;
+      (function suite() { if (i >= changes.length) { chargerListe(derniere.parametres); toast(changes.length + ' réglage(s) enregistré(s)'); return; } var x = changes[i]; i += 1;
+        Api.call('parametres_enregistrer', { id: x.p.id, valeur: x.lire() }).then(function (rep) { derniere = rep; suite(); }).catch(function (e) { ok.disabled = false; msg.className = 'etat err'; msg.textContent = x.p.libelle + ' : ' + e.message; }); })();
+    };
+    return c;
+  }
   /** Exercices d'inventaire : création, clôture / réouverture, injection dans le fichier global, suppression. La saisie et les corrections se font dans la page Inventaire. */
   function carteExercices() {
     var c = el('div', 'bloc'); c.appendChild(el('h3', null, '📅 Exercices d\'inventaire')); var liste = el('div'); c.appendChild(liste);

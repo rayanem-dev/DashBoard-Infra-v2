@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Règles d'envoi du rapport journalier – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .rg { max-width: 820px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 14px; }
+  .bloc h2 { margin: 0 0 6px; font-size: 16px; } .bloc p { margin: 6px 0; font-size: 13.5px; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; } th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); padding: 8px; border-bottom: 2px solid var(--border); }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--border); vertical-align: top; } td small { display: block; color: var(--text-muted); font-size: 12px; }
+  .pastille { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; } .c { background: #DCFCE7; color: #166534; } .s { background: #DBEAFE; color: #1E40AF; } .r { background: #F3F4F6; color: #6B7280; }
+  .btn-p { display: inline-block; padding: 9px 15px; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font-weight: 700; font-size: 13.5px; text-decoration: none; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">📨</div>
+    <div class="logo-text"><h1>Règles d'envoi du rapport journalier</h1><p>Qui reçoit quoi — en vigueur</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="rapports.html" style="text-decoration:none">← Retour aux rapports</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="rg">
+  <div class="bloc"><h2>Ce que reçoit chaque rôle</h2><div id="tableau"><p>Chargement…</p></div>
+    <p id="modif" style="margin-top:10px"></p></div>
+  <div class="bloc"><h2>Comment ça marche</h2>
+    <p><b>Consolidé complet</b> : tous les chantiers de la division, avec les photos, le PDF et le point de situation de l'inventaire.</p>
+    <p><b>Rapport de son service</b> : les chantiers de son service (le service du chantier décide), plus ce que la personne a elle-même écrit sur un autre service. Que la personne soit présente ou en congé ne change rien. Sans rapport dans son service ce jour-là, aucun e-mail n'est envoyé.</p>
+    <p id="auto"></p>
+    <p>Les décisions se prennent dans <b>Paramètres › Rapport journalier</b>, réservé au secrétariat. Pour toute demande de changement, adressez-vous au secrétariat.</p></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var LIB = { complet: ['Consolidé complet', 'c'], service: ['Rapport de son service', 's'], rien: ['Ne reçoit rien', 'r'] };
+  Api.call('rapport_regles_lire', {}).then(function (r) {
+    var t = document.createElement('table'), h = document.createElement('tr'); ['Rôle', 'Ce qu\'il reçoit'].forEach(function (x) { var th = document.createElement('th'); th.textContent = x; h.appendChild(th); }); t.appendChild(h);
+    r.roles.forEach(function (x) { var tr = document.createElement('tr'), a = document.createElement('td'), b = document.createElement('td'), l = LIB[x.choix] || [x.choix, 'r'], p = document.createElement('span'); a.textContent = x.libelle; if (x.note) { var sm = document.createElement('small'); sm.textContent = x.note; a.appendChild(sm); }
+      p.className = 'pastille ' + l[1]; p.textContent = l[0]; b.appendChild(p); tr.appendChild(a); tr.appendChild(b); t.appendChild(tr); });
+    $('tableau').textContent = ''; $('tableau').appendChild(t);
+    $('auto').textContent = r.actif ? 'Envoi automatique : actif, chaque soir à partir de ' + r.heure + ' h (heure d\'Alger).' + (r.copies ? '' : ' Les copies par service sont coupées.') + (r.extra ? ' ' + r.extra + ' adresse(s) supplémentaire(s) reçoivent aussi le consolidé complet.' : '') : 'Envoi automatique : désactivé (le secrétariat envoie à la main).';
+    if (r.peut_modifier) { var a = document.createElement('a'); a.className = 'btn-p'; a.href = 'parametres.html#rapport'; a.textContent = '⚙ Modifier dans Paramètres'; $('modif').appendChild(a); }
+  }).catch(function (e) { if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; } document.querySelector('main').textContent = e.code === 'DROITS' ? 'Cette page est réservée aux chefs de service et au-dessus.' : e.message; });
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-06-313",
+    "date": "2026-11-06",
+    "title": "Version 6.56.0 — Rapport journalier : règles d'envoi dans Paramètres",
+    "changes": [
+      "Paramètres › nouvel onglet « 📨 Rapport journalier » : un tableau « qui reçoit quoi » (un choix par rôle : consolidé complet / rapport de son service / ne reçoit rien), l'envoi automatique du soir (activé, heure) et les adresses supplémentaires. Les valeurs d'origine reprennent exactement l'existant (direction, secrétariat, chefs de service, cadres, CPM, ordonnateurs, intérims et chefs d'atelier : consolidé complet ; ingénieurs, dessinateurs, conducteurs, agents, stagiaires : rapport de leur service ; DSP, prestataires, invités : rien). Les chefs d'atelier sont maintenant cochés (consolidé complet).",
+      "Rapports › Synthèse du jour : la configuration (cases à cocher, personnes, envoi automatique) est retirée ; restent « Voir les destinataires », « Envoyer maintenant » (selon le tableau) et un lien : « Régler les règles d'envoi » vers Paramètres pour le secrétariat, « Voir les règles d'envoi » pour le chef de division, les cadres et les chefs de service (page en lecture seule qui explique les règles en vigueur).",
+      "L'ancienne configuration de l'envoi automatique (activé, heure, personnes) est reprise automatiquement dans Paramètres à la première lecture.",
+      "À redéployer : la passerelle et le site."
+    ]
+  },
+  {
     "id": "2026-11-05-312",
     "date": "2026-11-05",
     "title": "Version 6.55.0 — Renommer les applications ; envois des applications séparées comptés",

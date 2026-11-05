@@ -126,29 +126,19 @@
   <section class="panneau" id="p-synth" hidden>
     <div class="barre"><label class="aide" for="s-date" style="margin:0">Jour</label><input type="date" id="s-date" style="min-width:160px"><span id="s-resume" class="aide"></span></div>
     <div class="barre" style="gap:8px"><button class="btn-p" id="b-gen" type="button" title="Enregistre le rapport consolidé du jour à partir des rapports de chantier (remplace la version précédente)">📄 Générer le consolidé du jour</button><button class="btn-s" id="b-conso" type="button" disabled title="Imprime la version enregistrée">🖨 Imprimer le consolidé</button><span id="conso-etat" class="aide"></span></div>
+    <p class="aide" id="regles-lien" hidden style="margin:2px 0 10px">📨 Qui reçoit le rapport journalier ? <a id="regles-a" href="rapport-regles.html" style="font-weight:700">Voir les règles d'envoi</a></p>
     <div class="grille-synthese" id="synth"></div>
     <div class="bloc" id="envoi" hidden style="margin-top:16px">
       <b>✉ Envoyer le consolidé</b>
+      <p class="aide" style="margin:6px 0 8px;font-size:12.5px">L'envoi suit le tableau « qui reçoit quoi » (consolidé complet pour la direction, le secrétariat, les chefs de service, les cadres et les chefs d'atelier ; rapport de son service pour les ingénieurs, dessinateurs, conducteurs, agents et stagiaires, à l'envoi automatique du soir). <a id="lien-regles" href="parametres.html#rapport" style="font-weight:700">⚙ Régler l'envoi du rapport (Paramètres)</a></p>
       <div class="barre" style="gap:14px;margin:8px 0">
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="secretariat" style="width:auto;min-width:0"> Secrétariat</label>
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_service" style="width:auto;min-width:0"> Chefs de service</label>
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_division" style="width:auto;min-width:0"> Chef de division</label>
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" data-g="chef_atelier" style="width:auto;min-width:0"> Chefs d'atelier</label>
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600" title="Cadres supérieurs, cellule passation de marché, ordonnateurs et chefs de service par intérim : comptes du portail avec e-mail"><input type="checkbox" data-g="cadres" style="width:auto;min-width:0"> Cadres, CPM, ordonnateurs, intérims</label>
         <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:#8a1c1c" title="Exceptionnel, pour tester : tous les comptes actifs de la division (SH, ACOSCO, GTP…). Envoi manuel uniquement, jamais automatique."><input type="checkbox" id="toute-div" style="width:auto;min-width:0"> Toute la division (exceptionnel)</label>
-        <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé avec les groupes cochés (rien n'est envoyé)">👁 Voir les destinataires</button>
-        <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux groupes cochés">✉ Envoyer maintenant</button>
+        <button class="btn-s" id="b-liste-dest" type="button" title="Affiche les adresses qui recevraient le consolidé selon les règles en vigueur (rien n'est envoyé)">👁 Voir les destinataires</button>
+        <button class="btn-s" id="b-envoyer" type="button" title="Envoie par e-mail le consolidé enregistré du jour choisi aux destinataires du consolidé complet">✉ Envoyer maintenant</button>
       </div>
       <p class="aide" style="margin:0 0 8px;font-size:12.5px">📎 Les photos des rapports sont jointes au message et au PDF (poids total réglable dans Paramètres) ; chaque vidéo est envoyée par un <b>lien temporaire</b> qui se ferme tout seul au bout de quelques jours.</p>
-      <details id="pers" style="margin:0 0 10px"><summary style="cursor:pointer;font-size:13px;font-weight:700">＋ Choisir des personnes (en plus des boîtes) <span id="pers-n" class="aide"></span></summary><div id="pers-liste" class="aide" style="margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 14px">Chargement…</div></details>
       <div id="liste-dest" class="aide" style="margin:0 0 10px" hidden></div>
-      <div class="barre" style="gap:8px">
-        <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600"><input type="checkbox" id="auto-actif" style="width:auto;min-width:0"> Envoi automatique chaque jour à</label>
-        <input type="number" id="auto-heure" min="0" max="23" step="1" value="20" style="width:70px;min-width:0" aria-label="Heure d'envoi"> h
-        <button class="btn-s" id="b-auto" type="button">Enregistrer</button>
-      </div>
-      <p class="aide" style="margin:6px 0 0;font-size:12.5px">👥 À l'envoi automatique du soir, chaque inscrit de la division (ingénieur, dessinateur, conducteur, agent, stagiaire), présent ou en congé, reçoit le <b>rapport de son service</b> ; celui qui a rapporté reçoit aussi ce qu'il a écrit. Réglable dans Paramètres.</p>
-      <p class="aide" id="auto-etat" style="margin:6px 0 0">Désactivé par défaut. Quand il est coché, le consolidé du jour est régénéré (il écrase l'ancien) puis envoyé aux groupes cochés ci-dessus, une fois par jour, à l'heure réglée ; sans rapport ce jour-là, rien n'est envoyé.</p>
+      <p class="aide" id="auto-etat" style="margin:6px 0 0">Envoi automatique : chargement…</p>
     </div>
     <h3 style="margin:22px 0 8px;font-size:15px">Rapports consolidés enregistrés</h3>
     <div id="conso-liste"></div>
@@ -596,36 +586,17 @@
     }).catch(function () { /* liste indisponible */ });
   }
   // ----- Envoi du consolidé par e-mail (au clic) et envoi automatique du soir (option)
-  function personnesCochees() { if (!document.querySelector('#pers-liste input')) return personnesVoulues.slice(); return Array.prototype.map.call(document.querySelectorAll('#pers-liste input:checked'), function (c) { return c.value; }); }
-  function majNbPers() { var n = personnesCochees().length; $('pers-n').textContent = n ? '(' + n + ' cochée' + (n > 1 ? 's' : '') + ')' : ''; }
-  var personnesChargees = null, personnesVoulues = [];
-  function chargerPersonnes() {
-    if (personnesChargees) return personnesChargees;
-    return personnesChargees = Api.call('rapports_conso_personnes').then(function (r) {
-      var z = $('pers-liste'); z.textContent = '';
-      r.personnes.forEach(function (p) {
-        var l = el('label'); l.style.cssText = 'display:flex;gap:6px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:500';
-        var c = el('input'); c.type = 'checkbox'; c.value = p.email; c.style.cssText = 'width:auto;min-width:0'; c.checked = personnesVoulues.indexOf(p.email) >= 0; c.onchange = majNbPers;
-        l.appendChild(c); l.appendChild(el('span', null, p.nom + ' — ' + p.role + (p.service ? ' · ' + p.service : ''))); z.appendChild(l);
-      });
-      if (!r.personnes.length) z.textContent = 'Aucun compte actif avec e-mail.'; majNbPers();
-    }).catch(function (e) { personnesChargees = null; $('pers-liste').textContent = e.message; });
-  }
-  $('pers').addEventListener('toggle', function () { if ($('pers').open) chargerPersonnes(); });
-  function groupesCoches() { var g = {}; document.querySelectorAll('#envoi input[data-g]').forEach(function (c) { g[c.getAttribute('data-g')] = c.checked; }); return g; }
+  Api.call('rapport_regles_lire', {}).then(function (r) { $('regles-lien').hidden = false; var h = r.peut_modifier ? 'parametres.html#rapport' : 'rapport-regles.html'; $('regles-a').href = h; $('regles-a').textContent = r.peut_modifier ? 'Régler les règles d\'envoi (Paramètres)' : 'Voir les règles d\'envoi'; }).catch(function () { /* réservé aux chefs de service et au-dessus */ });
   function etatAuto(c) {
-    $('auto-actif').checked = !!c.actif; $('auto-heure').value = c.heure;
-    document.querySelectorAll('#envoi input[data-g]').forEach(function (x) { x.checked = !!c.groupes[x.getAttribute('data-g')]; });
-    personnesVoulues = c.personnes || []; document.querySelectorAll('#pers-liste input').forEach(function (x) { x.checked = personnesVoulues.indexOf(x.value) >= 0; }); if (personnesVoulues.length) $('pers-n').textContent = '(' + personnesVoulues.length + ' cochée' + (personnesVoulues.length > 1 ? 's' : '') + ')';
-    $('auto-etat').textContent = c.actif ? 'Envoi automatique actif : chaque jour à partir de ' + c.heure + ' h' + (c.dernier ? ' (dernier envoi : ' + fr(c.dernier) + ')' : '') + '. Décochez puis « Enregistrer » pour l\'arrêter.' : 'Envoi automatique désactivé. Quand il est coché, le consolidé du jour est régénéré (il écrase l\'ancien) puis envoyé aux groupes cochés, une fois par jour, à l\'heure réglée ; sans rapport ce jour-là, rien n\'est envoyé.';
+    $('auto-etat').textContent = c.actif ? 'Envoi automatique actif : chaque jour à partir de ' + c.heure + ' h' + (c.dernier ? ' (dernier envoi : ' + fr(c.dernier) + ')' : '') + '. Il se règle dans Paramètres › Rapport journalier.' : 'Envoi automatique désactivé (à activer dans Paramètres › Rapport journalier).';
     if (c.actif && c.erreur) $('auto-etat').textContent += ' ⚠ Dernier essai (' + c.essai + ') : ' + c.erreur;
   }
   $('b-liste-dest').addEventListener('click', function () {
-    var z = $('liste-dest'), g = groupesCoches(); z.hidden = false; z.textContent = 'Chargement…';
-    Api.call('rapports_conso_destinataires', { groupes: g, personnes: personnesCochees(), toute_division: $('toute-div').checked, date: $('s-date').value }).then(function (r) {
+    var z = $('liste-dest'); z.hidden = false; z.textContent = 'Chargement…';
+    Api.call('rapports_conso_destinataires', { toute_division: $('toute-div').checked, date: $('s-date').value }).then(function (r) {
       z.textContent = '';
       z.appendChild(el('b', null, r.destinataires.length + ' destinataire(s) du consolidé complet :'));
-      if (!r.destinataires.length) z.appendChild(document.createTextNode(' aucun (cochez un groupe ou une personne).'));
+      if (!r.destinataires.length) z.appendChild(document.createTextNode(' aucun (voir le tableau dans Paramètres › Rapport journalier).'));
       else { var u = el('ul'); u.style.cssText = 'margin:4px 0 0 18px;padding:0'; r.destinataires.forEach(function (d) { u.appendChild(el('li', null, d.nom + ' — ' + d.email + ' (' + d.role + (d.service ? ', ' + d.service : '') + ')')); }); z.appendChild(u); }
       var t = el('div'); t.style.marginTop = '10px';
       if (!r.copies_actives) t.appendChild(el('b', null, 'Copies du soir aux agents : désactivées (réglage dans Paramètres).'));
@@ -638,17 +609,12 @@
     }).catch(function (e) { z.hidden = true; toast(e.message, true); });
   });
   $('b-envoyer').addEventListener('click', function () {
-    var j = $('s-date').value, g = groupesCoches();
+    var j = $('s-date').value;
     var toute = $('toute-div').checked;
-    if (!g.secretariat && !g.chef_service && !g.chef_division && !g.chef_atelier && !g.cadres && !personnesCochees().length && !toute) { toast('Cochez au moins un destinataire', true); return; }
     if (!consolideDuJour) { toast('Générez d\'abord le consolidé du ' + fr(j), true); return; }
     if (!confirm(toute ? '⚠ ENVOI À TOUTE LA DIVISION : le consolidé du ' + fr(j) + ' sera envoyé à TOUS les comptes actifs (SH, ACOSCO, GTP…). Utilisez « Voir les destinataires » avant. Confirmer ?' : 'Envoyer le consolidé du ' + fr(j) + ' (version ' + consolideDuJour.version + ') par e-mail aux destinataires cochés ?')) return;
     var b = $('b-envoyer'); b.disabled = true;
-    Api.call('rapports_consolide_envoyer', { date: j, groupes: g, personnes: personnesCochees(), toute_division: toute }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
-  });
-  $('b-auto').addEventListener('click', function () {
-    var b = $('b-auto'); b.disabled = true;
-    Api.call('rapports_conso_auto_maj', { actif: $('auto-actif').checked, heure: Number($('auto-heure').value), groupes: groupesCoches(), personnes: personnesCochees() }).then(function (c) { etatAuto(c); toast(c.actif ? 'Envoi automatique enregistré' : 'Envoi automatique désactivé'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
+    Api.call('rapports_consolide_envoyer', { date: j, toute_division: toute }).then(function (r) { toast('Envoyé à ' + r.destinataires + ' destinataire(s)'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; });
   });
   $('b-gen').addEventListener('click', function () {
     var b = $('b-gen'), j = $('s-date').value;
@@ -720,7 +686,7 @@
     if (niveau < 2) { $('o-saisie').hidden = true; $('p-saisie').hidden = true; document.querySelector('[data-p=p-journal]').click(); }
     ouvrirOngletDuLien();
     if (niveau >= 3) { $('o-synth').hidden = false; }
-    if (peutEnvoyer) { $('envoi').hidden = false; Api.call('rapports_conso_auto_lire').then(etatAuto).catch(function () { /* indisponible */ }); }
+    if (peutEnvoyer) { $('envoi').hidden = false; Api.call('rapports_conso_auto_lire').then(function (c) { etatAuto(c); }).catch(function () { /* indisponible */ }); }
   }).catch(function (e) {
     if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
     if (e.code === 'DROITS') { document.querySelector('main').textContent = 'Accès réservé : le module « Rapports journaliers » n\'est pas activé pour votre compte.'; return; }

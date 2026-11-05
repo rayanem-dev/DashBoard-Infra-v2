@@ -18,7 +18,7 @@
   if (!window.Api) { location.replace('connexion.html'); return; }
   var CLE_MENU = 'gm_pages', TTL_MENU = 600000;
   function pagesDe(r) { var f = []; (r.menu || []).forEach(function (m) { (m.apps || []).forEach(function (a) { f.push(fichier(a.url)); }); }); return f; }
-  var LIBRES = ['profil.html'];   // pages personnelles : ouvertes à tout compte connecté (une session valide suffit, la connexion est vérifiée par menu)
+  var LIBRES = ['profil.html', 'rapport-regles.html'];   // pages personnelles : ouvertes à tout compte connecté (une session valide suffit, la connexion est vérifiée par menu)
   function autorise(r) { return LIBRES.indexOf(page) !== -1 || pagesDe(r).indexOf(page) !== -1; }
   function sess() { try { return String(Api.token() || '').slice(-12); } catch (e) { return ''; } }   /* le cache n'appartient qu'à la session qui l'a écrit */
   function connu() { try { var o = JSON.parse(sessionStorage.getItem(CLE_MENU) || 'null'); return !!(o && o.k === sess() && sess() && Date.now() - o.t < TTL_MENU && o.f.indexOf(page) !== -1); } catch (e) { return false; } }
