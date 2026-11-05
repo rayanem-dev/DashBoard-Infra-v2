@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-06-321",
+    "date": "2026-11-06",
+    "title": "Version 6.60.0 — NIN : écriture dans BDDORGA activée, saisie dans Privilèges",
+    "changes": [
+      "Paramètres › Sécurité : nouvelle option « Écrire aussi le NIN dans BDDORGA » (activée par défaut). Elle remplace le réglage caché du script : l'agent qui complète son NIN dans « Mon profil » le voit désormais écrit dans BDDORGA (comme le matricule et le matricule SAP).",
+      "Privilèges : le NIN (18 chiffres) peut être saisi à l'ajout d'un utilisateur et dans « Modifier » (champ jamais prérempli ni affiché ; vide = inchangé). Il ne sort jamais dans l'extraction Excel ni dans le journal.",
+      "Vérifié : le fichier Organigramme n'est partagé qu'à deux personnes nommées (pas de lien public)."
+    ]
+  },
+  {
     "id": "2026-11-06-320",
     "date": "2026-11-06",
     "title": "Version 6.59.1 — Privilèges : tous les champs à l'ajout d'un utilisateur",

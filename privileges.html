@@ -79,6 +79,7 @@
         <div><label for="n-sap">Matricule SAP</label><input id="n-sap" class="filtre" style="width:100%;box-sizing:border-box" maxlength="30"></div>
         <div><label for="n-sona">Identifiant SONA</label><input id="n-sona" class="filtre" style="width:100%;box-sizing:border-box" maxlength="30"></div>
         <div><label for="n-wifi_user">Identifiant Wi-Fi</label><input id="n-wifi_user" class="filtre" style="width:100%;box-sizing:border-box" maxlength="60"></div>
+        <div><label for="n-nin">NIN (18 chiffres)</label><input id="n-nin" class="filtre" inputmode="numeric" autocomplete="off" style="width:100%;box-sizing:border-box" maxlength="18"></div>
         <div><label for="n-date_integration">Date d'intégration</label><input id="n-date_integration" class="filtre" type="date" style="width:100%;box-sizing:border-box" maxlength="10"></div>
         <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;align-items:center"><span id="n-err" style="color:#B42318;font-size:13px;margin-inline-end:auto" role="alert"></span><button class="btn-s" type="button" id="n-annuler">Annuler</button><button class="btn-p" type="submit" id="n-ok">Créer le compte</button></div>
       </form>
@@ -389,7 +390,7 @@
   }
 
   // ---- Modifier tous les champs d'un compte, ou le supprimer carrément ----
-  var CHAMPS = [['nom', 'Nom et prénom'], ['service', 'Service'], ['section', 'Section'], ['fonction', 'Fonction'], ['dependance', 'Dépendance / entreprise'], ['telephone', 'Téléphone'], ['matricule', 'Matricule'], ['sap', 'Matricule SAP'], ['sona', 'Identifiant SONA'], ['civilite', 'Civilité'], ['wifi_user', 'Identifiant Wi-Fi'], ['date_integration', 'Date d\'intégration (AAAA-MM-JJ)']];
+  var CHAMPS = [['nom', 'Nom et prénom'], ['service', 'Service'], ['section', 'Section'], ['fonction', 'Fonction'], ['dependance', 'Dépendance / entreprise'], ['telephone', 'Téléphone'], ['matricule', 'Matricule'], ['sap', 'Matricule SAP'], ['sona', 'Identifiant SONA'], ['civilite', 'Civilité'], ['wifi_user', 'Identifiant Wi-Fi'], ['date_integration', 'Date d\'intégration (AAAA-MM-JJ)'], ['nin', 'NIN (18 chiffres, jamais affiché ; vide = inchangé)']];
   /** Entreprise(s) d'un compte prestataire : on choisit dans la liste (Suivi CPM, Badges) ou on écrit le NOM de l'entreprise seul (jamais un numéro de contrat : elle couvre tous ses contrats). */
   function selecteurEntreprises(u, surChange) {
     var liste = String(u.portee || u.dependance || '').split(/[;\n]+/).map(function (x) { return x.trim(); }).filter(Boolean), w = el('div'), puces = el('div'), ligne = el('div');
@@ -414,7 +415,7 @@
     var g = el('div'); g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px'; var inp = {}, portee = null;
     CHAMPS.forEach(function (c) {
       var w = el('div'); if (c[0] === 'nom') w.style.gridColumn = '1/-1'; w.appendChild(el('label', null, c[1]));
-      var i = el('input'); i.value = u[c[0]] || ''; i.style.cssText = 'width:100%;box-sizing:border-box'; i.maxLength = 120; inp[c[0]] = i;
+      var i = el('input'); i.value = u[c[0]] || ''; i.style.cssText = 'width:100%;box-sizing:border-box'; i.maxLength = c[0] === 'nin' ? 18 : 120; if (c[0] === 'nin') { i.inputMode = 'numeric'; i.autocomplete = 'off'; i.value = ''; } inp[c[0]] = i;
       if (c[0] === 'dependance' && u.role === 'prestataire') { w.replaceChildren(el('label', null, 'Entreprise(s) du prestataire (ses contrats)')); w.appendChild(selecteurEntreprises(u, function (l) { portee = l; })); w.style.gridColumn = '1/-1'; delete inp.dependance; g.appendChild(w); return; }
       w.appendChild(i); g.appendChild(w);
     });
@@ -552,7 +553,7 @@
   });
   $('b-ajout').addEventListener('click', function () {
     var s = $('n-role'); s.textContent = ''; etat.roles.forEach(function (r) { var o = el('option', null, r.libelle); o.value = r.id; s.appendChild(o); }); s.value = 'agent';
-    ['n-nom', 'n-email', 'n-service', 'n-dep', 'n-fonction', 'n-section', 'n-civilite', 'n-telephone', 'n-matricule', 'n-sap', 'n-sona', 'n-wifi_user', 'n-date_integration'].forEach(function (i) { $(i).value = ''; }); $('n-err').textContent = '';
+    ['n-nom', 'n-email', 'n-service', 'n-dep', 'n-fonction', 'n-section', 'n-civilite', 'n-telephone', 'n-matricule', 'n-sap', 'n-sona', 'n-wifi_user', 'n-date_integration', 'n-nin'].forEach(function (i) { $(i).value = ''; }); $('n-err').textContent = '';
     $('n-dep').value = 'SONATRACH';
     // entreprises proposées : SONATRACH, puis tous les prestataires connus (Badges et Config de la prise en charge) ; on peut aussi en saisir une nouvelle
     function liste() { var dl = $('l-ent'); dl.textContent = ''; ['SONATRACH'].concat(choixEntreprises || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; dl.appendChild(o); }); }
@@ -591,7 +592,7 @@
   $('n-annuler').addEventListener('click', function () { if ($('dlg-ajout').close) $('dlg-ajout').close(); else $('dlg-ajout').removeAttribute('open'); });
   $('f-ajout').addEventListener('submit', function (ev) {
     ev.preventDefault(); $('n-ok').disabled = true;
-    Api.call('admin_utilisateur_ajouter', { nom: $('n-nom').value, email: $('n-email').value, role: $('n-role').value, service: $('n-service').value, dependance: $('n-dep').value, section: $('n-section').value, fonction: $('n-fonction').value, civilite: $('n-civilite').value, telephone: $('n-telephone').value, matricule: $('n-matricule').value, sap: $('n-sap').value, sona: $('n-sona').value, wifi_user: $('n-wifi_user').value, date_integration: $('n-date_integration').value })
+    Api.call('admin_utilisateur_ajouter', { nom: $('n-nom').value, email: $('n-email').value, role: $('n-role').value, service: $('n-service').value, dependance: $('n-dep').value, section: $('n-section').value, fonction: $('n-fonction').value, civilite: $('n-civilite').value, telephone: $('n-telephone').value, matricule: $('n-matricule').value, sap: $('n-sap').value, sona: $('n-sona').value, wifi_user: $('n-wifi_user').value, date_integration: $('n-date_integration').value, nin: $('n-nin').value })
       .then(function (r) { if ($('dlg-ajout').close) $('dlg-ajout').close(); toast('Compte créé : ' + r.email + ' — vous pouvez maintenant l\'inviter par e-mail'); return recharger(); })
       .catch(function (e) { $('n-err').textContent = e.message; }).then(function () { $('n-ok').disabled = false; });
   });
