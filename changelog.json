@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-337",
+    "date": "2026-11-06",
+    "title": "Version 6.70.0 — Rapport journalier : secrétariat et inventaire pour tous",
+    "changes": [
+      "L'encadré « Activité du secrétariat » et le point de situation de l'inventaire (opération en cours) sont maintenant dans TOUS les envois : consolidé complet et copies par service, plus seulement au secrétariat.",
+      "Un agent réglé « Rapport de son service » dont le service n'a aucun rapport ce jour-là (ou sans service renseigné) reçoit désormais uniquement ces deux encadrés, et non plus le rapport de toute la division (correction de la 6.69.0). Pas de message vide s'il n'y a ni activité ni inventaire."
+    ]
+  },
+  {
     "id": "2026-11-06-336",
     "date": "2026-11-06",
     "title": "Version 6.69.0 — Rapport journalier : tout rôle « Rapport de son service » reçoit quelque chose",
