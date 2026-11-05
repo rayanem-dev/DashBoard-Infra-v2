@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-06-328",
+    "date": "2026-11-06",
+    "title": "Version 6.65.0 — Rapport journalier : le tableau décide seul, envoi plus fiable",
+    "changes": [
+      "Le tableau Paramètres › Rapport journalier est désormais la SEULE règle : l'ancien interrupteur « Copie du soir à tous les inscrits » (Options) ne bloque plus rien et est retiré.",
+      "Les rôles écrits de travers dans les comptes (« Ordonateur », « Cadre_Sup », « AGENT », « Interim chef service »…) sont reconnus comme le bon rôle : ces personnes n'étaient plus oubliées par le tableau.",
+      "Envoi plus fiable : une adresse refusée par Gmail ne bloque plus les autres (réessai adresse par adresse) ; un groupe de copies qui échoue n'empêche plus les suivants ; les adresses non envoyées sont notées dans le journal (« consolide_adresses_refusees »).",
+      "👁 Voir les destinataires : liste des personnes réglées « Rapport de son service » qui ne recevraient rien, avec la raison (service non renseigné, aucun rapport dans leur service, pas d'adresse valide)."
+    ]
+  },
+  {
     "id": "2026-11-06-327",
     "date": "2026-11-06",
     "title": "Version 6.64.2 — Renommage : messages clairs à l'ouverture d'un dossier",

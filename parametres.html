@@ -122,7 +122,8 @@
         if (d.length) { var u = el('ul'); u.style.cssText = 'margin:4px 0 6px 18px;padding:0'; d.forEach(function (x) { u.appendChild(el('li', null, x.nom + ' — ' + x.email + ' (' + x.role + (x.service ? ', ' + x.service : '') + ')')); }); bloc.appendChild(u); }
         bloc.appendChild(el('div', null, k.length + ' copie(s) « rapport de son service »' + (k.length ? ' (selon les rapports du ' + frJ(jour()) + ') :' : ' : aucune pour l\'instant (aucun rapport le ' + frJ(jour()) + ' dans leur service, ou ce rôle n\'est pas réglé sur « Rapport de son service »).')));
         if (k.length) { var u2 = el('ul'); u2.style.cssText = 'margin:4px 0 0 18px;padding:0'; k.forEach(function (x) { u2.appendChild(el('li', null, x.nom + ' — ' + x.email + ' · reçoit : ' + x.role + ((x.chantiers || []).length ? ' (' + x.chantiers.length + ' chantier' + (x.chantiers.length > 1 ? 's' : '') + ')' : ''))); }); bloc.appendChild(u2); }
-        if (r.copies_actives === false) bloc.appendChild(el('div', 'aide', 'Les copies par service sont coupées (onglet Options › « Copie du soir… »).'));
+        var ex = r.exclus || [];
+        if (ex.length) { var bx = el('div'); bx.style.cssText = 'margin-top:8px;padding:8px 10px;border-radius:9px;background:rgba(220,38,38,.07)'; bx.appendChild(el('b', null, '⚠ ' + ex.length + ' personne(s) réglée(s) « Rapport de son service » ne recevraient rien :')); var u3 = el('ul'); u3.style.cssText = 'margin:4px 0 0 18px;padding:0'; ex.forEach(function (x) { u3.appendChild(el('li', null, x.nom + (x.email ? ' — ' + x.email : '') + ' : ' + x.raison)); }); bx.appendChild(u3); bloc.appendChild(bx); }
         resultat.appendChild(bloc);
       }).catch(function (e) { resultat.textContent = e.message; });
     }
@@ -162,7 +163,7 @@
     }
     c.appendChild(bloc2);
     if (pe) { var w3 = el('label', null, 'Adresses supplémentaires (consolidé complet) — une par ligne'); w3.style.cssText = 'display:block;font-size:12px;font-weight:700;color:var(--text-muted)'; var ta = el('textarea'); ta.rows = 3; ta.value = pe.valeur; ta.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark);margin-top:3px'; w3.appendChild(ta); c.appendChild(w3); controles.push({ p: pe, lire: function () { return ta.value; } }); }
-    c.appendChild(el('p', 'aide', 'Les adresses des boîtes (secrétariat, chef de division, services) se règlent dans l\'onglet « Adresses e-mail ». Les copies par service partent à l\'envoi automatique du soir et avec les boutons « Envoyer maintenant » de cet onglet ; l\'option « Copie du soir… » de l\'onglet Options peut les couper.'));
+    c.appendChild(el('p', 'aide', 'Les adresses des boîtes (secrétariat, chef de division, services) se règlent dans l\'onglet « Adresses e-mail ». Les copies par service partent à l\'envoi automatique du soir et avec les boutons « Envoyer maintenant » de cet onglet'));
     var barre = el('div'); barre.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:6px 0';
     var bv = el('button', null, '👁 Voir tous les destinataires'); bv.type = 'button'; bv.style.cssText = btnStyle; bv.onclick = function () { voir(null, 'Tous les rôles'); };
     var be = el('button', null, '✉ Envoyer maintenant à tous selon les règles'); be.type = 'button'; be.style.cssText = btnStyle + ';background:linear-gradient(135deg,var(--orange-main),var(--orange-light));color:#fff;border-color:transparent'; be.onclick = function () { envoyer(null, 'tous les rôles du tableau (et les adresses supplémentaires)', be); };
