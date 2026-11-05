@@ -147,7 +147,7 @@
   function dessiner() {
     calculerDoublons();
     var c = $('corps'); c.textContent = ''; $('b-liste').hidden = !items.length;
-    var restants = items.filter(function (it) { return !it.fait; }).length; $('b-tous').textContent = '✔ Renommer tous les fichiers (' + restants + ')'; $('b-tous').disabled = !restants;
+    var restants = items.filter(function (it) { return !it.fait && !nomExact(it); }).length; $('b-tous').textContent = '✔ Renommer tous les fichiers (' + restants + ')'; $('b-tous').disabled = !restants;
     items.forEach(function (it, i) {
       var tr = el('tr'), t0 = el('td'); t0.appendChild(el('div', 'orig', it.f.name));
       if (it.texte) { var ch = Renomi.champs(it.texte, ''); if (ch.titre || ch.date) t0.appendChild(el('div', 'ok', '🔎 ' + (ch.titre ? 'Titre : ' + ch.titre : '') + (ch.titre && ch.date ? ' · ' : '') + (ch.date ? 'Date : ' + ch.date.split('-').reverse().join('/') : ''))); else t0.appendChild(el('div', 'av', 'Aucun texte lisible trouvé dans ce document.')); }
@@ -159,12 +159,15 @@
       var t3 = el('td'), n = el('input'); n.value = it.nom; n.disabled = !!it.fait; n.oninput = function () { it.nom = n.value; }; t3.appendChild(n);
       var t4 = el('td'); t4.style.whiteSpace = 'nowrap';
       if (it.fait) t4.appendChild(el('span', 'ok', '✔ Renommé'));
+      else if (nomExact(it)) t4.appendChild(el('span', 'ok', '✔ Nom exact détecté'));
       else if (window.showDirectoryPicker) { var b = el('button', 'btn-s', 'Remplacer le nom'); b.type = 'button'; b.title = 'Renomme ce fichier directement dans son dossier'; b.onclick = function () { renommer([it]); }; t4.appendChild(b); }
       if (!it.fait) { var br = el('button', 'btn-s', '✕'); br.type = 'button'; br.title = 'Retirer ce fichier de la liste'; br.style.marginLeft = '6px'; br.onclick = function () { items.splice(items.indexOf(it), 1); dessiner(); }; t4.appendChild(br); }
-      if (!it.fait) { var bd = el('button', 'btn-s', '⬇ Télécharger'); bd.type = 'button'; bd.style.marginLeft = '6px'; bd.title = 'Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)'; bd.onclick = function () { telechargerUn(it); }; t4.appendChild(bd); }
+      if (!it.fait && !nomExact(it)) { var bd = el('button', 'btn-s', '⬇ Télécharger'); bd.type = 'button'; bd.style.marginLeft = '6px'; bd.title = 'Enregistre une copie sous le nom proposé dans vos Téléchargements (sans choisir de dossier)'; bd.onclick = function () { telechargerUn(it); }; t4.appendChild(bd); }
       [t0, t3, t4].forEach(function (x) { tr.appendChild(x); }); c.appendChild(tr);
     });
   }
+  /** Le fichier porte déjà exactement le nom détecté : rien à proposer. */
+  function nomExact(it) { return !it.fait && !!it.nom && it.nom === it.f.name; }
   /** Bloc « document du personnel » d'une ligne : type, agent et période reconnus, corrigeables ; chaque correction recalcule le nom. */
   function blocDoc(it) {
     var d = el('div'), D = it.doc; d.style.cssText = 'margin-top:6px;padding:7px 9px;border:1px dashed var(--border);border-radius:9px;font-size:12px';
@@ -301,7 +304,7 @@
     };
   }
   $('b-zip').onclick = telecharger; $('b-vider').onclick = function () { items = []; dessiner(); };
-  if (window.showDirectoryPicker) { $('b-tous').hidden = false; $('b-tous').onclick = function () { renommer(items.filter(function (it) { return !it.fait; })); }; }
+  if (window.showDirectoryPicker) { $('b-tous').hidden = false; $('b-tous').onclick = function () { renommer(items.filter(function (it) { return !it.fait && !nomExact(it); })); }; }
   $('r-exp').onclick = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(regles, null, 2)], { type: 'application/json' })); a.download = 'renomi-regles.json'; a.click(); };
   $('r-imp').onclick = function () { $('r-fic').click(); };
   $('r-fic').onchange = function () { var f = $('r-fic').files[0]; if (!f) return; f.text().then(function (t) { var l = JSON.parse(t); if (!Array.isArray(l)) throw new Error('Fichier de règles invalide'); l.forEach(function (r) { if (r && r.modele && !regles.some(function (x) { return x.modele === r.modele && String(x.mots) === String(r.mots); })) regles.push(r); }); sauver(); toast('Règles importées.'); }).catch(function (e) { toast(e.message, true); }); $('r-fic').value = ''; };

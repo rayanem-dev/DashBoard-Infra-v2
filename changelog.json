@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-326",
+    "date": "2026-11-06",
+    "title": "Version 6.64.1 — Renommage : nom déjà exact",
+    "changes": [
+      "Renommage des fichiers : quand le fichier porte déjà exactement le nom détecté, plus de « Remplacer le nom » ni de « Télécharger » : la ligne affiche « ✔ Nom exact détecté » ; « Renommer tous » ne compte plus ces fichiers."
+    ]
+  },
+  {
     "id": "2026-11-06-325",
     "date": "2026-11-06",
     "title": "Version 6.64.0 — Accueil : deux cartes discrètes dans le tableau de bord",
