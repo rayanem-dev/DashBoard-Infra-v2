@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-318",
+    "date": "2026-11-06",
+    "title": "Version 6.58.1 — Rapport journalier : aperçu 👁 plus court",
+    "changes": [
+      "Paramètres › Rapport journalier, 👁 : pour les copies par service, une ligne par personne (nom, adresse, ce qu'elle reçoit : « rapport de son service (Service …) » ou « a établi un rapport », et le nombre de chantiers) ; la liste détaillée des chantiers n'est plus affichée."
+    ]
+  },
+  {
     "id": "2026-11-06-317",
     "date": "2026-11-06",
     "title": "Version 6.58.0 — Autorisation d'accès : sites concernés (OUI / NON)",

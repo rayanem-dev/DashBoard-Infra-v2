@@ -199,7 +199,7 @@
         bloc.appendChild(el('div', null, d.length + ' personne(s)/boîte(s) en consolidé complet' + (d.length ? ' :' : '.')));
         if (d.length) { var u = el('ul'); u.style.cssText = 'margin:4px 0 6px 18px;padding:0'; d.forEach(function (x) { u.appendChild(el('li', null, x.nom + ' — ' + x.email + ' (' + x.role + (x.service ? ', ' + x.service : '') + ')')); }); bloc.appendChild(u); }
         bloc.appendChild(el('div', null, k.length + ' copie(s) « rapport de son service »' + (k.length ? ' (selon les rapports du ' + frJ(jour()) + ') :' : ' : aucune pour l\'instant (aucun rapport le ' + frJ(jour()) + ' dans leur service, ou ce rôle n\'est pas réglé sur « Rapport de son service »).')));
-        if (k.length) { var u2 = el('ul'); u2.style.cssText = 'margin:4px 0 0 18px;padding:0'; k.forEach(function (x) { u2.appendChild(el('li', null, x.nom + ' — ' + x.email + ' · ' + (x.chantiers || []).join(', '))); }); bloc.appendChild(u2); }
+        if (k.length) { var u2 = el('ul'); u2.style.cssText = 'margin:4px 0 0 18px;padding:0'; k.forEach(function (x) { u2.appendChild(el('li', null, x.nom + ' — ' + x.email + ' · reçoit : ' + x.role + ((x.chantiers || []).length ? ' (' + x.chantiers.length + ' chantier' + (x.chantiers.length > 1 ? 's' : '') + ')' : ''))); }); bloc.appendChild(u2); }
         if (r.copies_actives === false) bloc.appendChild(el('div', 'aide', 'Les copies par service sont coupées (onglet Options › « Copie du soir… »).'));
         resultat.appendChild(bloc);
       }).catch(function (e) { resultat.textContent = e.message; });
