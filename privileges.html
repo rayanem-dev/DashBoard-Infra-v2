@@ -60,7 +60,7 @@
   </section>
   <section class="panneau" id="p-users" hidden>
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
-    <div style="margin:8px 0"><button class="btn-p" id="b-ajout" type="button">+ Ajouter un utilisateur</button> <span id="r-ajout" style="font-size:12.5px"></span></div>
+    <div style="margin:8px 0"><button class="btn-p" id="b-ajout" type="button">+ Ajouter un utilisateur</button> <button class="btn-s" id="b-extraction" type="button" title="Excel avec TOUS les champs de tous les comptes (sans mots de passe ni NIN)">⬇ Extraction complète (Excel)</button> <span id="r-ajout" style="font-size:12.5px"></span></div>
     <datalist id="l-sections"><option value="Froid"><option value="Électricité"><option value="Hydraulique"></datalist>
     <dialog id="dlg-ajout" style="border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <form method="dialog" id="f-ajout" novalidate style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
@@ -126,6 +126,7 @@
 <script src="js/rubriques.js"></script>
 <script src="js/grille-acces.js"></script>
 <script src="js/employeurs.js"></script>
+<script src="js/export-excel.js"></script>
 <script src="js/rotation.js"></script>
 <script>Rotation.exiger();</script>
 <script>
@@ -533,6 +534,14 @@
   });
   $('filtre').addEventListener('input', dessinerUsers); $('g-filtre').addEventListener('input', dessinerGrille);
   $('b-emails').addEventListener('click', controleEmails);
+  $('b-extraction').addEventListener('click', function () {
+    var b = this, txt = b.textContent; b.disabled = true; b.textContent = '⏳ Extraction…';
+    Api.call('admin_utilisateurs_export').then(function (r) {
+      var cols = r.colonnes || [];
+      return ExportExcel.telecharger({ fichier: 'utilisateurs-complet-' + new Date().toISOString().slice(0, 10) + '.xlsx', titre: 'Utilisateurs du portail — extraction complète', sousTitre: (r.lignes || []).length + ' compte(s) · ' + cols.length + ' champ(s) · sans mots de passe ni NIN',
+        feuilles: [{ nom: 'Utilisateurs', colonnes: cols.map(function (c) { return { titre: c, cle: c }; }), lignes: (r.lignes || []).map(function (l) { return cols.map(function (c) { return l[c]; }); }) }] });
+    }).then(function () { toast('Extraction téléchargée'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; b.textContent = txt; });
+  });
   $('b-ajout').addEventListener('click', function () {
     var s = $('n-role'); s.textContent = ''; etat.roles.forEach(function (r) { var o = el('option', null, r.libelle); o.value = r.id; s.appendChild(o); }); s.value = 'agent';
     ['n-nom', 'n-email', 'n-service', 'n-dep', 'n-fonction', 'n-section'].forEach(function (i) { $(i).value = ''; }); $('n-err').textContent = '';

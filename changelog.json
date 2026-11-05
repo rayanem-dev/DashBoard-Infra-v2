@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-319",
+    "date": "2026-11-06",
+    "title": "Version 6.59.0 — Privilèges › Utilisateurs : extraction complète",
+    "changes": [
+      "Privilèges › Utilisateurs : nouveau bouton « ⬇ Extraction complète (Excel) » : tous les comptes avec TOUS leurs champs (une colonne par champ, rôle et libellé du rôle compris), pour les exploiter librement. Les mots de passe, codes, jetons et le NIN n'en sortent jamais.",
+      "Paramètres : l'onglet « 👥 Utilisateurs » ajouté en 6.57.0 est retiré (doublon de Privilèges, qui enregistre directement dans BDDORGA)."
+    ]
+  },
+  {
     "id": "2026-11-06-318",
     "date": "2026-11-06",
     "title": "Version 6.58.1 — Rapport journalier : aperçu 👁 plus court",
