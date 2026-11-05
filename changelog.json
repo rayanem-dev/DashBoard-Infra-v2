@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-334",
+    "date": "2026-11-06",
+    "title": "Version 6.68.0 — Rapport journalier : on voit exactement qui a reçu quoi",
+    "changes": [
+      "Paramètres › Rapport journalier : après « Envoyer maintenant », la liste exacte des personnes servies (nom, adresse, consolidé complet ou rapport de leur service), les adresses refusées par la messagerie, les personnes qui ne reçoivent rien avec la raison, le quota restant, et un message clair quand rien n'est parti.",
+      "Paramètres › Rapport journalier : état de l'envoi automatique (activé ou non, heure, dernier envoi, dernière erreur) et bouton « 📜 Voir le journal des envois » (résultat de chaque envoi, automatique ou manuel : complet, copies, refusés, quota)."
+    ]
+  },
+  {
     "id": "2026-11-06-333",
     "date": "2026-11-06",
     "title": "Version 6.67.2 — Paramètres : le bouton quota fonctionne",

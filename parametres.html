@@ -132,7 +132,16 @@
     function envoyer(roles, titre, bouton) {
       if (!window.confirm('Envoyer maintenant le rapport du ' + frJ(jour()) + ' : ' + titre + ' ?\n\nLe consolidé de ce jour est régénéré avec les derniers rapports, puis envoyé selon le tableau enregistré (consolidé complet et/ou rapport de leur service). Rien ne part si aucun rapport n\'a été saisi ce jour-là.')) return;
       var txt = bouton.textContent; bouton.disabled = true; bouton.textContent = '⏳';
-      Api.call('rapports_consolide_envoyer', { roles: roles, copies: true, generer: true, date: jour() }).then(function (r) { toast('✅ Envoyé : ' + r.destinataires + ' destinataire(s) du consolidé complet, ' + (r.copies || 0) + ' copie(s) par service'); })
+      Api.call('rapports_consolide_envoyer', { roles: roles, copies: true, generer: true, date: jour() }).then(function (r) {
+        toast(r.destinataires + r.copies ? '✅ Envoyé : ' + r.destinataires + ' consolidé(s) complet(s), ' + (r.copies || 0) + ' copie(s) par service' : '⚠ Rien n\'a été envoyé', !(r.destinataires + r.copies));
+        resultat.textContent = ''; var bl = el('div'); bl.style.cssText = 'border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.02)';
+        bl.appendChild(el('b', null, (r.destinataires + r.copies ? '✅ Envoi du ' + frJ(r.date || jour()) + ' : ' : '⚠ Rien n\'a été envoyé pour le ' + frJ(r.date || jour()) + ' : ') + titre));
+        if (r.raison) bl.appendChild(el('div', null, r.raison));
+        var l = r.liste || []; if (l.length) { var u4 = el('ul'); u4.style.cssText = 'margin:4px 0 0 18px;padding:0'; l.forEach(function (x) { u4.appendChild(el('li', null, x.nom + ' — ' + x.email + ' (' + x.type + ')')); }); bl.appendChild(u4); }
+        if ((r.refuses || []).length) { var br = el('div'); br.style.cssText = 'margin-top:6px;color:#DC2626'; br.appendChild(el('b', null, '✖ Refusées par la messagerie : ' + r.refuses.length)); var u5 = el('ul'); u5.style.cssText = 'margin:2px 0 0 18px;padding:0'; r.refuses.forEach(function (x) { u5.appendChild(el('li', null, x.email + ' : ' + x.erreur)); }); br.appendChild(u5); bl.appendChild(br); }
+        if ((r.exclus || []).length) { var bx = el('div'); bx.style.cssText = 'margin-top:6px'; bx.appendChild(el('b', null, '⚠ ' + r.exclus.length + ' personne(s) de ces rôles ne reçoivent rien :')); var u6 = el('ul'); u6.style.cssText = 'margin:2px 0 0 18px;padding:0'; r.exclus.forEach(function (x) { u6.appendChild(el('li', null, x.nom + (x.email ? ' — ' + x.email : '') + ' : ' + x.raison)); }); bx.appendChild(u6); bl.appendChild(bx); }
+        if (r.quota >= 0) bl.appendChild(el('div', 'aide', '✉ Quota d\'e-mails restant après cet envoi : ' + r.quota + '.'));
+        resultat.appendChild(bl); })
         .catch(function (e) { toast(e.message, true); }).then(function () { bouton.disabled = false; bouton.textContent = txt; });
     }
     function boutonVoir(role, libelle) { var b = el('button', null, '👁'); b.type = 'button'; b.title = 'Voir à qui irait l\'envoi pour : ' + libelle; b.style.cssText = btnStyle; b.onclick = function () { voir([role], libelle); }; return b; }
@@ -146,6 +155,17 @@
     [['Aujourd\'hui', 0], ['Hier', -1]].forEach(function (x) { var b = el('button', null, x[0]); b.type = 'button'; b.style.cssText = btnStyle; b.onclick = function () { champJour.value = jourLocal(x[1]); resultat.textContent = ''; }; barreJour.appendChild(b); });
     barreJour.appendChild(el('span', 'aide', 'Vaut pour les boutons 👁 et ✉ ci-dessous.')); champJour.onchange = function () { resultat.textContent = ''; };
     c.appendChild(barreJour);
+    var etatAuto = el('div'); etatAuto.style.cssText = 'margin:8px 0;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:13px';
+    var jr = el('button', null, '📜 Voir le journal des envois'); jr.type = 'button'; jr.style.cssText = btnStyle + ';margin-left:8px'; var zj = el('div'); zj.style.cssText = 'font-size:12.5px;margin-top:6px';
+    function majAuto() {
+      return Api.call('rapport_envois_journal').then(function (r) {
+        var a = r.auto || {}, t = a.actif ? '🟢 Envoi automatique activé : chaque jour à partir de ' + a.heure + ' h, une seule fois par jour' + (a.dernier ? ' (dernier envoi : ' + frJ(a.dernier) + ')' : ' (aucun envoi encore)') + '.' : '🔴 Envoi automatique DÉSACTIVÉ : aucun envoi ne part tout seul (réglage « Envoi automatique chaque soir » ci-dessous).';
+        if (a.actif && a.dernier === jourLocal(0)) t += ' Déjà envoyé aujourd\'hui : il ne repart pas une 2e fois (utilisez « Envoyer maintenant »).'; if (a.erreur) t += ' ⚠ Dernier essai (' + a.essai + ') : ' + a.erreur;
+        etatAuto.textContent = t; etatAuto.appendChild(jr); zj.textContent = '';
+        jr.onclick = function () { zj.textContent = ''; var u7 = el('ul'); u7.style.cssText = 'margin:4px 0 0 18px;padding:0'; (r.lignes || []).forEach(function (x) { u7.appendChild(el('li', null, x.date + ' · ' + x.action + ' · ' + x.par + ' · ' + x.detail)); }); zj.appendChild(u7.childNodes.length ? u7 : el('p', 'aide', 'Aucune action d\'envoi dans le journal.')); };
+      }).catch(function (e) { etatAuto.textContent = e.message; });
+    }
+    c.appendChild(etatAuto); c.appendChild(zj); majAuto();
     var t = el('table'); t.style.cssText = 'width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:13.5px';
     var th = el('tr'); ['Rôle', 'Ce qu\'il reçoit', 'Actions'].forEach(function (x) { var h = el('th', null, x); h.style.cssText = 'text-align:left;padding:7px 8px;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)'; th.appendChild(h); }); t.appendChild(th);
     P.filter(function (p) { return p.id.indexOf('rapport_envoi.role.') === 0; }).forEach(function (p) {
