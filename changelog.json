@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-327",
+    "date": "2026-11-06",
+    "title": "Version 6.64.2 — Renommage : messages clairs à l'ouverture d'un dossier",
+    "changes": [
+      "Renommage › Ouvrir un dossier : si le navigateur refuse le dossier (Documents, Téléchargements, Bureau…) ou si rien n'est choisi, un message l'explique au lieu de ne rien faire ; un dossier sans PDF / JPG / PNG est signalé."
+    ]
+  },
+  {
     "id": "2026-11-06-326",
     "date": "2026-11-06",
     "title": "Version 6.64.1 — Renommage : nom déjà exact",

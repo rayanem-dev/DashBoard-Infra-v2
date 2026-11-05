@@ -299,8 +299,8 @@
     $('b-dossier').onclick = function () {
       window.showDirectoryPicker({ mode: 'readwrite' }).then(function (d) {
         dossierChoisi = d; var fs = [];
-        return (function lire(it) { return it.next().then(function (r) { if (r.done) return; var e = r.value[1]; if (e.kind === 'file' && /\.(pdf|jpe?g|png)$/i.test(e.name)) return e.getFile().then(function (f) { fs.push(f); return lire(it); }); return lire(it); }); })(d.entries()).then(function () { fs.sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); }); ajouter(fs); toast(fs.length + ' fichier(s) lus dans « ' + d.name + ' » : « Remplacer le nom » les renomme sur place.'); });
-      }).catch(function (e) { if (e && e.name !== 'AbortError') toast(e.message, true); });
+        return (function lire(it) { return it.next().then(function (r) { if (r.done) return; var e = r.value[1]; if (e.kind === 'file' && /\.(pdf|jpe?g|png)$/i.test(e.name)) return e.getFile().then(function (f) { fs.push(f); return lire(it); }); return lire(it); }); })(d.entries()).then(function () { fs.sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); }); ajouter(fs); if (!fs.length) { toast('Aucun PDF, JPG ou PNG directement dans « ' + d.name + ' » (les sous-dossiers ne sont pas lus).', true); return; } toast(fs.length + ' fichier(s) lus dans « ' + d.name + ' » : « Remplacer le nom » les renomme sur place.'); });
+      }).catch(function (e) { if (e && e.name === 'AbortError') toast('Aucun dossier ouvert (annulé, ou refusé par le navigateur). Documents, Téléchargements et Bureau sont refusés : choisissez un sous-dossier (ex. « Scans »), ou déposez les fichiers puis « Télécharger ».', true); else if (e) toast('Ouverture du dossier impossible : ' + (e.message || e.name), true); });
     };
   }
   $('b-zip').onclick = telecharger; $('b-vider').onclick = function () { items = []; dessiner(); };
