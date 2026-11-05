@@ -307,10 +307,10 @@
     if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
     document.querySelector('main').textContent = e.code === 'DROITS' ? 'Accès réservé au secrétariat.' : e.message;
   });
+  $('b-quota').onclick = function () { var b = this; b.disabled = true; $('q-val').textContent = '…'; Api.call('mail_quota').then(function (r) { $('q-val').innerHTML = '<b>' + r.restant + '</b> destinataire(s) restant(s) aujourd\'hui (mesuré à ' + r.heure + ' ; remis à zéro chaque jour). Limite habituelle : 100 pour un compte Gmail gratuit, 1 500 pour Google Workspace.'; }).catch(function (e) { $('q-val').textContent = e.message; }).then(function () { b.disabled = false; }); };
 })();
 </script>
-<script src="js/raccourcis.js">  $('b-quota').onclick = function () { var b = this; b.disabled = true; $('q-val').textContent = '…'; Api.call('mail_quota').then(function (r) { $('q-val').innerHTML = '<b>' + r.restant + '</b> destinataire(s) restant(s) aujourd\'hui (mesuré à ' + r.heure + ' ; remis à zéro chaque jour). Limite habituelle : 100 pour un compte Gmail gratuit, 1 500 pour Google Workspace.'; }).catch(function (e) { $('q-val').textContent = e.message; }).then(function () { b.disabled = false; }); };
-</script>
+<script src="js/raccourcis.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>

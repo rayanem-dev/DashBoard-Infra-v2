@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-333",
+    "date": "2026-11-06",
+    "title": "Version 6.67.2 — Paramètres : le bouton quota fonctionne",
+    "changes": [
+      "Paramètres : le bouton « ✉ Quota d'e-mails restant » ne répondait pas (code placé au mauvais endroit) : corrigé."
+    ]
+  },
+  {
     "id": "2026-11-06-332",
     "date": "2026-11-06",
     "title": "Version 6.67.1 — Paramètres : quota d'e-mails restant",
