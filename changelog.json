@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-06-330",
+    "date": "2026-11-06",
+    "title": "Version 6.66.1 — Documents administratifs : liste rechargée",
+    "changes": [
+      "Documents administratifs : la liste des modèles est rechargée à chaque nouvelle version (le modèle « Titre de congé » n'apparaissait pas chez ceux dont le navigateur gardait l'ancienne liste)."
+    ]
+  },
+  {
     "id": "2026-11-06-329",
     "date": "2026-11-06",
     "title": "Version 6.66.0 — Autorisation d'accès : sites choisis une fois par contrat, alerte si véhicule déjà autorisé",
