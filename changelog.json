@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-06-317",
+    "date": "2026-11-06",
+    "title": "Version 6.58.0 — Autorisation d'accès : sites concernés (OUI / NON)",
+    "changes": [
+      "Prise en charge › documents générés : sur chaque autorisation, un bouton « 🏢 Sites » (personnel de la division) ouvre les 10 sites (Base de vie centrale, annexes 01 et 02, Direction Régionale, Aéroport, UTG Phase A, CSC, GPL, Poste blindé, CTH). Site coché : « ☒ OUI » en gras ; sinon « ☒ NON » en gras.",
+      "Le macaron de la même série suit : ☒ / ☐ devant les sites (Base annexe I et II, Phase A, CSC, GPL, CTH, Direction Régionale, Base de vie centrale ; CPF laissé tel quel). Les deux PDF sont refaits.",
+      "Le choix est mémorisé par contrat et repris aux prochaines générations (sans choix mémorisé, le modèle reste inchangé). Passerelle et application Prise en charge à redéployer."
+    ]
+  },
+  {
     "id": "2026-11-06-316",
     "date": "2026-11-06",
     "title": "Version 6.57.1 — Rapport journalier : envoi manuel ciblé pour un jour choisi",
