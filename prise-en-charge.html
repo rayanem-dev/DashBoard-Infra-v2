@@ -785,34 +785,68 @@ window.google = { script: { run: (function () {
       afficherAlerteModale('Document ouvert', 'Corrigez le document dans Google Docs (l\'enregistrement est automatique), puis revenez ici : « 🖨️ Imprimer » et « ✉️ Envoyer par email » utilisent toujours la dernière version corrigée.', 'ok');
     }).withFailureHandler(function(err) { if (w) w.close(); btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).ouvrirDocPourModification(id);
   }
-  /** Fenêtre « Sites » : 10 cases OUI / NON ; enregistre dans l'autorisation ET le macaron, refait les deux PDF, mémorise pour le contrat. */
+  /** Fenêtre « Site concerné pour accès » : 10 cases. o = { sous, liste, coches (tableau de noms cochés), okTexte, onOk(sites, fermer, bouton), onSkip, onAnnuler }. */
+  function dialogueSites(o) {
+    const fond = document.createElement('div'); fond.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    const boite = document.createElement('div'); boite.style.cssText = 'background:var(--white,#fff);color:var(--text-dark,#1c1c1c);border-radius:14px;padding:18px 20px;max-width:420px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)';
+    boite.innerHTML = '<h3 style="margin:0 0 4px">🏢 Site concerné pour accès</h3><p style="margin:0 0 10px;font-size:13px;color:var(--text-muted,#6b7280)">' + echapper(o.sous || '') + '</p>';
+    const cases = [], coches = (o.coches || []).map(function(x) { return String(x).toLowerCase(); });
+    o.liste.forEach(function(s) {
+      const l = document.createElement('label'); l.style.cssText = 'display:flex;gap:10px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--border,#e5e7eb);font-size:14px;cursor:pointer';
+      const c = document.createElement('input'); c.type = 'checkbox'; c.checked = coches.indexOf(s.toLowerCase()) !== -1; c.style.cssText = 'width:18px;height:18px;margin:0'; cases.push({ s: s, c: c });
+      l.appendChild(c); l.appendChild(document.createTextNode(s)); boite.appendChild(l);
+    });
+    const fermer = function() { fond.remove(); };
+    const bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:14px;flex-wrap:wrap';
+    if (o.onSkip) { const sk = document.createElement('button'); sk.type = 'button'; sk.textContent = 'Passer sans choisir'; sk.style.cssText = 'margin-right:auto;background:none;border:0;color:var(--text-muted,#6b7280);text-decoration:underline;cursor:pointer;font:inherit;font-size:12.5px'; sk.onclick = function() { fermer(); o.onSkip(); }; bar.appendChild(sk); }
+    const non = document.createElement('button'); non.type = 'button'; non.className = 'modal-btn-secondary'; non.textContent = 'Annuler'; non.onclick = function() { fermer(); if (o.onAnnuler) o.onAnnuler(); };
+    const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'modal-btn'; ok.textContent = o.okTexte || 'Enregistrer';
+    ok.onclick = function() { o.onOk(cases.filter(function(x) { return x.c.checked; }).map(function(x) { return x.s; }), fermer, ok); };
+    bar.appendChild(non); bar.appendChild(ok); boite.appendChild(bar); fond.appendChild(boite); document.body.appendChild(fond);
+  }
+  /** Bouton « Sites » d'une autorisation déjà générée : change les sites de l'autorisation ET du macaron, refait les deux PDF, mémorise pour le contrat. */
   function choisirSites(btn, id) {
     const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳';
     google.script.run.withSuccessHandler(function(res) {
       btn.disabled = false; btn.textContent = txt;
-      if (!res || !res.success) { afficherAlerteModale('Erreur', String((res && res.error) || 'Lecture impossible'), 'err'); return; }
+      if (!res || !res.success) { afficherAlerteModale('Sites impossibles', String((res && res.error) || 'Lecture impossible') + ' (si le document modifiable a été supprimé, par exemple par la suppression automatique, générez l\'autorisation à nouveau : les sites du contrat sont repris.)', 'err'); return; }
+      dialogueSites({ sous: res.nom + ' — coché = « ☒ OUI » ; sinon « ☒ NON ». Le macaron suit.', liste: res.liste, coches: res.liste.filter(function(s) { return res.coches[s]; }), okTexte: 'Enregistrer',
+        onOk: function(sites, fermer, ok) {
+          ok.disabled = true; ok.textContent = '⏳ Mise à jour des PDF…';
+          google.script.run.withSuccessHandler(function(r2) {
+            fermer();
+            if (!r2 || !r2.success) { afficherAlerteModale('Erreur', String((r2 && r2.error) || 'Enregistrement impossible'), 'err'); return; }
+            afficherAlerteModale('Sites enregistrés', '✅ Autorisation' + (r2.macaron ? ' et macaron' : '') + ' mis à jour. Ce choix est retenu pour le contrat ' + (r2.contrat || '') + ' (prochaines générations).' + (r2.macaron ? '' : ' (Macaron de la même série introuvable : non modifié.)'), 'ok'); chargerFichiers();
+          }).withFailureHandler(function(err) { fermer(); afficherAlerteModale('Erreur', err.message, 'err'); }).definirSitesFichier(id, sites);
+        } });
+    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Sites impossibles', err.message, 'err'); }).lireSitesFichier(id);
+  }
+  /** Annule l'envoi en cours (réactive le bouton). */
+  function annulerEnvoi() { document.getElementById('btnEnvoyer').disabled = false; document.getElementById('spinner').style.display = 'none'; }
+  /** Avant de générer une autorisation : (1) alerte si un véhicule a déjà une autorisation valable ; (2) première autorisation d'un contrat : choisir une fois les sites (personnel de la division). */
+  function etapesAvantEnvoi(data) {
+    if (!data.genererAuto) { envoyerPEC(data); return; }
+    const sites = function() {
+      if (estPrestataire) { envoyerPEC(data); return; }
+      google.script.run.withSuccessHandler(function(r) {
+        if (!r || !r.success || r.coches !== null) { envoyerPEC(data); return; }   // déjà réglés pour ce contrat (ou lecture impossible : on ne bloque jamais)
+        dialogueSites({ sous: 'Première autorisation pour ce contrat (' + r.cle + ') : cochez les sites concernés. Ce choix est mémorisé pour ses prochaines autorisations (modifiable ensuite par le bouton « 🏢 Sites »). Le macaron suit.', liste: r.liste, coches: [], okTexte: 'Enregistrer et générer',
+          onOk: function(s, fermer, ok) { ok.disabled = true; google.script.run.withSuccessHandler(function() { fermer(); envoyerPEC(data); }).withFailureHandler(function() { fermer(); envoyerPEC(data); }).definirSitesContrat(data.prestataire, s); },
+          onSkip: function() { envoyerPEC(data); }, onAnnuler: annulerEnvoi });
+      }).withFailureHandler(function() { envoyerPEC(data); }).lireSitesContrat(data.prestataire);
+    };
+    google.script.run.withSuccessHandler(function(r) {
+      const v = (r && r.vehicules) || []; if (!v.length) { sites(); return; }
       const fond = document.createElement('div'); fond.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-      const boite = document.createElement('div'); boite.style.cssText = 'background:var(--white,#fff);color:var(--text-dark,#1c1c1c);border-radius:14px;padding:18px 20px;max-width:420px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)';
-      boite.innerHTML = '<h3 style="margin:0 0 4px">🏢 Site concerné pour accès</h3><p style="margin:0 0 10px;font-size:13px;color:var(--text-muted,#6b7280)">' + echapper(res.nom) + '<br>Coché = « ☒ OUI » ; sinon « ☒ NON ». Le macaron suit.</p>';
-      const cases = [];
-      res.liste.forEach(function(s) {
-        const l = document.createElement('label'); l.style.cssText = 'display:flex;gap:10px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--border,#e5e7eb);font-size:14px;cursor:pointer';
-        const c = document.createElement('input'); c.type = 'checkbox'; c.checked = !!res.coches[s]; c.style.cssText = 'width:18px;height:18px;margin:0'; cases.push({ s: s, c: c });
-        l.appendChild(c); l.appendChild(document.createTextNode(s)); boite.appendChild(l);
-      });
-      const bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px';
-      const non = document.createElement('button'); non.type = 'button'; non.className = 'modal-btn-secondary'; non.textContent = 'Annuler'; non.onclick = function() { fond.remove(); };
-      const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'modal-btn'; ok.textContent = 'Enregistrer';
-      ok.onclick = function() {
-        ok.disabled = true; ok.textContent = '⏳ Mise à jour des PDF…';
-        google.script.run.withSuccessHandler(function(r2) {
-          fond.remove();
-          if (!r2 || !r2.success) { afficherAlerteModale('Erreur', String((r2 && r2.error) || 'Enregistrement impossible'), 'err'); return; }
-          afficherAlerteModale('Sites enregistrés', '✅ Autorisation' + (r2.macaron ? ' et macaron' : '') + ' mis à jour. Ce choix est retenu pour le contrat ' + (r2.contrat || '') + ' (prochaines générations).' + (r2.macaron ? '' : ' (Macaron de la même série introuvable : non modifié.)'), 'ok'); chargerFichiers();
-        }).withFailureHandler(function(err) { fond.remove(); afficherAlerteModale('Erreur', err.message, 'err'); }).definirSitesFichier(id, cases.filter(function(x) { return x.c.checked; }).map(function(x) { return x.s; }));
-      };
-      bar.appendChild(non); bar.appendChild(ok); boite.appendChild(bar); fond.appendChild(boite); document.body.appendChild(fond);
-    }).withFailureHandler(function(err) { btn.disabled = false; btn.textContent = txt; afficherAlerteModale('Erreur', err.message, 'err'); }).lireSitesFichier(id);
+      const boite = document.createElement('div'); boite.style.cssText = 'background:#fff;color:#1c1c1c;border-radius:14px;max-width:480px;width:100%;padding:20px;font-family:inherit;box-shadow:0 10px 40px rgba(0,0,0,.3)';
+      const fr = function(d) { return String(d || '').split('-').reverse().join('/'); };
+      boite.innerHTML = '<h3 style="margin:0 0 8px">⚠ Autorisation déjà valable</h3><p style="margin:0 0 8px;color:#555">' + (v.length > 1 ? 'Ces véhicules ont' : 'Ce véhicule a') + ' déjà une autorisation d\'accès en cours de validité :</p><ul style="margin:0 0 12px;padding-left:20px">' +
+        v.map(function(x) { return '<li><b>' + echapper(x.immat) + '</b>' + (x.modele ? ' (' + echapper(x.modele) + ')' : '') + ' — valable jusqu\'au <b>' + fr(x.valide) + '</b>' + (x.prestataire ? ' · ' + echapper(x.prestataire) : '') + '</li>'; }).join('') + '</ul><p style="margin:0 0 14px;color:#555">Inutile d\'en créer plusieurs. Vous pouvez quand même en créer une nouvelle si nécessaire.</p>';
+      const bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+      const non = document.createElement('button'); non.type = 'button'; non.className = 'modal-btn-secondary'; non.textContent = 'Annuler'; non.onclick = function() { fond.remove(); annulerEnvoi(); };
+      const oui = document.createElement('button'); oui.type = 'button'; oui.className = 'modal-btn'; oui.textContent = 'Créer quand même'; oui.onclick = function() { fond.remove(); sites(); };
+      bar.appendChild(non); bar.appendChild(oui); boite.appendChild(bar); fond.appendChild(boite); document.body.appendChild(fond);
+    }).withFailureHandler(function() { sites(); }).verifierAutorisationsVehicules(data);
   }
   function majPdf(btn, id) {
     const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Mise à jour…';
@@ -1029,14 +1063,14 @@ window.google = { script: { run: (function () {
     document.getElementById('spinner').style.display = 'block';
     document.getElementById('resultat').style.display = 'none';
 
-    if (!data.injecterEnquetes) { envoyerPEC(data); return; }
+    if (!data.injecterEnquetes) { etapesAvantEnvoi(data); return; }
     // avant de générer : les personnes déjà enregistrées dans les Enquêtes (chez ce prestataire ou un autre) sont signalées
     google.script.run
       .withSuccessHandler(function(r) {
-        if (!r || !r.deja || !r.deja.length) { envoyerPEC(data); return; }
-        demanderDoublons(r.deja, function(ignorer) { data.ignorerEnquetes = ignorer ? r.deja.map(function(d) { return d.nomComplet; }) : []; envoyerPEC(data); });
+        if (!r || !r.deja || !r.deja.length) { etapesAvantEnvoi(data); return; }
+        demanderDoublons(r.deja, function(ignorer) { data.ignorerEnquetes = ignorer ? r.deja.map(function(d) { return d.nomComplet; }) : []; etapesAvantEnvoi(data); });
       })
-      .withFailureHandler(function() { envoyerPEC(data); })
+      .withFailureHandler(function() { etapesAvantEnvoi(data); })
       .verifierEnquetes(data);
   }
 

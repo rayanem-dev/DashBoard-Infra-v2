@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-329",
+    "date": "2026-11-06",
+    "title": "Version 6.66.0 — Autorisation d'accès : sites choisis une fois par contrat, alerte si véhicule déjà autorisé",
+    "changes": [
+      "À la première autorisation d'un contrat (personnel de la division), une fenêtre « Site concerné pour accès » demande de cocher les sites avant la génération ; le choix est mémorisé pour le contrat et appliqué aux autorisations et macarons suivants. Le bouton « 🏢 Sites » de la liste sert à les modifier ensuite (messages d'erreur explicites, par exemple si le document modifiable a été supprimé).",
+      "Avant de générer une autorisation, le portail vérifie dans le tableau des véhicules si chaque véhicule a déjà une autorisation valable (« Valable jusqu'au ») : une alerte l'indique avec la date, et on peut annuler ou « Créer quand même »."
+    ]
+  },
+  {
     "id": "2026-11-06-328",
     "date": "2026-11-06",
     "title": "Version 6.65.0 — Rapport journalier : le tableau décide seul, envoi plus fiable",
