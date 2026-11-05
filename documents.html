@@ -63,7 +63,7 @@
   <datalist id="dl-personnes"></datalist>
   <section class="dp-apercu dp-impr"><div id="apercu" data-i18n-non></div></section>
 </main>
-<script src="js/documents-modeles.js?v=6.66.1"></script>
+<script src="js/documents-modeles.js?v=6.67.0"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -98,7 +98,7 @@
       var ms = Documents.modeles.filter(function (m) { return !m.cache && m.categorie === c.id && (!q || norm(m.titre + ' ' + m.description).indexOf(q) !== -1); });
       if (!ms.length) return;
       z.appendChild(el('div', 'dp-cat', c.emoji + ' ' + c.titre));
-      ms.forEach(function (m) { var b = el('button', 'dp-m' + (courant && courant.id === m.id ? ' on' : ''), m.titre); b.type = 'button'; b.onclick = function () { ouvrir(m.id); }; z.appendChild(b); });
+      ms.forEach(function (m) { var b = el('button', 'dp-m' + (courant && courant.id === m.id ? ' on' : ''), m.titre); b.type = 'button'; b.onclick = function () { if (m.id === 'titre_conge' && (!courant || courant.id !== 'titre_conge')) titreCourant = null; ouvrir(m.id); }; z.appendChild(b); });
     });
     if (!z.firstChild) z.appendChild(el('div', 'dp-vide', 'Aucun document ne correspond.'));
   }
@@ -146,6 +146,51 @@
     dessiner(); return w;
   }
 
+  // ----- Titre de congé : enregistrer, demander l'injection au planning, validation par l'administrateur
+  var titreCourant = null;
+  var STATUTS = { enregistre: ['Enregistré', '#6B7280'], demande: ['Demandé', '#D97706'], injecte: ['Dans le planning ✅', '#16A34A'], refuse: ['Refusé', '#DC2626'] };
+  function frj(d) { return String(d || '').split('-').reverse().join('/'); }
+  function panneauTitres(f) {
+    var z = el('div'); z.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid var(--border,#e5e7eb)';
+    var etat = el('p', 'desc', ''); etat.style.fontWeight = '700';
+    function dire(t, err) { etat.textContent = t; etat.style.color = err ? '#DC2626' : '#16A34A'; }
+    var barre = el('div', 'dp-actions'), liste = el('div'); liste.style.marginTop = '10px';
+    function sauver(puisDemander) {
+      return Api.call('tc_enregistrer', { id: titreCourant, valeurs: valeurs }).then(function (r) {
+        titreCourant = r.titre.id; var msg = '✅ Enregistré sous le n° ' + r.titre.numero + '.';
+        if (!r.compte || !r.compte.email) msg += ' ⚠ Agent non rattaché à un compte du portail (' + ((r.compte && r.compte.raison) || '') + ') : choisissez-le dans la liste de BDDORGA pour pouvoir l\'injecter au planning.';
+        if (puisDemander) { if (!r.compte || !r.compte.email) { dire(msg, true); return charger(); } return Api.call('tc_demander', { id: titreCourant }).then(function () { dire('✅ Enregistré (' + r.titre.numero + ') et demande envoyée à l\'administrateur du planning.'); return charger(); }); }
+        dire(msg, !(r.compte && r.compte.email)); return charger();
+      }).catch(function (e) { dire(e.message, true); });
+    }
+    var b1 = el('button', 'btn-s', '💾 Enregistrer'); b1.type = 'button'; b1.title = 'Garde ce titre dans la liste ci-dessous (modifiable tant qu\'il n\'est pas dans le planning)'; b1.onclick = function () { sauver(false); };
+    var b2 = el('button', 'btn-s principal', '📨 Enregistrer et demander l\'injection au planning'); b2.type = 'button'; b2.title = 'L\'administrateur du planning valide ou refuse ; s\'il valide, les jours de congé apparaissent dans le planning de l\'agent'; b2.onclick = function () { sauver(true); };
+    barre.appendChild(b1); barre.appendChild(b2); z.appendChild(barre); z.appendChild(etat);
+    z.appendChild(el('h3', null, '📋 Titres de congé enregistrés')); z.appendChild(liste);
+    function bouton(t, titre, fn) { var b = el('button', 'btn-s', t); b.type = 'button'; b.title = titre; b.style.marginRight = '4px'; b.onclick = function () { b.disabled = true; Promise.resolve(fn()).catch(function (e) { dire(e.message, true); }).then(function () { b.disabled = false; }); }; return b; }
+    function charger() {
+      return Api.call('tc_liste').then(function (r) {
+        liste.textContent = '';
+        if (!r.titres.length) { liste.appendChild(el('p', 'desc', 'Aucun titre enregistré pour le moment.')); return; }
+        if (r.admin && r.attente) { var a = el('p', 'desc', '🔔 ' + r.attente + ' demande(s) d\'injection à décider.'); a.style.fontWeight = '700'; liste.appendChild(a); }
+        r.titres.forEach(function (t) {
+          var l = el('div'); l.style.cssText = 'border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:13px';
+          var s = STATUTS[t.statut] || [t.statut, '#6B7280'], tete = el('div'); tete.innerHTML = '<b></b> · <span></span> <span style="float:right;font-weight:800"></span>';
+          tete.children[0].textContent = t.numero + ' — ' + t.agent; tete.children[1].textContent = 'du ' + frj(t.depart) + ' au ' + frj(t.retour) + ' (' + t.jours + ' j)' + (t.destination ? ' · ' + t.destination : ''); tete.children[2].textContent = s[0]; tete.children[2].style.color = s[1]; l.appendChild(tete);
+          if (t.commentaire || t.decide_par) { var c = el('div', 'desc', (t.decide_par ? 'Décision : ' + t.decide_par + (t.decide_le ? ' le ' + frj(t.decide_le.slice(0, 10)) : '') : '') + (t.commentaire ? ' — ' + t.commentaire : '')); l.appendChild(c); }
+          var ac = el('div'); ac.style.marginTop = '5px';
+          if (t.statut !== 'injecte') ac.appendChild(bouton('✏ Ouvrir', 'Recharge ce titre dans le formulaire', function () { brouillons.titre_conge = t.valeurs; titreCourant = t.id; ouvrir('titre_conge'); }));
+          if (t.statut === 'enregistre' || t.statut === 'refuse') ac.appendChild(bouton('📨 Demander', 'Demande à l\'administrateur de l\'injecter au planning', function () { return Api.call('tc_demander', { id: t.id }).then(function () { dire('✅ Demande envoyée.'); return charger(); }); }));
+          if (r.admin && (t.statut === 'demande' || t.statut === 'enregistre')) ac.appendChild(bouton('✅ Valider et injecter', 'Pose les jours de congé dans le planning de l\'agent (absences)', function () { return Api.call('tc_decider', { id: t.id, decision: 'valider' }).then(function () { dire('✅ Injecté dans le planning de ' + t.agent + '.'); return charger(); }); }));
+          if (r.admin && (t.statut === 'demande' || t.statut === 'enregistre')) ac.appendChild(bouton('✕ Refuser', 'Refuse la demande (un motif peut être indiqué)', function () { var m = window.prompt('Motif du refus (facultatif) :', ''); if (m === null) return null; return Api.call('tc_decider', { id: t.id, decision: 'refuser', commentaire: m }).then(function () { dire('Demande refusée.'); return charger(); }); }));
+          if (r.admin && t.statut === 'injecte') ac.appendChild(bouton('↩ Retirer du planning', 'Enlève les jours de congé du planning de l\'agent', function () { if (!window.confirm('Retirer ce congé du planning de ' + t.agent + ' ?')) return null; return Api.call('tc_decider', { id: t.id, decision: 'retirer' }).then(function () { dire('Retiré du planning.'); return charger(); }); }));
+          if (t.statut !== 'injecte') ac.appendChild(bouton('🗑', 'Supprimer ce titre', function () { if (!window.confirm('Supprimer le titre ' + t.numero + ' ?')) return null; return Api.call('tc_supprimer', { id: t.id }).then(function () { if (titreCourant === t.id) titreCourant = null; return charger(); }); }));
+          l.appendChild(ac); liste.appendChild(l);
+        });
+      }).catch(function (e) { liste.textContent = ''; liste.appendChild(el('p', 'desc', 'Liste indisponible : ' + e.message)); });
+    }
+    charger(); f.appendChild(z);
+  }
   function ouvrir(id) {
     courant = Documents.trouver(id); if (!courant) return;
     valeurs = brouillons[id] || Documents.valeursInitiales(courant, user);
@@ -154,9 +199,10 @@
     courant.champs.forEach(function (c) { var l = el('label', null, c.l); l.htmlFor = 'f-' + c.k; f.appendChild(l); var i = saisie(c); i.id = 'f-' + c.k; f.appendChild(i); });
     var a = el('div', 'dp-actions');
     var p = el('button', 'btn-s principal', '🖨 Imprimer'); p.type = 'button'; p.onclick = function () { window.print(); };
-    var r = el('button', 'btn-s', '↺ Réinitialiser'); r.type = 'button'; r.onclick = function () { delete brouillons[id]; ouvrir(id); };
+    var r = el('button', 'btn-s', '↺ Réinitialiser'); r.type = 'button'; r.onclick = function () { delete brouillons[id]; if (id === 'titre_conge') titreCourant = null; ouvrir(id); };
     a.appendChild(p); a.appendChild(r); f.appendChild(a);
     f.appendChild(el('p', 'desc', 'Les cases laissées vides s\'impriment en pointillés pour être complétées à la main. Dans la fenêtre d\'impression, choisissez « Enregistrer au format PDF » pour obtenir un fichier.'));
+    if (id === 'titre_conge' && window.Api) panneauTitres(f);
     dessinerListe(); apercu();
     if (window.innerWidth < 1100) $('apercu').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }

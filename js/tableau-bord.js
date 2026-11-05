@@ -206,7 +206,7 @@
     }
     if (b.planning) {
       var pl = b.planning, cp = carte('Planning de ' + pl.portee, '🗓', 'planning.html'), pn = el('div', 'tb-ligne'), g1 = el('div', 'tb-col');
-      g1.appendChild(gros(pl.travail, 'en poste', '#E85D04')); g1.appendChild(el('small', null, pl.repos + ' à la maison' + (pl.retours ? ' · ' + pl.retours + ' reprennent cette semaine' : ''))); pn.appendChild(g1); cp.appendChild(pn);
+      g1.appendChild(gros(pl.travail, 'en poste', '#E85D04')); g1.appendChild(el('small', null, pl.repos + ' à la maison' + (pl.conge ? ' · ' + pl.conge + ' en congé' : '') + (pl.retours ? ' · ' + pl.retours + ' reprennent cette semaine' : ''))); pn.appendChild(g1); cp.appendChild(pn);
       cp.appendChild(petitesBarres(pl.serie, '#E85D04', function (n, i) { return jourCourt(plusJours(pl.debut, i)) + ' : ' + n + ' en poste'; }, true));
       cp.appendChild(el('small', null, 'Effectif en poste, 14 prochains jours (aujourd\'hui à gauche)')); ajout(cp);
     }

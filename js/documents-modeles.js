@@ -148,7 +148,7 @@
         '<div class="odm-sign"><b>' + E(v.signataire || 'LE CHEF DE DIVISION INFRASTRUCTURES') + '</b></div>' + PIED_ODM;
     });
   M[M.length - 1].opts = { _titre: 'Titre de Congé', _sansNum: true, _division: 'Division Infrastructure' };
-  M[M.length - 1].cache = true;   // modèle de la page « Requête de transport de personnel » (requete-transport.html), pas de la liste des documents administratifs
+  M.filter(function (m) { return m.id === 'transport'; })[0].cache = true;   // modèle de la page « Requête de transport de personnel » (requete-transport.html), pas de la liste des documents administratifs
 
   modele('demande-mission', 'missions', 'Demande de mission', 'Demande au Directeur Régional d\'autoriser une mission de travail.',
     [L.date, L.division, L.agent, L.matricule, L.fonction, { k: 'objet', l: 'Objet détaillé de la mission', t: 'textarea' }, { k: 'depart', l: 'Date de départ', t: 'date' },

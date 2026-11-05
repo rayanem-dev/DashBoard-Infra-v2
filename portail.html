@@ -70,6 +70,7 @@
     </div>
     <div class="alerte" id="alerte-inv" hidden style="display:block;color:var(--text-dark)"><div style="font-weight:800" id="inv-titre"></div><div style="height:12px;border-radius:6px;background:#E5E7EB;margin:7px 0 5px;overflow:hidden"><div id="inv-barre" style="height:100%;background:#2E9E5B;width:0"></div></div><div id="inv-texte" style="font-size:13px"></div><div id="inv-resp" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div><a class="btn-s" id="inv-lien" href="inventaire.html" hidden style="margin-top:6px;display:inline-block">Ouvrir l'inventaire</a></div>
     <div class="alerte" id="alerte-msg" hidden style="display:block"><span id="msg-texte"></span></div>
+    <div class="alerte" id="alerte-tc" hidden><span id="tc-texte"></span><a class="btn-s" href="documents.html#titre_conge">Décider</a></div>
     <div class="alerte" id="alerte-epi" hidden><span>🦺 Vos tailles de dotation EPI sont incomplètes : complétez-les (2 minutes).</span><a class="btn-s" href="epi.html">Renseigner mes tailles</a></div>
     <div class="alerte" id="alerte-vis" hidden><span>🔔 Un collègue vous a choisi comme vis-à-vis : confirmez ou refusez dans votre profil.</span><a class="btn-s" href="profil.html#coord">Répondre</a></div>
     <div class="alerte" id="alerte-mdp" hidden><span>Vous utilisez encore le mot de passe provisoire : choisissez le vôtre.</span><button class="btn-s" id="b-mdp-alerte" type="button">Changer mon mot de passe</button></div>
@@ -283,6 +284,7 @@
       $('inv-texte').textContent = z.trouves + ' article(s) retrouvé(s) sur ' + z.total + ' (' + String(pc).replace('.', ',') + ' %) · ' + z.restants + ' restant(s) à retrouver · ' + (z.ce_jour || 0) + ' retrouvé(s) ce jour';
       $('inv-resp').textContent = z.responsable ? 'Responsable de l\'opération : ' + z.responsable + ', coordinateur principal' : '';
       var acces = (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return /inventaire\.html/.test(a.url || ''); }); }); $('inv-lien').hidden = !acces; })();
+    $('alerte-tc').hidden = !(r.tc_attente > 0); if (r.tc_attente > 0) $('tc-texte').textContent = '📝 ' + r.tc_attente + ' titre' + (r.tc_attente > 1 ? 's' : '') + ' de congé à valider pour injection au planning.';
     $('alerte-msg').hidden = !r.accueil_message; $('msg-texte').textContent = r.accueil_message || '';
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
     var groupes = window.Rubriques ? Rubriques.regrouper(r.menu, r.rubriques).filter(function (g) { return g.apps.length; }) : r.menu;

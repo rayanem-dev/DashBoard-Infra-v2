@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-06-331",
+    "date": "2026-11-06",
+    "title": "Version 6.67.0 — Titre de congé : enregistrement, demande d'injection au planning, validation",
+    "changes": [
+      "Correction : le modèle « Titre de congé » n'apparaissait pas dans la liste de Documents administratifs (il était masqué par erreur). Il est maintenant dans « Attestations & divers ».",
+      "Titre de congé : « 💾 Enregistrer » (numéro TC-AAAA-NNNN, liste des titres enregistrés, modifiable tant qu'il n'est pas dans le planning), impression comme avant, et « 📨 Enregistrer et demander l'injection au planning ».",
+      "L'administrateur du planning (secrétariat, chef de division, droit Planning niveau 3) voit les demandes dans la page et sur son accueil, puis « ✅ Valider et injecter » (les jours de congé, du départ au jour avant le retour, deviennent des absences dans le planning de l'agent, sans décaler sa rotation), « ✕ Refuser » (avec motif) ou « ↩ Retirer du planning ». Chevauchement de deux congés refusé.",
+      "La carte « Planning de la division » de l'accueil compte aussi les agents en congé."
+    ]
+  },
+  {
     "id": "2026-11-06-330",
     "date": "2026-11-06",
     "title": "Version 6.66.1 — Documents administratifs : liste rechargée",
