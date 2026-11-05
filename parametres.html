@@ -188,7 +188,8 @@
     var barre = el('div'); barre.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:6px 0';
     var bv = el('button', null, '👁 Voir tous les destinataires'); bv.type = 'button'; bv.style.cssText = btnStyle; bv.onclick = function () { voir(null, 'Tous les rôles'); };
     var be = el('button', null, '✉ Envoyer maintenant à tous selon les règles'); be.type = 'button'; be.style.cssText = btnStyle + ';background:linear-gradient(135deg,var(--orange-main),var(--orange-light));color:#fff;border-color:transparent'; be.onclick = function () { envoyer(null, 'tous les rôles du tableau (et les adresses supplémentaires)', be); };
-    barre.appendChild(bv); barre.appendChild(be); c.appendChild(barre); c.appendChild(resultat);
+    var bs = el('button', null, '✉ Envoyer seulement les copies par service'); bs.type = 'button'; bs.style.cssText = btnStyle; bs.title = 'Rapport de leur service pour les rôles réglés « Rapport de son service » (ingénieurs, dessinateurs, conducteurs, agents, stagiaires), sans renvoyer le consolidé complet'; bs.onclick = function () { envoyer(['ingenieur', 'dessinateur', 'conducteur', 'agent', 'stagiaire'], 'copies par service (ingénieurs, dessinateurs, conducteurs, agents, stagiaires)', bs); };
+    barre.appendChild(bv); barre.appendChild(be); barre.appendChild(bs); c.appendChild(barre); c.appendChild(resultat);
     c.appendChild(el('p', 'aide', 'Les boutons 👁 et ✉ utilisent le tableau ENREGISTRÉ : enregistrez d\'abord vos changements.'));
     var msg = el('div', 'etat'); var ok = el('button', 'btn-p', 'Enregistrer le tableau'); ok.type = 'button'; c.appendChild(ok); c.appendChild(msg);
     ok.onclick = function () {

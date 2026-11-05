@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-06-335",
+    "date": "2026-11-06",
+    "title": "Version 6.68.1 — Rapport journalier : les copies par service repartent",
+    "changes": [
+      "Cause trouvée grâce au journal des envois : les copies par service (conducteurs, agents, ingénieurs…) échouaient depuis le 04/11 avec « Les autorisations spécifiées ne sont pas suffisantes pour appeler Session.getEffectiveUser ». L'envoi n'utilise plus cette fonction (la boîte du secrétariat sert de destinataire visible, les agents sont en copie cachée).",
+      "Paramètres › Rapport journalier : nouveau bouton « ✉ Envoyer seulement les copies par service » pour rattraper un jour sans renvoyer le consolidé complet."
+    ]
+  },
+  {
     "id": "2026-11-06-334",
     "date": "2026-11-06",
     "title": "Version 6.68.0 — Rapport journalier : on voit exactement qui a reçu quoi",
