@@ -148,6 +148,32 @@
         '<div class="odm-sign"><b>' + E(v.signataire || 'LE CHEF DE DIVISION INFRASTRUCTURES') + '</b></div>' + PIED_ODM;
     });
   M[M.length - 1].opts = { _titre: 'Titre de Congé', _sansNum: true, _division: 'Division Infrastructure' };
+
+  /** Décharge de matériel (modèle de la Division Infrastructures) : la personne reconnaît avoir reçu un matériel (désignation, marque, modèle, n° de série, état), valable pour une période ; visas du cédant et du preneur. */
+  modele('decharge', 'divers', 'Décharge de matériel', 'La personne reconnaît avoir reçu un matériel de la division (désignation, marque, modèle, n° de série, état), valable pour une période ; visas du cédant et du preneur.',
+    [L.date, L.agent, L.fonction, { k: 'employeur', l: 'Entreprise / employeur (facultatif)' }, { k: 'recu', l: 'Date de remise du matériel', t: 'date', def: 'aujourdhui' }, { k: 'cedant', l: 'De la part de', def: 'secrétariat de la division Infrastructure' },
+      { k: 'designation', l: 'Matériel', t: 'textarea' }, { k: 'marque', l: 'Marque' }, { k: 'modele', l: 'Modèle' }, { k: 'serie', l: 'Numéro de série' }, { k: 'etat', l: 'État', t: 'select', opts: ['En marche', 'Neuf', 'À réparer', 'Hors service'], def: 'En marche' },
+      { k: 'du', l: 'Décharge valable du', t: 'date', def: 'aujourdhui' }, { k: 'au', l: 'au', t: 'date' }], 'odm',
+    function (v) {
+      var ligne = function (l, x) { return '<div style="margin:2mm 0 2mm 5mm">' + l + ' : ' + x + '</div>'; };
+      return '<div class="odm-num">&nbsp;</div>' +
+        P('Je soussigné(e) <b>' + (v.agent ? E(v.agent) : pts(14)) + '</b>' + (v.fonction ? ', <b>' + E(v.fonction) + '</b>' : '') + (v.employeur ? ' <b>' + E(v.employeur) + '</b>' : '') + ', affecté(e) à la division Infrastructure, reconnais avoir reçu le <b>' + V(v, 'recu', 10) + '</b> de la part du <b>' + (v.cedant ? E(v.cedant) : pts(14)) + '</b> :') +
+        P('Le matériel suivant :') + '<div style="margin:2mm 0 3mm 5mm;font-weight:700">' + (String(v.designation || '').trim() ? E(v.designation).replace(/\n/g, '<br>') : pts(20)) + '</div>' +
+        ligne('Marque', V(v, 'marque', 10)) + ligne('Modèle', V(v, 'modele', 10)) + ligne('Numéro de série', V(v, 'serie', 12)) + ligne('État', V(v, 'etat', 8)) +
+        P('<b>Décharge valable du ' + V(v, 'du', 10) + ' au ' + V(v, 'au', 10) + '</b>') + visas(['Visa du cédant', 'Visa du preneur'], 90) + PIED_ODM;
+    });
+  M[M.length - 1].opts = { _titre: 'Décharge', _sansNum: true, _division: 'Division Infrastructure' };
+
+  /** Feuille de présence (modèle de la Division Infrastructures) : nom et prénom, fonction, signature ; lignes vides pour compléter à la main. */
+  modele('feuille-presence', 'divers', 'Feuille de présence', 'Liste d\'émargement (nom et prénom, fonction, signature) : personnes de BDDORGA et lignes vides pour compléter à la main.',
+    [L.date, { k: 'objet', l: 'Objet (réunion, formation… facultatif)' }, { k: 'personnes', l: 'Personnes (nom et prénom, fonction)', t: 'repeat', colonnes: [{ k: 'nom', l: 'Nom et prénom', pers: { fonction: 'fonction' } }, { k: 'fonction', l: 'Fonction' }] }, { k: 'lignes', l: 'Nombre de lignes au total (au moins)', t: 'number', def: '20' }], 'odm',
+    function (v) {
+      var pers = (v.personnes || []).filter(function (p) { return p && (String(p.nom || '').trim() || String(p.fonction || '').trim()); }), n = Math.max(Number(v.lignes) || 0, pers.length, 1), corps = '';
+      for (var i = 0; i < Math.min(n, 60); i += 1) { var p = pers[i] || {}; corps += '<tr style="height:9mm"><td>' + E(p.nom || '') + '</td><td>' + E(p.fonction || '') + '</td><td></td></tr>'; }
+      return '<div class="odm-num">' + (String(v.objet || '').trim() ? '<b>' + E(v.objet) + '</b>' : '&nbsp;') + '</div>' +
+        '<table class="tgr" style="width:100%"><thead><tr><th style="width:38%">NOM &amp; PRÉNOM</th><th style="width:34%">FONCTION</th><th>SIGNATURE</th></tr></thead><tbody>' + corps + '</tbody></table>';
+    });
+  M[M.length - 1].opts = { _titre: 'Feuille de présence', _sansNum: true, _division: 'Division Infrastructure' };
   M.filter(function (m) { return m.id === 'transport'; })[0].cache = true;   // modèle de la page « Requête de transport de personnel » (requete-transport.html), pas de la liste des documents administratifs
 
   modele('demande-mission', 'missions', 'Demande de mission', 'Demande au Directeur Régional d\'autoriser une mission de travail.',

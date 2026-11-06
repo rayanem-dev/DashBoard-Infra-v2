@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-07-338",
+    "date": "2026-11-07",
+    "title": "Version 6.71.0 — Rapports : saisie au téléphone, recherche dans le journal ; Décharge et Feuille de présence",
+    "changes": [
+      "Saisie du rapport, pensée pour le téléphone : champs en 16 px (plus de zoom au toucher), boutons de 44 px, lignes d'ouvrage empilées lisiblement (zone, texte, puis % / routine / retirer), effectif avec gros boutons − et +, compteurs de caractères, bouton « Enregistrer » collé en bas de l'écran, onglets défilables.",
+      "Brouillon enregistré sur l'appareil pendant la saisie : après une coupure ou un rechargement, « 📝 Brouillon retrouvé » propose de reprendre ; effacé à l'enregistrement.",
+      "Journal : recherche par mots (chantier, agent, date, travaux, difficultés, commentaire, ouvrages ; accents et majuscules indifférents), mots surlignés, et case « Tout l'historique » pour chercher dans tous les rapports enregistrés. Les impressions respectent la recherche.",
+      "Documents administratifs › Attestations & divers : deux nouveaux modèles, « Décharge de matériel » (matériel, marque, modèle, n° de série, état, validité, visas) et « Feuille de présence » (nom, fonction, signature, lignes vides)."
+    ]
+  },
+  {
     "id": "2026-11-06-337",
     "date": "2026-11-06",
     "title": "Version 6.70.0 — Rapport journalier : secrétariat et inventaire pour tous",
