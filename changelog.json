@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-07-339",
+    "date": "2026-11-07",
+    "title": "Version 6.72.0 — Documents établis : qui a fait quoi, jour par jour",
+    "changes": [
+      "Paramètres › 🗂️ Documents établis (secrétariat, chef de division) : par jour et par personne, le nombre de documents établis et leur type : prises en charge / autorisations d'accès, notes d'intérim, titres de congé, documents administratifs imprimés, envois par e-mail, rapports journaliers, saisies d'inventaire. Période au choix (120 jours au plus) et export Excel.",
+      "Documents administratifs : chaque impression est maintenant tracée (nom du modèle et personne), pour pouvoir la compter."
+    ]
+  },
+  {
     "id": "2026-11-07-338",
     "date": "2026-11-07",
     "title": "Version 6.71.0 — Rapports : saisie au téléphone, recherche dans le journal ; Décharge et Feuille de présence",
