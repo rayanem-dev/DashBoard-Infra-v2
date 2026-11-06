@@ -17,7 +17,7 @@
     valeurs.forEach(function (v, i) { var h = Math.max(v ? 3 : 1.5, (v - base) / Math.max(1, max - base) * (H - 3)), r = sv('rect', { x: i * bw + 1.5, y: H - h, width: bw - 3, height: h, rx: 2, fill: couleur, opacity: v ? 1 : 0.3 }); var ti = sv('title'); ti.textContent = infobulle(v, i); r.appendChild(ti); g.appendChild(r); });
     var z = el('div'); z.style.margin = '6px 0 0'; z.appendChild(g); return z;
   }
-  var STATS = 'stats-soustraitants.html#', OPTS = {};
+  var STATS = 'statistiques.html#', OPTS = {};
   function carte(titre, icone, id) {
     var lien = id && !OPTS.sansLien ? STATS + id : null;
     var c = el(lien ? 'a' : 'div', 'tb-carte'); c.dataset.stat = id || ''; if (lien) c.href = lien;

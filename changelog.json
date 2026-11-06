@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-07-342",
+    "date": "2026-11-07",
+    "title": "Version 6.74.0 — Page « Statistiques » à part, statistiques ouvertes à tout le personnel",
+    "changes": [
+      "Nouvelle page « Statistiques » (statistiques.html), distincte de « Statistique sous-traitants » (restaurée telle qu'avant) : un onglet par carré du tableau de bord de l'accueil, avec le détail complet. Elle est rangée dans la même rubrique que « Rapports journaliers » (menu « Rapport »). Un clic sur un carré de l'accueil ouvre son onglet.",
+      "Tous les carrés du tableau de bord (présence, rapports, effectif, classement, avancement, contrats, planning, inventaire, documents établis) sont visibles par tout le personnel de la division ; prestataires, invités et DSP ne les voient pas.",
+      "Rapport journalier : la ligne « Requêtes de transport générées » dit par qui (« par KHELIFI Amine (3), BENALI Karim (1) »).",
+      "Correction : le calcul des documents établis (carré, statistiques, rapport journalier) plantait côté passerelle depuis la 6.73.0 ; réparé et couvert par un test."
+    ]
+  },
+  {
     "id": "2026-11-07-341",
     "date": "2026-11-07",
     "title": "Version 6.73.0 — Statistiques complètes, carré « Documents établis », requêtes générées",
