@@ -17,7 +17,7 @@
   var REGLES = [
     [/prise.? en charge|autorisation d.acces|badge|enquete|bon de sortie|habilitations|statistique sous.?traitants/, 'acces'],
     [/statistiques sous|fiche d.evaluation|suivi cpm|dossiers cpm|passation des contrats|vivier|benchmark/, 'marches'],
-    [/rapport hebdomadaire|avancement chantiers|suivi chantier|taches journalieres|rapports journaliers|imputation|affectation chantier/, 'pilotage'],
+    [/^statistiques$|rapport hebdomadaire|avancement chantiers|suivi chantier|taches journalieres|rapports journaliers|imputation|affectation chantier/, 'pilotage'],
     [/organigramme|note d.interim|feuille de pointage|affectation du personnel|planning global|planning & rotations|simulation de planning|permanence|formation|visite medicale/, 'personnel'],
     [/veste en cuir|dechets industriels|dotation|repas a emporter|reservation|prise en charge hotel|ordre de travail|gaz.?oil|vehicule|requete transport|requete de transport|stock|inventaire|radio|commande de pieces/, 'logistique'],
     [/instances courriers|consignes|ordres de mission|documents administratifs|renommage|parametres/, 'admin'],
