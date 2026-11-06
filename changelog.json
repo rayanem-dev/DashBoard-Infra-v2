@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-07-340",
+    "date": "2026-11-07",
+    "title": "Version 6.72.1 — Documents établis : requêtes de transport comptées",
+    "changes": [
+      "La page « Requête de transport de personnel » trace maintenant chaque impression (comptée par personne dans Paramètres › Documents établis).",
+      "Les envois faits par les applications séparées (requête de transport, dotation, bon de sortie, fiche d'évaluation) sont comptés au nom de l'application : elles ne transmettent pas qui a établi le document."
+    ]
+  },
+  {
     "id": "2026-11-07-339",
     "date": "2026-11-07",
     "title": "Version 6.72.0 — Documents établis : qui a fait quoi, jour par jour",

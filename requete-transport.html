@@ -196,7 +196,7 @@
     var h = histo().filter(function (x) { return JSON.stringify(x) !== JSON.stringify(v); }); h.unshift(v); sauver(h); retenirParcours(v.parcours); envoyerTelephones(); return true;
   }
   $('b-garder').onclick = function () { if (garder()) toast('Enregistré dans l\'historique.'); };
-  $('b-imp').onclick = function () { garder(); window.print(); };          // impression en un clic (fenêtre d'impression directe), la requête est gardée dans l'historique
+  $('b-imp').onclick = function () { garder(); try { Api.call('doc_trace', { modele: 'transport', titre: 'Requête de transport de personnel' }).catch(function () { /* la trace ne bloque jamais l'impression */ }); } catch (e) { /* idem */ } window.print(); };          // impression en un clic (fenêtre d'impression directe), la requête est gardée dans l'historique
   $('b-vider').onclick = function () { ecrire(neuf()); initialiser(); };
   $('h-tout').onclick = function () { if (confirm('Supprimer tout l\'historique de cet ordinateur ?')) sauver([]); };
   dessinerParcours(); ecrire(neuf()); dessinerHisto();
