@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-07-343",
+    "date": "2026-11-07",
+    "title": "Version 6.75.0 — Privilèges : fiche BDDORGA complète, e-mail des prestataires, 3 applications comptées",
+    "changes": [
+      "Privilèges › Utilisateurs › Modifier : nouveau bloc « Fiche BDDORGA complète » avec TOUTES les colonnes du fichier BDDORGA ; l'enregistrement écrit directement dans BDDORGA.",
+      "Ajouter un utilisateur : case « Inscrire aussi cette personne dans BDDORGA » avec toutes les colonnes de BDDORGA (les champs déjà saisis sont repris).",
+      "Correction : changer l'e-mail d'un compte qui n'est pas dans BDDORGA (prestataire, externe) ne renvoie plus « Personne introuvable dans BDDORGA » ; seul le compte du portail est renommé.",
+      "Dotation, bon de sortie et fiche d'évaluation préviennent le portail à chaque génération (qui, combien) : comptés dans « Documents établis », les statistiques et le rapport journalier."
+    ]
+  },
+  {
     "id": "2026-11-07-342",
     "date": "2026-11-07",
     "title": "Version 6.74.0 — Page « Statistiques » à part, statistiques ouvertes à tout le personnel",

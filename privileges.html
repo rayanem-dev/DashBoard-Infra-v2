@@ -81,6 +81,7 @@
         <div><label for="n-wifi_user">Identifiant Wi-Fi</label><input id="n-wifi_user" class="filtre" style="width:100%;box-sizing:border-box" maxlength="60"></div>
         <div><label for="n-nin">NIN (18 chiffres)</label><input id="n-nin" class="filtre" inputmode="numeric" autocomplete="off" style="width:100%;box-sizing:border-box" maxlength="18"></div>
         <div><label for="n-date_integration">Date d'intégration</label><input id="n-date_integration" class="filtre" type="date" style="width:100%;box-sizing:border-box" maxlength="10"></div>
+        <div id="n-bdd" style="grid-column:1/-1"></div>
         <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;align-items:center"><span id="n-err" style="color:#B42318;font-size:13px;margin-inline-end:auto" role="alert"></span><button class="btn-s" type="button" id="n-annuler">Annuler</button><button class="btn-p" type="submit" id="n-ok">Créer le compte</button></div>
       </form>
     </dialog>
@@ -408,6 +409,32 @@
     plus.onclick = ajouter; champ.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ajouter(); } }); champ.addEventListener('change', function () { if ((choixEntreprises || []).indexOf(champ.value) >= 0) ajouter(); });
     ligne.appendChild(champ); ligne.appendChild(plus); w.appendChild(puces); w.appendChild(ligne); w.appendChild(dl); dessiner(); return w;
   }
+  // ---- Fiche BDDORGA complète : TOUTES les colonnes du fichier, écrites directement dans BDDORGA ----
+  var CLE_VERS_CHAMP = { nom: 'n-nom', email: 'n-email', service: 'n-service', dependance: 'n-dep', fonction: 'n-fonction', section: 'n-section', civilite: 'n-civilite', telephone: 'n-telephone', matricule: 'n-matricule', sap: 'n-sap', sona: 'n-sona', wifi_user: 'n-wifi_user', date_integration: 'n-date_integration', nin: 'n-nin' };
+  function blocBdd(email, entete) {
+    var det = document.createElement('details'); det.style.cssText = 'grid-column:1/-1;margin-top:10px;border:1.5px solid var(--border);border-radius:12px;padding:8px 12px';
+    var sm = el('summary', null, entete || '📋 Fiche BDDORGA complète — toutes les colonnes du fichier'); sm.style.cssText = 'cursor:pointer;font-weight:700'; det.appendChild(sm);
+    var corps = el('div', 'aide', 'Ouvrez pour charger les colonnes de BDDORGA…'); det.appendChild(corps);
+    var inp = {}, cols = null, init = {};
+    det.lire = function () { var o = {}; Object.keys(inp).forEach(function (c) { if (det.tous || inp[c].value !== (init[c] || '')) o[c] = inp[c].value; }); return o; };
+    det.cols = function () { return cols || []; };
+    det.champ = function (cle) { var c = (cols || []).filter(function (x) { return x.cle === cle; })[0]; return c ? inp[c.col] : null; };
+    det.addEventListener('toggle', function () {
+      if (!det.open || cols) return;
+      Api.call('admin_bddorga_fiche', { email: email || '' }).then(function (r) {
+        cols = r.colonnes || []; corps.textContent = '';
+        if (email && !r.presente) { var a = el('p', null, 'Cette personne n\'est pas encore dans BDDORGA. Elle n\'a donc que son compte portail.'); a.style.color = '#B42318'; corps.appendChild(a); }
+        var g = el('div'); g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:8px';
+        cols.forEach(function (c) {
+          var w = el('div'); w.appendChild(el('label', null, c.titre)); var i = el('input'); i.style.cssText = 'width:100%;box-sizing:border-box'; i.maxLength = 200;
+          var v = r.valeurs ? (r.valeurs[c.col] || '') : ''; if (c.cle === 'nin') i.inputMode = 'numeric'; i.value = v; init[c.col] = v; inp[c.col] = i; w.appendChild(i); g.appendChild(w);
+        });
+        corps.appendChild(g);
+        if (det.apresChargement) det.apresChargement();
+      }).catch(function (e) { corps.textContent = e.message; });
+    });
+    return det;
+  }
   function modifierCompte(u) {
     var d = document.createElement('dialog'); d.style.cssText = 'margin:auto;width:min(640px,94vw);max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)';
     d.appendChild(el('h3', null, 'Modifier ' + u.nom)).style.margin = '0 0 2px';
@@ -420,6 +447,8 @@
       w.appendChild(i); g.appendChild(w);
     });
     d.appendChild(g);
+    var bdd = null;
+    if (!u.hors) { bdd = blocBdd(u.email); bdd.style.marginTop = '12px'; d.appendChild(bdd); }
     var er = el('p'); er.style.cssText = 'color:#B42318;font-weight:700;margin:8px 0 0'; d.appendChild(er);
     var bar = el('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap';
     var sup = el('button', 'btn-s', '🗑 Supprimer le compte'); sup.type = 'button'; sup.style.cssText = 'color:#B42318;border-color:#B42318';
@@ -431,11 +460,15 @@
     var an = el('button', 'btn-s', 'Annuler'); an.type = 'button'; an.onclick = function () { d.close(); d.remove(); };
     var ok = el('button', 'btn-p', 'Enregistrer'); ok.type = 'button';
     ok.onclick = function () {
+      var lotBdd = bdd && bdd.cols().length ? bdd.lire() : {};
       var champs = {}; CHAMPS.forEach(function (c) { if (inp[c[0]] && (inp[c[0]].value || '').trim() !== (u[c[0]] || '')) champs[c[0]] = inp[c[0]].value; });
       if (portee && portee.join(' ; ') !== String(u.portee || '').split(/[;\n]+/).map(function (x) { return x.trim(); }).filter(Boolean).join(' ; ')) champs.portee = portee;
-      if (!Object.keys(champs).length) { d.close(); d.remove(); return; }
+      if (!Object.keys(champs).length && !Object.keys(lotBdd).length) { d.close(); d.remove(); return; }
       ok.disabled = true; er.textContent = '';
-      Api.call('admin_utilisateur_modifier', { email: u.email, champs: champs }).then(function (r) {
+      // 1) la fiche BDDORGA (toutes les colonnes) s'écrit directement dans BDDORGA ; 2) le reste (portée, champs propres au portail) dans la passerelle
+      var etape = Object.keys(lotBdd).length ? Api.call('admin_bddorga_ecrire', { email: u.email, valeurs: lotBdd }) : Promise.resolve({});
+      if (Object.keys(lotBdd).length) { Object.keys(champs).forEach(function (k) { if (k !== 'portee' && bdd.champ(k)) delete champs[k]; }); }
+      etape.then(function () { return Object.keys(champs).length ? Api.call('admin_utilisateur_modifier', { email: u.email, champs: champs }) : { ignores: [] }; }).then(function (r) {
         d.close(); d.remove(); toast(r.ignores && r.ignores.length ? 'Enregistré, sauf (imposé par BDDORGA) : ' + r.ignores.join(', ') : 'Compte modifié'); return recharger();
       }).catch(function (e) { er.textContent = e.message; }).then(function () { ok.disabled = false; });
     };
@@ -555,6 +588,11 @@
     var s = $('n-role'); s.textContent = ''; etat.roles.forEach(function (r) { var o = el('option', null, r.libelle); o.value = r.id; s.appendChild(o); }); s.value = 'agent';
     ['n-nom', 'n-email', 'n-service', 'n-dep', 'n-fonction', 'n-section', 'n-civilite', 'n-telephone', 'n-matricule', 'n-sap', 'n-sona', 'n-wifi_user', 'n-date_integration', 'n-nin'].forEach(function (i) { $(i).value = ''; }); $('n-err').textContent = '';
     $('n-dep').value = 'SONATRACH';
+    // fiche BDDORGA complète (toutes les colonnes) : cochée = la personne est aussi inscrite dans BDDORGA avec ces valeurs
+    var zb = $('n-bdd'); zb.textContent = '';
+    var cb = el('label'); cb.style.cssText = 'display:flex;gap:8px;align-items:center;text-transform:none;font-size:13px'; var ck = el('input'); ck.type = 'checkbox'; ck.id = 'n-inscrire'; ck.style.width = 'auto'; cb.appendChild(ck); cb.appendChild(document.createTextNode(' Inscrire aussi cette personne dans BDDORGA (toutes les colonnes ci-dessous)')); zb.appendChild(cb);
+    var bd = blocBdd(null, '📋 Toutes les colonnes de BDDORGA'); bd.id = 'n-fiche'; zb.appendChild(bd); bd.style.gridColumn = 'auto';
+    ck.addEventListener('change', function () { if (ck.checked) bd.open = true; });
     // entreprises proposées : SONATRACH, puis tous les prestataires connus (Badges et Config de la prise en charge) ; on peut aussi en saisir une nouvelle
     function liste() { var dl = $('l-ent'); dl.textContent = ''; ['SONATRACH'].concat(choixEntreprises || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; dl.appendChild(o); }); }
     liste(); if (!choixEntreprises) Api.call('admin_portee_choix').then(function (r) { choixEntreprises = r.entreprises || []; liste(); }).catch(function () { choixEntreprises = []; });
@@ -591,8 +629,20 @@
   $('n-role').addEventListener('change', function () { if ($('n-role').value === 'prestataire' && $('n-dep').value.toUpperCase() === 'SONATRACH') { $('n-dep').value = ''; $('n-dep').focus(); } else if ($('n-role').value !== 'prestataire' && !$('n-dep').value) $('n-dep').value = 'SONATRACH'; });
   $('n-annuler').addEventListener('click', function () { if ($('dlg-ajout').close) $('dlg-ajout').close(); else $('dlg-ajout').removeAttribute('open'); });
   $('f-ajout').addEventListener('submit', function (ev) {
-    ev.preventDefault(); $('n-ok').disabled = true;
+    ev.preventDefault(); $('n-ok').disabled = true; $('n-err').textContent = '';
+    var inscrire = $('n-inscrire') && $('n-inscrire').checked, fiche = $('n-fiche');
+    if (inscrire && !(fiche.cols && fiche.cols().length)) { $('n-err').textContent = 'Ouvrez la fiche BDDORGA pour charger les colonnes.'; $('n-ok').disabled = false; return; }
     Api.call('admin_utilisateur_ajouter', { nom: $('n-nom').value, email: $('n-email').value, role: $('n-role').value, service: $('n-service').value, dependance: $('n-dep').value, section: $('n-section').value, fonction: $('n-fonction').value, civilite: $('n-civilite').value, telephone: $('n-telephone').value, matricule: $('n-matricule').value, sap: $('n-sap').value, sona: $('n-sona').value, wifi_user: $('n-wifi_user').value, date_integration: $('n-date_integration').value, nin: $('n-nin').value })
+      .then(function (r) {
+        if (!inscrire) return r;
+        // les champs saisis plus haut remplissent les colonnes correspondantes (sans écraser ce que l'on a tapé dans la fiche)
+        var lot = {}; fiche.cols().forEach(function (c) {
+          var f = fiche.champ(c.cle), v = f ? f.value : ''; var src = CLE_VERS_CHAMP[c.cle] && $(CLE_VERS_CHAMP[c.cle]);
+          if (!v && src) v = src.value; if (c.cle === 'role') v = v || $('n-role').value; if (c.cle === 'actif') v = v || '1'; if (c.cle === 'email_contact') v = v || $('n-email').value;
+          if (v) lot[c.col] = v;
+        });
+        return Api.call('admin_bddorga_ajouter', { valeurs: lot }).then(function () { return r; });
+      })
       .then(function (r) { if ($('dlg-ajout').close) $('dlg-ajout').close(); toast('Compte créé : ' + r.email + ' — vous pouvez maintenant l\'inviter par e-mail'); return recharger(); })
       .catch(function (e) { $('n-err').textContent = e.message; }).then(function () { $('n-ok').disabled = false; });
   });
