@@ -34,7 +34,29 @@
   #feuille .signature th { font-weight: 600; text-align: center; font-size: 15px; padding: 8px; } #feuille .signature td { height: 54px; padding: 4px 7px; }
   #feuille .distrib { margin: 26px 0 0 34px; font-size: 14.5px; line-height: 1.9; } #feuille .distrib div:last-child { margin-left: 74px; }
   .ajout { display: inline-block; margin-top: 6px; }
-  @media (max-width: 860px) { #feuille { zoom: .75; } } @media (max-width: 640px) { #feuille { zoom: .5; } }
+  @media (max-width: 860px) { #feuille { zoom: .75; } }
+  /* Téléphone : plus de miniature, la fiche se recompose en blocs lisibles (même contenu, même impression) */
+  @media (max-width: 640px) {
+    .fd { padding: 10px 10px 30px; } .barre-act .btn-p, .barre-act .btn-s2 { flex: 1 1 100%; padding: 13px 14px; font-size: 15px; }
+    #feuille { width: 100%; zoom: 1; padding: 14px 12px 18px; }
+    #feuille .entete { font-size: 12.5px; } #feuille .titre { font-size: 19px; padding: 12px 8px; }
+    #feuille table.cadre, #feuille table.cadre tbody, #feuille table.cadre tr, #feuille table.cadre td, #feuille table.cadre th { display: block; width: 100% !important; box-sizing: border-box; }
+    #feuille td, #feuille th { font-size: 15px; height: auto !important; } #feuille .types { line-height: 2.2; } #feuille table.cadre > tbody > tr > td + td, #feuille table.cadre > tr > td + td { border-top: 0; }
+    #feuille input[type=text], #feuille input[type=date] { width: 100% !important; min-height: 40px; font-size: 16px; border: 1.3px solid #bbb; border-radius: 6px; padding: 6px 8px; margin-top: 3px; display: block; }
+    #feuille .types input[type=checkbox] { width: 26px !important; height: 22px !important; }
+    #feuille .lignes thead { display: none; }
+    #feuille .lignes tbody tr { border-top: 2.2px solid #111; padding: 4px 0; } #feuille .lignes tbody tr:first-child { border-top: 0; }
+    #feuille .lignes td { height: auto; border: 0; padding: 3px 8px; }
+    #feuille .lignes td::before { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: #555; padding-top: 4px; }
+    #feuille .lignes td:nth-child(1)::before { content: 'Désignation du déchet'; } #feuille .lignes td:nth-child(2)::before { content: 'Origine du déchet'; }
+    #feuille .lignes td:nth-child(3)::before { content: 'Quantité'; } #feuille .lignes td:nth-child(4)::before { content: 'Poids'; } #feuille .lignes td:nth-child(5)::before { content: 'Observations'; }
+    #feuille .lignes td textarea { font-size: 16px; border: 1.3px solid #bbb; border-radius: 6px; min-height: 40px; }
+    #feuille .signature td:empty { display: none; } #feuille .signature tr:nth-child(2) { display: none; }
+    #feuille .signature tr:nth-child(3) td:nth-child(1)::before { content: 'Structure génératrice — nom'; } #feuille .signature tr:nth-child(3) td:nth-child(3)::before { content: 'Réception / HSE — nom'; }
+    #feuille .signature td::before { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: #555; }
+    #feuille .signature td { height: auto; } #feuille .distrib { margin: 14px 0 0 4px; font-size: 13px; } #feuille .distrib div:last-child { margin-left: 56px; }
+    #b-ligne { width: 100%; padding: 12px !important; font-size: 15px !important; }
+  }
   @media print {
     @page { size: A4 portrait; margin: 8mm; }
     html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }

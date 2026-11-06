@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-07-344",
+    "date": "2026-11-07",
+    "title": "Version 6.75.1 — Fiche de dépôt des déchets adaptée au téléphone",
+    "changes": [
+      "Sur téléphone, la fiche n'est plus réduite en miniature : elle se recompose en blocs lisibles (champs pleine largeur, une carte par ligne de déchet, gros boutons). L'impression et l'écran large ne changent pas."
+    ]
+  },
+  {
     "id": "2026-11-07-343",
     "date": "2026-11-07",
     "title": "Version 6.75.0 — Privilèges : fiche BDDORGA complète, e-mail des prestataires, 3 applications comptées",
