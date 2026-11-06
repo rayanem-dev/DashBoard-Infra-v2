@@ -828,12 +828,18 @@ window.google = { script: { run: (function () {
     if (!data.genererAuto) { envoyerPEC(data); return; }
     const sites = function() {
       if (estPrestataire) { envoyerPEC(data); return; }
-      google.script.run.withSuccessHandler(function(r) {
-        if (!r || !r.success || r.coches !== null) { envoyerPEC(data); return; }   // déjà réglés pour ce contrat (ou lecture impossible : on ne bloque jamais)
-        dialogueSites({ sous: 'Première autorisation pour ce contrat (' + r.cle + ') : cochez les sites concernés. Ce choix est mémorisé pour ses prochaines autorisations (modifiable ensuite par le bouton « 🏢 Sites »). Le macaron suit.', liste: r.liste, coches: [], okTexte: 'Enregistrer et générer',
+      // Une lecture impossible ne passe plus sous silence : la fenêtre s'ouvre quand même (avec la raison), pour qu'on choisisse les sites.
+      const ouvrir = function(cle, liste, motif) {
+        dialogueSites({ sous: (motif ? '⚠ ' + motif + ' — ' : '') + 'Première autorisation pour ce contrat (' + cle + ') : cochez les sites concernés. Ce choix est mémorisé pour ses prochaines autorisations (modifiable ensuite par le bouton « 🏢 Sites »). Le macaron suit.', liste: liste, coches: [], okTexte: 'Enregistrer et générer',
           onOk: function(s, fermer, ok) { ok.disabled = true; google.script.run.withSuccessHandler(function() { fermer(); envoyerPEC(data); }).withFailureHandler(function() { fermer(); envoyerPEC(data); }).definirSitesContrat(data.prestataire, s); },
           onSkip: function() { envoyerPEC(data); }, onAnnuler: annulerEnvoi });
-      }).withFailureHandler(function() { envoyerPEC(data); }).lireSitesContrat(data.prestataire);
+      };
+      const SITES10 = ['Base de vie centrale', 'Base de vie annexe 01', 'Base de vie annexe 02', 'Direction Régionale', 'Aéroport', 'UTG Phase A', 'CSC', 'GPL', 'POSTE BLINDÉ', 'CTH'];
+      google.script.run.withSuccessHandler(function(r) {
+        if (r && r.success && r.coches !== null) { envoyerPEC(data); return; }   // déjà réglés pour ce contrat
+        if (!r || !r.success) { ouvrir(data.prestataire, SITES10, 'Lecture des sites mémorisés impossible (' + String((r && r.error) || 'pas de réponse') + ')'); return; }
+        ouvrir(r.cle, r.liste, '');
+      }).withFailureHandler(function(err) { ouvrir(data.prestataire, SITES10, 'Lecture des sites mémorisés impossible (' + String((err && err.message) || err) + ')'); }).lireSitesContrat(data.prestataire);
     };
     google.script.run.withSuccessHandler(function(r) {
       const v = (r && r.vehicules) || []; if (!v.length) { sites(); return; }
