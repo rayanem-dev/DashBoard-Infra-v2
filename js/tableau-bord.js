@@ -17,8 +17,10 @@
     valeurs.forEach(function (v, i) { var h = Math.max(v ? 3 : 1.5, (v - base) / Math.max(1, max - base) * (H - 3)), r = sv('rect', { x: i * bw + 1.5, y: H - h, width: bw - 3, height: h, rx: 2, fill: couleur, opacity: v ? 1 : 0.3 }); var ti = sv('title'); ti.textContent = infobulle(v, i); r.appendChild(ti); g.appendChild(r); });
     var z = el('div'); z.style.margin = '6px 0 0'; z.appendChild(g); return z;
   }
-  function carte(titre, icone, lien) {
-    var c = el(lien ? 'a' : 'div', 'tb-carte'); if (lien) c.href = lien;
+  var STATS = 'stats-soustraitants.html#', OPTS = {};
+  function carte(titre, icone, id) {
+    var lien = id && !OPTS.sansLien ? STATS + id : null;
+    var c = el(lien ? 'a' : 'div', 'tb-carte'); c.dataset.stat = id || ''; if (lien) c.href = lien;
     var h = el('div', 'tb-titre'); h.appendChild(el('span', null, icone + ' ' + titre)); c.appendChild(h); return c;
   }
   function gros(valeur, libelle, couleur) { var d = el('div', 'tb-gros'); var b = el('b', null, String(valeur)); if (couleur) b.style.color = couleur; d.appendChild(b); d.appendChild(el('span', null, libelle)); return d; }
@@ -132,7 +134,7 @@
     m.appendChild(el('p', 'tb-f-msg', msg));
     var etat = el('div', 'tb-f-etat'); etat.setAttribute('role', 'status');
     function dire(t, err) { etat.textContent = t; etat.className = 'tb-f-etat' + (err ? ' err' : ' ok'); }
-    function recharger() { return Api.call('tableau_bord').then(function (d) { if (ZONE) monter(ZONE, d, EXTRAS); }).catch(function () { /* l'affichage actuel reste */ }); }
+    function recharger() { return Api.call('tableau_bord', { detail: !!OPTS.detail }).then(function (d) { if (ZONE) monter(ZONE, d, EXTRAS, OPTS); }).catch(function () { /* l'affichage actuel reste */ }); }
     function relancer(x, bouton) {
       if (!window.confirm('Envoyer un e-mail de relance pour le contrat ' + x.contrat + (x.entreprise ? ' (' + x.entreprise + ')' : '') + ' au service concerné et au conducteur affecté à ce chantier ?')) return Promise.resolve();
       bouton.disabled = true;
@@ -196,22 +198,24 @@
     return c;
   }
   var ZONE = null, EXTRAS = [];
-  function monter(zone, d, extras) {
+  function monter(zone, d, extras, opts) {
+    OPTS = opts || OPTS || {}; if (opts === null) OPTS = {};
     ZONE = zone; EXTRAS = extras || []; zone.textContent = ''; var b = d.blocs || {}, n = 0, grille = el('div', 'tb-grille');
+    if (OPTS.seul) { var b1 = {}; b1[OPTS.seul] = b[OPTS.seul]; b = b1; }
     function ajout(c) { grille.appendChild(c); n += 1; }
     if (b.fiches_eval) ajout(carteFiches(b.fiches_eval));   // en tête et pleine largeur : échéance à ne pas manquer
     if (b.presents) {
-      var c = carte('Présence sur site', '🏕', null); c.appendChild(gros(b.presents.total, 'prestataires hébergés aujourd\'hui', '#E85D04')); c.appendChild(aire(b.presents.serie, '#E85D04'));
+      var c = carte('Présence sur site', '🏕', 'presence'); c.appendChild(gros(b.presents.total, 'prestataires hébergés aujourd\'hui', '#E85D04')); c.appendChild(aire(b.presents.serie, '#E85D04'));
       if (b.presents.entreprises.length) c.appendChild(barresH(b.presents.entreprises, b.presents.entreprises[0].n, '#E85D04')); ajout(c);
     }
     if (b.planning) {
-      var pl = b.planning, cp = carte('Planning de ' + pl.portee, '🗓', 'planning.html'), pn = el('div', 'tb-ligne'), g1 = el('div', 'tb-col');
+      var pl = b.planning, cp = carte('Planning de ' + pl.portee, '🗓', 'planning'), pn = el('div', 'tb-ligne'), g1 = el('div', 'tb-col');
       g1.appendChild(gros(pl.travail, 'en poste', '#E85D04')); g1.appendChild(el('small', null, pl.repos + ' à la maison' + (pl.conge ? ' · ' + pl.conge + ' en congé' : '') + (pl.retours ? ' · ' + pl.retours + ' reprennent cette semaine' : ''))); pn.appendChild(g1); cp.appendChild(pn);
       cp.appendChild(petitesBarres(pl.serie, '#E85D04', function (n, i) { return jourCourt(plusJours(pl.debut, i)) + ' : ' + n + ' en poste'; }, true));
       cp.appendChild(el('small', null, 'Effectif en poste, 14 prochains jours (aujourd\'hui à gauche)')); ajout(cp);
     }
     if (b.inventaire) {
-      var iv = b.inventaire, st = iv.stats, ci = carte('Inventaire ' + iv.annee, '📦', 'inventaire.html'), pc = Math.max(0, Math.min(100, Number(iv.pct) || 0));
+      var iv = b.inventaire, st = iv.stats, ci = carte('Inventaire ' + iv.annee, '📦', 'inventaire'), pc = Math.max(0, Math.min(100, Number(iv.pct) || 0));
       ci.appendChild(gros(fr1(pc) + ' %', iv.trouves + ' retrouvés sur ' + iv.total + ' · ' + iv.restants + ' restants', '#16A34A'));
       var bi = el('div', 'tb-bar'), ii = el('i'); ii.style.width = Math.max(2, pc) + '%'; ii.style.background = '#16A34A'; bi.appendChild(ii); ci.appendChild(bi);
       if (st) {
@@ -222,8 +226,20 @@
       }
       ajout(ci);
     }
+    if (b.documents) {
+      var dc = b.documents, cdoc = carte('Documents établis aujourd\'hui', '🗂️', 'documents'), tops = dc.personnes.slice(0, OPTS.seul ? 40 : 4);
+      cdoc.appendChild(gros(dc.total, dc.total > 1 ? 'documents · ' + dc.personnes.length + ' personne' + (dc.personnes.length > 1 ? 's' : '') : 'document'));
+      if (!tops.length) cdoc.appendChild(el('small', null, 'Aucun document établi pour le moment.'));
+      var ld = el('div', 'tb-barres'), mx = tops.length ? tops[0].total : 1;
+      tops.forEach(function (x) {
+        var r = el('div', 'tb-lig tb-rang'), nm = el('span', 'tb-nom', x.nom); nm.title = x.nom + ' : ' + Object.keys(x.types).map(function (k) { return x.types[k] + ' × ' + k; }).join(', ');
+        r.appendChild(nm); var bar = el('div', 'tb-bar'), ii = el('i'); ii.style.width = Math.max(6, x.total / mx * 100) + '%'; ii.style.background = '#E85D04'; bar.appendChild(ii); r.appendChild(bar); r.appendChild(el('b', null, String(x.total))); ld.appendChild(r);
+      });
+      cdoc.appendChild(ld); if (dc.personnes.length > tops.length) cdoc.appendChild(el('small', null, '+ ' + (dc.personnes.length - tops.length) + ' autre(s) : voir le détail'));
+      ajout(cdoc);
+    }
     if (b.rapports_jour) {
-      var r = b.rapports_jour, pc = r.total ? Math.round(r.recus / r.total * 100) : 0, c2 = carte('Rapports du jour', '📝', 'rapports.html#journal'), ligne = el('div', 'tb-ligne');
+      var r = b.rapports_jour, pc = r.total ? Math.round(r.recus / r.total * 100) : 0, c2 = carte('Rapports du jour', '📝', 'jour'), ligne = el('div', 'tb-ligne');
       ligne.appendChild(anneau([{ n: r.recus, couleur: '#16A34A' }, { n: r.total - r.recus, couleur: '#F59E0B' }], pc + '%', r.recus + ' rapports reçus sur ' + r.total));
       var t = el('div', 'tb-col'); t.appendChild(gros(r.recus + ' / ' + r.total, 'chantiers avec rapport', pc >= 80 ? '#16A34A' : '#D97706'));
       if (r.manquants.length) { t.appendChild(el('small', null, 'Sans rapport :')); var u = el('ul', 'tb-liste'); r.manquants.slice(0, 5).forEach(function (m) { u.appendChild(el('li', null, m.nom)); }); if (r.manquants.length > 5) u.appendChild(el('li', null, '… +' + (r.manquants.length - 5))); t.appendChild(u); }
@@ -231,12 +247,12 @@
       ligne.appendChild(t); c2.appendChild(ligne); ajout(c2);
     }
     if (b.effectif) {
-      var c3 = carte('Effectif des chantiers (14 jours)', '👷', 'rapports.html#journal'), auj = b.effectif.jours[b.effectif.jours.length - 1];
+      var c3 = carte('Effectif des chantiers (14 jours)', '👷', 'effectif'), auj = b.effectif.jours[b.effectif.jours.length - 1];
       c3.appendChild(gros(auj.total, 'personnes au rapport aujourd\'hui')); c3.appendChild(barresEmpilees(b.effectif));
       var lg = el('div', 'tb-legende'); b.effectif.services.forEach(function (s) { var x = el('span'); var p = el('i'); p.style.background = COUL[s.id]; x.appendChild(p); x.appendChild(document.createTextNode(' ' + s.nom)); lg.appendChild(x); }); c3.appendChild(lg); ajout(c3);
     }
     if (b.rapports_semaines) {
-      var rs = b.rapports_semaines, W = rs.semaines, cur = W[W.length - 1], prec = W[W.length - 2], c6 = carte('Rapports par jour et par semaine', '🗓', 'rapports.html#journal');
+      var rs = b.rapports_semaines, W = rs.semaines, cur = W[W.length - 1], prec = W[W.length - 2], c6 = carte('Rapports par jour et par semaine', '🗓', 'semaines');
       var g6 = gros(cur.rapports, cur.joursActifs ? 'rapports cette semaine · ' + cur.joursActifs + ' jour' + (cur.joursActifs > 1 ? 's' : '') + ' avec rapport' : 'rapport cette semaine (début de semaine)');
       c6.appendChild(g6);
       // sans jour d'activité cette semaine (début de semaine, week-end) : pas de comparaison trompeuse
@@ -247,7 +263,7 @@
       c6.appendChild(ch6); c6.appendChild(el('small', null, 'Semaine = samedi → vendredi · une barre par jour, une teinte par semaine')); ajout(c6);
     }
     if (b.effectif_chantiers && b.effectif_chantiers.chantiers.length) {
-      var ec = b.effectif_chantiers, c7 = carte('Ouvriers par chantier et par semaine', '👷', 'rapports.html#journal'), lst7 = el('div', 'tb-ouv');
+      var ec = b.effectif_chantiers, c7 = carte('Ouvriers par chantier et par semaine', '👷', 'ouvriers'), lst7 = el('div', 'tb-ouv');
       ec.chantiers.forEach(function (ch) {
         var r7 = el('div', 'tb-ouv-l'), nm = el('span', 'tb-nom', ch.nom); nm.title = ch.nom + (ch.service ? ' · ' + ch.service : ''); r7.appendChild(nm); r7.appendChild(miniBarres(ch.valeurs, ec.max));
         var der = ch.valeurs[ch.valeurs.length - 1], av = ch.valeurs[ch.valeurs.length - 2], b7 = el('b', null, fr1(der)); r7.appendChild(b7);
@@ -257,7 +273,7 @@
       c7.appendChild(lst7); c7.appendChild(el('small', null, 'Effectif moyen déclaré par jour de rapport · 4 semaines (la dernière en bleu foncé) · flèche = variation sur la semaine précédente')); ajout(c7);
     }
     if (b.classement && b.classement.rapporteurs.length) {
-      var cl = b.classement, c8 = carte('Classement des rapporteurs (30 jours)', '🏆', 'rapports.html#journal'), max8 = cl.rapporteurs[0].rapports, med = ['🥇', '🥈', '🥉'], l8 = el('div', 'tb-barres');
+      var cl = b.classement, c8 = carte('Classement des rapporteurs (30 jours)', '🏆', 'classement'), max8 = cl.rapporteurs[0].rapports, med = ['🥇', '🥈', '🥉'], l8 = el('div', 'tb-barres');
       cl.rapporteurs.forEach(function (rp, i) {
         var r8 = el('div', 'tb-lig tb-rang'), nm8 = el('span', 'tb-nom', (med[i] || (i + 1) + '.') + ' ' + rp.nom); nm8.title = rp.nom + ' · ' + rp.jours + ' jour' + (rp.jours > 1 ? 's' : '') + ' · ' + rp.chantiers + ' chantier' + (rp.chantiers > 1 ? 's' : '') + ' · dernier rapport le ' + jourCourt(rp.dernier);
         r8.appendChild(nm8); var bar8 = el('div', 'tb-bar'), i8 = el('i'); i8.style.width = Math.max(3, rp.rapports / max8 * 100) + '%'; i8.style.background = i === 0 ? '#F59E0B' : '#E85D04'; bar8.appendChild(i8); r8.appendChild(bar8); r8.appendChild(el('b', null, rp.rapports + ' · ' + rp.jours + ' j')); l8.appendChild(r8);
@@ -265,7 +281,7 @@
       c8.appendChild(l8); c8.appendChild(el('small', null, cl.total + ' rapporteur' + (cl.total > 1 ? 's' : '') + ' sur 30 jours · rapports (nombre) · jours distincts avec rapport')); ajout(c8);
     }
     if (b.suivi_saisie && (b.suivi_saisie.nbSilencieux || b.suivi_saisie.nbDifficultes)) {
-      var ss = b.suivi_saisie, c9 = carte('Suivi de la saisie', '🔔', 'rapports.html#journal'), l9 = el('div', 'tb-ligne');
+      var ss = b.suivi_saisie, c9 = carte('Suivi de la saisie', '🔔', 'saisie'), l9 = el('div', 'tb-ligne');
       var a1 = el('div', 'tb-col'); a1.appendChild(gros(ss.nbSilencieux, 'chantier' + (ss.nbSilencieux > 1 ? 's' : '') + ' sans rapport depuis 3 jours ou plus', ss.nbSilencieux ? '#DC2626' : '#16A34A')); l9.appendChild(a1);
       var a2 = el('div', 'tb-col'); a2.appendChild(gros(ss.nbDifficultes, 'difficulté' + (ss.nbDifficultes > 1 ? 's' : '') + ' signalée' + (ss.nbDifficultes > 1 ? 's' : '') + ' (14 jours)', ss.nbDifficultes ? '#D97706' : '#16A34A')); l9.appendChild(a2); c9.appendChild(l9);
       if (ss.silencieux.length) { var u9 = el('ul', 'tb-liste'); ss.silencieux.slice(0, 5).forEach(function (x) { u9.appendChild(el('li', null, x.nom + ' — ' + (x.jours === null ? 'aucun rapport récent' : x.jours + ' j sans rapport'))); }); c9.appendChild(u9); }
@@ -273,7 +289,7 @@
       ajout(c9);
     }
     if (b.avancement && b.avancement.chantiers.length) {
-      var a = b.avancement, c4 = carte('Avancement contre délai', '📈', 'Avancement_des_Chantiers.html');
+      var a = b.avancement, c4 = carte('Avancement contre délai', '📈', 'avancement');
       c4.appendChild(gros(a.en_retard, 'chantier' + (a.en_retard > 1 ? 's' : '') + ' en retard (> 15 points) sur ' + a.suivis + ' suivis', a.en_retard ? '#DC2626' : '#16A34A'));
       var lst = el('div', 'tb-barres');
       a.chantiers.slice(0, 7).forEach(function (ch) {
@@ -283,7 +299,7 @@
       c4.appendChild(lst); c4.appendChild(el('small', null, 'Barre = avancement déclaré · trait = part du délai écoulée')); ajout(c4);
     }
     if (b.contrats && b.contrats.length) {
-      var c5 = carte('État des contrats', '📑', 'Dossiers_CPM.html'), tot = b.contrats.reduce(function (s, x) { return s + x.n; }, 0), l5 = el('div', 'tb-ligne');
+      var c5 = carte('État des contrats', '📑', 'contrats'), tot = b.contrats.reduce(function (s, x) { return s + x.n; }, 0), l5 = el('div', 'tb-ligne');
       l5.appendChild(anneau(b.contrats.map(function (x) { return { n: x.n, couleur: COUL_STATUT[x.id] || '#CBD5E1' }; }), String(tot), 'Dossiers du Suivi CPM par statut'));
       var lg2 = el('div', 'tb-col'); b.contrats.forEach(function (x) { var s = el('div', 'tb-pt'); var p = el('i'); p.style.background = COUL_STATUT[x.id] || '#CBD5E1'; s.appendChild(p); s.appendChild(document.createTextNode(' ' + x.nom + ' : ')); s.appendChild(el('b', null, String(x.n))); lg2.appendChild(s); }); l5.appendChild(lg2); c5.appendChild(l5);
       if (b.echeances && b.echeances.length) { c5.appendChild(el('small', null, 'Échéances à moins de 60 jours :')); var u2 = el('ul', 'tb-liste'); b.echeances.slice(0, 4).forEach(function (e) { u2.appendChild(el('li', null, e.nom + ' — ' + e.jours + ' j')); }); c5.appendChild(u2); }
@@ -291,8 +307,8 @@
     }
     (extras || []).forEach(function (x) { x.classList.add('tb-carte'); grille.appendChild(x); n += 1; });   // cartes ajoutées par la page (ex. journal des changements du CPM)
     if (!n) { zone.hidden = true; return; }
-    var h = el('h3', 'tb-h', '📊 Tableau de bord'); h.appendChild(el('span', null, 'mis à jour à l\'ouverture de la page'));
-    zone.appendChild(h); zone.appendChild(grille); zone.hidden = false;
+    if (!OPTS.seul) { var h = el('h3', 'tb-h', '📊 Tableau de bord'); h.appendChild(el('span', null, 'mis à jour à l\'ouverture de la page')); zone.appendChild(h); }
+    zone.appendChild(grille); zone.hidden = false;
   }
   var CSS = '.tb{margin:18px 0}.tb-h{display:flex;align-items:baseline;gap:10px;margin:0 0 10px;font-size:16px}.tb-h span{font-size:11.5px;font-weight:500;color:var(--text-muted,#6B7280)}' +
     '.tb-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}.tb-carte{display:block;background:var(--surface,#fff);border:1px solid var(--border,#E5E7EB);border-radius:14px;padding:12px 14px;color:inherit;text-decoration:none;box-shadow:var(--shadow-card,0 1px 3px rgba(0,0,0,.06));min-width:0}' +
@@ -310,10 +326,11 @@
     '.tb-f-droite{flex:1;min-width:260px}.tb-f-msg{margin:0 0 8px;font-size:14px;font-weight:600;line-height:1.45}.alerte .tb-f-msg{color:#DC2626}.tb-f-sous{font-size:12px;font-weight:700;margin:6px 0 4px;color:var(--text-muted,#6B7280)}.tb-f-puces{display:flex;flex-wrap:wrap;gap:6px}' +
     '.tb-f-ligne[hidden]{display:none}.tb-f-masque{margin-top:8px;font-size:12px;color:var(--text-muted)}.tb-f-masque summary{cursor:pointer;font-weight:700}.tb-f-rouge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(220,38,38,.14);color:#DC2626;border:1px solid rgba(220,38,38,.45)}.tb-f-lignes{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:4px 10px;margin-bottom:4px}.tb-f-ligne{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}.tb-f-ligne>span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-f-ligne .tb-f-btn{flex:0 0 auto;white-space:nowrap}.tb-f-btn{font:inherit;font-size:11px;font-weight:700;padding:2px 7px;border-radius:8px;border:1.5px solid var(--border,#E5E7EB);background:var(--surface,#fff);color:inherit;cursor:pointer}.tb-f-btn:hover{border-color:#E85D04}.tb-f-btn:disabled{opacity:.5;cursor:default}.tb-f-vert{font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(22,163,74,.13);color:#16A34A;border:1px solid rgba(22,163,74,.45)}.tb-f-rouge,.tb-f-gris,.tb-f-vert{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-f-gris{font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(148,163,184,.18);color:var(--text-muted,#6B7280);border:1px dashed rgba(148,163,184,.7)}.tb-f-motif{color:var(--text-muted,#6B7280);font-style:italic}.tb-f-etat{margin-top:8px;font-size:12.5px;font-weight:700;min-height:1em}.tb-f-etat.ok{color:#16A34A}.tb-f-etat.err{color:#DC2626}.tb-f-lien{display:inline-block;text-decoration:none;margin-top:10px;font-size:13px;font-weight:800;color:#E85D04}' +
     '.tb-legende{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;margin-top:2px}.tb-legende i,.tb-pt i{display:inline-block;width:9px;height:9px;border-radius:2px}.tb-pt{font-size:12px;margin:2px 0}';
-  function charger(zone, extras) {
-    if (!document.getElementById('tb-css')) { var st = el('style'); st.id = 'tb-css'; st.textContent = CSS; document.head.appendChild(st); }
-    return Api.call('tableau_bord').then(function (d) { monter(zone, d, extras); }).catch(function () { monter(zone, { blocs: {} }, extras); });   // sans graphiques (droits ou réseau), les cartes ajoutées restent
+  function styles() { if (!document.getElementById('tb-css')) { var st = el('style'); st.id = 'tb-css'; st.textContent = CSS; document.head.appendChild(st); } }
+  function charger(zone, extras, opts) {
+    styles();
+    OPTS = opts || {}; return Api.call('tableau_bord', { detail: !!OPTS.detail }).then(function (d) { monter(zone, d, extras, OPTS); return d; }).catch(function () { monter(zone, { blocs: {} }, extras, OPTS); return { blocs: {} }; });   // sans graphiques (droits ou réseau), les cartes ajoutées restent
   }
-  var API = { charger: charger, monter: monter };
+  var API = { charger: charger, monter: monter, styles: styles };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.TableauBord = API;
 })(typeof window !== 'undefined' ? window : this);

@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-07-341",
+    "date": "2026-11-07",
+    "title": "Version 6.73.0 — Statistiques complètes, carré « Documents établis », requêtes générées",
+    "changes": [
+      "Statistiques (page « Statistique sous-traitants » devenue le hub) : un onglet par carré du tableau de bord de l'accueil — Présence sur site, Rapports du jour, Effectif, Rapports par semaine, Ouvriers par chantier, Classement, Suivi de la saisie, Avancement/délai, Contrats, Planning de la division, Inventaire, Documents établis — avec le détail complet (listes entières, périodes plus longues, export Excel pour les documents). Un clic sur un carré de l'accueil ouvre son onglet.",
+      "Accueil : nouveau petit carré « Documents établis aujourd'hui » (qui, combien) pour le secrétariat et le chef de division.",
+      "Rapport journalier, activité du secrétariat : extrait « Documents établis aujourd'hui » par personne et par type, et ligne « Requêtes de transport générées ».",
+      "L'application Requête de transport prévient maintenant le portail dès qu'une requête est GÉNÉRÉE, avec la personne concernée (à redéployer ; la clé de notification doit être réglée). Comptée dans les statistiques et le rapport journalier.",
+      "Retiré : l'onglet Paramètres › Documents établis (remplacé par le carré et les statistiques) et la trace d'impression de la page Requête de transport du portail."
+    ]
+  },
+  {
     "id": "2026-11-07-340",
     "date": "2026-11-07",
     "title": "Version 6.72.1 — Documents établis : requêtes de transport comptées",

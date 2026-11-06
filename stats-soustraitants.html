@@ -63,11 +63,17 @@
     #feuille { box-shadow: none !important; transform: none !important; margin: 0 !important; min-height: 0 !important; width: 210mm !important; }
   }
 </style>
+<style>
+  .stats-un .tb { margin: 0 0 14px; } .stats-un .tb-grille { grid-template-columns: 1fr; } .stats-un .tb-carte { cursor: default; }
+  #v-bloc table.res td, #v-bloc table.res th { padding: 6px 8px; } #v-bloc table.res tr:nth-child(even) td { background: rgba(0,0,0,.025); }
+  #v-bloc .rub { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; } .onglets button.bl { font-size: 12.5px; padding: 7px 12px; }
+  .ruban-pl { display: inline-flex; gap: 1px; vertical-align: middle; } .ruban-pl i { width: 6px; height: 12px; display: inline-block; } .ruban-pl i.T { background: #F0A030; } .ruban-pl i.R { background: #2E9E5B; } .ruban-pl i.A { background: #9CA3AF; } .ruban-pl i.p { background: #E5E7EB; }
+</style>
 </head>
 <body>
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">📊</div>
-    <div class="logo-text"><h1>Statistiques</h1><p>Sous-traitants (enquêtes administratives) · Rapports journaliers</p></div></div>
+    <div class="logo-text"><h1>Statistiques</h1><p>Sous-traitants · Rapports journaliers · tous les carrés du tableau de bord en détail</p></div></div>
   <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
@@ -102,6 +108,7 @@
   <div class="bloc" id="r-alertes" hidden></div>
 </div>
   <div class="apercu"><div id="feuille" data-i18n-non></div></div>
+  <div id="v-bloc" hidden><div id="v-bloc-carte" class="stats-un"></div><div id="v-bloc-detail"></div></div>
 </main>
 <div class="toast" id="toast" role="status"></div>
 <script>
@@ -271,6 +278,79 @@
   };
   if (window.Api) Api.call('menu').then(function (r) { moi = (r.user && r.user.nom) || ''; if (mode === 'rap') { if (R) feuilleRap(); } else { apercu(0, 0); if (D.lignes) dessiner(); } }).catch(function () { /* rien */ });
   charger(decaler(iso().slice(0, 7), -0));
+})();
+</script>
+<script src="js/tableau-bord.js"></script>
+<script>
+// ----- Statistiques : un onglet par carré du tableau de bord de l'accueil (le clic sur un carré ouvre son onglet, avec le détail complet)
+(function () {
+  var $ = function (id) { return document.getElementById(id); }, DB = null, courant = '';
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function frj(d) { return String(d || '').split('-').reverse().join('/'); }
+  var ONGLETS = [['presence', '🏕 Présence sur site', 'presents'], ['jour', '📝 Rapports du jour', 'rapports_jour'], ['effectif', '👷 Effectif des chantiers', 'effectif'], ['semaines', '🗓 Rapports par semaine', 'rapports_semaines'], ['ouvriers', '👷 Ouvriers par chantier', 'effectif_chantiers'],
+    ['classement', '🏆 Classement des rapporteurs', 'classement'], ['saisie', '🔔 Suivi de la saisie', 'suivi_saisie'], ['avancement', '📈 Avancement / délai', 'avancement'], ['contrats', '📑 Contrats', 'contrats'], ['planning', '🗓 Planning de la division', 'planning'], ['inventaire', '📦 Inventaire', 'inventaire'], ['documents', '🗂️ Documents établis', 'documents']];
+  function table(entetes, lignes, opts) {
+    var t = el('table', 'res'), th = el('tr'); entetes.forEach(function (x) { th.appendChild(el('th', null, x)); }); t.appendChild(th);
+    (lignes || []).forEach(function (l) { var tr = el('tr'); l.forEach(function (c) { var td = el('td'); if (c instanceof Node) td.appendChild(c); else td.textContent = c == null ? '' : String(c); tr.appendChild(td); }); t.appendChild(tr); });
+    if (!lignes || !lignes.length) { var tr = el('tr'), td = el('td', null, 'Rien à afficher.'); td.colSpan = entetes.length; td.style.color = 'var(--text-muted)'; tr.appendChild(td); t.appendChild(tr); }
+    var w = el('div', 'bloc'); if (opts && opts.titre) w.appendChild(el('h2', null, opts.titre)); w.style.overflowX = 'auto'; w.appendChild(t); return w;
+  }
+  function ruban(s) { var w = el('span', 'ruban-pl'); String(s || '').split('').forEach(function (c) { w.appendChild(el('i', c === 'T' ? 'T' : c === 'R' ? 'R' : c === 'A' ? 'A' : 'p')); }); return w; }
+  /** Détail complet (listes entières, périodes longues) d'un carré. */
+  function detail(id, d) {
+    var b = d.blocs || {}, z = $('v-bloc-detail'); z.textContent = '';
+    function ajout(x) { z.appendChild(x); }
+    if (id === 'presence') ajout(table(['Entreprise', 'Prestataires hébergés aujourd\'hui'], (b.presents.entreprises || []).map(function (x) { return [x.nom, x.n]; }), { titre: 'Par entreprise' })), ajout(table(['Jour', 'Présents'], (b.presents.serie || []).slice().reverse().map(function (x) { return [frj(x.date), x.total]; }), { titre: '30 derniers jours' }));
+    if (id === 'jour') ajout(table(['Chantier sans rapport aujourd\'hui', 'Service'], (b.rapports_jour.manquants || []).map(function (x) { return [x.nom, x.service || '']; }), { titre: b.rapports_jour.recus + ' rapport(s) reçu(s) sur ' + b.rapports_jour.total + ' chantier(s)' }));
+    if (id === 'effectif') ajout(table(['Jour', 'Total'].concat(b.effectif.services.map(function (s) { return s.nom; })), b.effectif.jours.slice().reverse().map(function (j) { return [frj(j.date), j.total].concat(b.effectif.services.map(function (s) { return j.par[s.id] || 0; })); }), { titre: 'Effectif déclaré par jour et par service' }));
+    if (id === 'semaines') ajout(table(['Semaine du', 'Rapports', 'Jours avec rapport', 'Rapports par jour d\'activité'], b.rapports_semaines.semaines.slice().reverse().map(function (w) { return [frj(w.debut) + (w.enCours ? ' (en cours)' : ''), w.rapports, w.joursActifs, w.parJourActif == null ? '' : String(Math.round(w.parJourActif * 10) / 10).replace('.', ',')]; }), { titre: 'Semaine = samedi → vendredi' }));
+    if (id === 'ouvriers') ajout(table(['Chantier', 'Service'].concat(b.effectif_chantiers.semaines.map(function (w) { return frj(w.debut); })).concat(['Moyenne']), b.effectif_chantiers.chantiers.map(function (c) { return [c.nom, c.service].concat(c.valeurs.map(function (v) { return String(Math.round(v * 10) / 10).replace('.', ','); })).concat([String(c.moyenne).replace('.', ',')]); }), { titre: 'Effectif moyen par semaine' }));
+    if (id === 'classement') ajout(table(['#', 'Rapporteur', 'Rapports', 'Jours', 'Chantiers', 'Dernier'], b.classement.rapporteurs.map(function (r, i) { return [i + 1, r.nom, r.rapports, r.jours, r.chantiers, frj(r.dernier)]; }), { titre: b.classement.total + ' rapporteur(s) sur 60 jours' }));
+    if (id === 'saisie') { ajout(table(['Chantier', 'Service', 'Dernier rapport', 'Jours sans rapport'], b.suivi_saisie.silencieux.map(function (c) { return [c.nom, c.service, c.dernier ? frj(c.dernier) : 'aucun récent', c.jours == null ? '—' : c.jours]; }), { titre: 'Chantiers sans rapport depuis 3 jours ou plus' })); ajout(table(['Chantier', 'Signalements', 'Dernier', 'Dernière difficulté'], b.suivi_saisie.difficultes.map(function (x) { return [x.nom, x.n, frj(x.date), x.texte]; }), { titre: 'Difficultés signalées (30 jours)' })); }
+    if (id === 'avancement') { ajout(table(['Chantier', 'Service', 'Avancement', 'Délai écoulé', 'Retard (points)'], b.avancement.chantiers.map(function (c) { return [c.nom, c.service, c.avancement + ' %', c.delai + ' %', c.retard]; }), { titre: b.avancement.en_retard + ' chantier(s) en retard sur ' + b.avancement.suivis + ' suivis' })); ajout(table(['Contrat', 'Entreprise', 'Échéance', 'Jours restants'], (b.echeances || []).map(function (e) { return [e.nom, e.entreprise, e.echeance, e.jours]; }), { titre: 'Échéances à moins de 180 jours' })); }
+    if (id === 'contrats') { ajout(table(['Statut', 'Dossiers'], b.contrats.map(function (c) { return [c.nom, c.n]; }), { titre: 'Par statut' })); ajout(table(['Statut', 'Dossier', 'Attribué à', 'Avancement', 'Échéance'], (d.contrats_liste || []).map(function (x) { return [x.statut, x.intitule, x.attribue_a, x.pourcent, x.echeance]; }), { titre: 'Tous les dossiers du Suivi CPM' })); }
+    if (id === 'planning') ajout(table(['Nom', 'Service', 'Situation', 'Jour', 'Prochain changement', '28 jours'], (b.planning.personnes || []).map(function (x) { return [x.nom, x.service, x.statut === 'T' ? 'En poste' : x.statut === 'R' ? 'À la maison' : 'En congé', x.jour + ' / ' + x.total, x.prochain ? frj(x.prochain) : '', ruban(x.ruban)]; }), { titre: b.planning.travail + ' en poste · ' + b.planning.repos + ' à la maison' + (b.planning.conge ? ' · ' + b.planning.conge + ' en congé' : '') + ' — ' + b.planning.portee }));
+    if (id === 'inventaire') { var iv = b.inventaire, st = iv.stats || {}; ajout(table(['Indicateur', 'Valeur'], [['Exercice', iv.annee], ['Articles à retrouver', iv.total], ['Retrouvés', iv.trouves + ' (' + String(iv.pct).replace('.', ',') + ' %)'], ['Restants', iv.restants], ['Retrouvés aujourd\'hui', iv.ce_jour], ['Rythme (7 derniers jours)', st.rythme != null ? String(st.rythme).replace('.', ',') + ' / jour' : ''], ['Fin estimée à ce rythme', st.fin ? frj(st.fin) : ''], ['Meilleur jour', st.meilleur ? st.meilleur.n + ' le ' + frj(st.meilleur.date) : '']], { titre: 'Point de situation' })); ajout(table(['#', 'Personne', 'Articles retrouvés'], (st.podium || []).map(function (p, i) { return [i + 1, p.nom, p.n]; }), { titre: 'Classement des personnes' })); }
+    if (id === 'documents') documentsPeriode();
+  }
+  /** Documents établis : période au choix, jour par jour et par personne (journal du portail et rapports journaliers). */
+  function documentsPeriode() {
+    var z = $('v-bloc-detail'), now = new Date(), iso = function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+    var w = el('div', 'bloc'), barre = el('div', 'barre'), du = el('input'), au = el('input'), ok = el('button', 'btn-s', '↻ Afficher'), xl = el('button', 'btn-s', '⬇ Excel'); du.type = au.type = 'date'; du.value = iso(new Date(now.getTime() - 6 * 864e5)); au.value = iso(now); ok.type = xl.type = 'button';
+    w.appendChild(el('h2', null, 'Par jour et par personne')); barre.appendChild(el('span', 'note', 'Du')); barre.appendChild(du); barre.appendChild(el('span', 'note', 'au')); barre.appendChild(au); barre.appendChild(ok); barre.appendChild(xl); w.appendChild(barre);
+    var etat = el('p', 'note', ''), corps = el('div'); w.appendChild(etat); w.appendChild(corps); z.appendChild(w); var dernier = null;
+    function charger() {
+      etat.textContent = 'Chargement…'; corps.textContent = '';
+      Api.call('activite_documents', { du: du.value, au: au.value }).then(function (r) {
+        dernier = r; var tot = r.jours.reduce(function (n, j) { return n + j.total; }, 0);
+        etat.textContent = tot + ' document(s) du ' + frj(r.du) + ' au ' + frj(r.au) + (r.complet ? '' : ' (les plus anciennes lignes du journal ne sont pas relues)') + '.';
+        var tp = Object.keys(r.types).sort(function (a, b) { return r.types[b] - r.types[a]; }); if (tp.length) corps.appendChild(el('p', null, tp.map(function (t) { return t + ' : ' + r.types[t]; }).join('  ·  ')));
+        var lignes = []; r.jours.forEach(function (j) { j.personnes.forEach(function (x) { lignes.push([frj(j.date), x.nom, x.total, Object.keys(x.types).map(function (k) { return x.types[k] + ' × ' + k; }).join(', ')]); }); });
+        corps.appendChild(table(['Jour', 'Personne', 'Total', 'Détail'], lignes));
+      }).catch(function (e) { etat.textContent = e.message; });
+    }
+    ok.onclick = charger; xl.onclick = function () {
+      if (!dernier || !window.ExportExcel) return; var types = Object.keys(dernier.types).sort(), lignes = [];
+      dernier.jours.slice().reverse().forEach(function (j) { j.personnes.forEach(function (x) { lignes.push([frj(j.date), x.nom, x.total].concat(types.map(function (t) { return x.types[t] || ''; }))); }); });
+      ExportExcel.telecharger({ fichier: 'documents-etablis-' + dernier.du + '_' + dernier.au + '.xlsx', titre: 'Documents établis par jour et par personne', sousTitre: 'Du ' + frj(dernier.du) + ' au ' + frj(dernier.au), feuilles: [{ nom: 'Par personne', colonnes: [{ titre: 'Date' }, { titre: 'Nom' }, { titre: 'Total', nombre: true }].concat(types.map(function (t) { return { titre: t, nombre: true }; })), lignes: lignes }] });
+    };
+    charger();
+  }
+  function ouvrir(id) {
+    var o = ONGLETS.filter(function (x) { return x[0] === id; })[0]; if (!o || !DB || !DB.blocs[o[2]]) return;
+    courant = id; $('v-st').hidden = true; $('v-rap').hidden = true; $('v-bloc').hidden = false; document.querySelector('.apercu').style.display = 'none'; $('t-st').classList.remove('actif'); $('t-rap').classList.remove('actif');
+    document.querySelectorAll('.onglets button.bl').forEach(function (b) { b.classList.toggle('actif', b.dataset.id === id); });
+    TableauBord.styles(); TableauBord.monter($('v-bloc-carte'), DB, [], { seul: o[2], sansLien: true, detail: true }); detail(id, DB);
+    try { history.replaceState(null, '', '#' + id); } catch (e) { /* rien */ }
+  }
+  function revenir() { $('v-bloc').hidden = true; courant = ''; document.querySelector('.apercu').style.display = ''; document.querySelectorAll('.onglets button.bl').forEach(function (b) { b.classList.remove('actif'); }); }
+  $('t-st').addEventListener('click', revenir); $('t-rap').addEventListener('click', revenir);
+  if (window.Api) Api.call('tableau_bord', { detail: true }).then(function (d) {
+    DB = d; var barre = document.querySelector('.onglets');
+    ONGLETS.forEach(function (o) { if (!d.blocs[o[2]]) return; var b = el('button', 'bl', o[1]); b.type = 'button'; b.dataset.id = o[0]; b.setAttribute('role', 'tab'); b.onclick = function () { ouvrir(o[0]); }; barre.appendChild(b); });
+    var h = String(location.hash || '').slice(1); if (h === 'rap') $('t-rap').click(); else if (h) ouvrir(h);
+    window.addEventListener('hashchange', function () { var k = String(location.hash || '').slice(1); if (k === 'rap') $('t-rap').click(); else if (k === 'st') $('t-st').click(); else if (k && k !== courant) ouvrir(k); });
+  }).catch(function () { /* sans tableau de bord : seuls les deux onglets d'origine */ });
 })();
 </script>
 <script src="js/export-excel.js"></script>
