@@ -738,5 +738,19 @@
 </script>
 <script src="js/raccourcis.js"></script>
 <script src="js/pied.js"></script>
+<script>
+/* Correcteur d'orthographe français sur tous les champs de texte du rapport (y compris ceux créés après coup) : soulignement des fautes + clic droit (ordinateur), correction automatique du clavier (téléphone). */
+(function () {
+  function regler(n) {
+    var t = (n.type || 'text').toLowerCase();
+    if (n.tagName === 'TEXTAREA' || (n.tagName === 'INPUT' && (t === 'text' || t === ''))) {
+      n.setAttribute('lang', 'fr'); n.spellcheck = true; n.setAttribute('autocorrect', 'on'); n.setAttribute('autocapitalize', 'sentences');
+    }
+  }
+  function tout(racine) { if (racine.querySelectorAll) { if (racine.matches && racine.matches('input,textarea')) regler(racine); Array.prototype.forEach.call(racine.querySelectorAll('input,textarea'), regler); } }
+  tout(document);
+  new MutationObserver(function (ms) { ms.forEach(function (m) { Array.prototype.forEach.call(m.addedNodes, function (n) { if (n.nodeType === 1) tout(n); }); }); }).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
 </body>
 </html>
