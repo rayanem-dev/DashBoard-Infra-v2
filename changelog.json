@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-07-349",
+    "date": "2026-11-07",
+    "title": "Version 6.75.6 — Note d'intérim : établir celle d'une personne de son service",
+    "changes": [
+      "Le nom de « la personne qui part en congé » n'est plus verrouillé : un agent ou un intérimaire de service peut établir sa propre note ou celle d'une personne de son service (par exemple l'intérimaire du chef de service pour son chef qui part en congé). Pour une personne d'un autre service, la demande reste réservée au secrétariat."
+    ]
+  },
+  {
     "id": "2026-11-07-348",
     "date": "2026-11-07",
     "title": "Version 6.75.5 — Rapport journalier : correcteur d'orthographe français",
