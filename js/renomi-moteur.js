@@ -68,8 +68,7 @@
 
   /**
    * Courrier officiel adressé à une entreprise (« Objet : … » + « A Monsieur le Directeur de l'Entreprise : X ») :
-   * nom « N° - Objet - Entreprise » (ex. « 744 - Invitation à l'ouverture des plis - ATEF BEZZALLA »).
-   * Le numéro n'est repris que s'il est lu juste après « N° » (souvent manuscrit : s'il n'est pas lu, il est simplement omis).
+   * nom « Objet - Entreprise » (ex. « Invitation à l'ouverture des plis - SARL GMS »), sans numéro (manuscrit, mal lu).
    */
   function courrier(texte) {
     var t = String(texte || ''), lignes = t.split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }), obj = '', ent = '', m, i;
@@ -81,13 +80,15 @@
       }
     }
     if (!obj || !ent) return null;
-    var num = ''; for (i = 0; i < lignes.length && !num && !/^(?:objet|object|r[ée]f)\b/i.test(lignes[i]); i += 1) { if ((m = /\bN\s*[°ºo]\s*:?\s*(\d{1,6})\b(?!\s*[\/.-]\s*\d)/.exec(lignes[i]))) num = m[1]; }
-    return { numero: num, objet: obj, entreprise: ent, nom: [num, obj, ent].filter(Boolean).join(' - ') };
+    // Parasites de l'OCR (logo, texte arabe lu comme « Lou », « Sl »…) devant la forme juridique : on repart de « SARL », « EURL », « SPA »…
+    var FORMES = /\b(sarl|eurl|spa|snc|scs|epe|ets|etablissements?|entreprise|groupement|sas?|saarl)\b/i, fm = FORMES.exec(ent);
+    if (fm && fm.index > 0 && ent.slice(0, fm.index).trim().split(/\s+/).every(function (w) { return w.length <= 4; }) && ent.slice(0, fm.index).trim().split(/\s+/).length <= 2) ent = ent.slice(fm.index);
+    return { objet: obj, entreprise: ent, nom: [obj, ent].filter(Boolean).join(' - ') };
   }
 
   function proposer(doc, regles) {
     var cr = courrier(doc.texte);
-    if (cr) return { nom: nettoyer(cr.nom) + extension(doc.nom), regle: 'courrier', confiance: 0.9, champs: Object.assign(champs(doc.texte, doc.nom), { numero: cr.numero, entreprise: cr.entreprise }) };
+    if (cr) return { nom: nettoyer(cr.nom) + extension(doc.nom), regle: 'courrier', confiance: 0.9, champs: Object.assign(champs(doc.texte, doc.nom), { entreprise: cr.entreprise }) };
     var ext = extension(doc.nom), tn = norm(doc.texte + ' ' + doc.nom), c = champs(doc.texte, doc.nom), meilleure = null, s = 0;
     (regles || []).forEach(function (r) { var x = score(r, tn); if (x > s) { s = x; meilleure = r; } });
     if (meilleure && s >= 0.6) return { nom: remplir(meilleure.modele, c) + ext, regle: meilleure.id, confiance: Math.min(1, s), champs: c };

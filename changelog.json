@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-07-347",
+    "date": "2026-11-07",
+    "title": "Version 6.75.4 — Renommage des courriers : sans numéro, parasites de l'OCR retirés",
+    "changes": [
+      "Courrier adressé à une entreprise : le nom proposé est « Objet - Entreprise » (par exemple « Invitation à l'ouverture des plis - SARL GMS »), sans le numéro manuscrit.",
+      "Les parasites que l'OCR lit devant le nom de l'entreprise (logo ou texte arabe lu comme « Lou ») sont retirés : on repart de la forme juridique (SARL, EURL, SPA, ETS…)."
+    ]
+  },
+  {
     "id": "2026-11-07-346",
     "date": "2026-11-07",
     "title": "Version 6.75.3 — Renommage : courriers adressés à une entreprise",
