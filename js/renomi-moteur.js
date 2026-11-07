@@ -66,7 +66,28 @@
     return ok / mots.length + Math.min(0.05, (regle.usages || 0) * 0.005);
   }
 
+  /**
+   * Courrier officiel adressé à une entreprise (« Objet : … » + « A Monsieur le Directeur de l'Entreprise : X ») :
+   * nom « N° - Objet - Entreprise » (ex. « 744 - Invitation à l'ouverture des plis - ATEF BEZZALLA »).
+   * Le numéro n'est repris que s'il est lu juste après « N° » (souvent manuscrit : s'il n'est pas lu, il est simplement omis).
+   */
+  function courrier(texte) {
+    var t = String(texte || ''), lignes = t.split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }), obj = '', ent = '', m, i;
+    for (i = 0; i < lignes.length && !obj; i += 1) { if ((m = /^(?:objet|object)\s*[:\-]\s*(.{5,})$/i.exec(lignes[i]))) obj = nettoyer(m[1]).slice(0, 80); }
+    for (i = 0; i < lignes.length && !ent; i += 1) {
+      if ((m = /directeur\s+de\s+l.?\s*entreprise\s*:?\s*(.*)$/i.exec(lignes[i]))) {
+        var reste = m[1], k = i + 1; while (!reste && k < lignes.length && k <= i + 3) { reste = lignes[k]; k += 1; }
+        ent = nettoyer(reste.replace(/\s*e-?\s?mail\b.*$/i, '').replace(/[^A-Za-zÀ-ÿ0-9 '&.\-]/g, ' ')).slice(0, 60);
+      }
+    }
+    if (!obj || !ent) return null;
+    var num = ''; for (i = 0; i < lignes.length && !num && !/^(?:objet|object|r[ée]f)\b/i.test(lignes[i]); i += 1) { if ((m = /\bN\s*[°ºo]\s*:?\s*(\d{1,6})\b(?!\s*[\/.-]\s*\d)/.exec(lignes[i]))) num = m[1]; }
+    return { numero: num, objet: obj, entreprise: ent, nom: [num, obj, ent].filter(Boolean).join(' - ') };
+  }
+
   function proposer(doc, regles) {
+    var cr = courrier(doc.texte);
+    if (cr) return { nom: nettoyer(cr.nom) + extension(doc.nom), regle: 'courrier', confiance: 0.9, champs: Object.assign(champs(doc.texte, doc.nom), { numero: cr.numero, entreprise: cr.entreprise }) };
     var ext = extension(doc.nom), tn = norm(doc.texte + ' ' + doc.nom), c = champs(doc.texte, doc.nom), meilleure = null, s = 0;
     (regles || []).forEach(function (r) { var x = score(r, tn); if (x > s) { s = x; meilleure = r; } });
     if (meilleure && s >= 0.6) return { nom: remplir(meilleure.modele, c) + ext, regle: meilleure.id, confiance: Math.min(1, s), champs: c };
@@ -94,6 +115,6 @@
     return liste;
   }
 
-  var API = { proposer: proposer, apprendre: apprendre, champs: champs, titre: titre, premiereDate: premiereDate, motsCles: motsCles, nettoyer: nettoyer, extension: extension };
+  var API = { proposer: proposer, apprendre: apprendre, champs: champs, courrier: courrier, titre: titre, premiereDate: premiereDate, motsCles: motsCles, nettoyer: nettoyer, extension: extension };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.Renomi = API;
 })(typeof window !== 'undefined' ? window : this);

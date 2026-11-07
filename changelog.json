@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-07-346",
+    "date": "2026-11-07",
+    "title": "Version 6.75.3 — Renommage : courriers adressés à une entreprise",
+    "changes": [
+      "Un courrier officiel avec « Objet : … » et « A Monsieur le Directeur de l'Entreprise : X » est maintenant proposé sous la forme « N° - Objet - Entreprise », par exemple « 744 - Invitation à l'ouverture des plis - ATEF BEZZALLA ». Le numéro (souvent manuscrit) n'est repris que s'il est lu juste après « N° » ; sinon il est omis et reste à compléter."
+    ]
+  },
+  {
     "id": "2026-11-07-345",
     "date": "2026-11-07",
     "title": "Version 6.75.2 — Autorisation d'accès : la fenêtre des sites ne disparaît plus en silence",
