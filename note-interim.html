@@ -94,7 +94,7 @@
     return Api.call('ni_options', {}).then(function (o) {
       O = o; var s = $('poste'); s.textContent = ''; var v0 = el('option', null, 'Choisir le poste…'); v0.value = ''; s.appendChild(v0); o.postes.forEach(function (p) { var x = el('option', null, p.libelle + ' (' + p.code + ')'); x.value = p.cle; s.appendChild(x); });
       var dl = $('l-pers'); dl.textContent = ''; o.personnes.forEach(function (p) { var x = el('option'); x.value = p.nom; x.label = p.fonction; dl.appendChild(x); });
-      $('a-nom').value = o.moi.nom; $('a-fonc').value = o.moi.fonction || '';  s.value = o.poste_moi || '';
+      $('a-nom').value = o.moi.nom; $('a-fonc').value = o.moi.fonction || ''; $('a-nom').readOnly = !o.autrui && o.niveau < 2;  s.value = o.poste_moi || '';
       $('fait').value = iso(new Date()); $('t-liste').textContent = o.niveau >= 2 ? 'Toutes les notes' : 'Mes notes';
       if (!o.modele) $('n-info').textContent = '⚠ Le modèle de la note n\'est pas encore chargé : le secrétariat doit le déposer dans Paramètres › Réglages › Note d\'intérim.';
       majApercu(); return liste();

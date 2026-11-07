@@ -2,9 +2,9 @@
   {
     "id": "2026-11-07-349",
     "date": "2026-11-07",
-    "title": "Version 6.75.6 — Note d'intérim : établir celle d'une personne de son service",
+    "title": "Version 6.75.6 — Note d'intérim : établir celle d'une personne de son service (intérimaires et au-dessus)",
     "changes": [
-      "Le nom de « la personne qui part en congé » n'est plus verrouillé : un agent ou un intérimaire de service peut établir sa propre note ou celle d'une personne de son service (par exemple l'intérimaire du chef de service pour son chef qui part en congé). Pour une personne d'un autre service, la demande reste réservée au secrétariat."
+      "Le nom de « la personne qui part en congé » est modifiable pour les intérimaires de service, chefs de service, cadres supérieurs, chef de division et secrétariat : note d'une personne de leur service (chef de division et secrétariat : de n'importe qui). Les autres profils (agent, conducteur, ingénieur…) ne peuvent établir que leur propre note, nom verrouillé."
     ]
   },
   {
