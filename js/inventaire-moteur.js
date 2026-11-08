@@ -270,12 +270,54 @@
     });
     return out;
   }
+  /** Dernier motif et auteur du dernier changement (lignes non annulées) : { clé article: { motif, par, date, source } }. */
+  function dernierMotif(etat) {
+    var d = {}; (etat.historique || []).forEach(function (h) { if (!h.annule) d[invCle(h.inv)] = { motif: h.motif || '', par: h.par || '', date: h.date, source: h.source || '' }; }); return d;
+  }
+  /** Premier mouvement non annulé de chaque article dans l'exercice (ligne avec une ancienne position) : { clé: ligne d'historique }. */
+  function premierMouvement(etat) {
+    var d = {}; (etat.historique || []).forEach(function (h) { var k = invCle(h.inv); if (h.de && h.vers && !h.annule && !d[k]) d[k] = h; }); return d;
+  }
+  /** Fiches complètes de l'opération pour le rapport : { kpis, mouvements, nonTrouves, positions } (pur, testé). */
+  function rapportDonnees(etat, annee, photos) {
+    var st = statuts(etat, annee), mv = premierMouvement(etat), dm = dernierMotif(etat), res = resume(etat, annee), n = { OUI: 0, NON: 0, 'HORS LISTE': 0 }, mouvements = [], non = [], parPos = {};
+    var dernierDe = {}; (etat.historique || []).forEach(function (h) { if (!h.annule && h.vers) dernierDe[invCle(h.inv)] = h; });
+    Object.keys(etat.articles).sort().forEach(function (k) {
+      var a = etat.articles[k], s = st[k], m = mv[k], l = dernierDe[k]; n[s.s] += 1;
+      (parPos[a.position || '(sans position)'] = parPos[a.position || '(sans position)'] || []).push(a.inv);
+      if (s.s === 'NON') non.push({ inv: a.inv, designation: a.designation, position: a.position, marque: a.marque, serie: a.serie, valeur: a.valeur, photo: !!(photos && photos[k]) });
+      if (l && !(l.source === 'Article retrouvé' && !l.de && !m)) mouvements.push({ inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur,
+        ancien: m ? m.de : (l.de || ''), nouveau: m ? a.position : (l.vers || a.position), motif: (dm[k] || {}).motif || '', source: (dm[k] || {}).source || '', par: s.par || (dm[k] || {}).par || '', date: String((s.le || (dm[k] || {}).date || '')).slice(0, 10), trouve: s.s === 'OUI', photo: !!(photos && photos[k]) });
+    });
+    var deplaces = mouvements.filter(function (x) { return x.ancien && x.nouveau && cle(x.ancien) !== cle(x.nouveau); }).length;
+    return { kpis: { articles: Object.keys(etat.articles).length, trouves: n.OUI, nonTrouves: n.NON, horsListe: n['HORS LISTE'], deplaces: deplaces, photos: photos ? Object.keys(photos).length : 0, avancement: (n.OUI + n.NON) ? Math.round(1000 * n.OUI / (n.OUI + n.NON)) / 10 : 0, valeurNonTrouvee: non.reduce(function (t, x) { return t + (Number(x.valeur) || 0); }, 0) },
+      mouvements: mouvements, nonTrouves: non, positions: Object.keys(parPos).sort().map(function (p) { return { position: p, n: parPos[p].length }; }) };
+  }
+  /**
+   * Tableau au format « FICHIER AMORTISSABLE INFRA » (33 colonnes, mêmes en-têtes que le fichier des amortissables), à injecter à la fin de l'opération :
+   * POSITION = position actuelle ; ANCIENNE POSITION - MOUVEMENT 01 et NOUVEAU EMPLAC remplis seulement pour un article déplacé pendant l'opération (date du mouvement en DATE PS (01)) ;
+   * OBSERVATION = motif du dernier changement (+ « NON TROUVÉ AAAA »). Les colonnes que l'inventaire ne connaît pas (glob N°, A/I, PS/TS/CS, BIP, fournisseur, commandes…) restent vides : l'injection se fait par N° INV.
+   * seulementDeplaces : ne garde que les articles déplacés.
+   */
+  var ENTETES_AMORTISSABLE = ['glob N°', 'N ° INV', 'CODE SH', 'A/I', 'DESIGNATION', 'MARQUE', 'TYPE', 'N° SERIE', 'POSITION', 'STRUCTURE', 'IMPUTATION', 'PS/TS/CS N°', 'DATE PS', 'OBSERVATION', 'INDICE', 'ETAT', 'BIP', 'FOURNISSEUR', 'VALEUR EN DA', 'ANCIENNE POSITION - MOUVEMENT 01', 'PE ET PS (01)', 'DATE PS (01)', 'NOUVEAU EMPLAC', 'N° REQ', 'DATE REQ', 'N° COMMANDE', 'DATE COMMANDE', 'BRC/TE N°', 'DATE BRC/TE', 'N° DMR', 'N° PV CDR', 'DATE', 'N° DE DECISION'];
+  function versAmortissable(etat, annee, seulementDeplaces) {
+    var mv = premierMouvement(etat), dm = dernierMotif(etat), out = [ENTETES_AMORTISSABLE.slice()];
+    Object.keys(etat.articles).sort().forEach(function (k) {
+      var a = etat.articles[k], m = mv[k], deplace = !!(m && cle(m.de) !== cle(a.position));
+      if (seulementDeplaces && !deplace) return;
+      var obs = [(dm[k] || {}).motif || '', annee && a.nonTrouve && a.nonTrouve[annee] ? 'NON TROUVÉ ' + annee : ''].filter(Boolean).join(' — ');
+      out.push(['', a.inv, a.codeSh, '', a.designation, a.marque, a.type, a.serie, a.position, a.structure, a.imputation, '', '', obs, a.indice, a.etat, '', '', a.valeur == null ? '' : a.valeur,
+        deplace ? m.de : '', '', deplace ? String(m.date).slice(0, 10) : '', deplace ? a.position : '', '', '', '', '', '', '', '', '', '', '']);
+    });
+    return out;
+  }
+
   function versTableaux(etat, annee, photos) {
-    var anc = derniereAncienne(etat), eff = effectifs(etat), st = statuts(etat, annee), n = { OUI: 0, NON: 0, 'HORS LISTE': 0 };
-    var inv = [['N° Inv', 'Code SH', 'Désignation', 'Objet trouvé', 'Trouvé par', 'Trouvé le', 'Photo', 'Marque', 'Type', 'N° Série', 'Position actuelle', 'Ancienne position', 'Date du dernier changement', 'Structure', 'Imputation', 'État', 'Indice', 'Valeur (DA)', 'Non trouvé']];
+    var anc = derniereAncienne(etat), eff = effectifs(etat), st = statuts(etat, annee), n = { OUI: 0, NON: 0, 'HORS LISTE': 0 }, dm = dernierMotif(etat);
+    var inv = [['N° Inv', 'Code SH', 'Désignation', 'Objet trouvé', 'Trouvé par', 'Trouvé le', 'Photo', 'Marque', 'Type', 'N° Série', 'Position actuelle', 'Ancienne position', 'Date du dernier changement', 'Structure', 'Imputation', 'État', 'Indice', 'Valeur (DA)', 'Non trouvé', 'Dernier motif', 'Dernier changement par']];
     Object.keys(etat.articles).sort().forEach(function (k) {
       var a = etat.articles[k], p = anc[k] || {}, s = st[k]; n[s.s] += 1;
-      inv.push([a.inv, a.codeSh, a.designation, s.s, s.par, s.le, photos && photos[k] ? 'OUI' : '', a.marque, a.type, a.serie, a.position, p.de || '', p.date ? String(p.date).slice(0, 10) : '', a.structure, a.imputation, a.etat, a.indice, a.valeur, Object.keys(a.nonTrouve || {}).join(', ')]);
+      inv.push([a.inv, a.codeSh, a.designation, s.s, s.par, s.le, photos && photos[k] ? 'OUI' : '', a.marque, a.type, a.serie, a.position, p.de || '', p.date ? String(p.date).slice(0, 10) : '', a.structure, a.imputation, a.etat, a.indice, a.valeur, Object.keys(a.nonTrouve || {}).join(', '), (dm[k] || {}).motif || '', (dm[k] || {}).par || '']);
     });
     var his = [['Date', 'N° Inv', 'De', 'Vers', 'Source', 'Motif', 'Par', 'Annulé']];
     etat.historique.forEach(function (h) { his.push([String(h.date).slice(0, 19).replace('T', ' '), h.inv, h.de, h.vers, h.source, h.motif, h.par || '', h.annule ? 'oui' : '']); });
@@ -287,6 +329,6 @@
 
   var API = { cle: cle, ressemblance: ressemblance, nouvelEtat: nouvelEtat, suggestions: suggestions, plusProche: plusProche, effectifs: effectifs, lireFeuille: lireFeuille, nombreFr: nombreFr,
     analyserImport: analyserImport, appliquerImport: appliquerImport, deplacer: deplacer, annuler: annuler, fusionner: fusionner, renommer: renommer, marquerTrouve: marquerTrouve,
-    parChamp: parChamp, resume: resume, versTableaux: versTableaux, ajouterPosition: ajouterPosition, invCle: invCle, CHAMPS: CHAMPS };
+    parChamp: parChamp, resume: resume, versTableaux: versTableaux, versAmortissable: versAmortissable, rapportDonnees: rapportDonnees, ENTETES_AMORTISSABLE: ENTETES_AMORTISSABLE, ajouterPosition: ajouterPosition, invCle: invCle, CHAMPS: CHAMPS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.InventaireMoteur = API;
 })(typeof window !== 'undefined' ? window : this);

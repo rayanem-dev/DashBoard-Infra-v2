@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-08-354",
+    "date": "2026-11-08",
+    "title": "Version 6.77.0 — Inventaire : export « fichier amortissable », motif dans l'Excel, rapport d'opération",
+    "changes": [
+      "Nouvel export au format de l'onglet « FICHIER AMORTISSABLE INFRA » (33 colonnes, mêmes en-têtes) pour mettre à jour le fichier des amortissables en fin d'opération : POSITION = position actuelle, ANCIENNE POSITION - MOUVEMENT 01 / DATE PS (01) / NOUVEAU EMPLAC pour les articles déplacés, OBSERVATION = motif. Deux feuilles : tous les articles, et les seuls articles déplacés. Injection par N° INV.",
+      "Excel normal : la feuille « Inventaire » porte maintenant les colonnes « Dernier motif » et « Dernier changement par » (le motif de chaque changement figurait seulement dans la feuille « Historique »).",
+      "Nouvel onglet « Rapport » : compte rendu imprimable / PDF de l'opération (chiffres, avancement, fiches des articles retrouvés ou déplacés avec photo, ancien et nouvel emplacement, motif, auteur et date ; articles non trouvés ; effectif par emplacement)."
+    ]
+  },
+  {
     "id": "2026-11-08-353",
     "date": "2026-11-08",
     "title": "Version 6.76.0 — Annuaire : entreprises ajoutées automatiquement",

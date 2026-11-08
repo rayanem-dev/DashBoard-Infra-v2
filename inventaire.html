@@ -45,6 +45,15 @@
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1F2937; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; max-width: 92vw; }
   .toast.on { opacity: 1; } .alerte-l { background: rgba(245,158,11,.12); border: 1.5px solid #F59E0B; border-radius: 10px; padding: 8px 12px; font-size: 12.5px; margin-bottom: 12px; }
   .defile { overflow: auto; max-height: 68vh; }
+  /* Rapport d'inventaire (écran + impression A4) */
+  #rap { background: #fff; color: #111; border-radius: 12px; padding: 22px 26px; max-width: 980px; margin: 0 auto; box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,.12)); font-family: 'Inter', sans-serif; }
+  #rap h2 { font-size: 22px; margin: 0 0 2px; } #rap h3 { font-size: 15px; margin: 22px 0 8px; padding: 5px 10px; background: #FFE9D2; border-left: 4px solid #E85D04; } #rap .sous { color: #555; font-size: 13px; margin: 0 0 12px; }
+  #rap .rk { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; } #rap .rk div { border: 1px solid #ddd; border-radius: 10px; padding: 8px 10px; text-align: center; } #rap .rk b { display: block; font-size: 22px; color: #E85D04; } #rap .rk span { font-size: 11.5px; color: #555; }
+  #rap .barre-av { height: 14px; background: #eee; border-radius: 7px; overflow: hidden; } #rap .barre-av i { display: block; height: 100%; background: #16A34A; }
+  #rap .fiche { display: grid; grid-template-columns: 120px 1fr; gap: 12px; border: 1px solid #ddd; border-radius: 10px; padding: 10px; margin-bottom: 10px; break-inside: avoid; } #rap .fiche .ph { width: 120px; height: 90px; background: #f3f3f3; border-radius: 8px; display: grid; place-items: center; color: #999; font-size: 12px; overflow: hidden; } #rap .fiche .ph img { width: 100%; height: 100%; object-fit: cover; }
+  #rap .fiche b.t { font-size: 14px; } #rap .fiche .ch { font-size: 12.5px; margin-top: 4px; } #rap .fiche .mot { margin-top: 4px; font-style: italic; color: #444; font-size: 12.5px; } #rap .fl { color: #E85D04; font-weight: 700; }
+  #rap table { width: 100%; border-collapse: collapse; font-size: 12px; } #rap th, #rap td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; } #rap th { background: #f3f3f3; }
+  @media print { body * { visibility: hidden !important; } #rap, #rap * { visibility: visible !important; } #rap { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; max-width: none; } @page { size: A4; margin: 10mm; } .noprint { display: none !important; } }
 </style>
 </head>
 <body>
@@ -64,7 +73,7 @@
   </div>
   <div class="onglets" role="tablist" id="onglets">
     <button type="button" data-v="articles" class="actif">📋 Articles</button><button type="button" data-v="importer">📥 Importer</button><button type="button" data-v="positions">📍 Positions</button>
-    <button type="button" data-v="stats">📊 Statistiques</button><button type="button" data-v="exporter">⬇ Exporter</button>
+    <button type="button" data-v="stats">📊 Statistiques</button><button type="button" data-v="rapport">📄 Rapport</button><button type="button" data-v="exporter">⬇ Exporter</button>
   </div>
   <div class="kpis" id="kpis"></div>
 
@@ -114,10 +123,19 @@
     <div class="bloc"><div class="defile"><table class="res"><thead><tr><th id="s-th">Position</th><th class="n">Articles</th><th>Part</th><th class="n">Valeur (DA)</th></tr></thead><tbody id="s-corps"></tbody></table></div></div>
   </section>
 
+  <section id="v-rapport" hidden>
+    <div class="bloc noprint"><div class="barre"><button class="btn-p" id="r-imp" type="button">🖨 Imprimer / PDF</button><button class="btn-s" id="r-ph" type="button">📷 Charger les photos</button><span class="note" id="r-info"></span></div>
+      <p class="note">Compte rendu de l'opération : chiffres, articles déplacés ou retrouvés (ancien et nouvel emplacement, motif, photo), articles non trouvés et effectif par emplacement. Imprimez-le ou enregistrez-le en PDF.</p></div>
+    <div id="rap"></div>
+  </section>
+
   <section id="v-exporter" hidden>
     <div class="bloc"><h2>Excel</h2>
       <p class="note">Trois feuilles : <b>Inventaire</b> (position actuelle, ancienne position, date du dernier changement), <b>Historique</b> (tous les changements) et <b>Positions</b> (effectif de chaque position et ses autres écritures).</p>
       <button class="btn-p" id="e-xl" type="button">⬇ Exporter en Excel</button></div>
+    <div class="bloc"><h2>Fichier amortissable (injection en fin d'opération)</h2>
+      <p class="note">Même format que l'onglet <b>FICHIER AMORTISSABLE INFRA</b> (33 colonnes, mêmes en-têtes). <b>POSITION</b> = position actuelle ; <b>ANCIENNE POSITION - MOUVEMENT 01</b>, <b>DATE PS (01)</b> et <b>NOUVEAU EMPLAC</b> sont remplies pour les articles déplacés ; <b>OBSERVATION</b> = motif du dernier changement. Les colonnes que l'inventaire ne connaît pas restent vides : l'injection se fait par le <b>N° INV</b>. Deux feuilles : tous les articles, et les seuls articles déplacés.</p>
+      <button class="btn-p" id="e-amo" type="button">⬇ Export « fichier amortissable »</button></div>
     <div class="bloc"><h2>Sauvegarde</h2>
       <p class="note">Fichier de sauvegarde complet (articles, positions, historique). À garder : il permet de tout retrouver sur un autre ordinateur.</p>
       <div class="barre"><button class="btn-s" id="e-json" type="button">💾 Télécharger la sauvegarde</button><button class="btn-s" id="e-rest" type="button">📂 Restaurer une sauvegarde</button><input type="file" id="e-fic" accept=".json,application/json" hidden>
@@ -408,12 +426,51 @@
   }
   function excelComplet() { var t = M.versTableaux(etat, annee, photos); exporterXlsx([['Résumé', t.resume], ['Inventaire', t.inventaire], ['Historique', t.historique], ['Positions', t.positions]], 'inventaire_' + annee + '_' + aujourdhui() + '.xlsx'); }
 
+  /* ---------- fichier amortissable + rapport ---------- */
+  function excelAmortissable() { var tous = M.versAmortissable(etat, annee), dep = M.versAmortissable(etat, annee, true); exporterXlsx([['FICHIER AMORTISSABLE INFRA', tous], ['Articles déplacés', dep]], 'fichier_amortissable_infra_' + annee + '_' + aujourdhui() + '.xlsx'); toast((dep.length - 1) + ' article(s) déplacé(s) sur ' + (tous.length - 1) + '.'); }
+  var photosRap = {};
+  function nbDA(v) { return (Number(v) || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' DA'; }
+  function fichePhoto(x) {
+    var d = el('div', 'fiche'), ph = el('div', 'ph', x.photo ? '📷' : 'sans photo'); ph.dataset.inv = x.inv; if (photosRap[M.invCle(x.inv)]) { ph.textContent = ''; var im = el('img'); im.src = photosRap[M.invCle(x.inv)]; im.alt = x.inv; ph.appendChild(im); }
+    var c = el('div'); c.appendChild(el('b', 't', x.inv + ' — ' + (x.designation || ''))); var l1 = el('div', 'ch'); [x.marque, x.serie ? 'Série ' + x.serie : '', x.valeur ? nbDA(x.valeur) : ''].filter(Boolean).forEach(function (t, i) { l1.appendChild(document.createTextNode((i ? ' · ' : '') + t)); }); c.appendChild(l1);
+    if (x.ancien || x.nouveau) { var l2 = el('div', 'ch'); l2.appendChild(el('span', 'fl', x.ancien && x.nouveau && x.ancien !== x.nouveau ? 'Déplacé : ' : 'Emplacement : ')); l2.appendChild(document.createTextNode((x.ancien && x.ancien !== x.nouveau ? x.ancien + '  →  ' : '') + (x.nouveau || ''))); c.appendChild(l2); }
+    if (x.motif) c.appendChild(el('div', 'mot', 'Motif : ' + x.motif));
+    c.appendChild(el('div', 'ch', [x.trouve ? 'Retrouvé' : 'Non retrouvé', x.par ? 'par ' + x.par : '', x.date ? 'le ' + x.date.split('-').reverse().join('/') : '', x.source].filter(Boolean).join(' · '))); d.appendChild(ph); d.appendChild(c); return d;
+  }
+  function rapport() {
+    var r = M.rapportDonnees(etat, annee, photos), k = r.kpis, z = $('rap'); z.textContent = '';
+    z.appendChild(el('div', null, 'Sonatrach · Activité Exploration Production · Division Infrastructures — RNS')).style.cssText = 'font-size:12px;color:#555';
+    z.appendChild(el('h2', null, 'Rapport d\'inventaire ' + annee)); z.appendChild(el('p', 'sous', 'Compte rendu de l\'opération — établi le ' + aujourdhui().split('-').reverse().join('/')));
+    var kp = el('div', 'rk'); [[k.articles, 'articles'], [k.trouves, 'trouvés'], [k.nonTrouves, 'non trouvés'], [k.deplaces, 'déplacés'], [k.horsListe, 'hors liste'], [k.photos, 'photos']].forEach(function (a) { var d = el('div'); d.appendChild(el('b', null, String(a[0]))); d.appendChild(el('span', null, a[1])); kp.appendChild(d); }); z.appendChild(kp);
+    var av = el('div', 'barre-av'); var i = el('i'); i.style.width = k.avancement + '%'; av.appendChild(i); z.appendChild(av); z.appendChild(el('p', 'sous', 'Avancement : ' + k.avancement + ' % des articles à retrouver' + (k.valeurNonTrouvee ? ' · valeur des articles non trouvés : ' + nbDA(k.valeurNonTrouvee) : '')));
+    z.appendChild(el('h3', null, 'Articles retrouvés ou déplacés (' + r.mouvements.length + ')'));
+    if (!r.mouvements.length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.')); r.mouvements.slice(0, 400).forEach(function (x) { z.appendChild(fichePhoto(x)); });
+    if (r.mouvements.length > 400) z.appendChild(el('p', 'sous', '… et ' + (r.mouvements.length - 400) + ' autre(s) : voir l\'export Excel.'));
+    z.appendChild(el('h3', null, 'Articles non trouvés (' + r.nonTrouves.length + ')'));
+    if (r.nonTrouves.length) { var t = el('table'), th = el('tr'); ['N° Inv', 'Désignation', 'Dernière position connue', 'Valeur'].forEach(function (h) { th.appendChild(el('th', null, h)); }); t.appendChild(th); r.nonTrouves.slice(0, 600).forEach(function (x) { var tr = el('tr'); [x.inv, x.designation, x.position, x.valeur ? nbDA(x.valeur) : ''].forEach(function (c) { tr.appendChild(el('td', null, c)); }); t.appendChild(tr); }); z.appendChild(t); }
+    else z.appendChild(el('p', 'sous', 'Tous les articles ont été retrouvés.'));
+    z.appendChild(el('h3', null, 'Effectif par emplacement (' + r.positions.length + ')'));
+    var tp = el('table'), hp = el('tr'); ['Emplacement', 'Articles'].forEach(function (h) { hp.appendChild(el('th', null, h)); }); tp.appendChild(hp); r.positions.forEach(function (x) { var tr = el('tr'); [x.position, String(x.n)].forEach(function (c) { tr.appendChild(el('td', null, c)); }); tp.appendChild(tr); }); z.appendChild(tp);
+    $('r-info').textContent = Object.keys(photosRap).length + ' photo(s) chargée(s) sur ' + k.photos + '.';
+  }
+  function chargerPhotos() {
+    var r = M.rapportDonnees(etat, annee, photos), liste = r.mouvements.concat(r.nonTrouves).filter(function (x) { return x.photo && !photosRap[M.invCle(x.inv)]; }).slice(0, 80), i = 0;
+    if (!liste.length) return toast('Aucune photo à charger.');
+    $('r-ph').disabled = true;
+    function suite() {
+      if (i >= liste.length) { $('r-ph').disabled = false; rapport(); return Promise.resolve(); }
+      var x = liste[i++]; return Api.call('inv_photo_lire', { annee: annee, inv: x.inv }).then(function (p) { if (p && p.photo) photosRap[M.invCle(x.inv)] = 'data:image/jpeg;base64,' + p.data; }).catch(function () { /* photo illisible : on continue */ }).then(function () { $('r-info').textContent = 'Photos : ' + i + ' / ' + liste.length; return suite(); });
+    }
+    suite();
+  }
+  $('r-ph').addEventListener('click', chargerPhotos); $('r-imp').addEventListener('click', function () { window.print(); }); $('e-amo').addEventListener('click', excelAmortissable);
+
   /* ---------- navigation ---------- */
   function basculer(v) {
-    vue = v; ['articles', 'importer', 'positions', 'stats', 'exporter'].forEach(function (k) { $('v-' + k).hidden = k !== v; });
+    vue = v; ['articles', 'importer', 'positions', 'stats', 'rapport', 'exporter'].forEach(function (k) { $('v-' + k).hidden = k !== v; });
     Array.prototype.forEach.call($('onglets').children, function (b) { b.classList.toggle('actif', b.dataset.v === v); }); rendre();
   }
-  function rendre() { kpis(); if (vue === 'articles') articles(); else if (vue === 'positions') positions(); else if (vue === 'stats') stats(); }
+  function rendre() { kpis(); if (vue === 'articles') articles(); else if (vue === 'positions') positions(); else if (vue === 'stats') stats(); else if (vue === 'rapport') rapport(); }
 
   Array.prototype.forEach.call($('onglets').children, function (b) { b.addEventListener('click', function () { basculer(b.dataset.v); }); });
   $('a-q').addEventListener('input', function () { filtreArt.q = this.value; limite = 150; articles(); });
