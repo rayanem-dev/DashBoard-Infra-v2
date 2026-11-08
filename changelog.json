@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-08-363",
+    "date": "2026-11-08",
+    "title": "Version 6.80.0 — Pages plus légères : le mode démo n'est plus téléchargé en production",
+    "changes": [
+      "js/api.js (client de la passerelle) passe de 166 ko à 6 ko : les données fictives du mode démo vivent dans js/api-demo.js, chargé seulement sans adresse de passerelle ou avec « ?demo ». En production, chaque page économise environ 160 ko de téléchargement et d'analyse.",
+      "Vérification des 42 pages du site en mode démo : aucune erreur de script, aucun fichier manquant. Les liens du catalogue pointent tous vers une page existante.",
+      "Nettoyage : un test (renomi-moteur.test.js) était publié dans le dossier js/ du site ; il rejoint les autres tests. Trois variables implicites du mode démo (nn, ac, ef) sont déclarées."
+    ]
+  },
+  {
     "id": "2026-11-08-362",
     "date": "2026-11-08",
     "title": "Version 6.79.4 — Autorisation d'accès : plus rien ne se perd en silence (sites, case Nuit)",
