@@ -2,10 +2,10 @@
   {
     "id": "2026-11-08-356",
     "date": "2026-11-08",
-    "title": "Version 6.77.2 — Bon de sortie : « Je soussigné » cédant ou preneur, chauffeur hors signatures",
+    "title": "Version 6.77.2 — Bon de sortie : le soussigné est cédant ou preneur (un simple choix)",
     "changes": [
-      "Bon de sortie matériel : « Je signe ce bon comme » permet de choisir Personne habilitée (cédant, par défaut) ou Preneur. Si l'on signe comme preneur, la personne habilitée (cédant, dans la liste des signataires désignés) se désigne à part et le soussigné prend le visa « Preneur ».",
-      "Sinon, le visa « Preneur » a un champ « Nom du preneur » facultatif. La personne autorisée (par exemple le chauffeur, simple contrôle de sécurité) ne figure jamais sous les signatures : seulement dans la phrase « Autorise M. … ». À redéployer : l'application Bon de sortie."
+      "Bon de sortie matériel : « Je signe ce bon comme » (Personne habilitée / Preneur) place le soussigné dans la case « Personne habilitée » ou dans la case « Preneur » du visa. C'est la même personne : aucun champ supplémentaire. L'autre case reste à signer à la main. Le contrôle de la liste des signataires ne s'applique qu'au rôle de personne habilitée.",
+      "La personne autorisée (par exemple le chauffeur, simple contrôle de sécurité) ne figure jamais sous les signatures. À redéployer : l'application Bon de sortie."
     ]
   },
   {
