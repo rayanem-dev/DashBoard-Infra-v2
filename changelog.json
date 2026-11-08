@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-08-351",
+    "date": "2026-11-08",
+    "title": "Version 6.75.8 — Mode sombre : menu latéral lisible sur les pages reprises de l'ancien site",
+    "changes": [
+      "Sur les pages reprises de l'ancien site (dont « Dossiers CPM — Détail »), le menu latéral restait blanc en mode sombre avec des textes clairs illisibles. Il prend maintenant les couleurs du thème sombre."
+    ]
+  },
+  {
     "id": "2026-11-08-350",
     "date": "2026-11-08",
     "title": "Version 6.75.7 — Diapositives CPM : commentaires complets",
