@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-08-357",
+    "date": "2026-11-08",
+    "title": "Version 6.78.0 — Autorisation d'accès : case « Travail de nuit »",
+    "changes": [
+      "Prise en charge › Autorisation d'accès : nouvelle case « 🌙 Travail de nuit ». Chaque autorisation générée reçoit, sous les sites, une ligne « TRAVAIL DE NUIT » avec ☒ OUI en gras si la case est cochée (☒ NON sinon), dans la même présentation que les sites. À redéployer : la passerelle (génération des documents)."
+    ]
+  },
+  {
     "id": "2026-11-08-356",
     "date": "2026-11-08",
     "title": "Version 6.77.2 — Bon de sortie : le soussigné est cédant ou preneur (un simple choix)",

@@ -313,6 +313,7 @@ window.google = { script: { run: (function () {
     <div class="bloc-doc" id="blocAuto" hidden>
       <div class="bloc-doc-t">🚗 Autorisation d'accès <span>un véhicule par ligne (type et immatriculation)</span></div>
       <p class="info-valable" id="libValable"></p>
+      <label style="display:flex;align-items:center;gap:8px;margin:8px 0 0;text-transform:none;font-size:13.5px;font-weight:600;letter-spacing:0;cursor:pointer"><input type="checkbox" id="travailNuit" style="width:auto;margin:0"> 🌙 Travail de nuit <span style="font-weight:400;color:var(--text-muted);font-size:12px">(coché dans l'autorisation : ☒ OUI)</span></label>
     </div>
     <p class="info-injection" id="infoInjection"></p>
 
@@ -1060,6 +1061,7 @@ window.google = { script: { run: (function () {
       restauration: document.getElementById('restauration').checked,
       genererAuto: document.getElementById('genererAuto').checked,
       valable2Mois: document.getElementById('valable2Mois').checked,
+      travailNuit: !!(document.getElementById('travailNuit') && document.getElementById('travailNuit').checked),
       injecterEnquetes: document.getElementById('genererPEC').checked,   // injection automatique : Enquêtes pour la prise en charge ; le suivi des véhicules est alimenté par le serveur pour chaque autorisation
       fonctionObservation: document.getElementById('fonctionObs').checked,
       personnes: personnes
