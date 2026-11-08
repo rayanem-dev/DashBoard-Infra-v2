@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-08-360",
+    "date": "2026-11-08",
+    "title": "Version 6.79.2 — Export EPI format final : veste en cuir (parka) en colonnes distinctes",
+    "changes": [
+      "« Excel format final » : la veste en cuir (parka) a ses deux colonnes à part, « taille UK » et « lettre », après les deux groupes de références. L'export mis en forme avait déjà « Veste cuir (UK) » et « Veste (lettre) » séparées."
+    ]
+  },
+  {
     "id": "2026-11-08-359",
     "date": "2026-11-08",
     "title": "Version 6.79.1 — Prise en charge : case « Renouvellement »",

@@ -70,7 +70,7 @@
       <select id="e-service" aria-label="Service"><option value="">Tous les services</option></select>
       <label class="coche"><input type="checkbox" id="e-inc"> tailles manquantes seulement</label>
       <button class="btn-s" id="e-xl" type="button">⬇ Excel</button><button class="btn-p" id="e-pdf" type="button">🖨 PDF / Imprimer</button>
-      <button class="btn-s" id="e-final" type="button" title="Excel au format du fichier final (genre, matricule, nom, prénom, division, service, pointure, deux groupes de tailles) : la structure choisie, ou toute la division">⬇ Excel format final</button><button class="btn-s" id="e-ecart" type="button" title="E-mail de relance aux agents dont les deux références de taille diffèrent (structure choisie, ou toute la division)">✉ Relancer les écarts</button>
+      <button class="btn-s" id="e-final" type="button" title="Excel au format du fichier final (genre, matricule, nom, prénom, division, service, pointure, deux groupes de tailles, veste en cuir) : la structure choisie, ou toute la division">⬇ Excel format final</button><button class="btn-s" id="e-ecart" type="button" title="E-mail de relance aux agents dont les deux références de taille diffèrent (structure choisie, ou toute la division)">✉ Relancer les écarts</button>
       <button class="btn-s" id="e-lien" type="button" title="Copie l'adresse de la page à envoyer aux agents (WhatsApp, messagerie…)">🔗 Copier le lien</button><button class="btn-s" id="e-mail" type="button" title="Un e-mail avec le lien à chaque agent affiché dont les tailles sont incomplètes">✉ Envoyer le lien aux incomplets</button>
     </div><p class="note" id="e-info"></p></div>
     <div class="bloc"><h2>À commander <span class="note" id="r-sous"></span></h2><div id="e-recap"></div></div>
@@ -251,24 +251,24 @@
   }
 
   /* Excel « format final » : mêmes colonnes que la liste finale (Genre, Mle, NOM, PRENOM, DIVISION, SERVICE, OBSERVATION, Modèle, Pointure, puis deux groupes chiffre · lettre · parka : liste du service / mesure Parka) */
-  var ENT_FINAL = ['Genre', 'Mle', 'NOM', 'PRENOM', 'DIVISION', 'SERVICE', 'OBSERVATION', 'Model de Distribution', 'Pointure Chaussure ', 'Taille en chiffre EU', 'taille en lettre USA', 'taille Parka', 'Taille en chiffre EU', 'taille en lettre USA', 'taille Parka'];
+  var ENT_FINAL = ['Genre', 'Mle', 'NOM', 'PRENOM', 'DIVISION', 'SERVICE', 'OBSERVATION', 'Model de Distribution', 'Pointure Chaussure ', 'Taille en chiffre EU', 'taille en lettre USA', 'taille Parka', 'Taille en chiffre EU', 'taille en lettre USA', 'taille Parka', 'Veste en cuir (parka) : taille UK', 'Veste en cuir (parka) : lettre'];
   function scinder(nom) { var m = String(nom || '').trim().split(/\s+/), i = 0; while (i < m.length && m[i] === m[i].toUpperCase() && /[A-ZÀ-Ý]/.test(m[i])) i += 1; if (i === 0 || i === m.length) { i = Math.max(1, m.length - 1); if (m.length === 1) i = 1; } return [m.slice(0, i).join(' '), m.slice(i).join(' ')]; }
   function ligneFinal(a) {
     var np = scinder(a.nom), retenu = a.choix === '1' ? (a.ref1_eu || '') + '-' + (a.ref1_lettre || '') : a.choix === '2' ? (a.ref2_eu || '') + '-' + (a.ref2_lettre || '') : '';
     var obs = [a.obs_ref, retenu ? 'Taille retenue : ' + retenu : (a.ecart ? 'À départager' : '')].filter(Boolean).join(' — ');
     var num = function (x) { return /^\d+$/.test(String(x)) ? Number(x) : (x || null); };
-    return [a.genre || '', a.matricule, np[0], np[1], a.div_ref || 'INFRA', a.service_ref || a.service || '', obs || null, a.modele || null, num(a.chaussures), num(a.ref1_eu), a.ref1_lettre || null, a.ref1_parka || null, num(a.ref2_eu), a.ref2_lettre || null, a.ref2_parka || null];
+    return [a.genre || '', a.matricule, np[0], np[1], a.div_ref || 'INFRA', a.service_ref || a.service || '', obs || null, a.modele || null, num(a.chaussures), num(a.ref1_eu), a.ref1_lettre || null, a.ref1_parka || null, num(a.ref2_eu), a.ref2_lettre || null, a.ref2_parka || null, num(a.veste_cuir), a.veste_cuir ? lettreDe(a.veste_cuir) || null : null];
   }
   function excelFinal() {
     var sv = $('e-service').value, liste = (LISTE.agents || []).filter(function (a) { return !a.prestataire && (!sv || a.service === sv); });
     if (!liste.length) return toast('Aucun agent à exporter.');
     script('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js').then(function () {
       var wb = new window.ExcelJS.Workbook(), ws = wb.addWorksheet('Feuil1', { views: [{ state: 'frozen', ySplit: 1 }] }), fine = { style: 'thin', color: { argb: 'FFBFBFBF' } }, bord = { top: fine, left: fine, bottom: fine, right: fine };
-      var hr = ws.getRow(1); ENT_FINAL.forEach(function (h, i) { var c = hr.getCell(i + 1); c.value = h; c.font = { name: 'Calibri', bold: true }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i >= 12 ? 'FFFDE9D9' : i >= 9 ? 'FFDDEBF7' : 'FFF2F2F2' } }; c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = bord; });
+      var hr = ws.getRow(1); ENT_FINAL.forEach(function (h, i) { var c = hr.getCell(i + 1); c.value = h; c.font = { name: 'Calibri', bold: true }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i >= 15 ? 'FFE2EFDA' : i >= 12 ? 'FFFDE9D9' : i >= 9 ? 'FFDDEBF7' : 'FFF2F2F2' } }; c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = bord; });
       liste.sort(function (a, b) { return (a.service || '') < (b.service || '') ? -1 : (a.service || '') > (b.service || '') ? 1 : a.nom < b.nom ? -1 : 1; }).forEach(function (a, r) {
-        var row = ws.getRow(r + 2); ligneFinal(a).forEach(function (v, i) { var c = row.getCell(i + 1); c.value = v; c.border = bord; c.font = { name: 'Calibri', size: 11 }; c.alignment = { vertical: 'middle', horizontal: i >= 8 ? 'center' : 'left', wrapText: i === 6 }; if (a.ecart && i >= 9) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } }; });
+        var row = ws.getRow(r + 2); ligneFinal(a).forEach(function (v, i) { var c = row.getCell(i + 1); c.value = v; c.border = bord; c.font = { name: 'Calibri', size: 11 }; c.alignment = { vertical: 'middle', horizontal: i >= 8 ? 'center' : 'left', wrapText: i === 6 }; if (a.ecart && i >= 9 && i < 15) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } }; });
       });
-      [8, 10, 18, 18, 10, 14, 30, 16, 10, 10, 10, 10, 10, 10, 10].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
+      [8, 10, 18, 18, 10, 14, 30, 16, 10, 10, 10, 10, 10, 10, 10, 14, 14].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
       return wb.xlsx.writeBuffer();
     }).then(function (buf) { telecharger(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'dotation_epi_final_' + (sv ? sv.replace(/[^A-Za-z0-9]+/g, '_') : 'division') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx'); toast('Excel exporté : ' + liste.length + ' agent(s)' + (sv ? ' — ' + sv : ' — toute la division') + '.'); }).catch(function (e) { toast('Export impossible : ' + e.message); });
   }
