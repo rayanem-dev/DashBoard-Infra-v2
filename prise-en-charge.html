@@ -305,6 +305,10 @@ window.google = { script: { run: (function () {
           <label>Remplacement</label>
         </div>
         <div class="ligne-check" style="margin-top:0;">
+          <input type="checkbox" id="renouvellement">
+          <label>Renouvellement</label>
+        </div>
+        <div class="ligne-check" style="margin-top:0;">
           <input type="checkbox" id="fonctionObs">
           <label>Fonction dans Observations</label>
         </div>
@@ -1053,6 +1057,7 @@ window.google = { script: { run: (function () {
       emputation: document.getElementById('genererPEC').checked ? document.getElementById('emputation').value : '',
       base: document.getElementById('genererPEC').checked ? document.getElementById('base').value : '',
       remplacement: document.getElementById('remplacement').checked,
+      renouvellement: document.getElementById('renouvellement').checked,
       numeroChambre: document.getElementById('numeroChambre').value,
       dateArrivee: document.getElementById('dateArrivee').value,
       dateDepart: document.getElementById('dateDepart').value,
