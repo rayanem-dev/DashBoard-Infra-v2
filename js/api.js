@@ -368,6 +368,8 @@
         if (action === 'ni_envoyer') return { destinataires: ['Secrétariat de la division'] };
         nl = nl.filter(function (x) { return x.id !== p.id; }); try { sessionStorage.setItem(cn, JSON.stringify(nl)); } catch (e) { /* rien */ } return { ok: true }; }
       case 'transport_telephone': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { ecrit: true, tel: String(p.tel || '').replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1 ') }; }
+      case 'annuaire_entreprises': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
+        return { fiches: [{ groupe: 'Entreprises — Prestataires & fournisseurs › Entreprises sous contrat', nom: 'SARL GMS', details: '📞 0660 93 27 34 | ✉️ sarlgms@gmail.com | 📍 Cité Coopérative, Ouargla', poste: 'Contrat 59.TECH.26' }, { groupe: 'Entreprises — Prestataires & fournisseurs › Vivier des entreprises', nom: 'ETS MESSAI', details: '📞 029 79 48 05', poste: 'Maintenance électrique' }] };
       case 'annuaire_personnes': if (!demoState.user) throw erreur('Session expirée', 'SESSION');
         return { remplace: ['DURAND Marc', 'MARTIN Hugo', 'BERNARD Louis'], personnes: [
           { nom: 'DURAND Marc', employeur: 'SONATRACH', section: '🧑‍💼 CHEF DIVISION INFRASTRUCTURE', service: 'Division', fonction: 'CHEF DIVISION INFRASTRUCTURE', tel: '0550000001', tels_alt: [], email: 'marc.durand@exemple.dz', email2: '', sona: 'sona00001', matricule: '10001A' },

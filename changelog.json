@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-08-353",
+    "date": "2026-11-08",
+    "title": "Version 6.76.0 — Annuaire : entreprises ajoutées automatiquement",
+    "changes": [
+      "L'annuaire reprend automatiquement les entreprises : attributaires du suivi CPM (avec n° de contrat, adresse, téléphones, fax, e-mail) et vivier des entreprises. Une même entreprise n'apparaît qu'une fois (« SARL GMS » = « GMS »), les numéros sont dédoublonnés (0660… = +213 660…), et une entreprise déjà présente dans l'annuaire avec les mêmes numéros n'est pas répétée.",
+      "Deux nouveaux groupes : « Entreprises sous contrat » et « Vivier des entreprises ». Réservé au personnel de la division : un prestataire ne voit pas les coordonnées des autres entreprises.",
+      "À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-08-352",
     "date": "2026-11-08",
     "title": "Version 6.75.9 — Diapositives CPM (Google Slides) : commentaires complets",

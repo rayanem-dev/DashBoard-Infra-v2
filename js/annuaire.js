@@ -35,6 +35,12 @@ var Annuaire = (function () {
       });
       rows.sort(function (a, b) { return a[0] - b[0]; });
       D.rows = rows; reindexer(); return true;
+    }).then(function (ok) {
+      // Entreprises (suivi CPM, vivier des entreprises) : ajoutées automatiquement ; sans effet si la passerelle les refuse (prestataire, hors connexion)
+      return (window.Api ? Api.call('annuaire_entreprises') : Promise.reject()).then(function (r) {
+        (r.fiches || []).forEach(function (f) { D.rows.push([groupeIndex(f.groupe), f.nom, f.details, f.poste, 'ENTREPRISE']); });
+        D.rows.sort(function (a, b) { return a[0] - b[0]; }); reindexer(); return true;
+      }).catch(function () { return ok; });
     }).catch(function () { return false; });
     return charge;
   }
