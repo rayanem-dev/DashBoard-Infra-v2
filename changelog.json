@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-08-358",
+    "date": "2026-11-08",
+    "title": "Version 6.79.0 — Dotation EPI : deux références de taille, relances et export au format final",
+    "changes": [
+      "« Mes tailles » : on retire « Longueur de jambe » et « Gants ». Chaque agent voit ses deux références de taille (liste du service, par exemple 42-L, et mesure Parka, par exemple 40-M) et choisit celle qui lui va ; la lettre du haut et la veste en cuir (UK) s'en déduisent.",
+      "Import des deux références depuis la liste finale et le fichier Parka (Mon équipe › Importer les deux références) : la mesure Parka est arrondie à la taille supérieure, la pointure et la lettre du haut ne remplissent que les cases vides.",
+      "Boutons « ✉ Relancer les écarts » (e-mail aux agents dont les deux références diffèrent, pour la structure choisie ou toute la division) et « ⬇ Excel format final » (mêmes colonnes que la liste finale : Genre, Mle, NOM, PRENOM, DIVISION, SERVICE, OBSERVATION, Modèle, Pointure, deux groupes de tailles).",
+      "À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-08-357",
     "date": "2026-11-08",
     "title": "Version 6.78.1 — Autorisation d'accès : la case « Nuit » du modèle est cochée",

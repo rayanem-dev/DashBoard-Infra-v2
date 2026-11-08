@@ -1,10 +1,10 @@
 /**
- * Formulaire des tailles de dotation EPI (haut, pantalon, jambe, pointure, gants, veste en cuir UK, bonnet + tour de tête, remarque).
+ * Formulaire des tailles de dotation EPI (haut, pantalon, pointure, veste en cuir UK, bonnet + tour de tête, remarque ; deux références de taille à départager le cas échéant).
  * Partagé par la page « Dotation EPI » (epi.html) et par « Mon profil » (profil.html) : les deux écrivent dans le même fichier (onglet TaillesEPI de la passerelle).
  *   EpiForm.formulaire(tailles, table, surEnregistrer(valeurs) → Promise, { toast }) → élément DOM
  */
 var EpiForm = (function () {
-  var HAUTS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'], GANTS = ['S', 'M', 'L', 'XL', 'XXL'];
+  var HAUTS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'];
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function formulaire(t, TABLE, surEnregistrer, opt) {
     t = t || {}; TABLE = TABLE || []; var toast = (opt && opt.toast) || function () {}, pref = (opt && opt.prefixe) || 'f';
@@ -21,13 +21,25 @@ var EpiForm = (function () {
     var f = el('div', 'epf'), g = el('div', 'grille'), champs = {};
     function champ(id, lib, noeud, aide, large) { var d = el('div', large ? 'large' : ''), l = el('label', null, lib); l.htmlFor = pref + '-' + id; noeud.id = pref + '-' + id; d.appendChild(l); d.appendChild(noeud); if (aide) d.appendChild(el('div', 'aide', aide)); g.appendChild(d); champs[id] = noeud; return d; }
     function liste(id, valeurs) { var dl = el('datalist'); dl.id = pref + '-dl-' + id; valeurs.forEach(function (v) { var o = el('option'); o.value = v; dl.appendChild(o); }); f.appendChild(dl); return dl.id; }
+    // Deux références de taille relevées (liste du service / mesure Parka) : l'agent choisit celle qui lui va ; la lettre du haut et la veste en cuir (UK) suivent
+    var choix = '';
+    if (t.ref1_lettre && t.ref2_lettre && t.ref1_lettre !== t.ref2_lettre) {
+      var rf = el('div', 'large'), pc = el('div'); pc.style.cssText = 'border:1.5px solid #F59E0B;background:rgba(245,158,11,.10);border-radius:12px;padding:10px 12px';
+      pc.appendChild(el('div', null, 'Deux tailles différentes ont été relevées pour vous : choisissez celle qui vous va.')).style.fontWeight = '700';
+      var bt = el('div'); bt.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
+      [['1', (t.ref1_eu || '') + '-' + t.ref1_lettre, 'liste du service'], ['2', (t.ref2_eu || '') + '-' + t.ref2_lettre, 'mesure Parka']].forEach(function (r) {
+        var b = el('button', 'petit', r[1] + ' · ' + r[2]); b.type = 'button'; b.style.fontSize = '13.5px'; b.style.padding = '7px 14px';
+        b.addEventListener('click', function () { choix = r[0]; var lt = t['ref' + r[0] + '_lettre'], uk = ukDe(lt); haut.value = lt; if (uk) vc.value = String(uk); Array.prototype.forEach.call(bt.children, function (x) { x.style.background = ''; x.style.borderColor = ''; }); b.style.background = 'rgba(22,163,74,.18)'; b.style.borderColor = '#16A34A'; toast('Choix noté : ' + r[1] + '. Pensez à enregistrer.'); });
+        if (String(t.choix) === r[0]) { b.style.background = 'rgba(22,163,74,.18)'; b.style.borderColor = '#16A34A'; }
+        bt.appendChild(b);
+      });
+      pc.appendChild(bt); rf.appendChild(pc); g.appendChild(rf);
+    }
     var haut = el('input'); haut.setAttribute('list', liste('haut', HAUTS)); haut.placeholder = 'M, L, XL… ou 42'; haut.value = t.haut || '';
     champ('haut', 'T-shirt · veste · combinaison (haut)', haut, 'S, M, L, XL, XXL ou une taille numérique. La combinaison suit cette taille ; autre cas : écrivez-le dans la remarque.');
     var pan = el('input'); pan.inputMode = 'numeric'; pan.placeholder = 'ex. 42 ou 90'; pan.value = t.pantalon || '';
     champ('pantalon', 'Pantalon : taille ou tour de taille', pan, 'Taille numérique (ex. 42) ou tour de taille en cm.');
-    var jam = el('input'); jam.inputMode = 'numeric'; jam.placeholder = 'cm (facultatif)'; jam.value = t.jambe || ''; champ('jambe', 'Longueur de jambe (cm)', jam, 'Facultatif si vous donnez une taille numérique.');
     var cha = el('input'); cha.type = 'number'; cha.min = 30; cha.max = 52; cha.placeholder = 'ex. 43'; cha.value = t.chaussures || ''; champ('chaussures', 'Pointure (chaussures de sécurité)', cha);
-    var gan = el('input'); gan.setAttribute('list', liste('gants', GANTS)); gan.placeholder = 'S, M, L, XL'; gan.value = t.gants || ''; champ('gants', 'Gants', gan);
     var vc = el('select'); var o0 = el('option', null, '— ne sait pas / pas de veste —'); o0.value = ''; vc.appendChild(o0);
     TABLE.forEach(function (r) { var o = el('option', null, 'UK ' + r.uk + ' — ' + r.lettre + ' (poitrine ' + r.poitrine + ' cm)'); o.value = String(r.uk); vc.appendChild(o); }); vc.value = String(t.veste_cuir || '');
     var dv = champ('veste_cuir', 'Veste en cuir (taille UK)', vc, '');
@@ -40,7 +52,7 @@ var EpiForm = (function () {
     var b = el('div'); b.style.marginTop = '12px'; var s = el('button', 'btn-p', '💾 Enregistrer'); s.type = 'button'; b.appendChild(s); f.appendChild(b);
     s.addEventListener('click', function () {
       s.disabled = true;
-      surEnregistrer({ haut: haut.value, pantalon: pan.value, jambe: jam.value, chaussures: cha.value, gants: gan.value, veste_cuir: vc.value, bonnet: bon.checked ? '1' : '', tete: bon.checked ? tet.value : '', remarque: rem.value }).then(function () { s.disabled = false; }, function () { s.disabled = false; });
+      surEnregistrer({ choix: choix, haut: haut.value, pantalon: pan.value, chaussures: cha.value, veste_cuir: vc.value, bonnet: bon.checked ? '1' : '', tete: bon.checked ? tet.value : '', remarque: rem.value }).then(function () { s.disabled = false; }, function () { s.disabled = false; });
     });
     return f;
   }
