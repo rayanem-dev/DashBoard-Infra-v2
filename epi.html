@@ -299,7 +299,12 @@
       });
       var vus = {}; lignes.forEach(function (l) { vus[l.matricule] = 1; });
       par.slice(1).forEach(function (r) { var m = String(r[pm]).trim(); if (m && !vus[m]) lignes.push({ matricule: m, nom: String(r[hp.findIndex(function (v) { return /nom/.test(v); })] || ''), eu2: r[pt] }); });   // dans Parka seulement
-      return Api.call('epi_importer_refs', { lignes: lignes });
+      // 1) aperçu sans rien écrire, 2) confirmation, 3) écriture
+      return Api.call('epi_importer_refs', { lignes: lignes, apercu: true }).then(function (ap) {
+        var txt = 'Aperçu (rien n\'est encore écrit) :\n• ' + ap.importes + ' agent(s) reçoivent leurs deux références de taille (liste du service et Parka)\n• ' + ap.ecarts + ' ont deux lettres différentes (à départager)\n• AUCUNE taille déjà saisie n\'est écrasée : la pointure est remplie pour ' + ap.remplis_pointure + ' agent(s) et la lettre du haut pour ' + ap.remplis_haut + ', seulement là où la case est vide' + (ap.refs_remplacees ? '\n• ' + ap.refs_remplacees + ' agent(s) avaient déjà des références : elles sont remplacées' : '') + (ap.inconnus.length ? '\n• ' + ap.inconnus.length + ' ligne(s) sans compte, ignorée(s) : ' + ap.inconnus.slice(0, 5).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '\n\nÉcrire ces données ?';
+        if (!window.confirm(txt)) throw new Error('Import annulé : rien n\'a été écrit.');
+        return Api.call('epi_importer_refs', { lignes: lignes });
+      });
     }).then(function (r) { z.textContent = r.importes + ' agent(s) mis à jour, ' + r.ecarts + ' avec deux références différentes' + (r.inconnus.length ? ', ' + r.inconnus.length + ' sans compte : ' + r.inconnus.slice(0, 6).map(function (i) { return i.nom || i.matricule; }).join(' ; ') + (r.inconnus.length > 6 ? '…' : '') : '') + '.'; $('r-ok').disabled = false; charger(); }).catch(function (e) { z.textContent = ''; $('r-ok').disabled = false; toast(e.message); });
   }
   $('e-final').addEventListener('click', excelFinal); $('e-ecart').addEventListener('click', relancerEcarts); $('r-ok').addEventListener('click', importerRefs);

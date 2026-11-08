@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-08-361",
+    "date": "2026-11-08",
+    "title": "Version 6.79.3 — Import des références EPI : aperçu et confirmation avant d'écrire",
+    "changes": [
+      "Importer les deux références de taille (liste finale + Parka) commence par un aperçu sans rien écrire : nombre d'agents, écarts à départager, cases vides remplies, lignes sans compte ; l'écriture n'a lieu qu'après confirmation. Aucune taille déjà saisie n'est écrasée (pointure et lettre du haut : cases vides seulement ; les références sont des colonnes nouvelles). À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-08-360",
     "date": "2026-11-08",
     "title": "Version 6.79.2 — Export EPI format final : veste en cuir (parka) en colonnes distinctes",
