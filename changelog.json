@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-08-352",
+    "date": "2026-11-08",
+    "title": "Version 6.75.9 — Diapositives CPM (Google Slides) : commentaires complets",
+    "changes": [
+      "Le rapport hebdomadaire (Google Slides) coupait encore les commentaires à 150 caractères. Ils sont maintenant affichés en entier : la ligne grandit, la police diminue un peu pour les très longs commentaires, et les dossiers se répartissent sur les diapositives selon la place. À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-08-351",
     "date": "2026-11-08",
     "title": "Version 6.75.8 — Mode sombre : menu latéral lisible sur les pages reprises de l'ancien site",
