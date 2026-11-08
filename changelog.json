@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-08-356",
+    "date": "2026-11-08",
+    "title": "Version 6.77.2 — Bon de sortie : preneur distinct, personne autorisée toujours visible",
+    "changes": [
+      "Bon de sortie matériel : le visa « Preneur » a son propre champ « Nom du preneur » (choix dans la liste ou saisie libre ; sa structure se reprend). Vide, le preneur reste la personne autorisée, comme avant.",
+      "Quand le preneur est une autre personne, la personne autorisée (par exemple le chauffeur) figure quand même sous les signatures, ligne « Autorisé : nom (fonction) ». À redéployer : l'application Bon de sortie."
+    ]
+  },
+  {
     "id": "2026-11-08-355",
     "date": "2026-11-08",
     "title": "Version 6.77.1 — Bon de sortie : « Autorise » indépendant du preneur",
