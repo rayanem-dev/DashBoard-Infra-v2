@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-08-350",
+    "date": "2026-11-08",
+    "title": "Version 6.75.7 — Diapositives CPM : commentaires complets",
+    "changes": [
+      "Diapositive « Situation des dossiers CPM non achevés » : le commentaire n'est plus coupé à 140 caractères. La ligne grandit selon la longueur du commentaire (police un peu réduite pour les très longs) et les dossiers se répartissent sur plusieurs diapositives selon la place disponible."
+    ]
+  },
+  {
     "id": "2026-11-07-349",
     "date": "2026-11-07",
     "title": "Version 6.75.6 — Note d'intérim : établir celle d'une personne de son service (intérimaires et au-dessus)",

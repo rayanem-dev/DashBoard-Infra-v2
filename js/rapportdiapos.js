@@ -41,14 +41,27 @@ var RapportDiapos = (function () {
   function frIso(iso) { var p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
   function couleurJauge(p) { return p >= 70 ? C.vert : p >= 40 ? C.ambre : C.orange; }
 
+  /** Commentaire jamais coupé : la ligne grandit (et la police diminue un peu) selon la longueur ; les dossiers sont répartis sur les diapositives selon la place. */
+  var HAUT_DISPO = 3.45;
+  function taille(d) { var n = String(d.commentaire || '').length; return n > 330 ? 7.5 : n > 220 ? 8 : 8.5; }
+  function hauteur(d) {
+    var t = taille(d), parLigne = Math.floor(62 * 8.5 / t), lignes = Math.max(1, Math.ceil(String(d.commentaire || '').length / parLigne)), lIntit = Math.ceil(String(d.intitule || '').length / 34);
+    return Math.min(2.2, Math.max(0.5, Math.max(lignes * (t / 72) * 1.25 + 0.14, lIntit * 0.17 + 0.14)));
+  }
+  function paginer(dossiers) {
+    var pages = [], cur = [], h = 0;
+    dossiers.forEach(function (d) { var x = hauteur(d); if (cur.length && (h + x > HAUT_DISPO || cur.length >= PAR_DIAPO)) { pages.push(cur); cur = []; h = 0; } cur.push(d); h += x; });
+    if (cur.length) pages.push(cur);
+    return pages.length ? pages : [[]];
+  }
   /** Dessine les diapositives dans `pptx` (PptxGenJS) ; retourne le nombre de diapositives ajoutées. Présentation « tableau » sobre, comme les autres diapositives du rapport. */
   function construire(pptx, rapport) {
     pptx.layout = 'LAYOUT_16x9'; // 10 × 5,625 po
     var n = 0, total = 0, F = 'Calibri';
-    rapport.groupes.forEach(function (g) { total += Math.ceil(g.dossiers.length / PAR_DIAPO); });
+    rapport.groupes.forEach(function (g) { g.pages = paginer(g.dossiers); total += g.pages.length; });
     var X = [0.4, 1.95, 4.75, 6.55], W = [1.55, 2.8, 1.8, 3.05]; // N° | Intitulé | Avancement | Commentaire
     rapport.groupes.forEach(function (g) {
-      var pages = Math.ceil(g.dossiers.length / PAR_DIAPO);
+      var pages = g.pages.length;
       for (var p = 0; p < pages; p += 1) {
         var s = pptx.addSlide(); n += 1; s.background = { color: 'FFFFFF' };
         s.addText('Division Infrastructures', { x: 0.4, y: 0.18, w: 5, h: 0.25, fontFace: F, fontSize: 10, bold: true, color: C.orange, margin: 0 });
@@ -60,15 +73,16 @@ var RapportDiapos = (function () {
         ['N° Dossier', 'Intitulé', 'Avancement', 'Commentaire'].forEach(function (t, i) {
           s.addText(t, { x: X[i] + 0.08, y: 1.4, w: W[i] - 0.1, h: 0.36, valign: 'middle', align: i === 2 ? 'center' : 'left', fontFace: F, fontSize: 11, bold: true, color: 'FFFFFF', margin: 0 });
         });
-        g.dossiers.slice(p * PAR_DIAPO, (p + 1) * PAR_DIAPO).forEach(function (d, i) {
-          var y = 1.76 + i * 0.5;
-          s.addShape('line', { x: 0.4, y: y + 0.5, w: 9.2, h: 0, line: { color: 'D1D5DB', width: 0.75 } });
-          s.addText(d.numero || '—', { x: X[0] + 0.08, y: y, w: W[0] - 0.12, h: 0.5, valign: 'middle', fontFace: F, fontSize: 8, color: C.doux, margin: 0 });
-          s.addText(couper(d.intitule, 70), { x: X[1] + 0.08, y: y, w: W[1] - 0.12, h: 0.5, valign: 'middle', fontFace: F, fontSize: 10, bold: true, color: C.texte, margin: 0 });
-          s.addShape('roundRect', { x: X[2] + 0.1, y: y + 0.17, w: 1.05, h: 0.16, rectRadius: 0.08, fill: { color: C.gris }, line: { color: C.gris, width: 0 } });
-          if (d.pct > 0) s.addShape('roundRect', { x: X[2] + 0.1, y: y + 0.17, w: Math.max(0.16, 1.05 * d.pct / 100), h: 0.16, rectRadius: 0.08, fill: { color: couleurJauge(d.pct) }, line: { color: couleurJauge(d.pct), width: 0 } });
-          s.addText(Math.round(d.pct) + ' %', { x: X[2] + 1.2, y: y, w: 0.55, h: 0.5, valign: 'middle', fontFace: F, fontSize: 11, bold: true, color: C.texte, margin: 0 });
-          s.addText(couper(d.commentaire, 140) || '—', { x: X[3] + 0.08, y: y, w: W[3] - 0.1, h: 0.5, valign: 'middle', fontFace: F, fontSize: 8.5, bold: d.change, color: d.change ? C.texte : C.doux, margin: 0 });
+        var yCourant = 1.76;
+        g.pages[p].forEach(function (d) {
+          var H = hauteur(d), y = yCourant; yCourant += H;
+          s.addShape('line', { x: 0.4, y: y + H, w: 9.2, h: 0, line: { color: 'D1D5DB', width: 0.75 } });
+          s.addText(d.numero || '—', { x: X[0] + 0.08, y: y, w: W[0] - 0.12, h: H, valign: 'middle', fontFace: F, fontSize: 8, color: C.doux, margin: 0 });
+          s.addText(couper(d.intitule, 70), { x: X[1] + 0.08, y: y, w: W[1] - 0.12, h: H, valign: 'middle', fontFace: F, fontSize: 10, bold: true, color: C.texte, margin: 0 });
+          s.addShape('roundRect', { x: X[2] + 0.1, y: y + H / 2 - 0.08, w: 1.05, h: 0.16, rectRadius: 0.08, fill: { color: C.gris }, line: { color: C.gris, width: 0 } });
+          if (d.pct > 0) s.addShape('roundRect', { x: X[2] + 0.1, y: y + H / 2 - 0.08, w: Math.max(0.16, 1.05 * d.pct / 100), h: 0.16, rectRadius: 0.08, fill: { color: couleurJauge(d.pct) }, line: { color: couleurJauge(d.pct), width: 0 } });
+          s.addText(Math.round(d.pct) + ' %', { x: X[2] + 1.2, y: y, w: 0.55, h: H, valign: 'middle', fontFace: F, fontSize: 11, bold: true, color: C.texte, margin: 0 });
+          s.addText((d.commentaire ? String(d.commentaire).replace(/\s+/g, ' ').trim() : '—'), { x: X[3] + 0.08, y: y, w: W[3] - 0.1, h: H, valign: 'middle', fontFace: F, fontSize: taille(d), bold: d.change, color: d.change ? C.texte : C.doux, margin: 0 });
         });
         s.addText('Commentaire en gras : dossier modifié pendant la semaine', { x: 0.4, y: 5.25, w: 6, h: 0.22, fontFace: F, fontSize: 8, italic: true, color: C.doux, margin: 0 });
         s.addText(n + ' / ' + total, { x: 8.6, y: 5.25, w: 1, h: 0.22, align: 'right', fontFace: F, fontSize: 8, color: C.doux, margin: 0 });
