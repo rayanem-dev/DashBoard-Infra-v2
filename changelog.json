@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-08-355",
+    "date": "2026-11-08",
+    "title": "Version 6.77.1 — Bon de sortie : « Autorise » indépendant du preneur",
+    "changes": [
+      "Bon de sortie matériel : la personne autorisée à emporter le matériel (par exemple un chauffeur de camion) n'est plus liée au visa « Preneur » : choisir ou saisir cette personne ne remplit plus la structure du preneur. Le bloc s'appelle « Autorise (la personne qui emporte le matériel) ». À redéployer : l'application Bon de sortie."
+    ]
+  },
+  {
     "id": "2026-11-08-354",
     "date": "2026-11-08",
     "title": "Version 6.77.0 — Inventaire : export « fichier amortissable », motif dans l'Excel, rapport d'opération",
