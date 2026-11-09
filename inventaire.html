@@ -265,7 +265,7 @@
     $('a-info').textContent = liste.length + ' article' + (liste.length > 1 ? 's' : '') + (filtreArt.pos ? ' dans « ' + filtreArt.pos + ' »' : '');
     if (!liste.length) { var tr = el('tr'), td = el('td', 'vide', Object.keys(etat.articles).length ? 'Aucun article ne correspond.' : 'Aucun article dans cet exercice : l\'administrateur doit charger le fichier des écarts (onglet Importer).'); td.colSpan = 7; tr.appendChild(td); c.appendChild(tr); $('a-plus').hidden = true; return; }
     var cleTri = function (a) { var nt = Object.keys(a.nonTrouve || {}), t0 = trouvePar[M.invCle(a.inv)], h = anc[M.invCle(a.inv)];
-      return { inv: a.inv, des: a.designation, pos: a.position || '', st: nt.length ? '1 non trouvé' : t0 ? '0 trouvé' : '2', par: !nt.length && t0 ? (t0.par || '') : '', anc: h ? h.de : '' }[tri.c]; };
+      return { inv: a.inv, des: a.designation, pos: a.position || '', st: nt.length ? '1 non trouvé' : t0 ? '0 trouvé' : photos[M.invCle(a.inv)] ? '0 vu' : '2', par: !nt.length ? (t0 ? (t0.par || '') : (photos[M.invCle(a.inv)] || {}).par || '') : '', anc: h ? h.de : '' }[tri.c]; };
     if (tri.c) liste = liste.slice().sort(function (x, y) { return tri.d * String(cleTri(x) == null ? '' : cleTri(x)).localeCompare(String(cleTri(y) == null ? '' : cleTri(y)), 'fr', { numeric: true, sensitivity: 'base' }); });
     Array.prototype.forEach.call($('a-tete').children, function (th) { var t = th.getAttribute('data-t'); if (!t) return; th.style.cursor = 'pointer'; th.setAttribute('role', 'button'); th.setAttribute('aria-sort', tri.c === t ? (tri.d > 0 ? 'ascending' : 'descending') : 'none'); th.title = 'Trier par cette colonne'; th.textContent = th.textContent.replace(/\s*[▲▼]$/, '') + (tri.c === t ? (tri.d > 0 ? ' ▲' : ' ▼') : ''); });
     liste.slice(0, limite).forEach(function (a) {
@@ -273,9 +273,9 @@
       var d = el('td'); d.appendChild(el('b', null, a.inv)); if (a.serie) d.appendChild(el('div', 'ancienne', 'S/N ' + a.serie)); tr.appendChild(d);
       var d2 = el('td', null, a.designation); if (a.marque || a.type) d2.appendChild(el('div', 'ancienne', [a.marque, a.type].filter(Boolean).join(' · '))); tr.appendChild(d2);
       tr.appendChild(el('td', null, a.position || '—'));
-      var tr0 = trouvePar[M.invCle(a.inv)], dt = function (x) { return String(x.date).slice(8, 10) + '/' + String(x.date).slice(5, 7) + '/' + String(x.date).slice(0, 4); };
-      var ds = el('td'); if (nt.length) ds.appendChild(el('span', 'pastille', 'non trouvé ' + nt.join(', '))); else if (tr0) ds.appendChild(el('span', 'pastille', '✅ trouvé')); else ds.appendChild(document.createTextNode('—')); tr.appendChild(ds);
-      tr.appendChild(el('td', null, !nt.length && tr0 ? (tr0.par || 'un utilisateur') + ' · ' + dt(tr0) : '—'));
+      var tr0 = trouvePar[M.invCle(a.inv)], ph0 = photos[M.invCle(a.inv)], dt = function (x) { return String(x.date).slice(8, 10) + '/' + String(x.date).slice(5, 7) + '/' + String(x.date).slice(0, 4); };
+      var ds = el('td'); if (nt.length) ds.appendChild(el('span', 'pastille', 'non trouvé ' + nt.join(', '))); else if (tr0) ds.appendChild(el('span', 'pastille', '✅ trouvé')); else if (ph0) ds.appendChild(el('span', 'pastille', '📷 vu (photo)')); else ds.appendChild(document.createTextNode('—')); tr.appendChild(ds);
+      tr.appendChild(el('td', null, !nt.length && tr0 ? (tr0.par || 'un utilisateur') + ' · ' + dt(tr0) : !nt.length && ph0 ? (ph0.par || 'photo ajoutée') + (ph0.le ? ' · ' + dt({ date: ph0.le }) + ' (photo)' : ' (photo)') : '—'));
       var h = anc[M.invCle(a.inv)]; tr.appendChild(el('td', 'ancienne', h ? h.de + ' (' + String(h.date).slice(0, 10) + ')' : ''));
       var ac = el('td'); ac.style.whiteSpace = 'nowrap';
       if (admin && peutSaisir()) { var b1 = el('button', 'btn-s petit', '📍 Corriger'); b1.type = 'button'; b1.addEventListener('click', function () { dialogPosition(a, false); }); ac.appendChild(b1); ac.appendChild(document.createTextNode(' ')); }

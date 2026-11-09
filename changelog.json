@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-373",
+    "date": "2026-11-09",
+    "title": "Version 6.87.1 — Inventaire : un article « vu » par photo est signalé",
+    "changes": [
+      "Un article sans écart dont on a seulement ajouté une photo affichait « — » partout. Il affiche maintenant « 📷 vu (photo) » dans Statut et, dans « Trouvé par », la personne qui a envoyé la photo avec la date. Le « ✅ trouvé » reste réservé aux articles marqués trouvés par le bouton « Trouvé : où ? » (articles non trouvés de l'écart)."
+    ]
+  },
+  {
     "id": "2026-11-09-372",
     "date": "2026-11-09",
     "title": "Version 6.87.0 — Inventaire : photo depuis la galerie du téléphone, colonnes Statut et Trouvé par triables",
