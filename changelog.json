@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-367",
+    "date": "2026-11-09",
+    "title": "Version 6.82.2 — Import EPI : erreurs visibles et bloc toujours affiché",
+    "changes": [
+      "Le bloc « Importer la liste finale » est toujours affiché (grisé avec la raison si le niveau 3 manque) et toute erreur d'import reste écrite en rouge dans le bloc au lieu de disparaître avec le message de quelques secondes. Le message d'erreur de lecture du Drive donne l'identifiant de la feuille et la cause probable. À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-09-366",
     "date": "2026-11-09",
     "title": "Version 6.82.1 — Dotation EPI : import de la liste finale depuis le Drive, sans fichier à choisir",

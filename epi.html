@@ -74,7 +74,7 @@
     </div><p class="note" id="e-info"></p></div>
     <div class="bloc"><h2>À commander <span class="note" id="r-sous"></span></h2><div id="e-recap"></div></div>
     <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Tête</th><th>Veste cuir / parka</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
-    <div class="bloc" id="r-bloc" hidden><h2>Importer la liste finale</h2>
+    <div class="bloc" id="r-bloc"><h2>Importer la liste finale</h2>
       <p class="note">Le fichier Excel de la liste finale (colonnes Mle, NOM, PRÉNOM, pointure, « T-shirt · veste · combinaison » taille en chiffre EU et en lettre USA, « taille Parka ») <b>remplace toute la base des tailles</b>. Pour chaque agent : T-shirt · veste · combinaison = la lettre, pantalon = la même taille en chiffre, chaussures = la pointure, veste en cuir / parka = la taille UK de la lettre « parka » (UK · lettre · chiffre, comme dans la table du site). Un aperçu précède l'écriture ; l'ancienne base est gardée dans le journal.</p>
       <div class="barre"><input type="file" id="r-fin" accept=".xlsx,.xls,.xlsm" aria-label="Liste finale"><button class="btn-p" id="r-ok" type="button">📥 Importer la liste finale</button><button class="btn-p" id="r-drive" type="button" title="La liste finale est déjà dans le Drive (Logistique › « Dotation EPI — liste finale ») : aucun fichier à choisir">📥 Importer celle du Drive</button><span id="r-res" class="note"></span></div></div>
   </section>
@@ -111,7 +111,7 @@
 
   /* Équipe */
   function charger() {
-    Api.call('epi_liste').then(function (r) { LISTE = r; TABLE = r.table || TABLE; NIV = r.niveau; $('r-bloc').hidden = NIV < 3; services(); dessiner(); }).catch(function (e) { toast(e.message); });
+    Api.call('epi_liste').then(function (r) { LISTE = r; TABLE = r.table || TABLE; NIV = r.niveau; $('r-bloc').hidden = false; if (NIV < 3) { $('r-ok').disabled = true; $('r-drive').disabled = true; $('r-res').textContent = 'Réservé au niveau 3 du module Dotation EPI (secrétariat, chef de division). Votre niveau : ' + NIV + '.'; } services(); dessiner(); }).catch(function (e) { toast(e.message); });
   }
   var PALETTE = ['E85D04', '7C3AED', '16A34A', '0EA5E9', 'DB2777', 'CA8A04', '0D9488', '64748B'], CONNUES = { SONATRACH: 'E85D04', ACOSCO: '7C3AED', GTP: '16A34A' };
   function couleur(n) { var k = String(n || '').toUpperCase(); if (CONNUES[k]) return CONNUES[k]; var h = 0; for (var i = 0; i < k.length; i += 1) h = (h * 31 + k.charCodeAt(i)) >>> 0; return PALETTE[h % PALETTE.length]; }
@@ -266,7 +266,7 @@
   }
   function importerListe(drive) {
     var f = $('r-fin').files[0], z = $('r-res'); if (!drive && !f) return toast('Choisissez la liste finale (fichier Excel), ou utilisez « Importer celle du Drive ».');
-    z.textContent = drive ? 'Lecture de la liste du Drive…' : 'Lecture du fichier…'; $('r-ok').disabled = true; $('r-drive').disabled = true;
+    z.style.color = ''; z.style.fontWeight = ''; z.textContent = drive ? 'Lecture de la liste du Drive…' : 'Lecture du fichier…'; $('r-ok').disabled = true; $('r-drive').disabled = true;
     (drive ? Promise.resolve(null) : lireListe(f)).then(function (rows) {
       if (drive) return confirmerRemplacement({ source: 'drive' });
       var H = rows[0] || [], n = function (v) { return String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }, h = H.map(n), col = function (re, k) { var i = -1, c = 0; h.forEach(function (v, j) { if (re.test(v)) { if (c === (k || 0) && i < 0) i = j; c += 1; } }); return i; };
@@ -276,7 +276,7 @@
       var lignes = rows.slice(1).filter(function (r) { return String(g(r, c.mle)).trim(); }).map(function (r) { return { matricule: String(r[c.mle]).trim(), nom: (g(r, c.nom) + ' ' + g(r, c.pre)).trim(), genre: g(r, c.gen), division: g(r, c.div), service: g(r, c.ser), observation: g(r, c.obs), modele: g(r, c.mod), pointure: g(r, c.poi), eu: g(r, c.eu), lettre: g(r, c.lt), parka: g(r, c.pk) }; });
       if (!lignes.length) throw new Error('Aucun agent trouvé dans le fichier.');
       return confirmerRemplacement({ lignes: lignes });
-    }).then(function (r) { z.textContent = r.agents + ' agent(s) enregistrés, ' + r.supprimes + ' ancienne(s) ligne(s) remplacée(s)' + (r.inconnus.length ? ', ' + r.inconnus.length + ' sans compte : ' + r.inconnus.slice(0, 6).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '.'; $('r-ok').disabled = false; $('r-drive').disabled = false; $('r-fin').value = ''; charger(); }).catch(function (e) { z.textContent = ''; $('r-ok').disabled = false; $('r-drive').disabled = false; toast(e.message); });
+    }).then(function (r) { z.textContent = r.agents + ' agent(s) enregistrés, ' + r.supprimes + ' ancienne(s) ligne(s) remplacée(s)' + (r.inconnus.length ? ', ' + r.inconnus.length + ' sans compte : ' + r.inconnus.slice(0, 6).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '.'; $('r-ok').disabled = false; $('r-drive').disabled = false; $('r-fin').value = ''; charger(); }).catch(function (e) { $('r-ok').disabled = false; $('r-drive').disabled = false; z.textContent = '⚠ ' + (e && e.message || e); z.style.color = '#B42318'; z.style.fontWeight = '700'; toast(e && e.message || String(e)); });
   }
   Array.prototype.forEach.call($('onglets').children, function (b) { b.addEventListener('click', function () { var v = b.dataset.v; $('v-moi').hidden = v !== 'moi'; $('v-equipe').hidden = v !== 'equipe'; Array.prototype.forEach.call($('onglets').children, function (x) { x.classList.toggle('actif', x === b); }); if (v === 'equipe') charger(); }); });
   ['e-q'].forEach(function (i) { $(i).addEventListener('input', dessiner); }); ['e-service', 'e-org', 'e-inc'].forEach(function (i) { $(i).addEventListener('change', dessiner); });
