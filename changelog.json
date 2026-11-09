@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-09-365",
+    "date": "2026-11-09",
+    "title": "Version 6.82.0 — Dotation EPI : la liste finale remplace toute la base, sans deuxième référence",
+    "changes": [
+      "Un seul import : « Importer la liste finale » (Mon équipe). Il REMPLACE toute la base des tailles : pour chaque agent, T-shirt · veste · combinaison = la lettre, pantalon = la même taille en chiffre (EU), chaussures = la pointure, veste en cuir / parka = la taille UK de la lettre « taille Parka » (norme du site : UK · lettre · chiffre). Un aperçu précède l'écriture ; l'ancienne base reste lisible dans le journal. Une personne de la liste sans compte est signalée (ajoutez-la, puis relancez l'import).",
+      "Supprimés : « Importer les deux références de taille (liste finale + Parka) », « Importer l'ancienne liste Veste en cuir », le choix entre deux références, les relances « écarts » et les colonnes de références. « Excel format final » suit le fichier de la liste finale (Genre, Mle, NOM, PRENOM, DIVISION, SERVICE, OBSERVATION, Modèle, Pointure, haut chiffre EU et lettre USA, taille Parka) avec la veste UK en colonne distincte.",
+      "À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-09-364",
     "date": "2026-11-09",
     "title": "Version 6.81.0 — Dotation EPI : la liste finale devient la référence unique (pointure et parka)",

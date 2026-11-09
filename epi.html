@@ -70,18 +70,13 @@
       <select id="e-service" aria-label="Service"><option value="">Tous les services</option></select>
       <label class="coche"><input type="checkbox" id="e-inc"> tailles manquantes seulement</label>
       <button class="btn-s" id="e-xl" type="button">⬇ Excel</button><button class="btn-p" id="e-pdf" type="button">🖨 PDF / Imprimer</button>
-      <button class="btn-s" id="e-final" type="button" title="Excel au format du fichier final (genre, matricule, nom, prénom, division, service, pointure, deux groupes de tailles, veste en cuir) : la structure choisie, ou toute la division">⬇ Excel format final</button><button class="btn-s" id="e-ecart" type="button" title="E-mail de relance aux agents dont les deux références de taille diffèrent (structure choisie, ou toute la division)">✉ Relancer les écarts</button>
-      <button class="btn-s" id="e-lien" type="button" title="Copie l'adresse de la page à envoyer aux agents (WhatsApp, messagerie…)">🔗 Copier le lien</button><button class="btn-s" id="e-mail" type="button" title="Un e-mail avec le lien à chaque agent affiché dont les tailles sont incomplètes">✉ Envoyer le lien aux incomplets</button>
+      <button class="btn-s" id="e-final" type="button" title="Excel au format du fichier final (genre, matricule, nom, prénom, division, service, pointure, deux groupes de tailles, veste en cuir) : la structure choisie, ou toute la division">⬇ Excel format final</button><button class="btn-s" id="e-lien" type="button" title="Copie l'adresse de la page à envoyer aux agents (WhatsApp, messagerie…)">🔗 Copier le lien</button><button class="btn-s" id="e-mail" type="button" title="Un e-mail avec le lien à chaque agent affiché dont les tailles sont incomplètes">✉ Envoyer le lien aux incomplets</button>
     </div><p class="note" id="e-info"></p></div>
     <div class="bloc"><h2>À commander <span class="note" id="r-sous"></span></h2><div id="e-recap"></div></div>
-    <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Tête</th><th>Veste cuir (UK)</th><th>Références</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
-    <div class="bloc" id="r-bloc" hidden><h2>Importer les deux références de taille (liste finale + Parka)</h2>
-      <p class="note"><b>Liste finale seule</b> (sans fichier Parka) : elle devient la <b>référence unique</b> — la pointure et la veste en cuir / parka (colonne « taille Parka ») remplacent les valeurs du dossier, toute autre référence est effacée. Avec le fichier Parka en plus : mode « deux références ». Un aperçu précède toujours l'écriture.</p>
-      <p class="note">Choisissez la <b>liste finale</b> (colonnes Mle, NOM, PRÉNOM, pointure, taille EU / lettre / parka) et le fichier <b>Parka</b> (feuille de la structure, colonne « Taille (EXP: 42) »). Chaque agent reçoit ses deux références (par exemple 42-L et 40-M) ; la pointure et la lettre du haut ne remplissent que les cases vides. Les écarts sont ensuite à relancer par e-mail.</p>
-      <div class="barre"><label class="note">Liste finale <input type="file" id="r-fin" accept=".xlsx,.xls,.xlsm"></label><label class="note">Fichier Parka (facultatif) <input type="file" id="r-par" accept=".xlsx,.xls,.xlsm"></label><input id="r-feuille" placeholder="Feuille Parka (ex. INFRA)" value="INFRA" style="width:170px" aria-label="Feuille Parka"><button class="btn-p" id="r-ok" type="button">📥 Importer</button><span id="r-res" class="note"></span></div></div>
-    <div class="bloc" id="i-bloc" hidden><h2>Importer l'ancienne liste « Veste en cuir »</h2>
-      <p class="note">Choisissez le fichier Excel de l'ancienne liste (colonnes : Matricule, Nom &amp; Prénom, Taille). Les tailles sont rapprochées des comptes par matricule puis par nom ; une taille de veste déjà saisie n'est jamais écrasée.</p>
-      <div class="barre"><input type="file" id="i-fic" accept=".xlsx,.xls,.xlsm,.csv"><span id="i-res" class="note"></span></div></div>
+    <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Tête</th><th>Veste cuir / parka</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
+    <div class="bloc" id="r-bloc" hidden><h2>Importer la liste finale</h2>
+      <p class="note">Le fichier Excel de la liste finale (colonnes Mle, NOM, PRÉNOM, pointure, « T-shirt · veste · combinaison » taille en chiffre EU et en lettre USA, « taille Parka ») <b>remplace toute la base des tailles</b>. Pour chaque agent : T-shirt · veste · combinaison = la lettre, pantalon = la même taille en chiffre, chaussures = la pointure, veste en cuir / parka = la taille UK de la lettre « parka » (UK · lettre · chiffre, comme dans la table du site). Un aperçu précède l'écriture ; l'ancienne base est gardée dans le journal.</p>
+      <div class="barre"><input type="file" id="r-fin" accept=".xlsx,.xls,.xlsm" aria-label="Liste finale"><button class="btn-p" id="r-ok" type="button">📥 Importer la liste finale</button><span id="r-res" class="note"></span></div></div>
   </section>
 </main>
 <dialog id="dlg"></dialog><div id="feuille" aria-hidden="true"></div>
@@ -116,7 +111,7 @@
 
   /* Équipe */
   function charger() {
-    Api.call('epi_liste').then(function (r) { LISTE = r; TABLE = r.table || TABLE; NIV = r.niveau; $('i-bloc').hidden = NIV < 3; $('r-bloc').hidden = NIV < 3; services(); dessiner(); }).catch(function (e) { toast(e.message); });
+    Api.call('epi_liste').then(function (r) { LISTE = r; TABLE = r.table || TABLE; NIV = r.niveau; $('r-bloc').hidden = NIV < 3; services(); dessiner(); }).catch(function (e) { toast(e.message); });
   }
   var PALETTE = ['E85D04', '7C3AED', '16A34A', '0EA5E9', 'DB2777', 'CA8A04', '0D9488', '64748B'], CONNUES = { SONATRACH: 'E85D04', ACOSCO: '7C3AED', GTP: '16A34A' };
   function couleur(n) { var k = String(n || '').toUpperCase(); if (CONNUES[k]) return CONNUES[k]; var h = 0; for (var i = 0; i < k.length; i += 1) h = (h * 31 + k.charCodeAt(i)) >>> 0; return PALETTE[h % PALETTE.length]; }
@@ -139,7 +134,7 @@
   }
   var LIB = { haut: 'T-shirt · veste · combinaison', pantalon: 'Pantalon', chaussures: 'Chaussures de sécurité (pointure)', tete: 'Bonnet / sous-casque (tour de tête)', veste_cuir: 'Veste en cuir (UK)' };
   function ordre(a, b) { var x = Number(a), y = Number(b); if (!isNaN(x) && !isNaN(y)) return x - y; var i = HAUTS.indexOf(a), j = HAUTS.indexOf(b); if (i >= 0 && j >= 0) return i - j; return a < b ? -1 : 1; }
-  function cellules(a) { return [a.haut, a.pantalon, a.chaussures, a.bonnet === '1' ? a.tete : '', a.veste_cuir ? a.veste_cuir + ' (' + lettreDe(a.veste_cuir) + ')' : '']; }
+  function cellules(a) { return [a.haut ? a.haut + (a.ref1_eu ? ' · ' + a.ref1_eu : '') : '', a.pantalon, a.chaussures, a.bonnet === '1' ? a.tete : '', a.veste_cuir ? 'UK ' + a.veste_cuir + ' · ' + lettreDe(a.veste_cuir) : '']; }
   function dessiner() {
     var liste = filtres(), r = recapDe(liste), gr = groupes(liste);
     $('e-info').textContent = liste.length + ' agent(s) dans ' + gr.length + ' organisme(s) / prestataire(s) · ' + r.complets + ' dossier(s) complet(s) · ' + (liste.length - r.complets) + ' avec des tailles manquantes';
@@ -153,11 +148,10 @@
     if (!z.childNodes.length) z.appendChild(el('p', 'note', 'Aucune taille renseignée pour l\'instant.'));
     var c = $('e-corps'); c.textContent = '';
     gr.forEach(function (g) {
-      var rg = recapDe(g.agents), th = el('tr', 'org'), td = el('td', null, g.nom + ' — ' + g.agents.length + ' agent(s) · ' + rg.complets + ' complet(s)'); td.colSpan = 9; td.style.setProperty('--c', '#' + g.couleur); th.appendChild(td); c.appendChild(th);
+      var rg = recapDe(g.agents), th = el('tr', 'org'), td = el('td', null, g.nom + ' — ' + g.agents.length + ' agent(s) · ' + rg.complets + ' complet(s)'); td.colSpan = 8; td.style.setProperty('--c', '#' + g.couleur); th.appendChild(td); c.appendChild(th);
       g.agents.forEach(function (a) {
         var tr = el('tr'), d = el('td'); d.appendChild(el('b', null, a.nom)); d.appendChild(el('div', 'note', [a.matricule, a.service, a.prestataire ? 'prestataire' : ''].filter(Boolean).join(' · '))); tr.appendChild(d);
         cellules(a).forEach(function (v) { tr.appendChild(el('td', null, v || '—')); });
-        var rf = el('td'); if (a.ref1_lettre || a.ref2_lettre) { rf.appendChild(el('div', null, (a.ref1_eu || '') + '-' + (a.ref1_lettre || '') + '  ·  ' + (a.ref2_eu || '') + '-' + (a.ref2_lettre || ''))); if (a.ecart) rf.appendChild(el('span', 'manque', 'à départager')); else if (a.choix) rf.appendChild(el('span', 'manque complet', 'choix ' + (a.choix === '1' ? 'liste' : 'Parka'))); } else rf.textContent = '—'; tr.appendChild(rf);
         var m = el('td'); if (!a.manquants.length) m.appendChild(el('span', 'manque complet', '✓')); else a.manquants.forEach(function (x) { m.appendChild(el('span', 'manque', x)); }); tr.appendChild(m);
         var ac = el('td'), b = el('button', 'btn-s petit', '✏️ Tailles'); b.type = 'button'; b.addEventListener('click', function () { dialogue(a); }); ac.appendChild(b); tr.appendChild(ac); c.appendChild(tr);
       });
@@ -238,88 +232,48 @@
     h += '</div>';
     $('feuille').innerHTML = h; setTimeout(function () { window.print(); }, 60);
   }
-  function importer(f) {
-    if (!f) return; var z = $('i-res'); z.textContent = 'Lecture du fichier…';
-    Promise.all([script(CDN_XLSX), f.arrayBuffer()]).then(function (x) {
-      var wb = window.XLSX.read(x[1], { type: 'array' }), rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' });
-      var h = -1, c = {}; rows.slice(0, 10).forEach(function (r, i) { if (h >= 0) return; var e = {}; r.forEach(function (v, k) { var s = String(v).toLowerCase(); if (/matricule/.test(s)) e.matricule = k; else if (/nom/.test(s)) e.nom = k; else if (/taille/.test(s)) e.taille = k; }); if (e.taille !== undefined && (e.matricule !== undefined || e.nom !== undefined)) { h = i; c = e; } });
-      if (h < 0) throw new Error('Colonnes introuvables : « Matricule » ou « Nom » et « Taille » attendues.');
-      var lignes = rows.slice(h + 1).map(function (r) { return { matricule: c.matricule === undefined ? '' : r[c.matricule], nom: c.nom === undefined ? '' : r[c.nom], taille: r[c.taille] }; }).filter(function (l) { return l.taille !== '' && (l.matricule || l.nom); });
-      return Api.call('epi_importer_vestes', { lignes: lignes });
-    }).then(function (r) {
-      z.textContent = r.importes + ' taille(s) importée(s), ' + r.deja + ' déjà renseignée(s)' + (r.inconnus.length ? ', ' + r.inconnus.length + ' non rapprochée(s) : ' + r.inconnus.slice(0, 8).map(function (i) { return (i.nom || i.matricule) + ' (' + i.raison + ')'; }).join(' ; ') + (r.inconnus.length > 8 ? '…' : '') : '') + '.'; charger();
-    }).catch(function (e) { z.textContent = ''; toast(e.message); }); $('i-fic').value = '';
-  }
-
-  /* Excel « format final » : mêmes colonnes que la liste finale (Genre, Mle, NOM, PRENOM, DIVISION, SERVICE, OBSERVATION, Modèle, Pointure, puis deux groupes chiffre · lettre · parka : liste du service / mesure Parka) */
-  var ENT_FINAL = ['Genre', 'Mle', 'NOM', 'PRENOM', 'DIVISION', 'SERVICE', 'OBSERVATION', 'Model de Distribution', 'Pointure Chaussure ', 'Taille en chiffre EU', 'taille en lettre USA', 'taille Parka', 'Taille en chiffre EU', 'taille en lettre USA', 'taille Parka', 'Veste en cuir (parka) : taille UK', 'Veste en cuir (parka) : lettre'];
+  /* Excel « format final » : mêmes colonnes que la liste finale du secrétariat (Genre, Mle, NOM, PRENOM, DIVISION, SERVICE, OBSERVATION, Modèle, Pointure, T-shirt · veste · combinaison : chiffre EU et lettre USA, taille Parka),
+     puis la veste en cuir / parka en UK : lettre et chiffre, dans des cases distinctes */
+  var ENT_FINAL = ['Genre', 'Mle', 'NOM', 'PRENOM', 'DIVISION', 'SERVICE', 'OBSERVATION', 'Model de Distribution', 'Pointure Chaussure ', 'T-shirt · veste · combinaison (haut) Taille en chiffre EU', 'T-shirt · veste · combinaison (haut) taille en lettre USA', 'taille Parka', 'taille Parka UK (chiffre)'];
+  var LETTRE_FICHIER = function (l) { return l === 'XXL' ? '2XL' : (l || null); };   // le fichier du secrétariat écrit « 2XL »
   function scinder(nom) { var m = String(nom || '').trim().split(/\s+/), i = 0; while (i < m.length && m[i] === m[i].toUpperCase() && /[A-ZÀ-Ý]/.test(m[i])) i += 1; if (i === 0 || i === m.length) { i = Math.max(1, m.length - 1); if (m.length === 1) i = 1; } return [m.slice(0, i).join(' '), m.slice(i).join(' ')]; }
   function ligneFinal(a) {
-    var np = scinder(a.nom), retenu = a.choix === '1' ? (a.ref1_eu || '') + '-' + (a.ref1_lettre || '') : a.choix === '2' ? (a.ref2_eu || '') + '-' + (a.ref2_lettre || '') : '';
-    var obs = [a.obs_ref, retenu ? 'Taille retenue : ' + retenu : (a.ecart ? 'À départager' : '')].filter(Boolean).join(' — ');
-    var num = function (x) { return /^\d+$/.test(String(x)) ? Number(x) : (x || null); };
-    return [a.genre || '', a.matricule, np[0], np[1], a.div_ref || 'INFRA', a.service_ref || a.service || '', obs || null, a.modele || null, num(a.chaussures), num(a.ref1_eu), a.ref1_lettre || null, a.ref1_parka || null, num(a.ref2_eu), a.ref2_lettre || null, a.ref2_parka || null, num(a.veste_cuir), a.veste_cuir ? lettreDe(a.veste_cuir) || null : null];
+    var np = scinder(a.nom), num = function (x) { return /^\d+$/.test(String(x)) ? Number(x) : (x || null); }, pk = a.veste_cuir ? lettreDe(a.veste_cuir) : '';
+    return [a.genre || '', a.matricule, np[0], np[1], a.div_ref || 'INFRA', a.service_ref || a.service || '', a.obs_ref || null, a.modele || null, num(a.chaussures), num(a.ref1_eu || a.pantalon), LETTRE_FICHIER(a.haut), LETTRE_FICHIER(pk), a.veste_cuir ? Number(a.veste_cuir) : null];
   }
   function excelFinal() {
     var sv = $('e-service').value, liste = (LISTE.agents || []).filter(function (a) { return !a.prestataire && (!sv || a.service === sv); });
     if (!liste.length) return toast('Aucun agent à exporter.');
     script('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js').then(function () {
       var wb = new window.ExcelJS.Workbook(), ws = wb.addWorksheet('Feuil1', { views: [{ state: 'frozen', ySplit: 1 }] }), fine = { style: 'thin', color: { argb: 'FFBFBFBF' } }, bord = { top: fine, left: fine, bottom: fine, right: fine };
-      var hr = ws.getRow(1); ENT_FINAL.forEach(function (h, i) { var c = hr.getCell(i + 1); c.value = h; c.font = { name: 'Calibri', bold: true }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i >= 15 ? 'FFE2EFDA' : i >= 12 ? 'FFFDE9D9' : i >= 9 ? 'FFDDEBF7' : 'FFF2F2F2' } }; c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = bord; });
+      var hr = ws.getRow(1); ENT_FINAL.forEach(function (h, i) { var c = hr.getCell(i + 1); c.value = h; c.font = { name: 'Calibri', bold: true }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i >= 11 ? 'FFE2EFDA' : i >= 9 ? 'FFDDEBF7' : 'FFF2F2F2' } }; c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = bord; });
+      hr.height = 44;
       liste.sort(function (a, b) { return (a.service || '') < (b.service || '') ? -1 : (a.service || '') > (b.service || '') ? 1 : a.nom < b.nom ? -1 : 1; }).forEach(function (a, r) {
-        var row = ws.getRow(r + 2); ligneFinal(a).forEach(function (v, i) { var c = row.getCell(i + 1); c.value = v; c.border = bord; c.font = { name: 'Calibri', size: 11 }; c.alignment = { vertical: 'middle', horizontal: i >= 8 ? 'center' : 'left', wrapText: i === 6 }; if (a.ecart && i >= 9 && i < 15) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } }; });
+        var row = ws.getRow(r + 2); ligneFinal(a).forEach(function (v, i) { var c = row.getCell(i + 1); c.value = v; c.border = bord; c.font = { name: 'Calibri', size: 11 }; c.alignment = { vertical: 'middle', horizontal: i >= 8 ? 'center' : 'left', wrapText: i === 6 }; });
       });
-      [8, 10, 18, 18, 10, 14, 30, 16, 10, 10, 10, 10, 10, 10, 10, 14, 14].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
+      [8, 10, 18, 18, 10, 14, 30, 16, 10, 16, 16, 12, 14].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
       return wb.xlsx.writeBuffer();
     }).then(function (buf) { telecharger(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'dotation_epi_final_' + (sv ? sv.replace(/[^A-Za-z0-9]+/g, '_') : 'division') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx'); toast('Excel exporté : ' + liste.length + ' agent(s)' + (sv ? ' — ' + sv : ' — toute la division') + '.'); }).catch(function (e) { toast('Export impossible : ' + e.message); });
   }
-  /* Relance des agents dont les deux références diffèrent : la structure choisie, ou toute la division */
-  function relancerEcarts() {
-    var sv = $('e-service').value, cibles = (LISTE.agents || []).filter(function (a) { return a.ecart && !a.prestataire && (!sv || a.service === sv); });
-    if (!cibles.length) return toast('Aucun agent à relancer' + (sv ? ' dans « ' + sv + ' »' : '') + ' : les deux références concordent ou le choix est fait.');
-    if (!window.confirm('Envoyer un e-mail de relance à ' + cibles.length + ' agent(s)' + (sv ? ' de « ' + sv + ' »' : ' de toute la division') + ' dont les deux références de taille diffèrent ?')) return;
-    var b = $('e-ecart'); b.disabled = true;
-    Api.call('epi_envoyer_lien', { mode: 'ecart', service: sv }).then(function (r) { toast('✉ ' + r.envoyes + ' e-mail(s) envoyé(s)' + (r.sans_adresse ? ', ' + r.sans_adresse + ' sans adresse valide' : '') + '.'); b.disabled = false; }).catch(function (e) { toast(e.message); b.disabled = false; });
-  }
-  /* Import des deux références : liste finale (réf. 1) + fichier Parka (réf. 2) */
-  function lireClasseur(f, feuille) { return Promise.all([script(CDN_XLSX), f.arrayBuffer()]).then(function (x) { var wb = window.XLSX.read(x[1], { type: 'array' }), n = feuille ? wb.SheetNames.filter(function (s) { return s.trim().toUpperCase() === feuille.trim().toUpperCase(); })[0] : wb.SheetNames[0]; if (!n) throw new Error('Feuille « ' + feuille + ' » introuvable dans ' + f.name); return window.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: '' }); }); }
-  /* 1) aperçu sans rien écrire, 2) confirmation, 3) écriture */
-  function apercuEtImport(lignes, finale) {
-    var base = finale ? { mode: 'finale' } : {};
-    return Api.call('epi_importer_refs', Object.assign({ lignes: lignes, apercu: true }, base)).then(function (ap) {
-      var txt = finale
-        ? 'Aperçu (rien n\'est encore écrit) :\n• ' + ap.importes + ' agent(s) mis à jour d\'après la liste finale (référence unique)\n• La POINTURE et la VESTE EN CUIR / PARKA (UK) sont alignées sur la liste : ' + ap.ecrasees + ' valeur(s) déjà saisie(s) seront remplacées' + (ap.exemples && ap.exemples.length ? '\n   ex. ' + ap.exemples.join('\n   ex. ') : '') + '\n• Toute autre référence ou choix précédent est effacé (' + ap.refs_remplacees + ' agent(s) concerné(s))\n• Haut, pantalon, bonnet et remarques sont conservés' + (ap.inconnus.length ? '\n• ' + ap.inconnus.length + ' ligne(s) sans compte, ignorée(s) : ' + ap.inconnus.slice(0, 5).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '\n\nÉcrire ces données ?'
-        : 'Aperçu (rien n\'est encore écrit) :\n• ' + ap.importes + ' agent(s) reçoivent leurs deux références de taille (liste du service et Parka)\n• ' + ap.ecarts + ' ont deux lettres différentes (à départager)\n• AUCUNE taille déjà saisie n\'est écrasée : la pointure est remplie pour ' + ap.remplis_pointure + ' agent(s) et la lettre du haut pour ' + ap.remplis_haut + ', seulement là où la case est vide' + (ap.refs_remplacees ? '\n• ' + ap.refs_remplacees + ' agent(s) avaient déjà des références : elles sont remplacées' : '') + (ap.inconnus.length ? '\n• ' + ap.inconnus.length + ' ligne(s) sans compte, ignorée(s) : ' + ap.inconnus.slice(0, 5).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '\n\nÉcrire ces données ?';
-      if (!window.confirm(txt)) throw new Error('Import annulé : rien n\'a été écrit.');
-      return Api.call('epi_importer_refs', Object.assign({ lignes: lignes }, base));
-    });
-  }
-  function importerRefs() {
-    var ff = $('r-fin').files[0], fp = $('r-par').files[0], z = $('r-res'); if (!ff) return toast('Choisissez la liste finale.');
-    var finale = !fp;   // la liste finale seule = référence unique : ses valeurs remplacent celles du dossier
-    z.textContent = 'Lecture des fichiers…'; $('r-ok').disabled = true;
-    Promise.all([lireClasseur(ff, ''), fp ? lireClasseur(fp, $('r-feuille').value) : Promise.resolve([])]).then(function (x) {
-      var fin = x[0], par = x[1], H = function (r) { return r.map(function (v) { return String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }); };
-      var g0 = function (r, k) { return k < 0 ? '' : r[k]; }, hf = H(fin[0] || []), col = function (re, nth) { var k = -1, n = 0; hf.forEach(function (v, i) { if (re.test(v)) { if (n === (nth || 0) && k < 0) k = i; n += 1; } }); return k; };
+  /* Import de la liste finale : remplace toute la base (aperçu, puis confirmation, puis écriture) */
+  function lireListe(f) { return Promise.all([script(CDN_XLSX), f.arrayBuffer()]).then(function (x) { var wb = window.XLSX.read(x[1], { type: 'array' }); return window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' }); }); }
+  function importerListe() {
+    var f = $('r-fin').files[0], z = $('r-res'); if (!f) return toast('Choisissez la liste finale (fichier Excel).');
+    z.textContent = 'Lecture du fichier…'; $('r-ok').disabled = true;
+    lireListe(f).then(function (rows) {
+      var H = rows[0] || [], n = function (v) { return String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }, h = H.map(n), col = function (re, k) { var i = -1, c = 0; h.forEach(function (v, j) { if (re.test(v)) { if (c === (k || 0) && i < 0) i = j; c += 1; } }); return i; };
       var c = { gen: col(/^genre/), mle: col(/^mle|matricule/), nom: col(/^nom/), pre: col(/^prenom/), div: col(/^division/), ser: col(/^service/), obs: col(/^observ/), mod: col(/^model/), poi: col(/pointure/), eu: col(/chiffre eu/, 0), lt: col(/lettre/, 0), pk: col(/parka/, 0) };
-      if (c.mle < 0) throw new Error('Liste finale : colonne « Mle » introuvable.');
-      if (finale) {   // référence unique : EU · lettre · parka (UK) de la liste finale, aucune autre référence
-        var lg = fin.slice(1).filter(function (r) { return String(g0(r, c.mle)).trim(); }).map(function (r) { return { matricule: String(r[c.mle]).trim(), nom: (g0(r, c.nom) + ' ' + g0(r, c.pre)).trim(), genre: g0(r, c.gen), division: g0(r, c.div), service: g0(r, c.ser), observation: g0(r, c.obs), modele: g0(r, c.mod), pointure: g0(r, c.poi), eu1: g0(r, c.eu), l1: g0(r, c.lt), parka: g0(r, c.pk) }; });
-        return apercuEtImport(lg, true);
-      }
-      var hp = H(par[0] || []), pm = hp.findIndex(function (v) { return /matricule|^mle/.test(v); }), pt = hp.findIndex(function (v) { return /^taille/.test(v); });
-      if (pm < 0 || pt < 0) throw new Error('Fichier Parka : colonnes « Matricule » et « Taille » introuvables dans la feuille « ' + $('r-feuille').value + ' ».');
-      var tp = {}; par.slice(1).forEach(function (r) { var m = String(r[pm]).trim(); if (m) tp[m] = r[pt]; });
+      if (c.mle < 0) throw new Error('Colonne « Mle » (matricule) introuvable.'); if (c.eu < 0 || c.lt < 0) throw new Error('Colonnes « taille en chiffre EU » et « taille en lettre USA » introuvables.');
       var g = function (r, k) { return k < 0 ? '' : r[k]; };
-      var lignes = fin.slice(1).filter(function (r) { return String(g(r, c.mle)).trim(); }).map(function (r) {
-        var m = String(r[c.mle]).trim(); return { matricule: m, nom: (g(r, c.nom) + ' ' + g(r, c.pre)).trim(), genre: g(r, c.gen), division: g(r, c.div), service: g(r, c.ser), observation: g(r, c.obs), modele: g(r, c.mod), pointure: g(r, c.poi), eu1: g(r, c.eu), l1: g(r, c.lt), p1: g(r, c.pk), eu2: tp[m] === undefined ? '' : tp[m] };
+      var lignes = rows.slice(1).filter(function (r) { return String(g(r, c.mle)).trim(); }).map(function (r) { return { matricule: String(r[c.mle]).trim(), nom: (g(r, c.nom) + ' ' + g(r, c.pre)).trim(), genre: g(r, c.gen), division: g(r, c.div), service: g(r, c.ser), observation: g(r, c.obs), modele: g(r, c.mod), pointure: g(r, c.poi), eu: g(r, c.eu), lettre: g(r, c.lt), parka: g(r, c.pk) }; });
+      if (!lignes.length) throw new Error('Aucun agent trouvé dans le fichier.');
+      return Api.call('epi_remplacer_base', { lignes: lignes, apercu: true }).then(function (ap) {
+        var txt = 'Aperçu (rien n\'est encore écrit) :\n• ' + ap.agents + ' agent(s) seront enregistrés d\'après la liste finale\n• La base actuelle (' + ap.supprimes + ' ligne(s)) est SUPPRIMÉE puis remplacée ; elle reste lisible dans le journal\n• T-shirt · veste · combinaison = la lettre ; pantalon = la même taille en chiffre ; chaussures = la pointure ; veste en cuir / parka = UK de la lettre « parka »' + (ap.anomalies.length ? '\n• À vérifier : ' + ap.anomalies.slice(0, 5).map(function (a) { return a.nom + ' (' + a.anomalies.join(', ') + ')'; }).join(' ; ') : '') + (ap.inconnus.length ? '\n• ' + ap.inconnus.length + ' ligne(s) SANS COMPTE, ignorée(s) : ' + ap.inconnus.slice(0, 6).map(function (i) { return i.nom || i.matricule; }).join(' ; ') + ' (ajoutez ces personnes, puis relancez l\'import)' : '') + '\n\nRemplacer toute la base ?';
+        if (!window.confirm(txt)) throw new Error('Import annulé : rien n\'a été écrit.');
+        return Api.call('epi_remplacer_base', { lignes: lignes });
       });
-      var vus = {}; lignes.forEach(function (l) { vus[l.matricule] = 1; });
-      par.slice(1).forEach(function (r) { var m = String(r[pm]).trim(); if (m && !vus[m]) lignes.push({ matricule: m, nom: String(r[hp.findIndex(function (v) { return /nom/.test(v); })] || ''), eu2: r[pt] }); });   // dans Parka seulement
-      return apercuEtImport(lignes, false);
-    }).then(function (r) { z.textContent = r.importes + ' agent(s) mis à jour, ' + r.ecarts + ' avec deux références différentes' + (r.inconnus.length ? ', ' + r.inconnus.length + ' sans compte : ' + r.inconnus.slice(0, 6).map(function (i) { return i.nom || i.matricule; }).join(' ; ') + (r.inconnus.length > 6 ? '…' : '') : '') + '.'; $('r-ok').disabled = false; charger(); }).catch(function (e) { z.textContent = ''; $('r-ok').disabled = false; toast(e.message); });
+    }).then(function (r) { z.textContent = r.agents + ' agent(s) enregistrés, ' + r.supprimes + ' ancienne(s) ligne(s) remplacée(s)' + (r.inconnus.length ? ', ' + r.inconnus.length + ' sans compte : ' + r.inconnus.slice(0, 6).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '.'; $('r-ok').disabled = false; $('r-fin').value = ''; charger(); }).catch(function (e) { z.textContent = ''; $('r-ok').disabled = false; toast(e.message); });
   }
-  $('e-final').addEventListener('click', excelFinal); $('e-ecart').addEventListener('click', relancerEcarts); $('r-ok').addEventListener('click', importerRefs);
   Array.prototype.forEach.call($('onglets').children, function (b) { b.addEventListener('click', function () { var v = b.dataset.v; $('v-moi').hidden = v !== 'moi'; $('v-equipe').hidden = v !== 'equipe'; Array.prototype.forEach.call($('onglets').children, function (x) { x.classList.toggle('actif', x === b); }); if (v === 'equipe') charger(); }); });
   ['e-q'].forEach(function (i) { $(i).addEventListener('input', dessiner); }); ['e-service', 'e-org', 'e-inc'].forEach(function (i) { $(i).addEventListener('change', dessiner); });
   $('e-lien').addEventListener('click', function () { var u = new URL('epi.html', location.href).href; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('Lien copié : ' + u); }, function () { window.prompt('Copiez ce lien :', u); }); });
@@ -329,7 +283,7 @@
     var b = this; b.disabled = true;
     Api.call('epi_envoyer_lien', { emails: cibles.map(function (a) { return a.email; }) }).then(function (r) { toast('✉ ' + r.envoyes + ' e-mail(s) envoyé(s)' + (r.sans_adresse ? ', ' + r.sans_adresse + ' sans adresse valide' : '') + '.'); b.disabled = false; }).catch(function (e) { toast(e.message); b.disabled = false; });
   });
-  $('e-xl').addEventListener('click', excel); $('e-pdf').addEventListener('click', pdf); $('i-fic').addEventListener('change', function () { importer(this.files && this.files[0]); });
+  $('e-xl').addEventListener('click', excel); $('e-pdf').addEventListener('click', pdf);
   moi();
 })();
 </script>
