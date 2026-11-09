@@ -60,7 +60,7 @@
     <div class="bloc"><h2 id="m-titre">Mes tailles</h2><p class="note" id="m-etat"></p><div id="m-form"></div></div>
     <div class="bloc"><details><summary style="cursor:pointer;font-weight:700">📏 Comment choisir ma taille ? (table de correspondance des vestes)</summary>
       <table class="guide" style="margin-top:8px"><thead><tr><th>Taille internationale</th><th>Tour de poitrine (cm)</th><th>Taille UK</th></tr></thead><tbody id="g-corps"></tbody></table>
-      <p class="note">Mesurez le tour de poitrine sous les bras, à plat. Entre deux tailles, prenez la plus grande. Pantalon : donnez la taille numérique, ou le tour de taille. Le casque de sécurité est réglable : le tour de tête ne sert que pour un bonnet ou un sous-casque.</p></details></div>
+      <p class="note">Mesurez le tour de poitrine sous les bras, à plat. Entre deux tailles, prenez la plus grande. Pantalon : donnez la taille numérique, ou le tour de taille.</p></details></div>
   </section>
 
   <section id="v-equipe" hidden>
@@ -70,10 +70,11 @@
       <select id="e-service" aria-label="Service"><option value="">Tous les services</option></select>
       <label class="coche"><input type="checkbox" id="e-inc"> tailles manquantes seulement</label>
       <button class="btn-s" id="e-xl" type="button">⬇ Excel</button><button class="btn-p" id="e-pdf" type="button">🖨 PDF / Imprimer</button>
+      <button class="btn-s" id="e-maj" type="button" title="E-mail de mise à jour à tous les agents de l'organisme choisi (ou de toute la division) : leurs tailles actuelles et un lien pour les vérifier">✉ Relancer pour mise à jour</button>
       <button class="btn-s" id="e-final" type="button" title="Excel au format du fichier final (genre, matricule, nom, prénom, division, service, pointure, deux groupes de tailles, veste en cuir) : la structure choisie, ou toute la division">⬇ Excel format final</button><button class="btn-s" id="e-lien" type="button" title="Copie l'adresse de la page à envoyer aux agents (WhatsApp, messagerie…)">🔗 Copier le lien</button><button class="btn-s" id="e-mail" type="button" title="Un e-mail avec le lien à chaque agent affiché dont les tailles sont incomplètes">✉ Envoyer le lien aux incomplets</button>
     </div><p class="note" id="e-info"></p></div>
     <div class="bloc"><h2>À commander <span class="note" id="r-sous"></span></h2><div id="e-recap"></div></div>
-    <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Tête</th><th>Veste cuir / parka</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
+    <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Veste cuir / parka</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
     <div class="bloc" id="r-bloc"><h2>Importer la liste finale</h2>
       <p class="note">Le fichier Excel de la liste finale (colonnes Mle, NOM, PRÉNOM, pointure, « T-shirt · veste · combinaison » taille en chiffre EU et en lettre USA, « taille Parka ») <b>remplace toute la base des tailles</b>. Pour chaque agent : T-shirt · veste · combinaison = la lettre, pantalon = la même taille en chiffre, chaussures = la pointure, veste en cuir / parka = la taille UK de la lettre « parka » (UK · lettre · chiffre, comme dans la table du site). Un aperçu précède l'écriture ; l'ancienne base est gardée dans le journal.</p>
       <div class="barre"><input type="file" id="r-fin" accept=".xlsx,.xls,.xlsm" aria-label="Liste finale"><button class="btn-p" id="r-ok" type="button">📥 Importer la liste finale</button><button class="btn-p" id="r-drive" type="button" title="La liste finale est déjà dans le Drive (Logistique › « Dotation EPI — liste finale ») : aucun fichier à choisir">📥 Importer celle du Drive</button><span id="r-res" class="note"></span></div></div>
@@ -128,13 +129,13 @@
     return Object.keys(g).sort(function (x, y) { return x === 'SONATRACH' ? -1 : y === 'SONATRACH' ? 1 : x < y ? -1 : 1; }).map(function (n) { return { nom: n, agents: g[n], couleur: couleur(n) }; });
   }
   function recapDe(agents) {
-    var out = { haut: {}, pantalon: {}, chaussures: {}, tete: {}, veste_cuir: {} }, complets = 0;
-    agents.forEach(function (a) { if (!a.manquants.length) complets += 1; ['haut', 'pantalon', 'chaussures', 'veste_cuir'].forEach(function (k) { if (a[k]) out[k][a[k]] = (out[k][a[k]] || 0) + 1; }); if (a.bonnet === '1' && a.tete) out.tete[a.tete] = (out.tete[a.tete] || 0) + 1; });
+    var out = { haut: {}, pantalon: {}, chaussures: {}, veste_cuir: {} }, complets = 0;
+    agents.forEach(function (a) { if (!a.manquants.length) complets += 1; ['haut', 'pantalon', 'chaussures', 'veste_cuir'].forEach(function (k) { if (a[k]) out[k][a[k]] = (out[k][a[k]] || 0) + 1; }); });
     return { articles: out, agents: agents.length, complets: complets };
   }
-  var LIB = { haut: 'T-shirt · veste · combinaison', pantalon: 'Pantalon', chaussures: 'Chaussures de sécurité (pointure)', tete: 'Bonnet / sous-casque (tour de tête)', veste_cuir: 'Veste en cuir (UK)' };
+  var LIB = { haut: 'T-shirt · veste · combinaison', pantalon: 'Pantalon', chaussures: 'Chaussures de sécurité (pointure)', veste_cuir: 'Veste en cuir (UK)' };
   function ordre(a, b) { var x = Number(a), y = Number(b); if (!isNaN(x) && !isNaN(y)) return x - y; var i = HAUTS.indexOf(a), j = HAUTS.indexOf(b); if (i >= 0 && j >= 0) return i - j; return a < b ? -1 : 1; }
-  function cellules(a) { return [a.haut ? a.haut + (a.ref1_eu ? ' · ' + a.ref1_eu : '') : '', a.pantalon, a.chaussures, a.bonnet === '1' ? a.tete : '', a.veste_cuir ? 'UK ' + a.veste_cuir + ' · ' + lettreDe(a.veste_cuir) : '']; }
+  function cellules(a) { return [a.haut ? a.haut + (a.ref1_eu ? ' · ' + a.ref1_eu : '') : '', a.pantalon, a.chaussures, a.veste_cuir ? 'UK ' + a.veste_cuir + ' · ' + lettreDe(a.veste_cuir) : '']; }
   function dessiner() {
     var liste = filtres(), r = recapDe(liste), gr = groupes(liste);
     $('e-info').textContent = liste.length + ' agent(s) dans ' + gr.length + ' organisme(s) / prestataire(s) · ' + r.complets + ' dossier(s) complet(s) · ' + (liste.length - r.complets) + ' avec des tailles manquantes';
@@ -148,7 +149,7 @@
     if (!z.childNodes.length) z.appendChild(el('p', 'note', 'Aucune taille renseignée pour l\'instant.'));
     var c = $('e-corps'); c.textContent = '';
     gr.forEach(function (g) {
-      var rg = recapDe(g.agents), th = el('tr', 'org'), td = el('td', null, g.nom + ' — ' + g.agents.length + ' agent(s) · ' + rg.complets + ' complet(s)'); td.colSpan = 8; td.style.setProperty('--c', '#' + g.couleur); th.appendChild(td); c.appendChild(th);
+      var rg = recapDe(g.agents), th = el('tr', 'org'), td = el('td', null, g.nom + ' — ' + g.agents.length + ' agent(s) · ' + rg.complets + ' complet(s)'); td.colSpan = 7; td.style.setProperty('--c', '#' + g.couleur); th.appendChild(td); c.appendChild(th);
       g.agents.forEach(function (a) {
         var tr = el('tr'), d = el('td'); d.appendChild(el('b', null, a.nom)); d.appendChild(el('div', 'note', [a.matricule, a.service, a.prestataire ? 'prestataire' : ''].filter(Boolean).join(' · '))); tr.appendChild(d);
         cellules(a).forEach(function (v) { tr.appendChild(el('td', null, v || '—')); });
@@ -162,8 +163,8 @@
     d.appendChild(EpiForm.formulaire(a, TABLE, function (v) { v.email = a.email; return Api.call('epi_enregistrer', v).then(function () { toast('Tailles enregistrées.'); d.close(); charger(); }).catch(function (e) { toast(e.message); throw e; }); }, { toast: toast, prefixe: 'd' }));
     var f = el('button', 'btn-s', 'Fermer'); f.type = 'button'; f.style.marginTop = '8px'; f.addEventListener('click', function () { d.close(); }); d.appendChild(f); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
   }
-  var ENTETES = ['Matricule', 'Nom', 'Fonction', 'Service', 'Haut', 'Pantalon', 'Pointure', 'Tour de tête', 'Veste cuir (UK)', 'Veste (lettre)', 'Remarque', 'Dossier'];
-  function ligneAgent(a) { return [a.matricule, a.nom, a.fonction, a.service, a.haut, a.pantalon, a.chaussures, a.bonnet === '1' ? a.tete : '', a.veste_cuir, lettreDe(a.veste_cuir), a.remarque, a.manquants.length ? 'Manque : ' + a.manquants.join(', ') : 'Complet']; }
+  var ENTETES = ['Matricule', 'Nom', 'Fonction', 'Service', 'Haut', 'Pantalon', 'Pointure', 'Veste cuir (UK)', 'Veste (lettre)', 'Remarque', 'Dossier'];
+  function ligneAgent(a) { return [a.matricule, a.nom, a.fonction, a.service, a.haut, a.pantalon, a.chaussures, a.veste_cuir, lettreDe(a.veste_cuir), a.remarque, a.manquants.length ? 'Manque : ' + a.manquants.join(', ') : 'Complet']; }
   function telecharger(blob, nom) { var a = el('a'); a.href = URL.createObjectURL(blob); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
   /* Excel mis en forme (ExcelJS) : titre, bandeau par organisme, lignes alternées, cases manquantes en rouge, feuille « À commander » par organisme */
   function excel() {
@@ -181,15 +182,15 @@
         b.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FFFFFFFF' } }; b.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + g.couleur } }; b.alignment = { vertical: 'middle', indent: 1 }; ws.getRow(ligne).height = 22; ligne += 1;
         g.agents.forEach(function (a, i) {
           var row = ws.getRow(ligne), v = ligneAgent(a); v.forEach(function (x, k) {
-            var c = row.getCell(k + 1); c.value = x === '' ? null : (/^\d+$/.test(String(x)) && k >= 4 && k <= 8 ? Number(x) : x); c.border = bord; c.font = { name: 'Calibri', size: 10.5 }; c.alignment = { vertical: 'middle', horizontal: k >= 4 && k <= 9 ? 'center' : 'left', wrapText: k === 10 };
+            var c = row.getCell(k + 1); c.value = x === '' ? null : (/^\d+$/.test(String(x)) && k >= 4 && k <= 7 ? Number(x) : x); c.border = bord; c.font = { name: 'Calibri', size: 10.5 }; c.alignment = { vertical: 'middle', horizontal: k >= 4 && k <= 8 ? 'center' : 'left', wrapText: k === 9 };
             if (i % 2) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F5F1' } };
-            if (k === 11) { c.font = { name: 'Calibri', size: 10.5, bold: true, color: { argb: a.manquants.length ? 'FFB91C1C' : 'FF166534' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: a.manquants.length ? 'FFFEE2E2' : 'FFDCFCE7' } }; }
+            if (k === 10) { c.font = { name: 'Calibri', size: 10.5, bold: true, color: { argb: a.manquants.length ? 'FFB91C1C' : 'FF166534' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: a.manquants.length ? 'FFFEE2E2' : 'FFDCFCE7' } }; }
           });
           [['haut', 4], ['pantalon', 5], ['chaussures', 6]].forEach(function (m) { if (a.manquants.indexOf(m[0]) >= 0) { var c = row.getCell(m[1] + 1); c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFECACA' } }; } });
           ligne += 1;
         });
       });
-      [12, 26, 28, 24, 9, 11, 9, 10, 11, 10, 28, 20].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
+      [12, 26, 28, 24, 9, 11, 9, 11, 10, 28, 20].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
       /* À commander : une ligne par article et taille, une colonne par organisme + total */
       var wc = wb.addWorksheet('À commander', { views: [{ state: 'frozen', ySplit: 3 }] }), noms = gr.map(function (g) { return g.nom; }), rec = {}; gr.forEach(function (g) { rec[g.nom] = recapDe(g.agents).articles; });
       wc.mergeCells(1, 1, 1, noms.length + 3); var tc = wc.getCell(1, 1); tc.value = 'À COMMANDER — par article, taille et organisme / prestataire'; tc.font = { name: 'Calibri', size: 15, bold: true, color: { argb: 'FFFFFFFF' } }; tc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } }; tc.alignment = { indent: 1, vertical: 'middle' }; wc.getRow(1).height = 28;
@@ -216,7 +217,7 @@
     gr.forEach(function (g) {
       var rg = recapDe(g.agents);
       h += '<div style="margin-top:12px;break-inside:avoid-page"><div style="background:#' + g.couleur + ';color:#fff;padding:5px 10px;border-radius:6px 6px 0 0;font-weight:800;font-size:12px">' + esc(g.nom) + ' <span style="font-weight:600;opacity:.9">— ' + g.agents.length + ' agent(s) · ' + rg.complets + ' complet(s)</span></div>' +
-        '<table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Agent', 'Haut', 'Pantalon', 'Pointure', 'Tête', 'Veste cuir (UK)', 'Dossier'].map(function (x) { return '<th ' + th + '>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        '<table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Agent', 'Haut', 'Pantalon', 'Pointure', 'Veste cuir (UK)', 'Dossier'].map(function (x) { return '<th ' + th + '>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
         g.agents.map(function (a, i) {
           var bg = i % 2 ? 'background:#FAF7F2;' : '';
           return '<tr style="' + bg + 'break-inside:avoid"><td ' + td + '><b>' + esc(a.nom) + '</b><div style="font-size:9px;color:#6B7280">' + esc([a.matricule, a.service].filter(Boolean).join(' · ')) + '</div></td>' + cellules(a).map(function (v) { return '<td ' + td + '>' + (esc(v) || '<span style="color:#B91C1C">—</span>') + '</td>'; }).join('') +
@@ -231,6 +232,14 @@
     });
     h += '</div>';
     $('feuille').innerHTML = h; setTimeout(function () { window.print(); }, 60);
+  }
+  /* Relance de mise à jour : tout l'organisme choisi dans le filtre (SONATRACH, ACOSCO, GTP…), ou toute la division s'il n'y en a pas ; la structure choisie restreint encore */
+  function relancerMaj() {
+    var og = $('e-org').value, sv = $('e-service').value, cibles = (LISTE.agents || []).filter(function (a) { return !a.prestataire && (!og || a.organisme === og) && (!sv || a.service === sv); });
+    if (!cibles.length) return toast('Aucun agent à relancer dans cette sélection.');
+    if (!window.confirm('Envoyer un e-mail de mise à jour des tailles à ' + cibles.length + ' agent(s)' + (og ? ' de « ' + og + ' »' : ' de toute la division') + (sv ? ' (service « ' + sv + ' »)' : '') + ' ?\nChacun reçoit ses tailles actuelles et un lien pour les vérifier. Les comptes prestataires ne sont pas concernés.')) return;
+    var b = $('e-maj'); b.disabled = true;
+    Api.call('epi_envoyer_lien', { mode: 'maj', organisme: og, service: sv }).then(function (r) { toast('✉ ' + r.envoyes + ' e-mail(s) envoyé(s)' + (r.sans_adresse ? ', ' + r.sans_adresse + ' sans adresse valide' : '') + '.'); b.disabled = false; }).catch(function (e) { toast(e.message); b.disabled = false; });
   }
   /* Excel « format final » : mêmes colonnes que la liste finale du secrétariat (Genre, Mle, NOM, PRENOM, DIVISION, SERVICE, OBSERVATION, Modèle, Pointure, T-shirt · veste · combinaison : chiffre EU et lettre USA, taille Parka),
      puis la veste en cuir / parka en UK : lettre et chiffre, dans des cases distinctes */

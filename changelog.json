@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-09-369",
+    "date": "2026-11-09",
+    "title": "Version 6.84.0 — Dotation EPI : « Tête » retirée, relance de mise à jour par organisme",
+    "changes": [
+      "Le bonnet et le tour de tête disparaissent du formulaire, du tableau, des exports Excel / PDF et du récapitulatif à commander.",
+      "Nouveau bouton « ✉ Relancer pour mise à jour » (Mon équipe) : e-mail à tous les agents de l'organisme choisi dans le filtre (SONATRACH, ACOSCO, GTP…) ou de toute la division, éventuellement restreint à un service. Chacun reçoit ses tailles actuelles (T-shirt · veste · combinaison, pantalon, pointure, veste en cuir / parka) et un lien « Vérifier mes tailles » ; confirmation avant l'envoi, un e-mail par personne, comptes prestataires exclus. À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-09-368",
     "date": "2026-11-09",
     "title": "Version 6.83.0 — Dotation EPI : la liste finale s'importe toute seule",

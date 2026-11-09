@@ -1,5 +1,5 @@
 /**
- * Formulaire des tailles de dotation EPI (haut, pantalon, pointure, veste en cuir UK, bonnet + tour de tête, remarque).
+ * Formulaire des tailles de dotation EPI (haut, pantalon, pointure, veste en cuir UK, remarque).
  * Partagé par la page « Dotation EPI » (epi.html) et par « Mon profil » (profil.html) : les deux écrivent dans le même fichier (onglet TaillesEPI de la passerelle).
  *   EpiForm.formulaire(tailles, table, surEnregistrer(valeurs) → Promise, { toast }) → élément DOM
  */
@@ -30,15 +30,12 @@ var EpiForm = (function () {
     TABLE.forEach(function (r) { var o = el('option', null, 'UK ' + r.uk + ' — ' + r.lettre + ' (poitrine ' + r.poitrine + ' cm)'); o.value = String(r.uk); vc.appendChild(o); }); vc.value = String(t.veste_cuir || '');
     var dv = champ('veste_cuir', 'Veste en cuir (taille UK)', vc, '');
     var sug = el('button', 'petit', 'Reprendre la taille de mon haut'); sug.type = 'button'; sug.addEventListener('click', function () { var uk = ukDe(haut.value); if (uk) vc.value = String(uk); else toast('Indiquez d\'abord une taille de haut en lettres (S, M, L…).'); }); dv.appendChild(sug);
-    var bd = el('div', 'large'), lb = el('label', 'coche'), bon = el('input'); bon.type = 'checkbox'; bon.checked = t.bonnet === '1' || t.bonnet === true; lb.appendChild(bon); lb.appendChild(document.createTextNode(' Je demande un bonnet ou un sous-casque')); bd.appendChild(lb); g.appendChild(bd);
-    var tet = el('input'); tet.type = 'number'; tet.min = 50; tet.max = 66; tet.placeholder = 'cm'; tet.value = t.tete || ''; var dt = champ('tete', 'Tour de tête (cm)', tet, 'Seulement pour un bonnet ou un sous-casque : le casque de sécurité est réglable.');
-    function majTete() { dt.hidden = !bon.checked; } bon.addEventListener('change', majTete); majTete();
     var rem = el('textarea'); rem.rows = 2; rem.maxLength = 200; rem.value = t.remarque || ''; champ('remarque', 'Remarque (facultatif)', rem, '', true);
     f.appendChild(g);
     var b = el('div'); b.style.marginTop = '12px'; var s = el('button', 'btn-p', '💾 Enregistrer'); s.type = 'button'; b.appendChild(s); f.appendChild(b);
     s.addEventListener('click', function () {
       s.disabled = true;
-      surEnregistrer({ haut: haut.value, pantalon: pan.value, chaussures: cha.value, veste_cuir: vc.value, bonnet: bon.checked ? '1' : '', tete: bon.checked ? tet.value : '', remarque: rem.value }).then(function () { s.disabled = false; }, function () { s.disabled = false; });
+      surEnregistrer({ haut: haut.value, pantalon: pan.value, chaussures: cha.value, veste_cuir: vc.value, remarque: rem.value }).then(function () { s.disabled = false; }, function () { s.disabled = false; });
     });
     return f;
   }
