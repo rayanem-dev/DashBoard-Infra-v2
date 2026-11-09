@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-368",
+    "date": "2026-11-09",
+    "title": "Version 6.83.0 — Dotation EPI : la liste finale s'importe toute seule",
+    "changes": [
+      "À la première utilisation du module Dotation EPI après le déploiement (ouverture du portail ou de la page), la passerelle remplace toute la base des tailles par la liste finale du Drive (Logistique › « Dotation EPI — liste finale »), sans rien à cliquer : agents rapprochés par matricule puis par nom, T-shirt · veste · combinaison = la lettre, pantalon = la même taille en chiffre, chaussures = la pointure, veste en cuir / parka = UK de la lettre « parka ». Une seule fois par liste ; ancienne base sauvegardée dans le journal ; trace « epi_import_auto » ; 3 essais au plus ; le module n'est jamais bloqué. Les personnes sans compte (ex. KHERFI) sont listées dans le journal ; le bouton « Importer celle du Drive » permet de relancer. À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-09-367",
     "date": "2026-11-09",
     "title": "Version 6.82.2 — Import EPI : erreurs visibles et bloc toujours affiché",
