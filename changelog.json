@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-366",
+    "date": "2026-11-09",
+    "title": "Version 6.82.1 — Dotation EPI : import de la liste finale depuis le Drive, sans fichier à choisir",
+    "changes": [
+      "La liste finale (35 agents) est déposée dans le Drive (Logistique › « Dotation EPI — liste finale »). Le bouton « 📥 Importer celle du Drive » (Mon équipe) la lit directement : aperçu, confirmation, puis remplacement de toute la base. Le bouton avec choix de fichier reste disponible pour une prochaine mise à jour. À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-09-365",
     "date": "2026-11-09",
     "title": "Version 6.82.0 — Dotation EPI : la liste finale remplace toute la base, sans deuxième référence",
