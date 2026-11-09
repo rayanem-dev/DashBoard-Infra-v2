@@ -53,6 +53,18 @@
   #rap .fiche { display: grid; grid-template-columns: 120px 1fr; gap: 12px; border: 1px solid #ddd; border-radius: 10px; padding: 10px; margin-bottom: 10px; break-inside: avoid; } #rap .fiche .ph { width: 120px; height: 90px; background: #f3f3f3; border-radius: 8px; display: grid; place-items: center; color: #999; font-size: 12px; overflow: hidden; } #rap .fiche .ph img { width: 100%; height: 100%; object-fit: cover; }
   #rap .fiche b.t { font-size: 14px; } #rap .fiche .ch { font-size: 12.5px; margin-top: 4px; } #rap .fiche .mot { margin-top: 4px; font-style: italic; color: #444; font-size: 12.5px; } #rap .fl { color: #E85D04; font-weight: 700; }
   #rap table { width: 100%; border-collapse: collapse; font-size: 12px; } #rap th, #rap td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; } #rap th { background: #f3f3f3; }
+  #a-tri { display: none; }
+  @media (max-width: 700px) {   /* téléphone : une fiche par article au lieu d'un tableau à faire défiler de côté */
+    #a-tri { display: block; }
+    #v-articles .defile { max-height: none; overflow: visible; }
+    #v-articles table.res, #v-articles table.res tbody { display: block; }
+    #v-articles table.res thead { display: none; }
+    #v-articles table.res tr { display: block; border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; margin-bottom: 8px; }
+    #v-articles table.res td { display: flex; gap: 8px; border: 0; padding: 3px 0; }
+    #v-articles table.res td[data-l]::before { content: attr(data-l); flex: 0 0 96px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); padding-top: 2px; }
+    #v-articles table.res td:last-child { flex-wrap: wrap; padding-top: 6px; }
+    #v-articles table.res td:last-child::before { content: none; }
+  }
   @media print { body * { visibility: hidden !important; } #rap, #rap * { visibility: visible !important; } #rap { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; max-width: none; } @page { size: A4; margin: 10mm; } .noprint { display: none !important; } }
 </style>
 </head>
@@ -81,6 +93,7 @@
     <div class="bloc"><div class="barre">
       <input type="search" id="a-q" placeholder="Rechercher : n° d'inventaire, désignation, série, position…" style="flex:1;min-width:220px" aria-label="Rechercher">
       <select id="a-pos" aria-label="Position"><option value="">Toutes les positions</option></select>
+      <select id="a-tri" aria-label="Trier par"><option value="">Trier par…</option><option value="inv">N° Inv</option><option value="des">Désignation</option><option value="pos">Position</option><option value="st">Statut</option><option value="par">Trouvé par</option><option value="anc">Ancienne position</option></select>
       <select id="a-st" aria-label="Statut"><option value="">Tous les articles</option><option value="nt">Non trouvés (écarts)</option><option value="ok">Sans écart</option></select>
     </div><p class="note" id="a-info"></p></div>
     <div class="bloc"><div class="defile"><table class="res"><thead><tr id="a-tete"><th data-t="inv">N° Inv</th><th data-t="des">Désignation</th><th data-t="pos">Position</th><th data-t="st">Statut</th><th data-t="par">Trouvé par</th><th data-t="anc">Ancienne position</th><th></th></tr></thead><tbody id="a-corps"></tbody></table></div>
@@ -258,6 +271,7 @@
   }
   var triArt = { c: '', d: 1 };
   document.addEventListener('click', function (e) { var th = e.target.closest && e.target.closest('#a-tete th[data-t]'); if (!th) return; var t = th.getAttribute('data-t'); triArt = triArt.c === t ? { c: t, d: -triArt.d } : { c: t, d: 1 }; articles(); });
+  document.addEventListener('change', function (e) { if (e.target && e.target.id === 'a-tri') { triArt = e.target.value ? { c: e.target.value, d: 1 } : { c: '', d: 1 }; articles(); } });
   function articles() {
     var s = $('a-pos'), v = filtreArt.pos; s.textContent = ''; var o0 = el('option', null, 'Toutes les positions'); o0.value = ''; s.appendChild(o0);
     var eff = M.effectifs(etat); Object.keys(etat.positions).sort().forEach(function (n) { var o = el('option', null, n + ' (' + (eff[n] || 0) + ')'); o.value = n; s.appendChild(o); }); s.value = v;
@@ -282,7 +296,7 @@
       if (!nt.length || photos[M.invCle(a.inv)]) { var bp = el('button', 'btn-s petit', photos[M.invCle(a.inv)] ? '📷' : '📷+'); bp.type = 'button'; bp.title = photos[M.invCle(a.inv)] ? 'Voir la photo' : 'Ajouter une photo'; if (!photos[M.invCle(a.inv)] && !peutSaisir()) bp = null; if (bp) { bp.addEventListener('click', function () { dialogPhoto(a); }); ac.appendChild(bp); ac.appendChild(document.createTextNode(' ')); } }
       var b2 = el('button', 'btn-s petit', '📜 Historique'); b2.type = 'button'; b2.addEventListener('click', function () { dialogHistorique(a); }); ac.appendChild(b2);
       if ((nt.length || !tr0) && peutSaisir()) { ac.appendChild(document.createTextNode(' ')); var b3 = el('button', nt.length ? 'btn-p petit' : 'btn-s petit', nt.length ? '✅ Trouvé : où ?' : '✅ Marquer trouvé'); b3.type = 'button'; b3.addEventListener('click', function () { dialogPosition(a, true); }); ac.appendChild(b3); }
-      tr.appendChild(ac); c.appendChild(tr);
+      tr.appendChild(ac); ['N° Inv', 'Désignation', 'Position', 'Statut', 'Trouvé par', 'Ancienne pos.'].forEach(function (l, i) { if (tr.children[i]) tr.children[i].setAttribute('data-l', l); }); c.appendChild(tr);
     });
     $('a-plus').hidden = liste.length <= limite;
   }

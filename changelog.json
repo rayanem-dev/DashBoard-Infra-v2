@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-375",
+    "date": "2026-11-09",
+    "title": "Version 6.87.3 — Inventaire : affichage téléphone en fiches",
+    "changes": [
+      "Sur téléphone, la liste des articles n'est plus un tableau à faire défiler de côté (Statut, Trouvé par et les boutons restaient hors écran) : chaque article devient une fiche avec toutes ses informations et ses boutons. Une liste « Trier par… » remplace les titres de colonnes cliquables."
+    ]
+  },
+  {
     "id": "2026-11-09-374",
     "date": "2026-11-09",
     "title": "Version 6.87.2 — Inventaire : « ✅ Marquer trouvé » sur tous les articles",
