@@ -301,7 +301,7 @@
     $('a-plus').hidden = liste.length <= limite;
   }
   function dialogPosition(a, trouve) {
-    listePositions(); var c = el('div'), p = el('input'), m = el('input'); p.setAttribute('list', 'dl-pos'); p.value = trouve ? '' : a.position; p.placeholder = 'Position (choisir ou écrire)'; m.placeholder = 'Motif (facultatif) : ex. trouvé au hangar, erreur de saisie…'; m.style.marginTop = '8px';
+    listePositions(); var c = el('div'), p = el('input'), m = el('input'); p.setAttribute('list', 'dl-pos'); p.value = a.position || ''; p.placeholder = 'Position (choisir ou écrire)'; m.placeholder = 'Motif (facultatif) : ex. trouvé au hangar, erreur de saisie…'; m.style.marginTop = '8px';
     c.appendChild(el('p', null, a.inv + ' — ' + a.designation)); c.appendChild(el('p', 'note', 'Position actuelle : ' + (a.position || '—') + '. L\'ancienne position est gardée dans l\'historique.')); c.appendChild(p); c.appendChild(m); var fph = trouve ? champPhoto(c) : null;
     fenetre(trouve ? '✅ Article trouvé : où ?' : '📍 Changer la position', c, [{ t: 'Annuler' }, { t: 'Enregistrer', p: 1, f: function () {
       var v = p.value.trim(); if (!v) { toast('Indiquez la position.'); return false; }
@@ -311,7 +311,7 @@
         var fichier = fph && fph.files[0]; valider(e, trouve ? 'Article marqué trouvé.' : 'Position enregistrée.').then(function (ok) { if (ok && fichier) return envoyerPhoto(a, fichier); });
       } catch (er) { toast(er.message); return false; }
     } }]);
-    setTimeout(function () { p.focus(); }, 50);
+    setTimeout(function () { p.focus(); if (trouve) p.select(); }, 50);
   }
   function dialogHistorique(a) {
     var c = el('div'), l = etat.historique.filter(function (h) { return M.invCle(h.inv) === M.invCle(a.inv); });

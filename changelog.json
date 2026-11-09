@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-376",
+    "date": "2026-11-09",
+    "title": "Version 6.87.4 — Inventaire : la position actuelle est proposée quand l'article est retrouvé",
+    "changes": [
+      "Dans « Article trouvé : où ? » / « Marquer trouvé », le champ Position est prérempli avec la position actuelle de l'article (sélectionnée, donc remplaçable en tapant). Il suffit de cliquer sur Enregistrer si l'article est à sa place ; sinon on choisit ou écrit la nouvelle position."
+    ]
+  },
+  {
     "id": "2026-11-09-375",
     "date": "2026-11-09",
     "title": "Version 6.87.3 — Inventaire : affichage téléphone en fiches",
