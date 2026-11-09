@@ -76,8 +76,9 @@
     <div class="bloc"><h2>À commander <span class="note" id="r-sous"></span></h2><div id="e-recap"></div></div>
     <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Tête</th><th>Veste cuir (UK)</th><th>Références</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
     <div class="bloc" id="r-bloc" hidden><h2>Importer les deux références de taille (liste finale + Parka)</h2>
+      <p class="note"><b>Liste finale seule</b> (sans fichier Parka) : elle devient la <b>référence unique</b> — la pointure et la veste en cuir / parka (colonne « taille Parka ») remplacent les valeurs du dossier, toute autre référence est effacée. Avec le fichier Parka en plus : mode « deux références ». Un aperçu précède toujours l'écriture.</p>
       <p class="note">Choisissez la <b>liste finale</b> (colonnes Mle, NOM, PRÉNOM, pointure, taille EU / lettre / parka) et le fichier <b>Parka</b> (feuille de la structure, colonne « Taille (EXP: 42) »). Chaque agent reçoit ses deux références (par exemple 42-L et 40-M) ; la pointure et la lettre du haut ne remplissent que les cases vides. Les écarts sont ensuite à relancer par e-mail.</p>
-      <div class="barre"><label class="note">Liste finale <input type="file" id="r-fin" accept=".xlsx,.xls,.xlsm"></label><label class="note">Fichier Parka <input type="file" id="r-par" accept=".xlsx,.xls,.xlsm"></label><input id="r-feuille" placeholder="Feuille Parka (ex. INFRA)" value="INFRA" style="width:170px" aria-label="Feuille Parka"><button class="btn-p" id="r-ok" type="button">📥 Importer</button><span id="r-res" class="note"></span></div></div>
+      <div class="barre"><label class="note">Liste finale <input type="file" id="r-fin" accept=".xlsx,.xls,.xlsm"></label><label class="note">Fichier Parka (facultatif) <input type="file" id="r-par" accept=".xlsx,.xls,.xlsm"></label><input id="r-feuille" placeholder="Feuille Parka (ex. INFRA)" value="INFRA" style="width:170px" aria-label="Feuille Parka"><button class="btn-p" id="r-ok" type="button">📥 Importer</button><span id="r-res" class="note"></span></div></div>
     <div class="bloc" id="i-bloc" hidden><h2>Importer l'ancienne liste « Veste en cuir »</h2>
       <p class="note">Choisissez le fichier Excel de l'ancienne liste (colonnes : Matricule, Nom &amp; Prénom, Taille). Les tailles sont rapprochées des comptes par matricule puis par nom ; une taille de veste déjà saisie n'est jamais écrasée.</p>
       <div class="barre"><input type="file" id="i-fic" accept=".xlsx,.xls,.xlsm,.csv"><span id="i-res" class="note"></span></div></div>
@@ -282,14 +283,30 @@
   }
   /* Import des deux références : liste finale (réf. 1) + fichier Parka (réf. 2) */
   function lireClasseur(f, feuille) { return Promise.all([script(CDN_XLSX), f.arrayBuffer()]).then(function (x) { var wb = window.XLSX.read(x[1], { type: 'array' }), n = feuille ? wb.SheetNames.filter(function (s) { return s.trim().toUpperCase() === feuille.trim().toUpperCase(); })[0] : wb.SheetNames[0]; if (!n) throw new Error('Feuille « ' + feuille + ' » introuvable dans ' + f.name); return window.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: '' }); }); }
+  /* 1) aperçu sans rien écrire, 2) confirmation, 3) écriture */
+  function apercuEtImport(lignes, finale) {
+    var base = finale ? { mode: 'finale' } : {};
+    return Api.call('epi_importer_refs', Object.assign({ lignes: lignes, apercu: true }, base)).then(function (ap) {
+      var txt = finale
+        ? 'Aperçu (rien n\'est encore écrit) :\n• ' + ap.importes + ' agent(s) mis à jour d\'après la liste finale (référence unique)\n• La POINTURE et la VESTE EN CUIR / PARKA (UK) sont alignées sur la liste : ' + ap.ecrasees + ' valeur(s) déjà saisie(s) seront remplacées' + (ap.exemples && ap.exemples.length ? '\n   ex. ' + ap.exemples.join('\n   ex. ') : '') + '\n• Toute autre référence ou choix précédent est effacé (' + ap.refs_remplacees + ' agent(s) concerné(s))\n• Haut, pantalon, bonnet et remarques sont conservés' + (ap.inconnus.length ? '\n• ' + ap.inconnus.length + ' ligne(s) sans compte, ignorée(s) : ' + ap.inconnus.slice(0, 5).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '\n\nÉcrire ces données ?'
+        : 'Aperçu (rien n\'est encore écrit) :\n• ' + ap.importes + ' agent(s) reçoivent leurs deux références de taille (liste du service et Parka)\n• ' + ap.ecarts + ' ont deux lettres différentes (à départager)\n• AUCUNE taille déjà saisie n\'est écrasée : la pointure est remplie pour ' + ap.remplis_pointure + ' agent(s) et la lettre du haut pour ' + ap.remplis_haut + ', seulement là où la case est vide' + (ap.refs_remplacees ? '\n• ' + ap.refs_remplacees + ' agent(s) avaient déjà des références : elles sont remplacées' : '') + (ap.inconnus.length ? '\n• ' + ap.inconnus.length + ' ligne(s) sans compte, ignorée(s) : ' + ap.inconnus.slice(0, 5).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '\n\nÉcrire ces données ?';
+      if (!window.confirm(txt)) throw new Error('Import annulé : rien n\'a été écrit.');
+      return Api.call('epi_importer_refs', Object.assign({ lignes: lignes }, base));
+    });
+  }
   function importerRefs() {
-    var ff = $('r-fin').files[0], fp = $('r-par').files[0], z = $('r-res'); if (!ff || !fp) return toast('Choisissez la liste finale ET le fichier Parka.');
+    var ff = $('r-fin').files[0], fp = $('r-par').files[0], z = $('r-res'); if (!ff) return toast('Choisissez la liste finale.');
+    var finale = !fp;   // la liste finale seule = référence unique : ses valeurs remplacent celles du dossier
     z.textContent = 'Lecture des fichiers…'; $('r-ok').disabled = true;
-    Promise.all([lireClasseur(ff, ''), lireClasseur(fp, $('r-feuille').value)]).then(function (x) {
+    Promise.all([lireClasseur(ff, ''), fp ? lireClasseur(fp, $('r-feuille').value) : Promise.resolve([])]).then(function (x) {
       var fin = x[0], par = x[1], H = function (r) { return r.map(function (v) { return String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }); };
-      var hf = H(fin[0] || []), col = function (re, nth) { var k = -1, n = 0; hf.forEach(function (v, i) { if (re.test(v)) { if (n === (nth || 0) && k < 0) k = i; n += 1; } }); return k; };
+      var g0 = function (r, k) { return k < 0 ? '' : r[k]; }, hf = H(fin[0] || []), col = function (re, nth) { var k = -1, n = 0; hf.forEach(function (v, i) { if (re.test(v)) { if (n === (nth || 0) && k < 0) k = i; n += 1; } }); return k; };
       var c = { gen: col(/^genre/), mle: col(/^mle|matricule/), nom: col(/^nom/), pre: col(/^prenom/), div: col(/^division/), ser: col(/^service/), obs: col(/^observ/), mod: col(/^model/), poi: col(/pointure/), eu: col(/chiffre eu/, 0), lt: col(/lettre/, 0), pk: col(/parka/, 0) };
       if (c.mle < 0) throw new Error('Liste finale : colonne « Mle » introuvable.');
+      if (finale) {   // référence unique : EU · lettre · parka (UK) de la liste finale, aucune autre référence
+        var lg = fin.slice(1).filter(function (r) { return String(g0(r, c.mle)).trim(); }).map(function (r) { return { matricule: String(r[c.mle]).trim(), nom: (g0(r, c.nom) + ' ' + g0(r, c.pre)).trim(), genre: g0(r, c.gen), division: g0(r, c.div), service: g0(r, c.ser), observation: g0(r, c.obs), modele: g0(r, c.mod), pointure: g0(r, c.poi), eu1: g0(r, c.eu), l1: g0(r, c.lt), parka: g0(r, c.pk) }; });
+        return apercuEtImport(lg, true);
+      }
       var hp = H(par[0] || []), pm = hp.findIndex(function (v) { return /matricule|^mle/.test(v); }), pt = hp.findIndex(function (v) { return /^taille/.test(v); });
       if (pm < 0 || pt < 0) throw new Error('Fichier Parka : colonnes « Matricule » et « Taille » introuvables dans la feuille « ' + $('r-feuille').value + ' ».');
       var tp = {}; par.slice(1).forEach(function (r) { var m = String(r[pm]).trim(); if (m) tp[m] = r[pt]; });
@@ -299,12 +316,7 @@
       });
       var vus = {}; lignes.forEach(function (l) { vus[l.matricule] = 1; });
       par.slice(1).forEach(function (r) { var m = String(r[pm]).trim(); if (m && !vus[m]) lignes.push({ matricule: m, nom: String(r[hp.findIndex(function (v) { return /nom/.test(v); })] || ''), eu2: r[pt] }); });   // dans Parka seulement
-      // 1) aperçu sans rien écrire, 2) confirmation, 3) écriture
-      return Api.call('epi_importer_refs', { lignes: lignes, apercu: true }).then(function (ap) {
-        var txt = 'Aperçu (rien n\'est encore écrit) :\n• ' + ap.importes + ' agent(s) reçoivent leurs deux références de taille (liste du service et Parka)\n• ' + ap.ecarts + ' ont deux lettres différentes (à départager)\n• AUCUNE taille déjà saisie n\'est écrasée : la pointure est remplie pour ' + ap.remplis_pointure + ' agent(s) et la lettre du haut pour ' + ap.remplis_haut + ', seulement là où la case est vide' + (ap.refs_remplacees ? '\n• ' + ap.refs_remplacees + ' agent(s) avaient déjà des références : elles sont remplacées' : '') + (ap.inconnus.length ? '\n• ' + ap.inconnus.length + ' ligne(s) sans compte, ignorée(s) : ' + ap.inconnus.slice(0, 5).map(function (i) { return i.nom || i.matricule; }).join(' ; ') : '') + '\n\nÉcrire ces données ?';
-        if (!window.confirm(txt)) throw new Error('Import annulé : rien n\'a été écrit.');
-        return Api.call('epi_importer_refs', { lignes: lignes });
-      });
+      return apercuEtImport(lignes, false);
     }).then(function (r) { z.textContent = r.importes + ' agent(s) mis à jour, ' + r.ecarts + ' avec deux références différentes' + (r.inconnus.length ? ', ' + r.inconnus.length + ' sans compte : ' + r.inconnus.slice(0, 6).map(function (i) { return i.nom || i.matricule; }).join(' ; ') + (r.inconnus.length > 6 ? '…' : '') : '') + '.'; $('r-ok').disabled = false; charger(); }).catch(function (e) { z.textContent = ''; $('r-ok').disabled = false; toast(e.message); });
   }
   $('e-final').addEventListener('click', excelFinal); $('e-ecart').addEventListener('click', relancerEcarts); $('r-ok').addEventListener('click', importerRefs);

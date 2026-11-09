@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-09-364",
+    "date": "2026-11-09",
+    "title": "Version 6.81.0 — Dotation EPI : la liste finale devient la référence unique (pointure et parka)",
+    "changes": [
+      "Importer la liste finale SEULE (sans fichier Parka) : c'est la référence unique. La pointure et la veste en cuir / parka (colonne « taille Parka », taille UK) remplacent les valeurs du dossier ; la série EU · lettre · parka est gardée pour l'export ; toute autre référence ou choix précédent est effacé. Haut, pantalon, bonnet et remarques sont conservés.",
+      "Un aperçu précède l'écriture : agents mis à jour, valeurs déjà saisies qui seront remplacées (avec exemples), lignes sans compte. Une taille de parka entre deux tailles est arrondie à la supérieure ; hors de 36 à 48, la veste n'est pas modifiée et l'observation le dit. À redéployer : la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-08-363",
     "date": "2026-11-08",
     "title": "Version 6.80.0 — Pages plus légères : le mode démo n'est plus téléchargé en production",

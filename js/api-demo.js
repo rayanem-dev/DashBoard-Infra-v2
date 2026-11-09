@@ -737,7 +737,7 @@
         if (action === 'epi_moi') { var mo = sto[demoState.user.email] || {}; return { niveau: niv, nom: demoState.user.nom, tailles: Object.assign({ ref1_eu: '42', ref1_lettre: 'L', ref2_eu: '40', ref2_lettre: 'M' }, mo), manquants: manq(mo), ecart: !mo.choix, table: TB }; }
         if (action === 'epi_enregistrer') { var cible = p.email || demoState.user.email, ex = sto[cible] || {}; ['haut', 'pantalon', 'chaussures', 'bonnet', 'tete', 'veste_cuir', 'remarque'].forEach(function (k) { if (p[k] !== undefined) ex[k] = String(p[k]); }); if (p.choix) { var lt = ex['ref' + p.choix + '_lettre']; if (lt) { ex.choix = String(p.choix); ex.haut = lt; var tt = TB.filter(function (x) { return x.lettre === lt; })[0]; if (tt) ex.veste_cuir = String(tt.uk); } } sto[cible] = ex; sessionStorage.setItem('infra_v2_demo_epi', JSON.stringify(sto)); return { tailles: ex, manquants: manq(ex), ecart: false }; }
         if (action === 'epi_importer_vestes') return { importes: 0, deja: 0, inconnus: [] };
-        if (action === 'epi_importer_refs') return { apercu: p.apercu === true, importes: (p.lignes || []).length, ecarts: 0, remplis_haut: 0, remplis_pointure: 0, refs_remplacees: 0, inconnus: [] };
+        if (action === 'epi_importer_refs') return { apercu: p.apercu === true, finale: p.mode === 'finale', ecrasees: 0, exemples: [], importes: (p.lignes || []).length, ecarts: 0, remplis_haut: 0, remplis_pointure: 0, refs_remplacees: 0, inconnus: [] };
         if (action === 'epi_envoyer_lien') return { envoyes: p.mode === 'ecart' ? 2 : (p.emails || []).length, sans_adresse: 0, restant: 90 };
         if (niv < 2) throw erreur('Droits insuffisants', 'DROITS');
         var orgs = ['SONATRACH', 'SONATRACH', 'ACOSCO', 'GTP'];
