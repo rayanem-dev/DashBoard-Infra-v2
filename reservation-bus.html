@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réservation Bus – Division Infrastructure RNS</title>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eceff3; --panel:#ffffff; --ink:#16212e; --muted:#5b6776; --line:#d3dae2;
+    --navy:#14283f; --orange:#e9721b; --orange-d:#c85d0f; --ok:#1c7a46; --err:#b3261e;
+    --r:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  header{background:var(--navy);color:#fff;padding:16px 84px 16px 24px;border-bottom:4px solid var(--orange)}   /* 84 px à droite : la pastille du profil (en haut à droite de toutes les pages) ne recouvre plus le bouton */
+  header h1{margin:0;font-size:19px;font-weight:600;letter-spacing:.1px}
+  header p{margin:2px 0 0;color:#b9c6d6;font-size:13px}
+  main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;max-width:1180px;margin:20px auto;padding:0 16px;align-items:start}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  h2{margin:0 0 12px;font-size:15px;font-weight:600}
+  label,.lbl{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:4px}
+  input,select{font:inherit;color:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:#fff;min-height:38px}
+  input:focus,select:focus,button:focus-visible{outline:2px solid var(--orange);outline-offset:1px;border-color:var(--orange)}
+  .top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px}
+  @media(max-width:620px){.top{grid-template-columns:1fr}}
+  .seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .seg button{flex:1;border:0;background:#fff;padding:8px 6px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer;min-height:38px}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+  .trajet{display:flex;align-items:stretch;gap:4px} .trajet input{text-transform:uppercase;min-width:0}
+  .trajet button{width:38px;border:1px solid var(--line);background:#fff;border-radius:var(--r);cursor:pointer;color:var(--navy);font-size:16px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-8px 0 16px;font-size:12px;color:var(--muted)}
+  .chip{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:3px 4px 3px 10px;font-size:12.5px;color:var(--navy);cursor:pointer}
+  .chip.jour{border-color:var(--orange);background:#fff6ee} .chip button{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 6px;font-size:12px} .chip button:hover{color:var(--err)}
+  .stepper{display:flex;align-items:stretch}
+  .stepper button{width:40px;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer;color:var(--navy)}
+  .stepper button:first-child{border-radius:var(--r) 0 0 var(--r)}
+  .stepper button:last-child{border-radius:0 var(--r) var(--r) 0}
+  .stepper input{border-radius:0;text-align:center;border-left:0;border-right:0;font-weight:600}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;min-height:16px}
+  .persons{display:flex;flex-direction:column;gap:10px}
+  .row{display:grid;grid-template-columns:28px 78px minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,.9fr) auto;gap:8px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:var(--r);background:#f8fafb}
+  .row .n{font-weight:600;color:var(--orange-d);padding-top:9px}
+  .row .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);padding-top:9px;white-space:nowrap;margin:0}
+  .row .chk input{width:auto;min-height:0}
+  .row .sub{grid-column:3 / 7;font-size:12px;color:var(--muted);margin-top:-2px}
+  .row .sub.warn{color:var(--orange-d)}
+  @media(max-width:720px){
+    .row{grid-template-columns:28px 1fr}
+    .row>*:not(.n){grid-column:2}
+    .row .sub{grid-column:2}
+  }
+  .actions{display:flex;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap}
+  .send{background:var(--orange);color:#fff;border:0;border-radius:var(--r);padding:11px 22px;font:inherit;font-weight:600;cursor:pointer;min-height:44px}
+  .send:hover:not(:disabled){background:var(--orange-d)}
+  .send:disabled{opacity:.6;cursor:default}
+  .send.done{background:var(--ok)}
+  .link{background:none;border:0;color:var(--navy);text-decoration:underline;font:inherit;cursor:pointer;padding:4px}
+  .msg{font-size:13px}
+  .msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+  .status{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .status.err{color:var(--err)}
+
+  /* aperçu du mail */
+  .mail{position:sticky;top:16px}
+  .mailhead{border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
+  .mailhead .subj{font-size:17px;font-weight:500;margin:0 0 6px}
+  .mailhead .meta{font-size:12.5px;color:var(--muted)}
+  .mailbody{font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:14.5px}
+  .mailbody p{margin:0 0 12px}
+  .mailbody ul{margin:0 0 12px;padding-left:22px}
+  .mailbody li{margin-bottom:4px}
+  .sig{font-size:12px;font-weight:700;margin-top:18px}
+  .bloc{border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:14px;background:#fff;border-left:4px solid var(--orange)}
+  .bloc .bh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;font-weight:600;color:var(--navy)}
+  .top2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px} .top2>div:first-child{grid-column:1 / -1}
+  @media(max-width:620px){.top2{grid-template-columns:1fr}}
+  .presta{display:grid;grid-template-columns:1fr 1.4fr;gap:12px;margin-bottom:16px;padding:12px;border:1px dashed var(--line);border-radius:var(--r);background:#fffaf5}
+  @media(max-width:620px){.presta{grid-template-columns:1fr}}
+  .ajout{background:#fff;border:1px dashed var(--orange);color:var(--orange-d);border-radius:var(--r);padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;width:100%}
+  .bloc h3{margin:0 0 4px;font-size:14px}
+  .mailbody .th{margin:0 0 2px}
+  .mailbody ul{margin-bottom:12px}
+</style>
+</head>
+<body>
+<header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+  <div><h1>Réservation Bus</h1>
+  <p>Division Infrastructure · Rhourde Nouss</p></div>
+  <a href="portail.html" style="color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 14px;font-size:13px">← Retour au portail</a>
+</header>
+<div id="demo" style="display:none;background:#FFF3E0;color:#9A5B0F;text-align:center;padding:6px;font-size:13px;font-weight:600">MODE DÉMO — aucun e-mail n'est envoyé</div>
+
+<main>
+  <section aria-labelledby="h-form">
+    <h2 id="h-form">Détails de la demande</h2>
+    <div class="status" id="status">Chargement de l’organigramme…</div>
+
+    <div class="presta">
+      <div><label for="presta-nom">Prestataire de transport</label><input id="presta-nom" placeholder="Nom du prestataire" maxlength="80"></div>
+      <div><label for="presta-mail">Adresse qui reçoit la demande</label><input id="presta-mail" type="email" placeholder="adresse du prestataire" maxlength="120">
+        <div class="hint" id="presta-hint"></div></div>
+    </div>
+
+    <div id="blocs"></div>
+    <datalist id="lieux"></datalist><datalist id="orga-list"></datalist>
+    <button type="button" class="ajout" id="ajout">+ Ajouter un autre trajet à ce mail</button>
+    <div class="chips" id="chips" aria-label="Trajets habituels" style="margin:12px 0 0"></div>
+
+    <div class="actions">
+      <button type="button" class="send" id="send">Envoyer la demande</button>
+      <button type="button" class="link" id="reset" hidden>Nouvelle demande</button>
+      <span class="msg" id="msg" role="status" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section class="mail" aria-labelledby="h-prev">
+    <h2 id="h-prev">Aperçu du mail</h2>
+    <div class="mailhead">
+      <p class="subj" id="p-subj"></p>
+      <div class="meta" id="p-meta"></div>
+    </div>
+    <div class="mailbody" id="p-body"></div>
+  </section>
+</main>
+
+<script>
+  const MENTION = 'Rattaché à la division Infra';
+  let COPIE = 'Sec-INFRA.RNS@Sonatrach.dz';
+  const norm = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  const isSonatrach = s => norm(s).includes('sonatrach');
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const pad = n => (n<10?'0':'')+n;
+  const $ = id => document.getElementById(id);
+  const nettoie = s => String(s||'').replace(/\s+/g,' ').trim().toUpperCase();
+  const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  let trajetsTable = {}, orgaMap = new Map();
+  const blocs = [];   // { el, refs, rows:[{el,refs,filled}] }
+
+  function today(){ const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function dateTxt(iso){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); return m ? m[3]+'/'+m[2]+'/'+m[1] : null; }
+
+  /* ---------- une personne dans un trajet ---------- */
+  function addRow(b){
+    const el = document.createElement('div'); el.className = 'row';
+    el.innerHTML =
+      '<div class="n">'+(b.rows.length+1)+'</div>'+
+      '<div><label class="lbl">Civilité</label><select class="civ" aria-label="Civilité"><option>M.</option><option>Mme</option></select></div>'+
+      '<div><label class="lbl">Nom</label><input class="nom" list="orga-list" autocomplete="off" placeholder="Nom et prénom"></div>'+
+      '<div><label class="lbl">Fonction</label><input class="fonction"></div>'+
+      '<div><label class="lbl">Société</label><input class="societe"></div>'+
+      '<label class="chk"><input type="checkbox" class="rattache"> Rattaché Infra</label>'+
+      '<div class="sub"></div>';
+    const refs = { civ: el.querySelector('.civ'), nom: el.querySelector('.nom'), fonction: el.querySelector('.fonction'), societe: el.querySelector('.societe'), rattache: el.querySelector('.rattache'), sub: el.querySelector('.sub') };
+    const row = { el, refs, filled:false };
+    refs.nom.addEventListener('input', () => onNom(row)); refs.nom.addEventListener('change', () => onNom(row));
+    refs.societe.addEventListener('input', () => { refs.rattache.checked = !isSonatrach(refs.societe.value); refresh(); });
+    [refs.civ, refs.fonction, refs.rattache].forEach(x => x.addEventListener('input', refresh));
+    b.rows.push(row); b.refs.persons.appendChild(el);
+  }
+  function onNom(row){
+    const r = row.refs, hit = orgaMap.get(norm(r.nom.value));
+    if (hit){ r.fonction.value = hit.fonction; r.societe.value = hit.societe; r.rattache.checked = !isSonatrach(hit.societe); r.sub.textContent = hit.service || ''; r.sub.className = 'sub'; row.filled = true; }
+    else { if (row.filled){ r.fonction.value=''; r.societe.value=''; row.filled=false; } r.rattache.checked = true;
+      r.sub.textContent = r.nom.value.trim() ? 'Nom absent de l’organigramme : complétez la fonction et la société.' : ''; r.sub.className = 'sub warn'; }
+    refresh();
+  }
+  function setCount(b, n){
+    n = Math.max(1, Math.min(30, n|0 || 1));
+    while (b.rows.length < n) addRow(b);
+    while (b.rows.length > n) b.rows.pop().el.remove();
+    b.refs.nb.value = n; refresh();
+  }
+
+  /* ---------- un bloc « trajet » ---------- */
+  function addBloc(depart, destination){
+    const el = document.createElement('div'); el.className = 'bloc';
+    el.innerHTML =
+      '<div class="bh"><span class="titre"></span><button type="button" class="link retirer" aria-label="Retirer ce trajet">✕ Retirer</button></div>'+
+      '<div class="top2">'+
+        '<div><span class="lbl">Trajet (départ → destination)</span><div class="trajet" role="group"><input class="dep" list="lieux" placeholder="Départ" autocomplete="off" maxlength="40" aria-label="Départ"><button type="button" class="inv" title="Inverser" aria-label="Inverser départ et destination">⇄</button><input class="des" list="lieux" placeholder="Destination" autocomplete="off" maxlength="40" aria-label="Destination"></div></div>'+
+        '<div><label class="lbl">Date du voyage</label><input type="date" class="date"><div class="hint jour"></div></div>'+
+        '<div><label class="lbl">Nombre de personnes</label><div class="stepper"><button type="button" class="moins" aria-label="Retirer une personne">−</button><input type="number" class="nb" min="1" max="30" value="1" inputmode="numeric"><button type="button" class="plus" aria-label="Ajouter une personne">+</button></div></div>'+
+      '</div><div class="persons"></div>';
+    const q = s => el.querySelector(s);
+    const b = { el, rows: [], refs: { titre: q('.titre'), dep: q('.dep'), des: q('.des'), date: q('.date'), jour: q('.jour'), nb: q('.nb'), persons: q('.persons') } };
+    b.refs.dep.value = depart || ''; b.refs.des.value = destination || '';
+    b.refs.date.value = blocs.length ? blocs[blocs.length-1].refs.date.value : today();
+    [b.refs.dep, b.refs.des].forEach(x => x.addEventListener('input', refresh));
+    b.refs.date.addEventListener('input', () => { refresh(); dessinerChips(); });
+    q('.inv').addEventListener('click', () => { const a = b.refs.dep.value; b.refs.dep.value = b.refs.des.value; b.refs.des.value = a; refresh(); });
+    b.refs.nb.addEventListener('input', () => setCount(b, parseInt(b.refs.nb.value,10)));
+    q('.moins').addEventListener('click', () => setCount(b, b.rows.length-1)); q('.plus').addEventListener('click', () => setCount(b, b.rows.length+1));
+    q('.retirer').addEventListener('click', () => { if (blocs.length < 2) return; blocs.splice(blocs.indexOf(b),1); el.remove(); refresh(); });
+    blocs.push(b); $('blocs').appendChild(el); setCount(b, 1);
+    return b;
+  }
+  const trajetDe = b => { const a = nettoie(b.refs.dep.value), c = nettoie(b.refs.des.value); return (a && c) ? a + ' → ' + c : (a || c ? (a || '…') + ' → ' + (c || '…') : '(trajet)'); };
+  const personnes = b => b.rows.map(r => ({ civ: r.refs.civ.value, nom: r.refs.nom.value.trim(), fonction: r.refs.fonction.value.trim(), societe: r.refs.societe.value.trim(), rattache: r.refs.rattache.checked }));
+  function ligne(p){ const parts=[]; if (p.fonction) parts.push(p.fonction); if (p.societe && !isSonatrach(p.societe)) parts.push(p.societe); if (p.rattache) parts.push(MENTION); return parts.join(' . '); }
+
+  /* ---------- aperçu ---------- */
+  function destinataire(){ return $('presta-mail').value.trim(); }
+  function refresh(){
+    let total = 0;
+    blocs.forEach((b,i) => { b.refs.titre.textContent = 'Trajet ' + (i+1) + ' : ' + trajetDe(b); b.el.querySelector('.retirer').hidden = blocs.length < 2; total += b.rows.length;
+      const j = /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.refs.date.value||''); b.refs.jour.textContent = j ? JOURS[new Date(Date.UTC(+j[1],+j[2]-1,+j[3])).getUTCDay()] : ''; });
+    const uniq = blocs.map(trajetDe).filter((x,i,a) => a.indexOf(x) === i);
+    $('p-subj').textContent = 'Reservation bus ' + uniq.join(' / ');
+    $('p-meta').textContent = 'À : ' + (destinataire() || COPIE) + (destinataire() && destinataire().toLowerCase() !== COPIE.toLowerCase() ? '  ·  Copie : ' + COPIE : '');
+    const intro = 'Nous vous demandons de bien vouloir réserver ' + (total>1 ? total+' places' : 'une place') + ' de bus sur ' + (blocs.length>1 ? 'les trajets suivants :' : 'le trajet suivant :');
+    $('p-body').innerHTML = '<p>Bonjour ;</p><p>'+esc(intro)+'</p>' + blocs.map(b => {
+      const ps = personnes(b), d = dateTxt(b.refs.date.value);
+      return '<p class="th"><b>'+esc(trajetDe(b))+'&nbsp;&nbsp;le '+esc(d || '(date)')+' au profit de :</b></p><ul>'+ps.map(p => '<li>'+esc(p.nom||'(nom)')+(ligne(p)?' . '+esc(ligne(p)):'')+'</li>').join('')+'</ul>'; }).join('') +
+      '<p>Salutations .</p><div class="sig">SECRETARIAT DIVISON INFRASTRUCTURE<br>SONATRACH – DP – RHOURDE-NOUSS<br>'+COPIE+'<br>FO : 7743/5843</div>';
+  }
+
+  /* ---------- envoi ---------- */
+  function setMsg(t, cls){ const m=$('msg'); m.textContent=t||''; m.className='msg '+(cls||''); }
+  function envoyer(){
+    setMsg('');
+    for (let i = 0; i < blocs.length; i++){
+      const b = blocs[i], n = ' (trajet '+(i+1)+')';
+      if (!nettoie(b.refs.dep.value) || !nettoie(b.refs.des.value)){ b.refs.dep.focus(); return setMsg('Indiquez le départ et la destination'+n+'.', 'err'); }
+      if (nettoie(b.refs.dep.value) === nettoie(b.refs.des.value)) return setMsg('Le départ et la destination sont identiques'+n+'.', 'err');
+      if (!b.refs.date.value) return setMsg('Choisissez la date'+n+'.', 'err');
+      const vide = personnes(b).findIndex(p => !p.nom);
+      if (vide >= 0){ b.rows[vide].refs.nom.focus(); return setMsg('Renseignez le nom de la personne n° '+(vide+1)+n+'.', 'err'); }
+    }
+    if (destinataire() && !/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]{2,}$/.test(destinataire())) return setMsg('Adresse du prestataire invalide.', 'err');
+    const bt = $('send'); bt.disabled = true; bt.textContent = 'Envoi en cours…';
+    Api.call('reservation_bus_envoyer', { demande: { destinataire: destinataire(), trajets: blocs.map(b => ({ depart: b.refs.dep.value, destination: b.refs.des.value, date: b.refs.date.value, personnes: personnes(b) })) } })
+      .then(res => {
+        bt.textContent = 'Demande envoyée'; bt.classList.add('done'); $('reset').hidden = false;
+        Api.call('reservation_bus_orga').then(r => { trajetsTable = r.trajets_table || trajetsTable; dessinerChips(); }).catch(() => {});
+        setMsg('Mail envoyé à ' + res.to + ' (' + res.count + ' personne' + (res.count>1?'s':'') + ', ' + res.trajets + ' trajet' + (res.trajets>1?'s':'') + ').', 'ok');
+      })
+      .catch(err => { bt.disabled = false; bt.textContent = 'Envoyer la demande'; setMsg('Échec de l’envoi : ' + (err && err.message ? err.message : err), 'err'); });
+  }
+  function nouvelle(){
+    blocs.splice(0).forEach(b => b.el.remove());
+    const bt=$('send'); bt.disabled=false; bt.classList.remove('done'); bt.textContent='Envoyer la demande'; $('reset').hidden = true; setMsg('');
+    addBloc(); refresh();
+  }
+
+  /* ---------- trajets habituels (un clic remplit le dernier trajet vide, sinon en ajoute un) ---------- */
+  function dessinerChips(){
+    const z = $('chips'); z.textContent = ''; const last = blocs[blocs.length-1];
+    const m = last && /^(\d{4})-(\d{2})-(\d{2})$/.exec(last.refs.date.value||''), j = m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay() : -1;
+    const liste = Object.keys(trajetsTable).map(k => ({ k, n: trajetsTable[k].n||0, cj: (trajetsTable[k].jours||{})[j]||0 })).sort((a,b) => (b.cj-a.cj) || (b.n-a.n) || (a.k<b.k?-1:1));
+    if (!liste.length) return;
+    const t = document.createElement('span'); t.textContent = 'Trajets habituels : '; z.appendChild(t);
+    liste.slice(0, 12).forEach(x => {
+      const c = document.createElement('span'); c.className = 'chip' + (x.cj ? ' jour' : ''); c.appendChild(document.createTextNode(x.k));
+      const del = document.createElement('button'); del.type = 'button'; del.textContent = '✕'; del.title = 'Retirer ce trajet de la liste'; del.setAttribute('aria-label', 'Retirer le trajet ' + x.k);
+      del.addEventListener('click', ev => { ev.stopPropagation(); if (!confirm('Retirer le trajet « ' + x.k + ' » de la liste ?')) return;
+        Api.call('reservation_bus_trajet_supprimer', { trajet: x.k }).then(r => { trajetsTable = r.trajets_table || {}; dessinerChips(); }).catch(e => setMsg(e.message, 'err')); });
+      c.appendChild(del);
+      c.addEventListener('click', () => { const p = x.k.split(' → '); const b = (last && !last.refs.dep.value && !last.refs.des.value) ? last : addBloc(); b.refs.dep.value = p[0]; b.refs.des.value = p[1] || ''; refresh(); });
+      z.appendChild(c);
+    });
+    const lieux = {}; Object.keys(trajetsTable).forEach(k => k.split(' → ').forEach(l => { lieux[l] = 1; }));
+    const dl = $('lieux'); dl.textContent = ''; Object.keys(lieux).sort().forEach(l => { const o = document.createElement('option'); o.value = l; dl.appendChild(o); });
+  }
+
+  /* ---------- init ---------- */
+  $('ajout').addEventListener('click', () => { const b = addBloc(); b.refs.dep.focus(); refresh(); });
+  $('send').addEventListener('click', envoyer); $('reset').addEventListener('click', nouvelle);
+  ['presta-nom','presta-mail'].forEach(i => $(i).addEventListener('input', refresh));
+  if (window.Api && Api.demo) $('demo').style.display = 'block';
+  addBloc(); refresh();
+
+  Api.call('reservation_bus_orga').then(r => {
+    const list = r.personnes || []; if (r.copie) COPIE = r.copie;
+    $('presta-nom').value = r.prestataire || ''; $('presta-mail').value = r.configure ? (r.destinataire || '') : '';
+    $('presta-hint').textContent = r.configure ? 'Prestataire par défaut (réglage « Réservation Bus » dans Paramètres › Adresses). Modifiable pour cet envoi.' : 'Aucun prestataire par défaut : sans adresse, la demande va au secrétariat. À enregistrer dans Paramètres › Adresses › Réservation Bus.';
+    trajetsTable = r.trajets_table || {}; dessinerChips();
+    const frag = document.createDocumentFragment();
+    list.forEach(p => { orgaMap.set(norm(p.nom), p); const o = document.createElement('option'); o.value = p.nom; if (p.service) o.label = p.service; frag.appendChild(o); });
+    $('orga-list').appendChild(frag);
+    $('status').textContent = 'Organigramme chargé : ' + list.length + ' personnes. Tapez un nom pour remplir la fonction et la société.';
+    blocs.forEach(b => b.rows.forEach(onNom)); refresh();
+  }).catch(err => { $('status').className = 'status err'; $('status').textContent = 'Organigramme indisponible (' + (err && err.message ? err.message : err) + '). Vous pouvez saisir les noms à la main.'; });
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

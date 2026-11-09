@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-09-371",
+    "date": "2026-11-09",
+    "title": "Version 6.86.0 — Nouvelle application : Réservation Bus (Logistique)",
+    "changes": [
+      "Nouvelle page « Réservation Bus », rangée dans Logistique à côté de « Réservation Vol » : même principe (nombre de personnes, nom choisi dans l'organigramme, fonction et société remplies seules, aperçu du mail en direct), mais un seul mail peut regrouper plusieurs trajets (ex. RNS → OUARGLA et HASSI MESSAOUD → RNS), chacun avec sa date et ses personnes. Le mail suit le modèle du secrétariat : « RNS → OUARGLA  le 10/11/2026 au profit de : » puis une puce « Nom . Fonction » par personne.",
+      "Prestataire par défaut : le mail est adressé au prestataire de transport enregistré dans Paramètres › Adresses › Réservation Bus (nom + adresse) ; les deux champs restent modifiables avant l'envoi et le secrétariat est mis en copie. Tant qu'aucune adresse n'est enregistrée, la demande va au secrétariat seul.",
+      "Les trajets envoyés sont appris et proposés en un clic (RNS ⇄ OUARGLA et HASSI MESSAOUD ⇄ RNS dès le départ). Envoi tracé au journal ; la carte apparaît toute seule dans le catalogue après redéploiement de la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-09-370",
     "date": "2026-11-09",
     "title": "Version 6.85.0 — Privilèges : changer l'entreprise de plusieurs agents d'un coup",
