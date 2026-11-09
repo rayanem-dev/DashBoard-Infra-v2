@@ -281,7 +281,7 @@
       if (admin && peutSaisir()) { var b1 = el('button', 'btn-s petit', '📍 Corriger'); b1.type = 'button'; b1.addEventListener('click', function () { dialogPosition(a, false); }); ac.appendChild(b1); ac.appendChild(document.createTextNode(' ')); }
       if (!nt.length || photos[M.invCle(a.inv)]) { var bp = el('button', 'btn-s petit', photos[M.invCle(a.inv)] ? '📷' : '📷+'); bp.type = 'button'; bp.title = photos[M.invCle(a.inv)] ? 'Voir la photo' : 'Ajouter une photo'; if (!photos[M.invCle(a.inv)] && !peutSaisir()) bp = null; if (bp) { bp.addEventListener('click', function () { dialogPhoto(a); }); ac.appendChild(bp); ac.appendChild(document.createTextNode(' ')); } }
       var b2 = el('button', 'btn-s petit', '📜 Historique'); b2.type = 'button'; b2.addEventListener('click', function () { dialogHistorique(a); }); ac.appendChild(b2);
-      if (nt.length && peutSaisir()) { ac.appendChild(document.createTextNode(' ')); var b3 = el('button', 'btn-p petit', '✅ Trouvé : où ?'); b3.type = 'button'; b3.addEventListener('click', function () { dialogPosition(a, true); }); ac.appendChild(b3); }
+      if ((nt.length || !tr0) && peutSaisir()) { ac.appendChild(document.createTextNode(' ')); var b3 = el('button', nt.length ? 'btn-p petit' : 'btn-s petit', nt.length ? '✅ Trouvé : où ?' : '✅ Marquer trouvé'); b3.type = 'button'; b3.addEventListener('click', function () { dialogPosition(a, true); }); ac.appendChild(b3); }
       tr.appendChild(ac); c.appendChild(tr);
     });
     $('a-plus').hidden = liste.length <= limite;

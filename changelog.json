@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-374",
+    "date": "2026-11-09",
+    "title": "Version 6.87.2 — Inventaire : « ✅ Marquer trouvé » sur tous les articles",
+    "changes": [
+      "Les articles sans écart n'avaient pas de bouton pour être déclarés trouvés (seulement la photo), donc ni nom ni date n'étaient enregistrés. Chaque article qui n'a pas encore de ligne « trouvé » porte maintenant le bouton « ✅ Marquer trouvé » : même fenêtre (position, motif, photo facultative), et le statut, le nom et la date apparaissent dans la liste."
+    ]
+  },
+  {
     "id": "2026-11-09-373",
     "date": "2026-11-09",
     "title": "Version 6.87.1 — Inventaire : un article « vu » par photo est signalé",
