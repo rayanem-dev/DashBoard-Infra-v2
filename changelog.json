@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-09-372",
+    "date": "2026-11-09",
+    "title": "Version 6.87.0 — Inventaire : photo depuis la galerie du téléphone, colonnes Statut et Trouvé par triables",
+    "changes": [
+      "Photo d'un article : sur téléphone, le choix n'est plus limité à « Prendre une photo » ; le téléphone propose maintenant l'appareil photo, la photothèque et les fichiers (comme sur ordinateur).",
+      "Liste des articles : nouvelles colonnes « Statut » (trouvé / non trouvé) et « Trouvé par » (nom et date), séparées de la position. Un clic sur le nom d'une colonne trie la liste (▲ / ▼ au second clic) : n° d'inventaire, désignation, position, statut, trouvé par, ancienne position."
+    ]
+  },
+  {
     "id": "2026-11-09-371",
     "date": "2026-11-09",
     "title": "Version 6.86.0 — Nouvelle application : Réservation Bus (Logistique)",

@@ -83,7 +83,7 @@
       <select id="a-pos" aria-label="Position"><option value="">Toutes les positions</option></select>
       <select id="a-st" aria-label="Statut"><option value="">Tous les articles</option><option value="nt">Non trouvés (écarts)</option><option value="ok">Sans écart</option></select>
     </div><p class="note" id="a-info"></p></div>
-    <div class="bloc"><div class="defile"><table class="res"><thead><tr><th>N° Inv</th><th>Désignation</th><th>Position</th><th>Ancienne position</th><th></th></tr></thead><tbody id="a-corps"></tbody></table></div>
+    <div class="bloc"><div class="defile"><table class="res"><thead><tr id="a-tete"><th data-t="inv">N° Inv</th><th data-t="des">Désignation</th><th data-t="pos">Position</th><th data-t="st">Statut</th><th data-t="par">Trouvé par</th><th data-t="anc">Ancienne position</th><th></th></tr></thead><tbody id="a-corps"></tbody></table></div>
       <div class="barre" style="margin-top:8px"><button class="btn-s" id="a-plus" type="button" hidden>Afficher plus</button></div></div>
   </section>
 
@@ -198,7 +198,7 @@
   }
   function champPhoto(c) {
     var w = el('div'); w.style.cssText = 'margin-top:10px;padding:9px 11px;border:1.5px dashed var(--border);border-radius:10px';
-    var l = el('label', null, '📷 Photo de l\'article (facultatif)'); l.style.cssText = 'font-weight:700;font-size:13px;display:block;margin-bottom:4px'; var f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.setAttribute('capture', 'environment'); f.style.width = '100%';
+    var l = el('label', null, '📷 Photo de l\'article (facultatif)'); l.style.cssText = 'font-weight:700;font-size:13px;display:block;margin-bottom:4px'; var f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.style.width = '100%';
     w.appendChild(l); w.appendChild(f); w.appendChild(el('p', 'note', 'Photographiez l\'article, pas les personnes ni les documents.')); c.appendChild(w); return f;
   }
   function dialogPhoto(a) {
@@ -256,17 +256,26 @@
       return true;
     });
   }
+  var triArt = { c: '', d: 1 };
+  document.addEventListener('click', function (e) { var th = e.target.closest && e.target.closest('#a-tete th[data-t]'); if (!th) return; var t = th.getAttribute('data-t'); triArt = triArt.c === t ? { c: t, d: -triArt.d } : { c: t, d: 1 }; articles(); });
   function articles() {
     var s = $('a-pos'), v = filtreArt.pos; s.textContent = ''; var o0 = el('option', null, 'Toutes les positions'); o0.value = ''; s.appendChild(o0);
     var eff = M.effectifs(etat); Object.keys(etat.positions).sort().forEach(function (n) { var o = el('option', null, n + ' (' + (eff[n] || 0) + ')'); o.value = n; s.appendChild(o); }); s.value = v;
-    var liste = filtrer(), anc = ancienne(), c = $('a-corps'), trouvePar = {}; etat.historique.forEach(function (h) { if (h.source === 'Article retrouvé' && !h.annule) trouvePar[M.invCle(h.inv)] = h; }); c.textContent = '';
+    var tri = triArt, liste = filtrer(), anc = ancienne(), c = $('a-corps'), trouvePar = {}; etat.historique.forEach(function (h) { if (h.source === 'Article retrouvé' && !h.annule) trouvePar[M.invCle(h.inv)] = h; }); c.textContent = '';
     $('a-info').textContent = liste.length + ' article' + (liste.length > 1 ? 's' : '') + (filtreArt.pos ? ' dans « ' + filtreArt.pos + ' »' : '');
-    if (!liste.length) { var tr = el('tr'), td = el('td', 'vide', Object.keys(etat.articles).length ? 'Aucun article ne correspond.' : 'Aucun article dans cet exercice : l\'administrateur doit charger le fichier des écarts (onglet Importer).'); td.colSpan = 5; tr.appendChild(td); c.appendChild(tr); $('a-plus').hidden = true; return; }
+    if (!liste.length) { var tr = el('tr'), td = el('td', 'vide', Object.keys(etat.articles).length ? 'Aucun article ne correspond.' : 'Aucun article dans cet exercice : l\'administrateur doit charger le fichier des écarts (onglet Importer).'); td.colSpan = 7; tr.appendChild(td); c.appendChild(tr); $('a-plus').hidden = true; return; }
+    var cleTri = function (a) { var nt = Object.keys(a.nonTrouve || {}), t0 = trouvePar[M.invCle(a.inv)], h = anc[M.invCle(a.inv)];
+      return { inv: a.inv, des: a.designation, pos: a.position || '', st: nt.length ? '1 non trouvé' : t0 ? '0 trouvé' : '2', par: !nt.length && t0 ? (t0.par || '') : '', anc: h ? h.de : '' }[tri.c]; };
+    if (tri.c) liste = liste.slice().sort(function (x, y) { return tri.d * String(cleTri(x) == null ? '' : cleTri(x)).localeCompare(String(cleTri(y) == null ? '' : cleTri(y)), 'fr', { numeric: true, sensitivity: 'base' }); });
+    Array.prototype.forEach.call($('a-tete').children, function (th) { var t = th.getAttribute('data-t'); if (!t) return; th.style.cursor = 'pointer'; th.setAttribute('role', 'button'); th.setAttribute('aria-sort', tri.c === t ? (tri.d > 0 ? 'ascending' : 'descending') : 'none'); th.title = 'Trier par cette colonne'; th.textContent = th.textContent.replace(/\s*[▲▼]$/, '') + (tri.c === t ? (tri.d > 0 ? ' ▲' : ' ▼') : ''); });
     liste.slice(0, limite).forEach(function (a) {
       var tr = el('tr'), nt = Object.keys(a.nonTrouve || {});
       var d = el('td'); d.appendChild(el('b', null, a.inv)); if (a.serie) d.appendChild(el('div', 'ancienne', 'S/N ' + a.serie)); tr.appendChild(d);
       var d2 = el('td', null, a.designation); if (a.marque || a.type) d2.appendChild(el('div', 'ancienne', [a.marque, a.type].filter(Boolean).join(' · '))); tr.appendChild(d2);
-      var d3 = el('td', null, a.position || '—'); var tr0 = trouvePar[M.invCle(a.inv)]; if (!nt.length && tr0) d3.appendChild(el('div', 'ancienne', '✅ Trouvé par ' + (tr0.par || 'un utilisateur') + ' le ' + String(tr0.date).slice(8, 10) + '/' + String(tr0.date).slice(5, 7) + '/' + String(tr0.date).slice(0, 4))); if (nt.length) { d3.appendChild(document.createTextNode(' ')); d3.appendChild(el('span', 'pastille', 'non trouvé ' + nt.join(', '))); } tr.appendChild(d3);
+      tr.appendChild(el('td', null, a.position || '—'));
+      var tr0 = trouvePar[M.invCle(a.inv)], dt = function (x) { return String(x.date).slice(8, 10) + '/' + String(x.date).slice(5, 7) + '/' + String(x.date).slice(0, 4); };
+      var ds = el('td'); if (nt.length) ds.appendChild(el('span', 'pastille', 'non trouvé ' + nt.join(', '))); else if (tr0) ds.appendChild(el('span', 'pastille', '✅ trouvé')); else ds.appendChild(document.createTextNode('—')); tr.appendChild(ds);
+      tr.appendChild(el('td', null, !nt.length && tr0 ? (tr0.par || 'un utilisateur') + ' · ' + dt(tr0) : '—'));
       var h = anc[M.invCle(a.inv)]; tr.appendChild(el('td', 'ancienne', h ? h.de + ' (' + String(h.date).slice(0, 10) + ')' : ''));
       var ac = el('td'); ac.style.whiteSpace = 'nowrap';
       if (admin && peutSaisir()) { var b1 = el('button', 'btn-s petit', '📍 Corriger'); b1.type = 'button'; b1.addEventListener('click', function () { dialogPosition(a, false); }); ac.appendChild(b1); ac.appendChild(document.createTextNode(' ')); }
