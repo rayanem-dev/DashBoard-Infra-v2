@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-09-370",
+    "date": "2026-11-09",
+    "title": "Version 6.85.0 — Privilèges : changer l'entreprise de plusieurs agents d'un coup",
+    "changes": [
+      "Privilèges › Utilisateurs : bouton « 🔁 Changer d'entreprise (plusieurs agents) ». On choisit l'entreprise actuelle (ex. ACOSCO), on coche les agents concernés (tous cochés au départ), on donne la nouvelle entreprise et la dépendance est modifiée pour chacun (écrite dans BDDORGA pour les personnes qui y figurent). Pour un seul agent : « Modifier » › Dépendance / entreprise."
+    ]
+  },
+  {
     "id": "2026-11-09-369",
     "date": "2026-11-09",
     "title": "Version 6.84.0 — Dotation EPI : « Tête » retirée, relance de mise à jour par organisme",

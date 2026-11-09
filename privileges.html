@@ -60,7 +60,7 @@
   </section>
   <section class="panneau" id="p-users" hidden>
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
-    <div style="margin:8px 0"><button class="btn-p" id="b-ajout" type="button">+ Ajouter un utilisateur</button> <button class="btn-s" id="b-extraction" type="button" title="Excel avec TOUS les champs de tous les comptes (sans mots de passe ni NIN)">⬇ Extraction complète (Excel)</button> <span id="r-ajout" style="font-size:12.5px"></span></div>
+    <div style="margin:8px 0"><button class="btn-p" id="b-ajout" type="button">+ Ajouter un utilisateur</button> <button class="btn-s" id="b-transfert" type="button" title="Changer l'entreprise de plusieurs agents d'un coup (fin de contrat, migration vers une autre entreprise)">🔁 Changer d'entreprise (plusieurs agents)</button> <button class="btn-s" id="b-extraction" type="button" title="Excel avec TOUS les champs de tous les comptes (sans mots de passe ni NIN)">⬇ Extraction complète (Excel)</button> <span id="r-ajout" style="font-size:12.5px"></span></div>
     <datalist id="l-sections"><option value="Froid"><option value="Électricité"><option value="Hydraulique"></datalist>
     <dialog id="dlg-ajout" style="border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <form method="dialog" id="f-ajout" novalidate style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
@@ -566,6 +566,44 @@
   var RANGS = { secretariat: 0, chef_division: 1, cadre_sup: 2, chef_service: 3, interim_chef_service: 4, cpm: 5, ordonnateur: 6, chef_atelier: 7, ingenieur: 8, dessinateur: 9, conducteur: 10, agent: 11, dsp: 12, stagiaire: 12, prestataire: 13, guest: 14 };
   function rangDe(r) { return typeof r.rang === 'number' ? r.rang : (RANGS[r.id] === undefined ? 7 : RANGS[r.id]); }
   function trierRoles(roles) { return roles.map(function (r, i) { return { r: r, i: i }; }).sort(function (a, b) { return rangDe(a.r) - rangDe(b.r) || a.i - b.i; }).map(function (x) { return x.r; }); }
+
+  // ---- Changer l'entreprise (dépendance) de plusieurs agents d'un coup : fin d'un contrat, migration vers une autre entreprise ----
+  function dependanceDe(u) { return String(u.dependance || '').replace(/\s+/g, ' ').trim(); }
+  function transfertEntreprise() {
+    var d = document.createElement('dialog'); d.style.cssText = 'margin:auto;width:min(620px,94vw);max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)';
+    d.appendChild(el('h3', null, 'Changer d\'entreprise')).style.margin = '0 0 4px';
+    d.appendChild(el('p', 'aide', 'Choisissez l\'entreprise de départ (ex. ACOSCO), cochez les agents concernés, puis donnez la nouvelle entreprise. L\'écriture se fait dans BDDORGA pour les personnes qui y sont inscrites.')).style.margin = '0 0 12px';
+    var noms = {}; (etat.utilisateurs || []).forEach(function (u) { var n = dependanceDe(u); if (n) noms[n] = (noms[n] || 0) + 1; });
+    var depart = el('select'); depart.style.cssText = 'width:100%;box-sizing:border-box;margin-bottom:8px'; var o0 = el('option', null, '— entreprise de départ —'); o0.value = ''; depart.appendChild(o0);
+    Object.keys(noms).sort().forEach(function (n) { var o = el('option', null, n + ' (' + noms[n] + ')'); o.value = n; depart.appendChild(o); });
+    d.appendChild(el('label', null, 'Entreprise actuelle')); d.appendChild(depart);
+    var liste = el('div'); liste.style.cssText = 'max-height:240px;overflow:auto;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;margin:8px 0'; d.appendChild(liste);
+    var cases = [];
+    depart.addEventListener('change', function () {
+      liste.textContent = ''; cases = [];
+      (etat.utilisateurs || []).filter(function (u) { return depart.value && dependanceDe(u) === depart.value; }).forEach(function (u) {
+        var l = el('label'); l.style.cssText = 'display:flex;gap:8px;align-items:center;padding:3px 0;text-transform:none;font-size:13.5px;font-weight:600;letter-spacing:0;color:inherit'; var c = el('input'); c.type = 'checkbox'; c.checked = true; c.style.width = 'auto'; c.dataset.email = u.email; l.appendChild(c); l.appendChild(document.createTextNode(' ' + u.nom + (u.actif === false ? ' (inactif)' : ''))); liste.appendChild(l); cases.push(c);
+      });
+      if (!cases.length) liste.appendChild(el('span', 'aide', 'Choisissez une entreprise.'));
+    });
+    d.appendChild(el('label', null, 'Nouvelle entreprise'));
+    var nouv = el('input'); nouv.setAttribute('list', 'l-ent'); nouv.placeholder = 'Ex. SONATRACH ou le nom de la nouvelle entreprise'; nouv.maxLength = 120; nouv.style.cssText = 'width:100%;box-sizing:border-box'; d.appendChild(nouv);
+    if (!choixEntreprises) Api.call('admin_portee_choix').then(function (r) { choixEntreprises = r.entreprises || []; var dl = $('l-ent'); if (dl) { dl.textContent = ''; ['SONATRACH'].concat(choixEntreprises).forEach(function (n) { var o = document.createElement('option'); o.value = n; dl.appendChild(o); }); } }).catch(function () { choixEntreprises = []; });
+    var er = el('p'); er.style.cssText = 'color:#B42318;font-weight:700;margin:8px 0 0'; d.appendChild(er);
+    var bar = el('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:12px';
+    var an = el('button', 'btn-s', 'Annuler'); an.type = 'button'; an.onclick = function () { d.close(); d.remove(); };
+    var ok = el('button', 'btn-p', 'Changer d\'entreprise'); ok.type = 'button';
+    ok.onclick = function () {
+      var cible = cases.filter(function (c) { return c.checked; }).map(function (c) { return c.dataset.email; }), nv = nouv.value.replace(/\s+/g, ' ').trim();
+      if (!cible.length) { er.textContent = 'Cochez au moins un agent.'; return; } if (!nv) { er.textContent = 'Indiquez la nouvelle entreprise.'; return; } if (nv === depart.value) { er.textContent = 'C\'est déjà leur entreprise.'; return; }
+      if (!window.confirm('Passer ' + cible.length + ' agent(s) de « ' + depart.value + ' » à « ' + nv + ' » ?')) return;
+      ok.disabled = true; er.textContent = ''; var faits = 0, echecs = [];
+      cible.reduce(function (p, email) { return p.then(function () { return Api.call('admin_utilisateur_modifier', { email: email, champs: { dependance: nv } }).then(function () { faits += 1; ok.textContent = faits + ' / ' + cible.length + '…'; }).catch(function (e) { echecs.push(email + ' : ' + e.message); }); }); }, Promise.resolve())
+        .then(function () { d.close(); d.remove(); toast(faits + ' agent(s) passé(s) à « ' + nv + ' »' + (echecs.length ? ' · ' + echecs.length + ' échec(s) : ' + echecs.slice(0, 2).join(' ; ') : '') + '.', echecs.length > 0); return recharger(); });
+    };
+    bar.appendChild(an); bar.appendChild(ok); d.appendChild(bar); document.body.appendChild(d); d.showModal();
+  }
+  $('b-transfert').addEventListener('click', transfertEntreprise);
   function recharger() { return Api.call('admin_etat').then(function (r) { r.roles = trierRoles(r.roles || []); etat = r; dessiner(); }); }
 
   document.querySelectorAll('.onglet').forEach(function (b) {
