@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-09-377",
+    "date": "2026-11-10",
+    "title": "Version 6.88.0 — Documents administratifs : nouveau bordereau d'envoi",
+    "changes": [
+      "Le bordereau d'envoi reprend les champs du gabarit Sonatrach : N° et année, date, émetteur (nom / service, division / structure, téléphone / fax, réf. de l'affaire), destinataire (nom / service, division / structure, lieu / direction), objet de l'envoi, pièces numérotées avec Nombre et Observations (☐ Pour attribution / Pour avis / Visa / Pour information, une case cochée par pièce + remarque libre), cachet et signature de l'émetteur et du destinataire (« Reçu le … »).",
+      "La mise en page suit le modèle Word : cadre noir avec le logo Sonatrach et l'entête de la Division Infrastructure, titre « BORDEREAU D'ENVOI », grand tableau des désignations (4 lignes au minimum), « Prière nous retourner le deuxième exemplaire »."
+    ]
+  },
+  {
     "id": "2026-11-09-376",
     "date": "2026-11-09",
     "title": "Version 6.87.4 — Inventaire : la position actuelle est proposée quand l'article est retrouvé",

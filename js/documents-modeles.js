@@ -67,6 +67,7 @@
     '<div class="odm-contacts"><span>☎ Tél. : 029 74 01 48</span><span>⎙ Fax : 029 74 01 40</span><span>⊕ www.sonatrach.dz</span><span>✉ Secrétariat.RNS@sonatrach.dz</span></div></div>';
   function entete(type, v) {
     if (type === 'odm') return enteteOdm(v || {});
+    if (type === 'bord') return '';   // le bordereau a son propre cadre d'en-tête (logo, titre, émetteur, destinataire)
     var g = type === 'dag'
       ? '<b>Ressources Humaines</b><br>Direction Affaires Sociales'
       : '<b>Activité Exploration - Production</b><br><b>Division Production</b><br>Direction Régionale Rhourde Nouss' + (v && v.entete_division ? '<br>' + E(v.entete_division) : '');
@@ -238,12 +239,31 @@
         P('<b>' + (v.trajet ? E(v.trajet) : pts(14)) + '</b> le ' + V(v, 'jour', 10) + ', au profit de Monsieur / Madame :', 'centre') + P('<b>' + (v.passager ? E(v.passager) : pts(24)) + '</b>', 'centre') + P('Meilleures salutations.') + signature(v.signataire || '', v);
     });
 
-  modele('bordereau', 'autres', 'Bordereau d\'envoi', 'Transmission de pièces avec accusé de réception.',
-    [L.date, { k: 'destinataire', l: 'Destinataire' }, { k: 'lignes', l: 'Désignations', t: 'repeat', colonnes: [{ k: 'des', l: 'Désignation' }, { k: 'nbr', l: 'Nbr', t: 'number' }, { k: 'obs', l: 'Observations' }] }], 'dr',
+  /** Bordereau d'envoi : champs du gabarit Sonatrach (émetteur, destinataire, objet, pièces avec Nombre et Observations cochables), mise en page du modèle Word (cadre noir, logo, titre, date / destinataire, grand tableau, « Reçu le / Signature »). */
+  modele('bordereau', 'autres', 'Bordereau d\'envoi', 'Transmission de pièces avec accusé de réception : émetteur, destinataire, objet, pièces (nombre, attribution / avis-visa / information), cachets.',
+    [L.date, { k: 'numero', l: 'N° du bordereau' }, { k: 'em_nom', l: 'Émetteur : nom / service', def: 'user.nom' }, { k: 'em_div', l: 'Émetteur : division / structure', def: 'Division Infrastructure' },
+      { k: 'em_tel', l: 'Émetteur : téléphone / fax' }, { k: 'affaire', l: 'Réf. de l\'affaire' },
+      { k: 'dest_nom', l: 'Destinataire : nom / service' }, { k: 'dest_div', l: 'Destinataire : division / structure' }, { k: 'dest_lieu', l: 'Destinataire : lieu / direction' },
+      { k: 'objet', l: 'Objet de l\'envoi', t: 'textarea' },
+      { k: 'lignes', l: 'Pièces / documents transmis', t: 'repeat', colonnes: [{ k: 'des', l: 'Désignation', t: 'textarea' }, { k: 'nbr', l: 'Nombre', t: 'number' },
+        { k: 'act', l: 'Observation', t: 'select', opts: ['', 'Pour attribution', 'Pour avis / Visa', 'Pour information'] }, { k: 'obs', l: 'Remarque' }] }], 'bord',
     function (v) {
-      var l = (v.lignes || []).map(function (x) { return [E(x.des), E(x.nbr), E(x.obs)]; }); while (l.length < 5) l.push(['', '', '']);
-      return '<div class="centre"><b>Division Infrastructure</b></div>' + titre('BORDEREAU D\'ENVOI') + P('Date : ' + V(v, 'date', 10)) + P('Destinataire : ' + V(v, 'destinataire', 24)) + GRILLE(['DÉSIGNATIONS', 'NBR', 'OBSERVATIONS'], l) +
-        visas(['Reçu le', 'Signature'], 60) + P('Prière nous retourner le deuxième exemplaire.', 'note');
+      var an = String(v.date || '').slice(0, 4), l = (v.lignes || []).filter(function (x) { return x && (String(x.des || '').trim() || String(x.nbr || '').trim() || x.act || String(x.obs || '').trim()); });
+      while (l.length < 4) l.push({});
+      var ACTS = ['Pour attribution', 'Pour avis / Visa', 'Pour information'];
+      var rows = l.map(function (x, i) {
+        var cases = ACTS.map(function (a) { return '<div class="bd-case">' + (x.act === a ? '☒' : '☐') + ' ' + E(a) + '</div>'; }).join('');
+        return '<tr><td class="c">' + ('0' + (i + 1)).slice(-2) + '</td><td>' + E(x.des).replace(/\n/g, '<br>') + '</td><td class="c">' + E(x.nbr) + '</td><td>' + cases + (String(x.obs || '').trim() ? '<div>' + E(x.obs) + '</div>' : '') + '</td></tr>';
+      }).join('');
+      var kv = function (lab, x, n) { return '<div class="bd-l">' + lab + ' : ' + V(v, x, n || 12) + '</div>'; };
+      return '<table class="bd-cadre"><tr><td class="bd-logo" rowspan="1"><img src="img/odm-logo.jpeg" alt="Sonatrach" class="bd-img"><div class="bd-ent">EXPLORATION PRODUCTION<br>DIVISION PRODUCTION<br>DIRECTION REGIONALE<br>RHOURDE NOUSS<br>DIVISION INFRASTRUCTURE</div></td>' +
+        '<td class="bd-titre"><div class="bd-t">- &nbsp;BORDEREAU D\'ENVOI –</div><div class="bd-n">N° ' + (String(v.numero || '').trim() ? E(v.numero) : pts(6)) + ' / ' + (an || '2026') + '</div></td></tr>' +
+        '<tr><td class="bd-em"><div class="bd-l"><b>Date :</b> ' + V(v, 'date', 10) + '</div><div class="bd-sous"><b>ÉMETTEUR</b></div>' + kv('Nom / Service', 'em_nom') + kv('Division / Structure', 'em_div') + kv('Téléphone / Fax', 'em_tel') + kv('Réf. de l\'affaire', 'affaire') + '</td>' +
+        '<td class="bd-dest"><div class="bd-sous"><b><u>DESTINATAIRE</u></b></div>' + kv('Nom / Service', 'dest_nom', 20) + kv('Division / Structure', 'dest_div', 20) + kv('Lieu / Direction', 'dest_lieu', 20) + '</td></tr></table>' +
+        '<div class="bd-obj"><b>Objet de l\'envoi :</b> ' + T(v, 'objet', 2) + '</div>' +
+        '<table class="bd-tab"><thead><tr><th style="width:8%">N°</th><th>DÉSIGNATIONS DES PIÈCES / DOCUMENTS TRANSMIS</th><th style="width:11%">NBR</th><th style="width:26%">OBSERVATIONS</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<table class="bd-sign"><tr><td><b>Cachet et signature de l\'Émetteur</b><div class="bd-zone"></div></td><td><b>Cachet et signature du Destinataire</b><br><span class="bd-s">Reçu le : …… / …… / ……</span><div class="bd-zone"></div></td></tr></table>' +
+        '<p class="bd-s">Prière nous retourner le deuxième exemplaire.</p>';
     });
 
   modele('convocation', 'autres', 'Convocation visite médicale', 'Convoque un ou plusieurs agents à la visite médicale périodique.',
@@ -464,10 +484,14 @@
     '.odm-d h2.long{font-size:11pt}.rt-corps{margin-top:3mm;font-size:9.5pt}.rt-l{margin:1.8mm 0}.rt-d{margin-left:12mm}.rt-n{display:inline-block;min-width:11mm;border:1px solid #000;padding:1mm 2mm;font-weight:700;text-align:center}.rt-imp{display:inline-table;border-collapse:collapse;vertical-align:middle;margin-left:3mm}.rt-imp td{border:1px solid #000;width:6.4mm;height:7mm;text-align:center;font-weight:700;padding:0}' +
     '.rt-res{border:1px solid #000;border-collapse:collapse;width:100%;margin:5mm 0 4mm}.rt-res th{background:#d9d9d9;border-bottom:1px solid #000;font-size:9.5pt;padding:1mm}.rt-res td{padding:1mm 2mm}.rt-res p{margin:2mm 0;font-size:9pt;white-space:nowrap;overflow:hidden}.rt-liste{border:1px solid #000;border-collapse:collapse;width:64%;margin:2mm 0 4mm}.rt-liste td{border:1px solid #000;padding:1.5mm 2mm;font-size:9.5pt}' +
 
-    '.odm-sign{font-size:9.5pt;margin:6mm 0 0 5mm}.odm-pied{position:absolute;left:-15mm;right:-15mm;bottom:-8mm;text-align:center;font-size:7pt;color:#666}.odm-trait2{height:2mm;background:#F0A030;width:55%;margin-bottom:9mm}.odm-adr{margin-bottom:3mm}.odm-contacts{display:flex;justify-content:center;gap:9mm;flex-wrap:wrap}';
+    '.odm-sign{font-size:9.5pt;margin:6mm 0 0 5mm}.odm-pied{position:absolute;left:-15mm;right:-15mm;bottom:-8mm;text-align:center;font-size:7pt;color:#666}.odm-trait2{height:2mm;background:#F0A030;width:55%;margin-bottom:9mm}.odm-adr{margin-bottom:3mm}.odm-contacts{display:flex;justify-content:center;gap:9mm;flex-wrap:wrap}' +
+    // bordereau d'envoi (mise en page du modèle Word)
+    '.bd-cadre,.bd-tab{border:1.5px solid #000;width:100%;margin:0;border-collapse:collapse}.bd-cadre td{border:1.5px solid #000;vertical-align:top;padding:2mm 3mm;font-size:9.5pt}.bd-logo{width:42%;text-align:center}.bd-img{width:26mm;height:auto;display:block;margin:0 auto 1mm}.bd-ent{font-size:7.5pt;line-height:1.25}.bd-titre{vertical-align:middle!important;text-align:center}.bd-t{font-size:14pt;font-style:italic}.bd-n{margin-top:3mm;font-size:10.5pt}.bd-l{margin:1mm 0}.bd-sous{margin:2mm 0 1mm}.bd-obj{border:1.5px solid #000;border-top:0;padding:2mm 3mm;font-size:10pt;margin-bottom:5mm}' +
+    '.bd-tab th{border:1.5px solid #000;font-weight:400;font-size:10pt;padding:2mm;text-align:center;background:none}.bd-tab td{border:1.5px solid #000;border-top:0;border-bottom:1px solid #000;padding:2mm 3mm;font-size:10pt;vertical-align:top;height:24mm}.bd-case{font-size:8.5pt;line-height:1.5;white-space:nowrap}' +
+    '.bd-sign{border:0;margin-top:6mm}.bd-sign td{border:0;width:50%;padding:0 3mm;font-size:10pt;vertical-align:top}.bd-zone{height:28mm}.bd-s{font-size:9pt;font-weight:400}p.bd-s{margin-top:6mm}';
   /** HTML complet d'un document (fragment à insérer dans la page ou dans une fenêtre d'impression). */
   function rendre(m, v, logo) {
-    var h = '<div class="doc' + (m.entete === 'odm' ? ' odm' : '') + '">' + entete(m.entete, Object.assign({}, v || {}, m.opts || {})) + m.html(v || {}) + '</div>';
+    var h = '<div class="doc' + (m.entete === 'odm' ? ' odm' : m.entete === 'bord' ? ' bord' : '') + '">' + entete(m.entete, Object.assign({}, v || {}, m.opts || {})) + m.html(v || {}) + '</div>';
     return h.replace('@LOGO@', E(logo || 'badges/logo-sonatrach.png'));
   }
   function trouver(id) { return M.filter(function (m) { return m.id === id; })[0] || null; }
