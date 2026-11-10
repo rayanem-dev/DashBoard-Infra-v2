@@ -250,18 +250,17 @@
     function (v) {
       var an = String(v.date || '').slice(0, 4), l = (v.lignes || []).filter(function (x) { return x && (String(x.des || '').trim() || String(x.nbr || '').trim() || x.act || String(x.obs || '').trim()); });
       while (l.length < 4) l.push({});
-      var ACTS = ['Pour attribution', 'Pour avis / Visa', 'Pour information'];
       var rows = l.map(function (x, i) {
-        var cases = ACTS.map(function (a) { return '<div class="bd-case">' + (x.act === a ? '☒' : '☐') + ' ' + E(a) + '</div>'; }).join('');
+        var cases = x.act ? '<div class="bd-obs">☒ ' + E(x.act) + '</div>' : '';
         return '<tr><td class="c">' + ('0' + (i + 1)).slice(-2) + '</td><td>' + E(x.des).replace(/\n/g, '<br>') + '</td><td class="c">' + E(x.nbr) + '</td><td>' + cases + (String(x.obs || '').trim() ? '<div>' + E(x.obs) + '</div>' : '') + '</td></tr>';
       }).join('');
-      var kv = function (lab, x, n) { return '<div class="bd-l">' + lab + ' : ' + V(v, x, n || 12) + '</div>'; };
+      var kv = function (lab, x, n) { return '<div class="bd-l">' + lab + ' : ' + V(v, x, n || 9) + '</div>'; };
       return '<table class="bd-cadre"><tr><td class="bd-logo" rowspan="1"><img src="img/odm-logo.jpeg" alt="Sonatrach" class="bd-img"><div class="bd-ent">EXPLORATION PRODUCTION<br>DIVISION PRODUCTION<br>DIRECTION REGIONALE<br>RHOURDE NOUSS<br>DIVISION INFRASTRUCTURE</div></td>' +
         '<td class="bd-titre"><div class="bd-t">- &nbsp;BORDEREAU D\'ENVOI –</div><div class="bd-n">N° ' + (String(v.numero || '').trim() ? E(v.numero) : pts(6)) + ' / ' + (an || '2026') + '</div></td></tr>' +
         '<tr><td class="bd-em"><div class="bd-l"><b>Date :</b> ' + V(v, 'date', 10) + '</div><div class="bd-sous"><b>ÉMETTEUR</b></div>' + kv('Nom / Service', 'em_nom') + kv('Division / Structure', 'em_div') + kv('Téléphone / Fax', 'em_tel') + kv('Réf. de l\'affaire', 'affaire') + '</td>' +
         '<td class="bd-dest"><div class="bd-sous"><b><u>DESTINATAIRE</u></b></div>' + kv('Nom / Service', 'dest_nom', 20) + kv('Division / Structure', 'dest_div', 20) + kv('Lieu / Direction', 'dest_lieu', 20) + '</td></tr></table>' +
         '<div class="bd-obj"><b>Objet de l\'envoi :</b> ' + T(v, 'objet', 2) + '</div>' +
-        '<table class="bd-tab"><thead><tr><th style="width:8%">N°</th><th>DÉSIGNATIONS DES PIÈCES / DOCUMENTS TRANSMIS</th><th style="width:11%">NBR</th><th style="width:26%">OBSERVATIONS</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<table class="bd-tab"><thead><tr><th style="width:8%">N°</th><th>DÉSIGNATIONS DES PIÈCES / DOCUMENTS TRANSMIS</th><th style="width:11%">NBR</th><th style="width:24%">OBSERVATIONS</th></tr></thead><tbody>' + rows + '</tbody></table>' +
         '<table class="bd-sign"><tr><td><b>Cachet et signature de l\'Émetteur</b><div class="bd-zone"></div></td><td><b>Cachet et signature du Destinataire</b><br><span class="bd-s">Reçu le : …… / …… / ……</span><div class="bd-zone"></div></td></tr></table>' +
         '<p class="bd-s">Prière nous retourner le deuxième exemplaire.</p>';
     });
@@ -485,10 +484,11 @@
     '.rt-res{border:1px solid #000;border-collapse:collapse;width:100%;margin:5mm 0 4mm}.rt-res th{background:#d9d9d9;border-bottom:1px solid #000;font-size:9.5pt;padding:1mm}.rt-res td{padding:1mm 2mm}.rt-res p{margin:2mm 0;font-size:9pt;white-space:nowrap;overflow:hidden}.rt-liste{border:1px solid #000;border-collapse:collapse;width:64%;margin:2mm 0 4mm}.rt-liste td{border:1px solid #000;padding:1.5mm 2mm;font-size:9.5pt}' +
 
     '.odm-sign{font-size:9.5pt;margin:6mm 0 0 5mm}.odm-pied{position:absolute;left:-15mm;right:-15mm;bottom:-8mm;text-align:center;font-size:7pt;color:#666}.odm-trait2{height:2mm;background:#F0A030;width:55%;margin-bottom:9mm}.odm-adr{margin-bottom:3mm}.odm-contacts{display:flex;justify-content:center;gap:9mm;flex-wrap:wrap}' +
-    // bordereau d'envoi (mise en page du modèle Word)
-    '.bd-cadre,.bd-tab{border:1.5px solid #000;width:100%;margin:0;border-collapse:collapse}.bd-cadre td{border:1.5px solid #000;vertical-align:top;padding:2mm 3mm;font-size:9.5pt}.bd-logo{width:42%;text-align:center}.bd-img{width:26mm;height:auto;display:block;margin:0 auto 1mm}.bd-ent{font-size:7.5pt;line-height:1.25}.bd-titre{vertical-align:middle!important;text-align:center}.bd-t{font-size:14pt;font-style:italic}.bd-n{margin-top:3mm;font-size:10.5pt}.bd-l{margin:1mm 0}.bd-sous{margin:2mm 0 1mm}.bd-obj{border:1.5px solid #000;border-top:0;padding:2mm 3mm;font-size:10pt;margin-bottom:5mm}' +
-    '.bd-tab th{border:1.5px solid #000;font-weight:400;font-size:10pt;padding:2mm;text-align:center;background:none}.bd-tab td{border:1.5px solid #000;border-top:0;border-bottom:1px solid #000;padding:2mm 3mm;font-size:10pt;vertical-align:top;height:24mm}.bd-case{font-size:8.5pt;line-height:1.5;white-space:nowrap}' +
-    '.bd-sign{border:0;margin-top:6mm}.bd-sign td{border:0;width:50%;padding:0 3mm;font-size:10pt;vertical-align:top}.bd-zone{height:28mm}.bd-s{font-size:9pt;font-weight:400}p.bd-s{margin-top:6mm}';
+    // bordereau d'envoi (mise en page du modèle Word) : Arial 11 pour le texte, 12 gras pour les titres
+    '.doc.bord{font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.3}.bd-cadre,.bd-tab{border:1.2px solid #000;width:100%;margin:0;border-collapse:collapse}.bd-cadre td{border:1.2px solid #000;vertical-align:top;padding:1.8mm 3mm;font-size:11pt}.bd-logo{width:38%;text-align:center}.bd-img{width:17mm;height:auto;display:block;margin:0 auto 1mm}.bd-ent{font-size:8pt;line-height:1.25}.bd-titre{vertical-align:middle!important;text-align:center}.bd-t{font-size:12pt;font-weight:700}.bd-n{margin-top:2mm;font-size:11pt}.bd-l{margin:.6mm 0}.bd-sous{margin:1mm 0;font-size:12pt;font-weight:700}.bd-obj{border:1.2px solid #000;border-top:0;padding:1.8mm 3mm;font-size:11pt;margin-bottom:4mm}.bd-obj b{font-size:12pt}' +
+    '.bd-tab th{border:1.2px solid #000;font-weight:700;font-size:12pt;padding:1.6mm;text-align:center;background:none}.bd-tab td{border:1.2px solid #000;border-top:0;padding:1.8mm 2.5mm;font-size:11pt;vertical-align:top;height:20mm}.bd-obs{font-size:11pt}' +
+    '.bd-sign{border:0;margin-top:5mm}.bd-sign td{border:0;width:50%;padding:0 3mm;font-size:11pt;vertical-align:top}.bd-sign b{font-size:12pt}.bd-zone{height:24mm}.bd-s{font-size:11pt;font-weight:400}p.bd-s{margin-top:5mm}';
+
   /** HTML complet d'un document (fragment à insérer dans la page ou dans une fenêtre d'impression). */
   function rendre(m, v, logo) {
     var h = '<div class="doc' + (m.entete === 'odm' ? ' odm' : m.entete === 'bord' ? ' bord' : '') + '">' + entete(m.entete, Object.assign({}, v || {}, m.opts || {})) + m.html(v || {}) + '</div>';

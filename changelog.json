@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-09-378",
+    "date": "2026-11-10",
+    "title": "Version 6.88.1 — Bordereau d'envoi : observation en liste déroulante, logo réduit, Arial 11 / 12",
+    "changes": [
+      "Observations : une liste déroulante par pièce (vide, Pour attribution, Pour avis / Visa, Pour information). Le document n'imprime plus les trois cases : seule l'observation choisie apparaît (☒), la cellule reste vide si rien n'est sélectionné.",
+      "Mise en page optimisée : logo réduit comme dans les autres modèles du site, cadre plus compact, texte en Arial 11 et titres en gras Arial 12."
+    ]
+  },
+  {
     "id": "2026-11-09-377",
     "date": "2026-11-10",
     "title": "Version 6.88.0 — Documents administratifs : nouveau bordereau d'envoi",
