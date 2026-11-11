@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-386",
+    "date": "2026-11-11",
+    "title": "Version 6.90.5 — Prise en charge : mise en page fidèle au modèle MG (cellules fusionnées, date alignée)",
+    "changes": [
+      "La prise en charge est écrite en HTML puis convertie en vrai document Google Docs : l'en-tête « Entreprise » est enfin fusionné au-dessus de S/traitant et SH, les titres de colonnes ne se coupent plus, et « Rhourde Nouss, le : » est placé à droite sur la ligne de « Activité Exploration Production » (il était collé sous le titre). Si la conversion échoue, l'ancienne construction directe sert de repli, sans bloquer la génération."
+    ]
+  },
+  {
     "id": "2026-11-11-385",
     "date": "2026-11-11",
     "title": "Version 6.90.4 — Prise en charge : valeurs communes regroupées, plus de séparation entre les personnes",
