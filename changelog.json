@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-389",
+    "date": "2026-11-11",
+    "title": "Version 6.91.0 — Annuaire : une personne écrite de deux façons n'apparaît plus deux fois",
+    "changes": [
+      "« ADNANE Abdelmoumen » (fiche du site) et « ADNAN ABDEL MOUMEN » (BDDORGA) étaient deux cartes. L'annuaire les regroupe maintenant quand l'employeur et le service sont les mêmes et que les noms ne diffèrent que d'une lettre, d'un espace ou de l'ordre des mots : on garde la fiche BDDORGA (fonction) et on y ajoute les téléphones, adresses et identifiants de l'autre, sans doublon."
+    ]
+  },
+  {
     "id": "2026-11-11-388",
     "date": "2026-11-11",
     "title": "Version 6.90.7 — Prise en charge : retour à la construction de la version 6.90.4",

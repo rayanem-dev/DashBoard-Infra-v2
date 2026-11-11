@@ -31,9 +31,9 @@ var Annuaire = (function () {
         if (p.sona) det.push('ID Sonatrach : ' + p.sona); if (p.matricule) det.push('Matricule : ' + p.matricule);
         var grp = p.section ? 'Équipe Division Infrastructure — Collaborateurs & Bureaux › ' + p.section : 'Équipe Division Infrastructure — Collaborateurs & Bureaux › ' + (p.service || 'Autres');
         var g = D.groupes.filter(function (x) { return x.indexOf('Équipe Division Infrastructure — Collaborateurs & Bureaux › ') === 0 && norme(x).indexOf(norme(p.section || p.service)) !== -1; })[0];
-        rows.push([groupeIndex(g || grp), p.nom, det.join(' | '), p.fonction || p.section || p.service || '', p.employeur]);
+        rows.push([groupeIndex(g || grp), p.nom, det.join(' | '), p.fonction || p.section || p.service || '', p.employeur, 'B']);
       });
-      rows.sort(function (a, b) { return a[0] - b[0]; });
+      rows = fusionnerDoublons(rows); rows.sort(function (a, b) { return a[0] - b[0]; });
       D.rows = rows; reindexer(); return true;
     }).then(function (ok) {
       // Entreprises (suivi CPM, vivier des entreprises) : ajoutées automatiquement ; sans effet si la passerelle les refuse (prestataire, hors connexion)
@@ -66,6 +66,36 @@ var Annuaire = (function () {
     var g = D.groupes[r[0]].split(' › '); c.appendChild(el('div', 'contact-groupe', g[g.length - 1]));
     return c;
   }
+  /** Distance d'édition entre deux chaînes (suppression, insertion, remplacement = 1). */
+  function distance(a, b) {
+    var prev = [], i, j; for (j = 0; j <= b.length; j += 1) prev[j] = j;
+    for (i = 1; i <= a.length; i += 1) { var cur = [i]; for (j = 1; j <= b.length; j += 1) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1)); prev = cur; }
+    return prev[b.length];
+  }
+  /** Signature d'un nom indépendante de l'ordre, des espaces et de la casse : lettres triées (« ADNANE Abdelmoumen » ≈ « ADNAN ABDEL MOUMEN »). */
+  function signatureNom(n) { return norme(n).replace(/[^a-z]/g, '').split('').sort().join(''); }
+  function memePersonne(a, b) {
+    if (cleEmployeur(a[4]) !== cleEmployeur(b[4]) || a[0] !== b[0]) return false;
+    var x = signatureNom(a[1]), y = signatureNom(b[1]);
+    return x.length >= 10 && y.length >= 10 && Math.abs(x.length - y.length) <= 1 && distance(x, y) <= 1;
+  }
+  function clePartie(seg) { var t = norme(seg).replace(/^[^a-z0-9@]+/, ''); var chiffres = t.replace(/\D/g, ''); return chiffres.length >= 9 ? 'tel' + chiffres.slice(-9) : t.replace(/\s+/g, ' ').trim(); }
+  /**
+   * Regroupe les fiches d'une même personne écrite de deux façons (même employeur, même service, noms identiques à une lettre près, dans n'importe quel ordre) :
+   * on garde celle de BDDORGA (6e élément « B ») et on lui ajoute les téléphones, adresses et autres lignes de l'autre, sans doublon.
+   */
+  function fusionnerDoublons(rows) {
+    var sortie = [];
+    rows.forEach(function (r) {
+      var k = -1; if (r[4] && r[4] !== 'ENTREPRISE') sortie.forEach(function (x, i) { if (k < 0 && memePersonne(x, r)) k = i; });
+      if (k < 0) { sortie.push(r.slice()); return; }
+      var a = sortie[k], b = r, prim = (b[5] === 'B' && a[5] !== 'B') ? b : a, sec = prim === a ? b : a;
+      var vus = {}, parties = [];
+      [prim[2], sec[2]].forEach(function (d) { String(d || '').split(' | ').forEach(function (seg) { if (!seg || /^Réf\. —$/.test(seg)) return; var c = clePartie(seg); if (!vus[c]) { vus[c] = 1; parties.push(seg); } }); });
+      sortie[k] = [prim[0], prim[1], parties.join(' | '), prim[3] || sec[3], prim[4] || sec[4], prim[5] || sec[5]];
+    });
+    return sortie;
+  }
   /** Résultats de recherche (max `limite`) ; renvoie le nombre total de correspondances. */
   function rechercher(zone, q, limite) {
     zone.textContent = ''; q = norme(q).trim(); if (q.length < 2) return 0;
@@ -86,5 +116,5 @@ var Annuaire = (function () {
     });
     return total;
   }
-  return { rechercher: rechercher, lister: lister, cleEmployeur: cleEmployeur, charger: charger, total: function () { return D.rows.length; } };
+  return { fusionnerDoublons: fusionnerDoublons, rechercher: rechercher, lister: lister, cleEmployeur: cleEmployeur, charger: charger, total: function () { return D.rows.length; } };
 })();
