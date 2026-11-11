@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-383",
+    "date": "2026-11-11",
+    "title": "Version 6.90.2 — Prise en charge : ouverture du modèle plus robuste et erreur explicite",
+    "changes": [
+      "L'ouverture de la copie du nouveau modèle est retentée (4 essais) ; si elle échoue toujours, le message indique le type et le propriétaire du fichier au lieu de « Unexpected error … openById », et la copie ratée est supprimée. Le modèle est aussi vérifié avant la copie (il doit être un document Google Docs)."
+    ]
+  },
+  {
     "id": "2026-11-11-382",
     "date": "2026-11-11",
     "title": "Version 6.90.1 — Prise en charge : formulaire aligné sur le modèle MG",
