@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-387",
+    "date": "2026-11-11",
+    "title": "Version 6.90.6 — Prise en charge : tableaux à la largeur de la page paysage (plus de découpe à droite)",
+    "changes": [
+      "Après la conversion en Google Docs, les tableaux restaient calés sur la largeur d'une page portrait : le titre, la date et les colonnes étaient tronqués et serrés à gauche. Les trois tableaux (en-tête, données, signatures) et le cadre du titre retrouvent maintenant leur largeur en paysage."
+    ]
+  },
+  {
     "id": "2026-11-11-386",
     "date": "2026-11-11",
     "title": "Version 6.90.5 — Prise en charge : mise en page fidèle au modèle MG (cellules fusionnées, date alignée)",
