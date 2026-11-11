@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-380",
+    "date": "2026-11-11",
+    "title": "Version 6.89.1 — Médias des rapports : le dossier peut être rangé ailleurs dans le Drive",
+    "changes": [
+      "Le dossier « Rapports journaliers – médias » n'était cherché qu'à la racine de Mon Drive : le déplacer dans le dossier du site aurait fait créer un second dossier vide. Il est maintenant retrouvé par son identifiant (mémorisé), sinon par son nom où qu'il soit. Les autres dossiers (Inventaire — photos, Notes d'intérim, Fiches d'évaluation, Bons de sortie matériel, Commandes_Pieces_PDF) pouvaient déjà être déplacés sans conséquence."
+    ]
+  },
+  {
     "id": "2026-11-11-379",
     "date": "2026-11-11",
     "title": "Version 6.89.0 — Feuille de présence : classement hiérarchique, agents SH et prestataires sur deux pages",
