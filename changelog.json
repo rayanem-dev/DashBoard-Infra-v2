@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-11-384",
+    "date": "2026-11-11",
+    "title": "Version 6.90.3 — Prise en charge : document construit par le code (plus de fichier modèle)",
+    "changes": [
+      "Google Docs refusait d'ouvrir la copie du modèle Word converti (erreur « openById on object DocumentApp »). La prise en charge est maintenant construite directement par le code, au format de la Division Moyens Généraux : logo et en-tête, titre encadré « Demande de Prise en Charge », « Rhourde Nouss, le : », cases ☒ / ☐ « Prise en charge complète » et « Uniquement Restauration », tableau, signatures Demandeur / Chef de division / Chef de division Moyens Généraux. Plus aucun fichier modèle à partager ou à copier.",
+      "Le tableau compte une ligne par personne (nom, dates, nombre en 1re ligne, S/traitant ou SH, fonction en face du nom, base d'hébergement réservée à MG laissée vide, centre de coût). Limite de Google Docs : les deux colonnes « Entreprise » S/traitant et SH sont deux en-têtes distincts, sans cellule fusionnée."
+    ]
+  },
+  {
     "id": "2026-11-11-383",
     "date": "2026-11-11",
     "title": "Version 6.90.2 — Prise en charge : ouverture du modèle plus robuste et erreur explicite",
