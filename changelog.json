@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-11-381",
+    "date": "2026-11-11",
+    "title": "Version 6.90.0 — Prise en charge : nouveau modèle « Demande de Prise en Charge » de la Division Moyens Généraux",
+    "changes": [
+      "La prise en charge est générée avec le nouveau modèle envoyé par la Division MG le 11/11/2026 (logo, titre « Demande de Prise en Charge », « Rhourde Nouss, le » avec la date, deux cases « Prise en charge complète (Hébergement et Restauration) » / « Uniquement Restauration », tableau Nom Prénom · Date d'arrivée · Date de départ · Nbr de personnes · S/traitant · SH · Fonction · Base d'hébergement · Centre de coût, signatures Demandeur / Chef de division / Chef de division Moyens Généraux).",
+      "Remplissage : un nom par ligne avec sa fonction en face (toujours, plus besoin de cocher « fonction en observation »), entreprise et n° de contrat dans S/traitant (« X » dans SH pour SONATRACH), code d'imputation dans « Centre de coût » (avec « Remplacement » / « Renouvellement » quand c'est coché). La case « Base d'hébergement » est laissée vide : elle est réservée à la Division MG. L'hébergement coche « complète » (avec ou sans restauration), la restauration seule coche « Uniquement Restauration ».",
+      "Le modèle est la copie Google Docs « Modele de Prise en charge » (même format que l'original Word). L'autorisation d'accès et le macaron ne changent pas."
+    ]
+  },
+  {
     "id": "2026-11-11-380",
     "date": "2026-11-11",
     "title": "Version 6.89.1 — Médias des rapports : le dossier peut être rangé ailleurs dans le Drive",
