@@ -287,31 +287,22 @@ window.google = { script: { run: (function () {
     <input type="checkbox" id="genererPEC" checked hidden><input type="checkbox" id="genererAuto" hidden><input type="checkbox" id="valable2Mois" hidden>
     <div class="bloc-doc" id="blocPEC">
       <div class="bloc-doc-t">🏨 Prise en charge <span>un fichier par base de vie, 8 personnes au plus par fichier</span></div>
-      <div id="sousOptionsPEC" style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:10px 0 0 0;">
-        <div class="ligne-check" style="margin-top:0;">
-          <input type="checkbox" id="hebergement" checked>
-          <label>Hébergement</label>
+      <div id="sousOptionsPEC" style="display:flex;flex-direction:column;gap:8px;margin:10px 0 0 0;">
+        <label class="ligne-check" style="margin:0;display:flex;align-items:center;gap:8px;text-transform:none;font-size:13.5px;font-weight:700;letter-spacing:0;cursor:pointer"><input type="radio" name="typePEC" id="typeComplete" value="complete" checked style="width:auto;margin:0"> Prise en charge complète (Hébergement et Restauration).</label>
+        <label class="ligne-check" style="margin:0;display:flex;align-items:center;gap:8px;text-transform:none;font-size:13.5px;font-weight:700;letter-spacing:0;cursor:pointer"><input type="radio" name="typePEC" id="typeResto" value="restauration" style="width:auto;margin:0"> Uniquement Restauration.</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:2px;">
+          <div class="ligne-check" style="margin-top:0;">
+            <input type="checkbox" id="remplacement">
+            <label>Remplacement</label>
+          </div>
+          <div class="ligne-check" style="margin-top:0;">
+            <input type="checkbox" id="renouvellement">
+            <label>Renouvellement</label>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <label style="margin:0;font-size:12.5px;font-weight:700;color:var(--gray-dark);">N° chambre</label>
-          <input type="text" id="numeroChambre" style="max-width:90px;padding:6px 8px;font-size:13px;">
-        </div>
-        <div class="ligne-check" style="margin-top:0;">
-          <input type="checkbox" id="restauration" checked>
-          <label>Restauration</label>
-        </div>
-        <div class="ligne-check" style="margin-top:0;">
-          <input type="checkbox" id="remplacement">
-          <label>Remplacement</label>
-        </div>
-        <div class="ligne-check" style="margin-top:0;">
-          <input type="checkbox" id="renouvellement">
-          <label>Renouvellement</label>
-        </div>
-        <div class="ligne-check" style="margin-top:0;">
-          <input type="checkbox" id="fonctionObs">
-          <label>Fonction dans Observations</label>
-        </div>
+        <p style="margin:0;font-size:12px;color:var(--gray-dark);">Modèle de la Division Moyens Généraux : la case « Base d'hébergement » du document est réservée à la Division MG (laissée vide). La fonction de chaque personne est imprimée en face de son nom.</p>
+        <!-- anciennes cases, gardées cachées : elles suivent le choix ci-dessus -->
+        <input type="checkbox" id="hebergement" checked hidden><input type="checkbox" id="restauration" checked hidden><input type="text" id="numeroChambre" hidden><input type="checkbox" id="fonctionObs" hidden>
       </div>
     </div>
     <div class="bloc-doc" id="blocAuto" hidden>
@@ -589,7 +580,7 @@ window.google = { script: { run: (function () {
     if (hab && choisi !== derniereHab) {   // une seule fois par entreprise choisie : ce que l'agent règle ensuite (ou avant un import de PDF) n'est plus écrasé
       derniereHab = choisi;   // documents et type (hébergement / restauration) demandés la dernière fois pour cette entreprise : préréglés, toujours modifiables
       document.getElementById('genererPEC').checked = !!hab.pec; document.getElementById('genererAuto').checked = !!hab.auto;
-      if (hab.pec) { document.getElementById('hebergement').checked = !!hab.heb; document.getElementById('restauration').checked = !!hab.rest; }
+      if (hab.pec) { document.getElementById('hebergement').checked = !!hab.heb; document.getElementById('restauration').checked = !!hab.rest; if (typeof lireTypePEC === 'function') lireTypePEC(); }
       document.getElementById('genererPEC').dispatchEvent(new Event('change')); majChoixDocs();
     }
     if (!emp) return;
@@ -1163,5 +1154,11 @@ window.google = { script: { run: (function () {
 </script>
 <script src="js/diffusion.js"></script>
 <script src="js/pied.js"></script>
+<script>
+  /* Choix du modèle MG : « complète » = hébergement + restauration, « uniquement restauration » = restauration seule */
+  function majTypePEC() { var r = document.getElementById('typeResto').checked; document.getElementById('hebergement').checked = !r; document.getElementById('restauration').checked = true; }
+  function lireTypePEC() { var heb = document.getElementById('hebergement').checked, rest = document.getElementById('restauration').checked; document.getElementById('typeResto').checked = !heb && rest; document.getElementById('typeComplete').checked = !(!heb && rest); majTypePEC(); }
+  document.getElementById('typeComplete').addEventListener('change', majTypePEC); document.getElementById('typeResto').addEventListener('change', majTypePEC); majTypePEC();
+</script>
 </body>
 </html>

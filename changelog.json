@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-382",
+    "date": "2026-11-11",
+    "title": "Version 6.90.1 — Prise en charge : formulaire aligné sur le modèle MG",
+    "changes": [
+      "Le formulaire propose les deux choix du modèle de la Division Moyens Généraux : « Prise en charge complète (Hébergement et Restauration). » ou « Uniquement Restauration. » (un seul à la fois, comme les deux cases du document), avec « Remplacement » et « Renouvellement ». Les anciennes cases Hébergement / Restauration séparées, N° chambre et « Fonction dans Observations » disparaissent : la case Base d'hébergement du document est réservée à MG et la fonction est toujours imprimée en face du nom. Le dernier choix fait pour une entreprise est toujours pré-sélectionné."
+    ]
+  },
+  {
     "id": "2026-11-11-381",
     "date": "2026-11-11",
     "title": "Version 6.90.0 — Prise en charge : nouveau modèle « Demande de Prise en Charge » de la Division Moyens Généraux",
