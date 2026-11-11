@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-388",
+    "date": "2026-11-11",
+    "title": "Version 6.90.7 — Prise en charge : retour à la construction de la version 6.90.4",
+    "changes": [
+      "La conversion HTML → Google Docs (versions 6.90.5 et 6.90.6) déformait le tableau : colonnes démesurées et coupées à droite. On revient à la construction directe de la version 6.90.4 (une seule ligne de données, valeurs communes regroupées, noms et fonctions en face), qui donnait un PDF complet et lisible."
+    ]
+  },
+  {
     "id": "2026-11-11-387",
     "date": "2026-11-11",
     "title": "Version 6.90.6 — Prise en charge : tableaux à la largeur de la page paysage (plus de découpe à droite)",
