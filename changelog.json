@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-11-379",
+    "date": "2026-11-11",
+    "title": "Version 6.89.0 — Feuille de présence : classement hiérarchique, agents SH et prestataires sur deux pages",
+    "changes": [
+      "Les noms sont classés du chef de division au bas de l'échelle (chef de division, adjoint, chefs de service, ingénieurs et cadres, chefs d'atelier / de chantier, conducteurs et dessinateurs, techniciens, agents), puis par ordre alphabétique à égalité. Le rang se lit dans la fonction de chaque personne.",
+      "Les agents Sonatrach (SH) restent sur une feuille et les prestataires sont sur une autre page, avec une colonne « Employeur » ; l'employeur se remplit seul en choisissant la personne dans BDDORGA (vide = SH). La page prestataires n'apparaît que s'il y en a, ou si l'on demande des lignes vides pour eux."
+    ]
+  },
+  {
     "id": "2026-11-09-378",
     "date": "2026-11-10",
     "title": "Version 6.88.1 — Bordereau d'envoi : observation en liste déroulante, logo réduit, Arial 11 / 12",

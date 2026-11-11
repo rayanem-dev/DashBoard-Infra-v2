@@ -165,14 +165,39 @@
     });
   M[M.length - 1].opts = { _titre: 'Décharge', _sansNum: true, _division: 'Division Infrastructure' };
 
-  /** Feuille de présence (modèle de la Division Infrastructures) : nom et prénom, fonction, signature ; lignes vides pour compléter à la main. */
-  modele('feuille-presence', 'divers', 'Feuille de présence', 'Liste d\'émargement (nom et prénom, fonction, signature) : personnes de BDDORGA et lignes vides pour compléter à la main.',
-    [L.date, { k: 'objet', l: 'Objet (réunion, formation… facultatif)' }, { k: 'personnes', l: 'Personnes (nom et prénom, fonction)', t: 'repeat', colonnes: [{ k: 'nom', l: 'Nom et prénom', pers: { fonction: 'fonction' } }, { k: 'fonction', l: 'Fonction' }] }, { k: 'lignes', l: 'Nombre de lignes au total (au moins)', t: 'number', def: '20' }], 'odm',
+  /** Rang hiérarchique d'après l'intitulé de la fonction (0 = chef de division … 9 = bas de l'échelle) ; une fonction inconnue se place au milieu-bas. Voir le test pour la liste. */
+  function rangFonction(f) {
+    var t = String(f || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (!t) return 8;
+    if (/adjoint|assistant/.test(t) && /(division|direction|directeur)/.test(t)) return 1;
+    if (/chef (de )?division|directeur|^responsable division|cadre dirigeant/.test(t)) return 0;
+    if (/chef (de )?(service|departement)|responsable (de )?(service|departement)/.test(t) && !/adjoint/.test(t)) return 2;
+    if (/adjoint/.test(t)) return 3;
+    if (/ingenieur|cadre|chef (de )?(projet|section|cellule|bureau)|responsable|charge (d )?(etudes?|mission)|expert|superviseur/.test(t)) return 4;
+    if (/chef (d )?(atelier|chantier|equipe|quart)/.test(t)) return 5;
+    if (/technicien superieur|conducteur|dessinateur|metreur|inspecteur|controleur/.test(t)) return 6;
+    if (/technicien|agent de maitrise|secretaire|assistant|comptable|magasinier|gestionnaire/.test(t)) return 7;
+    if (/agent|ouvrier|chauffeur|gardien|aide|manoeuvre|coursier|stagiaire/.test(t)) return 9;
+    return 8;
+  }
+  function estSh(societe) { var t = String(societe || '').toLowerCase(); return !t.trim() || t.indexOf('sonatrach') !== -1; }
+  function trierHierarchie(l) { return l.map(function (x, i) { return { x: x, i: i }; }).sort(function (a, b) { return (rangFonction(a.x.fonction) - rangFonction(b.x.fonction)) || (String(a.x.nom || '').toLowerCase() < String(b.x.nom || '').toLowerCase() ? -1 : String(a.x.nom || '').toLowerCase() > String(b.x.nom || '').toLowerCase() ? 1 : a.i - b.i); }).map(function (o) { return o.x; }); }
+  /** Feuille de présence (modèle de la Division Infrastructures) : nom et prénom, fonction, signature ; agents Sonatrach (SH) sur une feuille, prestataires sur une autre, chacun du chef de division au bas de l'échelle ; lignes vides pour compléter à la main. */
+  modele('feuille-presence', 'divers', 'Feuille de présence', 'Liste d\'émargement (nom et prénom, fonction, signature) : personnes de BDDORGA classées du chef de division au bas de l\'échelle ; agents SH sur une page, prestataires sur une autre ; lignes vides pour compléter à la main.',
+    [L.date, { k: 'objet', l: 'Objet (réunion, formation… facultatif)' }, { k: 'personnes', l: 'Personnes (nom et prénom, fonction, employeur : le classement et la séparation SH / prestataires se font seuls)', t: 'repeat', colonnes: [{ k: 'nom', l: 'Nom et prénom', pers: { fonction: 'fonction', dependance: 'societe' } }, { k: 'fonction', l: 'Fonction' }, { k: 'societe', l: 'Employeur (vide = SH)' }] },
+      { k: 'lignes', l: 'Nombre de lignes au total sur la feuille SH (au moins)', t: 'number', def: '20' }, { k: 'lignes_prest', l: 'Lignes vides sur la feuille prestataires (si aucun prestataire listé)', t: 'number', def: '0' }], 'odm',
     function (v) {
-      var pers = (v.personnes || []).filter(function (p) { return p && (String(p.nom || '').trim() || String(p.fonction || '').trim()); }), n = Math.max(Number(v.lignes) || 0, pers.length, 1), corps = '';
-      for (var i = 0; i < Math.min(n, 60); i += 1) { var p = pers[i] || {}; corps += '<tr style="height:9mm"><td>' + E(p.nom || '') + '</td><td>' + E(p.fonction || '') + '</td><td></td></tr>'; }
-      return '<div class="odm-num">' + (String(v.objet || '').trim() ? '<b>' + E(v.objet) + '</b>' : '&nbsp;') + '</div>' +
-        '<table class="tgr" style="width:100%"><thead><tr><th style="width:38%">NOM &amp; PRÉNOM</th><th style="width:34%">FONCTION</th><th>SIGNATURE</th></tr></thead><tbody>' + corps + '</tbody></table>';
+      var tous = (v.personnes || []).filter(function (p) { return p && (String(p.nom || '').trim() || String(p.fonction || '').trim()); });
+      var sh = trierHierarchie(tous.filter(function (p) { return estSh(p.societe); })), pr = trierHierarchie(tous.filter(function (p) { return !estSh(p.societe); }));
+      var feuille = function (liste, minimum, avecSociete) {
+        var n = Math.min(Math.max(minimum, liste.length, 1), 60), corps = '';
+        for (var i = 0; i < n; i += 1) { var p = liste[i] || {}; corps += '<tr style="height:9mm"><td>' + E(p.nom || '') + '</td><td>' + E(p.fonction || '') + '</td>' + (avecSociete ? '<td>' + E(p.societe || '') + '</td>' : '') + '<td></td></tr>'; }
+        return '<table class="tgr" style="width:100%"><thead><tr><th style="width:' + (avecSociete ? 30 : 38) + '%">NOM &amp; PRÉNOM</th><th style="width:' + (avecSociete ? 28 : 34) + '%">FONCTION</th>' + (avecSociete ? '<th style="width:16%">EMPLOYEUR</th>' : '') + '<th>SIGNATURE</th></tr></thead><tbody>' + corps + '</tbody></table>';
+      };
+      var objet = '<div class="odm-num">' + (String(v.objet || '').trim() ? '<b>' + E(v.objet) + '</b>' : '&nbsp;') + '</div>', nPr = Number(v.lignes_prest) || 0;
+      if (!pr.length && nPr <= 0) return objet + feuille(sh, Number(v.lignes) || 0, false);
+      return objet + '<p><b>Agents Sonatrach</b></p>' + feuille(sh, Number(v.lignes) || 0, false) +
+        '<div style="page-break-before:always"></div>' + objet + '<p><b>Prestataires</b></p>' + feuille(pr, nPr, true);
     });
   M[M.length - 1].opts = { _titre: 'Feuille de présence', _sansNum: true, _division: 'Division Infrastructure' };
   M.filter(function (m) { return m.id === 'transport'; })[0].cache = true;   // modèle de la page « Requête de transport de personnel » (requete-transport.html), pas de la liste des documents administratifs
@@ -508,6 +533,6 @@
     if (/division|infrastructure|cpm|passation|secretariat|cellule/.test(t)) return IMPUTATIONS[0];
     return null;
   }
-  var API = { scinderNom: scinderNom, IMPUTATIONS: IMPUTATIONS, imputationDe: imputationDe, categories: CATEGORIES, modeles: M, trouver: trouver, valeursInitiales: valeursInitiales, rendre: rendre, css: CSS, frDate: frDate, echapper: E };
+  var API = { rangFonction: rangFonction, scinderNom: scinderNom, IMPUTATIONS: IMPUTATIONS, imputationDe: imputationDe, categories: CATEGORIES, modeles: M, trouver: trouver, valeursInitiales: valeursInitiales, rendre: rendre, css: CSS, frDate: frDate, echapper: E };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.Documents = API;
 })(typeof window !== 'undefined' ? window : this);
