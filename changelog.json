@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-11-385",
+    "date": "2026-11-11",
+    "title": "Version 6.90.4 — Prise en charge : valeurs communes regroupées, plus de séparation entre les personnes",
+    "changes": [
+      "Le tableau n'a plus qu'une ligne de données : date d'arrivée, date de départ, nombre de personnes, entreprise (S/traitant ou SH) et centre de coût ne sont écrits qu'une fois ; les noms sont listés les uns sous les autres, avec leur fonction en face. Plus de trait entre les personnes. Colonnes « Nbr de personnes » et « SH » élargies pour que les titres ne se coupent plus."
+    ]
+  },
+  {
     "id": "2026-11-11-384",
     "date": "2026-11-11",
     "title": "Version 6.90.3 — Prise en charge : document construit par le code (plus de fichier modèle)",
