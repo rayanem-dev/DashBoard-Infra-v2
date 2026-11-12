@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-12-393",
+    "date": "2026-11-12",
+    "title": "Version 6.91.4 — Prise en charge : agents déjà enregistrés, trois choix dont « arrêter »",
+    "changes": [
+      "Quand des agents figurent déjà dans les Enquêtes avec un prestataire, la fenêtre propose trois choix : « Ne pas ajouter et arrêter » (rien n'est généré ni ajouté, le formulaire reste tel quel), « Générer sans les ajouter » (les documents sont créés mais ces agents ne sont pas rajoutés aux Enquêtes) et « OK, générer et ajouter quand même ». Avant, « Ignorer » générait quand même les fichiers."
+    ]
+  },
+  {
     "id": "2026-11-12-392",
     "date": "2026-11-12",
     "title": "Version 6.91.3 — Prise en charge : date de l'en-tête écrite comme dans la version qui fonctionnait",

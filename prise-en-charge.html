@@ -1073,7 +1073,10 @@ window.google = { script: { run: (function () {
     google.script.run
       .withSuccessHandler(function(r) {
         if (!r || !r.deja || !r.deja.length) { etapesAvantEnvoi(data); return; }
-        demanderDoublons(r.deja, function(ignorer) { data.ignorerEnquetes = ignorer ? r.deja.map(function(d) { return d.nomComplet; }) : []; etapesAvantEnvoi(data); });
+        demanderDoublons(r.deja, function(choix) {
+          if (choix === 'annuler') { document.getElementById('btnEnvoyer').disabled = false; document.getElementById('spinner').style.display = 'none'; return; }   // la génération est arrêtée : rien n'est créé ni ajouté
+          data.ignorerEnquetes = choix === 'sans' ? r.deja.map(function(d) { return d.nomComplet; }) : []; etapesAvantEnvoi(data);
+        });
       })
       .withFailureHandler(function() { etapesAvantEnvoi(data); })
       .verifierEnquetes(data);
@@ -1104,10 +1107,11 @@ window.google = { script: { run: (function () {
     const echap = function(t) { return String(t).replace(/[&<>]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
     boite.innerHTML = '<h3 style="margin:0 0 8px">Déjà enregistré dans les Enquêtes</h3><p style="margin:0 0 10px;color:#555">Ces agents figurent déjà avec un prestataire :</p><ul style="margin:0 0 14px;padding-left:20px">' +
       deja.map(function(d) { return '<li><b>' + echap(d.nomComplet) + '</b> — « ' + echap(d.onglet) + ' »' + (d.date ? ' (enregistré le ' + echap(d.date) + ')' : '') + '</li>'; }).join('') +
-      '</ul><div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button type="button" id="dbIgnorer" style="padding:10px 16px;border-radius:8px;border:1px solid #bbb;background:#fff;cursor:pointer">Ignorer (ne pas les ajouter)</button><button type="button" id="dbOk" style="padding:10px 16px;border-radius:8px;border:0;background:#e8610a;color:#fff;font-weight:700;cursor:pointer">OK, générer et ajouter quand même</button></div>';
+      '</ul><div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button type="button" id="dbAnnuler" style="padding:10px 16px;border-radius:8px;border:1px solid #b3261e;background:#fff;color:#b3261e;font-weight:700;cursor:pointer">Ne pas ajouter et arrêter</button><button type="button" id="dbIgnorer" style="padding:10px 16px;border-radius:8px;border:1px solid #bbb;background:#fff;cursor:pointer">Générer sans les ajouter</button><button type="button" id="dbOk" style="padding:10px 16px;border-radius:8px;border:0;background:#e8610a;color:#fff;font-weight:700;cursor:pointer">OK, générer et ajouter quand même</button></div>';
     fond.appendChild(boite); document.body.appendChild(fond);
-    boite.querySelector('#dbOk').onclick = function() { fond.remove(); suite(false); };
-    boite.querySelector('#dbIgnorer').onclick = function() { fond.remove(); suite(true); };
+    boite.querySelector('#dbOk').onclick = function() { fond.remove(); suite('ajouter'); };
+    boite.querySelector('#dbAnnuler').onclick = function() { fond.remove(); suite('annuler'); };
+    boite.querySelector('#dbIgnorer').onclick = function() { fond.remove(); suite('sans'); };
   }
 
   // Historique des demandes déjà créées (journal enregistré à chaque génération), affiché en haut
