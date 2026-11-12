@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-12-399",
+    "date": "2026-11-12",
+    "title": "Version 6.93.2 — Autorisation d'accès : les sites (et le travail de nuit) fonctionnent enfin dans la passerelle",
+    "changes": [
+      "Cause trouvée : le moteur « Prise en charge » de la passerelle est généré à partir de Code.js, et le générateur avalait les déclarations qui suivaient une fonction écrite sur une seule ligne. La liste des sites (SITES_AUTORISATION), celle du macaron et deux fonctions de lecture n'étaient donc pas reprises : « Lecture des sites mémorisés impossible (SITES_AUTORISATION is not defined) », aucune case cochée, aucune mémorisation. Le générateur reconnaît maintenant ces fonctions ; 11 éléments manquants sont repris (76 au lieu de 65), dont ceux des sites et du travail de nuit.",
+      "Un test vérifie désormais que tout ce que le moteur utilise est bien défini à la génération."
+    ]
+  },
+  {
     "id": "2026-11-12-398",
     "date": "2026-11-12",
     "title": "Version 6.93.1 — Données personnelles exploitables par l'agent : documents préremplis et téléchargement",
