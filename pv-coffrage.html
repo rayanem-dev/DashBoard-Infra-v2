@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PV de réception du coffrage et du ferraillage – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .fd { max-width: 900px; margin: 0 auto; padding: 16px 16px 40px; }
+  .barre-act { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; } .barre-act p { margin: 0; flex: 1 1 260px; font-size: 12.5px; color: var(--text-muted); }
+  .btn-p { padding: 10px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-s2 { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .fiche-zone { overflow-x: auto; }
+  /* Le PV : reproduction du procès-verbal papier (A4 portrait, 2 pages) */
+  #feuille { width: 794px; margin: 0 auto; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.4; padding: 26px 34px 30px; box-sizing: border-box; box-shadow: var(--shadow-card); }
+  #feuille .entete { display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.45; margin-bottom: 12px; } #feuille .entete img { width: 70px; height: auto; }
+  #feuille .titre { border: 2px solid #111; border-radius: 14px; text-align: center; font-size: 21px; font-weight: 800; padding: 12px 14px; margin: 6px 0 12px; text-transform: uppercase; }
+  #feuille .ligne { margin: 3px 0; } #feuille b { font-weight: 700; }
+  #feuille input[type=text], #feuille input[type=date], #feuille textarea { border: 0; border-bottom: 1px dotted #888; background: transparent; font: inherit; color: #111; padding: 2px 3px; box-sizing: border-box; outline: none; border-radius: 0; }
+  #feuille input[type=text]:focus, #feuille input[type=date]:focus, #feuille textarea:focus { background: #FFF4EA; border-bottom-color: #E85D04; }
+  #feuille textarea { width: 100%; resize: none; overflow: hidden; display: block; line-height: 1.35; }
+  #feuille label { text-transform: none; letter-spacing: 0; font-size: inherit; font-weight: 400; color: #111; }
+  #feuille h4 { margin: 14px 0 4px; font-size: 14px; text-decoration: underline; font-weight: 700; }
+  #feuille .ouvrages label { display: inline-block; margin: 2px 12px 2px 0; white-space: nowrap; } #feuille .ouvrages input[type=checkbox] { width: 16px; height: 16px; vertical-align: -3px; margin-right: 3px; }
+  #feuille table.pts { width: 100%; border-collapse: collapse; margin-top: 4px; } #feuille table.pts th, #feuille table.pts td { border: 1.2px solid #111; padding: 4px 8px; vertical-align: middle; font-size: 14px; }
+  #feuille table.pts th { text-align: center; font-weight: 700; } #feuille table.pts td.d { width: 31%; } #feuille table.pts td.c { width: 11%; text-align: center; } #feuille table.pts td.o { padding: 2px 4px; }
+  #feuille table.pts tr.sec td { font-weight: 700; } #feuille table.pts tr { break-inside: avoid; page-break-inside: avoid; }
+  #feuille table.pts td.o textarea { min-height: 30px; height: 30px; }
+  #feuille table.pts input[type=checkbox] { width: 20px; height: 20px; }
+  #feuille .concl label { display: block; margin: 2px 0; } #feuille .concl input[type=checkbox] { width: 16px; height: 16px; vertical-align: -3px; margin-right: 5px; }
+  #feuille ul.reco { margin: 4px 0 0 0; padding-left: 20px; list-style: '- '; font-size: 13.5px; } #feuille ul.reco li { margin-bottom: 2px; }
+  #feuille .fin { text-align: center; font-weight: 700; margin: 8px 0 4px; letter-spacing: 1px; }
+  #feuille .sign { display: flex; justify-content: space-between; margin-top: 10px; font-weight: 700; } #feuille .sign div { width: 32%; min-height: 80px; }
+  @media (max-width: 860px) { #feuille { zoom: .75; } }
+  @media (max-width: 640px) {
+    .fd { padding: 10px 10px 30px; } .barre-act .btn-p, .barre-act .btn-s2 { flex: 1 1 100%; padding: 13px 14px; font-size: 15px; }
+    #feuille { width: 100%; zoom: 1; padding: 14px 10px 18px; } #feuille .titre { font-size: 16px; }
+    #feuille input[type=text], #feuille input[type=date] { width: 100% !important; min-height: 38px; font-size: 16px; border: 1.3px solid #bbb; border-radius: 6px; padding: 5px 8px; margin-top: 3px; display: block; }
+    #feuille table.pts th, #feuille table.pts td { font-size: 13px; padding: 4px 4px; } #feuille table.pts td.c { width: 15%; } #feuille table.pts td.o textarea { font-size: 15px; }
+    #feuille .sign { flex-direction: column; gap: 8px; } #feuille .sign div { width: 100%; min-height: 50px; }
+  }
+  @media print {
+    @page { size: A4 portrait; margin: 9mm; }
+    html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body > *:not(main) { display: none !important; } .fd { padding: 0 !important; max-width: none !important; } .fd > *:not(.fiche-zone) { display: none !important; } .fiche-zone { overflow: visible !important; }
+    #feuille { zoom: 1 !important; width: 100% !important; font-size: 12.5px; margin: 0 !important; box-shadow: none !important; padding: 2px 4px !important; }
+    #feuille table.pts th, #feuille table.pts td { font-size: 12px; padding: 1px 6px; } #feuille table.pts td.o textarea { min-height: 20px !important; height: 20px !important; } #feuille h4 { margin: 8px 0 2px; } #feuille ul.reco { font-size: 12px; } #feuille .ligne { margin: 1px 0; } #feuille .sign div { min-height: 60px; }
+    #feuille input[type=text], #feuille input[type=date], #feuille textarea { border-bottom: 0 !important; background: transparent !important; } .noprint { display: none !important; } #feuille input[type=date]::-webkit-calendar-picker-indicator { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🏗️</div>
+    <div class="logo-text"><h1>PV de réception du coffrage et du ferraillage</h1><p>Sonatrach · RNS · à remplir, imprimer ou envoyer</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="fd">
+  <div class="barre-act">
+    <button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s2" id="b-mail" type="button">✉ Envoyer au secrétariat</button><button class="btn-s2" id="b-vider" type="button">🧹 Nouveau PV</button>
+    <p>Un seul PV (2 pages) : cochez « Conforme » ou « Non conforme » pour chaque point, notez les observations, choisissez la conclusion. Le brouillon est gardé sur cet appareil.</p>
+  </div>
+  <div class="fiche-zone"><div id="feuille">
+    <div class="entete"><img src="img/sonatrach-logo.jpeg" alt="Sonatrach"><div>Activité Exploration Production<br>Division Production<br>Direction Régionale Rhourde-Nouss<br>Division Infrastructures</div></div>
+    <div class="titre">Procès-verbal de réception du coffrage et du ferraillage.</div>
+    <div class="ligne"><b>Projet :</b> <textarea id="f-projet" rows="2" maxlength="300" aria-label="Projet"></textarea></div>
+    <div class="ligne"><b>Maître d'Ouvrage :</b> <input type="text" id="f-mo" style="width:62%" maxlength="80" aria-label="Maître d'ouvrage"></div>
+    <div class="ligne"><b>Entreprise de réalisation :</b> <input type="text" id="f-ent" style="width:52%" maxlength="80" aria-label="Entreprise de réalisation"></div>
+    <div class="ligne"><b>Lot :</b> <input type="text" id="f-lot" style="width:40%" maxlength="60" aria-label="Lot"></div>
+    <div class="ligne"><b>Bloc :</b> <input type="text" id="f-bloc" style="width:70%" maxlength="80" aria-label="Bloc"></div>
+    <div class="ligne ouvrages"><b>Ouvrage concerné :</b>
+      <span id="ouvrages"></span> <input type="text" id="f-autre" style="width:38%" maxlength="80" placeholder="Autre : précisez" aria-label="Autre ouvrage"></div>
+    <div class="ligne"><b>Date de l'inspection :</b> <input type="date" id="f-date" aria-label="Date de l'inspection"></div>
+    <h4>Objet</h4>
+    <div style="text-indent:28px">Le présent procès-verbal a pour objet de constater la conformité du coffrage et du ferraillage mises en place avant autorisation de bétonnage.</div>
+    <h4>Points contrôlés</h4>
+    <table class="pts" id="pts"><thead><tr><th>Désignation</th><th>Conforme</th><th>Non conforme</th><th>Observations</th></tr></thead><tbody></tbody></table>
+    <h4>Autres Observations</h4>
+    <textarea id="f-autres" rows="3" maxlength="800" aria-label="Autres observations"></textarea>
+    <h4>Conclusion</h4>
+    <div class="concl">
+      <label><input type="checkbox" id="c-ok"> Les armatures sont conformes aux plans et aux spécifications techniques.</label>
+      <div><b>Le bétonnage est autorisé.</b></div><div>ou</div>
+      <label><input type="checkbox" id="c-res"> Des réserves sont émises.</label>
+      <div><b>Le bétonnage est suspendu jusqu'à la levée des réserves suivantes :</b></div>
+      <textarea id="f-reserves" rows="2" maxlength="800" aria-label="Réserves"></textarea>
+    </div>
+    <h4>Recommandations générales :</h4>
+    <ul class="reco">
+      <li>Les travaux de bétonnage doivent être exécutés conformément aux prescriptions du DTR BE 2.1</li>
+      <li>L'entreprise doit réaliser des prélèvements d'éprouvettes de béton lors du coulage, conformément aux normes en vigueur.</li>
+      <li>L'entreprise doit assurer la continuité du bétonnage jusqu'à son achèvement complet, sans interruption, afin de garantir la qualité et l'homogénéité de l'ouvrage.</li>
+      <li>L'entreprise doit procéder au soufflage et au nettoyage des coffrages et armatures avant le coulage du béton, afin d'éliminer toute poussière, particule ou débris susceptibles d'altérer la qualité et l'adhérence du béton.</li>
+      <li>L'entreprise doit assurer l'arrosage régulier du béton après le coulage, afin de garantir une bonne prise, éviter les fissurations et assurer la durabilité de l'ouvrage.</li>
+      <li>L'entreprise doit appliquer strictement l'ensemble des consignes HSE (Hygiène, Sécurité et Environnement) prescrites par le maître d'ouvrage et mentionnées dans les permis de travail. Toute opération de bétonnage ou activité de chantier est conditionnée par le respect préalable de ces consignes.</li>
+      <li>L'entreprise doit assurer l'évacuation et le dépôt des déchets de construction exclusivement dans les emplacements autorisés, conformément aux consignes HSE et aux recommandations du maître d'ouvrage (décharges publiques). Le tri sélectif et le respect des procédures environnementales doivent être appliqués afin de garantir la propreté et la conformité réglementaire du chantier.</li>
+    </ul>
+    <div class="fin">.......................................FIN PV.......................................</div>
+    <h4>Signatures :</h4>
+    <div class="sign"><div>Maître d'Ouvrage</div><div style="text-align:center">Chargé de suivi</div><div style="text-align:right">Entreprise de réalisation</div></div>
+  </div></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); }, CLE = 'infra_pv_coffrage_v1';
+  var OUVRAGES = ['Fondation', 'Semelle', 'Radier', 'Poteaux', 'Voiles', 'Poutres', 'Dalle', 'Escalier'];
+  var COFFRAGE = ['Implantation et axes', 'Dimensions et sections', 'Alignement verticalité et niveau', 'Stabilité et rigidité du coffrage', 'Etanchéité des joints', 'Propreté du coffrage', 'Enrobage des armatures', 'Réservation, inserts et fourreaux', 'Conformité aux plans d\'exécutions'];
+  var FERRAILLAGE = ['Diamètre des armatures', 'Nombre de barres', 'Espacement des armatures', 'Longueur de recouvrement', 'Longueur d\'ancrage', 'Positionnement des armatures', 'Enrobage béton', 'Ligatures correctement réalisées', 'Cales d\'enrobage installées', 'Armatures propres (sans graisse ni rouille importante)', 'Réservations et inserts', 'Respect des plans d\'exécution'];
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.className = 'toast show'; clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = 'toast'; }, 3800); }
+  function iso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function fr(i) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(i || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : (i || ''); }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function ajuster(t) { t.style.height = 'auto'; t.style.height = Math.max(t.classList.contains('obs') ? 30 : 36, t.scrollHeight) + 'px'; }
+  function ajusterTous() { Array.prototype.forEach.call(document.querySelectorAll('#feuille textarea'), ajuster); }
+  /* tableau des points : deux cases (une seule cochée), observation libre */
+  function construire() {
+    var tb = $('pts').querySelector('tbody'); tb.textContent = '';
+    [['Inspection du Coffrage', COFFRAGE], ['Inspection du Ferraillage', FERRAILLAGE]].forEach(function (g) {
+      var tr = el('tr', 'sec'), td = el('td', null, g[0]); td.colSpan = 4; tr.appendChild(td); tb.appendChild(tr);
+      g[1].forEach(function (nom) {
+        var r = el('tr'); r.appendChild(el('td', 'd', nom));
+        var c1 = el('td', 'c'), c2 = el('td', 'c'), a = el('input'), b = el('input'); a.type = b.type = 'checkbox'; a.className = 'cf'; b.className = 'nc'; a.setAttribute('aria-label', 'Conforme : ' + nom); b.setAttribute('aria-label', 'Non conforme : ' + nom);
+        a.addEventListener('change', function () { if (a.checked) b.checked = false; garder(); }); b.addEventListener('change', function () { if (b.checked) a.checked = false; garder(); });
+        c1.appendChild(a); c2.appendChild(b); r.appendChild(c1); r.appendChild(c2);
+        var o = el('td', 'o'), t = el('textarea', 'obs'); t.rows = 1; t.maxLength = 300; t.setAttribute('aria-label', 'Observation : ' + nom); t.addEventListener('input', function () { ajuster(t); garder(); }); o.appendChild(t); r.appendChild(o); tb.appendChild(r);
+      });
+    });
+    var ov = $('ouvrages'); ov.textContent = '';
+    OUVRAGES.forEach(function (n) { var l = el('label'), i = el('input'); i.type = 'checkbox'; i.dataset.o = n; i.addEventListener('change', garder); l.appendChild(i); l.appendChild(document.createTextNode(n)); ov.appendChild(l); });
+  }
+  function lignes() { return Array.prototype.slice.call($('pts').querySelectorAll('tbody tr:not(.sec)')); }
+  function lire() {
+    return { projet: $('f-projet').value, mo: $('f-mo').value, ent: $('f-ent').value, lot: $('f-lot').value, bloc: $('f-bloc').value, date: $('f-date').value, autre: $('f-autre').value,
+      ouv: Array.prototype.filter.call($('ouvrages').querySelectorAll('input'), function (i) { return i.checked; }).map(function (i) { return i.dataset.o; }),
+      pts: lignes().map(function (r) { return [r.querySelector('.cf').checked ? 'c' : r.querySelector('.nc').checked ? 'n' : '', r.querySelector('textarea').value]; }),
+      autres: $('f-autres').value, ok: $('c-ok').checked, res: $('c-res').checked, reserves: $('f-reserves').value };
+  }
+  var PAR_DEFAUT = { mo: 'SONATRACH DP Rhourde Nouss', ent: 'EPE DIVINDUS MCM SPA', lot: 'Gros Œuvre' };
+  function ecrire(d) {
+    d = d || {}; $('f-projet').value = d.projet || ''; $('f-mo').value = d.mo != null ? d.mo : PAR_DEFAUT.mo; $('f-ent').value = d.ent != null ? d.ent : PAR_DEFAUT.ent; $('f-lot').value = d.lot != null ? d.lot : PAR_DEFAUT.lot;
+    $('f-bloc').value = d.bloc || ''; $('f-date').value = d.date || iso(); $('f-autre').value = d.autre || '';
+    Array.prototype.forEach.call($('ouvrages').querySelectorAll('input'), function (i) { i.checked = (d.ouv || []).indexOf(i.dataset.o) !== -1; });
+    lignes().forEach(function (r, i) { var v = (d.pts && d.pts[i]) || ['', '']; r.querySelector('.cf').checked = v[0] === 'c'; r.querySelector('.nc').checked = v[0] === 'n'; r.querySelector('textarea').value = v[1] || ''; });
+    $('f-autres').value = d.autres || ''; $('c-ok').checked = !!d.ok; $('c-res').checked = !!d.res; $('f-reserves').value = d.reserves || ''; ajusterTous();
+  }
+  function garder() { try { localStorage.setItem(CLE, JSON.stringify(lire())); } catch (e) { /* brouillon local indisponible */ } }
+  function brouillon() { try { var d = JSON.parse(localStorage.getItem(CLE) || 'null'); return d && d.pts ? d : null; } catch (e) { return null; } }
+  construire();
+  $('c-ok').addEventListener('change', function () { if ($('c-ok').checked) $('c-res').checked = false; garder(); }); $('c-res').addEventListener('change', function () { if ($('c-res').checked) $('c-ok').checked = false; garder(); });
+  Array.prototype.forEach.call(document.querySelectorAll('#feuille input[type=text], #feuille input[type=date], #feuille > div textarea'), function (i) { i.addEventListener('input', function () { if (i.tagName === 'TEXTAREA') ajuster(i); garder(); }); i.addEventListener('change', garder); });
+  $('b-vider').onclick = function () { if (!window.confirm('Commencer un nouveau PV vide ?')) return; ecrire({}); garder(); };
+  $('b-imp').onclick = function () { garder(); ajusterTous(); window.print(); };
+  $('b-mail').onclick = function () {
+    var v = lire(); if (!v.pts.some(function (p) { return p[0]; })) { toast('Cochez au moins un point (conforme ou non conforme).'); return; }
+    garder(); var b = $('b-mail'); b.disabled = true;
+    var f = $('feuille').cloneNode(true), src = $('feuille').querySelectorAll('input, textarea'), cop = f.querySelectorAll('input, textarea');
+    Array.prototype.forEach.call(cop, function (c, i) { var s = src[i], t; if (c.type === 'checkbox') { t = document.createElement('span'); t.textContent = s.checked ? '☒' : '☐'; t.style.fontSize = '16px'; } else { t = document.createElement('div'); t.style.cssText = 'white-space:pre-wrap;display:inline;font-weight:400'; t.textContent = c.type === 'date' ? fr(s.value) : s.value; } c.parentNode.replaceChild(t, c); });
+    var logo = f.querySelector('img'); if (logo) logo.remove();
+    var css = Array.prototype.map.call(document.querySelectorAll('style'), function (s) { return s.textContent; }).join('\n').replace(/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
+    Diffusion.envoyerHtml({ titre: '✉ Envoyer le PV de réception', sujet: 'PV de réception coffrage et ferraillage — ' + (v.bloc || v.projet.slice(0, 50) || 'chantier') + ' — ' + fr(v.date), nom: 'pv-coffrage-ferraillage-' + (v.date || iso()),
+      html: '<style>' + css + '</style><div id="feuille" style="width:auto;box-shadow:none">' + f.innerHTML + '</div>' })
+      .then(function (r) { if (r) toast('✅ Envoyé à : ' + r.destinataires.join(', ')); }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+  };
+  ecrire(brouillon() || {});
+})();
+</script>
+<script src="js/diffusion.js"></script>
+<script src="js/raccourcis.js"></script>
+<script src="js/pied.js"></script>
+</body>
+</html>

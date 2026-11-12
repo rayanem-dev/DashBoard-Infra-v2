@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-12-394",
+    "date": "2026-11-12",
+    "title": "Version 6.92.0 — Nouvelle application : PV de réception du coffrage et du ferraillage",
+    "changes": [
+      "Nouvelle page « PV de réception coffrage et ferraillage » (rubrique Chantiers) : le procès-verbal des deux scans, en un seul fichier de 2 pages A4. Projet, maître d'ouvrage / entreprise (EPE DIVINDUS MCM SPA) / lot (Gros Œuvre) préremplis, bloc, ouvrage concerné (Fondation, Semelle, Radier, Poteaux, Voiles, Poutres, Dalle, Escalier, Autre), date de l'inspection.",
+      "21 points contrôlés (9 de coffrage, 12 de ferraillage) avec une case « Conforme » ou « Non conforme » (une seule) et une observation ; autres observations ; conclusion « armatures conformes, bétonnage autorisé » ou « réserves émises, bétonnage suspendu » avec la liste des réserves ; recommandations générales (DTR BE 2.1, éprouvettes, HSE, déchets) ; signatures Maître d'Ouvrage / Chargé de suivi / Entreprise.",
+      "Boutons : imprimer (2 pages), envoyer au secrétariat par e-mail, nouveau PV ; brouillon gardé sur l'appareil. La carte apparaît dans le catalogue après redéploiement de la passerelle."
+    ]
+  },
+  {
     "id": "2026-11-12-393",
     "date": "2026-11-12",
     "title": "Version 6.91.4 — Prise en charge : agents déjà enregistrés, trois choix dont « arrêter »",

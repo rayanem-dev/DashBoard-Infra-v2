@@ -78,6 +78,7 @@
         { titre: 'Affectation du personnel', description: 'Changez le service d\'une personne directement dans l\'Organigramme (BDDORGA), avec historique et e-mail.', emoji: '🔀', url: 'affectation.html' } ] },
       { id: 'rapports', titre: 'Rapports journaliers', icone: '📝', niveau: 3, apps: [
         { titre: 'Rapports journaliers', description: 'Saisie du rapport du jour par chantier et suivi par la hiérarchie.', emoji: '📝', url: 'rapports.html' },
+        { titre: 'PV de réception coffrage et ferraillage', description: 'Procès-verbal de réception du coffrage et du ferraillage avant bétonnage : points conformes / non conformes, conclusion, impression ou envoi.', emoji: '🏗️', url: 'pv-coffrage.html' },
         { titre: 'Affectation chantier', description: 'Service de chaque chantier et synchronisation avec le Suivi CPM.', emoji: '🔀', url: 'affectation-chantier.html' } ] },
       { id: 'badges', titre: 'Badges prestataires', icone: '🪪', niveau: 3, apps: [
         { titre: 'Badges prestataires', description: 'Prépare et imprime les badges (recto-verso), numérotation automatique et historique.', emoji: '🪪', url: 'badges.html' },
