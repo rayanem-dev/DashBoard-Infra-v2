@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-12-391",
+    "date": "2026-11-12",
+    "title": "Version 6.91.2 — Prise en charge : correction de l'erreur « setSpacingBefore » à la génération",
+    "changes": [
+      "La version 6.91.1 (titre centré, date plus bas) faisait échouer la génération (« Cannot read properties of null (reading 'setSpacingBefore') ») : l'écriture de la date et son espacement sont maintenant deux instructions séparées."
+    ]
+  },
+  {
     "id": "2026-11-12-390",
     "date": "2026-11-12",
     "title": "Version 6.91.1 — Prise en charge : titre centré, date plus bas",
