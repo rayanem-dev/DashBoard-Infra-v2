@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-12-392",
+    "date": "2026-11-12",
+    "title": "Version 6.91.3 — Prise en charge : date de l'en-tête écrite comme dans la version qui fonctionnait",
+    "changes": [
+      "La date « Rhourde Nouss, le : » est de nouveau ajoutée comme nouveau paragraphe (procédé de la 6.90.4), puis descendue ; l'espacement est facultatif et ne peut plus bloquer la génération."
+    ]
+  },
+  {
     "id": "2026-11-12-391",
     "date": "2026-11-12",
     "title": "Version 6.91.2 — Prise en charge : correction de l'erreur « setSpacingBefore » à la génération",
