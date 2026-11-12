@@ -49,7 +49,7 @@
 <body>
 <header class="bandeau"><div class="bandeau-inner">
   <div class="logo-area"><div class="logo-circle">🦺</div>
-    <div class="logo-text"><h1>Dotation EPI</h1><p>Tailles · vestes en cuir · récapitulatif à commander</p></div></div>
+    <div class="logo-text"><h1>Dotation EPI</h1><p>Tailles · vestes / parkas · récapitulatif à commander</p></div></div>
   <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
 </div></header>
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
@@ -71,7 +71,7 @@
       <label class="coche"><input type="checkbox" id="e-inc"> tailles manquantes seulement</label>
       <button class="btn-s" id="e-xl" type="button">⬇ Excel</button><button class="btn-p" id="e-pdf" type="button">🖨 PDF / Imprimer</button>
       <button class="btn-s" id="e-maj" type="button" title="E-mail de mise à jour à tous les agents de l'organisme choisi (ou de toute la division) : leurs tailles actuelles et un lien pour les vérifier">✉ Relancer pour mise à jour</button>
-      <button class="btn-s" id="e-final" type="button" title="Excel au format du fichier final (genre, matricule, nom, prénom, division, service, pointure, deux groupes de tailles, veste en cuir) : la structure choisie, ou toute la division">⬇ Excel format final</button><button class="btn-s" id="e-lien" type="button" title="Copie l'adresse de la page à envoyer aux agents (WhatsApp, messagerie…)">🔗 Copier le lien</button><button class="btn-s" id="e-mail" type="button" title="Un e-mail avec le lien à chaque agent affiché dont les tailles sont incomplètes">✉ Envoyer le lien aux incomplets</button>
+      <button class="btn-s" id="e-final" type="button" title="Excel au format du fichier final (genre, matricule, nom, prénom, division, service, pointure, deux groupes de tailles, veste / parka) : la structure choisie, ou toute la division">⬇ Excel format final</button><button class="btn-s" id="e-lien" type="button" title="Copie l'adresse de la page à envoyer aux agents (WhatsApp, messagerie…)">🔗 Copier le lien</button><button class="btn-s" id="e-mail" type="button" title="Un e-mail avec le lien à chaque agent affiché dont les tailles sont incomplètes">✉ Envoyer le lien aux incomplets</button>
     </div><p class="note" id="e-info"></p></div>
     <div class="bloc"><h2>À commander <span class="note" id="r-sous"></span></h2><div id="e-recap"></div></div>
     <div class="bloc"><div class="defile"><table class="res" id="e-table"><thead><tr><th>Agent</th><th>Haut</th><th>Pantalon</th><th>Pointure</th><th>Veste cuir / parka</th><th>Dossier</th><th></th></tr></thead><tbody id="e-corps"></tbody></table></div></div>
@@ -133,7 +133,7 @@
     agents.forEach(function (a) { if (!a.manquants.length) complets += 1; ['haut', 'pantalon', 'chaussures', 'veste_cuir'].forEach(function (k) { if (a[k]) out[k][a[k]] = (out[k][a[k]] || 0) + 1; }); });
     return { articles: out, agents: agents.length, complets: complets };
   }
-  var LIB = { haut: 'T-shirt · veste · combinaison', pantalon: 'Pantalon', chaussures: 'Chaussures de sécurité (pointure)', veste_cuir: 'Veste en cuir (UK)' };
+  var LIB = { haut: 'T-shirt · veste · combinaison', pantalon: 'Pantalon', chaussures: 'Chaussures de sécurité (pointure)', veste_cuir: 'Veste / Parka (UK)' };
   function ordre(a, b) { var x = Number(a), y = Number(b); if (!isNaN(x) && !isNaN(y)) return x - y; var i = HAUTS.indexOf(a), j = HAUTS.indexOf(b); if (i >= 0 && j >= 0) return i - j; return a < b ? -1 : 1; }
   function cellules(a) { return [a.haut ? a.haut + (a.ref1_eu ? ' · ' + a.ref1_eu : '') : '', a.pantalon, a.chaussures, a.veste_cuir ? 'UK ' + a.veste_cuir + ' · ' + lettreDe(a.veste_cuir) : '']; }
   function dessiner() {

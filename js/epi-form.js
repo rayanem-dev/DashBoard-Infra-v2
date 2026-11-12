@@ -1,5 +1,5 @@
 /**
- * Formulaire des tailles de dotation EPI (haut, pantalon, pointure, veste en cuir UK, remarque).
+ * Formulaire des tailles de dotation EPI (haut, pantalon, pointure, veste / parka UK, remarque).
  * Partagé par la page « Dotation EPI » (epi.html) et par « Mon profil » (profil.html) : les deux écrivent dans le même fichier (onglet TaillesEPI de la passerelle).
  *   EpiForm.formulaire(tailles, table, surEnregistrer(valeurs) → Promise, { toast }) → élément DOM
  */
@@ -21,14 +21,21 @@ var EpiForm = (function () {
     var f = el('div', 'epf'), g = el('div', 'grille'), champs = {};
     function champ(id, lib, noeud, aide, large) { var d = el('div', large ? 'large' : ''), l = el('label', null, lib); l.htmlFor = pref + '-' + id; noeud.id = pref + '-' + id; d.appendChild(l); d.appendChild(noeud); if (aide) d.appendChild(el('div', 'aide', aide)); g.appendChild(d); champs[id] = noeud; return d; }
     function liste(id, valeurs) { var dl = el('datalist'); dl.id = pref + '-dl-' + id; valeurs.forEach(function (v) { var o = el('option'); o.value = v; dl.appendChild(o); }); f.appendChild(dl); return dl.id; }
-    var haut = el('input'); haut.setAttribute('list', liste('haut', HAUTS)); haut.placeholder = 'M, L, XL… ou 42'; haut.value = t.haut || '';
-    champ('haut', 'T-shirt · veste · combinaison (haut)', haut, 'S, M, L, XL, XXL ou une taille numérique. La combinaison suit cette taille ; autre cas : écrivez-le dans la remarque.');
-    var pan = el('input'); pan.inputMode = 'numeric'; pan.placeholder = 'ex. 42 ou 90'; pan.value = t.pantalon || '';
-    champ('pantalon', 'Pantalon : taille ou tour de taille', pan, 'Taille numérique (ex. 42) ou tour de taille en cm.');
+    /* Sélecteur (même présentation que la veste / parka) ; une valeur déjà enregistrée hors liste (ex. un tour de taille) reste proposée */
+    function selecteur(valeurs, courant, vide) {
+      var sl = el('select'), o = el('option', null, vide); o.value = ''; sl.appendChild(o); var c = String(courant == null ? '' : courant).trim();
+      if (c && valeurs.indexOf(c) < 0) valeurs = [c].concat(valeurs);
+      valeurs.forEach(function (v) { var x = el('option', null, v); x.value = v; sl.appendChild(x); }); sl.value = c; return sl;
+    }
+    var PANTALONS = []; for (var n = 34; n <= 66; n += 1) PANTALONS.push(String(n));
+    var haut = selecteur(HAUTS, t.haut, '— choisir la taille —');
+    champ('haut', 'T-shirt · veste · combinaison (haut)', haut, 'La combinaison suit cette taille ; autre cas : écrivez-le dans la remarque.');
+    var pan = selecteur(PANTALONS, t.pantalon, '— choisir la taille —');
+    champ('pantalon', 'Pantalon : taille', pan, 'Taille numérique (EU).');
     var cha = el('input'); cha.type = 'number'; cha.min = 30; cha.max = 52; cha.placeholder = 'ex. 43'; cha.value = t.chaussures || ''; champ('chaussures', 'Pointure (chaussures de sécurité)', cha);
-    var vc = el('select'); var o0 = el('option', null, '— ne sait pas / pas de veste —'); o0.value = ''; vc.appendChild(o0);
+    var vc = el('select'); var o0 = el('option', null, '— choisir la taille —'); o0.value = ''; vc.appendChild(o0);
     TABLE.forEach(function (r) { var o = el('option', null, 'UK ' + r.uk + ' — ' + r.lettre + ' (poitrine ' + r.poitrine + ' cm)'); o.value = String(r.uk); vc.appendChild(o); }); vc.value = String(t.veste_cuir || '');
-    var dv = champ('veste_cuir', 'Veste en cuir (taille UK)', vc, '');
+    var dv = champ('veste_cuir', 'Veste / Parka', vc, 'Taille UK (facultatif).');
     var sug = el('button', 'petit', 'Reprendre la taille de mon haut'); sug.type = 'button'; sug.addEventListener('click', function () { var uk = ukDe(haut.value); if (uk) vc.value = String(uk); else toast('Indiquez d\'abord une taille de haut en lettres (S, M, L…).'); }); dv.appendChild(sug);
     var rem = el('textarea'); rem.rows = 2; rem.maxLength = 200; rem.value = t.remarque || ''; champ('remarque', 'Remarque (facultatif)', rem, '', true);
     f.appendChild(g);

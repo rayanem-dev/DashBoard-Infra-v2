@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-12-396",
+    "date": "2026-11-12",
+    "title": "Version 6.92.2 — Dotation EPI : « Veste / Parka » et sélecteurs pour le haut et le pantalon",
+    "changes": [
+      "Le champ « Veste en cuir (taille UK) » s'appelle maintenant « Veste / Parka » (formulaire, récapitulatif, tableau et exports).",
+      "T-shirt · veste · combinaison (haut) et Pantalon deviennent des listes de choix comme la veste / parka (haut : XS à 4XL ; pantalon : 34 à 66) ; seule la pointure des chaussures reste un champ numérique. Une taille déjà enregistrée hors de la liste (par exemple un tour de taille) reste proposée et n'est pas perdue."
+    ]
+  },
+  {
     "id": "2026-11-12-395",
     "date": "2026-11-12",
     "title": "Version 6.92.1 — PV coffrage : projet et entreprise liés, impression sans en-tête ni pied du navigateur",
