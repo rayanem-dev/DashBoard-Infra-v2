@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-12-397",
+    "date": "2026-11-12",
+    "title": "Version 6.93.0 — Données personnelles de l'agent (référence RH) dans BDDORGA, visibles de lui seul",
+    "changes": [
+      "Mon profil › « Mes données personnelles » : nom et prénom en arabe, date et lieu de naissance, père, mère, adresse, n° de sécurité sociale (CNAS), n° CCP / RIB, situation familiale, diplôme. Chaque agent ne voit et ne modifie que les siennes (l'identité vient de sa session) ; elles s'écrivent dans sa ligne de BDDORGA, dans des colonnes créées à la fin de la feuille au premier enregistrement (texte brut : aucun numéro n'est transformé).",
+      "Administrateur (Privilèges › Utilisateurs) : « 📥 Importer une fiche RH » lit un Excel (colonnes Nom et prénom, Date de naissance, Père, Mère, Adresse, CNAS, CCP, Situation familiale, Diplôme, Téléphone…), rapproche chaque ligne de BDDORGA par e-mail puis par nom, affiche un aperçu (à écrire, déjà saisi, non trouvé, ambigu) et n'écrit qu'après confirmation ; une valeur déjà saisie n'est jamais écrasée, et le téléphone n'est complété que s'il manque.",
+      "« 🔒 Extraire les données personnelles » télécharge un Excel confidentiel de toutes les personnes ; l'import comme l'extraction sont tracés au journal (sans les valeurs). Les données ne sont jamais publiées dans les fichiers du site."
+    ]
+  },
+  {
     "id": "2026-11-12-396",
     "date": "2026-11-12",
     "title": "Version 6.92.2 — Dotation EPI : « Veste / Parka » et sélecteurs pour le haut et le pantalon",

@@ -17,6 +17,7 @@
 <script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
 <script src="js/epi-form.js"></script>
 <style>
+.grille-perso { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin: 8px 0 12px; } .grille-perso label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; } .grille-perso input, .grille-perso select { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
   .pf { max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
   .bloc { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 16px 18px; margin-bottom: 14px; }
   .bloc h2 { font-size: 15px; margin: 0 0 10px; }
@@ -76,6 +77,12 @@
         <div><label for="c-vc">Vis-à-vis de chambre</label><select id="c-vc"></select></div>
       </div>
       <div class="actions" style="justify-content:flex-start"><button class="btn-p" id="b-coord" type="button">💾 Enregistrer</button></div><div class="msg" id="m-coord"></div>
+    </div>
+    <div class="bloc" id="bloc-perso" hidden>
+      <h2>🔒 Mes données personnelles</h2>
+      <p class="aide" style="margin:0 0 8px;font-size:12px;color:var(--text-muted)">Informations de référence de votre dossier RH, gardées dans BDDORGA. <b>Elles ne sont visibles que par vous</b> ; l'administrateur peut les extraire en cas de besoin (chaque extraction est tracée). Vous pouvez les compléter et les corriger ici.</p>
+      <div id="perso-etat" class="msg"></div><div id="perso-form" class="grille-perso"></div>
+      <div class="actions" style="justify-content:flex-start"><button class="btn-p" id="b-perso" type="button">💾 Enregistrer mes données</button></div><div class="msg" id="m-perso"></div>
     </div>
     <div class="bloc" id="bloc-epi" hidden>
       <h2>🦺 Mes tailles (dotation EPI)</h2>
@@ -249,8 +256,29 @@
       f.appendChild(EpiForm.formulaire(r.tailles || {}, r.table || [], function (v) { return Api.call('epi_enregistrer', v).then(function () { msg('m-epi', 'Tailles enregistrées : le fichier de la dotation est à jour.', true); return chargerEpi(); }).catch(function (e) { msg('m-epi', e.message); throw e; }); }, { toast: function (t) { msg('m-epi', t); }, prefixe: 'pe' }));
     }).catch(function () { $('bloc-epi').hidden = true; });
   }
+  // ---------- données personnelles (visibles de moi seul) ----------
+  var PERSO_CHAMPS = [];
+  function chargerPerso() {
+    return Api.call('perso_moi').then(function (r) {
+      PERSO_CHAMPS = r.champs || []; $('bloc-perso').hidden = false;
+      $('perso-etat').textContent = r.presente ? '' : 'Votre fiche n\'est pas encore dans BDDORGA : demandez au secrétariat de vous y inscrire pour pouvoir enregistrer.'; $('perso-etat').className = 'msg';
+      $('b-perso').disabled = !r.presente;
+      var z = $('perso-form'); z.textContent = '';
+      PERSO_CHAMPS.forEach(function (c) {
+        var d = el('div'), l = el('label', null, c.l), i;
+        if (c.t === 'choix') { i = el('select'); var o0 = el('option', null, '— non renseignée —'); o0.value = ''; i.appendChild(o0); c.choix.forEach(function (x) { var o = el('option', null, x); o.value = x; i.appendChild(o); }); }
+        else { i = el('input'); i.type = c.t === 'date' ? 'date' : 'text'; i.maxLength = c.max || 40; if (c.k === 'nom_ar' || c.k === 'prenom_ar' || c.k === 'lieu_naissance' || c.k === 'pere' || c.k === 'mere' || c.k === 'adresse') i.dir = 'auto'; i.autocomplete = 'off'; }
+        i.id = 'pf-' + c.k; i.value = (r.valeurs || {})[c.k] || ''; l.htmlFor = i.id; d.appendChild(l); d.appendChild(i); z.appendChild(d);
+      });
+    }).catch(function () { $('bloc-perso').hidden = true; });
+  }
+  $('b-perso').addEventListener('click', function () {
+    var v = {}; PERSO_CHAMPS.forEach(function (c) { v[c.k] = $('pf-' + c.k).value; });
+    msg('m-perso', 'Enregistrement…', true); $('b-perso').disabled = true;
+    Api.call('perso_moi_maj', v).then(function () { msg('m-perso', 'Données enregistrées.', true); }).catch(function (e) { msg('m-perso', e.message); }).then(function () { $('b-perso').disabled = false; });
+  });
   function charger() {
-    chargerCoord(); chargerEpi();
+    chargerCoord(); chargerEpi(); chargerPerso();
     return Api.call('profil_moi').then(function (r) { U = r.user; photo = r.photo || ''; dessinerTete(); dessinerChamps(); dessinerAcces(r.acces, r.demandes || []); });
   }
   charger().then(function () { if (location.hash === '#coord' && !$('bloc-coord').hidden) $('bloc-coord').scrollIntoView(); if (location.hash === '#mdp') { $('bloc-mdp').scrollIntoView(); $('m-anc').focus(); } }).catch(function (e) { msg('m-enreg', e.message); });

@@ -60,7 +60,7 @@
   </section>
   <section class="panneau" id="p-users" hidden>
     <input type="text" id="filtre" class="filtre" placeholder="Filtrer par nom, service…">
-    <div style="margin:8px 0"><button class="btn-p" id="b-ajout" type="button">+ Ajouter un utilisateur</button> <button class="btn-s" id="b-transfert" type="button" title="Changer l'entreprise de plusieurs agents d'un coup (fin de contrat, migration vers une autre entreprise)">🔁 Changer d'entreprise (plusieurs agents)</button> <button class="btn-s" id="b-extraction" type="button" title="Excel avec TOUS les champs de tous les comptes (sans mots de passe ni NIN)">⬇ Extraction complète (Excel)</button> <span id="r-ajout" style="font-size:12.5px"></span></div>
+    <div style="margin:8px 0"><button class="btn-p" id="b-ajout" type="button">+ Ajouter un utilisateur</button> <button class="btn-s" id="b-transfert" type="button" title="Changer l'entreprise de plusieurs agents d'un coup (fin de contrat, migration vers une autre entreprise)">🔁 Changer d'entreprise (plusieurs agents)</button> <button class="btn-s" id="b-perso-imp" type="button" title="Intégrer dans BDDORGA les informations d'une fiche RH (Excel) : naissance, parents, adresse, sécurité sociale, CCP, situation familiale. Les valeurs déjà saisies ne sont pas écrasées.">📥 Importer une fiche RH</button> <button class="btn-s" id="b-perso-exp" type="button" title="Excel des données personnelles de tous les agents (confidentiel ; chaque extraction est tracée)">🔒 Extraire les données personnelles</button> <button class="btn-s" id="b-extraction" type="button" title="Excel avec TOUS les champs de tous les comptes (sans mots de passe ni NIN)">⬇ Extraction complète (Excel)</button> <span id="r-ajout" style="font-size:12.5px"></span></div>
     <datalist id="l-sections"><option value="Froid"><option value="Électricité"><option value="Hydraulique"></datalist>
     <dialog id="dlg-ajout" style="border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <form method="dialog" id="f-ajout" novalidate style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
@@ -614,6 +614,50 @@
   });
   $('filtre').addEventListener('input', dessinerUsers); $('g-filtre').addEventListener('input', dessinerGrille);
   $('b-emails').addEventListener('click', controleEmails);
+  // ---- Données personnelles (référence RH) : import d'une fiche RH dans BDDORGA, extraction Excel (admin) ----
+  var CDN_XLSX = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  function chargerXlsx() { return window.XLSX ? Promise.resolve() : new Promise(function (ok, ko) { var sc = document.createElement('script'); sc.src = CDN_XLSX; sc.onload = ok; sc.onerror = function () { ko(new Error('Lecteur Excel indisponible')); }; document.head.appendChild(sc); }); }
+  var ENT_RH = { nom: /^nom( et prenom)?$/, email: /e.?mail/, tel: /^tel/, nom_ar: /nom.*arabe/, prenom_ar: /prenom.*arabe/, naissance: /date de naissance/, lieu_naissance: /lieu de naissance/, pere: /^pere/, mere: /^mere/, adresse: /^adresse/, cnas: /securite sociale|cnas/, ccp: /ccp|rib/, situation: /situation familiale/, diplome: /^diplome/ };
+  function nzr(x) { return String(x == null ? '' : x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function lireFicheRh(fichier) {
+    return chargerXlsx().then(function () { return fichier.arrayBuffer(); }).then(function (buf) {
+      var wb = window.XLSX.read(buf, { type: 'array', cellDates: true }), ws = wb.Sheets[wb.SheetNames[0]], rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+      var h = -1; for (var i = 0; i < Math.min(rows.length, 8); i += 1) if (rows[i].some(function (c) { return /^nom/.test(nzr(c)); }) && rows[i].some(function (c) { return /naissance|securite|adresse/.test(nzr(c)); })) { h = i; break; }
+      if (h < 0) throw new Error('Ligne d\'en-têtes introuvable (colonnes « Nom et prénom », « Date de naissance »…).');
+      var col = {}; rows[h].forEach(function (c, j) { var t = nzr(c); Object.keys(ENT_RH).forEach(function (k) { if (col[k] == null && ENT_RH[k].test(t)) col[k] = j; }); });
+      if (col.nom == null) throw new Error('Colonne « Nom et prénom » introuvable.');
+      return rows.slice(h + 1).filter(function (r) { return String(r[col.nom] || '').trim(); }).map(function (r) {
+        var v = {}; ['nom_ar', 'prenom_ar', 'naissance', 'lieu_naissance', 'pere', 'mere', 'adresse', 'cnas', 'ccp', 'situation', 'diplome'].forEach(function (k) { if (col[k] != null) { var x = r[col[k]]; v[k] = x instanceof Date ? x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2) : x; } });
+        return { nom: String(r[col.nom]).trim(), email: col.email != null ? String(r[col.email] || '').trim() : '', telephone: col.tel != null ? String(r[col.tel] || '').trim() : '', valeurs: v };
+      });
+    });
+  }
+  $('b-perso-imp').addEventListener('click', function () {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls,.xlsm';
+    inp.addEventListener('change', function () {
+      if (!inp.files[0]) return; var b = $('b-perso-imp'), txt = b.textContent; b.disabled = true; b.textContent = '⏳ Lecture…';
+      lireFicheRh(inp.files[0]).then(function (lignes) {
+        return Api.call('perso_importer', { lignes: lignes, apercu: true }).then(function (ap) {
+          var m = 'Aperçu (rien n\'est encore écrit) :\n• ' + lignes.length + ' ligne(s) lue(s), ' + ap.personnes + ' personne(s) de BDDORGA à compléter\n• ' + ap.valeurs + ' valeur(s) à écrire, ' + ap.telephones + ' téléphone(s) manquant(s) à compléter\n• ' + ap.deja + ' valeur(s) déjà saisie(s) et différente(s) : gardées (pas d\'écrasement)';
+          if (ap.non_trouvees.length) m += '\n• Non trouvées dans BDDORGA : ' + ap.non_trouvees.join(', ');
+          if (ap.ambigues.length) m += '\n• Ambiguës (ignorées) : ' + ap.ambigues.map(function (a) { return a.nom; }).join(', ');
+          if (ap.erreurs.length) m += '\n• Valeurs refusées : ' + ap.erreurs.join(' ; ');
+          if (!ap.valeurs && !ap.telephones) { alert(m + '\n\nRien à écrire.'); return null; }
+          if (!window.confirm(m + '\n\nÉcrire dans BDDORGA ?')) return null;
+          return Api.call('perso_importer', { lignes: lignes, apercu: false }).then(function (r) { toast('Importé : ' + r.valeurs + ' valeur(s) pour ' + r.personnes + ' personne(s)'); });
+        });
+      }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; b.textContent = txt; });
+    });
+    inp.click();
+  });
+  $('b-perso-exp').addEventListener('click', function () {
+    var b = this, txt = b.textContent; if (!window.confirm('Extraire les données personnelles de tous les agents ? Fichier confidentiel ; l\'extraction est tracée au journal.')) return; b.disabled = true; b.textContent = '⏳ Extraction…';
+    Api.call('perso_exporter', {}).then(function (r) {
+      var cols = [['nom', 'Nom et prénom'], ['email', 'E-mail'], ['service', 'Service'], ['fonction', 'Fonction'], ['employeur', 'Employeur']].concat((r.champs || []).map(function (c) { return [c.k, c.l]; }));
+      return ExportExcel.telecharger({ fichier: 'donnees-personnelles-' + new Date().toISOString().slice(0, 10) + '.xlsx', titre: 'Données personnelles des agents — CONFIDENTIEL', sousTitre: (r.lignes || []).length + ' agent(s) · à ne pas diffuser',
+        feuilles: [{ nom: 'Données personnelles', colonnes: cols.map(function (c) { return { titre: c[1], cle: c[0] }; }), lignes: (r.lignes || []).map(function (l) { return cols.map(function (c) { return l[c[0]]; }); }) }] });
+    }).then(function () { toast('Extraction téléchargée'); }).catch(function (e) { toast(e.message, true); }).then(function () { b.disabled = false; b.textContent = txt; });
+  });
   $('b-extraction').addEventListener('click', function () {
     var b = this, txt = b.textContent; b.disabled = true; b.textContent = '⏳ Extraction…';
     Api.call('admin_utilisateurs_export').then(function (r) {
