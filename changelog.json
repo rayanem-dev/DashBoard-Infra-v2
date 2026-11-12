@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-12-390",
+    "date": "2026-11-12",
+    "title": "Version 6.91.1 — Prise en charge : titre centré, date plus bas",
+    "changes": [
+      "Le cadre « Demande de Prise en Charge » est centré au milieu de la page et « Rhourde Nouss, le : » est descendu sous le haut du cadre, à droite."
+    ]
+  },
+  {
     "id": "2026-11-11-389",
     "date": "2026-11-11",
     "title": "Version 6.91.0 — Annuaire : une personne écrite de deux façons n'apparaît plus deux fois",
