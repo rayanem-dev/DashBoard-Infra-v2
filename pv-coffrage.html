@@ -47,10 +47,10 @@
     #feuille .sign { flex-direction: column; gap: 8px; } #feuille .sign div { width: 100%; min-height: 50px; }
   }
   @media print {
-    @page { size: A4 portrait; margin: 9mm; }
+    @page { size: A4 portrait; margin: 0; }   /* marge 0 : le navigateur n'imprime plus son en-tête (date, titre) ni son pied (adresse du site, n° de page) */
     html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body > *:not(main) { display: none !important; } .fd { padding: 0 !important; max-width: none !important; } .fd > *:not(.fiche-zone) { display: none !important; } .fiche-zone { overflow: visible !important; }
-    #feuille { zoom: 1 !important; width: 100% !important; font-size: 12.5px; margin: 0 !important; box-shadow: none !important; padding: 2px 4px !important; }
+    #feuille { zoom: 1 !important; width: 100% !important; font-size: 12.5px; margin: 0 !important; box-shadow: none !important; padding: 10mm 11mm !important; box-sizing: border-box; }
     #feuille table.pts th, #feuille table.pts td { font-size: 12px; padding: 1px 6px; } #feuille table.pts td.o textarea { min-height: 20px !important; height: 20px !important; } #feuille h4 { margin: 8px 0 2px; } #feuille ul.reco { font-size: 12px; } #feuille .ligne { margin: 1px 0; } #feuille .sign div { min-height: 60px; }
     #feuille input[type=text], #feuille input[type=date], #feuille textarea { border-bottom: 0 !important; background: transparent !important; } .noprint { display: none !important; } #feuille input[type=date]::-webkit-calendar-picker-indicator { display: none; }
   }
@@ -71,9 +71,9 @@
   <div class="fiche-zone"><div id="feuille">
     <div class="entete"><img src="img/sonatrach-logo.jpeg" alt="Sonatrach"><div>Activité Exploration Production<br>Division Production<br>Direction Régionale Rhourde-Nouss<br>Division Infrastructures</div></div>
     <div class="titre">Procès-verbal de réception du coffrage et du ferraillage.</div>
-    <div class="ligne"><b>Projet :</b> <textarea id="f-projet" rows="2" maxlength="300" aria-label="Projet"></textarea></div>
+    <div class="ligne"><b>Projet :</b> <input type="text" id="f-projet" list="dl-projets" autocomplete="off" style="width:84%" maxlength="300" placeholder="Tapez pour chercher un projet" aria-label="Projet"></div><div class="noprint" id="aide-lien" style="font-size:12px;color:#B45309;min-height:0"></div>
     <div class="ligne"><b>Maître d'Ouvrage :</b> <input type="text" id="f-mo" style="width:62%" maxlength="80" aria-label="Maître d'ouvrage"></div>
-    <div class="ligne"><b>Entreprise de réalisation :</b> <input type="text" id="f-ent" style="width:52%" maxlength="80" aria-label="Entreprise de réalisation"></div>
+    <div class="ligne"><b>Entreprise de réalisation :</b> <input type="text" id="f-ent" list="dl-ent" autocomplete="off" style="width:56%" maxlength="80" placeholder="Tapez pour chercher une entreprise" aria-label="Entreprise de réalisation"></div><datalist id="dl-projets"></datalist><datalist id="dl-ent"></datalist>
     <div class="ligne"><b>Lot :</b> <input type="text" id="f-lot" style="width:40%" maxlength="60" aria-label="Lot"></div>
     <div class="ligne"><b>Bloc :</b> <input type="text" id="f-bloc" style="width:70%" maxlength="80" aria-label="Bloc"></div>
     <div class="ligne ouvrages"><b>Ouvrage concerné :</b>
@@ -148,7 +148,7 @@
   }
   var PAR_DEFAUT = { mo: 'SONATRACH DP Rhourde Nouss', ent: 'EPE DIVINDUS MCM SPA', lot: 'Gros Œuvre' };
   function ecrire(d) {
-    d = d || {}; $('f-projet').value = d.projet || ''; $('f-mo').value = d.mo != null ? d.mo : PAR_DEFAUT.mo; $('f-ent').value = d.ent != null ? d.ent : PAR_DEFAUT.ent; $('f-lot').value = d.lot != null ? d.lot : PAR_DEFAUT.lot;
+    d = d || {}; $('f-projet').value = (d.projet || '').replace(/\s*\n\s*/g, ' '); $('f-mo').value = d.mo != null ? d.mo : PAR_DEFAUT.mo; $('f-ent').value = d.ent != null ? d.ent : PAR_DEFAUT.ent; $('f-lot').value = d.lot != null ? d.lot : PAR_DEFAUT.lot;
     $('f-bloc').value = d.bloc || ''; $('f-date').value = d.date || iso(); $('f-autre').value = d.autre || '';
     Array.prototype.forEach.call($('ouvrages').querySelectorAll('input'), function (i) { i.checked = (d.ouv || []).indexOf(i.dataset.o) !== -1; });
     lignes().forEach(function (r, i) { var v = (d.pts && d.pts[i]) || ['', '']; r.querySelector('.cf').checked = v[0] === 'c'; r.querySelector('.nc').checked = v[0] === 'n'; r.querySelector('textarea').value = v[1] || ''; });
@@ -172,6 +172,27 @@
       html: '<style>' + css + '</style><div id="feuille" style="width:auto;box-shadow:none">' + f.innerHTML + '</div>' })
       .then(function (r) { if (r) toast('✅ Envoyé à : ' + r.destinataires.join(', ')); }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
   };
+  /* Projets et entreprises du portail (chantiers en cours) : choisir l'un remplit l'autre ; plusieurs possibilités → la liste de l'autre champ se limite à elles */
+  var PROJETS = [];   // { nom, entreprise, contrat }
+  function nz(x) { return String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function listeDatalist(id, valeurs) { var d = $(id); d.textContent = ''; var vus = {}; valeurs.forEach(function (v) { if (!v || vus[nz(v)]) return; vus[nz(v)] = 1; var o = document.createElement('option'); o.value = v; d.appendChild(o); }); }
+  function toutesListes() { listeDatalist('dl-projets', PROJETS.map(function (p) { return p.nom; })); listeDatalist('dl-ent', PROJETS.map(function (p) { return p.entreprise; })); }
+  function aide(t) { $('aide-lien').textContent = t || ''; }
+  function projetChoisi() {
+    var k = nz($('f-projet').value), liens = PROJETS.filter(function (p) { return nz(p.nom) === k; }); if (!k || !liens.length) return;
+    var ents = liens.map(function (p) { return p.entreprise; }).filter(function (e, i, a) { return e && a.map(nz).indexOf(nz(e)) === i; });
+    if (ents.length === 1) { $('f-ent').value = ents[0]; aide(''); garder(); }
+    else if (ents.length > 1) { listeDatalist('dl-ent', ents); aide(ents.length + ' entreprises pour ce projet : choisissez-en une dans la liste.'); $('f-ent').value = ''; $('f-ent').focus(); }
+  }
+  function entrepriseChoisie() {
+    var k = nz($('f-ent').value), liens = PROJETS.filter(function (p) { return nz(p.entreprise) === k; }); if (!k || !liens.length) return;
+    var noms = liens.map(function (p) { return p.nom; }).filter(function (e, i, a) { return e && a.map(nz).indexOf(nz(e)) === i; });
+    if (noms.length === 1) { $('f-projet').value = noms[0]; aide(''); listeDatalist('dl-projets', PROJETS.map(function (p) { return p.nom; })); garder(); }
+    else if (noms.length > 1) { listeDatalist('dl-projets', noms); aide(noms.length + ' projets pour cette entreprise : choisissez-en un dans la liste.'); $('f-projet').value = ''; $('f-projet').focus(); }
+  }
+  $('f-projet').addEventListener('change', projetChoisi); $('f-ent').addEventListener('change', entrepriseChoisie);
+  $('f-projet').addEventListener('focus', function () { if (!$('f-ent').value) toutesListes(); });
+  Api.call('pv_projets', {}).then(function (r) { PROJETS = (r && r.projets) || []; toutesListes(); }).catch(function () { /* saisie libre si la liste est indisponible */ });
   ecrire(brouillon() || {});
 })();
 </script>

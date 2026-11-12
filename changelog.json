@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-12-395",
+    "date": "2026-11-12",
+    "title": "Version 6.92.1 — PV coffrage : projet et entreprise liés, impression sans en-tête ni pied du navigateur",
+    "changes": [
+      "Projet et entreprise de réalisation sont deux champs avec recherche (liste des chantiers en cours du portail, saisie libre possible). Choisir un projet remplit l'entreprise ; choisir une entreprise remplit le projet. S'il y a plusieurs possibilités (une entreprise sur plusieurs projets, ou un projet avec plusieurs entreprises), la liste de l'autre champ se limite à elles et le curseur y passe pour choisir.",
+      "Impression : la date, le titre de la page, l'adresse du site et le numéro de page que le navigateur ajoutait en haut et en bas disparaissent (la marge de la feuille est gérée par le PV lui-même)."
+    ]
+  },
+  {
     "id": "2026-11-12-394",
     "date": "2026-11-12",
     "title": "Version 6.92.0 — Nouvelle application : PV de réception du coffrage et du ferraillage",
