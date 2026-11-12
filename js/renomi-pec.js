@@ -10,7 +10,37 @@
   function coupe(s) { var m = s.trim().split(/\s+/), out = []; for (var i = 0; i < m.length; i += 1) { if (/\d/.test(m[i]) || /^(activite|adresse|adressa|objet|code|n°|base|centrale|ancienne|remplacement|maint|infra|infrastructures?|observations?|hebergement|restauration)$/i.test(norm(m[i]).replace(/[^a-z°]/g, ''))) break; out.push(m[i]); } return out.join(' ').replace(/^[\s:.\-–—]+|[\s:.,;\-–—]+$/g, '').toUpperCase(); }
   /** Titre « PRISE EN CHARGE » (ou ces mots avec un des repères du tableau, même mal lus par l'OCR : colonnes éclatées, en-têtes déformés). */
   function estPrise(t) { var n = norm(t); return /prise\s+en\s+charge/.test(n) && /(imputation|analytique|observations|hebergement|restauration|liste\s+nominative|employeur|nom\s+et\s+prenom|personnes|arriv|depart)/.test(n); }
+  /** Nouveau modèle de la Division Moyens Généraux (11/11/2026) : en-têtes « Entreprise S/traitant · SH », « Base d'hébergement (Case réservée à la Division MG) », « Centre de coût ». */
+  function nouveauModele(t) { var n = norm(t); return /s\s*\/\s*traitant|sous.?traitant/.test(n) && /centre\s+de\s+cout/.test(n) && /(division\s+mg|moyens\s+generaux|nbr\s+de\s+personnes)/.test(n); }
+  /** Jetons en MAJUSCULES (sans chiffre) qui terminent la chaîne ; 'debut' = ceux qui la commencent. Un mot en casse mixte (« Technicien ») est une fonction : on s'arrête. */
+  function majuscules(s, fin) {
+    var m = s.trim().split(/\s+/).filter(Boolean), out = [], i;
+    var maj = function (x) { return /^[A-ZÀ-Ý][A-ZÀ-Ý'’\-]*$/.test(x) && x.length >= 2; };
+    if (fin) { for (i = m.length - 1; i >= 0 && maj(m[i]); i -= 1) out.unshift(m[i]); }
+    else { for (i = 0; i < m.length && maj(m[i]); i += 1) out.push(m[i]); }
+    return out;
+  }
+  /**
+   * Entreprise du nouveau modèle : la cellule S/traitant s'écrit « NOM (n° du contrat) », souvent coupée sur deux lignes et mêlée aux fonctions par la lecture :
+   * fin du nom = MAJUSCULES juste avant « (43.INFRA.25) » ; début = MAJUSCULES qui suivent la dernière date ou le dernier nombre de la ligne précédente. '' si le doute subsiste
+   * (l'entreprise est alors retrouvée par le n° de contrat dans le Suivi CPM).
+   */
+  function entrepriseNouveau(texte) {
+    var lignes = String(texte || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    for (var i = 0; i < lignes.length; i += 1) {
+      var m = /^(.*?)\(\s*\d{1,3}\s*[.\-]\s*INFRA\s*[.\-]\s*\d{2,4}\s*\)/i.exec(lignes[i]); if (!m) continue;
+      var queue = majuscules(m[1], true); if (!queue.length) continue;
+      var tete = [];
+      if (i > 0 && majuscules(lignes[i - 1], false).length === lignes[i - 1].split(/\s+/).length) tete = majuscules(lignes[i - 1], false);   // la ligne précédente n'est que le début du nom
+      else if (i > 0) { var prec = lignes[i - 1], k = prec.search(/(?:\d{1,2}[\/.]\d{1,2}[\/.]\d{4}|\b\d+)\s+(?=[A-ZÀ-Ý][A-ZÀ-Ý'’\-]+(?:\s|$))(?!.*\d{1,2}[\/.]\d{1,2}[\/.]\d{4})/); if (k >= 0) tete = majuscules(prec.slice(k).replace(/^\S+\s+/, ''), false); }
+      var nom = tete.concat(queue).join(' ');
+      if (tete.length && nom.split(' ').length >= 2) return nom;
+      return queue.length >= 2 && FORMES.test(queue.join(' ')) ? queue.join(' ') : '';
+    }
+    return '';
+  }
   function entreprise(texte) {
+    if (nouveauModele(texte)) return entrepriseNouveau(texte);   // nouveau modèle MG : jamais les règles de l'ancien (elles prenaient la fonction pour la fin du nom)
     var lignes = String(texte || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').replace(/^[^A-Za-z0-9À-ÿ]+/, '').trim(); }).filter(Boolean), m, i;
     for (i = 0; i < lignes.length; i += 1) if ((m = /^employeur\s*:?\s*(.+)$/i.exec(lignes[i]))) { var e = coupe(m[1]); if (e.length >= 3) return e; }
     for (i = 0; i < lignes.length; i += 1) if (FORMES.test(lignes[i]) && !/sonatrach|division|direction/i.test(lignes[i])) { var e2 = coupe(lignes[i]); if (e2.length >= 3 && e2.split(' ').length >= 2) return e2; }
@@ -35,6 +65,6 @@
     return { entreprise: e, date: d, contrat: contratDe(texte), nom: ['PEC', e, d].filter(Boolean).join('_') };
   }
   function nomAvec(pec, entreprise) { return ['PEC', entreprise, pec.date].filter(Boolean).join('_'); }
-  var API = { reconnaitre: reconnaitre, estPrise: estPrise, contratDe: contratDe, entrepriseDuContrat: entrepriseDuContrat, nomAvec: nomAvec };
+  var API = { nouveauModele: nouveauModele, reconnaitre: reconnaitre, estPrise: estPrise, contratDe: contratDe, entrepriseDuContrat: entrepriseDuContrat, nomAvec: nomAvec };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.RenomiPec = API;
 })(typeof window !== 'undefined' ? window : this);

@@ -115,7 +115,7 @@
     it.nom = Renomi.nettoyer(p.nom.replace(/\.[A-Za-z0-9]{2,5}$/, '')) + '.' + e;      // Titre_date lus dans le document (ou règle apprise)
     it.origine = p.regle ? 'appris' : 'defaut'; it.propose = it.nom;
     var pec = !p.regle && window.RenomiPec ? RenomiPec.reconnaitre(it.texte || '') : null;       // prise en charge reconnue : PEC_<ENTREPRISE>_<date> (une règle apprise garde la priorité)
-    if (pec) { it.nom = Renomi.nettoyer(pec.nom) + '.' + e; it.origine = 'pec'; it.pec = pec; it.propose = it.nom; if (!pec.entreprise && pec.contrat) entrepriseDuCpm(it, e); }
+    if (pec) { it.nom = Renomi.nettoyer(pec.nom) + '.' + e; it.origine = 'pec'; it.pec = pec; it.propose = it.nom; if (pec.contrat && (!pec.entreprise || RenomiPec.nouveauModele(it.texte || ''))) entrepriseDuCpm(it, e); }   // nouveau modèle : l'entreprise lue est incertaine, le Suivi CPM (par le n° de contrat) fait foi
     it.doc = null;
     if (!p.regle && !pec) docPersonnel(it, e);       // document du personnel (titre de congé, fiche de paie, contrat, attestations…) : comme la page « Documents » de Sijil
   }

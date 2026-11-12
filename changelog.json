@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-12-400",
+    "date": "2026-11-12",
+    "title": "Version 6.93.3 — Renomi : détection du nouveau modèle de prise en charge (Division Moyens Généraux)",
+    "changes": [
+      "Le nouveau modèle (« Demande de Prise en Charge », colonnes S/traitant · SH · Fonction · Base d'hébergement · Centre de coût) est reconnu comme tel : l'entreprise n'est plus lue avec les règles de l'ancien modèle, qui prenaient la fonction pour la fin du nom (« PEC_SPA UNITE TECHNICIEN NACELLE »). Elle est lue dans la cellule « NOM (n° du contrat) » : majuscules avant « (43.INFRA.25) » complétées par le début du nom de la ligne précédente (« ENCC SPA UNITE » + « HAMIZ » → PEC_ENCC SPA UNITE HAMIZ_2026-11-12).",
+      "Dans ce modèle, le n° de contrat qui suit le nom fait foi : l'entreprise est ensuite retrouvée dans le Suivi CPM et remplace la lecture si le nom proposé n'a pas été modifié à la main. Si la lecture est trop mêlée pour être sûre, le nom reste « PEC_date » plutôt qu'une fausse entreprise."
+    ]
+  },
+  {
     "id": "2026-11-12-399",
     "date": "2026-11-12",
     "title": "Version 6.93.2 — Autorisation d'accès : les sites (et le travail de nuit) fonctionnent enfin dans la passerelle",
