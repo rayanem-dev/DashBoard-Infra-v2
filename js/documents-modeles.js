@@ -31,7 +31,7 @@
     service: { k: 'service', l: 'Service', def: 'user.service' },
     division: { k: 'division', l: 'Division', def: 'Infrastructure' },
     recrutement: { k: 'recrutement', l: 'Date de recrutement', t: 'date', def: 'user.date_integration' },
-    naissance: { k: 'naissance', l: 'Date de naissance', t: 'date' },
+    naissance: { k: 'naissance', l: 'Date de naissance', t: 'date', def: 'user.naissance' },
     chef: { k: 'chef', l: 'Chef de division (nom, facultatif)' }
   };
 
@@ -428,7 +428,7 @@
       P('<b>OBJET DE LA RÉCLAMATION :</b>') + T(v, 'objet', 6) + signature('Date et signature de l\'agent', v) + visas(['Date et visa du Responsable de structure'], 70); });
 
   modele('engagement-route', 'divers', 'Engagement de départ par route', 'Déclaration sur l\'honneur : l\'agent rentre chez lui par ses propres moyens.',
-    [L.date, L.agent, { k: 'naissance', l: 'Né(e) le', t: 'date' }, L.fonction, L.matricule, L.structure, { k: 'absence', l: 'Départ en absence autorisée le', t: 'date' }, { k: 'observations', l: 'Observations (facultatif)', t: 'textarea' }], 'dr',
+    [L.date, L.agent, { k: 'naissance', l: 'Né(e) le', t: 'date', def: 'user.naissance' }, L.fonction, L.matricule, L.structure, { k: 'absence', l: 'Départ en absence autorisée le', t: 'date' }, { k: 'observations', l: 'Observations (facultatif)', t: 'textarea' }], 'dr',
     function (v) { return titre('ENGAGEMENT — DÉPART PAR ROUTE') + P('<b>Renseignements sur l\'agent</b>') + KV([['Nom et prénom', V(v, 'agent')], ['Fonction', V(v, 'fonction')], ['Matricule', V(v, 'matricule')], ['Structure', V(v, 'structure')]]) +
       P('Je soussigné(e), ' + V(v, 'agent') + ', né(e) le ' + V(v, 'naissance', 10) + ', travaillant comme ' + V(v, 'fonction') + ' à la Sonatrach, Direction Régionale de Rhourde Nouss, déclare sur l\'honneur que je me prends en charge pour arriver à mon domicile lors de mon départ en absence autorisée le ' + V(v, 'absence', 10) +
       ', à partir de mon lieu de travail (par route avec mes propres moyens), sans prétendre à des indemnités de route de ma part, et dégage l\'Entreprise de toute responsabilité en cas d\'incident.') + T(v, 'observations', 3) + P('Date et visa de l\'agent : ' + V(v, 'date', 10)) +

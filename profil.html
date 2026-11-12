@@ -82,7 +82,7 @@
       <h2>🔒 Mes données personnelles</h2>
       <p class="aide" style="margin:0 0 8px;font-size:12px;color:var(--text-muted)">Informations de référence de votre dossier RH, gardées dans BDDORGA. <b>Elles ne sont visibles que par vous</b> ; l'administrateur peut les extraire en cas de besoin (chaque extraction est tracée). Vous pouvez les compléter et les corriger ici.</p>
       <div id="perso-etat" class="msg"></div><div id="perso-form" class="grille-perso"></div>
-      <div class="actions" style="justify-content:flex-start"><button class="btn-p" id="b-perso" type="button">💾 Enregistrer mes données</button></div><div class="msg" id="m-perso"></div>
+      <div class="actions" style="justify-content:flex-start"><button class="btn-p" id="b-perso" type="button">💾 Enregistrer mes données</button> <button class="btn-s" id="b-perso-xl" type="button" title="Télécharger mes données personnelles (fichier Excel à garder pour moi)">⬇ Télécharger mes données</button></div><div class="msg" id="m-perso"></div>
     </div>
     <div class="bloc" id="bloc-epi" hidden>
       <h2>🦺 Mes tailles (dotation EPI)</h2>
@@ -277,6 +277,11 @@
     msg('m-perso', 'Enregistrement…', true); $('b-perso').disabled = true;
     Api.call('perso_moi_maj', v).then(function () { msg('m-perso', 'Données enregistrées.', true); }).catch(function (e) { msg('m-perso', e.message); }).then(function () { $('b-perso').disabled = false; });
   });
+  $('b-perso-xl').addEventListener('click', function () {
+    var lignes = PERSO_CHAMPS.map(function (c) { return [c.l, $('pf-' + c.k).value]; });
+    ExportExcel.telecharger({ fichier: 'mes-donnees-personnelles.xlsx', titre: 'Mes données personnelles — ' + ((U && U.nom) || ''), sousTitre: 'Document personnel et confidentiel', feuilles: [{ nom: 'Mes données', colonnes: [{ titre: 'Information', cle: 'l' }, { titre: 'Valeur', cle: 'v' }], lignes: lignes }] })
+      .catch(function (e) { msg('m-perso', e.message); });
+  });
   function charger() {
     chargerCoord(); chargerEpi(); chargerPerso();
     return Api.call('profil_moi').then(function (r) { U = r.user; photo = r.photo || ''; dessinerTete(); dessinerChamps(); dessinerAcces(r.acces, r.demandes || []); });
@@ -284,6 +289,7 @@
   charger().then(function () { if (location.hash === '#coord' && !$('bloc-coord').hidden) $('bloc-coord').scrollIntoView(); if (location.hash === '#mdp') { $('bloc-mdp').scrollIntoView(); $('m-anc').focus(); } }).catch(function (e) { msg('m-enreg', e.message); });
 })();
 </script>
+<script src="js/export-excel.js"></script>
 <script src="js/pied.js"></script>
 </body>
 </html>

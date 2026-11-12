@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-12-398",
+    "date": "2026-11-12",
+    "title": "Version 6.93.1 — Données personnelles exploitables par l'agent : documents préremplis et téléchargement",
+    "changes": [
+      "Documents administratifs : la date de naissance de l'agent (saisie dans Mon profil › Mes données personnelles) préremplit les demandes de prêt, de congé et les autres documents qui la demandent, en plus du nom, du matricule et de la fonction.",
+      "Mon profil : « ⬇ Télécharger mes données » donne à l'agent un fichier Excel de ses données personnelles, à garder pour lui."
+    ]
+  },
+  {
     "id": "2026-11-12-397",
     "date": "2026-11-12",
     "title": "Version 6.93.0 — Données personnelles de l'agent (référence RH) dans BDDORGA, visibles de lui seul",

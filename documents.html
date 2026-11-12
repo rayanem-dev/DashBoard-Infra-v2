@@ -212,7 +212,9 @@
   window.addEventListener('hashchange', function () { voulu = (location.hash || '').slice(1); ouvrirVoulu(); });
   function ouvrirVoulu() { if (voulu && Documents.trouver(voulu)) ouvrir(voulu); }
   chargerPersonnes();
-  if (window.Api) Api.call('menu').then(function (r) { user = r.user || {}; }).catch(function () { /* garde.js gère la session */ }).then(ouvrirVoulu); else ouvrirVoulu();
+  if (window.Api) Api.call('menu').then(function (r) { user = r.user || {}; })
+    .then(function () { return Api.call('perso_moi').then(function (r) { var v = (r && r.valeurs) || {}; ['naissance', 'lieu_naissance', 'adresse', 'situation', 'cnas', 'ccp'].forEach(function (k) { if (v[k] && !user[k]) user[k] = v[k]; }); }).catch(function () { /* données personnelles non renseignées : champs laissés vides */ }); })
+    .catch(function () { /* garde.js gère la session */ }).then(ouvrirVoulu); else ouvrirVoulu();
 })();
 </script>
 <script src="js/pied.js"></script>
