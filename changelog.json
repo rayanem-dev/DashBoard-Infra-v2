@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-13-405",
+    "date": "2026-11-13",
+    "title": "Version 6.93.8 — Rapport d'inventaire : les articles photographiés rejoignent les « Retrouvés »",
+    "changes": [
+      "Les articles qui n'ont qu'une photo (envoyée avant la tenue de l'historique) ne forment plus un groupe à part « Vus, photo seule » : ils sont classés parmi les Retrouvés, avec leur photo, l'auteur et la date, comme les autres. Le rapport PDF est donc complet et les photos sont toutes chargées (17 / 17)."
+    ]
+  },
+  {
     "id": "2026-11-13-404",
     "date": "2026-11-13",
     "title": "Version 6.93.7 — Impression sans pied de page du navigateur (rapport d'inventaire, PV coffrage)",

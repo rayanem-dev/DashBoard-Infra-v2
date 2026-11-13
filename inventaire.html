@@ -469,11 +469,13 @@
     z.appendChild(el('h2', null, 'Rapport d\'inventaire ' + annee)); z.appendChild(el('p', 'sous', 'Compte rendu de l\'opération — établi le ' + aujourdhui().split('-').reverse().join('/')));
     var kp = el('div', 'rk'); [[k.articles, 'articles'], [k.trouves, 'trouvés'], [k.nonTrouves, 'non trouvés'], [k.deplaces, 'déplacés'], [k.horsListe, 'hors liste'], [k.photos, 'photos']].forEach(function (a) { var d = el('div'); d.appendChild(el('b', null, String(a[0]))); d.appendChild(el('span', null, a[1])); kp.appendChild(d); }); z.appendChild(kp);
     var av = el('div', 'barre-av'); var i = el('i'); i.style.width = k.avancement + '%'; av.appendChild(i); z.appendChild(av); z.appendChild(el('p', 'sous', 'Avancement : ' + k.avancement + ' % des articles à retrouver' + (k.valeurNonTrouvee ? ' · valeur des articles non trouvés : ' + nbDA(k.valeurNonTrouvee) : '')));
-    z.appendChild(el('h3', null, 'Articles retrouvés ou déplacés (' + r.mouvements.length + ')'));
-    if (!r.mouvements.length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.'));
+    z.appendChild(el('h3', null, 'Articles retrouvés ou déplacés (' + (r.mouvements.length + (r.vusPhoto || []).length) + ')'));
+    if (!r.mouvements.length && !(r.vusPhoto || []).length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.'));
     // classés par état : d'abord les articles retrouvés, puis les non retrouvés (l'ordre d'origine est gardé dans chaque groupe)
-    var mvTr = r.mouvements.filter(function (x) { return x.trouve; }), mvNt = r.mouvements.filter(function (x) { return !x.trouve; }), restant = 400;
-    [['✅ Retrouvés (' + mvTr.length + ')', mvTr], ['❌ Non retrouvés (' + mvNt.length + ')', mvNt], ['📷 Vus, photo seule (' + (r.vusPhoto || []).length + ')', r.vusPhoto || []]].forEach(function (g) {
+    // les articles photographiés sans fiche de mouvement (photo envoyée avant la tenue de l'historique) sont des articles trouvés : ils rejoignent les Retrouvés, avec leur photo
+    var vus = (r.vusPhoto || []).map(function (x) { var c = {}; Object.keys(x).forEach(function (k) { c[k] = x[k]; }); c.vu = false; c.source = ''; return c; });
+    var mvTr = r.mouvements.filter(function (x) { return x.trouve; }).concat(vus), mvNt = r.mouvements.filter(function (x) { return !x.trouve; }), restant = 400;
+    [['✅ Retrouvés (' + mvTr.length + ')', mvTr], ['❌ Non retrouvés (' + mvNt.length + ')', mvNt]].forEach(function (g) {
       if (!g[1].length) return; z.appendChild(el('h4', 'grp', g[0])); g[1].slice(0, Math.max(restant, 0)).forEach(function (x) { z.appendChild(fichePhoto(x)); }); restant -= g[1].length;
     });
     if (r.mouvements.length > 400) z.appendChild(el('p', 'sous', '… et ' + (r.mouvements.length - 400) + ' autre(s) : voir l\'export Excel.'));
