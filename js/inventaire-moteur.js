@@ -291,8 +291,12 @@
     });
     // articles qui ont une photo mais ni mouvement ni écart (ex. photographiés sans avoir été marqués « trouvés ») : sans cette liste, leur photo comptait au total sans jamais apparaître dans le rapport
     var listes = {}; mouvements.concat(non).forEach(function (x) { listes[invCle(x.inv)] = 1; });
-    var vusPhoto = Object.keys(photos || {}).filter(function (k) { return etat.articles[k] && !listes[k]; }).sort().map(function (k) {
-      var a = etat.articles[k], ph = photos[k] || {}; return { inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur, ancien: '', nouveau: a.position, motif: '', source: 'Photo', par: ph.par || '', date: String(ph.le || '').slice(0, 10), trouve: true, vu: true, photo: true };
+    var retrouve = {}; (etat.historique || []).forEach(function (h) { if (h.source === 'Article retrouvé' && !h.annule) retrouve[invCle(h.inv)] = h; });
+    var vusPhoto = [];
+    Object.keys(photos || {}).filter(function (k) { return etat.articles[k] && !listes[k]; }).sort().forEach(function (k) {
+      var a = etat.articles[k], ph = photos[k] || {}, rt = retrouve[k];
+      if (rt) { mouvements.push({ inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur, ancien: '', nouveau: a.position, motif: rt.motif || '', source: 'Article retrouvé', par: rt.par || ph.par || '', date: String(rt.date || ph.le || '').slice(0, 10), trouve: true, photo: true }); return; }   // déjà marqué trouvé (à sa place) : il est listé avec sa photo
+      vusPhoto.push({ inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur, ancien: '', nouveau: a.position, motif: '', source: 'Photo', par: ph.par || '', date: String(ph.le || '').slice(0, 10), trouve: true, vu: true, photo: true });
     });
     var deplaces = mouvements.filter(function (x) { return x.ancien && x.nouveau && cle(x.ancien) !== cle(x.nouveau); }).length;
     return { kpis: { articles: Object.keys(etat.articles).length, trouves: n.OUI, nonTrouves: n.NON, horsListe: n['HORS LISTE'], deplaces: deplaces, photos: photos ? Object.keys(photos).length : 0, avancement: (n.OUI + n.NON) ? Math.round(1000 * n.OUI / (n.OUI + n.NON)) / 10 : 0, valeurNonTrouvee: non.reduce(function (t, x) { return t + (Number(x.valeur) || 0); }, 0) },

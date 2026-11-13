@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-13-407",
+    "date": "2026-11-13",
+    "title": "Version 6.94.1 — Inventaire : un article déjà marqué trouvé reste dans le rapport avec sa photo",
+    "changes": [
+      "Après « Marquer trouvés les articles photographiés », ces articles (trouvés à leur place, donc sans déplacement) restent listés dans « Retrouvés » avec leur photo, et le bouton ne les propose plus : il ne peut plus créer de doublons dans l'historique."
+    ]
+  },
+  {
     "id": "2026-11-13-406",
     "date": "2026-11-13",
     "title": "Version 6.94.0 — Inventaire : marquer trouvés les articles photographiés",
