@@ -309,9 +309,14 @@
       if (rt) { mouvements.push({ inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur, ancien: '', nouveau: a.position, motif: rt.motif || '', source: 'Article retrouvé', par: rt.par || ph.par || '', date: String(rt.date || ph.le || '').slice(0, 10), trouve: true, photo: true }); return; }   // déjà marqué trouvé (à sa place) : il est listé avec sa photo
       vusPhoto.push({ inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur, ancien: '', nouveau: a.position, motif: '', source: 'Photo', par: ph.par || '', date: String(ph.le || '').slice(0, 10), trouve: true, vu: true, photo: true });
     });
+    // articles trouvés (statut « non trouvé » levé) sans aucune ligne d'historique : marqués trouvés avant que la trace « Article retrouvé » existe (à leur position, sans changement) : listés quand même, sans auteur ni date
+    var deja = {}; mouvements.concat(non, vusPhoto).forEach(function (x) { deja[invCle(x.inv)] = 1; });
+    var sansTrace = Object.keys(etat.articles).sort().filter(function (k) { return st[k].s === 'OUI' && !deja[k]; }).map(function (k) {
+      var a = etat.articles[k]; return { inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur, ancien: '', nouveau: a.position, motif: '', source: '', par: '', date: '', trouve: true, sansTrace: true, photo: false };
+    });
     var deplaces = mouvements.filter(function (x) { return x.ancien && x.nouveau && cle(x.ancien) !== cle(x.nouveau); }).length;
     return { kpis: { articles: Object.keys(etat.articles).length, trouves: n.OUI, nonTrouves: n.NON, horsListe: n['HORS LISTE'], deplaces: deplaces, photos: photos ? Object.keys(photos).length : 0, avancement: (n.OUI + n.NON) ? Math.round(1000 * n.OUI / (n.OUI + n.NON)) / 10 : 0, valeurNonTrouvee: non.reduce(function (t, x) { return t + (Number(x.valeur) || 0); }, 0) },
-      mouvements: mouvements, vusPhoto: vusPhoto, nonTrouves: non, positions: Object.keys(parPos).sort().map(function (p) { return { position: p, n: parPos[p].length }; }) };
+      mouvements: mouvements, vusPhoto: vusPhoto, sansTrace: sansTrace, nonTrouves: non, positions: Object.keys(parPos).sort().map(function (p) { return { position: p, n: parPos[p].length }; }) };
   }
   /**
    * Tableau au format « FICHIER AMORTISSABLE INFRA » (33 colonnes, mêmes en-têtes que le fichier des amortissables), à injecter à la fin de l'opération :

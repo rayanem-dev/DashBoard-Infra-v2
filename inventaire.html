@@ -491,7 +491,7 @@
     if (x.ancien || x.nouveau) { var l2 = el('div', 'ch'); l2.appendChild(el('span', 'fl', x.ancien && x.nouveau && x.ancien !== x.nouveau ? 'Déplacé : ' : 'Emplacement : ')); l2.appendChild(document.createTextNode((x.ancien && x.ancien !== x.nouveau ? x.ancien + '  →  ' : '') + (x.nouveau || ''))); c.appendChild(l2); }
     if (x.motif) c.appendChild(el('div', 'mot', 'Motif : ' + x.motif));
     var ls = el('div', 'ch'); ls.appendChild(el('b', 'st', x.vu ? 'Vu (photo)' : x.trouve ? 'Retrouvé' : 'Non retrouvé'));   // seul l'état est en gras
-    var suite = [x.par ? 'par ' + x.par : '', x.date ? 'le ' + x.date.split('-').reverse().join('/') : '', x.source].filter(Boolean).join(' · '); if (suite) ls.appendChild(document.createTextNode(' · ' + suite));
+    var suite = x.sansTrace ? 'auteur et date non enregistrés (marqué trouvé avant la tenue de l\'historique)' : [x.par ? 'par ' + x.par : '', x.date ? 'le ' + x.date.split('-').reverse().join('/') : '', x.source].filter(Boolean).join(' · '); if (suite) ls.appendChild(document.createTextNode(' · ' + suite));
     c.appendChild(ls); d.appendChild(ph); d.appendChild(c); return d;
   }
   function rapport() {
@@ -501,12 +501,12 @@
     z.appendChild(el('h2', null, 'Rapport d\'inventaire ' + annee)); z.appendChild(el('p', 'sous', 'Compte rendu de l\'opération — établi le ' + aujourdhui().split('-').reverse().join('/')));
     var kp = el('div', 'rk'); [[k.articles, 'articles'], [k.trouves, 'trouvés'], [k.nonTrouves, 'non trouvés'], [k.deplaces, 'déplacés'], [k.horsListe, 'hors liste'], [k.photos, 'photos']].forEach(function (a) { var d = el('div'); d.appendChild(el('b', null, String(a[0]))); d.appendChild(el('span', null, a[1])); kp.appendChild(d); }); z.appendChild(kp);
     var av = el('div', 'barre-av'); var i = el('i'); i.style.width = k.avancement + '%'; av.appendChild(i); z.appendChild(av); z.appendChild(el('p', 'sous', 'Avancement : ' + k.avancement + ' % des articles à retrouver' + (k.valeurNonTrouvee ? ' · valeur des articles non trouvés : ' + nbDA(k.valeurNonTrouvee) : '')));
-    z.appendChild(el('h3', null, 'Articles retrouvés ou déplacés (' + (r.mouvements.length + (r.vusPhoto || []).length) + ')'));
-    if (!r.mouvements.length && !(r.vusPhoto || []).length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.'));
+    z.appendChild(el('h3', null, 'Articles retrouvés ou déplacés (' + (r.mouvements.length + (r.vusPhoto || []).length + (r.sansTrace || []).length) + ')'));
+    if (!r.mouvements.length && !(r.vusPhoto || []).length && !(r.sansTrace || []).length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.'));
     // classés par état : d'abord les articles retrouvés, puis les non retrouvés (l'ordre d'origine est gardé dans chaque groupe)
     // les articles photographiés sans fiche de mouvement (photo envoyée avant la tenue de l'historique) sont des articles trouvés : ils rejoignent les Retrouvés, avec leur photo
     var vus = (r.vusPhoto || []).map(function (x) { var c = {}; Object.keys(x).forEach(function (k) { c[k] = x[k]; }); c.vu = false; c.source = ''; return c; });
-    var mvTr = r.mouvements.filter(function (x) { return x.trouve; }).concat(vus), mvNt = r.mouvements.filter(function (x) { return !x.trouve; }), restant = 400;
+    var mvTr = r.mouvements.filter(function (x) { return x.trouve; }).concat(vus, r.sansTrace || []), mvNt = r.mouvements.filter(function (x) { return !x.trouve; }), restant = 400;
     [['✅ Retrouvés (' + mvTr.length + ')', mvTr], ['❌ Non retrouvés (' + mvNt.length + ')', mvNt]].forEach(function (g) {
       if (!g[1].length) return; z.appendChild(el('h4', 'grp', g[0])); g[1].slice(0, Math.max(restant, 0)).forEach(function (x) { z.appendChild(fichePhoto(x)); }); restant -= g[1].length;
     });

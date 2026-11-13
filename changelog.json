@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-13-410",
+    "date": "2026-11-13",
+    "title": "Version 6.95.2 — Rapport d'inventaire : tous les articles trouvés sont listés",
+    "changes": [
+      "Le rapport comptait 138 articles trouvés mais n'en listait que 86 : les autres avaient été marqués trouvés (à leur position) avant que le portail ne garde la trace « Article retrouvé » (auteur et date), donc sans aucune ligne d'historique. Ils sont maintenant listés dans « Retrouvés » avec la mention « auteur et date non enregistrés (marqué trouvé avant la tenue de l'historique) » : la liste des retrouvés égale le nombre de trouvés."
+    ]
+  },
+  {
     "id": "2026-11-13-409",
     "date": "2026-11-13",
     "title": "Version 6.95.1 — Inventaire : « Article créé » remplacé par un libellé sans ambiguïté",
