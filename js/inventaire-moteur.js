@@ -101,7 +101,7 @@
   var COLONNES = [
     ['inv', /^(n ?inv|inv|numero inv|n° inv)/], ['codeSh', /^code ?sh/], ['designation', /^designation/], ['marque', /^marque/], ['type', /^type$/],
     ['serie', /^n ?serie|^numero serie/], ['position', /^position$/], ['structure', /^(structure|strc|str g)$/], ['imputation', /^(imput|imputation)$/],
-    ['etat', /^etat$/], ['indice', /^indice$/], ['valeur', /^valeur/], ['recense', /^recense$/]
+    ['etat', /^etat$/], ['indice', /^indice$/], ['ai', /^a ?\/ ?i$/], ['valeur', /^valeur/], ['recense', /^recense$/]
   ];
   function nombreFr(v) {
     if (typeof v === 'number') return v;
@@ -125,7 +125,7 @@
       var l = lignes[i] || [], g = function (c) { return col[c] === undefined ? '' : propre(l[col[c]]); };
       var inv = g('inv'); if (!invCle(inv)) continue;
       out.push({ inv: inv, codeSh: g('codeSh'), designation: g('designation'), marque: g('marque'), type: g('type'), serie: g('serie'), position: g('position'), structure: g('structure'),
-        imputation: g('imputation').replace(/\.0$/, ''), etat: g('etat'), indice: g('indice'), valeur: col.valeur === undefined ? null : nombreFr(l[col.valeur]) });
+        imputation: g('imputation').replace(/\.0$/, ''), etat: g('etat'), indice: g('indice'), ai: g('ai'), valeur: col.valeur === undefined ? null : nombreFr(l[col.valeur]) });
     }
     return { articles: out, colonnes: col, ligneEntete: h, erreur: '' };
   }
@@ -165,10 +165,10 @@
       }
       var a = e.articles[k];
       if (!a) {
-        a = e.articles[k] = { inv: propre(l.inv), codeSh: l.codeSh, designation: l.designation, marque: l.marque, type: l.type, serie: l.serie, position: nom, structure: l.structure, imputation: l.imputation, etat: l.etat, indice: l.indice, valeur: l.valeur, nonTrouve: {}, maj: date };
+        a = e.articles[k] = { inv: propre(l.inv), codeSh: l.codeSh, designation: l.designation, marque: l.marque, type: l.type, serie: l.serie, position: nom, structure: l.structure, imputation: l.imputation, etat: l.etat, indice: l.indice, ai: l.ai || '', valeur: l.valeur, nonTrouve: {}, maj: date };
         resume.crees += 1; e.historique.push({ id: idLigne(date), date: date, inv: a.inv, de: '', vers: nom, source: source, motif: 'Article créé' });
       } else {
-        ['codeSh', 'designation', 'marque', 'type', 'serie', 'structure', 'imputation', 'etat', 'indice'].forEach(function (c) { if (!a[c] && l[c]) a[c] = l[c]; });
+        ['codeSh', 'designation', 'marque', 'type', 'serie', 'structure', 'imputation', 'etat', 'indice', 'ai'].forEach(function (c) { if (!a[c] && l[c]) a[c] = l[c]; });
         if (a.valeur == null && l.valeur != null) a.valeur = l.valeur;
         if (o.mode !== 'ecarts' && nom && nom !== a.position) {
           e.historique.push({ id: idLigne(date), date: date, inv: a.inv, de: a.position, vers: nom, source: source, motif: 'Position mise à jour par import' });
@@ -315,7 +315,7 @@
       var a = etat.articles[k], m = mv[k], deplace = !!(m && cle(m.de) !== cle(a.position));
       if (seulementDeplaces && !deplace) return;
       var obs = [(dm[k] || {}).motif || '', annee && a.nonTrouve && a.nonTrouve[annee] ? 'NON TROUVÉ ' + annee : ''].filter(Boolean).join(' — ');
-      out.push(['', a.inv, a.codeSh, '', a.designation, a.marque, a.type, a.serie, a.position, a.structure, a.imputation, '', '', obs, a.indice, a.etat, '', '', a.valeur == null ? '' : a.valeur,
+      out.push(['', a.inv, a.codeSh, a.ai || '', a.designation, a.marque, a.type, a.serie, a.position, a.structure, a.imputation, '', '', obs, a.indice, a.etat, '', '', a.valeur == null ? '' : a.valeur,
         deplace ? m.de : '', '', deplace ? String(m.date).slice(0, 10) : '', deplace ? a.position : '', '', '', '', '', '', '', '', '', '', '']);
     });
     return out;
@@ -323,17 +323,22 @@
 
   function versTableaux(etat, annee, photos) {
     var anc = derniereAncienne(etat), eff = effectifs(etat), st = statuts(etat, annee), n = { OUI: 0, NON: 0, 'HORS LISTE': 0 }, dm = dernierMotif(etat);
-    var inv = [['N° Inv', 'Code SH', 'Désignation', 'Objet trouvé', 'Trouvé par', 'Trouvé le', 'Photo', 'Marque', 'Type', 'N° Série', 'Position actuelle', 'Ancienne position', 'Date du dernier changement', 'Structure', 'Imputation', 'État', 'Indice', 'Valeur (DA)', 'Non trouvé', 'Dernier motif', 'Dernier changement par']];
+    // Colonnes du fichier SOURCE (mêmes titres, même ordre : « Etat global »), puis celles de l'inventaire. « Inv » est la colonne vide du fichier source.
+    var inv = [[' N ° Inv', ' Code SH', 'A/I', 'Indice', 'Strc', 'Inv', 'Désignation', 'Marque', 'Type', 'N° Série', 'Position', 'Imput', 'Etat', 'Valeur (DA)',
+      'Statut', 'Trouvé par', 'Trouvé le', 'Photo', 'Photo par', 'Photo le', 'Ancienne position', 'Date du dernier changement', 'Dernier motif', 'Dernier changement par', 'Non trouvé (exercice)']], statutsLignes = [];
+    var num = function (v) { return /^\d+$/.test(String(v == null ? '' : v).trim()) ? Number(v) : (v == null ? '' : v); };
     Object.keys(etat.articles).sort().forEach(function (k) {
-      var a = etat.articles[k], p = anc[k] || {}, s = st[k]; n[s.s] += 1;
-      inv.push([a.inv, a.codeSh, a.designation, s.s, s.par, s.le, photos && photos[k] ? 'OUI' : '', a.marque, a.type, a.serie, a.position, p.de || '', p.date ? String(p.date).slice(0, 10) : '', a.structure, a.imputation, a.etat, a.indice, a.valeur, Object.keys(a.nonTrouve || {}).join(', '), (dm[k] || {}).motif || '', (dm[k] || {}).par || '']);
+      var a = etat.articles[k], p = anc[k] || {}, s = st[k], ph = (photos && photos[k]) || null; n[s.s] += 1; statutsLignes.push(s.s);
+      inv.push([a.inv, a.codeSh, a.ai || '', a.indice, a.structure, '', a.designation, a.marque, a.type, a.serie, a.position, num(a.imputation), a.etat, a.valeur == null ? '' : a.valeur,
+        s.s === 'OUI' ? 'Trouvé' : s.s === 'NON' ? 'Non trouvé' : 'Hors liste', s.par || '', s.le ? String(s.le).slice(0, 10) : '', ph ? 'OUI' : '', ph ? (ph.par || '') : '', ph && ph.le ? String(ph.le).slice(0, 10) : '',
+        p.de || '', p.date ? String(p.date).slice(0, 10) : '', (dm[k] || {}).motif || '', (dm[k] || {}).par || '', Object.keys(a.nonTrouve || {}).join(', ')]);
     });
     var his = [['Date', 'N° Inv', 'De', 'Vers', 'Source', 'Motif', 'Par', 'Annulé']];
     etat.historique.forEach(function (h) { his.push([String(h.date).slice(0, 19).replace('T', ' '), h.inv, h.de, h.vers, h.source, h.motif, h.par || '', h.annule ? 'oui' : '']); });
     var pos = [['Position', 'Nombre d\'articles', 'Autres écritures déjà vues']];
     Object.keys(etat.positions).sort().forEach(function (nm) { pos.push([nm, eff[nm] || 0, (etat.positions[nm].alias || []).join(' | ')]); });
-    var tot = n.OUI + n.NON, res = [['Exercice ' + (annee || ''), 'Nombre'], ['Articles dans l\'exercice', Object.keys(etat.articles).length], ['Objets trouvés (colonne « Objet trouvé » = OUI)', n.OUI], ['Objets non trouvés (= NON)', n.NON], ['Hors liste des écarts (fichier global seul)', n['HORS LISTE']], ['Avancement (trouvés / à retrouver)', tot ? Math.round(1000 * n.OUI / tot) / 10 + ' %' : '0 %']];
-    return { inventaire: inv, historique: his, positions: pos, resume: res };
+    var tot = n.OUI + n.NON, res = [['Exercice ' + (annee || ''), 'Nombre'], ['Articles dans l\'exercice', Object.keys(etat.articles).length], ['Objets trouvés (colonne « Statut » = Trouvé)', n.OUI], ['Objets non trouvés (= Non trouvé)', n.NON], ['Hors liste des écarts (fichier global seul)', n['HORS LISTE']], ['Avancement (trouvés / à retrouver)', tot ? Math.round(1000 * n.OUI / tot) / 10 + ' %' : '0 %']];
+    return { inventaire: inv, statuts: statutsLignes, historique: his, positions: pos, resume: res };
   }
 
   var API = { cle: cle, ressemblance: ressemblance, nouvelEtat: nouvelEtat, suggestions: suggestions, plusProche: plusProche, effectifs: effectifs, lireFeuille: lireFeuille, nombreFr: nombreFr,

@@ -139,7 +139,7 @@
 
   <section id="v-rapport" hidden>
     <div class="bloc noprint"><div class="barre"><button class="btn-p" id="r-imp" type="button">🖨 Imprimer / PDF</button><button class="btn-s" id="r-ph" type="button">📷 Charger les photos</button><button class="btn-s" id="r-trouve" type="button" hidden>✅ Marquer trouvés les articles photographiés</button><span class="note" id="r-info"></span></div>
-      <p class="note">Compte rendu de l'opération : chiffres, articles déplacés ou retrouvés (ancien et nouvel emplacement, motif, photo), articles non trouvés et effectif par emplacement. Imprimez-le ou enregistrez-le en PDF.</p></div>
+      <p class="note">Compte rendu de l'opération : chiffres, articles déplacés ou retrouvés (ancien et nouvel emplacement, motif, photo), articles non trouvés et nombre d'articles par emplacement. Imprimez-le ou enregistrez-le en PDF.</p></div>
     <table id="rapT"><thead><tr class="esp"><td></td></tr></thead><tbody><tr><td><div id="rap"></div></td></tr></tbody><tfoot><tr class="esp"><td></td></tr></tfoot></table>   <!-- table d'impression : ses lignes vides se répètent en haut et en bas de CHAQUE page (marge) pendant que la marge @page est nulle, ce qui supprime l'en-tête et le pied du navigateur -->
   </section>
 
@@ -448,7 +448,38 @@
       window.XLSX.writeFile(wb, nom);
     }).catch(function (e) { toast('Export impossible : ' + e.message); });
   }
-  function excelComplet() { var t = M.versTableaux(etat, annee, photos); exporterXlsx([['Résumé', t.resume], ['Inventaire', t.inventaire], ['Historique', t.historique], ['Positions', t.positions]], 'inventaire_' + annee + '_' + aujourdhui() + '.xlsx'); }
+  /* Excel complet : la feuille « Inventaire » reprend les colonnes du fichier SOURCE (mêmes titres, même ordre), puis celles de l'inventaire ; lignes vertes = trouvés, orange = non trouvés */
+  var CDN_EXCELJS = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+  function chargerExcelJs() { return window.ExcelJS ? Promise.resolve() : new Promise(function (ok, ko) { var sc = document.createElement('script'); sc.src = CDN_EXCELJS; sc.onload = ok; sc.onerror = function () { ko(new Error('Chargement impossible : ExcelJS')); }; document.head.appendChild(sc); }); }
+  function excelComplet() {
+    var t = M.versTableaux(etat, annee, photos);
+    chargerExcelJs().then(function () {
+      var E = window.ExcelJS, wb = new E.Workbook(), fine = { style: 'thin', color: { argb: 'FFBFBFBF' } }, bord = { top: fine, left: fine, bottom: fine, right: fine }, plein = function (c) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } }; };
+      wb.creator = 'Division Infrastructure RNS';
+      var LARG = [10.1, 12.1, 4, 6.9, 6, 9.4, 45.3, 16.3, 18, 14, 51.4, 10.9, 12.1, 12.4, 12, 22, 12, 8, 22, 12, 48, 14, 48, 22, 12];
+      var ws = wb.addWorksheet('Inventaire', { views: [{ state: 'frozen', ySplit: 1 }] }), NB_SOURCE = 14;
+      t.inventaire.forEach(function (l, i) {
+        var r = ws.addRow(l);
+        r.eachCell({ includeEmpty: true }, function (c, k) {
+          c.border = bord; c.alignment = { vertical: 'middle', wrapText: false };
+          if (i === 0) { c.font = { name: 'Calibri', bold: true, size: 12, color: { argb: k > NB_SOURCE ? 'FFFFFFFF' : 'FF1A1A2E' } }; c.fill = plein(k > NB_SOURCE ? 'E85D04' : 'E5E7EB'); c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; return; }
+          c.font = { name: 'Calibri', size: 11 };
+          var st = t.statuts[i - 1]; c.fill = plein(st === 'OUI' ? 'C8E6C9' : st === 'NON' ? 'FFD8A8' : 'E5E7EB');
+          if (k === 15) c.font = { name: 'Calibri', size: 11, bold: true, color: { argb: st === 'OUI' ? 'FF166534' : st === 'NON' ? 'FF9A3412' : 'FF374151' } };
+          if (k === 14 && typeof c.value === 'number') c.numFmt = '#,##0.00';
+        });
+      });
+      LARG.forEach(function (w, k) { ws.getColumn(k + 1).width = w; }); ws.getRow(1).height = 32; ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: t.inventaire[0].length } };
+      var lig = function (nom, rows, larg) { var w = wb.addWorksheet(nom, { views: [{ state: 'frozen', ySplit: 1 }] }); rows.forEach(function (l, i) { var r = w.addRow(l); r.eachCell({ includeEmpty: true }, function (c) { c.border = bord; c.font = { name: 'Calibri', size: 11, bold: i === 0 }; if (i === 0) c.fill = plein('E5E7EB'); }); }); (larg || []).forEach(function (x, k) { w.getColumn(k + 1).width = x; }); return w; };
+      var res = lig('Résumé', t.resume.concat([[''], ['Légende de la feuille « Inventaire »', ''], ['Ligne verte', 'article trouvé'], ['Ligne orange', 'article non trouvé'], ['Ligne grise', 'hors liste des écarts']]), [52, 14]);
+      res.getCell('A' + (t.resume.length + 3)).font = { bold: true, name: 'Calibri' }; res.getCell('A' + (t.resume.length + 4)).fill = plein('C8E6C9'); res.getCell('A' + (t.resume.length + 5)).fill = plein('FFD8A8'); res.getCell('A' + (t.resume.length + 6)).fill = plein('E5E7EB');
+      lig('Historique', t.historique, [21, 12, 55, 55, 22, 60, 24, 8]); lig('Positions', t.positions, [60, 18, 60]);
+      wb.views = [{ activeTab: 0 }]; wb.worksheets.sort(function (a, b) { return ['Inventaire', 'Résumé', 'Historique', 'Positions'].indexOf(a.name) - ['Inventaire', 'Résumé', 'Historique', 'Positions'].indexOf(b.name); });
+      return wb.xlsx.writeBuffer();
+    }).then(function (buf) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = 'inventaire_' + annee + '_' + aujourdhui() + '.xlsx'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    }).catch(function (e) { toast('Export impossible : ' + e.message); });
+  }
 
   /* ---------- fichier amortissable + rapport ---------- */
   function excelAmortissable() { var tous = M.versAmortissable(etat, annee), dep = M.versAmortissable(etat, annee, true); exporterXlsx([['FICHIER AMORTISSABLE INFRA', tous], ['Articles déplacés', dep]], 'fichier_amortissable_infra_' + annee + '_' + aujourdhui() + '.xlsx'); toast((dep.length - 1) + ' article(s) déplacé(s) sur ' + (tous.length - 1) + '.'); }
@@ -483,7 +514,7 @@
     z.appendChild(el('h3', null, 'Articles non trouvés (' + r.nonTrouves.length + ')'));
     if (r.nonTrouves.length) { var t = el('table'), th = el('tr'); ['N° Inv', 'Désignation', 'Dernière position connue', 'Valeur'].forEach(function (h) { th.appendChild(el('th', null, h)); }); t.appendChild(th); r.nonTrouves.slice(0, 600).forEach(function (x) { var tr = el('tr'); [x.inv, x.designation, x.position, x.valeur ? nbDA(x.valeur) : ''].forEach(function (c) { tr.appendChild(el('td', null, c)); }); t.appendChild(tr); }); z.appendChild(t); }
     else z.appendChild(el('p', 'sous', 'Tous les articles ont été retrouvés.'));
-    z.appendChild(el('h3', null, 'Effectif par emplacement (' + r.positions.length + ')'));
+    z.appendChild(el('h3', null, 'Articles par emplacement (' + r.positions.length + ')'));
     var tp = el('table'), hp = el('tr'); ['Emplacement', 'Articles'].forEach(function (h) { hp.appendChild(el('th', null, h)); }); tp.appendChild(hp); r.positions.forEach(function (x) { var tr = el('tr'); [x.position, String(x.n)].forEach(function (c) { tr.appendChild(el('td', null, c)); }); tp.appendChild(tr); }); z.appendChild(tp);
     $('r-info').textContent = Object.keys(photosRap).length + ' photo(s) chargée(s) sur ' + k.photos + '.';
   }

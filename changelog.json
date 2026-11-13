@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-13-408",
+    "date": "2026-11-13",
+    "title": "Version 6.95.0 — Inventaire : export Excel au format du fichier source, lignes vertes (trouvés) et orange (non trouvés)",
+    "changes": [
+      "La feuille « Inventaire » de l'export Excel reprend d'abord les 14 colonnes du fichier source, avec les mêmes titres et dans le même ordre : N ° Inv, Code SH, A/I, Indice, Strc, Inv, Désignation, Marque, Type, N° Série, Position, Imput, Etat, Valeur (DA) ; la colonne « Inv » du fichier source reste vide.",
+      "Viennent ensuite les colonnes de l'inventaire (en-têtes orange) : Statut (Trouvé / Non trouvé / Hors liste), Trouvé par, Trouvé le, Photo (OUI), Photo par, Photo le, Ancienne position, Date du dernier changement, Dernier motif, Dernier changement par, Non trouvé (exercice). Lignes vertes = trouvés, orange = non trouvés (gris = hors liste) ; en-têtes figés, filtre sur toutes les colonnes, légende dans la feuille Résumé.",
+      "La colonne A/I du fichier source est maintenant lue à l'import : réimporter le fichier source (mode positions) la complète pour les articles déjà enregistrés, sans rien écraser.",
+      "Rapport d'inventaire : « Effectif par emplacement » devient « Articles par emplacement » (c'est bien un nombre d'articles, pas un effectif de personnes)."
+    ]
+  },
+  {
     "id": "2026-11-13-407",
     "date": "2026-11-13",
     "title": "Version 6.94.1 — Inventaire : un article déjà marqué trouvé reste dans le rapport avec sa photo",
