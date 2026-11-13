@@ -138,7 +138,7 @@
   </section>
 
   <section id="v-rapport" hidden>
-    <div class="bloc noprint"><div class="barre"><button class="btn-p" id="r-imp" type="button">🖨 Imprimer / PDF</button><button class="btn-s" id="r-ph" type="button">📷 Charger les photos</button><span class="note" id="r-info"></span></div>
+    <div class="bloc noprint"><div class="barre"><button class="btn-p" id="r-imp" type="button">🖨 Imprimer / PDF</button><button class="btn-s" id="r-ph" type="button">📷 Charger les photos</button><button class="btn-s" id="r-trouve" type="button" hidden>✅ Marquer trouvés les articles photographiés</button><span class="note" id="r-info"></span></div>
       <p class="note">Compte rendu de l'opération : chiffres, articles déplacés ou retrouvés (ancien et nouvel emplacement, motif, photo), articles non trouvés et effectif par emplacement. Imprimez-le ou enregistrez-le en PDF.</p></div>
     <table id="rapT"><thead><tr class="esp"><td></td></tr></thead><tbody><tr><td><div id="rap"></div></td></tr></tbody><tfoot><tr class="esp"><td></td></tr></tfoot></table>   <!-- table d'impression : ses lignes vides se répètent en haut et en bas de CHAQUE page (marge) pendant que la marge @page est nulle, ce qui supprime l'en-tête et le pied du navigateur -->
   </section>
@@ -465,6 +465,7 @@
   }
   function rapport() {
     var r = M.rapportDonnees(etat, annee, photos), k = r.kpis, z = $('rap'); z.textContent = '';
+    $('r-trouve').hidden = !(admin && (r.vusPhoto || []).length); $('r-trouve').textContent = '✅ Marquer trouvés les ' + (r.vusPhoto || []).length + ' articles photographiés';
     z.appendChild(el('div', null, 'Sonatrach · Activité Exploration Production · Division Infrastructures — RNS')).style.cssText = 'font-size:12px;color:#555';
     z.appendChild(el('h2', null, 'Rapport d\'inventaire ' + annee)); z.appendChild(el('p', 'sous', 'Compte rendu de l\'opération — établi le ' + aujourdhui().split('-').reverse().join('/')));
     var kp = el('div', 'rk'); [[k.articles, 'articles'], [k.trouves, 'trouvés'], [k.nonTrouves, 'non trouvés'], [k.deplaces, 'déplacés'], [k.horsListe, 'hors liste'], [k.photos, 'photos']].forEach(function (a) { var d = el('div'); d.appendChild(el('b', null, String(a[0]))); d.appendChild(el('span', null, a[1])); kp.appendChild(d); }); z.appendChild(kp);
@@ -496,6 +497,21 @@
     }
     suite();
   }
+  /* Articles photographiés sans ligne « trouvé » (photos envoyées avant la tenue de l'historique) : l'administrateur les marque réellement trouvés, à leur position actuelle, à la date de la photo ; l'auteur de la photo est gardé dans le motif */
+  function marquerPhotographies() {
+    var vus = M.rapportDonnees(etat, annee, photos).vusPhoto || []; if (!vus.length) return toast('Aucun article photographié à marquer.');
+    if (!window.confirm('Marquer ' + vus.length + ' article(s) comme TROUVÉS (à leur position actuelle, à la date de leur photo) ?\n\n' + vus.map(function (x) { return x.inv + ' — ' + (x.par || 'photo'); }).join('\n'))) return;
+    try {
+      var e = etat;
+      vus.forEach(function (x) {
+        var k = M.invCle(x.inv), a = e.articles[k], ph = photos[k] || {}, quand = /^\d{4}-\d{2}-\d{2}/.test(String(ph.le || '')) ? new Date(ph.le).toISOString() : new Date().toISOString();
+        e = M.marquerTrouve(e, a.inv, a.position, undefined, quand);
+        var h = e.historique[e.historique.length - 1]; if (h && h.source === 'Article retrouvé') h.motif = 'Trouvé à la même position · photo de ' + (ph.par || 'un agent') + (ph.le ? ' le ' + String(ph.le).slice(0, 10).split('-').reverse().join('/') : '');
+      });
+      valider(e, vus.length + ' article(s) marqué(s) trouvé(s).');
+    } catch (er) { toast(er.message); }
+  }
+  $('r-trouve').addEventListener('click', marquerPhotographies);
   $('r-ph').addEventListener('click', chargerPhotos); $('r-imp').addEventListener('click', function () { window.print(); }); $('e-amo').addEventListener('click', excelAmortissable);
 
   /* ---------- navigation ---------- */

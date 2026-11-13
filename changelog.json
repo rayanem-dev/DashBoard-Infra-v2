@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-13-406",
+    "date": "2026-11-13",
+    "title": "Version 6.94.0 — Inventaire : marquer trouvés les articles photographiés",
+    "changes": [
+      "Rapport › « ✅ Marquer trouvés les n articles photographiés » (administrateur) : les articles qui n'ont qu'une photo, sans ligne « trouvé », sont enregistrés comme retrouvés à leur position actuelle, à la date de leur photo, avec le motif « Trouvé à la même position · photo de … le … ». Ils passent ainsi à « ✅ trouvé » dans la liste, le rapport et l'export Excel."
+    ]
+  },
+  {
     "id": "2026-11-13-405",
     "date": "2026-11-13",
     "title": "Version 6.93.8 — Rapport d'inventaire : les articles photographiés rejoignent les « Retrouvés »",
