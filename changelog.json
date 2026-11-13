@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-13-401",
+    "date": "2026-11-13",
+    "title": "Version 6.93.4 — Note d'intérim : la mention « Édité par » est retirée pour de bon",
+    "changes": [
+      "La mention « Édité par : HAMZA LOUCIF » restait en bas de la note : le texte du modèle utilise des espaces insécables que la recherche précédente ne reconnaissait pas. Le paragraphe qui porte « Édité par » est maintenant vidé (corps, en-tête, pied, tableaux), quel que soit le nom et le type d'espace."
+    ]
+  },
+  {
     "id": "2026-11-12-400",
     "date": "2026-11-12",
     "title": "Version 6.93.3 — Renomi : détection du nouveau modèle de prise en charge (Division Moyens Généraux)",
