@@ -320,7 +320,7 @@
     var dernier = null; l.forEach(function (h) { if (!h.annule && h.vers === a.position) dernier = h; });
     l.slice().reverse().forEach(function (h) {
       var d = el('div', 'histo' + (h.annule ? ' annule' : '')); d.appendChild(el('div', null, String(h.date).slice(0, 10) + ' · ' + (h.de ? '« ' + h.de + ' » → ' : '') + '« ' + h.vers + ' »'));
-      d.appendChild(el('div', 'ancienne', h.source + (h.motif ? ' — ' + h.motif : '')));
+      d.appendChild(el('div', 'ancienne', h.source + (h.motif ? ' — ' + M.libelleMotif(h.motif, h.source) : '')));
       if (admin && peutSaisir() && h === dernier && h.de && !h.annule) { var b = el('button', 'btn-s petit', '↩ Annuler ce changement'); b.type = 'button'; b.addEventListener('click', function () { try { valider(M.annuler(etat, h.id, new Date().toISOString()), 'Changement annulé : ancienne position rétablie.'); $('dlg').close(); } catch (er) { toast(er.message); } }); d.appendChild(b); }
       c.appendChild(d);
     });

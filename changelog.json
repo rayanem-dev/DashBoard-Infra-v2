@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-13-409",
+    "date": "2026-11-13",
+    "title": "Version 6.95.1 — Inventaire : « Article créé » remplacé par un libellé sans ambiguïté",
+    "changes": [
+      "Le motif « Article créé » laissait croire que l'utilisateur avait créé l'article. Il s'agit en réalité d'un article chargé depuis le fichier reçu de la division. Il s'affiche maintenant « Article du fichier des écarts 2026 (importé) » (ou « …des positions (importé) ») dans le rapport, l'historique d'un article et l'export Excel (Dernier motif, feuille Historique). Le texte technique reste inchangé en base : rien n'est modifié dans les données."
+    ]
+  },
+  {
     "id": "2026-11-13-408",
     "date": "2026-11-13",
     "title": "Version 6.95.0 — Inventaire : export Excel au format du fichier source, lignes vertes (trouvés) et orange (non trouvés)",

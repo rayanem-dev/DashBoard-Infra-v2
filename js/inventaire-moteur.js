@@ -271,8 +271,19 @@
     return out;
   }
   /** Dernier motif et auteur du dernier changement (lignes non annulées) : { clé article: { motif, par, date, source } }. */
+  /**
+   * Libellé AFFICHÉ d'un motif : « Article créé » est le motif technique d'une ligne chargée depuis un fichier (la logique du programme s'appuie sur ce texte, il reste donc tel quel en base).
+   * Pour l'utilisateur, il s'agit d'un article du fichier reçu, jamais d'un article qu'il aurait créé : on écrit « Article du fichier des écarts 2026 (importé) ».
+   */
+  function libelleMotif(motif, source) {
+    if (String(motif || '') !== 'Article créé') return motif || '';
+    var src = String(source || ''), m = /^Import écarts\s*(.*)$/i.exec(src);
+    if (m) return 'Article du fichier des écarts' + (m[1] ? ' ' + m[1].trim() : '') + ' (importé)';
+    if (/^Import positions/i.test(src)) return 'Article du fichier des positions (importé)';
+    return 'Article importé d\'un fichier';
+  }
   function dernierMotif(etat) {
-    var d = {}; (etat.historique || []).forEach(function (h) { if (!h.annule) d[invCle(h.inv)] = { motif: h.motif || '', par: h.par || '', date: h.date, source: h.source || '' }; }); return d;
+    var d = {}; (etat.historique || []).forEach(function (h) { if (!h.annule) d[invCle(h.inv)] = { motif: libelleMotif(h.motif, h.source), par: h.par || '', date: h.date, source: h.source || '' }; }); return d;
   }
   /** Premier mouvement non annulé de chaque article dans l'exercice (ligne avec une ancienne position) : { clé: ligne d'historique }. */
   function premierMouvement(etat) {
@@ -334,7 +345,7 @@
         p.de || '', p.date ? String(p.date).slice(0, 10) : '', (dm[k] || {}).motif || '', (dm[k] || {}).par || '', Object.keys(a.nonTrouve || {}).join(', ')]);
     });
     var his = [['Date', 'N° Inv', 'De', 'Vers', 'Source', 'Motif', 'Par', 'Annulé']];
-    etat.historique.forEach(function (h) { his.push([String(h.date).slice(0, 19).replace('T', ' '), h.inv, h.de, h.vers, h.source, h.motif, h.par || '', h.annule ? 'oui' : '']); });
+    etat.historique.forEach(function (h) { his.push([String(h.date).slice(0, 19).replace('T', ' '), h.inv, h.de, h.vers, h.source, libelleMotif(h.motif, h.source), h.par || '', h.annule ? 'oui' : '']); });
     var pos = [['Position', 'Nombre d\'articles', 'Autres écritures déjà vues']];
     Object.keys(etat.positions).sort().forEach(function (nm) { pos.push([nm, eff[nm] || 0, (etat.positions[nm].alias || []).join(' | ')]); });
     var tot = n.OUI + n.NON, res = [['Exercice ' + (annee || ''), 'Nombre'], ['Articles dans l\'exercice', Object.keys(etat.articles).length], ['Objets trouvés (colonne « Statut » = Trouvé)', n.OUI], ['Objets non trouvés (= Non trouvé)', n.NON], ['Hors liste des écarts (fichier global seul)', n['HORS LISTE']], ['Avancement (trouvés / à retrouver)', tot ? Math.round(1000 * n.OUI / tot) / 10 + ' %' : '0 %']];
@@ -342,7 +353,7 @@
   }
 
   var API = { cle: cle, ressemblance: ressemblance, nouvelEtat: nouvelEtat, suggestions: suggestions, plusProche: plusProche, effectifs: effectifs, lireFeuille: lireFeuille, nombreFr: nombreFr,
-    analyserImport: analyserImport, appliquerImport: appliquerImport, deplacer: deplacer, annuler: annuler, fusionner: fusionner, renommer: renommer, marquerTrouve: marquerTrouve,
+    analyserImport: analyserImport, appliquerImport: appliquerImport, deplacer: deplacer, annuler: annuler, fusionner: fusionner, renommer: renommer, marquerTrouve: marquerTrouve, libelleMotif: libelleMotif,
     parChamp: parChamp, resume: resume, versTableaux: versTableaux, versAmortissable: versAmortissable, rapportDonnees: rapportDonnees, ENTETES_AMORTISSABLE: ENTETES_AMORTISSABLE, ajouterPosition: ajouterPosition, invCle: invCle, CHAMPS: CHAMPS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.InventaireMoteur = API;
 })(typeof window !== 'undefined' ? window : this);
