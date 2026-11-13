@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-13-402",
+    "date": "2026-11-13",
+    "title": "Version 6.93.5 — Rapport d'inventaire : états en gras, articles classés retrouvés / non retrouvés",
+    "changes": [
+      "« Déplacé : » n'est plus en gras ; « Retrouvé » et « Non retrouvé » le sont.",
+      "Les articles de la liste « retrouvés ou déplacés » sont classés en deux groupes : d'abord les Retrouvés, puis les Non retrouvés, chacun avec son titre et son nombre."
+    ]
+  },
+  {
     "id": "2026-11-13-401",
     "date": "2026-11-13",
     "title": "Version 6.93.4 — Note d'intérim : la mention « Édité par » est retirée pour de bon",

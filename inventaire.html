@@ -51,7 +51,7 @@
   #rap .rk { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; } #rap .rk div { border: 1px solid #ddd; border-radius: 10px; padding: 8px 10px; text-align: center; } #rap .rk b { display: block; font-size: 22px; color: #E85D04; } #rap .rk span { font-size: 11.5px; color: #555; }
   #rap .barre-av { height: 14px; background: #eee; border-radius: 7px; overflow: hidden; } #rap .barre-av i { display: block; height: 100%; background: #16A34A; }
   #rap .fiche { display: grid; grid-template-columns: 120px 1fr; gap: 12px; border: 1px solid #ddd; border-radius: 10px; padding: 10px; margin-bottom: 10px; break-inside: avoid; } #rap .fiche .ph { width: 120px; height: 90px; background: #f3f3f3; border-radius: 8px; display: grid; place-items: center; color: #999; font-size: 12px; overflow: hidden; } #rap .fiche .ph img { width: 100%; height: 100%; object-fit: cover; }
-  #rap .fiche b.t { font-size: 14px; } #rap .fiche .ch { font-size: 12.5px; margin-top: 4px; } #rap .fiche .mot { margin-top: 4px; font-style: italic; color: #444; font-size: 12.5px; } #rap .fl { color: #E85D04; font-weight: 700; }
+  #rap .fiche b.t { font-size: 14px; } #rap .fiche .ch { font-size: 12.5px; margin-top: 4px; } #rap .fiche .mot { margin-top: 4px; font-style: italic; color: #444; font-size: 12.5px; } #rap .fl { color: #E85D04; font-weight: 400; } #rap .st { font-weight: 700; } #rap h4.grp { margin: 14px 0 6px; font-size: 13.5px; }
   #rap table { width: 100%; border-collapse: collapse; font-size: 12px; } #rap th, #rap td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; } #rap th { background: #f3f3f3; }
   #a-tri { display: none; }
   @media (max-width: 700px) {   /* téléphone : une fiche par article au lieu d'un tableau à faire défiler de côté */
@@ -458,7 +458,9 @@
     var c = el('div'); c.appendChild(el('b', 't', x.inv + ' — ' + (x.designation || ''))); var l1 = el('div', 'ch'); [x.marque, x.serie ? 'Série ' + x.serie : '', x.valeur ? nbDA(x.valeur) : ''].filter(Boolean).forEach(function (t, i) { l1.appendChild(document.createTextNode((i ? ' · ' : '') + t)); }); c.appendChild(l1);
     if (x.ancien || x.nouveau) { var l2 = el('div', 'ch'); l2.appendChild(el('span', 'fl', x.ancien && x.nouveau && x.ancien !== x.nouveau ? 'Déplacé : ' : 'Emplacement : ')); l2.appendChild(document.createTextNode((x.ancien && x.ancien !== x.nouveau ? x.ancien + '  →  ' : '') + (x.nouveau || ''))); c.appendChild(l2); }
     if (x.motif) c.appendChild(el('div', 'mot', 'Motif : ' + x.motif));
-    c.appendChild(el('div', 'ch', [x.trouve ? 'Retrouvé' : 'Non retrouvé', x.par ? 'par ' + x.par : '', x.date ? 'le ' + x.date.split('-').reverse().join('/') : '', x.source].filter(Boolean).join(' · '))); d.appendChild(ph); d.appendChild(c); return d;
+    var ls = el('div', 'ch'); ls.appendChild(el('b', 'st', x.trouve ? 'Retrouvé' : 'Non retrouvé'));   // seul l'état est en gras
+    var suite = [x.par ? 'par ' + x.par : '', x.date ? 'le ' + x.date.split('-').reverse().join('/') : '', x.source].filter(Boolean).join(' · '); if (suite) ls.appendChild(document.createTextNode(' · ' + suite));
+    c.appendChild(ls); d.appendChild(ph); d.appendChild(c); return d;
   }
   function rapport() {
     var r = M.rapportDonnees(etat, annee, photos), k = r.kpis, z = $('rap'); z.textContent = '';
@@ -467,7 +469,12 @@
     var kp = el('div', 'rk'); [[k.articles, 'articles'], [k.trouves, 'trouvés'], [k.nonTrouves, 'non trouvés'], [k.deplaces, 'déplacés'], [k.horsListe, 'hors liste'], [k.photos, 'photos']].forEach(function (a) { var d = el('div'); d.appendChild(el('b', null, String(a[0]))); d.appendChild(el('span', null, a[1])); kp.appendChild(d); }); z.appendChild(kp);
     var av = el('div', 'barre-av'); var i = el('i'); i.style.width = k.avancement + '%'; av.appendChild(i); z.appendChild(av); z.appendChild(el('p', 'sous', 'Avancement : ' + k.avancement + ' % des articles à retrouver' + (k.valeurNonTrouvee ? ' · valeur des articles non trouvés : ' + nbDA(k.valeurNonTrouvee) : '')));
     z.appendChild(el('h3', null, 'Articles retrouvés ou déplacés (' + r.mouvements.length + ')'));
-    if (!r.mouvements.length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.')); r.mouvements.slice(0, 400).forEach(function (x) { z.appendChild(fichePhoto(x)); });
+    if (!r.mouvements.length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.'));
+    // classés par état : d'abord les articles retrouvés, puis les non retrouvés (l'ordre d'origine est gardé dans chaque groupe)
+    var mvTr = r.mouvements.filter(function (x) { return x.trouve; }), mvNt = r.mouvements.filter(function (x) { return !x.trouve; }), restant = 400;
+    [['✅ Retrouvés (' + mvTr.length + ')', mvTr], ['❌ Non retrouvés (' + mvNt.length + ')', mvNt]].forEach(function (g) {
+      if (!g[1].length) return; z.appendChild(el('h4', 'grp', g[0])); g[1].slice(0, Math.max(restant, 0)).forEach(function (x) { z.appendChild(fichePhoto(x)); }); restant -= g[1].length;
+    });
     if (r.mouvements.length > 400) z.appendChild(el('p', 'sous', '… et ' + (r.mouvements.length - 400) + ' autre(s) : voir l\'export Excel.'));
     z.appendChild(el('h3', null, 'Articles non trouvés (' + r.nonTrouves.length + ')'));
     if (r.nonTrouves.length) { var t = el('table'), th = el('tr'); ['N° Inv', 'Désignation', 'Dernière position connue', 'Valeur'].forEach(function (h) { th.appendChild(el('th', null, h)); }); t.appendChild(th); r.nonTrouves.slice(0, 600).forEach(function (x) { var tr = el('tr'); [x.inv, x.designation, x.position, x.valeur ? nbDA(x.valeur) : ''].forEach(function (c) { tr.appendChild(el('td', null, c)); }); t.appendChild(tr); }); z.appendChild(t); }
