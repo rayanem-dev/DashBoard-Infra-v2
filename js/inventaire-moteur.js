@@ -289,9 +289,14 @@
       if (l && !(l.source === 'Article retrouvé' && !l.de && !m)) mouvements.push({ inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur,
         ancien: m ? m.de : (l.de || ''), nouveau: m ? a.position : (l.vers || a.position), motif: (dm[k] || {}).motif || '', source: (dm[k] || {}).source || '', par: s.par || (dm[k] || {}).par || '', date: String((s.le || (dm[k] || {}).date || '')).slice(0, 10), trouve: s.s === 'OUI', photo: !!(photos && photos[k]) });
     });
+    // articles qui ont une photo mais ni mouvement ni écart (ex. photographiés sans avoir été marqués « trouvés ») : sans cette liste, leur photo comptait au total sans jamais apparaître dans le rapport
+    var listes = {}; mouvements.concat(non).forEach(function (x) { listes[invCle(x.inv)] = 1; });
+    var vusPhoto = Object.keys(photos || {}).filter(function (k) { return etat.articles[k] && !listes[k]; }).sort().map(function (k) {
+      var a = etat.articles[k], ph = photos[k] || {}; return { inv: a.inv, designation: a.designation, marque: a.marque, serie: a.serie, valeur: a.valeur, ancien: '', nouveau: a.position, motif: '', source: 'Photo', par: ph.par || '', date: String(ph.le || '').slice(0, 10), trouve: true, vu: true, photo: true };
+    });
     var deplaces = mouvements.filter(function (x) { return x.ancien && x.nouveau && cle(x.ancien) !== cle(x.nouveau); }).length;
     return { kpis: { articles: Object.keys(etat.articles).length, trouves: n.OUI, nonTrouves: n.NON, horsListe: n['HORS LISTE'], deplaces: deplaces, photos: photos ? Object.keys(photos).length : 0, avancement: (n.OUI + n.NON) ? Math.round(1000 * n.OUI / (n.OUI + n.NON)) / 10 : 0, valeurNonTrouvee: non.reduce(function (t, x) { return t + (Number(x.valeur) || 0); }, 0) },
-      mouvements: mouvements, nonTrouves: non, positions: Object.keys(parPos).sort().map(function (p) { return { position: p, n: parPos[p].length }; }) };
+      mouvements: mouvements, vusPhoto: vusPhoto, nonTrouves: non, positions: Object.keys(parPos).sort().map(function (p) { return { position: p, n: parPos[p].length }; }) };
   }
   /**
    * Tableau au format « FICHIER AMORTISSABLE INFRA » (33 colonnes, mêmes en-têtes que le fichier des amortissables), à injecter à la fin de l'opération :

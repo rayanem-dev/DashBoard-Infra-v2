@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-13-403",
+    "date": "2026-11-13",
+    "title": "Version 6.93.6 — Rapport d'inventaire : toutes les photos sont chargées (articles « vus » par photo)",
+    "changes": [
+      "« 12 photo(s) chargée(s) sur 17 » : le total comptait toutes les photos de l'exercice, mais le rapport ne listait que les articles retrouvés, déplacés ou non trouvés. Les 5 autres photos appartiennent à des articles photographiés sans avoir été marqués trouvés : elles n'avaient donc aucune fiche où s'afficher. Ils forment maintenant un troisième groupe « 📷 Vus, photo seule » (état « Vu (photo) », auteur et date de la photo), et le bouton « Charger les photos » les charge aussi."
+    ]
+  },
+  {
     "id": "2026-11-13-402",
     "date": "2026-11-13",
     "title": "Version 6.93.5 — Rapport d'inventaire : états en gras, articles classés retrouvés / non retrouvés",

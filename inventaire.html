@@ -458,7 +458,7 @@
     var c = el('div'); c.appendChild(el('b', 't', x.inv + ' — ' + (x.designation || ''))); var l1 = el('div', 'ch'); [x.marque, x.serie ? 'Série ' + x.serie : '', x.valeur ? nbDA(x.valeur) : ''].filter(Boolean).forEach(function (t, i) { l1.appendChild(document.createTextNode((i ? ' · ' : '') + t)); }); c.appendChild(l1);
     if (x.ancien || x.nouveau) { var l2 = el('div', 'ch'); l2.appendChild(el('span', 'fl', x.ancien && x.nouveau && x.ancien !== x.nouveau ? 'Déplacé : ' : 'Emplacement : ')); l2.appendChild(document.createTextNode((x.ancien && x.ancien !== x.nouveau ? x.ancien + '  →  ' : '') + (x.nouveau || ''))); c.appendChild(l2); }
     if (x.motif) c.appendChild(el('div', 'mot', 'Motif : ' + x.motif));
-    var ls = el('div', 'ch'); ls.appendChild(el('b', 'st', x.trouve ? 'Retrouvé' : 'Non retrouvé'));   // seul l'état est en gras
+    var ls = el('div', 'ch'); ls.appendChild(el('b', 'st', x.vu ? 'Vu (photo)' : x.trouve ? 'Retrouvé' : 'Non retrouvé'));   // seul l'état est en gras
     var suite = [x.par ? 'par ' + x.par : '', x.date ? 'le ' + x.date.split('-').reverse().join('/') : '', x.source].filter(Boolean).join(' · '); if (suite) ls.appendChild(document.createTextNode(' · ' + suite));
     c.appendChild(ls); d.appendChild(ph); d.appendChild(c); return d;
   }
@@ -472,7 +472,7 @@
     if (!r.mouvements.length) z.appendChild(el('p', 'sous', 'Aucun mouvement enregistré.'));
     // classés par état : d'abord les articles retrouvés, puis les non retrouvés (l'ordre d'origine est gardé dans chaque groupe)
     var mvTr = r.mouvements.filter(function (x) { return x.trouve; }), mvNt = r.mouvements.filter(function (x) { return !x.trouve; }), restant = 400;
-    [['✅ Retrouvés (' + mvTr.length + ')', mvTr], ['❌ Non retrouvés (' + mvNt.length + ')', mvNt]].forEach(function (g) {
+    [['✅ Retrouvés (' + mvTr.length + ')', mvTr], ['❌ Non retrouvés (' + mvNt.length + ')', mvNt], ['📷 Vus, photo seule (' + (r.vusPhoto || []).length + ')', r.vusPhoto || []]].forEach(function (g) {
       if (!g[1].length) return; z.appendChild(el('h4', 'grp', g[0])); g[1].slice(0, Math.max(restant, 0)).forEach(function (x) { z.appendChild(fichePhoto(x)); }); restant -= g[1].length;
     });
     if (r.mouvements.length > 400) z.appendChild(el('p', 'sous', '… et ' + (r.mouvements.length - 400) + ' autre(s) : voir l\'export Excel.'));
@@ -484,7 +484,7 @@
     $('r-info').textContent = Object.keys(photosRap).length + ' photo(s) chargée(s) sur ' + k.photos + '.';
   }
   function chargerPhotos() {
-    var r = M.rapportDonnees(etat, annee, photos), liste = r.mouvements.concat(r.nonTrouves).filter(function (x) { return x.photo && !photosRap[M.invCle(x.inv)]; }).slice(0, 80), i = 0;
+    var r = M.rapportDonnees(etat, annee, photos), liste = r.mouvements.concat(r.vusPhoto || [], r.nonTrouves).filter(function (x) { return x.photo && !photosRap[M.invCle(x.inv)]; }).slice(0, 80), i = 0;
     if (!liste.length) return toast('Aucune photo à charger.');
     $('r-ph').disabled = true;
     function suite() {
