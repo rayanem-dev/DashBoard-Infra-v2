@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-13-404",
+    "date": "2026-11-13",
+    "title": "Version 6.93.7 — Impression sans pied de page du navigateur (rapport d'inventaire, PV coffrage)",
+    "changes": [
+      "Rapport d'inventaire : l'adresse du site et le numéro de page que le navigateur imprimait en bas (et la date et le titre en haut) disparaissent. La marge de la page est maintenant nulle et remplacée par une marge propre au document, répétée en haut et en bas de chaque page.",
+      "PV coffrage et ferraillage : même procédé ; la 2e page garde elle aussi sa marge en haut (sans cela, le texte aurait touché le bord)."
+    ]
+  },
+  {
     "id": "2026-11-13-403",
     "date": "2026-11-13",
     "title": "Version 6.93.6 — Rapport d'inventaire : toutes les photos sont chargées (articles « vus » par photo)",

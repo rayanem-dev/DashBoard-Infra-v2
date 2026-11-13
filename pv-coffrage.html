@@ -38,6 +38,7 @@
   #feuille ul.reco { margin: 4px 0 0 0; padding-left: 20px; list-style: '- '; font-size: 13.5px; } #feuille ul.reco li { margin-bottom: 2px; }
   #feuille .fin { text-align: center; font-weight: 700; margin: 8px 0 4px; letter-spacing: 1px; }
   #feuille .sign { display: flex; justify-content: space-between; margin-top: 10px; font-weight: 700; } #feuille .sign div { width: 32%; min-height: 80px; }
+  #pvT { width: 100%; border-collapse: collapse; } #pvT > thead > tr > td, #pvT > tbody > tr > td, #pvT > tfoot > tr > td { padding: 0; border: 0; } #pvT tr.esp { display: none; }
   @media (max-width: 860px) { #feuille { zoom: .75; } }
   @media (max-width: 640px) {
     .fd { padding: 10px 10px 30px; } .barre-act .btn-p, .barre-act .btn-s2 { flex: 1 1 100%; padding: 13px 14px; font-size: 15px; }
@@ -50,7 +51,7 @@
     @page { size: A4 portrait; margin: 0; }   /* marge 0 : le navigateur n'imprime plus son en-tête (date, titre) ni son pied (adresse du site, n° de page) */
     html, body { background: #fff !important; margin: 0 !important; filter: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body > *:not(main) { display: none !important; } .fd { padding: 0 !important; max-width: none !important; } .fd > *:not(.fiche-zone) { display: none !important; } .fiche-zone { overflow: visible !important; }
-    #feuille { zoom: 1 !important; width: 100% !important; font-size: 12.5px; margin: 0 !important; box-shadow: none !important; padding: 10mm 11mm !important; box-sizing: border-box; }
+    #feuille { zoom: 1 !important; width: 100% !important; font-size: 12.5px; margin: 0 !important; box-shadow: none !important; padding: 0 11mm !important; box-sizing: border-box; } #pvT tr.esp { display: table-row; } #pvT tr.esp td { height: 10mm; }
     #feuille table.pts th, #feuille table.pts td { font-size: 12px; padding: 1px 6px; } #feuille table.pts td.o textarea { min-height: 20px !important; height: 20px !important; } #feuille h4 { margin: 8px 0 2px; } #feuille ul.reco { font-size: 12px; } #feuille .ligne { margin: 1px 0; } #feuille .sign div { min-height: 60px; }
     #feuille input[type=text], #feuille input[type=date], #feuille textarea { border-bottom: 0 !important; background: transparent !important; } .noprint { display: none !important; } #feuille input[type=date]::-webkit-calendar-picker-indicator { display: none; }
   }
@@ -68,7 +69,7 @@
     <button class="btn-p" id="b-imp" type="button">🖨 Imprimer</button><button class="btn-s2" id="b-mail" type="button">✉ Envoyer au secrétariat</button><button class="btn-s2" id="b-vider" type="button">🧹 Nouveau PV</button>
     <p>Un seul PV (2 pages) : cochez « Conforme » ou « Non conforme » pour chaque point, notez les observations, choisissez la conclusion. Le brouillon est gardé sur cet appareil.</p>
   </div>
-  <div class="fiche-zone"><div id="feuille">
+  <div class="fiche-zone"><table id="pvT"><thead><tr class="esp"><td></td></tr></thead><tbody><tr><td><div id="feuille">
     <div class="entete"><img src="img/sonatrach-logo.jpeg" alt="Sonatrach"><div>Activité Exploration Production<br>Division Production<br>Direction Régionale Rhourde-Nouss<br>Division Infrastructures</div></div>
     <div class="titre">Procès-verbal de réception du coffrage et du ferraillage.</div>
     <div class="ligne"><b>Projet :</b> <input type="text" id="f-projet" list="dl-projets" autocomplete="off" style="width:84%" maxlength="300" placeholder="Tapez pour chercher un projet" aria-label="Projet"></div><div class="noprint" id="aide-lien" style="font-size:12px;color:#B45309;min-height:0"></div>
@@ -106,7 +107,7 @@
     <div class="fin">.......................................FIN PV.......................................</div>
     <h4>Signatures :</h4>
     <div class="sign"><div>Maître d'Ouvrage</div><div style="text-align:center">Chargé de suivi</div><div style="text-align:right">Entreprise de réalisation</div></div>
-  </div></div>
+  </div></td></tr></tbody><tfoot><tr class="esp"><td></td></tr></tfoot></table></div>
 </main>
 <div class="toast" id="toast" role="status"></div>
 <script>
@@ -139,7 +140,7 @@
     var ov = $('ouvrages'); ov.textContent = '';
     OUVRAGES.forEach(function (n) { var l = el('label'), i = el('input'); i.type = 'checkbox'; i.dataset.o = n; i.addEventListener('change', garder); l.appendChild(i); l.appendChild(document.createTextNode(n)); ov.appendChild(l); });
   }
-  function lignes() { return Array.prototype.slice.call($('pts').querySelectorAll('tbody tr:not(.sec)')); }
+  function lignes() { return Array.prototype.slice.call($('pts').querySelectorAll(':scope > tbody > tr:not(.sec)')); }
   function lire() {
     return { projet: $('f-projet').value, mo: $('f-mo').value, ent: $('f-ent').value, lot: $('f-lot').value, bloc: $('f-bloc').value, date: $('f-date').value, autre: $('f-autre').value,
       ouv: Array.prototype.filter.call($('ouvrages').querySelectorAll('input'), function (i) { return i.checked; }).map(function (i) { return i.dataset.o; }),

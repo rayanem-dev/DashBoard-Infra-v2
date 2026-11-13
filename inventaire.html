@@ -65,7 +65,8 @@
     #v-articles table.res td:last-child { flex-wrap: wrap; padding-top: 6px; }
     #v-articles table.res td:last-child::before { content: none; }
   }
-  @media print { body * { visibility: hidden !important; } #rap, #rap * { visibility: visible !important; } #rap { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; max-width: none; } @page { size: A4; margin: 10mm; } .noprint { display: none !important; } }
+  #rapT { width: 100%; border-collapse: collapse; } #rapT > thead > tr > td, #rapT > tbody > tr > td, #rapT > tfoot > tr > td { padding: 0; border: 0; } #rapT tr.esp { display: none; }
+  @media print { body * { visibility: hidden !important; } #rapT, #rapT * { visibility: visible !important; } #rapT { position: absolute; left: 0; top: 0; width: 100%; } #rap { box-shadow: none; padding: 0 11mm; max-width: none; } #rapT tr.esp { display: table-row; } #rapT tr.esp td { height: 10mm; } @page { size: A4; margin: 0; } .noprint { display: none !important; } }
 </style>
 </head>
 <body>
@@ -139,7 +140,7 @@
   <section id="v-rapport" hidden>
     <div class="bloc noprint"><div class="barre"><button class="btn-p" id="r-imp" type="button">🖨 Imprimer / PDF</button><button class="btn-s" id="r-ph" type="button">📷 Charger les photos</button><span class="note" id="r-info"></span></div>
       <p class="note">Compte rendu de l'opération : chiffres, articles déplacés ou retrouvés (ancien et nouvel emplacement, motif, photo), articles non trouvés et effectif par emplacement. Imprimez-le ou enregistrez-le en PDF.</p></div>
-    <div id="rap"></div>
+    <table id="rapT"><thead><tr class="esp"><td></td></tr></thead><tbody><tr><td><div id="rap"></div></td></tr></tbody><tfoot><tr class="esp"><td></td></tr></tfoot></table>   <!-- table d'impression : ses lignes vides se répètent en haut et en bas de CHAQUE page (marge) pendant que la marge @page est nulle, ce qui supprime l'en-tête et le pied du navigateur -->
   </section>
 
   <section id="v-exporter" hidden>
