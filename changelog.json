@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-14-420",
+    "date": "2026-11-14",
+    "title": "Version 6.99.0 — Suivi CPM V6 : le fichier Suivi CPM se saisit et se corrige dans le portail",
+    "changes": [
+      "Nouvelle application « Suivi CPM V6 » (module Cellule Passation Marché) : tous les dossiers du fichier Suivi CPM, filtrés par statut et par type, avec recherche, tri par colonne, jauge d'avancement, couleurs d'échéance et de dead line.",
+      "Un clic sur un dossier ouvre sa fiche complète (passation, attribution et contrat, arrêts et prolongations, commentaire, coordonnées) : on modifie les cases et « Enregistrer dans le fichier » met à jour le fichier tout de suite. « + Nouveau dossier » ajoute une ligne.",
+      "Les calculs sont ceux du script du fichier (un test compare les deux) : étape → % réalisé, statut en « Contrat en exécution » à 100 %, échéance (durée en mois ou en jours, arrêts, reprises, prolongations), « Contrat échu » / retour en exécution, dead line, durée de passation, commentaire automatique, couleurs, classement par statut. Un aperçu en direct annonce les changements automatiques avant l'enregistrement.",
+      "Garde-fous : modification réservée au niveau « saisie » du module CPM (lecture seule sinon), une seule écriture à la fois, refus si quelqu'un a modifié la même case entre-temps, colonnes calculées non modifiables, date de début du cahier des charges obligatoire."
+    ]
+  },
+  {
     "id": "2026-11-14-419",
     "date": "2026-11-14",
     "title": "Version 6.98.1 — Suivi CPM : arrêts alignés sur le script de la feuille (plus de double compte)",

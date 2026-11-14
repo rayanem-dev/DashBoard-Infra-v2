@@ -49,6 +49,7 @@
         { titre: 'Suivi Chantier', description: 'Détail du suivi par chantier.', emoji: '🗂️', url: 'Suivi_Chantier.html' } ] },
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
+        { titre: 'Suivi CPM V6', description: 'Le fichier Suivi CPM dans le portail : saisie et correction directes des dossiers.', emoji: '🧾', url: 'suivi-cpm-v6.html' },
         { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' },
         { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: 'img/icones/banchy-96.png', url: 'benchmark.html' } ] },
       { id: 'planning', titre: 'Planning & Rotations', icone: '🗓️', niveau: 2, apps: [
@@ -98,6 +99,7 @@
     cpm: [
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
+        { titre: 'Suivi CPM V6', description: 'Le fichier Suivi CPM dans le portail : saisie et correction directes des dossiers.', emoji: '🧾', url: 'suivi-cpm-v6.html' },
         { titre: 'Vivier des Entreprises', description: 'Base des entreprises et inscription d\'une nouvelle entreprise.', emoji: '🏢', url: 'vivier.html' },
         { titre: 'Benchmark des prix', description: 'Normativité des prix : compare l\'offre reçue aux prix des autres régions.', emoji: 'img/icones/banchy-96.png', url: 'benchmark.html' } ] }
     ]
@@ -110,6 +112,23 @@
     { id: 'prestataire', libelle: 'Prestataire', niveau_max: 2, interdits: ['securite', 'rh', 'admin'] },
     { id: 'guest', libelle: 'Invité (lecture seule)', niveau_max: 1, interdits: ['securite', 'rh', 'admin', 'planning', 'badges'] }
   ];
+  // Suivi CPM V6 (démo) : mêmes colonnes que le fichier, données fictives, mêmes règles de calcul que la passerelle (ReglesCpm)
+  var CPM6_ENT = ['Date debut Cahier des Charges', 'Type', 'N° dossier', 'Intitulé', 'Etape', 'Date limite', '', '% Réalisé', 'Statut', 'Date Attribution Finale', 'Durée Passation (jours)', 'Attribution', 'Date signature de contrat', 'Date ODS', 'Durée du contrat (mois)', 'Échéance', 'Unité durée', 'Date arrêt 1', 'Date reprise 1', 'Date arrêt 2', 'Date reprise 2', 'Prolongation 1 (jours)', 'Prolongation 2 (jours)', 'Fin après prolongation 1', 'Fin après prolongation 2', 'Commentaire', 'Ordre statut'];
+  var CPM6_IDX = { debut: 0, type: 1, etape: 4, lim: 5, dead: 6, pct: 7, statut: 8, af: 9, pass: 10, attr: 11, signature: 12, ods: 13, dur: 14, ech: 15, unite: 16, a1: 17, r1: 18, a2: 19, r2: 20, j1: 21, j2: 22, p1: 23, p2: 24, com: 25, ordre: 26 };
+  var CPM6_TYPES = { 'Consultation Fournisseur CF': [{ etape: 'Lancement', pct: 0.2 }, { etape: 'Évaluation des offres', pct: 0.6 }, { etape: 'Contrat signé', pct: 1 }], 'Dossier Appel Offre DAO': [{ etape: 'Lancement', pct: 0.1 }, { etape: 'Contrat signé', pct: 1 }], 'Bon De Commande': [{ etape: 'Commande émise', pct: 0.5 }, { etape: 'Contrat signé', pct: 1 }], 'Gré à Gré Convention Cadre': [{ etape: 'Contrat signé', pct: 1 }], 'Gré à Gré Contrat Application': [{ etape: 'Contrat signé', pct: 1 }] };
+  function cpm6Iso(j) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + j); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function cpm6Ligne(o) { var r = []; for (var i = 0; i < CPM6_ENT.length; i += 1) r.push(''); Object.keys(o).forEach(function (k) { r[CPM6_IDX[k] !== undefined ? CPM6_IDX[k] : k] = o[k]; }); return r; }
+  var demoCpm6 = [
+    cpm6Ligne({ debut: cpm6Iso(-420), type: 'Consultation Fournisseur CF', 2: 'CPM-101', 3: 'Maintenance des installations électriques', etape: 'Contrat signé', pct: 1, statut: 'Contrat en exécution', af: cpm6Iso(-330), attr: 'ACOSCO', ods: cpm6Iso(-300), dur: 12, ech: cpm6Iso(64) }),
+    cpm6Ligne({ debut: cpm6Iso(-500), type: 'Dossier Appel Offre DAO', 2: 'CPM-102', 3: 'Réhabilitation du réseau d\'eau — base de vie', etape: 'Contrat signé', pct: 1, statut: 'Contrat en exécution', af: cpm6Iso(-400), attr: 'ENCC SPA UNITE HAMIZ', ods: cpm6Iso(-250), dur: 8, a1: cpm6Iso(-120), r1: cpm6Iso(-90), ech: cpm6Iso(19) }),
+    cpm6Ligne({ debut: cpm6Iso(-60), type: 'Bon De Commande', 2: 'CPM-103', 3: 'Fourniture de pièces détachées', etape: 'Commande émise', pct: 0.5, statut: 'Attribué', af: cpm6Iso(-20), attr: 'Entreprise Atlas', lim: cpm6Iso(12) }),
+    cpm6Ligne({ debut: cpm6Iso(-30), type: 'Consultation Fournisseur CF', 2: 'CPM-104', 3: 'Entretien des espaces verts', etape: 'Lancement', pct: 0.2, statut: 'Dossier en cours', lim: cpm6Iso(25) }),
+    cpm6Ligne({ debut: cpm6Iso(-700), type: 'Dossier Appel Offre DAO', 2: 'CPM-105', 3: 'Location d\'engins', etape: 'Contrat signé', pct: 1, statut: 'Contrat échu', af: cpm6Iso(-600), attr: 'ETB ZATOUT', ods: cpm6Iso(-500), dur: 12, ech: cpm6Iso(-134) }),
+    cpm6Ligne({ debut: cpm6Iso(-15), 2: 'CPM-106', 3: 'Nettoyage des bacs', statut: 'Bloqué' })
+  ];
+  function cpm6Traiter(l) { var a = new Date(); a.setHours(0, 0, 0, 0); var v = l.map(function (x, i) { return window.ReglesCpm && /^\d{4}-\d{2}-\d{2}$/.test(String(x)) ? new Date(+x.slice(0, 4), +x.slice(5, 7) - 1, +x.slice(8, 10)) : x; }); var r = window.ReglesCpm.traiterLigne(v, CPM6_IDX, l.length, a); if (!r) return l; return r.v.map(function (x) { return x instanceof Date ? x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2) : x; }); }
+  var cpm6Init = false;
+  function cpm6Cle(r) { return r[2] ? 'N:' + String(r[2]).toLowerCase() : 'T:' + String(r[3]).toLowerCase(); }
   var demoVivier = [
     { id: 'V1', nom: 'SARL Sahara Travaux', activite: 'Génie civil', telephone: '029 70 11 22', telephone2: '', email: 'contact@sahara-travaux.example', email2: '', fax: '029 70 11 23', adresse: 'Zone industrielle, Ouargla', commentaire: 'Références : bâtiments et VRD' },
     { id: 'V2', nom: 'EURL Electro Sud', activite: 'Électricité', telephone: '0661 00 11 22', telephone2: '', email: 'direction@electrosud.example', email2: '', fax: '', adresse: 'Hassi Messaoud', commentaire: '' },
@@ -583,6 +602,18 @@
       case 'reservation_bus_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var dB = p.demande || {}, nb = 0; (dB.trajets || []).forEach(function (t) { nb += (t.personnes || []).length; var k = String(t.depart || '').trim().toUpperCase() + ' → ' + String(t.destination || '').trim().toUpperCase(); var e = demoTrajetsBus[k] || (demoTrajetsBus[k] = { n: 0, jours: {}, dernier: '' }); e.n += 1; }); return { ok: true, count: nb, trajets: (dB.trajets || []).length, to: (dB.destinataire || 'transport@exemple.dz') + ' (démonstration : rien n\'est envoyé)' }; }
       case 'reservation_trajet_supprimer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); delete demoTrajets[p.trajet]; return { trajets_table: demoTrajets }; }
       case 'reservation_envoyer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var dm = p.demande || {}, tj = String(dm.depart || '').trim().toUpperCase() + ' → ' + String(dm.destination || '').trim().toUpperCase(); var jd = new Date(String(dm.date) + 'T00:00:00Z').getUTCDay(); var te = demoTrajets[tj] || (demoTrajets[tj] = { n: 0, jours: {}, dernier: '' }); te.n += 1; te.jours[jd] = (te.jours[jd] || 0) + 1; return { ok: true, count: ((p.demande || {}).personnes || []).length, to: 'Sec-INFRA.RNS@Sonatrach.dz (démonstration : rien n\'est envoyé)' }; }
+      case 'cpm_v6_lire': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); if (!cpm6Init) { demoCpm6 = demoCpm6.map(cpm6Traiter); cpm6Init = true; } var datesC = ['debut', 'lim', 'af', 'ods', 'signature', 'ech', 'a1', 'r1', 'a2', 'r2', 'p1', 'p2'].map(function (k) { return CPM6_IDX[k]; });
+        return { colonnes: CPM6_ENT.map(function (h, i) { return { i: i, titre: h || 'Dead line', date: datesC.indexOf(i) >= 0, liste: null, calcule: i === 6 || i === 7 || i === 10 }; }).filter(function (c) { return c.i !== 26; }), idx: CPM6_IDX,
+                 lignes: demoCpm6.map(function (r, k) { return { n: 3 + k, cle: cpm6Cle(r), r: r.slice() }; }), types: CPM6_TYPES, statuts: ['Bloqué', 'Non démarré', 'Dossier en cours', 'Attribué', 'Contrat en exécution', 'Contrat échu', 'Infructueux'], peut_modifier: true, maj: new Date().toISOString() }; }
+      case 'cpm_v6_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var chg = p.changements || {}, ligneD, k6;
+        if (p.nouveau) { ligneD = cpm6Ligne({}); } else { k6 = demoCpm6.map(cpm6Cle).indexOf(String(p.cle)); if (k6 < 0) throw erreur('Ce dossier n\'existe plus : rechargez la page'); ligneD = demoCpm6[k6].slice(); }
+        Object.keys(chg).forEach(function (c) { ligneD[Number(c)] = chg[c]; });
+        if (!ligneD[CPM6_IDX.debut]) throw erreur('La date de début du cahier des charges est obligatoire.');
+        if (chg[CPM6_IDX.etape] !== undefined) { var inf = (CPM6_TYPES[ligneD[CPM6_IDX.type]] || []).filter(function (e) { return e.etape === chg[CPM6_IDX.etape]; })[0]; ligneD[CPM6_IDX.pct] = inf ? inf.pct : ''; }
+        ligneD = cpm6Traiter(ligneD); if (p.nouveau) demoCpm6.push(ligneD); else demoCpm6[k6] = ligneD;
+        var rang = { bloque: 1, 'non demarre': 2, 'en cours': 3, attribue: 4, execution: 5, echu: 6, infructueux: 7 };
+        demoCpm6.sort(function (a, b) { return window.ReglesCpm.rangStatut(a[8]) - window.ReglesCpm.rangStatut(b[8]); });
+        return { ligne: 3 + demoCpm6.indexOf(ligneD), cle: cpm6Cle(ligneD), r: ligneD.slice(), modifiees: Object.keys(chg).map(Number) }; }
       case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];

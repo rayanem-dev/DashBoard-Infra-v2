@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Suivi CPM V6 – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/regles-cpm.js"></script><script src="js/garde.js"></script>
+<style>
+  .sv { max-width: 1500px; margin: 0 auto; padding: 16px 16px 40px; }
+  .barre { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; margin-bottom: 12px; }
+  .barre label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 3px; }
+  .barre input, .barre select, dialog input, dialog select, dialog textarea { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); box-sizing: border-box; }
+  .btn-p { padding: 9px 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-s { padding: 9px 16px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-p:disabled { opacity: .6; cursor: wait; }
+  .ok { font-size: 12.5px; color: #15803D; font-weight: 600; }
+  .puces { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .puce { padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+  .puce[aria-pressed="true"] { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; border-color: transparent; }
+  .puce i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); display: inline-block; }
+  .cadre-t { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); overflow: auto; max-height: 72vh; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { position: sticky; top: 0; background: var(--surface); text-align: left; padding: 9px 10px; border-bottom: 2px solid var(--border); font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); cursor: pointer; white-space: nowrap; user-select: none; z-index: 1; }
+  th[aria-sort="ascending"]::after { content: " ▲"; } th[aria-sort="descending"]::after { content: " ▼"; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; max-width: 320px; }
+  tbody tr:hover td { background: rgba(232,93,4,.06); } tbody tr { cursor: pointer; }
+  .st { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; white-space: nowrap; border: 1px solid rgba(0,0,0,.12); }
+  .jauge { width: 70px; height: 8px; border-radius: 6px; background: var(--border); overflow: hidden; display: inline-block; vertical-align: middle; margin-inline-end: 6px; } .jauge b { display: block; height: 100%; background: var(--orange-main); }
+  .ech { padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+  .vide { text-align: center; color: var(--text-muted); padding: 40px 10px; }
+  .com { color: var(--text-muted); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  dialog { border: 0; border-radius: 16px; padding: 0; max-width: 900px; width: calc(100% - 24px); max-height: 92vh; box-shadow: 0 20px 60px rgba(0,0,0,.3); background: var(--surface); color: var(--text-dark); } dialog::backdrop { background: rgba(0,0,0,.45); }
+  dialog form { display: flex; flex-direction: column; max-height: 92vh; }
+  .d-tete { padding: 16px 20px 8px; } .d-tete h2 { margin: 0; font-size: 18px; } .d-tete p { margin: 4px 0 0; font-size: 12.5px; color: var(--text-muted); }
+  .d-corps { padding: 4px 20px 12px; overflow: auto; flex: 1; }
+  fieldset { border: 1px solid var(--border); border-radius: 12px; margin: 10px 0; padding: 8px 14px 14px; } legend { font-weight: 800; font-size: 13px; padding: 0 6px; color: var(--orange-main); }
+  .champs { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px 14px; }
+  .champs label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin-bottom: 3px; }
+  .champs input, .champs select, .champs textarea { width: 100%; }
+  .champs .large { grid-column: 1 / -1; }
+  .champs .calc input, .champs .calc textarea, .champs .calc select { background: rgba(127,127,127,.12); border-style: dashed; }
+  .champs .change input, .champs .change select, .champs .change textarea { border-color: var(--orange-main); }
+  .champs small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .d-pied { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+  .d-pied .err { color: #B42318; font-size: 13px; margin-inline-end: auto; }
+  .apercu { margin: 8px 0; padding: 10px 14px; border-radius: 10px; background: rgba(232,93,4,.08); font-size: 13px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 560px) { .champs { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🧾</div>
+    <div class="logo-text"><h1>Suivi CPM V6</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="sv">
+  <div class="barre">
+    <div style="flex:1;min-width:220px"><label for="f-q">Rechercher</label><input type="search" id="f-q" style="width:100%" placeholder="Intitulé, n° de dossier, entreprise, n° de contrat…"></div>
+    <div><label for="f-type">Type</label><select id="f-type"><option value="">Tous</option></select></div>
+    <div id="z-mod" hidden><button class="btn-p" id="b-add" type="button">+ Nouveau dossier</button></div>
+    <button class="btn-s" id="b-maj" type="button">↻ Actualiser</button>
+    <span id="ok" class="ok" role="status"></span>
+  </div>
+  <div class="puces" id="puces"></div>
+  <div class="cadre-t"><table id="tab"><thead><tr id="tete"></tr></thead><tbody id="corps"></tbody></table><p class="vide" id="vide" hidden>Aucun dossier ne correspond.</p></div>
+  <p class="ok" id="note" style="color:var(--text-muted);margin-top:10px"></p>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" id="frm" novalidate>
+    <div class="d-tete"><h2 id="d-titre">Dossier</h2><p id="d-sous"></p></div>
+    <div class="d-corps" id="d-corps"></div>
+    <div class="d-pied"><span class="err" id="d-err" role="alert"></span><button class="btn-s" type="button" id="d-annuler">Fermer</button><button class="btn-p" type="submit" id="d-ok">Enregistrer dans le fichier</button></div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  var $ = function (i) { return document.getElementById(i); };
+  var R = window.ReglesCpm;
+  var E = { cols: [], idx: {}, lignes: [], types: {}, statuts: [], peut: false }, filtre = { q: '', type: '', statut: '' }, tri = { i: null, sens: 1 }, courant = null, champs = {};
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function dire(t, mauvais) { var o = $('ok'); o.textContent = t; o.style.color = mauvais ? '#B42318' : ''; clearTimeout(dire.t); dire.t = setTimeout(function () { o.textContent = ''; }, 4500); }
+  function frDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso == null ? '' : iso); }
+  function isoVersDate(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function dateVersIso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function estDateCol(i) { return !!(E.cols[i] && E.cols[i].date); }
+  function pctTxt(v) { if (v === '' || v == null) return ''; var n = Number(v); if (isNaN(n)) return String(v); return Math.round(n <= 1 ? n * 100 : n) + ' %'; }
+  function aff(v, i) { return estDateCol(i) ? frDate(v) : (i === E.idx.pct ? pctTxt(v) : String(v == null ? '' : v)); }
+  function statutNorm(l) { return norm(l.r[E.idx.statut]); }
+  function sombre(st) { return /infructueux|bloque/.test(st); }
+
+  function charger() {
+    return Api.call('cpm_v6_lire').then(function (r) {
+      E.cols = []; r.colonnes.forEach(function (c) { E.cols[c.i] = c; });
+      E.idx = r.idx; E.lignes = r.lignes; E.types = r.types || {}; E.statuts = r.statuts || []; E.peut = !!r.peut_modifier;
+      $('z-mod').hidden = !E.peut; $('z-mod').style.display = E.peut ? '' : 'none';
+      var sel = $('f-type'), cur = sel.value; sel.textContent = ''; var o0 = el('option', null, 'Tous'); o0.value = ''; sel.appendChild(o0);
+      Object.keys(E.types).forEach(function (t) { var o = el('option', null, t); o.value = t; sel.appendChild(o); }); sel.value = cur;
+      $('note').textContent = E.peut ? 'Cliquez sur un dossier pour le modifier : le fichier Suivi CPM est mis à jour tout de suite.' : 'Consultation seule : la modification demande le niveau « saisie » sur le module CPM.';
+      puces(); dessiner();
+    }).catch(function (e) { dire(e.message, true); });
+  }
+  function puces() {
+    var z = $('puces'); z.textContent = ''; var cpt = {};
+    E.lignes.forEach(function (l) { var s = String(l.r[E.idx.statut] || '').trim() || 'Sans statut'; cpt[s] = (cpt[s] || 0) + 1; });
+    var tous = el('button', 'puce', 'Tous (' + E.lignes.length + ')'); tous.type = 'button'; tous.setAttribute('aria-pressed', String(!filtre.statut)); tous.onclick = function () { filtre.statut = ''; puces(); dessiner(); }; z.appendChild(tous);
+    var ordre = E.statuts.concat(Object.keys(cpt).filter(function (s) { return E.statuts.indexOf(s) < 0; }));
+    ordre.forEach(function (s) {
+      if (!cpt[s]) return; var b = el('button', 'puce'); b.type = 'button'; var i = el('i'); i.style.background = R.couleurStatut(norm(s)); b.appendChild(i); b.appendChild(document.createTextNode(s + ' (' + cpt[s] + ')'));
+      b.setAttribute('aria-pressed', String(filtre.statut === s)); b.onclick = function () { filtre.statut = filtre.statut === s ? '' : s; puces(); dessiner(); }; z.appendChild(b);
+    });
+  }
+  var AFFICHEES = ['n_dossier', 'intitule', 'type', 'etape', 'pct', 'statut', 'attribue', 'contrat', 'ods', 'ech', 'dead', 'com'];
+  function colonnesTable() {
+    var out = [], I = E.idx, c = E.cols;
+    function trouver(mots) { for (var i = 0; i < c.length; i += 1) if (c[i] && mots.every(function (m) { return norm(c[i].titre).indexOf(m) >= 0; })) return i; return -1; }
+    function contratCol() { for (var i = I.attr; i < c.length; i += 1) { var t = c[i] ? norm(c[i].titre) : ''; if (t.indexOf('contrat') >= 0 && t.indexOf('date') < 0 && t.indexOf('duree') < 0) return i; } return -1; }
+    var defs = [['N° dossier', 2], ['Intitulé', 3], ['Type', I.type], ['Étape', I.etape], ['Avancement', I.pct], ['Statut', I.statut], ['Attribution', I.attr], ['N° contrat', contratCol()],
+                ['ODS', I.ods], ['Échéance', I.ech], ['Dead line', I.dead], ['Commentaire', I.com]];
+    defs.forEach(function (d) { if (d[1] >= 0 && c[d[1]]) out.push({ t: d[0], i: d[1] }); });
+    return out;
+  }
+  function dessiner() {
+    var cols = colonnesTable(), th = $('tete'), q = norm(filtre.q);
+    th.textContent = '';
+    cols.forEach(function (c) { var h = el('th', null, c.t); h.setAttribute('aria-sort', tri.i === c.i ? (tri.sens > 0 ? 'ascending' : 'descending') : 'none'); h.onclick = function () { tri.sens = tri.i === c.i ? -tri.sens : 1; tri.i = c.i; dessiner(); }; th.appendChild(h); });
+    var l = E.lignes.filter(function (x) {
+      if (filtre.statut && (String(x.r[E.idx.statut] || '').trim() || 'Sans statut') !== filtre.statut) return false;
+      if (filtre.type && x.r[E.idx.type] !== filtre.type) return false;
+      return !q || norm(x.r.join(' ')).indexOf(q) >= 0;
+    });
+    if (tri.i !== null) l = l.slice().sort(function (a, b) { var x = a.r[tri.i], y = b.r[tri.i]; if (x === y) return 0; if (x === '') return 1; if (y === '') return -1; return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x) < String(y) ? -1 : 1) * tri.sens; });
+    var tb = $('corps'); tb.textContent = ''; $('vide').hidden = !!l.length;
+    l.forEach(function (x) {
+      var tr = el('tr'); tr.tabIndex = 0;
+      cols.forEach(function (c) {
+        var td = el('td'), v = x.r[c.i];
+        if (c.i === E.idx.statut) { var s = el('span', 'st', v || '—'), n = norm(v); s.style.background = R.couleurStatut(n); s.style.color = sombre(n) ? '#fff' : '#111'; td.appendChild(s); }
+        else if (c.i === E.idx.pct) { var n2 = Number(v); if (v !== '' && !isNaN(n2)) { var j = el('span', 'jauge'), b = el('b'); b.style.width = Math.min(100, n2 <= 1 ? n2 * 100 : n2) + '%'; j.appendChild(b); td.appendChild(j); td.appendChild(document.createTextNode(pctTxt(v))); } }
+        else if (c.i === E.idx.ech) { if (v) { var e = el('span', 'ech', frDate(v)), d = isoVersDate(v), auj = new Date(); auj.setHours(0, 0, 0, 0); if (d) { var jr = Math.round((d - auj) / 864e5); e.style.background = jr > 365 ? '#7cd5b0' : jr >= 182 ? '#fbbc04' : '#ea4335'; e.style.color = '#111'; } td.appendChild(e); } }
+        else if (c.i === E.idx.dead) { if (v !== '') { var dl = el('span', 'ech', String(v)), nn = Number(v); dl.style.background = nn <= 0 ? '#000' : nn <= 7 ? '#ea4335' : nn <= 15 ? '#fbbc04' : '#34a853'; dl.style.color = nn <= 0 ? '#fff' : '#111'; td.appendChild(dl); } }
+        else if (c.i === E.idx.com) td.appendChild(el('div', 'com', String(v || '')));
+        else td.textContent = aff(v, c.i);
+        tr.appendChild(td);
+      });
+      tr.onclick = function () { ouvrir(x); }; tr.onkeydown = function (ev) { if (ev.key === 'Enter') ouvrir(x); };
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---------- fiche : formulaire généré à partir des colonnes du fichier ----------
+  function sections() {
+    var I = E.idx, s = { pass: [], contrat: [], arrets: [], com: [], autres: [] }, arrets = [I.unite, I.a1, I.r1, I.a2, I.r2, I.j1, I.j2, I.p1, I.p2];
+    E.cols.forEach(function (c) {
+      if (!c) return; var i = c.i;
+      if (i === I.com) s.com.push(i); else if (arrets.indexOf(i) >= 0) s.arrets.push(i);
+      else if (i <= I.statut) s.pass.push(i); else if (i >= I.af && i <= I.ech) s.contrat.push(i); else s.autres.push(i);
+    });
+    return s;
+  }
+  function champ(i, nouveau) {
+    var c = E.cols[i], I = E.idx, w = el('div'), lab = el('label', null, c.titre || 'Colonne ' + (i + 1)), inp;
+    var longs = [I.com, 3]; 
+    if (i === I.type) { inp = el('select'); inp.appendChild(new Option('', '')); Object.keys(E.types).forEach(function (t) { inp.appendChild(new Option(t, t)); }); }
+    else if (i === I.etape) inp = el('select');
+    else if (i === I.statut) { inp = el('select'); inp.appendChild(new Option('', '')); E.statuts.forEach(function (t) { inp.appendChild(new Option(t, t)); }); }
+    else if (i === I.unite) { inp = el('select'); ['', 'mois', 'jours'].forEach(function (t) { inp.appendChild(new Option(t, t)); }); }
+    else if (c.liste && c.liste.length) { inp = el('select'); inp.appendChild(new Option('', '')); c.liste.forEach(function (t) { inp.appendChild(new Option(t, t)); }); }
+    else if (c.date) { inp = el('input'); inp.type = 'date'; }
+    else if (longs.indexOf(i) >= 0) { inp = el('textarea'); inp.rows = i === I.com ? 4 : 2; }
+    else { inp = el('input'); inp.type = 'text'; }
+    inp.id = 'c' + i; if (longs.indexOf(i) >= 0) w.className = 'large';
+    w.appendChild(lab); w.appendChild(inp); champs[i] = { w: w, inp: inp }; lab.htmlFor = inp.id;
+    inp.addEventListener('input', recalculer); inp.addEventListener('change', recalculer);
+    if (i === I.type) inp.addEventListener('change', remplirEtapes);
+    return w;
+  }
+  function fixer(i, v) {
+    var f = champs[i], inp = f.inp;
+    if (i === E.idx.etape) { remplirEtapes(); }
+    if (inp.tagName === 'SELECT' && v !== '' && !Array.prototype.some.call(inp.options, function (o) { return o.value === String(v); })) inp.appendChild(new Option(String(v), String(v)));
+    inp.value = i === E.idx.pct ? pctTxt(v) : String(v == null ? '' : v);
+  }
+  function remplirEtapes() {
+    var inp = champs[E.idx.etape].inp, type = champs[E.idx.type].inp.value, cur = inp.value; inp.textContent = ''; inp.appendChild(new Option('', ''));
+    (E.types[type] || []).forEach(function (e) { inp.appendChild(new Option(e.etape + (e.pct !== '' && e.pct != null ? ' — ' + pctTxt(e.pct) : ''), e.etape)); });
+    if (cur && Array.prototype.some.call(inp.options, function (o) { return o.value === cur; })) inp.value = cur;
+  }
+  function lireChamp(i) {
+    var inp = champs[i].inp; return inp.value;
+  }
+  function ouvrir(l) {
+    courant = l || null; champs = {}; var corps = $('d-corps'); corps.textContent = ''; $('d-err').textContent = '';
+    var nouveau = !l, modifiable = E.peut, S = sections();
+    $('d-titre').textContent = nouveau ? 'Nouveau dossier' : (l.r[3] || 'Dossier');
+    $('d-sous').textContent = nouveau ? 'Renseignez d\'abord la date de début du cahier des charges.' : ('N° ' + (l.r[2] || '—') + (modifiable ? ' · les cases en pointillés sont calculées par le fichier' : ' · consultation seule'));
+    function groupe(titre, liste) {
+      if (!liste.length) return; var fs = el('fieldset'), lg = el('legend', null, titre), g = el('div', 'champs'); fs.appendChild(lg); fs.appendChild(g);
+      liste.forEach(function (i) { g.appendChild(champ(i, nouveau)); }); corps.appendChild(fs);
+    }
+    groupe('Passation', S.pass); groupe('Attribution et contrat', S.contrat); groupe('Arrêts de chantier et prolongations', S.arrets); groupe('Commentaire', S.com); groupe('Autres informations (coordonnées, service…)', S.autres);
+    var ap = el('div', 'apercu'); ap.id = 'apercu'; ap.hidden = true; corps.insertBefore(ap, corps.firstChild);
+    var nCol = E.cols.length;
+    for (var i = 0; i < nCol; i += 1) if (champs[i]) fixer(i, l ? l.r[i] : '');
+    remplirEtapes(); if (l) champs[E.idx.etape].inp.value = l.r[E.idx.etape] || '';
+    Object.keys(champs).forEach(function (k) { champs[k].inp.disabled = !modifiable; });
+    $('d-ok').hidden = !modifiable; initial = valeursChamps();
+    recalculer();
+    if (typeof $('dlg').showModal === 'function') $('dlg').showModal(); else $('dlg').setAttribute('open', '');
+  }
+  var initial = {};
+  function valeursChamps() { var o = {}; Object.keys(champs).forEach(function (k) { o[k] = champs[k].inp.value; }); return o; }
+  var HIDE_AIDE = '';
+  // Aperçu en direct : mêmes règles que le fichier (statut à 100 %, échéance, dead line, durée de passation, commentaire)
+  function recalculer() {
+    if (!champs[E.idx.statut]) return; var I = E.idx, nb = (courant ? courant.r.length : Math.max.apply(null, Object.keys(champs).map(Number)) + 2), v = [], i;
+    var tousIdx = Object.keys(I).map(function (k) { return I[k]; });
+    nb = Math.max(nb, Math.max.apply(null, tousIdx) + 1, E.cols.length);
+    for (i = 0; i < nb; i += 1) v.push(courant ? courant.r[i] : '');
+    Object.keys(champs).forEach(function (k) { var i2 = Number(k), val = champs[k].inp.value; if (i2 === I.pct || i2 === I.dead || i2 === I.pass) return; v[i2] = estDateCol(i2) ? (isoVersDate(val) || '') : val; });
+    // type changé : étape et % remis à zéro ; étape choisie : % de la feuille config
+    var type = v[I.type], etapeInfo = (E.types[type] || []).filter(function (e) { return e.etape === v[I.etape]; })[0];
+    if (courant && type !== courant.r[I.type] && v[I.etape] === courant.r[I.etape]) { v[I.etape] = ''; }
+    v[I.pct] = (courant && type === courant.r[I.type] && v[I.etape] === courant.r[I.etape]) ? courant.r[I.pct] : (etapeInfo ? etapeInfo.pct : '');
+    if (v[I.dur] !== '' && v[I.dur] != null) v[I.dur] = Number(String(v[I.dur]).replace(',', '.')) || '';
+    var auj = new Date(), r = null; auj.setHours(0, 0, 0, 0);
+    try { r = R.traiterLigne(v, I, nb, auj); } catch (e) { r = null; }
+    var calc = [I.dead, I.pct, I.pass, I.ech].filter(function (x) { return x >= 0; });
+    Object.keys(champs).forEach(function (k) { var i3 = Number(k); var est = calc.indexOf(i3) >= 0; champs[k].w.classList.toggle('calc', est && (i3 !== I.ech || /attribue|execution|echu|termine/.test(norm(r ? r.v[I.statut] : v[I.statut])))); champs[k].w.classList.toggle('change', champs[k].inp.value !== initial[k]); });
+    if (r) {
+      var msgs = [];
+      [I.dead, I.pct, I.pass, I.ech, I.statut, I.com].forEach(function (c) {
+        if (c < 0 || !champs[c]) return; var val = r.v[c];
+        if (c === I.statut) { if (String(val) !== String(champs[c].inp.value)) { msgs.push('Le statut passera automatiquement à « ' + val + ' ».'); } return; }
+        if (c === I.com) { if (val && String(val) !== String(champs[c].inp.value) && /execution/.test(norm(r.v[I.statut]))) { champs[c].inp.value = val; } return; }
+        var cible = estDateCol(c) ? (val instanceof Date ? dateVersIso(val) : '') : (c === I.pct ? pctTxt(val) : String(val == null ? '' : val));
+        if (c === I.ech && !/attribue|execution|echu|termine/.test(norm(r.v[I.statut]))) return;
+        if (champs[c].inp.value !== cible && (c !== I.ech || !champs[c].inp.matches(':focus'))) champs[c].inp.value = cible;
+      });
+      var ap = $('apercu'); ap.hidden = !msgs.length; ap.textContent = msgs.join(' ');
+    }
+  }
+  function enregistrer(ev) {
+    ev.preventDefault(); var I = E.idx, ch = {}, avant = {}, now = valeursChamps(), calc = [I.dead, I.pct, I.pass];
+    Object.keys(now).forEach(function (k) {
+      var i = Number(k); if (calc.indexOf(i) >= 0 || now[k] === initial[k]) return;
+      if (i === I.ech && !courant) return;
+      var cal = champs[k].w.classList.contains('calc'); if (cal) return;
+      ch[i] = now[k]; if (courant) avant[i] = courant.r[i] === undefined ? '' : courant.r[i];
+    });
+    if (!Object.keys(ch).length && courant) { $('d-err').textContent = 'Aucune modification à enregistrer.'; return; }
+    if (!courant && !now[I.debut]) { $('d-err').textContent = 'La date de début du cahier des charges est obligatoire.'; return; }
+    $('d-ok').disabled = true; $('d-err').textContent = '';
+    Api.call('cpm_v6_enregistrer', { ligne: courant ? courant.n : 0, cle: courant ? courant.cle : '', nouveau: !courant, changements: ch, avant: avant })
+      .then(function (r) { fermer(); dire('✓ Fichier Suivi CPM mis à jour' + (r.modifiees && r.modifiees.length > Object.keys(ch).length ? ' (cases calculées recalculées)' : '')); return charger(); })
+      .catch(function (e) { $('d-err').textContent = e.message; }).then(function () { $('d-ok').disabled = false; });
+  }
+  function fermer() { if ($('dlg').close) $('dlg').close(); else $('dlg').removeAttribute('open'); }
+  $('frm').addEventListener('submit', enregistrer); $('d-annuler').onclick = fermer; $('b-add').onclick = function () { ouvrir(null); };
+  $('f-q').addEventListener('input', function () { filtre.q = this.value; dessiner(); }); $('f-type').addEventListener('change', function () { filtre.type = this.value; dessiner(); });
+  $('b-maj').onclick = function () { charger().then(function () { dire('✓ Actualisé'); }); };
+  charger();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
