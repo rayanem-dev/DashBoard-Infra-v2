@@ -336,7 +336,14 @@
   // ---------- Schéma en arbre : chef de division en haut, secrétariat à côté, un chef par service avec ses agents dessous ----------
   var TEINTES = [['#2A6F97', '#DCEBF5'], ['#9B1C31', '#F5DDE1'], ['#1F8A9E', '#D8EEF2'], ['#B7791F', '#FBEBCB'], ['#3F7D20', '#E2F0D6'], ['#6B4FA3', '#E6DFF3'], ['#B4541A', '#F8E2D3'], ['#334155', '#E2E8F0']];
   function bx(cls, nom, sous, couleur) { var d = el('div', 'bx ' + cls, nom); if (sous) d.appendChild(el('small', null, sous)); if (couleur) d.style.background = couleur; return d; }
+  /** Un agent qui dépend d'un organisme (ACOSCO, GTP, SETER SUD…) prend la couleur de la pastille de cet organisme ; l'organisme est écrit dans sa case. Un agent Sonatrach garde la couleur de son service. */
+  var EMP_VUS = {};
+  function coulEmp(b, dep) {
+    var st = Employeur.style(dep); if (!st) return; EMP_VUS[String(dep).trim().toUpperCase()] = st;
+    b.style.background = st.fond; b.style.color = st.texte; b.style.borderColor = st.texte; var tag = el('small', null, '● ' + String(dep).trim().toUpperCase()); tag.style.fontWeight = '700'; tag.style.opacity = '1'; b.appendChild(tag);
+  }
   function dessinerArbre() {
+    EMP_VUS = {};
     var z = $('feuille-arb'); z.textContent = ''; if (!D) return;
     var div = $('a-div').checked, pre = $('a-pre').checked; if (!div && !pre) { $('a-div').checked = div = true; }
     var d = new Date(), aujourdhui = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
@@ -355,9 +362,9 @@
       var internes = membres.filter(function (m) { return !m.prestataire; }), presta = membres.filter(function (m) { return m.prestataire; });
       var chef = internes.filter(function (m) { return m.role === 'chef_service'; })[0] || internes.filter(function (m) { return m.role === 'interim_chef_service'; })[0] || null;
       var col = el('div', 'col'), titre = s.racine ? 'Direction' : s.nom;
-      var tete = chef ? bx('tete', titre, chef.nom + (chef.role === 'interim_chef_service' ? ' (intérim)' : ''), T[0]) : bx('tete', titre, internes.length ? '' : 'Prestataires', T[0]); col.appendChild(tete);
+      var tete = chef ? bx('tete', titre, chef.nom + (chef.role === 'interim_chef_service' ? ' (intérim)' : ''), T[0]) : bx('tete', titre, internes.length ? '' : 'Prestataires', T[0]); if (chef) coulEmp(tete, chef.dependance); col.appendChild(tete);
       var liste = el('div', 'liste'), sections = {}, ordre = [];
-      internes.filter(function (m) { return m !== chef; }).forEach(function (m) { var it = el('div', 'it'), b = bx('', m.nom, m.fonction || '', T[0]); b.style.background = T[0]; if (m.chef) b.style.fontWeight = '800'; it.appendChild(b); if (m.section) { (sections[m.section] = sections[m.section] || []).push(it); if (ordre.indexOf(m.section) < 0) ordre.push(m.section); } else liste.appendChild(it); });
+      internes.filter(function (m) { return m !== chef; }).forEach(function (m) { var it = el('div', 'it'), b = bx('', m.nom, m.fonction || '', T[0]); b.style.background = T[0]; if (m.chef) b.style.fontWeight = '800'; coulEmp(b, m.dependance); it.appendChild(b); if (m.section) { (sections[m.section] = sections[m.section] || []).push(it); if (ordre.indexOf(m.section) < 0) ordre.push(m.section); } else liste.appendChild(it); });
       ordre.sort().forEach(function (sec) { var h = el('div', 'it'); h.appendChild(bx('sect', 'Section ' + sec, '')); liste.appendChild(h); sections[sec].forEach(function (it) { liste.appendChild(it); }); });
       var ents = {}, ordreE = []; presta.forEach(function (m) { var e = m.dependance || 'Prestataire'; if (!ents[e]) { ents[e] = []; ordreE.push(e); } ents[e].push(m); });
       ordreE.sort().forEach(function (e) {
@@ -369,7 +376,7 @@
     });
     if (cols.children.length) { arb.appendChild(el('div', 'lien-v')); arb.appendChild(cols); } else arb.appendChild(el('p', 'vide-o', 'Aucune personne à afficher pour ce choix.'));
     z.appendChild(arb);
-    var lg = el('div', 'leg-arb'); [['#E4472B', 'Chef de division'], ['#B565D6', 'Secrétariat'], ['#2A6F97', 'Chef de service et ses agents'], ['#E5E7EB', 'Prestataires (couleur de l\'entreprise)']].forEach(function (c) { var sp = el('span'), i = el('i'); i.style.background = c[0]; sp.appendChild(i); sp.appendChild(document.createTextNode(c[1])); lg.appendChild(sp); }); z.appendChild(lg);
+    var lg = el('div', 'leg-arb'); [['#E4472B', 'Chef de division'], ['#B565D6', 'Secrétariat'], ['#2A6F97', 'Chef de service et ses agents'], ['#E5E7EB', 'Prestataires (couleur de l\'entreprise)']].forEach(function (c) { var sp = el('span'), i = el('i'); i.style.background = c[0]; sp.appendChild(i); sp.appendChild(document.createTextNode(c[1])); lg.appendChild(sp); }); Object.keys(EMP_VUS).sort().forEach(function (k) { var sp = el('span'), i = el('i'); i.style.background = EMP_VUS[k].fond; i.style.borderColor = EMP_VUS[k].texte; sp.appendChild(i); sp.appendChild(document.createTextNode('Agents ' + k)); lg.appendChild(sp); }); z.appendChild(lg);
   }
   $('a-div').addEventListener('change', dessinerArbre); $('a-pre').addEventListener('change', dessinerArbre);
   /* impression : le schéma est réduit pour tenir sur UNE page A4 paysage (277 × 190 mm utiles) */

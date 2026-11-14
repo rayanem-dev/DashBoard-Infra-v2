@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-14-414",
+    "date": "2026-11-14",
+    "title": "Version 6.96.1 — Organigramme (schéma) : la couleur de l'organisme pour ses agents",
+    "changes": [
+      "Dans le schéma en arbre, un agent qui dépend d'un organisme (ACOSCO, GTP, SETER SUD, ou tout autre employeur) prend la couleur de la pastille de cet organisme, avec son nom en bas de la case ; les agents Sonatrach gardent la couleur de leur service. La légende ajoute une ligne « Agents <organisme> » pour chaque organisme présent."
+    ]
+  },
+  {
     "id": "2026-11-14-413",
     "date": "2026-11-14",
     "title": "Version 6.96.0 — Organigramme : schéma en arbre, division et/ou prestataires, impression",
