@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-14-419",
+    "date": "2026-11-14",
+    "title": "Version 6.98.1 — Suivi CPM : arrêts alignés sur le script de la feuille (plus de double compte)",
+    "changes": [
+      "Correction de la 6.98.0 : le script du fichier Suivi CPM écrit déjà dans « Échéance » la fin avec les jours d'arrêt et les prolongations ; le portail ne les ajoute plus une seconde fois. Il ne les recalcule que si l'échéance est vide (ODS + durée).",
+      "Mêmes règles que la feuille : « Prolongation (jours) » = 60, « 15 j » ou « 2 mois » (1 mois = 30 jours) ; « Fin après prolongation » prioritaire si plus tardive ; chantier à l'arrêt (sans reprise) : délai figé à la date d'arrêt, jamais « échu ». Mention « Arrêté depuis le … · N j d'arrêt · prolongé de N j »."
+    ]
+  },
+  {
     "id": "2026-11-14-418",
     "date": "2026-11-14",
     "title": "Version 6.98.0 — Suivi CPM : arrêts de chantier et reprises pris en compte",

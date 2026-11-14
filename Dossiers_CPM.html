@@ -289,7 +289,7 @@ function renderCard(d) {
       ${metaItem(contratLabel, contratValue)}
       ${d.key === 'execution' ? metaItem('N° Projet SAP', d.nProjetSap) : ''}
       ${metaItem('Code Sap Fournisseur', d.codeSap)}
-      ${d.key === 'execution' && d.arretTxt ? metaItem('Arrêt de chantier', d.arretTxt) : ''}
+      ${d.key === 'execution' && d.arretTxt ? metaItem('Arrêts / prolongation', d.arretTxt) : ''}
       ${d.key === 'execution' ? metaItem('Jours restants', d.joursRestants !== null ? (d.joursRestants > 0 ? d.joursRestants + ' j.' : 'Échéance dépassée') : '') : ''}
     </div>
     ${contactLines.length ? `<div class="contact-block">${contactLines.join('')}</div>` : ''}
@@ -403,6 +403,7 @@ async function init() {
         const dateODS = parseFrDate(r[COL.DATE_ODS]);
         const dureeMois = parseFloat((r[COL.DUREE_CONTRAT] || '').toString().replace(',', '.')) || null;
         let echeanceDate = parseFrDate(r[COL.ECHEANCE]);
+        const echeanceFeuille = !!echeanceDate;   // la feuille y écrit déjà la fin avec arrêts et prolongations
         if (!echeanceDate && dateODS && dureeMois) {
           echeanceDate = new Date(dateODS);
           // durée de plus de 60 = en JOURS (ex. 580), sinon en mois ; la date de fin est incluse (ODS + 18 mois → veille)
@@ -413,9 +414,9 @@ async function init() {
         let pctConsomme = null, joursRestants = null, arretTxt = '', joursArret = 0;
         if (echeanceDate) {
           // arrêts / reprises de chantier : le délai ne court pas pendant un arrêt, la fin est repoussée d'autant
-          const an = Arrets.analyser({ echeance: echeanceDate, ods: dateODS, aujourdhui: today, arrets: Arrets.lireArrets({ arret1: r[COL.ARRET1], reprise1: r[COL.REPRISE1], prol1: r[COL.PROL1], fin1: r[COL.FIN1], arret2: r[COL.ARRET2], reprise2: r[COL.REPRISE2], prol2: r[COL.PROL2], fin2: r[COL.FIN2] }) });
+          const an = Arrets.analyser(Object.assign({ echeance: echeanceDate, inclus: echeanceFeuille, ods: dateODS, aujourdhui: today }, Arrets.lireChamps({ arret1: r[COL.ARRET1], reprise1: r[COL.REPRISE1], arret2: r[COL.ARRET2], reprise2: r[COL.REPRISE2], prol1: r[COL.PROL1], prol2: r[COL.PROL2], fin1: r[COL.FIN1], fin2: r[COL.FIN2] })));
           joursRestants = an.joursRestants; pctConsomme = an.pctDelai; joursArret = an.joursArret; echeanceDate = an.finEffective;
-          if (an.joursArret > 0) arretTxt = an.enArret ? `Arrêté depuis le ${an.arretDepuis.toLocaleDateString('fr-FR')} (${an.joursArret} j)` : `Dont ${an.joursArret} j d'arrêt (fin repoussée)`;
+          arretTxt = Arrets.mention(an);
         }
 
         // "Arrivée à échéance" = contrat en exécution ayant consommé ≥ 60% de son délai total

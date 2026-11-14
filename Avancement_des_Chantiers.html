@@ -269,15 +269,16 @@ async function loadElectrique(chantier) {
         if (chantier.delaiManuel.dureeMois) dureeMois = chantier.delaiManuel.dureeMois;
       }
       let echeanceDate = parseFrDate(match[COL_CPM.ECHEANCE]);
+      const echeanceFeuille = !!echeanceDate;
       if (!echeanceDate && dateODS && dureeMois) {
         echeanceDate = new Date(dateODS);
         echeanceDate.setMonth(echeanceDate.getMonth() + Math.round(dureeMois));
       }
       if (dateODS && echeanceDate) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
-        const an = Arrets.analyser({ echeance: echeanceDate, ods: dateODS, aujourdhui: today, arrets: Arrets.lireArrets({ arret1: match[COL_CPM.ARRET1], reprise1: match[COL_CPM.REPRISE1], prol1: match[COL_CPM.PROL1], fin1: match[COL_CPM.FIN1], arret2: match[COL_CPM.ARRET2], reprise2: match[COL_CPM.REPRISE2], prol2: match[COL_CPM.PROL2], fin2: match[COL_CPM.FIN2] }) });
+        const an = Arrets.analyser(Object.assign({ echeance: echeanceDate, inclus: echeanceFeuille, ods: dateODS, aujourdhui: today }, Arrets.lireChamps({ arret1: match[COL_CPM.ARRET1], reprise1: match[COL_CPM.REPRISE1], arret2: match[COL_CPM.ARRET2], reprise2: match[COL_CPM.REPRISE2], prol1: match[COL_CPM.PROL1], prol2: match[COL_CPM.PROL2], fin1: match[COL_CPM.FIN1], fin2: match[COL_CPM.FIN2] })));
         if (an.pctDelai !== null) pctDelai = an.pctDelai;
-        if (an.joursArret > 0) delaiArret = an.enArret ? `arrêté depuis le ${an.arretDepuis.toLocaleDateString('fr-FR')} (${an.joursArret} j d'arrêt)` : `dont ${an.joursArret} j d'arrêt déduits`;
+        delaiArret = Arrets.mention(an) || null;
       } else {
         delaiMotif = "Dossier CPM trouvé, mais la Date ODS (et/ou l'Échéance) n'est pas renseignée — à compléter dans Suivi CPM";
       }

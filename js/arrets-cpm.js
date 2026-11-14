@@ -1,10 +1,8 @@
 /**
- * Arrêts et reprises de chantier (Suivi CPM) : jours d'arrêt, nouvelle fin de contrat, part du délai consommée SANS les jours d'arrêt.
- * Colonnes du Suivi CPM lues par les pages et la passerelle : « Date arrêt 1 », « Date reprise 1 », « Date arrêt 2 », « Date reprise 2 », « Prolongation 1/2 » (jours d'arrêt), « Fin après prolongation 1/2 ».
- * Deux façons de renseigner un arrêt (au choix, par arrêt) :
- *   • date d'arrêt + DATE de reprise → la durée est calculée ;
- *   • date d'arrêt + DURÉE (colonne Prolongation, de préférence en JOURS ; « 2 mois » est aussi compris) → la date de reprise est calculée.
- * Sans reprise ni durée, le chantier est « arrêté en cours » : les jours d'arrêt courent jusqu'à aujourd'hui. Une « Fin après prolongation » saisie dans le fichier l'emporte sur le calcul.
+ * Arrêts, reprises et prolongations (Suivi CPM) : mêmes règles que le script de la feuille (apps-script/cpm-sheet/SuiviCPM-complet.gs, analyserContrat).
+ *   fin du contrat = fin initiale + jours d'arrêt (arrêt → reprise) + prolongations en jours (« 60 », « 15 j », « 2 mois » = 60 j), ou la plus tardive des « Fin après prolongation » si elle dépasse.
+ * Le script de la feuille écrit DÉJÀ cette fin dans la colonne « Échéance » : quand l'échéance vient de la feuille, on ne la rallonge pas une seconde fois (inclus: true).
+ * Un arrêt sans reprise = chantier à l'arrêt : le délai est figé à la date d'arrêt et le contrat n'est jamais « échu ».
  * Ce fichier est recopié À L'IDENTIQUE dans apps-script/gateway/ArretsCpm.gs (un test vérifie qu'ils ne divergent pas) : modifier les deux ensemble.
  */
 (function (racine) {
@@ -12,44 +10,12 @@
   var JOUR = 864e5;
   function jours(a, b) { return Math.round((b.getTime() - a.getTime()) / JOUR); }
   function plus(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
-  function plusMois(d, n) { var x = new Date(d.getTime()), j = x.getDate(); x.setMonth(x.getMonth() + n); if (x.getDate() !== j) x.setDate(0); return x; }
-  /** « 45 », « 45 j », « 45 jours » → { jours: 45 } ; « 2 mois » → { mois: 2 } ; sinon null. */
-  function lireDuree(t) {
-    var s = String(t == null ? '' : t).trim().toLowerCase().replace(',', '.'), m;
-    if (!s) return null;
-    if ((m = /^(\d+(?:\.\d+)?)\s*(?:m|mois)$/.exec(s))) return Number(m[1]) > 0 ? { mois: Number(m[1]) } : null;
-    if ((m = /^(\d+(?:\.\d+)?)\s*(?:j|jr|jrs|jour|jours)?$/.exec(s))) return Number(m[1]) > 0 ? { jours: Math.round(Number(m[1])) } : null;
-    return null;
-  }
-  /**
-   * entree = { echeance: Date (fin du contrat avant arrêts), ods: Date|null, aujourdhui: Date, arrets: [{ arret: Date|null, reprise: Date|null, duree: texte|nombre, fin: Date|null }] }
-   * → { arrets: [{ arret, reprise, jours, enCours }], joursArret (arrêts décomptés au total), joursArretEcoules (déjà écoulés aujourd'hui), enArret, arretDepuis, finEffective, pctDelai (null si ods manquante), joursRestants }
-   */
-  function analyser(entree) {
-    var auj = entree.aujourdhui, ech0 = entree.echeance, ods = entree.ods || null, liste = [], total = 0, ecoules = 0, enArret = false, depuis = null, finFichier = null;
-    (entree.arrets || []).forEach(function (x) {
-      if (x.fin && (!finFichier || x.fin.getTime() > finFichier.getTime())) finFichier = x.fin;
-      if (!x.arret) return;
-      var a = x.arret, r = x.reprise && x.reprise.getTime() > a.getTime() ? x.reprise : null, d = null, nb = 0, encours = false;
-      if (!r) {
-        d = lireDuree(x.duree);
-        if (d) r = d.mois ? plusMois(a, d.mois) : plus(a, d.jours);
-      }
-      if (r) nb = jours(a, r); else { encours = true; nb = Math.max(0, jours(a, auj)); }
-      var ecoule = encours ? nb : Math.max(0, Math.min(nb, jours(a, auj)));
-      total += nb; ecoules += ecoule;
-      if (encours) { enArret = true; depuis = a; }
-      liste.push({ arret: a, reprise: r, jours: nb, enCours: encours });
-    });
-    var fin = ech0 ? plus(ech0, total) : null;
-    if (finFichier && ech0 && finFichier.getTime() >= ech0.getTime()) fin = finFichier;   // la « Fin après prolongation » du fichier l'emporte
-    var pct = null, restants = null;
-    if (ech0 && ods) {
-      var duree = jours(ods, ech0);
-      if (duree > 0) pct = Math.max(0, Math.min(100, Math.round(((jours(ods, auj) - ecoules) / duree) * 100)));
-    }
-    if (fin) restants = jours(auj, fin);
-    return { arrets: liste, joursArret: total, joursArretEcoules: ecoules, enArret: enArret, arretDepuis: depuis, finEffective: fin, pctDelai: pct, joursRestants: restants };
+  /** Durée de prolongation → jours : 60 ; « 15 j » ; « 2 mois » (= 60, un mois = 30 jours comme dans la feuille). */
+  function joursDe(v) {
+    if (typeof v === 'number') return v > 0 ? Math.round(v) : 0;
+    var t = String(v == null ? '' : v).trim().toLowerCase().replace(',', '.'), m = /(\d+(?:\.\d+)?)\s*([a-z]*)/.exec(t);
+    if (!m) return 0;
+    return Math.round(m[2].indexOf('m') === 0 ? Number(m[1]) * 30 : Number(m[1]));
   }
   /** « 25/03/2026 » ou « 2026-03-25 » (ou une Date) → Date locale à minuit, sinon null. */
   function lireDate(v) {
@@ -59,12 +25,47 @@
     if (y < 1990 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
     return new Date(y, mo - 1, d);
   }
-  /** d = { arret1, reprise1, prol1, fin1, arret2, reprise2, prol2, fin2 } (textes de la feuille) → liste pour analyser(). */
-  function lireArrets(d, parse) {
+  /** d = { arret1, reprise1, arret2, reprise2, prol1, prol2, fin1, fin2 } (textes de la feuille) → entrée pour analyser(). */
+  function lireChamps(d, parse) {
     var lire = parse || lireDate;
-    return [1, 2].map(function (k) { return { arret: lire(d['arret' + k]), reprise: lire(d['reprise' + k]), duree: d['prol' + k], fin: lire(d['fin' + k]) }; });
+    return {
+      arrets: [1, 2].map(function (k) { return { arret: lire(d['arret' + k]), reprise: lire(d['reprise' + k]) }; }),
+      prolongs: [d.prol1, d.prol2],
+      fins: [lire(d.fin1), lire(d.fin2)]
+    };
   }
-  var API = { lireDuree: lireDuree, lireDate: lireDate, lireArrets: lireArrets, analyser: analyser };
+  /**
+   * entree = { echeance: Date, inclus: bool (true = échéance de la feuille, arrêts et prolongations déjà inclus), ods: Date|null, aujourdhui: Date, arrets: [{arret, reprise}], prolongs: [valeur], fins: [Date] }
+   * → { joursArret, joursProlonges, enArret, arretDepuis, finInitiale, finEffective, pctDelai (null sans ods), joursRestants, arrets: [{arret, reprise, jours}] }
+   */
+  function analyser(entree) {
+    var auj = entree.aujourdhui, ods = entree.ods || null, liste = [], total = 0, depuis = null, jp = 0, fin;
+    (entree.arrets || []).forEach(function (x) {
+      if (!x.arret) return;
+      if (x.reprise && x.reprise.getTime() >= x.arret.getTime()) { var n = jours(x.arret, x.reprise); total += n; liste.push({ arret: x.arret, reprise: x.reprise, jours: n }); }
+      else { depuis = x.arret; liste.push({ arret: x.arret, reprise: null, jours: 0 }); }
+    });
+    (entree.prolongs || []).forEach(function (v) { jp += joursDe(v); });
+    var ech0 = entree.echeance || null, initiale = null;
+    if (ech0) {
+      if (entree.inclus) { fin = ech0; initiale = plus(ech0, -(total + jp)); }
+      else { initiale = ech0; fin = plus(ech0, total + jp); }
+      (entree.fins || []).forEach(function (f) { if (f && f.getTime() > fin.getTime()) fin = f; });
+    }
+    var pct = null, restants = null, repere = depuis && depuis.getTime() < auj.getTime() ? depuis : auj;   // à l'arrêt, le délai est figé à la date d'arrêt
+    if (fin && ods) { var duree = jours(ods, fin); if (duree > 0) pct = Math.max(0, Math.min(100, Math.round((jours(ods, repere) / duree) * 100))); }
+    if (fin) restants = jours(repere, fin);
+    return { arrets: liste, joursArret: total, joursProlonges: jp, enArret: !!depuis, arretDepuis: depuis, finInitiale: initiale, finEffective: fin || null, pctDelai: pct, joursRestants: restants };
+  }
+  /** Texte d'information court (ou '') : « Arrêté depuis le … » / « Dont N j d'arrêt » / « Prolongé de N j ». */
+  function mention(an) {
+    var p = [];
+    if (an.enArret) p.push('Arrêté depuis le ' + ('0' + an.arretDepuis.getDate()).slice(-2) + '/' + ('0' + (an.arretDepuis.getMonth() + 1)).slice(-2) + '/' + an.arretDepuis.getFullYear());
+    if (an.joursArret > 0) p.push(an.joursArret + ' j d\'arrêt');
+    if (an.joursProlonges > 0) p.push('prolongé de ' + an.joursProlonges + ' j');
+    return p.length ? p.join(' · ') : '';
+  }
+  var API = { joursDe: joursDe, lireDate: lireDate, lireChamps: lireChamps, analyser: analyser, mention: mention };
   // arrets>>
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else racine.Arrets = API;
 })(typeof window !== 'undefined' ? window : this);
