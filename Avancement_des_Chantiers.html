@@ -6,7 +6,7 @@
 <meta name="referrer" content="same-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tableau de Bord – Avancement des Chantiers – Division Infrastructure RNS</title>
-<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/garde.js"></script>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/arrets-cpm.js"></script><script src="js/garde.js"></script>
 <link rel="stylesheet" href="css/sombre-ancien.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -188,7 +188,7 @@ async function fetchCSV(source) {
 //   AH (index 33) = Nature du contrat  (ex: "Travaux", "Prestation")
 // ─────────────────────────────────────────────
 const CPM_CSV_URL = "cpm"; // source lue par la passerelle (js/donnees.js)
-const COL_CPM = { INTITULE: 3, STATUT: 8, N_CONTRAT: 13, DATE_ODS: 16, DUREE_CONTRAT: 17, ECHEANCE: 18, SERVICE: 32, NATURE: 33 };
+const COL_CPM = { INTITULE: 3, STATUT: 8, N_CONTRAT: 13, DATE_ODS: 16, DUREE_CONTRAT: 17, ECHEANCE: 18, SERVICE: 32, NATURE: 33, ARRET1: 36, REPRISE1: 37, ARRET2: 38, REPRISE2: 39, PROL1: 40, PROL2: 41, FIN1: 42, FIN2: 43 };
 const SERVICES_ORDRE = ["Construction", "Travaux Entretien", "Électromécanique", "Autre"];
 
 function normalizeTxt(str) {
@@ -248,7 +248,7 @@ async function loadElectrique(chantier) {
   const montantLivre = colMontantLivre !== -1 ? parseMontantFr(valueRow[colMontantLivre]) : 0;
 
   let pctDelai = null;
-  let delaiMotif = null;
+  let delaiMotif = null, delaiArret = null;
   try {
     const cpmRows = await fetchCSV(CPM_CSV_URL);
     let headerIdx = cpmRows.findIndex(r => r.some(cell => normalizeTxt(cell) === 'statut'));
@@ -275,12 +275,9 @@ async function loadElectrique(chantier) {
       }
       if (dateODS && echeanceDate) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
-        const totalJours = Math.round((echeanceDate - dateODS) / (1000 * 60 * 60 * 24));
-        const joursRestants = Math.round((echeanceDate - today) / (1000 * 60 * 60 * 24));
-        if (totalJours > 0) {
-          const elapsedJours = totalJours - joursRestants;
-          pctDelai = Math.max(0, Math.min(100, Math.round((elapsedJours / totalJours) * 100)));
-        }
+        const an = Arrets.analyser({ echeance: echeanceDate, ods: dateODS, aujourdhui: today, arrets: Arrets.lireArrets({ arret1: match[COL_CPM.ARRET1], reprise1: match[COL_CPM.REPRISE1], prol1: match[COL_CPM.PROL1], fin1: match[COL_CPM.FIN1], arret2: match[COL_CPM.ARRET2], reprise2: match[COL_CPM.REPRISE2], prol2: match[COL_CPM.PROL2], fin2: match[COL_CPM.FIN2] }) });
+        if (an.pctDelai !== null) pctDelai = an.pctDelai;
+        if (an.joursArret > 0) delaiArret = an.enArret ? `arrêté depuis le ${an.arretDepuis.toLocaleDateString('fr-FR')} (${an.joursArret} j d'arrêt)` : `dont ${an.joursArret} j d'arrêt déduits`;
       } else {
         delaiMotif = "Dossier CPM trouvé, mais la Date ODS (et/ou l'Échéance) n'est pas renseignée — à compléter dans Suivi CPM";
       }
@@ -291,7 +288,7 @@ async function loadElectrique(chantier) {
 
   return {
     type: 'electrique', service: chantier.service, nom: chantier.nom,
-    pct: pctGlobal, pctGlobal, pctConso, pctDelai, delaiMotif,
+    pct: pctGlobal, pctGlobal, pctConso, pctDelai, delaiMotif, delaiArret,
     montantTotal, montantLivre
   };
 }
@@ -449,7 +446,7 @@ function chantierUnifie(c, fiche) {
   const connues = [delai, conso, avanc].filter(v => v !== null);
   const pct = (conso !== null || avanc !== null) ? connues.reduce((s, v) => s + v, 0) / connues.length : null;
   return { type: 'chantier', nom: c.nom, service: c.service || 'Sans service', contrat: c.contrat, entreprise: c.entreprise, pct, delai, conso, consoTxt, avanc,
-    joursRestants: c.jours_restants, echeance: c.echeance, montant: c.montant, dernier: c.dernier, rapports7j: c.rapports_7j, lignesFiche: lignes, fiche: !!fiche, totalPrevu: fiche && fiche.type !== 'electrique' ? fiche.totalPrevu : null, totalRealise: fiche && fiche.type !== 'electrique' ? fiche.totalRealise : null };
+    joursRestants: c.jours_restants, delaiArret: c.delai_arret || '', echeance: c.echeance, montant: c.montant, dernier: c.dernier, rapports7j: c.rapports_7j, lignesFiche: lignes, fiche: !!fiche, totalPrevu: fiche && fiche.type !== 'electrique' ? fiche.totalPrevu : null, totalRealise: fiche && fiche.type !== 'electrique' ? fiche.totalRealise : null };
 }
 async function computeStats() {
   const t = await Api.call('chantiers_tableau');
@@ -488,7 +485,7 @@ function renderChantierCard(d, i) {
     </div>`).join('');
   const detail = (lignesFiche ? '<div class="sub-metric"><div class="sm-name">Postes de la fiche</div></div>' + lignesFiche : '') + (lignesRap ? '<div class="sub-metric"><div class="sm-name">Dernier rapport journalier</div></div>' + lignesRap : '');
   const jaugeDelai = jaugeBloc('⏳ Délai d\'exécution', d.delai, 'linear-gradient(90deg,#6366F1,#818CF8)',
-    d.delai !== null ? `${d.delai}% du délai contractuel consommé${d.joursRestants != null ? ' — ' + (d.joursRestants >= 0 ? d.joursRestants + ' jour(s) restant(s)' : 'échu depuis ' + (-d.joursRestants) + ' jour(s)') : ''}` : 'Dates ODS / échéance absentes du Suivi CPM');
+    d.delai !== null ? `${d.delai}% du délai contractuel consommé${d.joursRestants != null ? ' — ' + (d.joursRestants >= 0 ? d.joursRestants + ' jour(s) restant(s)' : 'échu depuis ' + (-d.joursRestants) + ' jour(s)') : ''}${d.delaiArret ? ' — ' + d.delaiArret : ''}` : 'Dates ODS / échéance absentes du Suivi CPM');
   const jaugeConso = jaugeBloc('📦 Consommation du marché', d.conso, 'linear-gradient(90deg,var(--orange-main),var(--orange-light))',
     d.conso !== null ? `${d.conso.toFixed(1)}% du montant contractuel consommé` : 'Fiche non branchée — à brancher depuis « Suivi chantier »');
   const jaugeAv = jaugeBloc('📝 Avancement chantier', d.avanc, 'linear-gradient(90deg,#0D9488,#2DD4BF)',

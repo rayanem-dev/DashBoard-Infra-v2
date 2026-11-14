@@ -6,7 +6,7 @@
 <meta name="referrer" content="same-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Dossiers CPM — Détail — Division Infrastructure RNS</title>
-<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/synthese.js"></script><script src="js/garde.js"></script>
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/donnees.js"></script><script src="js/synthese.js"></script><script src="js/arrets-cpm.js"></script><script src="js/garde.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -160,7 +160,7 @@ const COL = {
   DEBUT_CDC: 0, TYPE: 1, N_DOSSIER: 2, INTITULE: 3, ETAPE: 4, DATE_LIMITE: 5,
   ECHEANCE_G: 6, POURCENT: 7, STATUT: 8, COMMENTAIRE: 9, ATTRIB_FINALE: 10,
   DUREE_PASSATION: 11, ATTRIBUTION: 12, N_CONTRAT: 13, MONTANT: 14, DATE_SIGNATURE: 15,
-  DATE_ODS: 16, DUREE_CONTRAT: 17, ECHEANCE: 18, N_PROJET_SAP: 19, CODE_SAP: 20,
+  DATE_ODS: 16, DUREE_CONTRAT: 17, ECHEANCE: 18, ARRET1: 36, REPRISE1: 37, ARRET2: 38, REPRISE2: 39, PROL1: 40, PROL2: 41, FIN1: 42, FIN2: 43, N_PROJET_SAP: 19, CODE_SAP: 20,
   ADRESSE: 21, VILLE: 22, TEL: 23, AUTRE_TEL: 24, FAX: 25, EMAIL: 26
 };
 
@@ -289,6 +289,7 @@ function renderCard(d) {
       ${metaItem(contratLabel, contratValue)}
       ${d.key === 'execution' ? metaItem('N° Projet SAP', d.nProjetSap) : ''}
       ${metaItem('Code Sap Fournisseur', d.codeSap)}
+      ${d.key === 'execution' && d.arretTxt ? metaItem('Arrêt de chantier', d.arretTxt) : ''}
       ${d.key === 'execution' ? metaItem('Jours restants', d.joursRestants !== null ? (d.joursRestants > 0 ? d.joursRestants + ' j.' : 'Échéance dépassée') : '') : ''}
     </div>
     ${contactLines.length ? `<div class="contact-block">${contactLines.join('')}</div>` : ''}
@@ -409,16 +410,12 @@ async function init() {
           else { echeanceDate.setMonth(echeanceDate.getMonth() + Math.round(dureeMois)); echeanceDate.setDate(echeanceDate.getDate() - 1); }
         }
 
-        let pctConsomme = null, joursRestants = null;
+        let pctConsomme = null, joursRestants = null, arretTxt = '', joursArret = 0;
         if (echeanceDate) {
-          joursRestants = Math.round((echeanceDate - today) / (1000 * 60 * 60 * 24));
-          if (dateODS) {
-            const totalJours = Math.round((echeanceDate - dateODS) / (1000 * 60 * 60 * 24));
-            if (totalJours > 0) {
-              const elapsedJours = totalJours - joursRestants;
-              pctConsomme = Math.max(0, Math.min(100, Math.round((elapsedJours / totalJours) * 100)));
-            }
-          }
+          // arrêts / reprises de chantier : le délai ne court pas pendant un arrêt, la fin est repoussée d'autant
+          const an = Arrets.analyser({ echeance: echeanceDate, ods: dateODS, aujourdhui: today, arrets: Arrets.lireArrets({ arret1: r[COL.ARRET1], reprise1: r[COL.REPRISE1], prol1: r[COL.PROL1], fin1: r[COL.FIN1], arret2: r[COL.ARRET2], reprise2: r[COL.REPRISE2], prol2: r[COL.PROL2], fin2: r[COL.FIN2] }) });
+          joursRestants = an.joursRestants; pctConsomme = an.pctDelai; joursArret = an.joursArret; echeanceDate = an.finEffective;
+          if (an.joursArret > 0) arretTxt = an.enArret ? `Arrêté depuis le ${an.arretDepuis.toLocaleDateString('fr-FR')} (${an.joursArret} j)` : `Dont ${an.joursArret} j d'arrêt (fin repoussée)`;
         }
 
         // "Arrivée à échéance" = contrat en exécution ayant consommé ≥ 60% de son délai total
@@ -430,7 +427,7 @@ async function init() {
           etape: r[COL.ETAPE] || '',
           pct,
           pctConsomme,
-          joursRestants,
+          joursRestants, arretTxt, joursArret,
           commentaire: r[COL.COMMENTAIRE] || '',
           dureePassation: (r[COL.DUREE_PASSATION] || '').trim(),
           attribution: r[COL.ATTRIBUTION] || '',

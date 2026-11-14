@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-14-418",
+    "date": "2026-11-14",
+    "title": "Version 6.98.0 — Suivi CPM : arrêts de chantier et reprises pris en compte",
+    "changes": [
+      "Les colonnes « Date arrêt 1/2 », « Date reprise 1/2 », « Prolongation 1/2 » (durée de l'arrêt, de préférence en JOURS ; « 2 mois » est aussi compris) et « Fin après prolongation » du Suivi CPM sont désormais lues par le portail.",
+      "Deux façons de saisir : date d'arrêt + date de reprise (la durée est calculée), ou date d'arrêt + durée en jours (la reprise est calculée). Sans reprise ni durée, le chantier est « arrêté en cours » et les jours courent jusqu'à aujourd'hui. Une « Fin après prolongation » saisie dans le fichier l'emporte.",
+      "La fin du contrat est repoussée du nombre de jours d'arrêt, et le délai consommé ne court pas pendant l'arrêt : pages Dossiers CPM, Avancement des chantiers, tableau des chantiers, alerte « arrive à échéance » du rapport hebdomadaire. La mention « Arrêté depuis le … » ou « Dont N j d'arrêt » s'affiche."
+    ]
+  },
+  {
     "id": "2026-11-14-417",
     "date": "2026-11-14",
     "title": "Version 6.97.0 — Bon de sortie matériel : liste des bons générés, suppression des anciens",
