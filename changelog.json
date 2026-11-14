@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-14-417",
+    "date": "2026-11-14",
+    "title": "Version 6.97.0 — Bon de sortie matériel : liste des bons générés, suppression des anciens",
+    "changes": [
+      "Nouveau bloc « Bons générés » : tous les PDF du dossier « Bons de sortie matériel », du plus récent au plus ancien, avec la date et la taille. Pour chaque bon : « 📄 Ouvrir », « 🖨 Imprimer » (impression en un clic : la fenêtre d'impression s'ouvre directement) et « 🗑 » pour le supprimer. « 🗑️ Tout supprimer » vide la liste (corbeille de Drive, récupérable 30 jours).",
+      "La liste se met à jour après chaque génération ou suppression. La suppression et l'impression ne s'appliquent qu'aux fichiers de ce dossier (jamais à un autre fichier du Drive).",
+      "Application séparée : redéployez « BonSortie » (le publish automatique s'en charge) pour que le bloc apparaisse."
+    ]
+  },
+  {
     "id": "2026-11-14-416",
     "date": "2026-11-14",
     "title": "Version 6.96.3 — Organigramme (schéma) : les sections collées à leur service",
