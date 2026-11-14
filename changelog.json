@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-14-412",
+    "date": "2026-11-14",
+    "title": "Version 6.95.4 — Pastille d'employeur automatique pour tous les employeurs",
+    "changes": [
+      "Tout employeur saisi dans « Dépendance / entreprise » reçoit maintenant sa pastille et sa teinte sans qu'il faille l'ajouter à une liste : la couleur est calculée à partir du nom (toujours la même pour un même employeur, différente d'un employeur à l'autre). Les couleurs fixées dans js/config.js (ACOSCO violet, GTP vert, SETER SUD bleu) sont conservées ; SONATRACH / SH et un employeur vide restent sans pastille. S'applique partout : liste des agents, organigramme, planning, profil."
+    ]
+  },
+  {
     "id": "2026-11-14-411",
     "date": "2026-11-14",
     "title": "Version 6.95.3 — SETER SUD a sa pastille de couleur comme ACOSCO et GTP",

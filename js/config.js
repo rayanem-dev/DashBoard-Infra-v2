@@ -6,7 +6,7 @@ window.GATEWAY_URL = 'https://script.google.com/macros/s/AKfycbzrXkomfA6HRzetFiO
 window.SIJIL_URL = 'https://rayanem-dev.github.io/pointage-app/';
 
 // Couleur de chaque employeur (colonne « dépendance » de BDDORGA) : fond et texte. Mêmes teintes que dans le fichier Organigramme.
-// Un employeur absent de cette liste (ex. SONATRACH) s'affiche sans couleur. Ajouter une ligne pour en colorer un autre.
+// Un employeur absent de cette liste reçoit AUTOMATIQUEMENT une couleur calculée à partir de son nom (SONATRACH / SH : sans pastille). Cette liste ne sert qu'à imposer une couleur précise.
 window.EMPLOYEURS = {
   'ACOSCO': { fond: '#D9D2E9', texte: '#4A3B6B' },
   'GTP': { fond: '#D9EAD3', texte: '#2F5D2A' },
