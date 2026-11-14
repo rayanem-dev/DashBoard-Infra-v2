@@ -86,9 +86,9 @@
   .arb .liste { position: relative; margin: 0 0 0 14px; padding-left: 12px; text-align: left; border-left: 2px solid #444; }
   .arb .liste .it { position: relative; margin-top: 9px; }
   .arb .liste .it::before { content: ''; position: absolute; right: 100%; top: 50%; width: 12px; border-top: 2px solid #444; }
-  .arb .liste .bx { display: block; min-width: 0; max-width: none; width: 135px; font-size: 10.5px; padding: 5px 8px; font-weight: 600; }
+  .arb .liste .bx { text-align: left; display: block; min-width: 0; max-width: none; width: 135px; font-size: 10.5px; padding: 5px 8px; font-weight: 600; }
   .arb .liste .bx small { font-size: 9px; }
-  .arb .liste .bx.sect { background: #fff !important; color: #111 !important; border-style: dashed; font-size: 9.5px; text-transform: uppercase; letter-spacing: .3px; }
+  .arb .liste .bx.sect { font-size: 10px; text-transform: uppercase; letter-spacing: .3px; border-width: 2px; } .arb .liste .liste.sous { margin: 0 0 0 14px; } .arb .liste .liste.sous .it:first-child { margin-top: 0; } .arb .liste .it > .liste.sous { margin-top: 0; }
   .arb .liste .bx.pr { border-style: dashed; }
   .arb .pont { width: 0; height: 20px; border-left: 2px solid #444; margin: 0 auto; } .arb .sa { text-align: center; } .arb .sa .lien-v.pt { height: 12px; } .arb .sa .bx.chefe { width: 135px; font-size: 10.5px; padding: 5px 8px; display: inline-block; } .arb .sa .bx.tete { width: 150px; max-width: 150px; }
   .arb .vide-svc { font-size: 10px; color: #666; margin: 8px 0 0 14px; }
@@ -365,8 +365,13 @@
       var col = el('div', 'col'), titre = s.racine ? 'Direction' : s.nom;
       var tete = chef ? bx('tete', titre, chef.nom + (chef.role === 'interim_chef_service' ? ' (intérim)' : ''), T[0]) : bx('tete', titre, internes.length ? '' : 'Prestataires', T[0]); if (chef) coulEmp(tete, chef.dependance); col.appendChild(tete);
       var liste = el('div', 'liste'), sections = {}, ordre = [];
-      internes.filter(function (m) { return m !== chef; }).forEach(function (m) { var it = el('div', 'it'), b = bx('', m.nom, m.fonction || '', T[0]); b.style.background = T[0]; if (m.chef) b.style.fontWeight = '800'; coulEmp(b, m.dependance); it.appendChild(b); if (m.section) { (sections[m.section] = sections[m.section] || []).push(it); if (ordre.indexOf(m.section) < 0) ordre.push(m.section); } else liste.appendChild(it); });
-      ordre.sort().forEach(function (sec) { var h = el('div', 'it'); h.appendChild(bx('sect', 'Section ' + sec, '')); liste.appendChild(h); sections[sec].forEach(function (it) { liste.appendChild(it); }); });
+      // agents sans section directement sous le service ; chaque section est une branche COLLÉE au service (case de la section), ses agents en sous-liste dessous
+      internes.filter(function (m) { return m !== chef; }).forEach(function (m) { var it = el('div', 'it'), b = bx('', m.nom, m.fonction || '', T[0]); b.style.background = T[0]; if (m.chef) b.style.fontWeight = '800'; coulEmp(b, m.dependance); it.appendChild(b); if (m.section) { (sections[m.section] = sections[m.section] || []).push(m); if (ordre.indexOf(m.section) < 0) ordre.push(m.section); } else liste.appendChild(it); });
+      ordre.sort().forEach(function (sec) {
+        var h = el('div', 'it'), sb = bx('sect', 'Section ' + sec, '', T[0]); sb.style.color = '#fff'; h.appendChild(sb);
+        var sous = el('div', 'liste sous'); sections[sec].forEach(function (m) { var it = el('div', 'it'), b = bx('', m.nom, m.fonction || '', T[1]); b.style.color = T[0]; b.style.borderColor = T[0]; if (m.chef) b.style.fontWeight = '800'; coulEmp(b, m.dependance); it.appendChild(b); sous.appendChild(it); });
+        h.appendChild(sous); liste.appendChild(h);
+      });
       if (liste.children.length) col.appendChild(liste);
       // prestataires : sous-arbre rattaché au service dont ils dépendent, séparé des agents par un trait vertical ; une entreprise = son en-tête, son chef d'équipe en tête de liste, puis ses agents
       var ents = {}, ordreE = []; presta.forEach(function (m) { var e = m.dependance || 'Prestataire'; if (!ents[e]) { ents[e] = []; ordreE.push(e); } ents[e].push(m); });

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-14-416",
+    "date": "2026-11-14",
+    "title": "Version 6.96.3 — Organigramme (schéma) : les sections collées à leur service",
+    "changes": [
+      "Chaque section (Froid, Électricité…) est maintenant une case pleine accrochée directement au service, avec ses agents en sous-liste juste dessous, au lieu d'un simple intitulé en pointillés. Les agents sans section restent directement sous le service."
+    ]
+  },
+  {
     "id": "2026-11-14-415",
     "date": "2026-11-14",
     "title": "Version 6.96.2 — Organigramme (schéma) : les prestataires en sous-arbre sous leur service",
