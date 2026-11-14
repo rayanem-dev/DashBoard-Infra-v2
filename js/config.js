@@ -9,7 +9,9 @@ window.SIJIL_URL = 'https://rayanem-dev.github.io/pointage-app/';
 // Un employeur absent de cette liste (ex. SONATRACH) s'affiche sans couleur. Ajouter une ligne pour en colorer un autre.
 window.EMPLOYEURS = {
   'ACOSCO': { fond: '#D9D2E9', texte: '#4A3B6B' },
-  'GTP': { fond: '#D9EAD3', texte: '#2F5D2A' }
+  'GTP': { fond: '#D9EAD3', texte: '#2F5D2A' },
+  'SETER SUD': { fond: '#CFE2F3', texte: '#1C4587' },
+  'SETERSUD': { fond: '#CFE2F3', texte: '#1C4587' }   // même employeur écrit sans espace dans certains fichiers
 };
 
 // Adresse du secrétariat : lien « Mot de passe oublié ? Demander au secrétariat » de la fiche de l'agent.

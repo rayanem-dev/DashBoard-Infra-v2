@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-14-411",
+    "date": "2026-11-14",
+    "title": "Version 6.95.3 — SETER SUD a sa pastille de couleur comme ACOSCO et GTP",
+    "changes": [
+      "La liste des employeurs colorés (js/config.js) ne contenait qu'ACOSCO et GTP : un agent dont l'employeur est SETER SUD n'avait donc ni pastille ni teinte dans la liste des agents (Privilèges), l'organigramme, le planning et le profil. SETER SUD (écrit aussi SETERSUD) est ajouté en bleu. Pour colorer un autre employeur, il suffit d'ajouter une ligne dans cette liste."
+    ]
+  },
+  {
     "id": "2026-11-13-410",
     "date": "2026-11-13",
     "title": "Version 6.95.2 — Rapport d'inventaire : tous les articles trouvés sont listés",
