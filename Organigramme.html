@@ -65,6 +65,34 @@
   #feuille-vis .verdict { font-size: 11px; font-weight: 700; margin: 1px 0 4px 178px; } #feuille-vis .verdict.ok { color: #166534; } #feuille-vis .verdict.ko { color: #B42318; }
   #feuille-vis .legende { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10.5px; margin: 6px 0 0; } #feuille-vis .legende i { display: inline-block; width: 12px; height: 9px; margin-right: 4px; border: 1px solid #999; vertical-align: middle; }
   @media print { @page { size: A4 landscape; margin: 12mm; } body * { visibility: hidden !important; } #feuille-vis, #feuille-vis * { visibility: visible !important; } #feuille-vis { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; } #feuille-vis tr { break-inside: avoid; } }
+
+  /* ---------- Schéma (organigramme en arbre) ---------- */
+  #feuille-arb { background: #fff; color: #111; border-radius: 10px; padding: 14px 16px 18px; box-shadow: var(--shadow-card); font-family: Arial, Helvetica, sans-serif; overflow-x: auto; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #feuille-arb h2 { text-align: center; font-size: 16px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .4px; } #feuille-arb .sous { text-align: center; font-size: 11px; color: #555; margin: 0 0 14px; }
+  .arb { display: inline-block; min-width: 100%; text-align: center; }
+  .arb .bx { display: inline-block; vertical-align: top; color: #fff; font-weight: 700; font-size: 11.5px; line-height: 1.25; padding: 7px 12px; min-width: 120px; max-width: 190px; border: 2px solid rgba(0,0,0,.18); }
+  .arb .bx small { display: block; font-weight: 400; font-size: 9.5px; opacity: .95; margin-top: 1px; }
+  .arb .haut { display: block; position: relative; text-align: center; min-height: 50px; }
+  .arb .bx.dg { background: #E4472B; font-size: 13px; min-width: 170px; } .arb .bx.sec { background: #B565D6; position: absolute; left: calc(50% + 115px); top: 0; margin: 0; text-align: center; }
+  .arb .bx.sec::before { content: ''; position: absolute; right: 100%; top: 50%; width: 30px; border-top: 2px solid #444; }
+  .arb .lien-v { width: 0; height: 18px; border-left: 2px solid #444; margin: 0 auto; }
+  .arb .cols { display: flex; justify-content: center; align-items: flex-start; gap: 0; }
+  .arb .col { position: relative; padding: 18px 7px 0; text-align: center; }
+  .arb .col::before, .arb .col::after { content: ''; position: absolute; top: 0; height: 18px; width: 50%; border-top: 2px solid #444; }
+  .arb .col::before { right: 50%; } .arb .col::after { left: 50%; border-left: 2px solid #444; }
+  .arb .col:first-child::before { border: 0; } .arb .col:last-child::after { border: 0; } .arb .col:last-child::before { border-right: 2px solid #444; }
+  .arb .col:only-child::before { border: 0; } .arb .col:only-child::after { border: 0; border-left: 2px solid #444; }
+  .arb .col > .bx.tete { width: 150px; max-width: 150px; }
+  .arb .liste { position: relative; margin: 0 0 0 14px; padding-left: 12px; text-align: left; border-left: 2px solid #444; }
+  .arb .liste .it { position: relative; margin-top: 9px; }
+  .arb .liste .it::before { content: ''; position: absolute; right: 100%; top: 50%; width: 12px; border-top: 2px solid #444; }
+  .arb .liste .bx { display: block; min-width: 0; max-width: none; width: 135px; font-size: 10.5px; padding: 5px 8px; font-weight: 600; }
+  .arb .liste .bx small { font-size: 9px; }
+  .arb .liste .bx.sect { background: #fff !important; color: #111 !important; border-style: dashed; font-size: 9.5px; text-transform: uppercase; letter-spacing: .3px; }
+  .arb .liste .bx.pr { border-style: dashed; }
+  .arb .vide-svc { font-size: 10px; color: #666; margin: 8px 0 0 14px; }
+  #feuille-arb .leg-arb { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 10.5px; margin: 14px 0 0; } #feuille-arb .leg-arb i { display: inline-block; width: 12px; height: 9px; margin-right: 4px; border: 1px solid #777; vertical-align: middle; }
+  @media print { body.arb-print * { visibility: hidden !important; } body.arb-print #feuille-arb, body.arb-print #feuille-arb * { visibility: visible !important; } body.arb-print #feuille-arb { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 8mm 10mm; overflow: visible; page: arb; box-sizing: border-box; } @page arb { size: A4 landscape; margin: 0; } }
 </style>
 </head>
 <body>
@@ -76,7 +104,7 @@
 <div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
 
 <main class="portail">
-  <div class="onglets-o" role="tablist"><button type="button" class="actif" id="o-org">Organigramme</button><button type="button" id="o-list">Listing · vis-à-vis</button><button type="button" id="o-imp">🖨 Imprimer par vis-à-vis <span id="n-sel"></span></button></div>
+  <div class="onglets-o" role="tablist"><button type="button" class="actif" id="o-org">Organigramme</button><button type="button" id="o-list">Listing · vis-à-vis</button><button type="button" id="o-imp">🖨 Imprimer par vis-à-vis <span id="n-sel"></span></button><button type="button" id="o-arbre">🌳 Schéma (arbre)</button></div>
   <div class="barre-o">
     <input type="text" id="q" placeholder="Rechercher un nom, une fonction, un service…" autocomplete="off" aria-label="Rechercher">
     <div class="legende" id="leg"></div>
@@ -90,6 +118,15 @@
     <div style="overflow:auto"><table class="listing" id="tab-list"><thead><tr><th class="sel"><input type="checkbox" id="c-tout" title="Sélectionner / désélectionner les personnes affichées"></th><th data-col="nom">Nom</th><th data-col="fonction">Fonction</th><th data-col="service">Service</th><th data-col="dependance">Employeur</th><th data-col="telephone">Téléphone</th><th data-col="vis_travail">Vis-à-vis travail</th><th data-col="vis_chambre">Vis-à-vis chambre</th></tr></thead><tbody id="corps-list"></tbody></table></div>
     <datalist id="dl-pers"></datalist>
     <p class="aide" style="margin:8px 0 0">Cochez les personnes à présenter (case en tête de colonne = toutes celles affichées), puis ouvrez l'onglet « Imprimer par vis-à-vis ».</p>
+  </div>
+  <div id="p-arbre" hidden>
+    <div class="no-print" style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      <label style="font-size:13.5px;display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" id="a-div" checked> Division</label>
+      <label style="font-size:13.5px;display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" id="a-pre"> Prestataires</label>
+      <button class="btn-p" id="a-imp" type="button">🖨 Imprimer</button>
+      <span class="aide" style="margin:0">Cochez « Division » seule, « Prestataires » seuls, ou les deux : la division avec ses prestataires. Le schéma s'imprime sur une page A4 paysage.</span>
+    </div>
+    <div id="feuille-arb" data-i18n-non></div>
   </div>
   <div id="p-imp" hidden>
     <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
@@ -296,14 +333,61 @@
   }
   $('c-conf').addEventListener('change', feuille); $('s-vue').addEventListener('change', feuille); $('s-duree').addEventListener('change', feuille); document.querySelectorAll('input[name=grp]').forEach(function (r) { r.addEventListener('change', feuille); });
   $('b-imprimer').addEventListener('click', function () { window.print(); });
-  function onglet(liste, imp) {
-    $('o-org').classList.toggle('actif', !liste && !imp); $('o-list').classList.toggle('actif', liste); $('o-imp').classList.toggle('actif', !!imp);
-    $('racine').hidden = $('services').hidden = liste || !!imp; $('p-list').hidden = !liste; $('p-imp').hidden = !imp; $('aide').hidden = liste || !!imp; $('tout').hidden = liste || !!imp; $('leg').hidden = liste || !!imp; $('q').hidden = !!imp;
+  // ---------- Schéma en arbre : chef de division en haut, secrétariat à côté, un chef par service avec ses agents dessous ----------
+  var TEINTES = [['#2A6F97', '#DCEBF5'], ['#9B1C31', '#F5DDE1'], ['#1F8A9E', '#D8EEF2'], ['#B7791F', '#FBEBCB'], ['#3F7D20', '#E2F0D6'], ['#6B4FA3', '#E6DFF3'], ['#B4541A', '#F8E2D3'], ['#334155', '#E2E8F0']];
+  function bx(cls, nom, sous, couleur) { var d = el('div', 'bx ' + cls, nom); if (sous) d.appendChild(el('small', null, sous)); if (couleur) d.style.background = couleur; return d; }
+  function dessinerArbre() {
+    var z = $('feuille-arb'); z.textContent = ''; if (!D) return;
+    var div = $('a-div').checked, pre = $('a-pre').checked; if (!div && !pre) { $('a-div').checked = div = true; }
+    var d = new Date(), aujourdhui = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+    z.appendChild(el('h2', null, 'Organigramme — Division Infrastructure RNS')); z.appendChild(el('p', 'sous', (div && pre ? 'Division et prestataires' : div ? 'Division' : 'Prestataires') + ' · édité le ' + aujourdhui));
+    var arb = el('div', 'arb'), tous = []; D.services.forEach(function (s) { s.membres.forEach(function (m) { tous.push({ m: m, s: s }); }); });
+    var secretariat = tous.filter(function (x) { return x.m.role === 'secretariat' && !x.m.prestataire; }).map(function (x) { return x.m; });
+    var chefDiv = tous.filter(function (x) { return x.m.role === 'chef_division'; })[0], hautN = el('div', 'haut');
+    var dg = chefDiv ? bx('dg', 'Chef de division', chefDiv.m.nom) : bx('dg', 'Division Infrastructure', ''); hautN.appendChild(dg);
+    if (secretariat.length) { var sb = bx('sec', 'Secrétariat', secretariat.map(function (m) { return m.nom; }).join(' · ')); hautN.appendChild(sb); }
+    arb.appendChild(hautN);
+    var cols = el('div', 'cols'), k = 0;
+    D.services.forEach(function (s) {
+      var membres = s.membres.filter(function (m) { return !(m.role === 'chef_division') && !(m.role === 'secretariat' && !m.prestataire) && (m.prestataire ? pre : div); });
+      if (!membres.length) return;
+      var T = TEINTES[k % TEINTES.length]; k += 1;
+      var internes = membres.filter(function (m) { return !m.prestataire; }), presta = membres.filter(function (m) { return m.prestataire; });
+      var chef = internes.filter(function (m) { return m.role === 'chef_service'; })[0] || internes.filter(function (m) { return m.role === 'interim_chef_service'; })[0] || null;
+      var col = el('div', 'col'), titre = s.racine ? 'Direction' : s.nom;
+      var tete = chef ? bx('tete', titre, chef.nom + (chef.role === 'interim_chef_service' ? ' (intérim)' : ''), T[0]) : bx('tete', titre, internes.length ? '' : 'Prestataires', T[0]); col.appendChild(tete);
+      var liste = el('div', 'liste'), sections = {}, ordre = [];
+      internes.filter(function (m) { return m !== chef; }).forEach(function (m) { var it = el('div', 'it'), b = bx('', m.nom, m.fonction || '', T[0]); b.style.background = T[0]; if (m.chef) b.style.fontWeight = '800'; it.appendChild(b); if (m.section) { (sections[m.section] = sections[m.section] || []).push(it); if (ordre.indexOf(m.section) < 0) ordre.push(m.section); } else liste.appendChild(it); });
+      ordre.sort().forEach(function (sec) { var h = el('div', 'it'); h.appendChild(bx('sect', 'Section ' + sec, '')); liste.appendChild(h); sections[sec].forEach(function (it) { liste.appendChild(it); }); });
+      var ents = {}, ordreE = []; presta.forEach(function (m) { var e = m.dependance || 'Prestataire'; if (!ents[e]) { ents[e] = []; ordreE.push(e); } ents[e].push(m); });
+      ordreE.sort().forEach(function (e) {
+        var st = Employeur.style(e), h = el('div', 'it'), b = bx('pr', '🏗️ ' + e, '', st ? st.texte : '#555'); h.appendChild(b); liste.appendChild(h);
+        ents[e].forEach(function (m) { var it = el('div', 'it'), pb = bx('pr', m.nom, m.fonction || '', st ? st.fond : '#E5E7EB'); pb.style.color = st ? st.texte : '#111'; pb.style.borderColor = st ? st.texte : '#777'; it.appendChild(pb); liste.appendChild(it); });
+      });
+      if (liste.children.length) col.appendChild(liste);
+      cols.appendChild(col);
+    });
+    if (cols.children.length) { arb.appendChild(el('div', 'lien-v')); arb.appendChild(cols); } else arb.appendChild(el('p', 'vide-o', 'Aucune personne à afficher pour ce choix.'));
+    z.appendChild(arb);
+    var lg = el('div', 'leg-arb'); [['#E4472B', 'Chef de division'], ['#B565D6', 'Secrétariat'], ['#2A6F97', 'Chef de service et ses agents'], ['#E5E7EB', 'Prestataires (couleur de l\'entreprise)']].forEach(function (c) { var sp = el('span'), i = el('i'); i.style.background = c[0]; sp.appendChild(i); sp.appendChild(document.createTextNode(c[1])); lg.appendChild(sp); }); z.appendChild(lg);
+  }
+  $('a-div').addEventListener('change', dessinerArbre); $('a-pre').addEventListener('change', dessinerArbre);
+  /* impression : le schéma est réduit pour tenir sur UNE page A4 paysage (277 × 190 mm utiles) */
+  var zoomAvant = '';
+  window.addEventListener('beforeprint', function () {
+    if (!document.body.classList.contains('arb-print')) return; var z = $('feuille-arb'); zoomAvant = z.style.zoom; z.style.zoom = ''; var w = z.scrollWidth, h = z.scrollHeight, f = Math.min(1, 1075 / w, 740 / h); z.style.zoom = f < 1 ? String(f) : '';
+  });
+  window.addEventListener('afterprint', function () { document.body.classList.remove('arb-print'); $('feuille-arb').style.zoom = zoomAvant; });
+  $('a-imp').addEventListener('click', function () { document.body.classList.add('arb-print'); window.print(); setTimeout(function () { document.body.classList.remove('arb-print'); }, 1500); });
+  function onglet(liste, imp, arbre) {
+    $('o-org').classList.toggle('actif', !liste && !imp); $('o-list').classList.toggle('actif', liste); $('o-imp').classList.toggle('actif', !!imp); $('o-arbre').classList.toggle('actif', !!arbre); $('o-org').classList.toggle('actif', !liste && !imp && !arbre);
+    $('racine').hidden = $('services').hidden = liste || !!imp || !!arbre; $('p-list').hidden = !liste; $('p-imp').hidden = !imp; $('p-arbre').hidden = !arbre; $('aide').hidden = liste || !!imp || !!arbre; $('tout').hidden = liste || !!imp || !!arbre; $('leg').hidden = liste || !!imp || !!arbre; $('q').hidden = !!imp || !!arbre;
+    if (arbre) dessinerArbre();
     if (imp) { var go = function () { chargerPlan(feuille); }; if (!L) Api.call('visavis_liste').then(function (r) { L = r.personnes; L.forEach(function (p) { parUid[p.uid] = p; }); go(); }).catch(function () {}); else go(); }
     if (liste && !L) Api.call('visavis_liste').then(function (r) { L = r.personnes; dessinerListing(); filtrer(); }).catch(function (e) { $('corps-list').appendChild(el('tr')).appendChild(el('td', 'vide-o', '⚠ ' + e.message)); });
     filtrer();
   }
-  $('o-org').addEventListener('click', function () { onglet(false); if (location.hash === '#vis') history.replaceState(null, '', location.pathname); }); $('o-list').addEventListener('click', function () { onglet(true); }); $('o-imp').addEventListener('click', function () { onglet(false, true); });
+  $('o-org').addEventListener('click', function () { onglet(false); if (location.hash === '#vis') history.replaceState(null, '', location.pathname); }); $('o-list').addEventListener('click', function () { onglet(true); }); $('o-imp').addEventListener('click', function () { onglet(false, true); }); $('o-arbre').addEventListener('click', function () { onglet(false, false, true); });
   function selonAncre() { onglet(location.hash === '#vis'); }
   window.addEventListener('hashchange', selonAncre); if (location.hash === '#vis') selonAncre();
   function filtrer() {

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-14-413",
+    "date": "2026-11-14",
+    "title": "Version 6.96.0 — Organigramme : schéma en arbre, division et/ou prestataires, impression",
+    "changes": [
+      "Nouvel onglet « 🌳 Schéma (arbre) » dans l'Organigramme : le chef de division en haut (rouge), le secrétariat à côté (violet), puis une colonne par service avec le chef de service en tête et ses agents dessous, reliés par des traits comme sur le modèle d'organigramme d'entreprise ; une couleur par service, les sections (Froid, Électricité…) en sous-titres.",
+      "Deux cases à cocher : « Division » et « Prestataires » (l'une, l'autre ou les deux : la division avec ses prestataires, chaque entreprise dans sa couleur). Bouton « 🖨 Imprimer » : le schéma est réduit pour tenir sur une page A4 paysage, sans en-tête ni pied de page du navigateur."
+    ]
+  },
+  {
     "id": "2026-11-14-412",
     "date": "2026-11-14",
     "title": "Version 6.95.4 — Pastille d'employeur automatique pour tous les employeurs",
