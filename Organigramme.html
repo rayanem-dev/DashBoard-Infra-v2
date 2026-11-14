@@ -90,6 +90,7 @@
   .arb .liste .bx small { font-size: 9px; }
   .arb .liste .bx.sect { background: #fff !important; color: #111 !important; border-style: dashed; font-size: 9.5px; text-transform: uppercase; letter-spacing: .3px; }
   .arb .liste .bx.pr { border-style: dashed; }
+  .arb .pont { width: 0; height: 20px; border-left: 2px solid #444; margin: 0 auto; } .arb .sa { text-align: center; } .arb .sa .lien-v.pt { height: 12px; } .arb .sa .bx.chefe { width: 135px; font-size: 10.5px; padding: 5px 8px; display: inline-block; } .arb .sa .bx.tete { width: 150px; max-width: 150px; }
   .arb .vide-svc { font-size: 10px; color: #666; margin: 8px 0 0 14px; }
   #feuille-arb .leg-arb { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 10.5px; margin: 14px 0 0; } #feuille-arb .leg-arb i { display: inline-block; width: 12px; height: 9px; margin-right: 4px; border: 1px solid #777; vertical-align: middle; }
   @media print { body.arb-print * { visibility: hidden !important; } body.arb-print #feuille-arb, body.arb-print #feuille-arb * { visibility: visible !important; } body.arb-print #feuille-arb { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 8mm 10mm; overflow: visible; page: arb; box-sizing: border-box; } @page arb { size: A4 landscape; margin: 0; } }
@@ -366,12 +367,18 @@
       var liste = el('div', 'liste'), sections = {}, ordre = [];
       internes.filter(function (m) { return m !== chef; }).forEach(function (m) { var it = el('div', 'it'), b = bx('', m.nom, m.fonction || '', T[0]); b.style.background = T[0]; if (m.chef) b.style.fontWeight = '800'; coulEmp(b, m.dependance); it.appendChild(b); if (m.section) { (sections[m.section] = sections[m.section] || []).push(it); if (ordre.indexOf(m.section) < 0) ordre.push(m.section); } else liste.appendChild(it); });
       ordre.sort().forEach(function (sec) { var h = el('div', 'it'); h.appendChild(bx('sect', 'Section ' + sec, '')); liste.appendChild(h); sections[sec].forEach(function (it) { liste.appendChild(it); }); });
+      if (liste.children.length) col.appendChild(liste);
+      // prestataires : sous-arbre rattaché au service dont ils dépendent, séparé des agents par un trait vertical ; une entreprise = son en-tête, son chef d'équipe en tête de liste, puis ses agents
       var ents = {}, ordreE = []; presta.forEach(function (m) { var e = m.dependance || 'Prestataire'; if (!ents[e]) { ents[e] = []; ordreE.push(e); } ents[e].push(m); });
       ordreE.sort().forEach(function (e) {
-        var st = Employeur.style(e), h = el('div', 'it'), b = bx('pr', '🏗️ ' + e, '', st ? st.texte : '#555'); h.appendChild(b); liste.appendChild(h);
-        ents[e].forEach(function (m) { var it = el('div', 'it'), pb = bx('pr', m.nom, m.fonction || '', st ? st.fond : '#E5E7EB'); pb.style.color = st ? st.texte : '#111'; pb.style.borderColor = st ? st.texte : '#777'; it.appendChild(pb); liste.appendChild(it); });
+        var st = Employeur.style(e), sa = el('div', 'sa'), couleur = st ? st.texte : '#555', fond = st ? st.fond : '#E5E7EB';
+        sa.appendChild(el('div', 'pont'));
+        var entete = bx('tete pr', '🏗️ ' + e, '', couleur); entete.style.borderStyle = 'dashed'; sa.appendChild(entete);
+        var gens = ents[e], chefE = gens.filter(function (m) { return /chef/i.test(m.fonction || ''); })[0] || null, reste = gens.filter(function (m) { return m !== chefE; });
+        if (chefE) { sa.appendChild(el('div', 'lien-v pt')); var cb = bx('chefe', chefE.nom, (chefE.fonction || 'Chef d\'équipe'), couleur); cb.style.fontWeight = '800'; sa.appendChild(cb); }
+        if (reste.length) { var l2 = el('div', 'liste'); reste.forEach(function (m) { var it = el('div', 'it'), pb = bx('pr', m.nom, m.fonction || '', fond); pb.style.color = couleur; pb.style.borderColor = couleur; it.appendChild(pb); l2.appendChild(it); }); sa.appendChild(l2); }
+        col.appendChild(sa);
       });
-      if (liste.children.length) col.appendChild(liste);
       cols.appendChild(col);
     });
     if (cols.children.length) { arb.appendChild(el('div', 'lien-v')); arb.appendChild(cols); } else arb.appendChild(el('p', 'vide-o', 'Aucune personne à afficher pour ce choix.'));

@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-14-415",
+    "date": "2026-11-14",
+    "title": "Version 6.96.2 — Organigramme (schéma) : les prestataires en sous-arbre sous leur service",
+    "changes": [
+      "Les prestataires ne sont plus mêlés aux agents du service : un trait vertical part du bas du service dont ils dépendent et mène à un sous-arbre par entreprise (en-tête de l'entreprise, couleur de sa pastille), avec le chef d'équipe en tête puis ses agents dessous."
+    ]
+  },
+  {
     "id": "2026-11-14-414",
     "date": "2026-11-14",
     "title": "Version 6.96.1 — Organigramme (schéma) : la couleur de l'organisme pour ses agents",
