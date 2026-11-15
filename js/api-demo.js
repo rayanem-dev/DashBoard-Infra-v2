@@ -88,6 +88,7 @@
       { id: 'securite', titre: 'Sécurité & Accès', icone: '🔐', niveau: 3, apps: [
         { titre: 'Contrôle de l\'annuaire', description: 'Compare les fiches contact avec BDDORGA.', emoji: '🔎', url: 'divergences.html' },
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' },
+        { titre: 'Santé du site', description: 'Vue globale de la santé du portail et optimisation en un clic (réservé au secrétariat).', emoji: '🩺', url: 'sante.html' },
         { titre: 'Paramètres', description: 'Les petits réglages de tous les programmes au même endroit (réservé au secrétariat).', emoji: '⚙️', url: 'parametres.html' } ] }
     ],
     conducteur: [
@@ -614,6 +615,23 @@
         var rang = { bloque: 1, 'non demarre': 2, 'en cours': 3, attribue: 4, execution: 5, echu: 6, infructueux: 7 };
         demoCpm6.sort(function (a, b) { return window.ReglesCpm.rangStatut(a[8]) - window.ReglesCpm.rangStatut(b[8]); });
         return { ligne: 3 + demoCpm6.indexOf(ligneD), cle: cpm6Cle(ligneD), r: ligneD.slice(), modifiees: Object.keys(chg).map(Number) }; }
+      case 'sante_etat': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var sec = p.section;
+        if (sec === 'classeur') return { section: sec, nom: 'Gateway_DB (démo)', cellules: 410000, part: 0.041, vides: 262000, limite: 10000000, maj: new Date().toISOString(), journal: [{ nom: 'Journal', lignes: 5230 }, { nom: 'Journal_PEC', lignes: 880 }],
+          onglets: [{ nom: 'Journal', lignes: 5230, colonnes: 4, cellules: 200000, vides: 180000, gros: false, optimisable: true }, { nom: 'Utilisateurs', lignes: 180, colonnes: 22, cellules: 22000, vides: 17000, gros: false, optimisable: true }, { nom: 'Applications', lignes: 60, colonnes: 7, cellules: 7000, vides: 5000, gros: false, optimisable: false }] };
+        if (sec === 'declencheurs') return { section: sec, total: 6, limite: 20, doublons: [{ fn: 'consoAutoTick', type: 'CLOCK', i: 5 }], orphelins: [], liste: [{ fn: 'synchroniserDepuisBDDORGA', type: 'CLOCK' }, { fn: 'consoAutoTick', type: 'CLOCK' }, { fn: 'consoAutoTick', type: 'CLOCK' }, { fn: 'pecSuppressionTick', type: 'CLOCK' }, { fn: 'cpmInstantaneNuit', type: 'CLOCK' }, { fn: 'cpmRapportSemaine', type: 'CLOCK' }] };
+        if (sec === 'sources') return { section: sec, sources: [{ cle: 'cpm', libelle: 'Suivi CPM V5', ok: true, cellules: 52000, vides: 9000, maj: new Date().toISOString() }, { cle: 'forage', libelle: 'Forage RNS', ok: true, cellules: 18000, vides: 4000, maj: new Date().toISOString() }, { cle: 'orga', libelle: 'Organigramme (BDDORGA)', ok: false, erreur: 'Illisible par la passerelle' }] };
+        if (sec === 'quotas') return { section: sec, mail_restant: 88, proprietes: 74, proprietes_octets: 9800, proprietes_limite: 500000 };
+        if (sec === 'drive') return { section: sec, connus: [{ libelle: 'Bons de sortie matériel', id: 'd1', nom: 'Bons de sortie matériel' }, { libelle: 'Notes d\'intérim', id: 'd2', nom: 'Notes d\'intérim' }, { libelle: 'Photos d\'inventaire', id: 'd3', nom: 'Inventaire — photos' }],
+          inconnus: [{ id: 'x1', nom: 'Ancien générateur de badges (copie)', maj: '2025-03-02T10:00:00Z', url: '#' }], gros: [{ id: 'g1', nom: 'Export complet 2024.zip', taille: 38000000, maj: '2025-01-12T10:00:00Z', url: '#' }], utilise: 3200000000, limite: 16106127360, corbeille: { n: 42, taille: 91000000, partiel: false } };
+        if (sec === 'drive_dossier') { var dd = { d1: [212, 38000000], d2: [47, 6400000], d3: [940, 410000000] }[p.id] || [0, 0]; return { section: sec, id: p.id, nom: 'dossier', fichiers: dd[0], taille: dd[1], plusAncien: '2025-02-01T00:00:00Z', plusGros: [], partiel: false }; }
+        throw erreur('Section inconnue'); }
+      case 'sante_optimiser': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var simu = !!p.simulation, acts = p.actions && p.actions.length ? p.actions : ['journal', 'grille', 'declencheurs', 'cache'], rr = [];
+        if (acts.indexOf('journal') >= 0) rr.push({ id: 'journal', titre: 'Journal « Journal » : lignes de plus de ' + (p.jours_journal || 180) + ' jours', n: 3120, fait: !simu, detail: '3 120 ligne(s) sur 5 230' });
+        if (acts.indexOf('grille') >= 0) rr.push({ id: 'grille', titre: 'Onglet « Journal » : lignes et colonnes vides', n: 180000, fait: !simu, detail: '180 000 cellule(s) vide(s) libérée(s)' });
+        if (acts.indexOf('declencheurs') >= 0) rr.push({ id: 'declencheurs', titre: 'Déclencheurs en double ou sans fonction', n: 1, fait: !simu, detail: 'consoAutoTick (doublon)' });
+        if (acts.indexOf('cache') >= 0) rr.push({ id: 'cache', titre: 'Mémoire temporaire (cache)', n: 8, fait: !simu, detail: 'les listes se rechargent à la prochaine visite' });
+        return { simulation: simu, resultats: rr }; }
+      case 'sante_drive_purger': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { simulation: !p.confirme, dossier: 'démo', jours: p.jours || 365, fichiers: 64, taille: 9800000, partiel: false }; }
       case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];

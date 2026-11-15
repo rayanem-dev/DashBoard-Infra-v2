@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-15-421",
+    "date": "2026-11-15",
+    "title": "Version 6.100.0 — Nouvelle page « Santé du site » (Admin) : vue globale et optimisation en un clic",
+    "changes": [
+      "Nouvelle application « Santé du site » (secrétariat) : un feu vert / orange / rouge résume l'état du portail, puis six blocs détaillés : site, scripts et passerelle, classeur, documents générés sur Drive, déclencheurs, fichiers sources et quotas.",
+      "Contrôle global du site à chaque publication (outils/sante-site.js, aussi exécuté par les tests) : poids par type et fichiers les plus lourds, images à compresser ou intégrées en base64, images et scripts jamais utilisés, erreur de syntaxe de chaque script, fichiers mentionnés mais absents, appels du site vers une action inexistante de la passerelle, actions sans fonction, fonctions définies deux fois.",
+      "Classeur de la passerelle : cellules utilisées par rapport à la limite de Google, onglets lourds, cases vides inutiles. Drive : dossiers de documents générés par chaque application (nombre, poids, plus ancien fichier), dossiers inconnus à la racine (application oubliée ?), gros fichiers, corbeille et stockage. Déclencheurs : doublons et déclencheurs sans fonction. Fichiers sources lisibles ou non, e-mails restants, réglages.",
+      "Bouton « Optimiser tout » : montre d'abord ce qui serait fait puis applique ce que vous cochez — purge des lignes anciennes du journal (durée au choix), suppression des lignes et colonnes vides du classeur, déclencheurs en double ou orphelins, mémoire temporaire. Aucun document n'est touché ; « Libérer… » sur un dossier Drive compte puis met à la corbeille (récupérable 30 jours) après confirmation.",
+      "Nettoyage : une fonction définie deux fois dans la passerelle (autoriserEcritureNIN et interdireEcritureNIN) a été retirée."
+    ]
+  },
+  {
     "id": "2026-11-14-420",
     "date": "2026-11-14",
     "title": "Version 6.99.0 — Suivi CPM V6 : le fichier Suivi CPM se saisit et se corrige dans le portail",

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Santé du site – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .sa { max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; }
+  .bilan { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-card); padding: 18px 20px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .feu { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; background: #E5E7EB; flex: none; }
+  .feu.ok { background: #BBF7D0; } .feu.attention { background: #FDE68A; } .feu.probleme { background: #FECACA; }
+  .bilan h2 { margin: 0; font-size: 20px; } .bilan p { margin: 3px 0 0; color: var(--text-muted); font-size: 13.5px; }
+  .bilan .actions { margin-inline-start: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-p { padding: 10px 18px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-s { padding: 9px 16px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .btn-p:disabled, .btn-s:disabled { opacity: .6; cursor: wait; }
+  .btn-s.dang { color: #B42318; border-color: #F3B7B0; }
+  .tuiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .tuile { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-card); padding: 12px 14px; } .tuile b { display: block; font-size: 22px; } .tuile span { font-size: 12px; color: var(--text-muted); }
+  .tuile.ok b { color: #15803D; } .tuile.attention b { color: #B45309; } .tuile.probleme b { color: #B42318; }
+  details { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); margin-bottom: 12px; }
+  summary { cursor: pointer; padding: 14px 18px; font-weight: 800; font-size: 15px; display: flex; gap: 10px; align-items: center; list-style: none; } summary::-webkit-details-marker { display: none; }
+  summary .pastille { margin-inline-start: auto; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #E5E7EB; color: #374151; }
+  summary .pastille.ok { background: #BBF7D0; color: #14532D; } summary .pastille.attention { background: #FDE68A; color: #78350F; } summary .pastille.probleme { background: #FECACA; color: #7F1D1D; }
+  .corps { padding: 0 18px 16px; font-size: 13.5px; }
+  .barre { height: 10px; border-radius: 6px; background: var(--border); overflow: hidden; margin: 6px 0 10px; } .barre i { display: block; height: 100%; background: linear-gradient(90deg, #22C55E, #F59E0B); }
+  .rep { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 8px 0; } .rep i { display: block; height: 100%; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; } th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); padding: 6px 8px; border-bottom: 2px solid var(--border); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; word-break: break-word; } td.n { text-align: right; white-space: nowrap; }
+  .al { border-left: 4px solid #9CA3AF; background: rgba(127,127,127,.07); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+  .al.erreur { border-color: #DC2626; } .al.warn { border-color: #F59E0B; } .al.info { border-color: #60A5FA; }
+  .al b { display: block; } .al ul { margin: 6px 0 0; padding-inline-start: 18px; font-size: 12.5px; color: var(--text-muted); max-height: 150px; overflow: auto; }
+  .muted { color: var(--text-muted); } .vide { color: var(--text-muted); padding: 8px 0; }
+  .ligne { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--border); } .ligne .l { flex: 1; min-width: 200px; }
+  dialog { border: 0; border-radius: 16px; padding: 0; max-width: 640px; width: calc(100% - 24px); box-shadow: 0 20px 60px rgba(0,0,0,.3); background: var(--surface); color: var(--text-dark); } dialog::backdrop { background: rgba(0,0,0,.45); }
+  dialog .c { padding: 18px 20px; } dialog h2 { margin: 0 0 8px; font-size: 18px; } dialog .pied { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--border); }
+  dialog label.ck { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); } dialog input[type=number] { width: 80px; padding: 6px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-dark); }
+  .ok-t { color: #15803D; font-weight: 700; } .ko-t { color: #B42318; font-weight: 700; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🩺</div>
+    <div class="logo-text"><h1>Santé du site</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="sa">
+  <section class="bilan" aria-live="polite">
+    <div class="feu" id="feu">⏳</div>
+    <div><h2 id="b-titre">Contrôle en cours…</h2><p id="b-sous">Lecture du site, des scripts, du classeur et de Drive.</p></div>
+    <div class="actions"><button class="btn-s" id="b-relance" type="button">🔍 Relancer le contrôle</button><button class="btn-p" id="b-opti" type="button">⚡ Optimiser tout</button></div>
+  </section>
+  <div class="tuiles" id="tuiles"></div>
+
+  <details open id="d-site"><summary>🌐 Le site (pages, scripts, images) <span class="pastille" id="p-site">…</span></summary><div class="corps" id="c-site"><p class="vide">Chargement…</p></div></details>
+  <details open id="d-scripts"><summary>🧩 Scripts et passerelle (contrôle global) <span class="pastille" id="p-scripts">…</span></summary><div class="corps" id="c-scripts"><p class="vide">Chargement…</p></div></details>
+  <details open id="d-classeur"><summary>🗄️ Classeur de la passerelle (Gateway_DB) <span class="pastille" id="p-classeur">…</span></summary><div class="corps" id="c-classeur"><p class="vide">Chargement…</p></div></details>
+  <details open id="d-drive"><summary>📁 Documents générés et Drive <span class="pastille" id="p-drive">…</span></summary><div class="corps" id="c-drive"><p class="vide">Chargement…</p></div></details>
+  <details open id="d-decl"><summary>⏱️ Déclencheurs automatiques <span class="pastille" id="p-decl">…</span></summary><div class="corps" id="c-decl"><p class="vide">Chargement…</p></div></details>
+  <details open id="d-src"><summary>📊 Fichiers sources et quotas <span class="pastille" id="p-src">…</span></summary><div class="corps" id="c-src"><p class="vide">Chargement…</p></div></details>
+</main>
+
+<dialog id="dlg"><div class="c"><h2 id="d-titre"></h2><div id="d-corps"></div></div><div class="pied"><span id="d-err" class="ko-t" style="margin-inline-end:auto"></span><button class="btn-s" id="d-non" type="button">Fermer</button><button class="btn-p" id="d-oui" type="button">Appliquer</button></div></dialog>
+
+<script>
+(function () {
+  var $ = function (i) { return document.getElementById(i); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  var S = { site: null, classeur: null, decl: null, drive: null, src: null, quotas: null, dossiers: {} };
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function oct(n) { n = Number(n) || 0; return n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' Go' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' Mo' : n >= 1024 ? Math.round(n / 1024) + ' Ko' : n + ' o'; }
+  function nb(n) { return (Number(n) || 0).toLocaleString('fr-FR'); }
+  function dateFr(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR'); }
+  function vider(i, enfants) { var z = $(i); z.textContent = ''; (enfants || []).forEach(function (e) { z.appendChild(e); }); }
+  function pastille(i, niv, txt) { var p = $(i); p.className = 'pastille ' + niv; p.textContent = txt; }
+  function barre(part) { var b = el('div', 'barre'), i = el('i'); i.style.width = Math.min(100, Math.round(part * 100)) + '%'; b.appendChild(i); return b; }
+  function tableau(entetes, lignes, num) { var t = el('table'), th = el('thead'), tr = el('tr'); entetes.forEach(function (h) { tr.appendChild(el('th', null, h)); }); th.appendChild(tr); t.appendChild(th); var tb = el('tbody');
+    lignes.forEach(function (l) { var r = el('tr'); l.forEach(function (c, k) { r.appendChild(el('td', (num || []).indexOf(k) >= 0 ? 'n' : null, c)); }); tb.appendChild(r); }); t.appendChild(tb); return t; }
+  function alerte(a) { var d = el('div', 'al ' + a.niveau), b = el('b', null, a.texte + (a.n ? ' (' + a.n + ')' : '')); d.appendChild(b);
+    if (a.liste && a.liste.length) { var u = el('ul'); a.liste.forEach(function (x) { u.appendChild(el('li', null, x)); }); d.appendChild(u); } return d; }
+  function niveauDe(err, warn) { return err ? 'probleme' : warn ? 'attention' : 'ok'; }
+
+  // ---------- Site + scripts : rapport produit à la publication ----------
+  function chargerSite() {
+    return fetch('sante-site.json?v=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('absent'); return r.json(); }).then(function (r) { S.site = r; dessinerSite(); }).catch(function () {
+      S.site = null; vider('c-site', [el('p', 'vide', 'Le rapport du site est produit à chaque publication : il n\'est pas encore disponible ici.')]); vider('c-scripts', [el('p', 'vide', 'Même rapport : disponible après la prochaine publication.')]);
+      pastille('p-site', 'attention', 'indisponible'); pastille('p-scripts', 'attention', 'indisponible'); bilan();
+    });
+  }
+  var CODES_SCRIPTS = ['syntaxe', 'liens_casses', 'appels_sans_route', 'routes_sans_fonction', 'collisions', 'routes_non_appelees', 'scripts_orphelins', 'pages_hors_catalogue'];
+  function dessinerSite() {
+    var r = S.site, z = [], cats = r.categories || {}, couleurs = { pages: '#E85D04', scripts: '#6366F1', images: '#10B981', 'vidéos': '#EF4444', 'données': '#F59E0B', styles: '#0EA5E9', autres: '#9CA3AF' };
+    z.push(el('p', null, nb(r.fichiers) + ' fichiers · ' + oct(r.taille) + ' au total · page d\'accueil : environ ' + oct(r.poidsAccueil) + ' de code à charger · rapport du ' + dateFr(r.genere)));
+    var rep = el('div', 'rep'); Object.keys(cats).forEach(function (k) { var i = el('i'); i.style.width = (cats[k].taille / r.taille * 100) + '%'; i.style.background = couleurs[k] || '#999'; i.title = k + ' : ' + oct(cats[k].taille); rep.appendChild(i); }); z.push(rep);
+    z.push(tableau(['Type', 'Fichiers', 'Poids'], Object.keys(cats).sort(function (a, b) { return cats[b].taille - cats[a].taille; }).map(function (k) { return [k, String(cats[k].n), oct(cats[k].taille)]; }), [1, 2]));
+    z.push(el('h3', null, 'Les 15 fichiers les plus lourds')); z.push(tableau(['Fichier', 'Poids'], (r.plusGros || []).map(function (x) { return [x.f, oct(x.taille)]; }), [1]));
+    var al = (r.alertes || []).filter(function (a) { return CODES_SCRIPTS.indexOf(a.code) < 0; });
+    if (al.length) { z.push(el('h3', null, 'À optimiser')); al.forEach(function (a) { z.push(alerte(a)); }); }
+    vider('c-site', z);
+    var w = al.filter(function (a) { return a.niveau === 'warn'; }).length, e = al.filter(function (a) { return a.niveau === 'erreur'; }).length;
+    pastille('p-site', niveauDe(e, w), oct(r.taille) + (w || e ? ' · ' + (w + e) + ' point(s)' : ' · léger'));
+    var g = r.passerelle, z2 = [];
+    if (g) z2.push(el('p', null, g.fichiers + ' fichiers de passerelle (' + oct(g.taille) + ') · ' + g.routes + ' actions · ' + g.appelsDistincts + ' appels distincts depuis les pages · ' + g.routesNonAppelees + ' action(s) jamais appelée(s) par une page'));
+    var as = (r.alertes || []).filter(function (a) { return CODES_SCRIPTS.indexOf(a.code) >= 0; });
+    var ee = as.filter(function (a) { return a.niveau === 'erreur'; }).length;
+    if (!as.length || !ee) z2.push(el('p', 'ok-t', '✓ Syntaxe de chaque script, fichiers mentionnés par les pages, appels et actions de la passerelle : aucune erreur.'));
+    as.forEach(function (a) { z2.push(alerte(a)); }); vider('c-scripts', z2);
+    pastille('p-scripts', niveauDe(ee, 0), ee ? ee + ' erreur(s)' : 'aucune erreur'); bilan();
+  }
+
+  // ---------- Classeur ----------
+  function chargerClasseur() {
+    return Api.call('sante_etat', { section: 'classeur' }).then(function (r) {
+      S.classeur = r; var z = [];
+      z.push(el('p', null, nb(r.cellules) + ' cellules sur ' + nb(r.limite) + ' autorisées par Google (' + Math.round(r.part * 1000) / 10 + ' %)' + (r.vides ? ' · dont environ ' + nb(r.vides) + ' vides inutiles' : '')));
+      z.push(barre(r.part));
+      z.push(tableau(['Onglet', 'Lignes', 'Colonnes', 'Cellules', 'Vides inutiles'], r.onglets.map(function (o) { return [o.nom + (o.gros ? ' ⚠' : ''), nb(o.lignes), nb(o.colonnes), nb(o.cellules), o.optimisable ? nb(o.vides) : '—']; }), [1, 2, 3, 4]));
+      if (r.journal && r.journal.length) z.push(el('p', 'muted', 'Journaux : ' + r.journal.map(function (j) { return j.nom + ' ' + nb(j.lignes) + ' lignes'; }).join(' · ')));
+      vider('c-classeur', z); var w = r.part > 0.7 ? 1 : 0, e = r.part > 0.9 ? 1 : 0, opt = r.onglets.filter(function (o) { return o.optimisable; }).length;
+      pastille('p-classeur', niveauDe(e, w || (opt ? 1 : 0)), Math.round(r.part * 1000) / 10 + ' % de la limite' + (opt ? ' · optimisable' : '')); bilan();
+    }).catch(function (e) { erreurSection('c-classeur', 'p-classeur', e); });
+  }
+  function erreurSection(c, p, e) { vider(c, [el('p', 'ko-t', 'Lecture impossible : ' + (e && e.message || 'erreur'))]); pastille(p, 'probleme', 'erreur'); bilan(); }
+
+  // ---------- Déclencheurs ----------
+  function chargerDecl() {
+    return Api.call('sante_etat', { section: 'declencheurs' }).then(function (r) {
+      S.decl = r; var z = [];
+      z.push(el('p', null, r.total + ' déclencheur(s) actif(s) sur ' + r.limite + ' possibles par projet.'));
+      if (r.doublons.length) z.push(alerte({ niveau: 'warn', texte: 'Déclencheurs en double (la tâche tourne plusieurs fois)', n: r.doublons.length, liste: r.doublons.map(function (t) { return t.fn; }) }));
+      if (r.orphelins.length) z.push(alerte({ niveau: 'erreur', texte: 'Déclencheurs dont la fonction n\'existe plus (ils échouent à chaque passage)', n: r.orphelins.length, liste: r.orphelins.map(function (t) { return t.fn; }) }));
+      var c = {}; r.liste.forEach(function (t) { c[t.fn] = (c[t.fn] || 0) + 1; });
+      z.push(tableau(['Fonction', 'Fois'], Object.keys(c).map(function (k) { return [k, String(c[k])]; }), [1]));
+      vider('c-decl', z); pastille('p-decl', niveauDe(r.orphelins.length, r.doublons.length || r.total > r.limite - 3 ? 1 : 0), r.total + ' actif(s)' + (r.doublons.length + r.orphelins.length ? ' · à nettoyer' : '')); bilan();
+    }).catch(function (e) { erreurSection('c-decl', 'p-decl', e); });
+  }
+
+  // ---------- Sources et quotas ----------
+  function chargerSources() {
+    var p1 = Api.call('sante_etat', { section: 'sources' }).then(function (r) { S.src = r; }), p2 = Api.call('sante_etat', { section: 'quotas' }).then(function (r) { S.quotas = r; });
+    return Promise.all([p1, p2]).then(function () {
+      var z = [], q = S.quotas;
+      z.push(tableau(['Fichier', 'État', 'Cellules', 'Vides inutiles', 'Modifié'], S.src.sources.map(function (s) { return [s.libelle, s.ok ? '✓ lisible' : '✗ ' + s.erreur, s.ok ? nb(s.cellules) : '', s.ok ? nb(s.vides) : '', s.ok ? dateFr(s.maj) : '']; }), [2, 3]));
+      z.push(el('p', null, 'E-mails restants aujourd\'hui : ' + (q.mail_restant == null ? 'inconnu' : q.mail_restant) + ' · réglages de la passerelle : ' + q.proprietes + ' propriété(s), ' + oct(q.proprietes_octets) + ' sur ' + oct(q.proprietes_limite)));
+      vider('c-src', z); var ko = S.src.sources.filter(function (s) { return !s.ok; }).length, faible = q.mail_restant != null && q.mail_restant < 30;
+      pastille('p-src', niveauDe(ko, faible ? 1 : 0), ko ? ko + ' illisible(s)' : S.src.sources.length + ' fichier(s) lisible(s)'); bilan();
+    }).catch(function (e) { erreurSection('c-src', 'p-src', e); });
+  }
+
+  // ---------- Drive : documents générés ----------
+  function chargerDrive() {
+    return Api.call('sante_etat', { section: 'drive' }).then(function (r) {
+      S.drive = r; S.dossiers = {}; dessinerDrive();
+      return r.connus.reduce(function (p, d) { return p.then(function () { return Api.call('sante_etat', { section: 'drive_dossier', id: d.id }).then(function (m) { S.dossiers[d.id] = m; dessinerDrive(); }).catch(function (e) { S.dossiers[d.id] = { erreur: e.message }; dessinerDrive(); }); }); }, Promise.resolve());
+    }).catch(function (e) { erreurSection('c-drive', 'p-drive', e); });
+  }
+  function dessinerDrive() {
+    var r = S.drive, z = [], part = r.limite ? r.utilise / r.limite : 0;
+    z.push(el('p', null, 'Stockage du compte : ' + oct(r.utilise) + ' sur ' + oct(r.limite) + ' (' + Math.round(part * 100) + ' %) · corbeille : ' + r.corbeille.n + (r.corbeille.partiel ? '+' : '') + ' fichier(s), ' + oct(r.corbeille.taille))); z.push(barre(part));
+    z.push(el('h3', null, 'Dossiers de documents générés par les applications'));
+    if (!r.connus.length) z.push(el('p', 'vide', 'Aucun dossier connu trouvé.'));
+    r.connus.forEach(function (d) {
+      var m = S.dossiers[d.id], l = el('div', 'ligne'), t = el('div', 'l'); t.appendChild(el('b', null, d.libelle)); t.appendChild(el('div', 'muted', d.nom));
+      l.appendChild(t);
+      if (!m) l.appendChild(el('span', 'muted', 'mesure en cours…')); else if (m.erreur) l.appendChild(el('span', 'ko-t', m.erreur));
+      else {
+        l.appendChild(el('span', null, nb(m.fichiers) + (m.partiel ? '+' : '') + ' fichier(s) · ' + oct(m.taille) + (m.plusAncien ? ' · depuis ' + dateFr(m.plusAncien) : '')));
+        var b = el('button', 'btn-s', '🧹 Libérer…'); b.type = 'button'; b.onclick = function () { purger(d, m); }; l.appendChild(b);
+      }
+      z.push(l);
+    });
+    if (r.inconnus.length) { z.push(el('h3', null, 'Dossiers à la racine de Drive que l\'application ne connaît pas'));
+      z.push(el('p', 'muted', 'Si l\'un d\'eux porte le nom d\'une application que vous n\'utilisez plus, c\'est peut-être un générateur oublié : vérifiez avant de libérer.'));
+      r.inconnus.forEach(function (d) { var l = el('div', 'ligne'), t = el('div', 'l'); t.appendChild(el('b', null, d.nom)); t.appendChild(el('div', 'muted', 'modifié le ' + dateFr(d.maj))); l.appendChild(t);
+        var a = el('a', 'btn-s', 'Ouvrir'); a.href = d.url; a.target = '_blank'; a.rel = 'noopener'; a.style.textDecoration = 'none'; l.appendChild(a); z.push(l); }); }
+    if (r.gros.length) { z.push(el('h3', null, 'Gros fichiers à la racine (plus de 5 Mo)')); z.push(tableau(['Fichier', 'Poids', 'Modifié'], r.gros.map(function (x) { return [x.nom, oct(x.taille), dateFr(x.maj)]; }), [1])); }
+    vider('c-drive', z);
+    var mesures = Object.keys(S.dossiers).map(function (k) { return S.dossiers[k]; }), fort = mesures.some(function (m) { return m.taille > 1073741824; });
+    pastille('p-drive', niveauDe(part > 0.95, (r.inconnus.length || part > 0.85 || fort) ? 1 : 0), r.connus.length + ' dossier(s) suivi(s)' + (r.inconnus.length ? ' · ' + r.inconnus.length + ' inconnu(s)' : '')); bilan();
+  }
+  function purger(d, m) {
+    $('d-titre').textContent = 'Libérer « ' + d.libelle + ' »'; $('d-err').textContent = '';
+    var c = $('d-corps'); c.textContent = ''; c.appendChild(el('p', null, 'Met à la corbeille de Drive (récupérable 30 jours) les fichiers de ce dossier plus anciens que :'));
+    var inp = el('input'); inp.type = 'number'; inp.min = '30'; inp.value = '365'; var lab = el('label'); lab.appendChild(inp); lab.appendChild(document.createTextNode(' jours')); c.appendChild(lab);
+    var res = el('p', 'muted', 'Cliquez sur « Compter » pour voir ce qui serait concerné — rien n\'est supprimé avant votre confirmation.'); c.appendChild(res);
+    var oui = $('d-oui'); oui.textContent = 'Compter'; var etape = 0, dernier = null; oui.disabled = false;
+    oui.onclick = function () {
+      oui.disabled = true;
+      Api.call('sante_drive_purger', { dossier_id: d.id, jours: Number(inp.value), confirme: etape === 1 }).then(function (r) {
+        if (etape === 0) { dernier = r; res.textContent = r.fichiers ? r.fichiers + ' fichier(s), ' + oct(r.taille) + ' plus ancien(s) que ' + r.jours + ' jours' + (r.partiel ? ' (comptage partiel)' : '') + '. Confirmer la mise à la corbeille ?' : 'Aucun fichier de plus de ' + r.jours + ' jours.';
+          if (r.fichiers) { etape = 1; oui.textContent = 'Mettre à la corbeille'; } }
+        else { res.textContent = '✓ ' + r.fichiers + ' fichier(s) mis à la corbeille (' + oct(r.taille) + ').'; oui.hidden = true; chargerDrive(); }
+      }).catch(function (e) { $('d-err').textContent = e.message; }).then(function () { oui.disabled = false; });
+    };
+    oui.hidden = false; ouvrirDlg();
+  }
+
+  // ---------- Optimiser tout ----------
+  var LIB = { journal: 'Purger les lignes anciennes du journal', grille: 'Supprimer les lignes et colonnes vides des onglets', declencheurs: 'Supprimer les déclencheurs en double ou sans fonction', cache: 'Vider la mémoire temporaire (elle se reconstruit seule)' };
+  function optimiser() {
+    $('d-titre').textContent = '⚡ Optimiser tout ce qui peut l\'être'; $('d-err').textContent = '';
+    var c = $('d-corps'); c.textContent = ''; c.appendChild(el('p', 'muted', 'Analyse en cours… rien n\'est modifié à cette étape.')); var oui = $('d-oui'); oui.hidden = true; ouvrirDlg();
+    var jours = 180;
+    function plan() {
+      return Api.call('sante_optimiser', { simulation: true, jours_journal: jours }).then(function (r) {
+        c.textContent = ''; c.appendChild(el('p', null, 'Voici ce qui serait fait. Aucun document n\'est touché : seulement le journal, les cases vides, les déclencheurs et la mémoire temporaire.'));
+        var lab = el('label'); lab.appendChild(document.createTextNode('Garder le journal sur ')); var ij = el('input'); ij.type = 'number'; ij.min = '30'; ij.value = String(jours); lab.appendChild(ij); lab.appendChild(document.createTextNode(' jours ')); var re = el('button', 'btn-s', 'Recalculer'); re.type = 'button'; re.onclick = function () { jours = Math.max(30, Number(ij.value) || 180); plan(); }; lab.appendChild(re); c.appendChild(lab);
+        var ids = {}; r.resultats.forEach(function (x) { (ids[x.id] = ids[x.id] || []).push(x); });
+        var coches = {};
+        Object.keys(LIB).forEach(function (id) {
+          var l = el('label', 'ck'), cb = el('input'); cb.type = 'checkbox'; coches[id] = cb; var x = ids[id] || [], n = x.reduce(function (s, y) { return s + y.n; }, 0); cb.checked = n > 0 || id === 'cache'; l.appendChild(cb);
+          var t = el('div'); t.appendChild(el('b', null, LIB[id])); t.appendChild(el('div', 'muted', x.length ? x.map(function (y) { return y.titre + ' — ' + y.detail; }).join(' · ') : 'rien à faire')); l.appendChild(t); c.appendChild(l);
+        });
+        oui.hidden = false; oui.disabled = false; oui.textContent = 'Appliquer la sélection';
+        oui.onclick = function () {
+          var actions = Object.keys(coches).filter(function (k) { return coches[k].checked; }); if (!actions.length) { $('d-err').textContent = 'Rien de coché.'; return; }
+          oui.disabled = true; $('d-err').textContent = '';
+          Api.call('sante_optimiser', { actions: actions, jours_journal: jours }).then(function (r2) {
+            c.textContent = ''; c.appendChild(el('p', 'ok-t', '✓ Optimisation terminée'));
+            r2.resultats.forEach(function (x) { c.appendChild(el('p', null, (x.fait ? '✓ ' : '• ') + x.titre + ' — ' + x.detail)); }); oui.hidden = true;
+            chargerClasseur(); chargerDecl();
+          }).catch(function (e) { $('d-err').textContent = e.message; oui.disabled = false; });
+        };
+      }).catch(function (e) { c.textContent = ''; $('d-err').textContent = e.message; });
+    }
+    plan();
+  }
+  function ouvrirDlg() { var d = $('dlg'); if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', ''); }
+  $('d-non').onclick = function () { var d = $('dlg'); if (d.close) d.close(); else d.removeAttribute('open'); };
+
+  // ---------- Bilan global ----------
+  function bilan() {
+    var err = 0, warn = 0, pts = [];
+    if (S.site) { err += S.site.erreurs || 0; warn += S.site.avertissements || 0; }
+    if (S.classeur) { if (S.classeur.part > 0.9) err += 1; else if (S.classeur.part > 0.7) warn += 1; if (S.classeur.onglets.some(function (o) { return o.optimisable; })) { warn += 1; pts.push('cases vides à retirer du classeur'); } }
+    if (S.decl) { err += S.decl.orphelins.length; warn += S.decl.doublons.length ? 1 : 0; }
+    if (S.src) err += S.src.sources.filter(function (s) { return !s.ok; }).length;
+    if (S.drive) { if (S.drive.inconnus.length) { warn += 1; pts.push(S.drive.inconnus.length + ' dossier(s) Drive inconnu(s)'); } if (S.drive.limite && S.drive.utilise / S.drive.limite > 0.85) warn += 1; }
+    var niv = err ? 'probleme' : warn ? 'attention' : 'ok', feu = $('feu'); feu.className = 'feu ' + niv; feu.textContent = niv === 'ok' ? '✅' : niv === 'attention' ? '⚠️' : '⛔';
+    $('b-titre').textContent = niv === 'ok' ? 'Tout va bien' : niv === 'attention' ? 'À surveiller' : 'Des erreurs à corriger';
+    $('b-sous').textContent = err + ' erreur(s) · ' + warn + ' point(s) d\'attention' + (pts.length ? ' · ' + pts.join(' · ') : '');
+    var t = []; function tu(n, v, s, niv2) { var d = el('div', 'tuile ' + (niv2 || '')); d.appendChild(el('b', null, v)); d.appendChild(el('span', null, n + (s ? ' — ' + s : ''))); t.push(d); }
+    if (S.site) tu('Poids du site', oct(S.site.taille), S.site.fichiers + ' fichiers', S.site.avertissements ? 'attention' : 'ok');
+    if (S.site && S.site.passerelle) tu('Actions de la passerelle', String(S.site.passerelle.routes), oct(S.site.passerelle.taille) + ' de code', S.site.erreurs ? 'probleme' : 'ok');
+    if (S.classeur) tu('Classeur', Math.round(S.classeur.part * 1000) / 10 + ' %', 'de la limite Google', S.classeur.part > 0.7 ? 'attention' : 'ok');
+    if (S.drive) tu('Drive', Math.round((S.drive.utilise / (S.drive.limite || 1)) * 100) + ' %', oct(S.drive.utilise) + ' utilisés');
+    if (S.decl) tu('Déclencheurs', String(S.decl.total), S.decl.orphelins.length + S.decl.doublons.length ? 'à nettoyer' : 'en ordre', S.decl.orphelins.length ? 'probleme' : S.decl.doublons.length ? 'attention' : 'ok');
+    vider('tuiles', t);
+  }
+  function tout() {
+    $('b-relance').disabled = true; $('feu').className = 'feu'; $('feu').textContent = '⏳'; $('b-titre').textContent = 'Contrôle en cours…';
+    return Promise.all([chargerSite(), chargerClasseur(), chargerDecl(), chargerSources(), chargerDrive()]).then(function () { $('b-relance').disabled = false; });
+  }
+  $('b-relance').onclick = tout; $('b-opti').onclick = optimiser;
+  tout();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
