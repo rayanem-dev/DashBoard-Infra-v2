@@ -45,7 +45,7 @@
   .ligne { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--border); } .ligne .l { flex: 1; min-width: 200px; }
   dialog { border: 0; border-radius: 16px; padding: 0; max-width: 640px; width: calc(100% - 24px); box-shadow: 0 20px 60px rgba(0,0,0,.3); background: var(--surface); color: var(--text-dark); } dialog::backdrop { background: rgba(0,0,0,.45); }
   dialog .c { padding: 18px 20px; } dialog h2 { margin: 0 0 8px; font-size: 18px; } dialog .pied { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--border); }
-  dialog label.ck { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); } dialog input[type=number] { width: 80px; padding: 6px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-dark); }
+  dialog label.ck { text-transform: none; letter-spacing: 0; font-weight: 400; display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); } dialog input[type=number] { width: 80px; padding: 6px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-dark); }
   .ok-t { color: #15803D; font-weight: 700; } .ko-t { color: #B42318; font-weight: 700; }
   [hidden] { display: none !important; }
 </style>
@@ -222,7 +222,7 @@
         var coches = {};
         Object.keys(LIB).forEach(function (id) {
           var l = el('label', 'ck'), cb = el('input'); cb.type = 'checkbox'; coches[id] = cb; var x = ids[id] || [], n = x.reduce(function (s, y) { return s + y.n; }, 0); cb.checked = n > 0 || id === 'cache'; l.appendChild(cb);
-          var t = el('div'); t.appendChild(el('b', null, LIB[id])); t.appendChild(el('div', 'muted', x.length ? x.map(function (y) { return y.titre + ' — ' + y.detail; }).join(' · ') : 'rien à faire')); l.appendChild(t); c.appendChild(l);
+          var t = el('div'); t.appendChild(el('b', null, LIB[id])); if (!x.length) t.appendChild(el('div', 'muted', 'rien à faire')); x.forEach(function (y) { t.appendChild(el('div', 'muted', '• ' + y.titre.replace(/^Onglet /, '') + ' — ' + y.detail)); }); l.appendChild(t); c.appendChild(l);
         });
         oui.hidden = false; oui.disabled = false; oui.textContent = 'Appliquer la sélection';
         oui.onclick = function () {

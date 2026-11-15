@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-15-422",
+    "date": "2026-11-15",
+    "title": "Version 6.100.1 — Santé : optimisation du classeur plus prudente et plus lisible",
+    "changes": [
+      "Le nettoyage des cases vides garde désormais une réserve de 200 lignes sous les données et ne retire que les colonnes au-delà de la grille standard (colonne Z) plus 5 de réserve : le code qui écrit dans des lignes ou colonnes pas encore utilisées, ou les onglets formatés en texte, ne sont plus exposés.",
+      "Le plan d'optimisation affiche un onglet par ligne, en minuscules lisibles (plus de bloc de texte en majuscules)."
+    ]
+  },
+  {
     "id": "2026-11-15-421",
     "date": "2026-11-15",
     "title": "Version 6.100.0 — Nouvelle page « Santé du site » (Admin) : vue globale et optimisation en un clic",
