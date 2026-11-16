@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-16-424",
+    "date": "2026-11-16",
+    "title": "Version 6.102.0 — Carte des puits : relief par défaut et cache commun dans le Drive du portail",
+    "changes": [
+      "Le fond de carte est maintenant un relief (courbes de niveau et ombrage), affiché par défaut ; « ⛰️ Relief » permet de le masquer.",
+      "Cache commun : le navigateur ne contacte jamais le fournisseur de cartes. Il demande les tuiles à la passerelle, qui les lit dans le dossier « Carte des puits — fond de carte » rangé dans le répertoire Drive du portail (à côté de Gateway_DB), ou les télécharge UNE seule fois et les y range pour tous. Le dossier est privé : l'accès passe par le portail, après connexion.",
+      "Chaque appareil garde en plus une copie du relief déjà vu (« ⋯ → Mémoriser la zone affichée ») pour le terrain sans réseau.",
+      "Nouveau bouton réservé au niveau « saisie » : « ☁️ Préparer le relief de toute la zone pour tous » remplit le cache commun pour l'ensemble des puits (niveaux de zoom 7 à 13), par lots, reprenable si interrompu.",
+      "Le dossier du cache apparaît dans la page Santé avec les autres dossiers générés (taille, nombre de fichiers, « Libérer »)."
+    ]
+  },
+  {
     "id": "2026-11-16-423",
     "date": "2026-11-16",
     "title": "Version 6.101.0 — Nouvelle application « Carte des puits » (hors réseau)",
