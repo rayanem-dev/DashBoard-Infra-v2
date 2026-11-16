@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-16-427",
+    "date": "2026-11-16",
+    "title": "Version 6.105.0 — Carte des puits : tous les niveaux de zoom, jusqu'au 17",
+    "changes": [
+      "La carte hors réseau couvre maintenant tous les niveaux de zoom du relief : toute la zone aux zooms 4 à 13, puis le détail autour de chaque puits (le puits et ses 8 tuiles voisines) aux zooms 14, 15, 16 et 17 (le plus fin, environ 1 mètre par pixel).",
+      "Le téléchargement automatique enchaîne : la zone d'abord (carte utilisable tout de suite), puis les niveaux de détail un par un. Sur le réseau mobile ou en économiseur de données, seule la zone se télécharge seule ; le détail se lance alors à la main (« ⋯ → Détail autour des puits »).",
+      "« ☁️ Préparer le relief pour tous » remplit le cache commun du Drive avec tous ces niveaux ; ce qui est déjà rangé est ignoré, on peut l'interrompre et le relancer."
+    ]
+  },
+  {
     "id": "2026-11-16-426",
     "date": "2026-11-16",
     "title": "Version 6.104.0 — Carte des puits : téléchargement automatique en arrière-plan",
