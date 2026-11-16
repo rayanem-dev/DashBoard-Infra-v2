@@ -37,6 +37,9 @@
   #fiche .actions { display: flex; gap: 8px; flex-wrap: wrap; } #fiche .x { position: absolute; right: 12px; top: 10px; border: 0; background: transparent; font-size: 22px; color: var(--doux); cursor: pointer; }
   dialog { border: 0; border-radius: 16px; padding: 0; max-width: 520px; width: calc(100% - 24px); background: var(--surface); color: var(--texte); box-shadow: var(--ombre); } dialog::backdrop { background: rgba(0,0,0,.5); }
   dialog .c { padding: 16px 18px; font-size: 14px; } dialog h2 { margin: 0 0 8px; font-size: 18px; } dialog .pied { display: flex; gap: 8px; justify-content: flex-end; padding: 10px 18px 14px; flex-wrap: wrap; align-items: center; } .err { color: #B42318; font-weight: 700; margin-inline-end: auto; }
+  #viseur { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; pointer-events: none; } #viseur:before, #viseur:after { content: ''; position: absolute; background: #DC2626; } #viseur:before { left: 21px; top: 0; width: 2px; height: 44px; } #viseur:after { top: 21px; left: 0; height: 2px; width: 44px; }
+  #place { position: absolute; left: 10px; right: 10px; bottom: 14px; background: var(--surface); border-radius: 14px; box-shadow: var(--ombre); padding: 10px 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; max-width: 560px; margin: 0 auto; } #place span { flex: 1; min-width: 160px; font-size: 13px; }
+  dialog label.f { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--doux); margin: 8px 0 3px; } dialog input[type=text], dialog textarea { width: 100%; padding: 9px 10px; border: 1.5px solid var(--bord); border-radius: 9px; font: inherit; font-size: 15px; background: var(--fond); color: var(--texte); } .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .gris { color: var(--doux); } [hidden] { display: none !important; }
 </style>
 </head>
@@ -48,6 +51,7 @@
   <button class="btn" id="b-gps" type="button">📍 Ma position</button>
   <button class="btn" id="b-fond" type="button" aria-pressed="false">⛰️ Relief</button>
   <button class="btn" id="b-tout" type="button">⤢ Tout voir</button>
+  <button class="btn p" id="b-lieu" type="button" hidden>＋ Lieu</button>
   <button class="btn" id="b-plus" type="button">⋯</button>
   <div id="resultats" hidden></div>
 </div>
@@ -55,6 +59,8 @@
 <div id="zone"><canvas id="cv"></canvas>
   <div class="zoom"><button class="btn" id="z-p" type="button" aria-label="Zoom avant">＋</button><button class="btn" id="z-m" type="button" aria-label="Zoom arrière">−</button></div>
   <div id="attrib" hidden>Données © contributeurs OpenStreetMap, SRTM · Rendu © OpenTopoMap (CC-BY-SA)</div>
+  <div id="viseur" hidden></div>
+  <div id="place" hidden><span id="place-t">Déplacez la carte : la croix rouge indique la position du lieu.</span><button class="btn" id="place-non" type="button">Annuler</button><button class="btn p" id="place-ok" type="button">✓ Valider ici</button></div>
   <div id="fiche" hidden></div>
 </div>
 
@@ -67,6 +73,14 @@
   <p><button class="btn" id="o-oubli" type="button">🗑 Oublier les données de cet appareil</button></p>
   <p class="gris">Les positions et le relief déjà vus sont gardés sur cet appareil pour travailler sans réseau. Le relief est téléchargé une seule fois pour tout le monde (cache commun sur Drive). « Oublier » efface les données de cet appareil.</p></div>
   <div class="pied"><button class="btn" data-ferme type="button">Fermer</button></div></dialog>
+<dialog id="dlg-lieu"><div class="c"><h2 id="l-titre">Ajouter un lieu</h2>
+  <label class="f" for="l-nom">Nom *</label><input type="text" id="l-nom" maxlength="40" autocomplete="off" placeholder="Ex. RN140, BASE-NORD…">
+  <label class="f" for="l-type">Type</label><input type="text" id="l-type" list="l-types" maxlength="30" placeholder="Puits, Base, Campement…"><datalist id="l-types"><option value="Puits"><option value="Base"><option value="Campement"><option value="Poste"><option value="Autre"></datalist>
+  <label class="f" for="l-coord">Coordonnées (latitude, longitude)</label><input type="text" id="l-coord" inputmode="decimal" autocomplete="off" placeholder="Ex. 29.56165, 6.86803  (collez depuis Google Maps)">
+  <p style="margin:6px 0"><button class="btn" id="l-gps" type="button">📍 Ma position</button> <button class="btn" id="l-carte" type="button">🎯 Choisir sur la carte</button></p>
+  <div class="deux"><div><label class="f" for="l-td">Profondeur (m)</label><input type="text" id="l-td" inputmode="numeric" maxlength="6"></div><div></div></div>
+  <label class="f" for="l-com">Commentaire</label><textarea id="l-com" rows="2" maxlength="300"></textarea></div>
+  <div class="pied"><span class="err" id="l-err"></span><button class="btn" id="l-sup" type="button" hidden style="color:#B42318">🗑 Supprimer</button><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="l-ok" type="button">Enregistrer</button></div></dialog>
 <dialog id="dlg-imp"><div class="c"><h2>Importer des puits</h2><p class="gris">Fichier KMZ, KML ou CSV (nom, latitude, longitude, X, Y, profondeur). Rien n'est enregistré avant votre confirmation ; les puits absents du fichier sont conservés.</p>
   <input type="file" id="i-fic" accept=".kmz,.kml,.csv,.txt"><div id="i-res" style="margin-top:10px"></div>
   <label style="display:block;margin-top:8px" id="i-ret" hidden><input type="checkbox" id="i-retirer"> Retirer aussi les puits absents du fichier</label></div>
@@ -97,7 +111,7 @@
     var fams = {}; S.puits.forEach(function (p) { fams[p.famille] = (fams[p.famille] || 0) + 1; });
     var sel = $('fam'), cur = sel.value; sel.textContent = ''; sel.appendChild(new Option('Toutes (' + S.puits.length + ')', ''));
     Object.keys(fams).sort().forEach(function (f) { sel.appendChild(new Option(f + ' (' + fams[f] + ')', f)); }); sel.value = fams[cur] ? cur : '';
-    $('o-import').hidden = !(S.peut && enLigne); $('o-prep').hidden = !(S.peut && enLigne);
+    $('o-import').hidden = !(S.peut && enLigne); $('o-prep').hidden = !(S.peut && enLigne); $('b-lieu').hidden = !(S.peut && enLigne);
     var age = (Date.now() - S.t) / 864e5;
     bandeau(!enLigne ? 'Hors réseau : positions enregistrées le ' + dateFr(S.t) + (age > 30 ? ' — plus de 30 jours, reconnectez-vous dès que possible pour les actualiser.' : '.') : '');
     if (!S.pret) { S.pret = true; toutVoir(); } else dessiner();
@@ -183,7 +197,7 @@
     l.forEach(function (p) {
       var s = versEcran(p.lat, p.lon); if (s.x < -20 || s.y < -20 || s.x > W + 20 || s.y > H + 20) return;
       var sel = S.sel && S.sel.uwi === p.uwi;
-      ctx.beginPath(); ctx.arc(s.x, s.y, sel ? 8 : 5.5, 0, 6.283); ctx.fillStyle = couleur(p.famille); ctx.fill(); ctx.lineWidth = sel ? 3 : 1.5; ctx.strokeStyle = sel ? '#000' : '#fff'; ctx.stroke();
+      var autre = p.type && norm(p.type) !== 'puits', r0 = sel ? 8 : 5.5; ctx.beginPath(); if (autre) ctx.rect(s.x - r0, s.y - r0, 2 * r0, 2 * r0); else ctx.arc(s.x, s.y, r0, 0, 6.283); ctx.fillStyle = autre ? '#7C3AED' : couleur(p.famille); ctx.fill(); ctx.lineWidth = sel ? 3 : 1.5; ctx.strokeStyle = sel ? '#000' : '#fff'; ctx.stroke();
       if (etiq || sel) { var kx = Math.round(s.x / 46) + ',' + Math.round(s.y / 14); if (sel || !occ[kx]) { occ[kx] = 1; var t = p.uwi; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(t, s.x + 9, s.y); ctx.fillStyle = '#111'; ctx.fillText(t, s.x + 9, s.y); } }
     });
     // ma position et ligne vers le puits choisi
@@ -236,14 +250,16 @@
     var p = S.sel, f = $('fiche'); f.textContent = ''; if (!p) { f.hidden = true; return; }
     var x = el('button', 'x', '×'); x.type = 'button'; x.onclick = function () { S.sel = null; f.hidden = true; dessiner(); }; f.appendChild(x);
     var h = el('h2'); var pa = el('span', 'pastille'); pa.style.background = couleur(p.famille); h.appendChild(pa); h.appendChild(document.createTextNode(p.uwi)); f.appendChild(h);
-    var i = el('div', 'infos'), lignes = [['Famille', p.famille], ['Profondeur finale', p.td ? p.td.toLocaleString('fr-FR') + ' m' : 'inconnue'], ['Latitude / longitude', p.lat.toFixed(6) + ' , ' + p.lon.toFixed(6)]];
+    var i = el('div', 'infos'), lignes = [['Type', p.type || 'Puits'], ['Famille', p.famille], ['Profondeur finale', p.td ? p.td.toLocaleString('fr-FR') + ' m' : 'inconnue'], ['Latitude / longitude', p.lat.toFixed(6) + ' , ' + p.lon.toFixed(6)]];
     if (p.x && p.y) lignes.push(['UTM X / Y', Math.round(p.x) + ' , ' + Math.round(p.y)]);
+    if (p.commentaire) lignes.push(['Note', p.commentaire]);
     if (S.moi) { var d = G.distance(S.moi.lat, S.moi.lon, p.lat, p.lon), c = G.cap(S.moi.lat, S.moi.lon, p.lat, p.lon); lignes.unshift(['Depuis vous', 'à ' + G.texteDistance(d) + ' à vol d\'oiseau, direction ' + G.pointCardinal(c) + ' (' + Math.round(c) + '°)']); }
     lignes.forEach(function (l) { var d2 = el('div'); d2.appendChild(document.createTextNode(l[0] + ' : ')); d2.appendChild(el('b', null, l[1])); i.appendChild(d2); }); f.appendChild(i);
     var a = el('div', 'actions'), dest = p.lat + ',' + p.lon;
     function lien(t, h2) { var e = el('a', 'btn p', t); e.href = h2; e.target = '_blank'; e.rel = 'noopener'; e.style.textDecoration = 'none'; a.appendChild(e); }
     lien('🧭 Itinéraire', 'https://www.google.com/maps/dir/?api=1&destination=' + dest + '&travelmode=driving'); lien('Waze', 'https://waze.com/ul?ll=' + dest + '&navigate=yes');
     var cp = el('button', 'btn', '📋 Copier'); cp.type = 'button'; cp.onclick = function () { var t = p.uwi + ' ' + p.lat.toFixed(6) + ',' + p.lon.toFixed(6); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { cp.textContent = '✓ Copié'; }, function () { prompt('Coordonnées', t); }); }; a.appendChild(cp);
+    if (S.peut && navigator.onLine !== false) { var mo2 = el('button', 'btn', '✏️ Modifier'); mo2.type = 'button'; mo2.onclick = function () { ouvrirLieu(p); }; a.appendChild(mo2); }
     f.appendChild(a); f.hidden = false;
   }
 
@@ -255,7 +271,7 @@
     if (!q && S.moi) { l = l.map(function (p) { return { p: p, d: G.distance(S.moi.lat, S.moi.lon, p.lat, p.lon) }; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 10); t = l; z.appendChild(Object.assign(el('div', 'gris', 'Les plus proches de vous'), { style: 'padding:8px 14px' })); }
     else t = l.slice(0, 30).map(function (p) { return { p: p, d: S.moi ? G.distance(S.moi.lat, S.moi.lon, p.lat, p.lon) : null }; });
     if (!t.length) { z.appendChild(Object.assign(el('div', 'gris', 'Aucun puits ne correspond.'), { style: 'padding:12px 14px' })); }
-    t.forEach(function (r) { var b = el('button'); b.type = 'button'; b.appendChild(el('span', null, r.p.uwi)); b.appendChild(el('small', null, (r.d != null ? G.texteDistance(r.d) + ' · ' : '') + r.p.famille + (r.p.td ? ' · ' + r.p.td + ' m' : ''))); b.onmousedown = function (ev) { ev.preventDefault(); }; b.onclick = function () { z.hidden = true; $('q').blur(); selectionner(r.p, true); }; z.appendChild(b); });
+    t.forEach(function (r) { var b = el('button'); b.type = 'button'; b.appendChild(el('span', null, r.p.uwi)); b.appendChild(el('small', null, (r.d != null ? G.texteDistance(r.d) + ' · ' : '') + (r.p.type && norm(r.p.type) !== 'puits' ? r.p.type : r.p.famille) + (r.p.td ? ' · ' + r.p.td + ' m' : ''))); b.onmousedown = function (ev) { ev.preventDefault(); }; b.onclick = function () { z.hidden = true; $('q').blur(); selectionner(r.p, true); }; z.appendChild(b); });
     z.hidden = false;
   }
   $('q').addEventListener('input', function () { resultats(); dessiner(); }); $('q').addEventListener('focus', resultats); $('q').addEventListener('blur', function () { setTimeout(function () { $('resultats').hidden = true; }, 150); });
@@ -414,6 +430,43 @@
   $('i-ok').onclick = function () {
     if ($('i-retirer').checked && !confirm('Les puits absents du fichier seront SUPPRIMÉS de la carte. Continuer ?')) return;
     $('i-ok').disabled = true; Api.call('puits_importer', { puits: lus, retirer: $('i-retirer').checked, confirme: true }).then(function () { fermer($('dlg-imp')); return charger(); }).catch(function (e) { $('i-err').textContent = e.message; }).then(function () { $('i-ok').disabled = false; });
+  };
+
+  // ---------- ajouter, modifier, supprimer un lieu (secrétariat, chefs de service) ----------
+  var edition = null;   // lieu en cours de modification (null = ajout)
+  function lireCoord(t) { var m = String(t || '').replace(/[°;]/g, ' ').match(/-?\d+(?:[.,]\d+)?/g); if (!m || m.length < 2) return null; var a = Number(m[0].replace(',', '.')), o = Number(m[1].replace(',', '.')); return (a >= -90 && a <= 90 && o >= -180 && o <= 180) ? { lat: a, lon: o } : null; }
+  function ouvrirLieu(p, coord, garder) {   // garder = retour du choix sur la carte : on ne touche pas à ce qui était déjà saisi
+    edition = p || null; $('l-err').textContent = ''; $('l-titre').textContent = p ? 'Modifier « ' + p.uwi + ' »' : 'Ajouter un lieu'; $('l-sup').hidden = !p;
+    if (!garder) { $('l-nom').value = p ? p.uwi : ''; $('l-type').value = p ? (p.type || 'Puits') : 'Puits'; $('l-td').value = p && p.td ? p.td : ''; $('l-com').value = p ? (p.commentaire || '') : ''; $('l-coord').value = p ? p.lat.toFixed(6) + ', ' + p.lon.toFixed(6) : ''; }
+    if (coord) $('l-coord').value = coord.lat.toFixed(6) + ', ' + coord.lon.toFixed(6);
+    ouvrir($('dlg-lieu'));
+  }
+  $('b-lieu').onclick = function () { ouvrirLieu(null); };
+  $('l-gps').onclick = function () {
+    var b = $('l-gps'); if (S.moi) { $('l-coord').value = S.moi.lat.toFixed(6) + ', ' + S.moi.lon.toFixed(6); return; }
+    if (!navigator.geolocation) { $('l-err').textContent = 'Position GPS indisponible.'; return; }
+    b.textContent = '📍 Recherche…'; navigator.geolocation.getCurrentPosition(function (p) { b.textContent = '📍 Ma position'; $('l-coord').value = p.coords.latitude.toFixed(6) + ', ' + p.coords.longitude.toFixed(6); }, function () { b.textContent = '📍 Ma position'; $('l-err').textContent = 'Position introuvable pour le moment.'; }, { enableHighAccuracy: true, timeout: 20000 });
+  };
+  $('l-carte').onclick = function () {   // la fenêtre se ferme, on déplace la carte sous la croix rouge, puis on valide
+    var c = lireCoord($('l-coord').value); if (c) { S.vue.lat = c.lat; S.vue.lon = c.lon; S.vue.z = Math.max(S.vue.z, 14); }
+    fermer($('dlg-lieu')); S.placement = true; $('viseur').hidden = false; $('place').hidden = false; $('fiche').hidden = true; dessiner();
+  };
+  function finPlacement() { S.placement = false; $('viseur').hidden = true; $('place').hidden = true; }
+  $('place-non').onclick = function () { finPlacement(); ouvrirLieu(edition, null, true); };
+  $('place-ok').onclick = function () { var c = depuisEcran(W / 2, H / 2); finPlacement(); ouvrirLieu(edition, { lat: c.lat, lon: c.lon }, true); };
+  $('l-ok').onclick = function () {
+    var nom = $('l-nom').value.trim(), c = lireCoord($('l-coord').value);
+    if (!nom) { $('l-err').textContent = 'Le nom est obligatoire.'; return; }
+    if (!c) { $('l-err').textContent = 'Coordonnées invalides : indiquez latitude et longitude (ex. 29.56165, 6.86803).'; return; }
+    $('l-ok').disabled = true; $('l-err').textContent = '';
+    var lieu = { uwi: nom, type: $('l-type').value.trim(), lat: c.lat, lon: c.lon, td: Number($('l-td').value.replace(',', '.')) || 0, commentaire: $('l-com').value.trim() };
+    if (edition) { lieu.x = edition.x; lieu.y = edition.y; if (Math.abs(edition.lat - c.lat) > 1e-6 || Math.abs(edition.lon - c.lon) > 1e-6) { lieu.x = null; lieu.y = null; } }   // les X/Y UTM d'origine ne valent plus si on déplace le lieu
+    Api.call('puits_enregistrer', { ancien_uwi: edition ? edition.uwi : '', lieu: lieu }).then(function () { fermer($('dlg-lieu')); S.sel = null; $('fiche').hidden = true; return charger().then(function () { var n = S.puits.filter(function (p) { return norm(p.uwi) === norm(nom); })[0]; if (n) { $('q').value = ''; selectionner(n, true); } }); })
+      .catch(function (e) { $('l-err').textContent = e.message; }).then(function () { $('l-ok').disabled = false; });
+  };
+  $('l-sup').onclick = function () {
+    if (!edition || !confirm('Supprimer « ' + edition.uwi + ' » de la carte, pour tout le monde ?')) return;
+    Api.call('puits_supprimer', { uwi: edition.uwi }).then(function () { fermer($('dlg-lieu')); S.sel = null; $('fiche').hidden = true; return charger(); }).catch(function (e) { $('l-err').textContent = e.message; });
   };
 
   window.addEventListener('resize', taille); window.addEventListener('orientationchange', function () { setTimeout(taille, 200); });
