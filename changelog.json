@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-16-423",
+    "date": "2026-11-16",
+    "title": "Version 6.101.0 — Nouvelle application « Carte des puits » (hors réseau)",
+    "changes": [
+      "Nouvelle carte tactile des puits (module Chantiers & Pilotage) : recherche par nom, filtre par famille (RN, RNSE, HA…), un toucher sur un puits affiche sa profondeur, ses coordonnées (et X/Y UTM) et, avec le GPS, la distance et la direction depuis vous ; « 🧭 Itinéraire » ouvre Google Maps ou Waze. Pincer pour zoomer, déplacer, double-toucher.",
+      "Sans fond de carte, les puits sont placés sur un quadrillage en degrés avec échelle : de quoi se repérer dans le désert sans réseau. Le fond OpenStreetMap est optionnel ; les zones déjà vues ou « mémorisées » (⋯ → Mémoriser la zone) restent disponibles hors réseau.",
+      "Fonctionne sans réseau : la page et les positions restent sur l'appareil après une première ouverture avec connexion (service worker propre à la carte ; le service worker général reste sans cache). « Oublier les données de cet appareil » efface tout.",
+      "Les positions ne sont JAMAIS dans le dépôt public : elles sont dans l'onglet « Puits » du classeur de la passerelle, servies après connexion (lecture : niveau 1 du module Pilotage, soit les conducteurs des travaux et chefs de service ; import : niveau 2).",
+      "Import d'un fichier KMZ, KML ou CSV (nom, latitude, longitude, X, Y, profondeur) : aperçu avant enregistrement (nouveaux, modifiés, inchangés, doublons), les puits absents du fichier sont conservés sauf demande explicite."
+    ]
+  },
+  {
     "id": "2026-11-15-422",
     "date": "2026-11-15",
     "title": "Version 6.100.1 — Santé : optimisation du classeur plus prudente et plus lisible",

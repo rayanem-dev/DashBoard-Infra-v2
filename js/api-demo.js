@@ -46,6 +46,7 @@
     chef_division: [
       { id: 'pilotage', titre: 'Pilotage & Projets', icone: '📊', niveau: 3, apps: [
         { titre: 'Avancement Chantiers', description: 'Vue d\'ensemble de l\'avancement des chantiers.', emoji: '📊', url: 'Avancement_des_Chantiers.html' },
+        { titre: 'Carte des puits', description: 'Position des puits, votre position GPS, distance et itinéraire, même sans réseau.', emoji: '🛢️', url: 'puits.html' },
         { titre: 'Suivi Chantier', description: 'Détail du suivi par chantier.', emoji: '🗂️', url: 'Suivi_Chantier.html' } ] },
       { id: 'cpm', titre: 'Cellule Passation Marché', icone: '📑', niveau: 3, apps: [
         { titre: 'Dossiers CPM — Détail', description: 'Dossiers de passation de marché et échéances.', emoji: '🗂️', url: 'Dossiers_CPM.html' },
@@ -130,6 +131,8 @@
   function cpm6Traiter(l) { var a = new Date(); a.setHours(0, 0, 0, 0); var v = l.map(function (x, i) { return window.ReglesCpm && /^\d{4}-\d{2}-\d{2}$/.test(String(x)) ? new Date(+x.slice(0, 4), +x.slice(5, 7) - 1, +x.slice(8, 10)) : x; }); var r = window.ReglesCpm.traiterLigne(v, CPM6_IDX, l.length, a); if (!r) return l; return r.v.map(function (x) { return x instanceof Date ? x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2) : x; }); }
   var cpm6Init = false;
   function cpm6Cle(r) { return r[2] ? 'N:' + String(r[2]).toLowerCase() : 'T:' + String(r[3]).toLowerCase(); }
+  // Carte des puits (démo) : puits FICTIFS (les vraies positions ne sont jamais dans le dépôt public)
+  var demoPuits = (function () { var l = [], fams = ['DEMO', 'ESSAI', 'TEST']; for (var i = 0; i < 36; i += 1) l.push({ uwi: fams[i % 3] + (i + 1), famille: fams[i % 3], lat: Math.round((32.0 + (i % 6) * 0.045 + Math.floor(i / 6) * 0.01) * 1e6) / 1e6, lon: Math.round((5.0 + Math.floor(i / 6) * 0.05 + (i % 3) * 0.01) * 1e6) / 1e6, x: null, y: null, td: 2500 + i * 40 }); return l; })();
   var demoVivier = [
     { id: 'V1', nom: 'SARL Sahara Travaux', activite: 'Génie civil', telephone: '029 70 11 22', telephone2: '', email: 'contact@sahara-travaux.example', email2: '', fax: '029 70 11 23', adresse: 'Zone industrielle, Ouargla', commentaire: 'Références : bâtiments et VRD' },
     { id: 'V2', nom: 'EURL Electro Sud', activite: 'Électricité', telephone: '0661 00 11 22', telephone2: '', email: 'direction@electrosud.example', email2: '', fax: '', adresse: 'Hassi Messaoud', commentaire: '' },
@@ -632,6 +635,10 @@
         if (acts.indexOf('cache') >= 0) rr.push({ id: 'cache', titre: 'Mémoire temporaire (cache)', n: 8, fait: !simu, detail: 'les listes se rechargent à la prochaine visite' });
         return { simulation: simu, resultats: rr }; }
       case 'sante_drive_purger': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { simulation: !p.confirme, dossier: 'démo', jours: p.jours || 365, fichiers: 64, taille: 9800000, partiel: false }; }
+      case 'puits_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { puits: demoPuits.slice(), peut_importer: true, maj: new Date().toISOString() }; }
+      case 'puits_importer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var imp = p.puits || [], aj = 0, mo = 0, ig = 0;
+        imp.forEach(function (x) { var ex = demoPuits.filter(function (y) { return y.uwi.toUpperCase() === String(x.uwi).toUpperCase(); })[0]; if (!ex) { aj += 1; if (p.confirme) demoPuits.push(Object.assign({ famille: String(x.uwi).replace(/[^A-Za-z].*$/, '').toUpperCase() || '?', x: null, y: null, td: 0 }, x)); } else if (ex.lat !== x.lat || ex.lon !== x.lon) { mo += 1; if (p.confirme) { ex.lat = x.lat; ex.lon = x.lon; } } else ig += 1; });
+        return { simulation: !p.confirme, ajoutes: aj, modifies: mo, inchanges: ig, retires: 0, doublons: [], rejetes: 0, exemples: { ajoutes: [], modifies: [], retires: [] } }; }
       case 'vivier_liste': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); return { entreprises: demoVivier.slice(), niveau: 3, peut_modifier: true }; }
       case 'vivier_enregistrer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var fv = p.fiche || {}; if (!String(fv.nom || '').trim()) throw erreur('Le nom de l\'entreprise est obligatoire');
         var iv = demoVivier.filter(function (x) { return x.id === p.id; })[0];
