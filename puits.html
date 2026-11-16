@@ -335,16 +335,21 @@
   // ---------- synchronisation AUTOMATIQUE : à chaque ouverture (en ligne), ce qui manque sur l'appareil est téléchargé en arrière-plan ----------
   // La carte reste utilisable pendant ce temps : les images de l'écran passent en premier, le téléchargement de fond attend qu'elles soient arrivées.
   // Il reprend là où il s'était arrêté (fermeture de la page, perte de réseau) et se refait tout seul quand de nouveaux puits agrandissent la zone.
-  function detailAuto() { var c = navigator.connection; return !(c && (c.saveData || c.type === 'cellular')); }   // le détail (≈ 130 Mo) se télécharge seul, sauf en économiseur de données ou sur le réseau mobile
+  function detailAuto() { return true; }   // le détail (≈ 130 Mo) se télécharge seul lui aussi, même sur le réseau mobile (l'utilisateur est prévenu)
+  function conseil() {   // avertissement de la première fois : une seule fois, de préférence en Wi-Fi, mais le téléchargement se fait quand même
+    var c = navigator.connection, mobile = c && c.type === 'cellular', wifi = c && (c.type === 'wifi' || c.type === 'ethernet');
+    return 'Première fois : ' + (mobile ? 'vous êtes sur le réseau mobile, cela consomme environ 170 Mo de données' : wifi ? 'Wi-Fi détecté, parfait' : 'faites-le de préférence en Wi-Fi (environ 170 Mo), sinon cela se fait quand même avec vos données mobiles') + '. Gardez cette page ouverte. ';
+  }
   function synchro(detail, sortie) {
     if (S.sync || navigator.onLine === false || !S.puits.length) return;
     return etatHorsReseau().then(function (e) {
       var liste = (detail ? e.listeDetail : e.listeZone).slice(); if (!liste.length) { if (sortie) sortie.textContent = 'Déjà complet.'; return; }
       if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () { /* refusé : le navigateur pourra vider en cas de manque de place */ });
       var total = liste.length, fait = 0, echec = 0, vus = 0, lots = 0, arret = false;
+      if (!detail && e.zone && e.manqueZone.length / e.zone > 0.9) S.premiere = true;   // l'appareil n'avait presque rien : première utilisation
       S.sync = true; $('o-dl').disabled = $('o-dl2').disabled = true;
       function progres() {
-        var pc = Math.round(vus / total * 100), t = (detail ? 'Téléchargement du détail (zooms 14 à 17)… ' : 'Téléchargement de la carte pour le terrain… ') + pc + ' % (≈ ' + mo(total) + ' Mo)'; bandeau(t); $('etat').textContent = '⬇ ' + pc + ' %'; if (sortie) sortie.textContent = t + ' — vous pouvez continuer à utiliser la carte.';
+        var pc = Math.round(vus / total * 100), t = (detail ? 'Téléchargement du détail (zooms 14 à 17)… ' : 'Téléchargement de la carte pour le terrain… ') + pc + ' % (≈ ' + mo(total) + ' Mo)'; t = (S.premiere ? conseil() : '') + t; bandeau(t); $('etat').textContent = '⬇ ' + pc + ' %'; if (sortie) sortie.textContent = t + ' — vous pouvez continuer à utiliser la carte.';
       }
       progres();
       function travailleur() {
@@ -364,9 +369,10 @@
       return Promise.all([travailleur(), travailleur()]).then(function () {
         S.sync = false; etat();
         var fin = arret ? '⚠ Téléchargement interrompu : il reprendra automatiquement à la prochaine ouverture.' : echec ? '⚠ ' + echec + ' tuile(s) non téléchargée(s) : nouvelle tentative à la prochaine ouverture.' : '✓ Carte téléchargée : elle fonctionne maintenant sans réseau.';
+        if (!arret && !echec && !S.sync) { /* la suite (détail) peut encore suivre : S.premiere reste vrai jusqu'à la fin de la chaîne */ }
         bandeau(fin); setTimeout(function () { if ($('bandeau-t').textContent === fin) bandeau(''); }, 6000); if (sortie) sortie.textContent = fin; dessiner(); majHorsReseau();
         if (navigator.onLine === false) bandeau('Hors réseau : le téléchargement reprendra dès que la connexion revient.');
-        if (!arret && !echec && (S.relances = (S.relances || 0) + 1) <= 6) etatHorsReseau().then(function (e2) { if (e2.manqueZone.length) synchro(false); else if (e2.manqueDetail.length && detailAuto()) synchro(true); });   // zone d'abord, puis le détail ; de nouveaux puits agrandissent la liste
+        if (!arret && !echec && (S.relances = (S.relances || 0) + 1) <= 6) etatHorsReseau().then(function (e2) { if (e2.manqueZone.length) synchro(false); else if (e2.manqueDetail.length && detailAuto()) synchro(true); else S.premiere = false; });   // zone d'abord, puis le détail ; de nouveaux puits agrandissent la liste
       });
     });
   }

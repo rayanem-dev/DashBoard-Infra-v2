@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-16-428",
+    "date": "2026-11-16",
+    "title": "Version 6.105.1 — Carte des puits : avertissement de la première fois (Wi-Fi conseillé)",
+    "changes": [
+      "À la première ouverture (appareil sans carte), un message en haut prévient : téléchargement unique d'environ 170 Mo, à faire de préférence en Wi-Fi, page ouverte. Il s'adapte à la connexion quand le téléphone l'indique (Wi-Fi détecté, ou réseau mobile avec la consommation de données).",
+      "Le téléchargement se fait quand même, même sur le réseau mobile ou en économiseur de données (le détail n'est plus mis de côté). Le message disparaît quand la carte est complète ; aux ouvertures suivantes, rien n'est retéléchargé."
+    ]
+  },
+  {
     "id": "2026-11-16-427",
     "date": "2026-11-16",
     "title": "Version 6.105.0 — Carte des puits : tous les niveaux de zoom, jusqu'au 17",
