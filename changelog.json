@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-17-435",
+    "date": "2026-11-17",
+    "title": "Version 6.109.2 — Signaler route barrée : retour à la carte",
+    "changes": [
+      "Quand on ouvre « Signaler » depuis la carte des puits, « Annuler » (ou la touche Échap) ramène à la carte au lieu de laisser sur la liste des alertes.",
+      "Un bouton « 🛢️ Carte » apparaît en haut de « Signaler route barrée » pour les comptes qui ont accès à la carte, afin de pouvoir y revenir à tout moment, y compris après l'envoi d'une alerte."
+    ]
+  },
+  {
     "id": "2026-11-17-434",
     "date": "2026-11-17",
     "title": "Version 6.109.1 — Carte des puits : plus d'images pour le désert vide",

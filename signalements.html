@@ -34,7 +34,7 @@
 </style>
 </head>
 <body>
-<header><h1>⚠️ Signaler route barrée</h1><span id="etat" class="pastille">…</span><a href="portail.html">← Portail</a></header>
+<header><h1>⚠️ Signaler route barrée</h1><span id="etat" class="pastille">…</span><a id="h-carte" href="puits.html" hidden>🛢️ Carte</a><a href="portail.html">← Portail</a></header>
 <main>
   <div id="avis" hidden></div>
   <div class="onglets" id="onglets"></div>
@@ -51,7 +51,7 @@
   <p style="margin:8px 0 0"><button class="btn" id="n-gps" type="button">📍 Ma position</button> <button class="btn" id="n-carte" type="button" hidden>🎯 Choisir sur la carte</button> <span class="gris" id="n-pos"></span></p>
   <label class="f" for="n-desc">Description <span id="n-obl" class="gris"></span></label><textarea id="n-desc" rows="3" maxlength="500" placeholder="Ex. 1 m de sable sur la plateforme, accès impossible pour les camions."></textarea>
   <p class="gris" style="margin-top:10px">Le service et les responsables du dessablage sont prévenus par e-mail. Sans réseau, l'alerte part dès que la connexion revient.</p></div>
-  <div class="pied"><span class="err" id="n-err"></span><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="n-ok" type="button">Envoyer l'alerte</button></div></dialog>
+  <div class="pied"><span class="err" id="n-err"></span><button class="btn" id="n-annuler" type="button">Annuler</button><button class="btn p" id="n-ok" type="button">Envoyer l'alerte</button></div></dialog>
 <dialog id="dlg-statut"><div class="c"><h2 id="s-titre"></h2><label class="f" for="s-note" style="margin-top:0">Note (facultative)</label><textarea id="s-note" rows="3" maxlength="300" placeholder="Ex. Engin en route demain matin."></textarea>
   <label id="s-rapport" hidden style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:14px"><input type="checkbox" id="s-rapport-cb" checked> <span>Proposer d'ajouter ce travail à mon <b>rapport journalier</b> (je vérifie avant d'enregistrer le rapport)</span></label></div>
   <div class="pied"><span class="err" id="s-err"></span><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="s-ok" type="button">Valider</button></div></dialog>
@@ -142,6 +142,8 @@
     navigator.geolocation.getCurrentPosition(function (p) { S.pos = { lat: p.coords.latitude, lon: p.coords.longitude, prec: p.coords.accuracy || 0 }; maj(); }, function () { $('n-pos').textContent = 'position indisponible (indiquez le lieu)'; }, { enableHighAccuracy: true, timeout: 25000, maximumAge: 15000 });
   }
   $('n-gps').onclick = prendrePosition;
+  $('n-annuler').onclick = function () { fermer($('dlg-nouveau')); if (pre.depuis === 'carte') location.href = 'puits.html'; };   // ouvert depuis la carte : « Annuler » y retourne
+  $('dlg-nouveau').addEventListener('cancel', function () { if (pre.depuis === 'carte') setTimeout(function () { location.href = 'puits.html'; }, 0); });   // touche Échap
   $('n-carte').onclick = function () {   // le formulaire est gardé le temps de choisir le point sur la carte, puis restauré au retour
     try { sessionStorage.setItem('infra_v2_signal_brouillon', JSON.stringify({ form: S.form, lieu: $('n-lieu').value, desc: $('n-desc').value, pos: S.pos })); } catch (e) { /* sans stockage : le formulaire sera à refaire */ }
     var p = S.pos ? '&voir=' + S.pos.lat + ',' + S.pos.lon : ''; location.href = 'puits.html?choisir=1' + p;
@@ -161,7 +163,7 @@
     if (!c.puits && !c.lieu && c.lat == null) { $('n-err').textContent = 'Indiquez où : prenez votre position ou écrivez le puits / un repère.'; return; }
     if (c.categorie === 'autre' && !c.description && !c.sous_type) { $('n-err').textContent = 'Choisissez la nature des travaux ou décrivez-les.'; return; }
     $('n-ok').disabled = true;
-    Api.call('signal_creer', { signalement: c }).then(function (r) { fermer($('dlg-nouveau')); avis('✓ Alerte ' + r.id + ' envoyée' + (r.alertes ? ' — ' + r.alertes + ' adresse(s) prévenue(s).' : r.doublon ? ' (déjà enregistrée).' : ' (aucune adresse d\'alerte configurée : prévenez le service).'), true); return charger(); })
+    Api.call('signal_creer', { signalement: c }).then(function (r) { fermer($('dlg-nouveau')); if (pre.depuis === 'carte') $('h-carte').hidden = false; avis('✓ Alerte ' + r.id + ' envoyée' + (r.alertes ? ' — ' + r.alertes + ' adresse(s) prévenue(s).' : r.doublon ? ' (déjà enregistrée).' : ' (aucune adresse d\'alerte configurée : prévenez le service).'), true); return charger(); })
       .catch(function (e) {
         if (e && e.code === 'RESEAU') { var q = stock(CLE_FILE) || []; q.push(c); stock(CLE_FILE, q); fermer($('dlg-nouveau')); avis('Pas de réseau : alerte gardée sur le téléphone, elle partira dès que la connexion revient.'); dessiner(); }
         else $('n-err').textContent = e.message;
@@ -174,7 +176,7 @@
   }
 
   // noms de puits pour l'aide à la saisie (seulement si l'accès à la carte existe, sinon un repère libre)
-  Api.call('puits_liste').then(function (r) { S.noms = (r.puits || []).map(function (p) { return p.uwi; }); S.carte = true; $('n-carte').hidden = false; stock('infra_v2_signal_noms', S.noms); }).catch(function () { S.noms = stock('infra_v2_signal_noms') || []; }).then(function () { var d = $('l-puits'); (S.noms || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; d.appendChild(o); }); });
+  Api.call('puits_liste').then(function (r) { S.noms = (r.puits || []).map(function (p) { return p.uwi; }); S.carte = true; $('n-carte').hidden = false; $('h-carte').hidden = false; stock('infra_v2_signal_noms', S.noms); }).catch(function () { S.noms = stock('infra_v2_signal_noms') || []; }).then(function () { var d = $('l-puits'); (S.noms || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; d.appendChild(o); }); });
   function restaurer() {   // retour de « Choisir sur la carte » : ?retour=1&lat=&lon=
     var b = null; try { b = JSON.parse(sessionStorage.getItem('infra_v2_signal_brouillon') || 'null'); sessionStorage.removeItem('infra_v2_signal_brouillon'); } catch (e) { b = null; }
     if (!b) return false; S.form = b.form || S.form; S.pos = pre.lat ? { lat: Number(pre.lat), lon: Number(pre.lon), prec: 0 } : b.pos; $('n-lieu').value = b.lieu || ''; $('n-desc').value = b.desc || ''; $('n-err').textContent = ''; maj(); ouvrir($('dlg-nouveau')); return true;

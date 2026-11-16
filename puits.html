@@ -52,7 +52,7 @@
   <button class="btn" id="b-fond" type="button" aria-pressed="false">⛰️ Relief</button>
   <button class="btn" id="b-tout" type="button">⤢ Tout voir</button>
   <button class="btn p" id="b-lieu" type="button" hidden>＋ Lieu</button>
-  <a class="btn" id="b-sig" href="signalements.html?nouveau=1" style="text-decoration:none;color:#B42318;border-color:#F3B7B0">⚠️ Signaler</a>
+  <a class="btn" id="b-sig" href="signalements.html?nouveau=1&depuis=carte" style="text-decoration:none;color:#B42318;border-color:#F3B7B0">⚠️ Signaler</a>
   <button class="btn" id="b-plus" type="button">⋯</button>
   <div id="resultats" hidden></div>
 </div>
@@ -273,7 +273,7 @@
     var g = S.selSig, f = $('fiche'); f.textContent = ''; if (!g) { f.hidden = true; return; }
     var x = el('button', 'x', '×'); x.type = 'button'; x.onclick = function () { S.selSig = null; f.hidden = true; dessiner(); }; f.appendChild(x);
     f.appendChild(el('h2', null, '⚠️ ' + g.titre)); var i = el('div', 'infos'); [['Statut', { ouvert: 'Signalé', pris: 'Pris en charge' }[g.statut] || g.statut], ['Urgence', g.urgence === 'urgent' ? 'URGENT' : 'normale'], ['Signalé', new Date(g.cree_le).toLocaleDateString('fr-FR') + ' par ' + (g.par_nom || '—')]].concat(g.description ? [['Description', g.description]] : []).forEach(function (l) { var d2 = el('div'); d2.appendChild(document.createTextNode(l[0] + ' : ')); d2.appendChild(el('b', null, l[1])); i.appendChild(d2); }); f.appendChild(i);
-    var a = el('div', 'actions'), t = el('a', 'btn p', 'Traiter / détails'); t.href = 'signalements.html?id=' + g.id; t.style.textDecoration = 'none'; a.appendChild(t); var it = el('a', 'btn', '🧭 Itinéraire'); it.href = 'https://www.google.com/maps/dir/?api=1&destination=' + g.lat + ',' + g.lon; it.target = '_blank'; it.rel = 'noopener'; it.style.textDecoration = 'none'; a.appendChild(it); f.appendChild(a); f.hidden = false;
+    var a = el('div', 'actions'), t = el('a', 'btn p', 'Traiter / détails'); t.href = 'signalements.html?id=' + g.id + '&depuis=carte'; t.style.textDecoration = 'none'; a.appendChild(t); var it = el('a', 'btn', '🧭 Itinéraire'); it.href = 'https://www.google.com/maps/dir/?api=1&destination=' + g.lat + ',' + g.lon; it.target = '_blank'; it.rel = 'noopener'; it.style.textDecoration = 'none'; a.appendChild(it); f.appendChild(a); f.hidden = false;
   }
   function fiche() {
     var p = S.sel, f = $('fiche'); f.textContent = ''; if (!p) { f.hidden = true; return; }
@@ -289,7 +289,7 @@
     lien('🧭 Itinéraire', 'https://www.google.com/maps/dir/?api=1&destination=' + dest + '&travelmode=driving'); lien('Waze', 'https://waze.com/ul?ll=' + dest + '&navigate=yes');
     var cp = el('button', 'btn', '📋 Copier'); cp.type = 'button'; cp.onclick = function () { var t = p.uwi + ' ' + p.lat.toFixed(6) + ',' + p.lon.toFixed(6); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { cp.textContent = '✓ Copié'; }, function () { prompt('Coordonnées', t); }); }; a.appendChild(cp);
     if (S.peut && navigator.onLine !== false) { var mo2 = el('button', 'btn', '✏️ Modifier'); mo2.type = 'button'; mo2.onclick = function () { ouvrirLieu(p); }; a.appendChild(mo2); }
-    var sig = el('a', 'btn', '⚠️ Signaler ici'); sig.href = 'signalements.html?nouveau=1&puits=' + encodeURIComponent(p.uwi) + '&lat=' + p.lat + '&lon=' + p.lon; sig.style.textDecoration = 'none'; a.appendChild(sig);
+    var sig = el('a', 'btn', '⚠️ Signaler ici'); sig.href = 'signalements.html?nouveau=1&depuis=carte&puits=' + encodeURIComponent(p.uwi) + '&lat=' + p.lat + '&lon=' + p.lon; sig.style.textDecoration = 'none'; a.appendChild(sig);
     f.appendChild(a); f.hidden = false;
   }
 
