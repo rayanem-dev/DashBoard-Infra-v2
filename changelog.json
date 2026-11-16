@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-16-430",
+    "date": "2026-11-16",
+    "title": "Version 6.106.1 — Carte des puits : ajouter une base en deux gestes, noms toujours visibles",
+    "changes": [
+      "Ajout simplifié : un appui long sur la carte ouvre « Ajouter un lieu » avec la position déjà remplie ; il suffit de taper le nom, de choisir le type en un toucher (Base, Campement, Poste, Puits, Autre) et d'enregistrer. La profondeur et la note sont rangées dans « Plus de détails » (la profondeur n'apparaît que pour un puits).",
+      "Les noms des bases, campements et postes sont affichés sur la carte à tous les niveaux de zoom (les puits gardent leurs noms à partir du zoom rapproché)."
+    ]
+  },
+  {
     "id": "2026-11-16-429",
     "date": "2026-11-16",
     "title": "Version 6.106.0 — Carte des puits : ajouter, modifier et supprimer des lieux (secrétariat, chefs de service)",

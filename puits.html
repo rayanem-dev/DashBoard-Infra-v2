@@ -71,15 +71,16 @@
   <p><button class="btn" id="o-prep" type="button" hidden>☁️ Préparer le relief de toute la zone pour tous (Drive)</button></p>
   <p><button class="btn" id="o-import" type="button" hidden>⬆ Importer des puits (KMZ, KML, CSV)</button></p>
   <p><button class="btn" id="o-oubli" type="button">🗑 Oublier les données de cet appareil</button></p>
-  <p class="gris">Les positions et le relief déjà vus sont gardés sur cet appareil pour travailler sans réseau. Le relief est téléchargé une seule fois pour tout le monde (cache commun sur Drive). « Oublier » efface les données de cet appareil.</p></div>
+  <p class="gris">Chefs de service et secrétariat : un appui long sur la carte ajoute un lieu à cet endroit.</p><p class="gris">Les positions et le relief déjà vus sont gardés sur cet appareil pour travailler sans réseau. Le relief est téléchargé une seule fois pour tout le monde (cache commun sur Drive). « Oublier » efface les données de cet appareil.</p></div>
   <div class="pied"><button class="btn" data-ferme type="button">Fermer</button></div></dialog>
 <dialog id="dlg-lieu"><div class="c"><h2 id="l-titre">Ajouter un lieu</h2>
-  <label class="f" for="l-nom">Nom *</label><input type="text" id="l-nom" maxlength="40" autocomplete="off" placeholder="Ex. RN140, BASE-NORD…">
-  <label class="f" for="l-type">Type</label><input type="text" id="l-type" list="l-types" maxlength="30" placeholder="Puits, Base, Campement…"><datalist id="l-types"><option value="Puits"><option value="Base"><option value="Campement"><option value="Poste"><option value="Autre"></datalist>
-  <label class="f" for="l-coord">Coordonnées (latitude, longitude)</label><input type="text" id="l-coord" inputmode="decimal" autocomplete="off" placeholder="Ex. 29.56165, 6.86803  (collez depuis Google Maps)">
-  <p style="margin:6px 0"><button class="btn" id="l-gps" type="button">📍 Ma position</button> <button class="btn" id="l-carte" type="button">🎯 Choisir sur la carte</button></p>
-  <div class="deux"><div><label class="f" for="l-td">Profondeur (m)</label><input type="text" id="l-td" inputmode="numeric" maxlength="6"></div><div></div></div>
-  <label class="f" for="l-com">Commentaire</label><textarea id="l-com" rows="2" maxlength="300"></textarea></div>
+  <label class="f" for="l-nom">Nom *</label><input type="text" id="l-nom" maxlength="40" autocomplete="off" placeholder="Ex. BASE-NORD, CAMP 2, RN140…">
+  <label class="f">Type</label><div id="l-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div><input type="text" id="l-type" maxlength="30" placeholder="Autre type…" style="margin-top:6px" hidden>
+  <label class="f" for="l-coord">Position</label><p style="margin:0 0 6px"><button class="btn p" id="l-carte" type="button">🎯 La choisir sur la carte</button> <button class="btn" id="l-gps" type="button">📍 Ma position</button></p>
+  <input type="text" id="l-coord" inputmode="decimal" autocomplete="off" placeholder="ou coller : 29.56165, 6.86803 (Google Maps)">
+  <details style="margin-top:8px"><summary class="gris" style="cursor:pointer;font-size:13px">Plus de détails (profondeur, note)</summary>
+    <div id="l-prof"><label class="f" for="l-td">Profondeur (m) — puits seulement</label><input type="text" id="l-td" inputmode="numeric" maxlength="6"></div>
+    <label class="f" for="l-com">Note</label><textarea id="l-com" rows="2" maxlength="300"></textarea></details></div>
   <div class="pied"><span class="err" id="l-err"></span><button class="btn" id="l-sup" type="button" hidden style="color:#B42318">🗑 Supprimer</button><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="l-ok" type="button">Enregistrer</button></div></dialog>
 <dialog id="dlg-imp"><div class="c"><h2>Importer des puits</h2><p class="gris">Fichier KMZ, KML ou CSV (nom, latitude, longitude, X, Y, profondeur). Rien n'est enregistré avant votre confirmation ; les puits absents du fichier sont conservés.</p>
   <input type="file" id="i-fic" accept=".kmz,.kml,.csv,.txt"><div id="i-res" style="margin-top:10px"></div>
@@ -198,7 +199,7 @@
       var s = versEcran(p.lat, p.lon); if (s.x < -20 || s.y < -20 || s.x > W + 20 || s.y > H + 20) return;
       var sel = S.sel && S.sel.uwi === p.uwi;
       var autre = p.type && norm(p.type) !== 'puits', r0 = sel ? 8 : 5.5; ctx.beginPath(); if (autre) ctx.rect(s.x - r0, s.y - r0, 2 * r0, 2 * r0); else ctx.arc(s.x, s.y, r0, 0, 6.283); ctx.fillStyle = autre ? '#7C3AED' : couleur(p.famille); ctx.fill(); ctx.lineWidth = sel ? 3 : 1.5; ctx.strokeStyle = sel ? '#000' : '#fff'; ctx.stroke();
-      if (etiq || sel) { var kx = Math.round(s.x / 46) + ',' + Math.round(s.y / 14); if (sel || !occ[kx]) { occ[kx] = 1; var t = p.uwi; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(t, s.x + 9, s.y); ctx.fillStyle = '#111'; ctx.fillText(t, s.x + 9, s.y); } }
+      if (etiq || sel || autre) { var kx = Math.round(s.x / 46) + ',' + Math.round(s.y / 14); if (sel || !occ[kx]) { occ[kx] = 1; var t = p.uwi; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(t, s.x + 9, s.y); ctx.fillStyle = '#111'; ctx.fillText(t, s.x + 9, s.y); } }
     });
     // ma position et ligne vers le puits choisi
     if (S.moi) {
@@ -223,7 +224,8 @@
   // gestes : un doigt déplace, deux doigts zooment, molette, double-tape
   var ptrs = {}, dep = null, pince = 0, dernierTap = 0;
   function nbPtrs() { return Object.keys(ptrs).length; }
-  cv.addEventListener('pointerdown', function (e) { cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = { x: e.offsetX, y: e.offsetY }; dep = { x: e.offsetX, y: e.offsetY, t: Date.now(), bouge: false }; if (nbPtrs() === 2) { var a = Object.keys(ptrs).map(function (k) { return ptrs[k]; }); pince = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); } });
+  var appui = 0;
+  cv.addEventListener('pointerdown', function (e) { clearTimeout(appui); if (S.peut && navigator.onLine !== false && !S.placement && e.isPrimary !== false) { var ex = e.offsetX, ey = e.offsetY; appui = setTimeout(function () { if (dep && !dep.bouge && nbPtrs() === 1) { var c = depuisEcran(ex, ey); if (navigator.vibrate) navigator.vibrate(30); dep.bouge = true; ouvrirLieu(null, { lat: c.lat, lon: c.lon }); } }, 600); } cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = { x: e.offsetX, y: e.offsetY }; dep = { x: e.offsetX, y: e.offsetY, t: Date.now(), bouge: false }; if (nbPtrs() === 2) { var a = Object.keys(ptrs).map(function (k) { return ptrs[k]; }); pince = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); } });
   cv.addEventListener('pointermove', function (e) {
     if (!ptrs[e.pointerId]) return; var avant = ptrs[e.pointerId]; ptrs[e.pointerId] = { x: e.offsetX, y: e.offsetY };
     if (nbPtrs() === 2) { var a = Object.keys(ptrs).map(function (k) { return ptrs[k]; }), d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); if (pince) zoomer(Math.log2(d / pince), (a[0].x + a[1].x) / 2, (a[0].y + a[1].y) / 2); pince = d; if (dep) dep.bouge = true; return; }
@@ -231,6 +233,7 @@
     if (dep && dep.bouge) { var c = G.versPixels(S.vue.lat, S.vue.lon, S.vue.z), n = G.depuisPixels(c.x - dx, c.y - dy, S.vue.z); S.vue.lat = n.lat; S.vue.lon = n.lon; dessiner(); }
   });
   function fin(e) {
+    clearTimeout(appui);
     var tap = dep && !dep.bouge && Date.now() - dep.t < 450 && nbPtrs() === 1; delete ptrs[e.pointerId]; if (nbPtrs() < 2) pince = 0;
     if (tap) { if (Date.now() - dernierTap < 320) { zoomer(1, e.offsetX, e.offsetY); dernierTap = 0; } else { dernierTap = Date.now(); choisirEn(e.offsetX, e.offsetY); } }
     if (!nbPtrs()) dep = null;
@@ -434,12 +437,20 @@
 
   // ---------- ajouter, modifier, supprimer un lieu (secrétariat, chefs de service) ----------
   var edition = null;   // lieu en cours de modification (null = ajout)
+  var TYPES = ['Base', 'Campement', 'Poste', 'Puits', 'Autre'];
+  function typeChoisi() { return $('l-type').value.trim(); }
+  function poserType(t) {
+    $('l-type').value = t; var autre = !!t && TYPES.indexOf(t) < 0; $('l-type').hidden = !(autre || t === '');
+    Array.prototype.forEach.call($('l-chips').children, function (b) { b.classList.toggle('on', b.dataset.t === t || (b.dataset.t === 'Autre' && t && TYPES.indexOf(t) < 0)); });
+    $('l-prof').hidden = !(t === 'Puits' || !t);
+  }
+  TYPES.forEach(function (t) { var b = el('button', 'btn', t); b.type = 'button'; b.dataset.t = t; b.onclick = function () { if (t === 'Autre') { poserType(''); $('l-type').hidden = false; $('l-type').focus(); Array.prototype.forEach.call($('l-chips').children, function (x) { x.classList.toggle('on', x.dataset.t === 'Autre'); }); } else poserType(t); }; $('l-chips').appendChild(b); });
   function lireCoord(t) { var m = String(t || '').replace(/[°;]/g, ' ').match(/-?\d+(?:[.,]\d+)?/g); if (!m || m.length < 2) return null; var a = Number(m[0].replace(',', '.')), o = Number(m[1].replace(',', '.')); return (a >= -90 && a <= 90 && o >= -180 && o <= 180) ? { lat: a, lon: o } : null; }
   function ouvrirLieu(p, coord, garder) {   // garder = retour du choix sur la carte : on ne touche pas à ce qui était déjà saisi
     edition = p || null; $('l-err').textContent = ''; $('l-titre').textContent = p ? 'Modifier « ' + p.uwi + ' »' : 'Ajouter un lieu'; $('l-sup').hidden = !p;
-    if (!garder) { $('l-nom').value = p ? p.uwi : ''; $('l-type').value = p ? (p.type || 'Puits') : 'Puits'; $('l-td').value = p && p.td ? p.td : ''; $('l-com').value = p ? (p.commentaire || '') : ''; $('l-coord').value = p ? p.lat.toFixed(6) + ', ' + p.lon.toFixed(6) : ''; }
+    if (!garder) { $('l-nom').value = p ? p.uwi : ''; poserType(p ? (p.type || 'Puits') : 'Base'); $('l-td').value = p && p.td ? p.td : ''; $('l-com').value = p ? (p.commentaire || '') : ''; $('l-coord').value = p ? p.lat.toFixed(6) + ', ' + p.lon.toFixed(6) : ''; }
     if (coord) $('l-coord').value = coord.lat.toFixed(6) + ', ' + coord.lon.toFixed(6);
-    ouvrir($('dlg-lieu'));
+    ouvrir($('dlg-lieu')); if (!p) setTimeout(function () { $('l-nom').focus(); }, 100);
   }
   $('b-lieu').onclick = function () { ouvrirLieu(null); };
   $('l-gps').onclick = function () {
@@ -459,7 +470,7 @@
     if (!nom) { $('l-err').textContent = 'Le nom est obligatoire.'; return; }
     if (!c) { $('l-err').textContent = 'Coordonnées invalides : indiquez latitude et longitude (ex. 29.56165, 6.86803).'; return; }
     $('l-ok').disabled = true; $('l-err').textContent = '';
-    var lieu = { uwi: nom, type: $('l-type').value.trim(), lat: c.lat, lon: c.lon, td: Number($('l-td').value.replace(',', '.')) || 0, commentaire: $('l-com').value.trim() };
+    var lieu = { uwi: nom, type: typeChoisi() || 'Puits', lat: c.lat, lon: c.lon, td: Number($('l-td').value.replace(',', '.')) || 0, commentaire: $('l-com').value.trim() };
     if (edition) { lieu.x = edition.x; lieu.y = edition.y; if (Math.abs(edition.lat - c.lat) > 1e-6 || Math.abs(edition.lon - c.lon) > 1e-6) { lieu.x = null; lieu.y = null; } }   // les X/Y UTM d'origine ne valent plus si on déplace le lieu
     Api.call('puits_enregistrer', { ancien_uwi: edition ? edition.uwi : '', lieu: lieu }).then(function () { fermer($('dlg-lieu')); S.sel = null; $('fiche').hidden = true; return charger().then(function () { var n = S.puits.filter(function (p) { return norm(p.uwi) === norm(nom); })[0]; if (n) { $('q').value = ''; selectionner(n, true); } }); })
       .catch(function (e) { $('l-err').textContent = e.message; }).then(function () { $('l-ok').disabled = false; });
