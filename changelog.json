@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-17-436",
+    "date": "2026-11-17",
+    "title": "Version 6.109.3 — Carte des puits et Signaler route barrée épinglées dans « Mes applications » (15 jours)",
+    "changes": [
+      "La Carte des puits et « Signaler route barrée » sont épinglées en tête de « Mes applications » (avec un 📌) du 16 au 30 novembre, pour les comptes qui y ont accès, parmi les 9 affichées. Ensuite elles retrouvent leur place normale : le classement par utilisation habituel reprend, sans rien à faire.",
+      "Retrait du bandeau « À la une » de l'accueil et des étoiles du menu latéral, ajoutés par erreur à la place de l'épinglage. Les dates se changent dans vedettes.json."
+    ]
+  },
+  {
     "id": "2026-11-17-435",
     "date": "2026-11-17",
     "title": "Version 6.109.2 — Signaler route barrée : retour à la carte",

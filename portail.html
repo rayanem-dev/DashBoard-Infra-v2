@@ -176,7 +176,16 @@
   // Raccourcis du planning : le sien pour tous ; celui des équipes pour qui y a droit (niveau 2 ou 3 du module « planning »).
   // Mes applications : une icône par application autorisée pour cet utilisateur (nom au survol), même ouverture que les cartes du bas
   var TOP_APPS = 9;   // raccourcis : les 9 applications que l'agent ouvre le plus ; elles changent avec ses habitudes
+  // Applications ÉPINGLÉES en tête de « Mes applications » pendant une période (vedettes.json : debut / fin inclus, dans l'ordre du fichier) ;
+  // la période passée, elles retrouvent leur place normale (classement par utilisation). Seules celles auxquelles le compte a accès apparaissent.
+  var EPINGLES = [], MENU_COURANT = null;
+  fetch('vedettes.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
+    var d = new Date(), iso = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    EPINGLES = (l || []).filter(function (x) { return x.debut <= iso && iso <= x.fin; }).map(function (x) { return String(x.url).toLowerCase(); });
+    if (EPINGLES.length && MENU_COURANT) mesApps(MENU_COURANT);
+  }).catch(function () { /* pas d'épingle */ });
   function mesApps(menu) {
+    MENU_COURANT = menu;
     var box = $('mes-apps'), g = $('mes-apps-grille'), vues = {}, n = 0, liste = [], us = {}, loc = usages(), pop = SERVEUR.populaires || {}; g.textContent = '';
     Object.keys(loc).concat(Object.keys(SERVEUR.usages || {})).forEach(function (t) { us[t] = Math.max(loc[t] || 0, (SERVEUR.usages || {})[t] || 0); });   // l'historique de ce navigateur et celui du compte : le plus grand des deux
     (menu || []).forEach(function (m) {
@@ -185,8 +194,10 @@
       });
     });
     liste.sort(function (x, y) { return (us[y.a.titre] || 0) - (us[x.a.titre] || 0) || (pop[y.a.titre] || 0) - (pop[x.a.titre] || 0) || x.rang - y.rang; });   // les plus utilisées par la personne, puis par les gens de son rôle, puis l'ordre du menu
+    var epingle = function (x) { return EPINGLES.indexOf(String(x.a.url || '').split(/[?#]/)[0].split('/').pop().toLowerCase()); };
+    if (EPINGLES.length) liste = liste.filter(function (x) { return epingle(x) >= 0; }).sort(function (x, y) { return epingle(x) - epingle(y); }).concat(liste.filter(function (x) { return epingle(x) < 0; }));   // épinglées d'abord, puis le classement habituel
     liste.forEach(function (x, i) {
-      var a = x.a, c = el('a', 'mes-app' + (i >= TOP_APPS ? ' hors-top' : '')); c.appendChild(ico(el('span', 'mes-app-ico'), a.emoji)); c.appendChild(el('span', 'mes-app-nom', a.titre || '')); c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
+      var a = x.a, c = el('a', 'mes-app' + (i >= TOP_APPS ? ' hors-top' : '') + (epingle(x) >= 0 ? ' epingle' : '')); c.appendChild(ico(el('span', 'mes-app-ico'), a.emoji)); c.appendChild(el('span', 'mes-app-nom', a.titre || '')); if (epingle(x) >= 0) { var pn = el('span', null, '📌'); pn.style.cssText = 'position:absolute;top:3px;right:5px;font-size:11px'; pn.title = 'Épinglée pour quelques jours'; c.style.position = 'relative'; c.appendChild(pn); } c.href = x.u; c.dataset.nom = a.titre || ''; c.title = (a.titre || '') + (us[a.titre] ? ' · ouverte ' + us[a.titre] + ' fois' : ''); c.setAttribute('aria-label', a.titre || '');
       if (/^https?:\/\//i.test(c.href) && c.origin !== location.origin) { c.target = '_blank'; c.rel = 'noopener'; }
       c.addEventListener('click', function () { compter(a.titre); }); c.addEventListener('auxclick', function () { compter(a.titre); });
       g.appendChild(c);
@@ -289,7 +300,6 @@
     // Affichage par rubriques (métiers) : les droits restent portés par les modules du menu, seul le rangement des cartes change
     var groupes = window.Rubriques ? Rubriques.regrouper(r.menu, r.rubriques).filter(function (g) { return g.apps.length; }) : r.menu;
     var zone = $('modules'); zone.textContent = ''; outilsAccueil(groupes);
-    vedettes(zone, r.menu || []);   // « À la une » : nouveautés mises en avant pendant quelques jours (vedettes.json)
     if (!r.menu.length) { zone.appendChild(el('p', 'vide', 'Aucun module n\'est encore activé pour votre compte. Contactez le secrétariat.')); return; }
     groupes.forEach(function (m) {
       var sec = el('section', 'module'); sec.dataset.m = m.id; sec.dataset.n = String(Math.min((m.apps || []).length, 3));
@@ -307,25 +317,6 @@
       });
       sec.appendChild(g); zone.appendChild(sec);
     });
-  }
-
-  // « À la une » : applications mises en avant pour une période (vedettes.json : debut / fin inclus). Chaque compte ne voit que celles auxquelles il a accès (menu).
-  function vedettes(zone, menu) {
-    var pages = {}; menu.forEach(function (m) { (m.apps || []).forEach(function (a) { pages[String(a.url || '').split(/[?#]/)[0].split('/').pop().toLowerCase()] = a; }); });
-    fetch('vedettes.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
-      var auj = new Date(), iso = auj.getFullYear() + '-' + ('0' + (auj.getMonth() + 1)).slice(-2) + '-' + ('0' + auj.getDate()).slice(-2);
-      var v = (l || []).filter(function (x) { return x.debut <= iso && iso <= x.fin && pages[String(x.url).toLowerCase()]; });
-      if (!v.length || zone.querySelector('.module[data-m="vedette"]')) return;
-      var sec = el('section', 'module'); sec.dataset.m = 'vedette'; sec.dataset.n = String(Math.min(v.length, 3));
-      var h = el('h3', null, '⭐ À la une'); sec.appendChild(h); var g = el('div', 'grille');
-      v.forEach(function (x) {
-        var a = pages[String(x.url).toLowerCase()], c = el('a', 'app'); c.href = lienApp(a); c.style.cssText = 'border:2px solid #E85D04;position:relative';
-        var b = el('span', null, 'NOUVEAU · jusqu\'au ' + x.fin.slice(8, 10) + '/' + x.fin.slice(5, 7)); b.style.cssText = 'position:absolute;top:8px;right:10px;font-size:10.5px;font-weight:800;background:#E85D04;color:#fff;border-radius:999px;padding:2px 9px'; c.appendChild(b);
-        c.appendChild(ico(el('div', 'em'), a.emoji || x.emoji)); c.appendChild(el('h4', null, x.titre || a.titre)); c.appendChild(el('p', null, x.texte || a.description || '')); c.appendChild(el('div', 'ouvrir', 'Ouvrir →'));
-        c.addEventListener('click', function () { compter(a.titre); }); g.appendChild(c);
-      });
-      sec.appendChild(g); zone.insertBefore(sec, zone.firstChild);
-    }).catch(function () { /* pas de mise en avant */ });
   }
 
   // L'agent complète lui-même les champs vides de sa fiche ; une valeur déjà enregistrée ne se modifie plus (secrétariat).

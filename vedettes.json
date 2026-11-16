@@ -2,19 +2,15 @@
   {
     "id": "carte-puits-2026-11",
     "titre": "Carte des puits",
-    "texte": "Où sont les puits, votre position GPS, distance et itinéraire. La carte se télécharge sur le téléphone et marche sans réseau.",
-    "emoji": "🛢️",
     "url": "puits.html",
     "debut": "2026-11-16",
-    "fin": "2026-11-29"
+    "fin": "2026-11-30"
   },
   {
     "id": "signaler-route-2026-11",
     "titre": "Signaler route barrée",
-    "texte": "Une route barrée ou ensablée, un dessablage à faire : signalez-le en deux touches, les responsables sont prévenus.",
-    "emoji": "⚠️",
     "url": "signalements.html",
     "debut": "2026-11-16",
-    "fin": "2026-11-29"
+    "fin": "2026-11-30"
   }
 ]
