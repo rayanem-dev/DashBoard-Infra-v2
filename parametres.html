@@ -62,7 +62,8 @@
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function frDate(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
-  function chargerListe(l) { P = l; dessiner(); }
+  var PERS = [];
+  function chargerListe(l, pers) { P = l; if (pers && pers.length) PERS = pers; dessiner(); }
   function etatTexte(p) {
     if (p.source === 'parametres') return 'Modifié' + (p.maj_par ? ' par ' + p.maj_par : '') + (p.maj_le ? ' le ' + frDate(p.maj_le) : '');
     if (p.source === 'ancien') return 'Valeur de l\'ancien réglage du serveur (pas encore enregistrée ici)';
@@ -299,6 +300,25 @@
     re.onclick = function () { if (!window.confirm('Revenir aux valeurs d\'origine pour « ' + base.libelle + ' » ?')) return; var l = []; if (a && a.source === 'parametres') l.push({ id: a.id, retablir: true }); if (r && r.source === 'parametres') l.push({ id: r.id, retablir: true }); sequence(l); };
     return c;
   }
+  // Personnes connues du portail, à cocher (au lieu de taper les adresses) : conducteurs, responsables, chefs de service…
+  var ROLES_SUGGERES = { conducteur: ['conducteur'], responsables: ['chef_service', 'interim_chef_service', 'cadre_sup', 'chef_division'], service: ['chef_service', 'interim_chef_service'] };
+  function emailsDe(t) { var o = {}; String(t || '').split('\n').forEach(function (l) { var m = /<([^>\s]+)>/.exec(l) || /([^\s<>]+@[^\s<>]+)/.exec(l); if (m) o[m[1].toLowerCase()] = 1; }); return o; }
+  function suggestions(r, inp, quoi) {
+    var roles = ROLES_SUGGERES[quoi] || [], liste = PERS.filter(function (x) { return roles.indexOf(x.role) >= 0; }); if (!liste.length) return;
+    var d = el('details'); d.open = true; d.style.cssText = 'margin:6px 0 2px;padding:6px 10px;border:1px solid var(--border);border-radius:10px';
+    var sm = el('summary', null, '👥 Personnes connues (' + liste.length + ') — cochez pour ajouter'); sm.style.cssText = 'cursor:pointer;font-weight:700;font-size:12.5px'; d.appendChild(sm);
+    var z = el('div'); z.style.cssText = 'max-height:210px;overflow:auto;margin-top:6px'; d.appendChild(z);
+    function etat() { var coche = emailsDe(inp.value); Array.prototype.forEach.call(z.querySelectorAll('input'), function (cb) { cb.checked = !!coche[cb.dataset.e]; }); }
+    liste.forEach(function (x) {
+      var l = el('label'); l.style.cssText = 'display:flex;gap:8px;align-items:center;padding:4px 0;font-size:13.5px;cursor:pointer'; var cb = el('input'); cb.type = 'checkbox'; cb.dataset.e = x.email.toLowerCase();
+      cb.onchange = function () {
+        var lignes = inp.value.split('\n').filter(function (t) { return t.trim() && t.toLowerCase().indexOf(x.email.toLowerCase()) < 0; });
+        if (cb.checked) lignes.push(x.nom + ' <' + x.email + '>'); inp.value = lignes.join('\n'); inp.dispatchEvent(new Event('input'));
+      };
+      l.appendChild(cb); var t = el('span', null, x.nom); l.appendChild(t); var sub = el('span', null, ' ' + [x.fonction, x.service].filter(Boolean).join(' · ')); sub.style.cssText = 'color:var(--text-muted);font-size:12px'; l.appendChild(sub); z.appendChild(l);
+    });
+    inp.addEventListener('input', etat); etat(); r.appendChild(d);
+  }
   function reglage(p) {
     var r = el('div', 'reglage'), id = 'r-' + p.id.replace(/\W/g, '_'); var l = el('label', 'l', p.libelle); l.setAttribute('for', id); r.appendChild(l); r.appendChild(el('p', 'aide', p.aide));
     var c = el('div', 'champ'), inp;
@@ -310,11 +330,12 @@
     var ok = el('button', 'btn-p', 'Enregistrer'); ok.type = 'button'; ok.disabled = true; c.appendChild(ok);
     var re = el('button', 'btn-s', 'Rétablir'); re.type = 'button'; re.title = 'Revenir à la valeur d\'origine'; re.hidden = p.source !== 'parametres'; c.appendChild(re);
     r.appendChild(c);
+    if (p.suggere && p.type === 'emails') suggestions(r, inp, p.suggere);
     var e = el('div', 'etat' + (p.source === 'parametres' ? ' mod' : ''), etatTexte(p)); r.appendChild(e);
     inp.addEventListener(p.type === 'choix' ? 'change' : 'input', function () { ok.disabled = inp.value.trim() === String(p.valeur).trim(); if (!ok.disabled) { e.className = 'etat'; e.textContent = 'Non enregistré'; } });
     function envoyer(corps) {
       ok.disabled = true; re.disabled = true;
-      return Api.call('parametres_enregistrer', corps).then(function (rep) { chargerListe(rep.parametres); toast('Réglage enregistré'); }).catch(function (x) {
+      return Api.call('parametres_enregistrer', corps).then(function (rep) { chargerListe(rep.parametres, rep.personnes); toast('Réglage enregistré'); }).catch(function (x) {
         if (x.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
         re.disabled = false; ok.disabled = false; e.className = 'etat err'; e.textContent = x.message;
       });
@@ -324,7 +345,7 @@
     return r;
   }
   $('filtre').addEventListener('input', dessiner);
-  Api.call('parametres_lire', {}).then(function (r) { chargerListe(r.parametres); }).catch(function (e) {
+  Api.call('parametres_lire', {}).then(function (r) { chargerListe(r.parametres, r.personnes); }).catch(function (e) {
     if (e.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
     document.querySelector('main').textContent = e.code === 'DROITS' ? 'Accès réservé au secrétariat.' : e.message;
   });

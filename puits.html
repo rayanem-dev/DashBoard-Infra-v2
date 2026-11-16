@@ -243,7 +243,7 @@
   var ptrs = {}, dep = null, pince = 0, dernierTap = 0;
   function nbPtrs() { return Object.keys(ptrs).length; }
   var appui = 0;
-  cv.addEventListener('pointerdown', function (e) { clearTimeout(appui); if (S.peut && navigator.onLine !== false && !S.placement && e.isPrimary !== false) { var ex = e.offsetX, ey = e.offsetY; appui = setTimeout(function () { if (dep && !dep.bouge && nbPtrs() === 1) { var c = depuisEcran(ex, ey); if (navigator.vibrate) navigator.vibrate(30); dep.bouge = true; ouvrirLieu(null, { lat: c.lat, lon: c.lon }); } }, 600); } cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = { x: e.offsetX, y: e.offsetY }; dep = { x: e.offsetX, y: e.offsetY, t: Date.now(), bouge: false }; if (nbPtrs() === 2) { var a = Object.keys(ptrs).map(function (k) { return ptrs[k]; }); pince = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); } });
+  cv.addEventListener('pointerdown', function (e) { clearTimeout(appui); if (S.peut && navigator.onLine !== false && !S.placement && e.isPrimary !== false) { var ex = e.offsetX, ey = e.offsetY; appui = setTimeout(function () { if (!S.choix && dep && !dep.bouge && nbPtrs() === 1) { var c = depuisEcran(ex, ey); if (navigator.vibrate) navigator.vibrate(30); dep.bouge = true; ouvrirLieu(null, { lat: c.lat, lon: c.lon }); } }, 600); } cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = { x: e.offsetX, y: e.offsetY }; dep = { x: e.offsetX, y: e.offsetY, t: Date.now(), bouge: false }; if (nbPtrs() === 2) { var a = Object.keys(ptrs).map(function (k) { return ptrs[k]; }); pince = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); } });
   cv.addEventListener('pointermove', function (e) {
     if (!ptrs[e.pointerId]) return; var avant = ptrs[e.pointerId]; ptrs[e.pointerId] = { x: e.offsetX, y: e.offsetY };
     if (nbPtrs() === 2) { var a = Object.keys(ptrs).map(function (k) { return ptrs[k]; }), d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); if (pince) zoomer(Math.log2(d / pince), (a[0].x + a[1].x) / 2, (a[0].y + a[1].y) / 2); pince = d; if (dep) dep.bouge = true; return; }
@@ -490,8 +490,10 @@
     fermer($('dlg-lieu')); S.placement = true; $('viseur').hidden = false; $('place').hidden = false; $('fiche').hidden = true; dessiner();
   };
   function finPlacement() { S.placement = false; $('viseur').hidden = true; $('place').hidden = true; }
-  $('place-non').onclick = function () { finPlacement(); ouvrirLieu(edition, null, true); };
-  $('place-ok').onclick = function () { var c = depuisEcran(W / 2, H / 2); finPlacement(); ouvrirLieu(edition, { lat: c.lat, lon: c.lon }, true); };
+  $('place-non').onclick = function () { if (S.choix) { location.href = 'signalements.html?retour=1'; return; } finPlacement(); ouvrirLieu(edition, null, true); };
+  $('place-ok').onclick = function () { var c = depuisEcran(W / 2, H / 2); if (S.choix) { location.href = 'signalements.html?retour=1&lat=' + c.lat.toFixed(6) + '&lon=' + c.lon.toFixed(6); return; } finPlacement(); ouvrirLieu(edition, { lat: c.lat, lon: c.lon }, true); };
+  // ?choisir=1 : ouvert depuis « Signaler route barrée » pour choisir le point du problème sur la carte (la croix rouge), puis retour au formulaire
+  if (/[?&]choisir=1/.test(location.search)) { S.choix = true; S.placement = true; $('viseur').hidden = false; $('place').hidden = false; $('place-t').textContent = 'Déplacez la carte : la croix rouge doit être sur le lieu à signaler, puis « Valider ici ».'; $('place-ok').textContent = '✓ Valider ici'; }
   $('l-ok').onclick = function () {
     var nom = $('l-nom').value.trim(), c = lireCoord($('l-coord').value);
     if (!nom) { $('l-err').textContent = 'Le nom est obligatoire.'; return; }

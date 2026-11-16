@@ -8,6 +8,8 @@
   if (window.MenuLateral || !window.Api || !Api.token || !Api.token()) return;
   var page = (location.pathname.split('/').pop() || '').toLowerCase();
   if (/^(connexion|index|app|requete)\.html$/.test(page)) return;
+  var VEDETTES = {};   // pages mises en avant aujourd'hui (vedettes.json), chargées une fois ; le menu les marque d'une étoile
+  try { fetch('vedettes.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { var d = new Date(), iso = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); (l || []).forEach(function (x) { if (x.debut <= iso && iso <= x.fin) VEDETTES[String(x.url).toLowerCase()] = 1; }); if (Object.keys(VEDETTES).length && typeof champ !== 'undefined' && champ && typeof dessiner === 'function') dessiner(champ.value); }).catch(function () { /* rien */ }); } catch (e) { /* rien */ }
   var CLE_ETAT = 'ml_etat', CLE_MENU = 'ml_menu2', TTL = 600000, LARGE = 1000, WO = 260, WR = 60;
   var LARGES = /^(portail|planning|simulation|organigramme|dossiers_cpm|pointage|habilitations|simulation-v1)\.html$/;
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
@@ -82,6 +84,7 @@
       apps.forEach(function (a) {
         var href = lienApp(a), x = el('a', ici(a) ? 'ici' : ''); x.href = href; x.appendChild(ico(el('span', 'ml-ico'), a.emoji)); x.appendChild(el('span', 'ml-nom', a.titre || '')); x.title = a.titre || '';
         if (ici(a)) x.setAttribute('aria-current', 'page');
+        if (VEDETTES[fichier(a.url)]) { var nv = document.createElement('span'); nv.textContent = '★'; nv.title = 'À la une'; nv.style.cssText = 'margin-inline-start:auto;color:#E85D04;font-size:13px'; x.appendChild(nv); }   // « À la une » (vedettes.json)
         x.addEventListener('click', function () { compterUsage(a.titre); }); x.addEventListener('auxclick', function () { compterUsage(a.titre); });   // alimente « Mes applications » de l'accueil
         if (etranger(href)) { x.target = '_blank'; x.rel = 'noopener'; }
         l.appendChild(x);

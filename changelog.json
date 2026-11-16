@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-17-432",
+    "date": "2026-11-17",
+    "title": "Version 6.108.0 — « Signaler route barrée » : choix des personnes, carte, natures de travaux, À la une",
+    "changes": [
+      "L'application « Signalements terrain » s'appelle maintenant « Signaler route barrée » (carte du menu, page, module, réglages, e-mails d'alerte). Les mots « signalement » sont remplacés par « alerte » dans l'interface.",
+      "Paramètres : pour les conducteurs du contrat de dessablage, l'adresse d'urgence et le service, la liste des personnes connues du portail s'affiche avec des cases à cocher (conducteurs, chefs de service, chef de division…) : plus besoin de taper les adresses.",
+      "Dans le formulaire d'alerte, « 🎯 Choisir sur la carte » ouvre la carte des puits avec une croix rouge à placer sur le lieu, puis revient au formulaire avec ce qui était déjà saisi (pour les comptes qui ont accès à la carte).",
+      "« Autres travaux » propose maintenant des natures prêtes à choisir : piste à niveler ou recharger, plateforme à réparer, drainage ou fossé, clôture ou barrière, éclairage ou électricité, eau ou plomberie, bâtiment ou peinture, signalisation, nettoyage. La liste se complète dans Paramètres (génie civil, etc.) sans modifier le code.",
+      "« À la une » : la Carte des puits et « Signaler route barrée » sont mises en avant sur l'accueil (bandeau NOUVEAU) et marquées d'une étoile dans le menu latéral du 16 au 29 novembre, pour tous les comptes qui y ont accès. Le réglage est dans vedettes.json (titre, texte, dates)."
+    ]
+  },
+  {
     "id": "2026-11-16-431",
     "date": "2026-11-16",
     "title": "Version 6.107.0 — Nouvelle application « Signalements terrain » (dessablage, route barrée)",
