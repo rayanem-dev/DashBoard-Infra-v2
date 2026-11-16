@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-16-426",
+    "date": "2026-11-16",
+    "title": "Version 6.104.0 — Carte des puits : téléchargement automatique en arrière-plan",
+    "changes": [
+      "À chaque ouverture de la carte (en ligne), ce qui manque du relief de la zone est téléchargé automatiquement sur l'appareil, en arrière-plan : la carte reste utilisable, une progression s'affiche en haut (« ⬇ 45 % »), les images de l'écran passent avant le téléchargement de fond.",
+      "Reprise automatique : si la page est fermée ou si le réseau coupe, le téléchargement repart là où il s'était arrêté (à la prochaine ouverture ou dès le retour du réseau). Quand de nouveaux puits agrandissent la zone, les images manquantes sont ajoutées toutes seules.",
+      "Rien n'est retéléchargé quand la carte est déjà complète sur l'appareil. Le mode « économiseur de données » du téléphone est respecté (pas de téléchargement automatique). Le détail autour des puits (zoom 14) reste à lancer à la main."
+    ]
+  },
+  {
     "id": "2026-11-16-425",
     "date": "2026-11-16",
     "title": "Version 6.103.0 — Carte des puits : télécharger toute la carte sur le téléphone pour le terrain",
