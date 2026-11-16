@@ -46,7 +46,7 @@
   <input type="search" id="q" placeholder="Nom du puits (ex. RN33)…" autocomplete="off" enterkeyhint="search">
   <select id="fam" aria-label="Famille"><option value="">Toutes</option></select>
   <button class="btn" id="b-gps" type="button">📍 Ma position</button>
-  <button class="btn" id="b-fond" type="button" aria-pressed="false">🗺️ Fond</button>
+  <button class="btn" id="b-fond" type="button" aria-pressed="false">⛰️ Relief</button>
   <button class="btn" id="b-tout" type="button">⤢ Tout voir</button>
   <button class="btn" id="b-plus" type="button">⋯</button>
   <div id="resultats" hidden></div>
@@ -54,15 +54,16 @@
 <div id="bandeau" hidden></div>
 <div id="zone"><canvas id="cv"></canvas>
   <div class="zoom"><button class="btn" id="z-p" type="button" aria-label="Zoom avant">＋</button><button class="btn" id="z-m" type="button" aria-label="Zoom arrière">−</button></div>
-  <div id="attrib" hidden>© contributeurs OpenStreetMap</div>
+  <div id="attrib" hidden>Données © contributeurs OpenStreetMap, SRTM · Rendu © OpenTopoMap (CC-BY-SA)</div>
   <div id="fiche" hidden></div>
 </div>
 
 <dialog id="dlg-plus"><div class="c"><h2>Options</h2>
-  <p><button class="btn" id="o-zone" type="button">💾 Mémoriser la zone affichée (fond de carte)</button></p><p class="gris" id="o-etat"></p>
+  <p><button class="btn" id="o-zone" type="button">💾 Mémoriser la zone affichée sur cet appareil</button></p><p class="gris" id="o-etat"></p>
+  <p><button class="btn" id="o-prep" type="button" hidden>☁️ Préparer le relief de toute la zone pour tous (Drive)</button></p>
   <p><button class="btn" id="o-import" type="button" hidden>⬆ Importer des puits (KMZ, KML, CSV)</button></p>
   <p><button class="btn" id="o-oubli" type="button">🗑 Oublier les données de cet appareil</button></p>
-  <p class="gris">Les positions sont gardées sur cet appareil après une connexion réussie, pour travailler sans réseau. « Oublier » les efface (et le fond de carte mémorisé).</p></div>
+  <p class="gris">Les positions et le relief déjà vus sont gardés sur cet appareil pour travailler sans réseau. Le relief est téléchargé une seule fois pour tout le monde (cache commun sur Drive). « Oublier » efface les données de cet appareil.</p></div>
   <div class="pied"><button class="btn" data-ferme type="button">Fermer</button></div></dialog>
 <dialog id="dlg-imp"><div class="c"><h2>Importer des puits</h2><p class="gris">Fichier KMZ, KML ou CSV (nom, latitude, longitude, X, Y, profondeur). Rien n'est enregistré avant votre confirmation ; les puits absents du fichier sont conservés.</p>
   <input type="file" id="i-fic" accept=".kmz,.kml,.csv,.txt"><div id="i-res" style="margin-top:10px"></div>
@@ -94,14 +95,14 @@
     var fams = {}; S.puits.forEach(function (p) { fams[p.famille] = (fams[p.famille] || 0) + 1; });
     var sel = $('fam'), cur = sel.value; sel.textContent = ''; sel.appendChild(new Option('Toutes (' + S.puits.length + ')', ''));
     Object.keys(fams).sort().forEach(function (f) { sel.appendChild(new Option(f + ' (' + fams[f] + ')', f)); }); sel.value = fams[cur] ? cur : '';
-    $('o-import').hidden = !(S.peut && enLigne);
+    $('o-import').hidden = !(S.peut && enLigne); $('o-prep').hidden = !(S.peut && enLigne);
     var age = (Date.now() - S.t) / 864e5;
     bandeau(!enLigne ? 'Hors réseau : positions enregistrées le ' + dateFr(S.t) + (age > 30 ? ' — plus de 30 jours, reconnectez-vous dès que possible pour les actualiser.' : '.') : '');
     if (!S.pret) { S.pret = true; toutVoir(); } else dessiner();
   }
   function charger() {
     return Api.call('puits_liste').then(function (r) {
-      var d = { puits: r.puits, peut_importer: r.peut_importer, maj: r.maj, t: Date.now() }; stock(CLE, d); appliquer(d, true);
+      if (r.attribution) { ATTRIB = r.attribution; $('attrib').textContent = ATTRIB; } var d = { puits: r.puits, peut_importer: r.peut_importer, maj: r.maj, t: Date.now() }; stock(CLE, d); appliquer(d, true);
     }).catch(function (e) {
       if (e && e.code === 'SESSION' && navigator.onLine !== false) { location.replace('connexion.html'); return; }
       if (e && e.code === 'DROITS') { bandeau('Vous n\'avez pas accès à la carte des puits avec ce compte.'); return; }
@@ -118,10 +119,45 @@
   function depuisEcran(x, y) { var c = G.versPixels(S.vue.lat, S.vue.lon, S.vue.z); return G.depuisPixels(c.x + x - W / 2, c.y + y - H / 2, S.vue.z); }
   function visibles() { var q = norm($('q').value), f = $('fam').value; return S.puits.filter(function (p) { return (!f || p.famille === f) && (!q || norm(p.uwi).indexOf(q) >= 0); }); }
   function dessiner() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; rendre(); }); }
+  // Fond de carte (relief) : les tuiles viennent de la passerelle, qui les range UNE fois dans le cache commun sur Drive pour tous les utilisateurs ;
+  // chaque appareil en garde aussi une copie (Cache API) pour le terrain sans réseau.
+  var CACHE_TUILES = 'puits-tuiles-v2', file = [], enCours = 0, minuteur = 0, ATTRIB = 'Données © contributeurs OpenStreetMap, SRTM · Rendu © OpenTopoMap (CC-BY-SA)';
+  function urlCache(k) { return 'https://tuiles.invalid/' + k; }
+  function depuisAppareil(k) { if (!window.caches) return Promise.resolve(null); return caches.open(CACHE_TUILES).then(function (c) { return c.match(urlCache(k)); }).then(function (r) { return r ? r.blob() : null; }).catch(function () { return null; }); }
+  function versAppareil(k, blob) { if (window.caches) caches.open(CACHE_TUILES).then(function (c) { return c.put(urlCache(k), new Response(blob, { headers: { 'Content-Type': 'image/png' } })); }).catch(function () { /* stockage plein */ }); }
+  function octets(b64) { var bin = atob(b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i += 1) u[i] = bin.charCodeAt(i); return u; }
+  function afficher(t, blob) {
+    var fin = function (img) { t.img = img; t.ok = true; dessiner(); };
+    if (window.createImageBitmap) createImageBitmap(blob).then(fin, function () { t.err = true; });
+    else { var im = new Image(); im.onload = function () { fin(im); }; im.onerror = function () { t.err = true; }; im.src = URL.createObjectURL(blob); }
+  }
   function tuile(z, x, y) {
-    var k = z + '/' + x + '/' + y, t = S.tuiles[k];
-    if (!t) { t = S.tuiles[k] = { img: new Image(), ok: false }; t.img.onload = function () { t.ok = true; dessiner(); }; t.img.onerror = function () { t.err = true; }; t.img.src = 'https://tile.openstreetmap.org/' + k + '.png'; }
+    var k = z + '/' + x + '/' + y, t = S.tuiles[k]; if (t) return t;
+    t = S.tuiles[k] = { ok: false, img: null }; t.k = k;
+    depuisAppareil(k).then(function (blob) {
+      if (blob) { afficher(t, blob); return; }
+      if (navigator.onLine === false) { t.err = true; return; }
+      file.push({ z: z, x: x, y: y, k: k, t: t }); planifier();
+    });
     return t;
+  }
+  function planifier() { if (!minuteur) minuteur = setTimeout(function () { minuteur = 0; pomper(); }, 60); }
+  /** demande un lot de tuiles à la passerelle (preparer = remplir le cache commun sans rapatrier les images) ; résout la liste des résultats */
+  function recupererLot(lot, preparer) {
+    return Api.call('puits_tuiles', { tuiles: lot.map(function (t) { return { z: t.z, x: t.x, y: t.y }; }), preparer: !!preparer }).then(function (r) { if (r.attribution) ATTRIB = r.attribution; $('attrib').textContent = ATTRIB; return r.tuiles || []; });
+  }
+  function pomper() {
+    while (enCours < 3 && file.length) {
+      var lot = [], voulues = S.voulues || {};
+      while (file.length && lot.length < 12) { var e = file.pop(); if (voulues[e.k]) lot.push(e); else delete S.tuiles[e.k]; }   // la dernière vue d'abord ; ce qui est sorti de l'écran est abandonné
+      if (!lot.length) break;
+      enCours += 1;
+      (function (lot) {
+        recupererLot(lot, false).then(function (res) {
+          res.forEach(function (r) { var e = lot.filter(function (x) { return x.z === r.z && x.x === r.x && x.y === r.y; })[0]; if (!e) return; if (!r.d) { e.t.err = true; return; } var blob = new Blob([octets(r.d)], { type: 'image/png' }); versAppareil(e.k, blob); afficher(e.t, blob); });
+        }).catch(function (err) { lot.forEach(function (e) { delete S.tuiles[e.k]; }); if (err && err.code === 'SESSION') location.replace('connexion.html'); }).then(function () { enCours -= 1; pomper(); });
+      })(lot);
+    }
   }
   function mpp() { var z = S.vue.z; return G.distance(S.vue.lat, S.vue.lon, S.vue.lat, S.vue.lon + 0.001) / (G.versPixels(S.vue.lat, S.vue.lon + 0.001, z).x - G.versPixels(S.vue.lat, S.vue.lon, z).x); }
   function rendre() {
@@ -129,6 +165,8 @@
     var z = S.vue.z, c = G.versPixels(S.vue.lat, S.vue.lon, z), x0 = c.x - W / 2, y0 = c.y - H / 2;
     if (S.fond) {   // fond de carte : tuiles du zoom entier le plus proche, mises à l'échelle (hors réseau : celles déjà gardées sur l'appareil)
       var zi = Math.max(0, Math.min(17, Math.round(z))), k = Math.pow(2, z - zi), tx0 = x0 / k, ty0 = y0 / k;
+      S.voulues = {}; var cles = Object.keys(S.tuiles); if (cles.length > 500) cles.slice(0, 250).forEach(function (kk) { if (S.tuiles[kk].ok || S.tuiles[kk].err) delete S.tuiles[kk]; });
+      G.tuiles(zi, tx0, ty0, tx0 + W / k, ty0 + H / k).forEach(function (t) { S.voulues[t.z + '/' + t.x + '/' + t.y] = 1; });
       G.tuiles(zi, tx0, ty0, tx0 + W / k, ty0 + H / k).forEach(function (t) { var im = tuile(t.z, t.x, t.y); if (im.ok) ctx.drawImage(im.img, t.px * k - x0, t.py * k - y0, 256 * k + .5, 256 * k + .5); });
     }
     // quadrillage de repère (utile sans fond de carte) : degrés ou fractions de degré selon le zoom
@@ -237,17 +275,39 @@
   function fond(v) { S.fond = v; stock(CLE_FOND, v); var b = $('b-fond'); b.classList.toggle('on', v); b.setAttribute('aria-pressed', String(v)); dessiner(); }
   $('b-fond').onclick = function () { fond(!S.fond); };
   $('b-plus').onclick = function () { $('o-etat').textContent = ''; ouvrir($('dlg-plus')); };
+  function tuilesDe(zs, h, bbox) {   // tuiles couvrant l'écran (ou une boîte géographique) aux niveaux de zoom donnés
+    var liste = [];
+    zs.forEach(function (z) {
+      if (bbox) { var a = G.versPixels(bbox.maxLat, bbox.minLon, z), c = G.versPixels(bbox.minLat, bbox.maxLon, z); G.tuiles(z, a.x, a.y, c.x, c.y).forEach(function (t) { liste.push(t); }); }
+      else { var cz = G.versPixels(S.vue.lat, S.vue.lon, z), k = Math.pow(2, z - S.vue.z); G.tuiles(z, cz.x - W / 2 * k, cz.y - H / 2 * k, cz.x + W / 2 * k, cz.y + H / 2 * k).forEach(function (t) { liste.push(t); }); }
+    });
+    return liste;
+  }
+  function boucle(liste, taille, preparer, o, libelle) {   // lots successifs vers la passerelle, avec compte rendu
+    var total = liste.length, fait = 0, echec = 0;
+    return new Promise(function (ok) {
+      (function suite() {
+        var lot = liste.splice(0, taille); if (!lot.length) { ok({ fait: fait, echec: echec, total: total }); return; }
+        recupererLot(lot, preparer).then(function (res) { res.forEach(function (r) { if (r.etat === 'echec') echec += 1; else { fait += 1; if (r.d) versAppareil(r.z + '/' + r.x + '/' + r.y, new Blob([octets(r.d)], { type: 'image/png' })); } }); })
+          .catch(function () { echec += lot.length; }).then(function () { o.textContent = libelle + ' ' + (fait + echec) + ' / ' + total; setTimeout(suite, preparer ? 400 : 150); });
+      })();
+    });
+  }
   $('o-zone').onclick = function () {
-    if (navigator.onLine === false) { $('o-etat').textContent = 'Il faut du réseau pour mémoriser le fond de carte.'; return; }
-    fond(true); var zi = Math.max(3, Math.min(15, Math.round(S.vue.z))), liste = [], zs = [zi, Math.min(16, zi + 1)];
-    zs.forEach(function (z) { var cz = G.versPixels(S.vue.lat, S.vue.lon, z), h = Math.pow(2, z - S.vue.z); G.tuiles(z, cz.x - W / 2 * h, cz.y - H / 2 * h, cz.x + W / 2 * h, cz.y + H / 2 * h).forEach(function (t) { liste.push(t); }); });
-    liste = liste.slice(0, 160); var fait = 0, err = 0, o = $('o-etat'); o.textContent = 'Mémorisation de ' + liste.length + ' tuiles…';
-    (function suite() { var lot = liste.splice(0, 4); if (!lot.length) { o.textContent = '✓ Zone mémorisée (' + fait + ' tuiles' + (err ? ', ' + err + ' échec(s)' : '') + ').'; return; }
-      Promise.all(lot.map(function (t) { return fetch('https://tile.openstreetmap.org/' + t.z + '/' + t.x + '/' + t.y + '.png', { mode: 'cors', credentials: 'omit' }).then(function (r) { r.ok ? fait++ : err++; }, function () { err++; }); })).then(function () { o.textContent = 'Mémorisation… ' + fait + ' tuiles'; setTimeout(suite, 300); }); })();
+    var o = $('o-etat'); if (navigator.onLine === false) { o.textContent = 'Il faut du réseau pour mémoriser le fond de carte.'; return; }
+    fond(true); var zi = Math.max(3, Math.min(16, Math.round(S.vue.z))), liste = tuilesDe([zi, Math.min(17, zi + 1)]).slice(0, 200);
+    o.textContent = 'Mémorisation de ' + liste.length + ' tuiles…'; boucle(liste, 12, false, o, 'Mémorisation').then(function (r) { o.textContent = '✓ Zone mémorisée sur cet appareil (' + r.fait + ' tuiles' + (r.echec ? ', ' + r.echec + ' échec(s)' : '') + ').'; dessiner(); });
+  };
+  $('o-prep').onclick = function () {
+    var o = $('o-etat'); if (navigator.onLine === false) { o.textContent = 'Il faut du réseau.'; return; } if (!S.puits.length) { o.textContent = 'Aucun puits chargé.'; return; }
+    var b = G.boite(S.puits); b.minLat -= 0.06; b.maxLat += 0.06; b.minLon -= 0.06; b.maxLon += 0.06;
+    var liste = tuilesDe([7, 8, 9, 10, 11, 12, 13], null, b);
+    if (!confirm('Préparer le fond de carte de toute la zone des puits pour TOUS les utilisateurs (' + liste.length + ' tuiles, niveaux 7 à 13, rangées dans Drive) ? Cela prend quelques minutes ; vous pouvez relancer si elle est interrompue.')) return;
+    $('o-prep').disabled = true; o.textContent = 'Préparation…'; boucle(liste, 40, true, o, 'Préparation du cache commun').then(function (r) { $('o-prep').disabled = false; o.textContent = '✓ Cache commun prêt (' + r.fait + ' tuiles' + (r.echec ? ', ' + r.echec + ' échec(s) : relancez' : '') + ').'; });
   };
   $('o-oubli').onclick = function () {
     if (!confirm('Effacer les positions et le fond de carte mémorisés sur cet appareil ?')) return;
-    stock(CLE, null); if (window.caches) { caches.delete('puits-tuiles-v1'); } S.tuiles = {}; S.puits = []; S.sel = null; $('fiche').hidden = true; $('o-etat').textContent = '✓ Données effacées de cet appareil.'; dessiner();
+    stock(CLE, null); if (window.caches) { caches.delete(CACHE_TUILES); } S.tuiles = {}; S.puits = []; S.sel = null; $('fiche').hidden = true; $('o-etat').textContent = '✓ Données effacées de cet appareil.'; dessiner();
   };
 
   // ---------- import (secrétariat, chefs de service : niveau « saisie ») ----------
@@ -271,7 +331,7 @@
   };
 
   window.addEventListener('resize', taille); window.addEventListener('orientationchange', function () { setTimeout(taille, 200); });
-  if (stock(CLE_FOND)) fond(true);
+  var pf = stock(CLE_FOND); fond(pf === null || pf === undefined ? true : !!pf);   // relief par défaut
   taille();
   var cache = stock(CLE); if (cache && cache.puits && cache.puits.length) appliquer(cache, navigator.onLine !== false);   // affichage immédiat avec les données de l'appareil, puis actualisation
   charger();
