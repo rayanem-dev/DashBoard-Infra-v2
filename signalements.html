@@ -52,7 +52,8 @@
   <label class="f" for="n-desc">Description <span id="n-obl" class="gris"></span></label><textarea id="n-desc" rows="3" maxlength="500" placeholder="Ex. 1 m de sable sur la plateforme, accès impossible pour les camions."></textarea>
   <p class="gris" style="margin-top:10px">Le service et les responsables du dessablage sont prévenus par e-mail. Sans réseau, l'alerte part dès que la connexion revient.</p></div>
   <div class="pied"><span class="err" id="n-err"></span><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="n-ok" type="button">Envoyer l'alerte</button></div></dialog>
-<dialog id="dlg-statut"><div class="c"><h2 id="s-titre"></h2><label class="f" for="s-note" style="margin-top:0">Note (facultative)</label><textarea id="s-note" rows="3" maxlength="300" placeholder="Ex. Engin en route demain matin."></textarea></div>
+<dialog id="dlg-statut"><div class="c"><h2 id="s-titre"></h2><label class="f" for="s-note" style="margin-top:0">Note (facultative)</label><textarea id="s-note" rows="3" maxlength="300" placeholder="Ex. Engin en route demain matin."></textarea>
+  <label id="s-rapport" hidden style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:14px"><input type="checkbox" id="s-rapport-cb" checked> <span>Proposer d'ajouter ce travail à mon <b>rapport journalier</b> (je vérifie avant d'enregistrer le rapport)</span></label></div>
   <div class="pied"><span class="err" id="s-err"></span><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="s-ok" type="button">Valider</button></div></dialog>
 
 <script>
@@ -102,7 +103,7 @@
       if (s.lat != null) { var e1 = el('a', 'btn', '🗺️ Carte'); e1.href = 'puits.html?voir=' + s.lat + ',' + s.lon; a.appendChild(e1); lien('🧭 Itinéraire', 'https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lon); }
       if (S.peut && !S.hors) {
         function act(t, st, cl) { var b = el('button', 'btn' + (cl ? ' ' + cl : ''), t); b.type = 'button'; b.onclick = function () { statut(s, st); }; a.appendChild(b); }
-        if (s.statut === 'ouvert') act('✋ Prise en charge', 'pris'); if (s.statut === 'ouvert' || s.statut === 'pris') { act('✅ Réalisé', 'realise', 'p'); act('✖ Annuler', 'annule'); } if (s.statut === 'realise' || s.statut === 'annule') act('↩ Rouvrir', 'ouvert');
+        if (s.statut === 'ouvert') act('✋ Prise en charge', 'pris'); if (s.statut === 'ouvert' || s.statut === 'pris') { act('✅ Réalisée', 'realise', 'p'); act('✖ Annuler', 'annule'); } if (s.statut === 'realise' || s.statut === 'annule') act('↩ Rouvrir', 'ouvert');
         if (S.presta && s.categorie === 'dessablage' && (s.statut === 'ouvert' || s.statut === 'pris')) { var b2 = el('button', 'btn', '📨 Transmettre' + (S.prestaNom ? ' à ' + S.prestaNom : ' au prestataire')); b2.type = 'button'; b2.onclick = function () { transmettre(s); }; a.appendChild(b2); }
       }
       c.appendChild(a); z.appendChild(c);
@@ -110,9 +111,16 @@
   }
   function statut(s, vers) {
     var lib = { pris: 'Prise en charge', realise: 'Marquer comme réalisée', annule: 'Annuler cette alerte', ouvert: 'Rouvrir' }[vers];
-    $('s-titre').textContent = lib + ' — ' + s.titre; $('s-note').value = ''; $('s-err').textContent = '';
-    $('s-ok').onclick = function () { $('s-ok').disabled = true; Api.call('signal_statut', { id: s.id, statut: vers, note: $('s-note').value }).then(function () { fermer($('dlg-statut')); return charger(); }).catch(function (e) { $('s-err').textContent = e.message; }).then(function () { $('s-ok').disabled = false; }); };
+    $('s-titre').textContent = lib + ' — ' + s.titre; $('s-note').value = ''; $('s-err').textContent = ''; $('s-rapport').hidden = vers !== 'realise'; $('s-rapport').style.display = vers === 'realise' ? 'flex' : 'none';
+    $('s-ok').onclick = function () { $('s-ok').disabled = true; Api.call('signal_statut', { id: s.id, statut: vers, note: $('s-note').value }).then(function () { var ajoute = vers === 'realise' && $('s-rapport-cb').checked; if (ajoute) pourRapport(s, $('s-note').value); fermer($('dlg-statut')); if (ajoute) avis('✅ Marquée réalisée. Le travail est prêt à être ajouté à votre rapport journalier : ouvrez « Saisir mon rapport » (il vous le propose).', true); return charger(); }).catch(function (e) { $('s-err').textContent = e.message; }).then(function () { $('s-ok').disabled = false; }); };
     ouvrir($('dlg-statut'));
+  }
+  // Texte du rapport journalier : « Route dégagée — piste nord », « Dessablage mécanique réalisé — RN33 », « Travaux réalisés : plateforme à réparer »
+  function pourRapport(s, note) {
+    var lieu = s.puits || s.lieu || 'Lieu signalé', quoi = s.categorie === 'route' ? 'Route dégagée' : s.categorie === 'dessablage' ? s.titre.replace(/ — .*$/, '') + ' réalisé' : s.titre.replace(/ — .*$/, '').replace(/^Travaux : /, 'Travaux réalisés : '), n = (note || '').trim();
+    var l; try { l = JSON.parse(localStorage.getItem('infra_v2_rapport_ajouts') || '[]') || []; } catch (e) { l = []; }
+    l = l.filter(function (x) { return x.id !== s.id; }); l.push({ id: s.id, zone: s.puits || s.lieu || '', texte: quoi + (s.puits || s.lieu ? '' : ' — ' + lieu) + (n ? ' (' + n + ')' : ''), date: new Date().toISOString().slice(0, 10) });
+    try { localStorage.setItem('infra_v2_rapport_ajouts', JSON.stringify(l)); } catch (e) { /* stockage indisponible */ }
   }
   function transmettre(s) {
     if (!confirm('Envoyer cette alerte au prestataire de dessablage' + (S.prestaNom ? ' (' + S.prestaNom + ')' : '') + ' ? Le service est mis en copie.')) return;

@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-17-433",
+    "date": "2026-11-17",
+    "title": "Version 6.109.0 — Signaler route barrée : « Réalisée » alimente le rapport journalier",
+    "changes": [
+      "Quand un responsable marque une alerte « Réalisée » (route dégagée, dessablage terminé, travaux faits), une case cochée par défaut propose d'ajouter ce travail à son rapport journalier : « Route dégagée — piste nord km 12 », « Dessablage mécanique réalisé — RN33 (note) », « Travaux réalisés : plateforme à réparer ».",
+      "Dans « Saisir mon rapport », un encadré vert liste ces travaux terminés ; « Ajouter à ce rapport » les place comme lignes du rapport choisi (le chantier se choisit avant), à vérifier avant d'enregistrer. Rien n'est écrit tout seul dans le rapport. « + Ligne » permet d'ajouter ensuite les autres travaux qui n'avaient pas été signalés."
+    ]
+  },
+  {
     "id": "2026-11-17-432",
     "date": "2026-11-17",
     "title": "Version 6.108.0 — « Signaler route barrée » : choix des personnes, carte, natures de travaux, À la une",

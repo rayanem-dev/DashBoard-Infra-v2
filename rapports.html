@@ -114,7 +114,10 @@
       <div class="champ"><label>Avancement par ouvrage / zone</label>
         <div id="lignes"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn-s" type="button" id="b-ligne">+ Ligne</button><button class="btn-s" type="button" id="b-reprendre" title="Reprend aussi le texte du dernier rapport de ce chantier">↻ Reprendre le dernier rapport</button></div>
-        <p class="aide" id="reprise" style="margin-top:6px"></p></div>
+        <p class="aide" id="reprise" style="margin-top:6px"></p>
+        <div id="ajouts-sig" hidden style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#ECFDF5;border:1px solid #6EE7B7;font-size:13.5px"><b id="ajouts-t"></b><div id="ajouts-l" style="margin:6px 0;color:#065F46"></div>
+          <button class="btn-p" type="button" id="ajouts-ok">Ajouter à ce rapport</button> <button class="btn-s" type="button" id="ajouts-non">Ignorer</button>
+          <div class="aide" style="margin-top:6px">Vous pourrez ensuite ajouter vos autres travaux (non signalés) avec « + Ligne ».</div></div></div>
       <div class="champ"><label for="travaux">Travaux réalisés — texte libre <span class="aide" style="font-weight:400">(facultatif si des lignes sont remplies)</span></label><textarea id="travaux" maxlength="1000"></textarea><p class="aide" style="margin:3px 0 0">Le texte ne passe pas à la ligne tout seul : appuyez sur Entrée pour aller à la ligne et commencez par <b>*</b> chaque nouveau point (ex. <i>* Décoffrage du regard</i>).</p></div>
       <div class="champ"><label for="difficultes">Difficultés / incidents — facultatif</label><textarea id="difficultes" maxlength="1000"></textarea></div>
       <div class="champ"><label for="commentaire">Commentaire du jour — facultatif</label><textarea id="commentaire" maxlength="1000"></textarea></div>
@@ -253,6 +256,20 @@
     dessinerLignes(); majCompteurs();
     $('bandeau-br').hidden = true; if (!r) proposerBrouillon();
   }
+  // Travaux terminés marqués « Réalisé » dans « Signaler route barrée » : proposés ici, à vérifier avant d'être ajoutés à CE rapport (le chantier se choisit ci-dessus)
+  var CLE_AJOUTS = 'infra_v2_rapport_ajouts';
+  function ajoutsEnAttente() { try { return JSON.parse(localStorage.getItem(CLE_AJOUTS) || '[]') || []; } catch (e) { return []; } }
+  function majAjoutsSig() {
+    var l = ajoutsEnAttente(), z = $('ajouts-sig'); z.hidden = !l.length; if (!l.length) return;
+    $('ajouts-t').textContent = '✅ ' + l.length + ' travail(aux) terminé(s) depuis « Signaler route barrée »';
+    var d = $('ajouts-l'); d.textContent = ''; l.forEach(function (x) { var p = el('div', null, '• ' + (x.zone ? x.zone + ' : ' : '') + x.texte); d.appendChild(p); });
+  }
+  $('ajouts-ok').addEventListener('click', function () {
+    var l = ajoutsEnAttente(); l.forEach(function (x) { lignes.push({ zone: x.zone || '', texte: x.texte, avancement: '', prev: '' }); });
+    try { localStorage.removeItem(CLE_AJOUTS); } catch (e) { /* ignoré */ } dessinerLignes(); majCompteurs(); majAjoutsSig(); toast(l.length + ' ligne(s) ajoutée(s) : vérifiez, complétez, puis enregistrez le rapport');
+  });
+  $('ajouts-non').addEventListener('click', function () { try { localStorage.removeItem(CLE_AJOUTS); } catch (e) { /* ignoré */ } majAjoutsSig(); });
+  majAjoutsSig();
   $('b-ligne').addEventListener('click', function () { lignes.push({ zone: '', texte: '', avancement: '', prev: '' }); dessinerLignes(); });
   $('b-reprendre').addEventListener('click', function () {
     var p = dernierRapport($('chantier').value, $('date').value); if (!p) { toast('Aucun rapport précédent pour ce chantier', true); return; }
