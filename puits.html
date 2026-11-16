@@ -346,16 +346,19 @@
   }
   // ---------- carte pour le terrain : tout le relief de la zone sur l'appareil ----------
   function boiteZone() { var b = G.boite(S.puits); b.minLat -= 0.06; b.maxLat += 0.06; b.minLon -= 0.06; b.maxLon += 0.06; return b; }
-  var ZOOMS_ZONE = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13], ZOOMS_DETAIL = [14, 15, 16, 17];   // 17 = niveau le plus fin du relief
-  function tuilesZone() { return S.puits.length ? tuilesDe(ZOOMS_ZONE, null, boiteZone()) : []; }
-  function tuilesDetail() {   // zooms 14 à 17 : la tuile de chaque puits et ses 8 voisines (de 6 km à 800 m de côté selon le zoom), niveau par niveau
+  // Ce qui est gardé sur l'appareil : (1) zooms 4 à 12 sur tout le rectangle qui contient les puits (vue d'ensemble, pistes entre les champs), léger ;
+  // (2) zooms 13 à 17 UNIQUEMENT autour des puits (aucune image pour le désert vide entre les champs).
+  var ZOOMS_ZONE = [4, 5, 6, 7, 8, 9, 10, 11, 12], ZOOMS_DETAIL = [14, 15, 16, 17];
+  function autourDesPuits(zooms, rayon) {   // la tuile de chaque puits et ses voisines (rayon 1 = 3 x 3), sans doublon, niveau par niveau
     var out = [];
-    ZOOMS_DETAIL.forEach(function (z) { var vus = {};
+    zooms.forEach(function (z) { var vus = {};
       S.puits.forEach(function (p) { var c = G.versPixels(p.lat, p.lon, z), tx = Math.floor(c.x / 256), ty = Math.floor(c.y / 256);
-        for (var dx = -1; dx <= 1; dx += 1) for (var dy = -1; dy <= 1; dy += 1) { var k = (tx + dx) + '/' + (ty + dy); if (!vus[k]) { vus[k] = 1; out.push({ z: z, x: tx + dx, y: ty + dy }); } } });
+        for (var dx = -rayon; dx <= rayon; dx += 1) for (var dy = -rayon; dy <= rayon; dy += 1) { var k = (tx + dx) + '/' + (ty + dy); if (!vus[k]) { vus[k] = 1; out.push({ z: z, x: tx + dx, y: ty + dy }); } } });
     });
     return out;
   }
+  function tuilesZone() { return S.puits.length ? tuilesDe(ZOOMS_ZONE, null, boiteZone()).concat(autourDesPuits([13], 2)) : []; }
+  function tuilesDetail() { return autourDesPuits(ZOOMS_DETAIL, 1); }
   function surAppareil() {   // ensemble des tuiles déjà gardées sur l'appareil
     if (!window.caches) return Promise.resolve({});
     return caches.open(CACHE_TUILES).then(function (c) { return c.keys(); }).then(function (ks) { var o = {}; ks.forEach(function (r) { o[r.url.replace('https://tuiles.invalid/', '')] = 1; }); return o; }).catch(function () { return {}; });
@@ -433,8 +436,8 @@
   $('o-prep').onclick = function () {
     var o = $('o-etat'); if (navigator.onLine === false) { o.textContent = 'Il faut du réseau.'; return; } if (!S.puits.length) { o.textContent = 'Aucun puits chargé.'; return; }
     var b = G.boite(S.puits); b.minLat -= 0.06; b.maxLat += 0.06; b.minLon -= 0.06; b.maxLon += 0.06;
-    var liste = tuilesDe(ZOOMS_ZONE, null, b).concat(tuilesDetail());
-    if (!confirm('Préparer le relief pour TOUS les utilisateurs : ' + liste.length + ' tuiles (zone entière aux zooms 4 à 13, autour des puits aux zooms 14 à 17), rangées dans le Drive du portail ? Cela prend un bon moment (de l\'ordre de 15 à 30 minutes) ; vous pouvez fermer la page et relancer : ce qui est déjà rangé est ignoré.')) return;
+    var liste = tuilesZone().concat(tuilesDetail());
+    if (!confirm('Préparer le relief pour TOUS les utilisateurs : ' + liste.length + ' tuiles (vue d\'ensemble aux zooms 4 à 12, puis autour des puits aux zooms 13 à 17), rangées dans le Drive du portail ? Cela prend un bon moment (de l\'ordre de 15 à 30 minutes) ; vous pouvez fermer la page et relancer : ce qui est déjà rangé est ignoré.')) return;
     $('o-prep').disabled = true; o.textContent = 'Préparation…'; boucle(liste, 20, true, o, 'Préparation du cache commun', 2).then(function (r) { $('o-prep').disabled = false; o.textContent = '✓ Cache commun prêt (' + r.fait + ' tuiles' + (r.echec ? ', ' + r.echec + ' échec(s) : relancez' : '') + ').'; });
   };
   $('o-oubli').onclick = function () {

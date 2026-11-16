@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-17-434",
+    "date": "2026-11-17",
+    "title": "Version 6.109.1 — Carte des puits : plus d'images pour le désert vide",
+    "changes": [
+      "La carte hors réseau ne garde plus le zoom 13 sur tout le rectangle des puits (105 × 136 km, 858 images dont la plupart de désert vide) : le zoom 13 se limite maintenant à 2 images autour de chaque puits (462 images). Les zooms 4 à 12 restent sur toute la zone (vue d'ensemble et pistes entre les champs, environ 320 images) et les zooms 14 à 17 restent autour des puits seulement. Le préchargement du cache commun suit la même règle."
+    ]
+  },
+  {
     "id": "2026-11-17-433",
     "date": "2026-11-17",
     "title": "Version 6.109.0 — Signaler route barrée : « Réalisée » alimente le rapport journalier",
