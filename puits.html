@@ -52,6 +52,7 @@
   <button class="btn" id="b-fond" type="button" aria-pressed="false">⛰️ Relief</button>
   <button class="btn" id="b-tout" type="button">⤢ Tout voir</button>
   <button class="btn p" id="b-lieu" type="button" hidden>＋ Lieu</button>
+  <a class="btn" id="b-sig" href="signalements.html?nouveau=1" style="text-decoration:none;color:#B42318;border-color:#F3B7B0">⚠️ Signaler</a>
   <button class="btn" id="b-plus" type="button">⋯</button>
   <div id="resultats" hidden></div>
 </div>
@@ -91,7 +92,8 @@
 (function () {
   var $ = function (i) { return document.getElementById(i); }, G = window.PuitsGeo;
   var CLE = 'infra_v2_puits', CLE_FOND = 'infra_v2_puits_fond';
-  var S = { puits: [], peut: false, maj: '', t: 0, sel: null, moi: null, suivi: null, fond: false, vue: { lat: 29.5, lon: 6.8, z: 8 }, tuiles: {}, pret: false };
+  var CLE_SIG = 'infra_v2_puits_signal';
+  var S = { signal: [], puits: [], peut: false, maj: '', t: 0, sel: null, moi: null, suivi: null, fond: false, vue: { lat: 29.5, lon: 6.8, z: 8 }, tuiles: {}, pret: false };
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function stock(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } return null; }
@@ -115,8 +117,17 @@
     $('o-import').hidden = !(S.peut && enLigne); $('o-prep').hidden = !(S.peut && enLigne); $('b-lieu').hidden = !(S.peut && enLigne);
     var age = (Date.now() - S.t) / 864e5;
     bandeau(!enLigne ? 'Hors réseau : positions enregistrées le ' + dateFr(S.t) + (age > 30 ? ' — plus de 30 jours, reconnectez-vous dès que possible pour les actualiser.' : '.') : '');
-    if (!S.pret) { S.pret = true; toutVoir(); } else dessiner();
+    if (!S.pret) { S.pret = true; toutVoir(); voirParametre(); } else dessiner();
+    chargerSignal();
     if (enLigne) majHorsReseau().then(function () { if (S.fond && !(navigator.connection && navigator.connection.saveData)) synchro(false); });   // automatique à l'ouverture
+  }
+  function chargerSignal() {
+    var c = stock(CLE_SIG); if (c && !S.signal.length) { S.signal = c.l || []; dessiner(); }
+    if (navigator.onLine === false) return;
+    Api.call('signal_liste').then(function (r) { S.signal = (r.signalements || []).filter(function (g) { return (g.statut === 'ouvert' || g.statut === 'pris') && g.lat != null; }); stock(CLE_SIG, { t: Date.now(), l: S.signal }); dessiner(); }).catch(function () { /* pas de signalements : la carte reste utilisable */ });
+  }
+  function voirParametre() {   // ?voir=lat,lon : ouvert depuis un signalement
+    var m = /[?&]voir=(-?[\d.]+),(-?[\d.]+)/.exec(location.search); if (m) { S.vue.lat = Number(m[1]); S.vue.lon = Number(m[2]); S.vue.z = 14; dessiner(); }
   }
   function charger() {
     return Api.call('puits_liste').then(function (r) {
@@ -201,6 +212,13 @@
       var autre = p.type && norm(p.type) !== 'puits', r0 = sel ? 8 : 5.5; ctx.beginPath(); if (autre) ctx.rect(s.x - r0, s.y - r0, 2 * r0, 2 * r0); else ctx.arc(s.x, s.y, r0, 0, 6.283); ctx.fillStyle = autre ? '#7C3AED' : couleur(p.famille); ctx.fill(); ctx.lineWidth = sel ? 3 : 1.5; ctx.strokeStyle = sel ? '#000' : '#fff'; ctx.stroke();
       if (etiq || sel || autre) { var kx = Math.round(s.x / 46) + ',' + Math.round(s.y / 14); if (sel || !occ[kx]) { occ[kx] = 1; var t = p.uwi; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(t, s.x + 9, s.y); ctx.fillStyle = '#111'; ctx.fillText(t, s.x + 9, s.y); } }
     });
+    // signalements en cours : triangle rouge (route barrée), orange (dessablage), bleu (autres travaux)
+    (S.signal || []).forEach(function (g) {
+      if (g.lat == null) return; var s2 = versEcran(g.lat, g.lon); if (s2.x < -20 || s2.y < -20 || s2.x > W + 20 || s2.y > H + 20) return;
+      var cc = g.categorie === 'route' ? '#DC2626' : g.categorie === 'dessablage' ? '#F59E0B' : '#2563EB', r1 = g.urgence === 'urgent' ? 11 : 9, selS = S.selSig && S.selSig.id === g.id;
+      ctx.beginPath(); ctx.moveTo(s2.x, s2.y - r1); ctx.lineTo(s2.x + r1, s2.y + r1 * 0.8); ctx.lineTo(s2.x - r1, s2.y + r1 * 0.8); ctx.closePath(); ctx.fillStyle = cc; ctx.fill(); ctx.lineWidth = selS ? 3 : 1.5; ctx.strokeStyle = selS ? '#000' : '#fff'; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('!', s2.x, s2.y + 3); ctx.textAlign = 'left'; ctx.font = '600 11px Inter, sans-serif';
+    });
     // ma position et ligne vers le puits choisi
     if (S.moi) {
       var m = versEcran(S.moi.lat, S.moi.lon), r = Math.max(8, S.moi.prec / mpp());   // précision en pixels
@@ -241,13 +259,21 @@
   cv.addEventListener('pointerup', fin); cv.addEventListener('pointercancel', fin);
   cv.addEventListener('wheel', function (e) { e.preventDefault(); zoomer(e.deltaY < 0 ? 0.5 : -0.5, e.offsetX, e.offsetY); }, { passive: false });
   function choisirEn(x, y) {
+    var sg = null, ds = 26; (S.signal || []).forEach(function (g) { if (g.lat == null) return; var s3 = versEcran(g.lat, g.lon), d3 = Math.hypot(s3.x - x, s3.y - y); if (d3 < ds) { ds = d3; sg = g; } });
+    if (sg) { S.sel = null; S.selSig = sg; ficheSignal(); dessiner(); return; }
     var meilleur = null, d0 = 26; visibles().forEach(function (p) { var s = versEcran(p.lat, p.lon), d = Math.hypot(s.x - x, s.y - y); if (d < d0) { d0 = d; meilleur = p; } });
     if (meilleur) selectionner(meilleur); else { S.sel = null; $('fiche').hidden = true; dessiner(); }
   }
 
   // ---------- fiche du puits ----------
   function selectionner(p, centrerSur) {
-    S.sel = p; if (centrerSur) centrer(p, 13); fiche(); dessiner();
+    S.selSig = null; S.sel = p; if (centrerSur) centrer(p, 13); fiche(); dessiner();
+  }
+  function ficheSignal() {
+    var g = S.selSig, f = $('fiche'); f.textContent = ''; if (!g) { f.hidden = true; return; }
+    var x = el('button', 'x', '×'); x.type = 'button'; x.onclick = function () { S.selSig = null; f.hidden = true; dessiner(); }; f.appendChild(x);
+    f.appendChild(el('h2', null, '⚠️ ' + g.titre)); var i = el('div', 'infos'); [['Statut', { ouvert: 'Signalé', pris: 'Pris en charge' }[g.statut] || g.statut], ['Urgence', g.urgence === 'urgent' ? 'URGENT' : 'normale'], ['Signalé', new Date(g.cree_le).toLocaleDateString('fr-FR') + ' par ' + (g.par_nom || '—')]].concat(g.description ? [['Description', g.description]] : []).forEach(function (l) { var d2 = el('div'); d2.appendChild(document.createTextNode(l[0] + ' : ')); d2.appendChild(el('b', null, l[1])); i.appendChild(d2); }); f.appendChild(i);
+    var a = el('div', 'actions'), t = el('a', 'btn p', 'Traiter / détails'); t.href = 'signalements.html?id=' + g.id; t.style.textDecoration = 'none'; a.appendChild(t); var it = el('a', 'btn', '🧭 Itinéraire'); it.href = 'https://www.google.com/maps/dir/?api=1&destination=' + g.lat + ',' + g.lon; it.target = '_blank'; it.rel = 'noopener'; it.style.textDecoration = 'none'; a.appendChild(it); f.appendChild(a); f.hidden = false;
   }
   function fiche() {
     var p = S.sel, f = $('fiche'); f.textContent = ''; if (!p) { f.hidden = true; return; }
@@ -263,6 +289,7 @@
     lien('🧭 Itinéraire', 'https://www.google.com/maps/dir/?api=1&destination=' + dest + '&travelmode=driving'); lien('Waze', 'https://waze.com/ul?ll=' + dest + '&navigate=yes');
     var cp = el('button', 'btn', '📋 Copier'); cp.type = 'button'; cp.onclick = function () { var t = p.uwi + ' ' + p.lat.toFixed(6) + ',' + p.lon.toFixed(6); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { cp.textContent = '✓ Copié'; }, function () { prompt('Coordonnées', t); }); }; a.appendChild(cp);
     if (S.peut && navigator.onLine !== false) { var mo2 = el('button', 'btn', '✏️ Modifier'); mo2.type = 'button'; mo2.onclick = function () { ouvrirLieu(p); }; a.appendChild(mo2); }
+    var sig = el('a', 'btn', '⚠️ Signaler ici'); sig.href = 'signalements.html?nouveau=1&puits=' + encodeURIComponent(p.uwi) + '&lat=' + p.lat + '&lon=' + p.lon; sig.style.textDecoration = 'none'; a.appendChild(sig);
     f.appendChild(a); f.hidden = false;
   }
 

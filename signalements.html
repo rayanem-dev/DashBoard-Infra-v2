@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Signalements terrain – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="js/config.js"></script><script src="js/api.js"></script>
+<style>
+  :root { --fond: #F5F5F0; --surface: #FFFFFF; --texte: #1A1A2E; --doux: #6B7280; --bord: #D9D9D0; --orange: #E85D04; --ombre: 0 4px 18px rgba(0,0,0,.16); }
+  @media (prefers-color-scheme: dark) { :root { --fond: #0F1420; --surface: #1B2233; --texte: #EEF1F7; --doux: #9AA4B8; --bord: #2E3850; --ombre: 0 4px 18px rgba(0,0,0,.6); } }
+  * { box-sizing: border-box; } body { margin: 0; font-family: Inter, system-ui, Arial, sans-serif; background: var(--fond); color: var(--texte); }
+  header { background: linear-gradient(135deg, #E85D04, #F48C06); color: #fff; padding: 10px 14px; display: flex; gap: 10px; align-items: center; position: sticky; top: 0; z-index: 3; } header h1 { margin: 0; font-size: 17px; flex: 1; } header a { color: #fff; font-size: 13px; text-decoration: none; font-weight: 600; background: rgba(255,255,255,.2); padding: 5px 10px; border-radius: 8px; }
+  main { max-width: 760px; margin: 0 auto; padding: 12px 12px 90px; }
+  .btn { padding: 10px 14px; border: 1.5px solid var(--bord); border-radius: 10px; background: var(--surface); color: var(--texte); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; } .btn.p { background: var(--orange); border-color: var(--orange); color: #fff; } .btn.on { background: var(--orange); border-color: var(--orange); color: #fff; } .btn.rouge { background: #DC2626; border-color: #DC2626; color: #fff; } .btn:disabled { opacity: .55; }
+  .onglets { display: flex; gap: 6px; margin: 4px 0 10px; flex-wrap: wrap; } .onglets .btn { padding: 7px 14px; border-radius: 999px; font-size: 13px; }
+  #fab { position: fixed; right: 14px; bottom: 16px; z-index: 4; padding: 14px 20px; border-radius: 999px; font-size: 16px; box-shadow: var(--ombre); }
+  #avis { background: #FEF3C7; color: #78350F; border-radius: 10px; padding: 8px 12px; font-size: 13px; margin-bottom: 10px; } #avis.ok { background: #D1FAE5; color: #064E3B; }
+  .carte { background: var(--surface); border-radius: 14px; box-shadow: var(--ombre); padding: 12px 14px; margin-bottom: 10px; border-left: 5px solid #9CA3AF; } .carte.dessablage { border-color: #F59E0B; } .carte.route { border-color: #DC2626; } .carte.autre { border-color: #2563EB; } .carte.clos { opacity: .7; }
+  .carte h3 { margin: 0 0 3px; font-size: 15.5px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .meta { font-size: 12.5px; color: var(--doux); line-height: 1.5; } .desc { margin: 6px 0; font-size: 14px; }
+  .pastille { font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #E5E7EB; color: #374151; } .pastille.urgent { background: #FEE2E2; color: #991B1B; } .pastille.ouvert { background: #FEF3C7; color: #78350F; } .pastille.pris { background: #DBEAFE; color: #1E3A8A; } .pastille.realise { background: #D1FAE5; color: #064E3B; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; } .actions .btn { padding: 7px 11px; font-size: 13px; } .actions a.btn { text-decoration: none; display: inline-block; }
+  .vide { text-align: center; color: var(--doux); padding: 40px 10px; }
+  dialog { border: 0; border-radius: 16px; padding: 0; max-width: 520px; width: calc(100% - 20px); background: var(--surface); color: var(--texte); box-shadow: var(--ombre); max-height: 94vh; } dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog .c { padding: 16px 18px; overflow: auto; max-height: calc(94vh - 70px); } dialog h2 { margin: 0 0 8px; font-size: 18px; } dialog .pied { display: flex; gap: 8px; justify-content: flex-end; padding: 10px 18px 14px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--bord); } .err { color: #B42318; font-weight: 700; margin-inline-end: auto; font-size: 13px; }
+  label.f { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--doux); margin: 12px 0 4px; } .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  dialog input[type=text], dialog textarea, dialog select { width: 100%; padding: 10px; border: 1.5px solid var(--bord); border-radius: 9px; font: inherit; font-size: 15px; background: var(--fond); color: var(--texte); }
+  .gris { color: var(--doux); font-size: 13px; } [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header><h1>⚠️ Signalements terrain</h1><span id="etat" class="pastille">…</span><a href="portail.html">← Portail</a></header>
+<main>
+  <div id="avis" hidden></div>
+  <div class="onglets" id="onglets"></div>
+  <div id="liste"></div>
+  <p class="vide" id="vide" hidden></p>
+</main>
+<button class="btn rouge" id="fab" type="button">＋ Signaler</button>
+
+<dialog id="dlg-nouveau"><div class="c"><h2>Signaler</h2>
+  <label class="f" style="margin-top:0">Quoi ?</label><div class="chips" id="c-cat"></div>
+  <div id="z-sous"><label class="f">Type de dessablage</label><div class="chips" id="c-sous"></div></div>
+  <label class="f">Urgence</label><div class="chips"><button class="btn" id="b-urg" type="button">🔴 Urgent</button><span class="gris" style="align-self:center">Route barrée ou chantier bloqué : mettez Urgent.</span></div>
+  <label class="f" for="n-lieu">Où ? (puits ou repère)</label><input type="text" id="n-lieu" list="l-puits" maxlength="120" autocomplete="off" placeholder="Ex. RN33, piste nord km 12…"><datalist id="l-puits"></datalist>
+  <p style="margin:8px 0 0"><button class="btn" id="n-gps" type="button">📍 Ma position</button> <span class="gris" id="n-pos"></span></p>
+  <label class="f" for="n-desc">Description <span id="n-obl" class="gris"></span></label><textarea id="n-desc" rows="3" maxlength="500" placeholder="Ex. 1 m de sable sur la plateforme, accès impossible pour les camions."></textarea>
+  <p class="gris" style="margin-top:10px">Le service et les responsables du dessablage sont prévenus par e-mail. Sans réseau, le signalement part dès que la connexion revient.</p></div>
+  <div class="pied"><span class="err" id="n-err"></span><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="n-ok" type="button">Envoyer le signalement</button></div></dialog>
+<dialog id="dlg-statut"><div class="c"><h2 id="s-titre"></h2><label class="f" for="s-note" style="margin-top:0">Note (facultative)</label><textarea id="s-note" rows="3" maxlength="300" placeholder="Ex. Engin en route demain matin."></textarea></div>
+  <div class="pied"><span class="err" id="s-err"></span><button class="btn" data-ferme type="button">Annuler</button><button class="btn p" id="s-ok" type="button">Valider</button></div></dialog>
+
+<script>
+(function () {
+  var $ = function (i) { return document.getElementById(i); };
+  var CLE_CACHE = 'infra_v2_signal_cache', CLE_FILE = 'infra_v2_signal_file';
+  var CATS = [['dessablage', '🏜️ Dessablage'], ['route', '🚧 Route barrée'], ['autre', '🛠️ Autres travaux']], SOUS = [['mecanique', 'Mécanique'], ['manuel', 'Manuel'], ['inconnu', 'À préciser']];
+  var S = { liste: [], peut: false, presta: false, prestaNom: '', voitTout: false, onglet: 'traiter', form: { categorie: 'dessablage', sous_type: 'inconnu', urgence: 'normal' }, pos: null, hors: false };
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function stock(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } return null; }
+  function dateFr(t) { var d = new Date(t); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
+  function ouvrir(d) { if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', ''); }
+  function fermer(d) { if (d.close) d.close(); else d.removeAttribute('open'); }
+  document.querySelectorAll('[data-ferme]').forEach(function (b) { b.onclick = function () { fermer(b.closest('dialog')); }; });
+  function avis(t, ok) { var a = $('avis'); a.hidden = !t; a.textContent = t || ''; a.className = ok ? 'ok' : ''; }
+  function etat() { var e = $('etat'); e.textContent = navigator.onLine === false ? 'hors réseau' : 'en ligne'; }
+  window.addEventListener('online', function () { etat(); envoyerFile(); charger(); }); window.addEventListener('offline', etat); etat();
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw-puits.js', { scope: './signalements.html' }).catch(function () { /* sans service worker : fonctionne en ligne */ });
+
+  // ---------- liste ----------
+  function charger() {
+    return Api.call('signal_liste').then(function (r) { S.liste = r.signalements || []; S.peut = !!r.peut_traiter; S.presta = !!r.prestataire_configure; S.prestaNom = r.prestataire_nom || ''; S.voitTout = !!r.voit_tout; stock(CLE_CACHE, { t: Date.now(), l: S.liste, peut: S.peut, tout: S.voitTout }); S.hors = false; dessiner(); })
+      .catch(function (e) {
+        if (e && e.code === 'SESSION' && navigator.onLine !== false) { location.replace('connexion.html'); return; }
+        var c = stock(CLE_CACHE); if (c) { S.liste = c.l || []; S.peut = false; S.voitTout = !!c.tout; S.hors = true; avis('Hors réseau : liste enregistrée le ' + dateFr(c.t) + '.'); } else avis(e && e.message || 'Lecture impossible');
+        dessiner();
+      });
+  }
+  function dessinerOnglets() {
+    var z = $('onglets'); z.textContent = ''; var cpt = { traiter: S.liste.filter(function (s) { return s.statut === 'ouvert' || s.statut === 'pris'; }).length, mes: S.liste.filter(function (s) { return s.mien; }).length, clos: S.liste.filter(function (s) { return s.statut === 'realise' || s.statut === 'annule'; }).length };
+    [['traiter', (S.voitTout ? 'En cours' : 'Mes en cours') + ' (' + cpt.traiter + ')'], ['mes', 'Mes signalements (' + cpt.mes + ')'], ['clos', 'Clos (' + cpt.clos + ')']].forEach(function (o) { var b = el('button', 'btn' + (S.onglet === o[0] ? ' on' : ''), o[1]); b.type = 'button'; b.onclick = function () { S.onglet = o[0]; dessiner(); }; z.appendChild(b); });
+  }
+  function dessiner() {
+    dessinerOnglets();
+    var q = stock(CLE_FILE) || [], z = $('liste'); z.textContent = '';
+    if (q.length) avis(q.length + ' signalement(s) en attente d\'envoi : ils partiront dès que le réseau revient.');
+    var l = S.liste.filter(function (s) { return S.onglet === 'mes' ? s.mien : S.onglet === 'clos' ? (s.statut === 'realise' || s.statut === 'annule') : (s.statut === 'ouvert' || s.statut === 'pris'); });
+    q.forEach(function (p) { var c = el('div', 'carte ' + p.categorie); c.appendChild(el('h3', null, '⏳ ' + (CATS.filter(function (x) { return x[0] === p.categorie; })[0] || ['', ''])[1] + (p.puits || p.lieu ? ' — ' + (p.puits || p.lieu) : ''))); c.appendChild(el('div', 'meta', 'En attente d\'envoi (pas de réseau)')); if (S.onglet !== 'clos') z.appendChild(c); });
+    $('vide').hidden = !!(l.length || (q.length && S.onglet !== 'clos')); $('vide').textContent = S.onglet === 'clos' ? 'Aucun signalement clos récent.' : 'Aucun signalement en cours. Utilisez « ＋ Signaler » pour en créer un.';
+    l.forEach(function (s) {
+      var c = el('div', 'carte ' + s.categorie + (s.statut === 'realise' || s.statut === 'annule' ? ' clos' : '')), h = el('h3', null, s.titre);
+      if (s.urgence === 'urgent') h.appendChild(el('span', 'pastille urgent', 'URGENT')); h.appendChild(el('span', 'pastille ' + s.statut, { ouvert: 'Signalé', pris: 'Pris en charge', realise: 'Réalisé', annule: 'Annulé' }[s.statut] || s.statut)); c.appendChild(h);
+      c.appendChild(el('div', 'meta', dateFr(s.cree_le) + ' · ' + (s.par_nom || '—') + (s.lieu ? ' · ' + s.lieu : '') + (s.statut_par && s.statut !== 'ouvert' ? ' · ' + s.statut_par : '')));
+      if (s.description) c.appendChild(el('div', 'desc', s.description)); if (s.note) c.appendChild(el('div', 'meta', 'Note : ' + s.note)); if (s.transmis_le) c.appendChild(el('div', 'meta', '📨 Transmis au prestataire le ' + dateFr(s.transmis_le)));
+      var a = el('div', 'actions');
+      function lien(t, h2) { var e = el('a', 'btn', t); e.href = h2; e.target = '_blank'; e.rel = 'noopener'; a.appendChild(e); }
+      if (s.lat != null) { var e1 = el('a', 'btn', '🗺️ Carte'); e1.href = 'puits.html?voir=' + s.lat + ',' + s.lon; a.appendChild(e1); lien('🧭 Itinéraire', 'https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lon); }
+      if (S.peut && !S.hors) {
+        function act(t, st, cl) { var b = el('button', 'btn' + (cl ? ' ' + cl : ''), t); b.type = 'button'; b.onclick = function () { statut(s, st); }; a.appendChild(b); }
+        if (s.statut === 'ouvert') act('✋ Pris en charge', 'pris'); if (s.statut === 'ouvert' || s.statut === 'pris') { act('✅ Réalisé', 'realise', 'p'); act('✖ Annuler', 'annule'); } if (s.statut === 'realise' || s.statut === 'annule') act('↩ Rouvrir', 'ouvert');
+        if (S.presta && s.categorie === 'dessablage' && (s.statut === 'ouvert' || s.statut === 'pris')) { var b2 = el('button', 'btn', '📨 Transmettre' + (S.prestaNom ? ' à ' + S.prestaNom : ' au prestataire')); b2.type = 'button'; b2.onclick = function () { transmettre(s); }; a.appendChild(b2); }
+      }
+      c.appendChild(a); z.appendChild(c);
+    });
+  }
+  function statut(s, vers) {
+    var lib = { pris: 'Pris en charge', realise: 'Marquer comme réalisé', annule: 'Annuler ce signalement', ouvert: 'Rouvrir' }[vers];
+    $('s-titre').textContent = lib + ' — ' + s.titre; $('s-note').value = ''; $('s-err').textContent = '';
+    $('s-ok').onclick = function () { $('s-ok').disabled = true; Api.call('signal_statut', { id: s.id, statut: vers, note: $('s-note').value }).then(function () { fermer($('dlg-statut')); return charger(); }).catch(function (e) { $('s-err').textContent = e.message; }).then(function () { $('s-ok').disabled = false; }); };
+    ouvrir($('dlg-statut'));
+  }
+  function transmettre(s) {
+    if (!confirm('Envoyer ce signalement au prestataire de dessablage' + (S.prestaNom ? ' (' + S.prestaNom + ')' : '') + ' ? Le service est mis en copie.')) return;
+    Api.call('signal_prestataire', { id: s.id }).then(function () { avis('✓ Signalement transmis au prestataire.', true); return charger(); }).catch(function (e) { avis(e.message); });
+  }
+
+  // ---------- nouveau signalement ----------
+  function chips(zone, liste, cle) { var z = $(zone); z.textContent = ''; liste.forEach(function (o) { var b = el('button', 'btn' + (S.form[cle] === o[0] ? ' on' : ''), o[1]); b.type = 'button'; b.onclick = function () { S.form[cle] = o[0]; if (cle === 'categorie' && o[0] === 'route') S.form.urgence = 'urgent'; maj(); }; z.appendChild(b); }); }
+  function maj() {
+    chips('c-cat', CATS, 'categorie'); chips('c-sous', SOUS, 'sous_type'); $('z-sous').hidden = S.form.categorie !== 'dessablage';
+    $('b-urg').className = 'btn' + (S.form.urgence === 'urgent' ? ' rouge' : ''); $('n-obl').textContent = S.form.categorie === 'autre' ? '(obligatoire)' : '(facultative)';
+    $('n-pos').textContent = S.pos ? '✓ position prise (±' + Math.round(S.pos.prec) + ' m)' : '';
+  }
+  $('b-urg').onclick = function () { S.form.urgence = S.form.urgence === 'urgent' ? 'normal' : 'urgent'; maj(); };
+  function prendrePosition() {
+    if (!navigator.geolocation) return; $('n-pos').textContent = 'recherche de la position…';
+    navigator.geolocation.getCurrentPosition(function (p) { S.pos = { lat: p.coords.latitude, lon: p.coords.longitude, prec: p.coords.accuracy || 0 }; maj(); }, function () { $('n-pos').textContent = 'position indisponible (indiquez le lieu)'; }, { enableHighAccuracy: true, timeout: 25000, maximumAge: 15000 });
+  }
+  $('n-gps').onclick = prendrePosition;
+  function nouveau(pre) {
+    S.form = { categorie: 'dessablage', sous_type: 'inconnu', urgence: 'normal' }; S.pos = null; $('n-err').textContent = ''; $('n-desc').value = ''; $('n-lieu').value = '';
+    if (pre && pre.puits) $('n-lieu').value = pre.puits; if (pre && pre.lat != null) S.pos = { lat: pre.lat, lon: pre.lon, prec: 0 };
+    maj(); ouvrir($('dlg-nouveau')); if (!S.pos) prendrePosition();
+  }
+  $('fab').onclick = function () { nouveau(); };
+  function charge() {
+    var lieu = $('n-lieu').value.trim(), puits = (S.noms || []).filter(function (n) { return n.toLowerCase() === lieu.toLowerCase(); })[0] || '';
+    return { categorie: S.form.categorie, sous_type: S.form.sous_type, urgence: S.form.urgence, puits: puits, lieu: puits ? '' : lieu, lat: S.pos ? S.pos.lat : null, lon: S.pos ? S.pos.lon : null, precision: S.pos ? S.pos.prec : 0, description: $('n-desc').value.trim() };
+  }
+  $('n-ok').onclick = function () {
+    var c = charge(); $('n-err').textContent = '';
+    if (!c.puits && !c.lieu && c.lat == null) { $('n-err').textContent = 'Indiquez où : prenez votre position ou écrivez le puits / un repère.'; return; }
+    if (c.categorie === 'autre' && !c.description) { $('n-err').textContent = 'Décrivez les travaux à faire.'; return; }
+    $('n-ok').disabled = true;
+    Api.call('signal_creer', { signalement: c }).then(function (r) { fermer($('dlg-nouveau')); avis('✓ Signalement ' + r.id + ' envoyé' + (r.alertes ? ' — ' + r.alertes + ' adresse(s) alertée(s).' : r.doublon ? ' (déjà enregistré).' : ' (aucune adresse d\'alerte configurée : prévenez le service).'), true); return charger(); })
+      .catch(function (e) {
+        if (e && e.code === 'RESEAU') { var q = stock(CLE_FILE) || []; q.push(c); stock(CLE_FILE, q); fermer($('dlg-nouveau')); avis('Pas de réseau : signalement gardé sur le téléphone, il partira dès que la connexion revient.'); dessiner(); }
+        else $('n-err').textContent = e.message;
+      }).then(function () { $('n-ok').disabled = false; });
+  };
+  function envoyerFile() {
+    var q = stock(CLE_FILE) || []; if (!q.length || navigator.onLine === false) return Promise.resolve();
+    var p = q.shift(); stock(CLE_FILE, q);
+    return Api.call('signal_creer', { signalement: p }).then(function (r) { avis('✓ Signalement envoyé (' + r.id + ').', true); return envoyerFile(); }).catch(function (e) { if (e && (e.code === 'RESEAU' || e.code === 'SERVEUR' || e.code === 'SESSION')) { var r2 = stock(CLE_FILE) || []; r2.unshift(p); stock(CLE_FILE, r2); } });
+  }
+
+  // noms de puits pour l'aide à la saisie (seulement si l'accès à la carte existe, sinon un repère libre)
+  Api.call('puits_liste').then(function (r) { S.noms = (r.puits || []).map(function (p) { return p.uwi; }); stock('infra_v2_signal_noms', S.noms); }).catch(function () { S.noms = stock('infra_v2_signal_noms') || []; }).then(function () { var d = $('l-puits'); (S.noms || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; d.appendChild(o); }); });
+  var pre = {}; (location.search.replace(/^\?/, '').split('&')).forEach(function (kv) { var p = kv.split('='); pre[p[0]] = decodeURIComponent(p[1] || ''); });
+  charger().then(function () { return envoyerFile(); }).then(function () { if (pre.nouveau) nouveau({ puits: pre.puits, lat: pre.lat ? Number(pre.lat) : null, lon: pre.lon ? Number(pre.lon) : null }); });
+})();
+</script>
+</body>
+</html>

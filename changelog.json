@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-16-431",
+    "date": "2026-11-16",
+    "title": "Version 6.107.0 — Nouvelle application « Signalements terrain » (dessablage, route barrée)",
+    "changes": [
+      "Tout compte du portail peut signaler un dessablage à faire (mécanique, manuel ou à préciser), une route barrée ou ensablée, ou d'autres travaux (le génie civil pourra s'y ajouter) : catégorie, urgence, lieu (puits ou repère), position GPS prise automatiquement, description. Sans réseau, le signalement est gardé sur le téléphone et part dès que la connexion revient (sans doublon).",
+      "Alerte par e-mail à l'envoi, avec la position cliquable et le lien de suivi : un dessablage va aux conducteurs responsables du contrat de dessablage (s'ils sont désignés, sinon au service) avec le service Travaux Entretien en copie ; une route barrée ou un signalement urgent prévient en plus une adresse d'urgence (chef de service…). Le prestataire n'est jamais alerté tout seul : un responsable clique sur « Transmettre au prestataire » (un réglage permet l'envoi automatique).",
+      "Suivi : Signalé → Pris en charge → Réalisé (ou Annulé / Rouvert) avec une note ; la personne qui a signalé reçoit un e-mail quand c'est réalisé ou annulé. Chacun ne voit que ses signalements, sauf les responsables et les personnes ayant accès à la carte des puits.",
+      "Sur la carte des puits : les signalements en cours apparaissent en triangle (rouge = route barrée, orange = dessablage, bleu = autres travaux), un bouton « ⚠️ Signaler » et « ⚠️ Signaler ici » sur la fiche d'un puits pré-remplissent le lieu.",
+      "Nouveaux réglages (Paramètres → Signalements terrain) : service, conducteurs du contrat de dessablage, adresse d'urgence, prestataire (nom et adresse) et envoi automatique au prestataire (désactivé par défaut). Nouveau module de droits « Signalements terrain » : signaler pour tous les comptes, traiter pour les conducteurs, ingénieurs, chefs d'atelier, chefs de service, cadres supérieurs et secrétariat."
+    ]
+  },
+  {
     "id": "2026-11-16-430",
     "date": "2026-11-16",
     "title": "Version 6.106.1 — Carte des puits : ajouter une base en deux gestes, noms toujours visibles",
