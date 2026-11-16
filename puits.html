@@ -51,7 +51,7 @@
   <button class="btn" id="b-plus" type="button">⋯</button>
   <div id="resultats" hidden></div>
 </div>
-<div id="bandeau" hidden></div>
+<div id="bandeau" hidden><span id="bandeau-t"></span> <button class="btn" id="bandeau-b" type="button" hidden style="padding:4px 10px;font-size:12.5px">Télécharger</button></div>
 <div id="zone"><canvas id="cv"></canvas>
   <div class="zoom"><button class="btn" id="z-p" type="button" aria-label="Zoom avant">＋</button><button class="btn" id="z-m" type="button" aria-label="Zoom arrière">−</button></div>
   <div id="attrib" hidden>Données © contributeurs OpenStreetMap, SRTM · Rendu © OpenTopoMap (CC-BY-SA)</div>
@@ -59,6 +59,8 @@
 </div>
 
 <dialog id="dlg-plus"><div class="c"><h2>Options</h2>
+  <p><b>Carte pour le terrain (sans réseau)</b></p><p class="gris" id="o-hors">…</p>
+  <p><button class="btn p" id="o-dl" type="button">📥 Télécharger la carte de la zone</button></p><p><button class="btn" id="o-dl2" type="button">📥 + Détail autour des puits</button></p>
   <p><button class="btn" id="o-zone" type="button">💾 Mémoriser la zone affichée sur cet appareil</button></p><p class="gris" id="o-etat"></p>
   <p><button class="btn" id="o-prep" type="button" hidden>☁️ Préparer le relief de toute la zone pour tous (Drive)</button></p>
   <p><button class="btn" id="o-import" type="button" hidden>⬆ Importer des puits (KMZ, KML, CSV)</button></p>
@@ -88,7 +90,7 @@
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw-puits.js', { scope: './puits.html' }).catch(function () { /* pas de service worker : la carte marche en ligne */ });
   function etat() { var e = $('etat'), enLigne = navigator.onLine !== false; e.textContent = enLigne ? 'en ligne' : 'hors réseau'; e.className = enLigne ? 'ok' : ''; }
   window.addEventListener('online', etat); window.addEventListener('offline', etat); etat();
-  function bandeau(t) { var b = $('bandeau'); b.hidden = !t; b.textContent = t || ''; }
+  function bandeau(t, action, libelle) { var b = $('bandeau'); b.hidden = !t; $('bandeau-t').textContent = t || ''; var bt = $('bandeau-b'); bt.hidden = !action; bt.textContent = libelle || ''; bt.onclick = action || null; }
 
   function appliquer(d, enLigne) {
     S.puits = d.puits || []; S.peut = !!d.peut_importer; S.maj = d.maj || ''; S.t = d.t || Date.now();
@@ -99,6 +101,7 @@
     var age = (Date.now() - S.t) / 864e5;
     bandeau(!enLigne ? 'Hors réseau : positions enregistrées le ' + dateFr(S.t) + (age > 30 ? ' — plus de 30 jours, reconnectez-vous dès que possible pour les actualiser.' : '.') : '');
     if (!S.pret) { S.pret = true; toutVoir(); } else dessiner();
+    if (enLigne) majHorsReseau();
   }
   function charger() {
     return Api.call('puits_liste').then(function (r) {
@@ -283,16 +286,60 @@
     });
     return liste;
   }
-  function boucle(liste, taille, preparer, o, libelle) {   // lots successifs vers la passerelle, avec compte rendu
-    var total = liste.length, fait = 0, echec = 0;
+  function boucle(liste, taille, preparer, o, libelle, concurrence) {   // lots successifs vers la passerelle (en parallèle si demandé), avec compte rendu
+    var total = liste.length, fait = 0, echec = 0, actifs = Math.max(1, concurrence || 1);
     return new Promise(function (ok) {
-      (function suite() {
-        var lot = liste.splice(0, taille); if (!lot.length) { ok({ fait: fait, echec: echec, total: total }); return; }
+      function suite() {
+        var lot = liste.splice(0, taille);
+        if (!lot.length) { actifs -= 1; if (actifs === 0) ok({ fait: fait, echec: echec, total: total }); return; }
         recupererLot(lot, preparer).then(function (res) { res.forEach(function (r) { if (r.etat === 'echec') echec += 1; else { fait += 1; if (r.d) versAppareil(r.z + '/' + r.x + '/' + r.y, new Blob([octets(r.d)], { type: 'image/png' })); } }); })
-          .catch(function () { echec += lot.length; }).then(function () { o.textContent = libelle + ' ' + (fait + echec) + ' / ' + total; setTimeout(suite, preparer ? 400 : 150); });
-      })();
+          .catch(function () { echec += lot.length; }).then(function () { o.textContent = libelle + ' ' + (fait + echec) + ' / ' + total + ' (' + Math.round((fait + echec) / total * 100) + ' %)'; setTimeout(suite, preparer ? 400 : 100); });
+      }
+      for (var i = 0, n = actifs; i < n; i += 1) suite();
     });
   }
+  // ---------- carte pour le terrain : tout le relief de la zone sur l'appareil ----------
+  function boiteZone() { var b = G.boite(S.puits); b.minLat -= 0.06; b.maxLat += 0.06; b.minLon -= 0.06; b.maxLon += 0.06; return b; }
+  function tuilesZone() { return S.puits.length ? tuilesDe([7, 8, 9, 10, 11, 12, 13], null, boiteZone()) : []; }
+  function tuilesDetail() {   // zoom 14 : la tuile de chaque puits et ses voisines (environ 1 km autour)
+    var vus = {}, out = [];
+    S.puits.forEach(function (p) { var c = G.versPixels(p.lat, p.lon, 14), tx = Math.floor(c.x / 256), ty = Math.floor(c.y / 256); for (var dx = -1; dx <= 1; dx += 1) for (var dy = -1; dy <= 1; dy += 1) { var k = '14/' + (tx + dx) + '/' + (ty + dy); if (!vus[k]) { vus[k] = 1; out.push({ z: 14, x: tx + dx, y: ty + dy }); } } });
+    return out;
+  }
+  function surAppareil() {   // ensemble des tuiles déjà gardées sur l'appareil
+    if (!window.caches) return Promise.resolve({});
+    return caches.open(CACHE_TUILES).then(function (c) { return c.keys(); }).then(function (ks) { var o = {}; ks.forEach(function (r) { o[r.url.replace('https://tuiles.invalid/', '')] = 1; }); return o; }).catch(function () { return {}; });
+  }
+  function cle(t) { return t.z + '/' + t.x + '/' + t.y; }
+  function etatHorsReseau() {
+    return surAppareil().then(function (dispo) {
+      var z = tuilesZone(), d = tuilesDetail(), mz = z.filter(function (t) { return !dispo[cle(t)]; }), md = d.filter(function (t) { return !dispo[cle(t)]; });
+      return { zone: z.length, manqueZone: mz, detail: d.length, manqueDetail: md, listeZone: mz, listeDetail: md };
+    });
+  }
+  function mo(n) { return Math.max(1, Math.round(n * 0.03)); }   // une tuile ≈ 30 Ko
+  function majHorsReseau() {
+    if (!S.puits.length) return;
+    etatHorsReseau().then(function (e) {
+      var pz = e.zone ? Math.round((1 - e.manqueZone.length / e.zone) * 100) : 0, pd = e.detail ? Math.round((1 - e.manqueDetail.length / e.detail) * 100) : 0;
+      $('o-hors').textContent = 'Sur cet appareil : relief de la zone ' + pz + ' %, détail autour des puits ' + pd + ' %.';
+      $('o-dl').textContent = e.manqueZone.length ? '📥 Télécharger la carte de la zone (≈ ' + mo(e.manqueZone.length) + ' Mo)' : '✓ Carte de la zone complète sur cet appareil';
+      $('o-dl').disabled = !e.manqueZone.length; $('o-dl2').textContent = e.manqueDetail.length ? '📥 + Détail autour des puits (≈ ' + mo(e.manqueDetail.length) + ' Mo)' : '✓ Détail autour des puits complet'; $('o-dl2').disabled = !e.manqueDetail.length;
+      if (navigator.onLine !== false && S.fond && e.manqueZone.length && !S.bandeauVu) bandeau('Pour utiliser la carte sans réseau, téléchargez le relief de la zone (≈ ' + mo(e.manqueZone.length) + ' Mo, une seule fois, en Wi-Fi de préférence).', function () { ouvrir($('dlg-plus')); majHorsReseau(); }, 'Télécharger');
+      else if (navigator.onLine !== false && !e.manqueZone.length && $('bandeau-b').hidden === false) bandeau('');
+    });
+  }
+  function telecharger(detail) {
+    var o = $('o-etat'); if (navigator.onLine === false) { o.textContent = 'Il faut du réseau pour télécharger la carte.'; return; }
+    etatHorsReseau().then(function (e) {
+      var liste = (detail ? e.listeDetail : e.listeZone).slice(); if (!liste.length) { o.textContent = 'Déjà complet.'; return; }
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () { /* refusé : le navigateur pourra vider en cas de manque de place */ });
+      fond(true); $('o-dl').disabled = $('o-dl2').disabled = true; o.textContent = 'Téléchargement de ' + liste.length + ' tuiles (≈ ' + mo(liste.length) + ' Mo)… gardez cette page ouverte.';
+      boucle(liste, 16, false, o, 'Téléchargement', 3).then(function (r) { o.textContent = r.echec ? '⚠ ' + r.fait + ' tuiles téléchargées, ' + r.echec + ' échec(s) : relancez le téléchargement.' : '✓ Carte téléchargée sur cet appareil (' + r.fait + ' tuiles). Elle fonctionne maintenant sans réseau.'; bandeau(''); S.bandeauVu = true; majHorsReseau(); dessiner(); });
+    });
+  }
+  $('o-dl').onclick = function () { telecharger(false); }; $('o-dl2').onclick = function () { telecharger(true); };
+  $('b-plus').addEventListener('click', majHorsReseau);
   $('o-zone').onclick = function () {
     var o = $('o-etat'); if (navigator.onLine === false) { o.textContent = 'Il faut du réseau pour mémoriser le fond de carte.'; return; }
     fond(true); var zi = Math.max(3, Math.min(16, Math.round(S.vue.z))), liste = tuilesDe([zi, Math.min(17, zi + 1)]).slice(0, 200);
@@ -303,7 +350,7 @@
     var b = G.boite(S.puits); b.minLat -= 0.06; b.maxLat += 0.06; b.minLon -= 0.06; b.maxLon += 0.06;
     var liste = tuilesDe([7, 8, 9, 10, 11, 12, 13], null, b);
     if (!confirm('Préparer le fond de carte de toute la zone des puits pour TOUS les utilisateurs (' + liste.length + ' tuiles, niveaux 7 à 13, rangées dans Drive) ? Cela prend quelques minutes ; vous pouvez relancer si elle est interrompue.')) return;
-    $('o-prep').disabled = true; o.textContent = 'Préparation…'; boucle(liste, 40, true, o, 'Préparation du cache commun').then(function (r) { $('o-prep').disabled = false; o.textContent = '✓ Cache commun prêt (' + r.fait + ' tuiles' + (r.echec ? ', ' + r.echec + ' échec(s) : relancez' : '') + ').'; });
+    $('o-prep').disabled = true; o.textContent = 'Préparation…'; boucle(liste, 40, true, o, 'Préparation du cache commun', 2).then(function (r) { $('o-prep').disabled = false; o.textContent = '✓ Cache commun prêt (' + r.fait + ' tuiles' + (r.echec ? ', ' + r.echec + ' échec(s) : relancez' : '') + ').'; });
   };
   $('o-oubli').onclick = function () {
     if (!confirm('Effacer les positions et le fond de carte mémorisés sur cet appareil ?')) return;

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-16-425",
+    "date": "2026-11-16",
+    "title": "Version 6.103.0 — Carte des puits : télécharger toute la carte sur le téléphone pour le terrain",
+    "changes": [
+      "Nouveau pour tous les utilisateurs : « ⋯ → 📥 Télécharger la carte de la zone » copie en une fois le relief de toute la zone des puits (niveaux 7 à 13, environ 25 Mo) depuis le cache commun du portail vers l'appareil ; « + Détail autour des puits » ajoute un zoom plus fin (14) autour de chaque puits. Ensuite la carte, les puits et le GPS fonctionnent sans aucun réseau.",
+      "La page indique l'état sur l'appareil (« relief de la zone 100 % ») et propose le téléchargement tant que la carte est incomplète ; seules les tuiles manquantes sont téléchargées, le téléchargement se reprend où il s'est arrêté.",
+      "Le navigateur est invité à garder ces données (stockage persistant) pour qu'elles ne soient pas effacées en cas de manque de place."
+    ]
+  },
+  {
     "id": "2026-11-16-424",
     "date": "2026-11-16",
     "title": "Version 6.102.0 — Carte des puits : relief par défaut et cache commun dans le Drive du portail",
