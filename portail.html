@@ -289,6 +289,11 @@
     try { raccourcis(r.menu); } catch (e) { if (window.console) console.error(e); }
     mesApps(r.menu); synchroUsage(r.menu);
     Synthese.monterModifs($('syn-modifs')); // demandes de modification de planning à décider
+    (function () {   // administrateurs : rappel quand le portail est en pause (les autres comptes ne peuvent plus l'ouvrir)
+      var admin = (r.menu || []).some(function (m) { return (m.apps || []).some(function (a) { return /pause\.html/.test(a.url || ''); }); }); if (!admin) return;
+      Api.call('pause_details').then(function (x) { var d = document.getElementById('bandeau-pause'); if (!x.pause) { if (d) d.remove(); return; } if (d) return;
+        d = document.createElement('a'); d.id = 'bandeau-pause'; d.href = 'pause.html'; d.style.cssText = 'display:block;background:#DC2626;color:#fff;text-align:center;font-weight:800;padding:10px 14px;text-decoration:none;font-size:14px'; d.textContent = '⏸️ Portail EN PAUSE : visible par les administrateurs seulement · cliquer pour le remettre en service'; document.body.insertBefore(d, document.body.firstChild); }).catch(function () { /* rien */ });
+    })();
     $('alerte-mdp').hidden = !r.mdp_par_defaut; $('alerte-vis').hidden = !(r.vis_propositions > 0); $('alerte-epi').hidden = !(r.epi_manquants > 0);
     (function () { var z = r.inventaire, ok = !!(z && z.total); $('alerte-inv').hidden = !ok; if (!ok) return;
       var pc = Math.max(0, Math.min(100, Number(z.pct) || 0)); $('inv-titre').textContent = '📦 Point de situation — Inventaire ' + z.annee + ' (opération en cours)'; $('inv-barre').style.width = pc + '%';

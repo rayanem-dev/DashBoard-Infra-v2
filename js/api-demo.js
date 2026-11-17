@@ -91,6 +91,7 @@
         { titre: 'Contrôle de l\'annuaire', description: 'Compare les fiches contact avec BDDORGA.', emoji: '🔎', url: 'divergences.html' },
         { titre: 'Gestion des privilèges', description: 'Rôles, droits par module, exceptions individuelles, comptes et codes de secours.', emoji: '🛡️', url: 'privileges.html' },
         { titre: 'Santé du site', description: 'Vue globale de la santé du portail et optimisation en un clic (réservé au secrétariat).', emoji: '🩺', url: 'sante.html' },
+        { titre: 'Pause du portail', description: 'Interrupteur qui suspend tout accès au portail sauf aux administrateurs (réservé au secrétariat).', emoji: '⏸️', url: 'pause.html' },
         { titre: 'Paramètres', description: 'Les petits réglages de tous les programmes au même endroit (réservé au secrétariat).', emoji: '⚙️', url: 'parametres.html' } ] }
     ],
     conducteur: [
@@ -657,6 +658,9 @@
         return { id: idn, alertes: 3, alerte: '3 adresse(s)' }; }
       case 'signal_statut': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var gg = demoSignal.filter(function (g) { return g.id === p.id; })[0]; if (!gg) throw erreur('Signalement introuvable'); gg.statut = p.statut; gg.note = p.note || ''; gg.statut_par = demoState.user.nom || 'Moi'; gg.statut_le = new Date().toISOString(); return { id: gg.id, statut: gg.statut }; }
       case 'signal_prestataire': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var g2 = demoSignal.filter(function (g) { return g.id === p.id; })[0]; if (g2) g2.transmis_le = new Date().toISOString(); return { id: p.id }; }
+      case 'pause_etat': case 'pause_details': case 'pause_changer': { var PK = 'infra_v2_demo_pause', pz; try { pz = JSON.parse(sessionStorage.getItem(PK) || '{}'); } catch (e) { pz = {}; }
+        if (action === 'pause_changer') { pz = p.actif ? { pause: true, message: String(p.message || '').trim() || 'Le portail est temporairement suspendu.', par: (demoState.user && demoState.user.email) || '', le: new Date().toISOString() } : {}; try { sessionStorage.setItem(PK, JSON.stringify(pz)); } catch (e) { /* ignoré */ } }
+        return { pause: !!pz.pause, message: pz.message || 'Le portail est temporairement suspendu. Pour toute urgence, contactez le secrétariat de la division.', par: pz.par || '', le: pz.le || '', message_defaut: 'Le portail est temporairement suspendu. Pour toute urgence, contactez le secrétariat de la division.' }; }
       case 'puits_importer': { if (!demoState.user) throw erreur('Session expirée', 'SESSION'); var imp = p.puits || [], aj = 0, mo = 0, ig = 0;
         imp.forEach(function (x) { var ex = demoPuits.filter(function (y) { return y.uwi.toUpperCase() === String(x.uwi).toUpperCase(); })[0]; if (!ex) { aj += 1; if (p.confirme) demoPuits.push(Object.assign({ famille: String(x.uwi).replace(/[^A-Za-z].*$/, '').toUpperCase() || '?', x: null, y: null, td: 0 }, x)); } else if (ex.lat !== x.lat || ex.lon !== x.lon) { mo += 1; if (p.confirme) { ex.lat = x.lat; ex.lon = x.lon; } } else ig += 1; });
         return { simulation: !p.confirme, ajoutes: aj, modifies: mo, inchanges: ig, retires: 0, doublons: [], rejetes: 0, exemples: { ajoutes: [], modifies: [], retires: [] } }; }

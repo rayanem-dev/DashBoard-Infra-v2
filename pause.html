@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pause du portail – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .pz { max-width: 760px; margin: 0 auto; padding: 18px 16px 50px; }
+  .etat { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow-card); padding: 22px; text-align: center; margin-bottom: 14px; border: 3px solid #22C55E; }
+  .etat.pause { border-color: #DC2626; background: rgba(220,38,38,.06); }
+  .etat .gros { font-size: 54px; line-height: 1; } .etat h2 { margin: 8px 0 4px; font-size: 22px; } .etat p { margin: 0; color: var(--text-muted); font-size: 14px; }
+  .btn-g { margin-top: 16px; padding: 14px 26px; border: 0; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 800; color: #fff; cursor: pointer; background: #DC2626; } .btn-g.vert { background: #16A34A; } .btn-g:disabled { opacity: .6; cursor: wait; }
+  .carte { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 16px 18px; margin-bottom: 12px; font-size: 14px; line-height: 1.55; } .carte h3 { margin: 0 0 6px; font-size: 15px; } .carte ul { margin: 6px 0 0; padding-inline-start: 20px; }
+  textarea { width: 100%; box-sizing: border-box; min-height: 80px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text-dark); }
+  .err { color: #B42318; font-weight: 700; margin-top: 8px; } .ok { color: #15803D; font-weight: 700; margin-top: 8px; } [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">⏸️</div>
+    <div class="logo-text"><h1>Pause du portail</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — rien n'est réellement suspendu</div>
+<main class="pz">
+  <section class="etat" id="etat"><div class="gros" id="gros">⏳</div><h2 id="titre">Lecture de l'état…</h2><p id="sous"></p>
+    <button class="btn-g" id="bouton" type="button" hidden></button><div id="msg" role="status"></div></section>
+  <section class="carte" id="z-message"><h3>Message affiché à tout le monde pendant la pause</h3><textarea id="message" maxlength="300"></textarea></section>
+  <section class="carte"><h3>Ce que fait la pause</h3><ul>
+    <li><b>Plus personne ne peut se connecter ni utiliser le portail</b>, sauf les administrateurs (le secrétariat) : tous les autres voient « Portail en pause » avec le message ci-dessus.</li>
+    <li>Les envois automatiques (rapport du soir, rapport CPM du samedi) et les synchronisations de la nuit sont suspendus.</li>
+    <li>Les applications séparées (Bon de sortie, Dotation, Requête de transport, Fiche d'évaluation, Commande de pièces) ne s'ouvrent plus depuis le portail.</li>
+    <li>Rien n'est supprimé ni modifié : en rallumant, tout reprend tel quel.</li></ul></section>
+  <section class="carte"><h3>Ce que la pause ne fait pas</h3><ul>
+    <li>Elle ne retire pas les fichiers de Google Drive / Google Sheets ni le site public : pour cela, un hébergement approuvé par la cellule IT est nécessaire.</li>
+    <li>Les applications séparées gardent leur propre adresse : pour les couper vraiment, désactivez leur déploiement dans Apps Script.</li>
+    <li>Si plus aucun administrateur ne peut se connecter : lancer <code>reprendrePortail()</code> depuis l'éditeur Apps Script de la passerelle.</li></ul></section>
+</main>
+<script>
+(function () {
+  var $ = function (i) { return document.getElementById(i); }, etat = null, defaut = '';
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function dateFr(t) { var d = new Date(t); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
+  function dessiner() {
+    var p = etat.pause, e = $('etat'); e.className = 'etat' + (p ? ' pause' : '');
+    $('gros').textContent = p ? '⏸️' : '✅'; $('titre').textContent = p ? 'Le portail est EN PAUSE' : 'Le portail est en service';
+    $('sous').textContent = p ? 'Seuls les administrateurs y ont accès' + (etat.par ? ' · mis en pause par ' + etat.par : '') + (etat.le ? ' le ' + dateFr(etat.le) : '') : 'Tous les comptes y ont accès selon leurs droits.';
+    var b = $('bouton'); b.hidden = false; b.className = 'btn-g' + (p ? ' vert' : ''); b.textContent = p ? '▶ Remettre le portail en service' : '⏸ Mettre le portail en pause';
+    if (p || !$('message').value) $('message').value = etat.message || defaut;
+  }
+  function charger() { return Api.call('pause_details').then(function (r) { etat = r; defaut = r.message_defaut || ''; dessiner(); }).catch(function (e) { if (e.code === 'SESSION') { location.replace('connexion.html'); return; } $('titre').textContent = e.code === 'DROITS' ? 'Accès réservé aux administrateurs' : e.message; $('gros').textContent = '⚠️'; }); }
+  $('bouton').onclick = function () {
+    var vers = !etat.pause;
+    if (!window.confirm(vers ? 'Mettre le portail en pause ? Plus personne (sauf les administrateurs) ne pourra l\'utiliser, et les envois automatiques seront suspendus.' : 'Remettre le portail en service pour tout le monde ?')) return;
+    var b = $('bouton'); b.disabled = true; $('msg').textContent = '';
+    Api.call('pause_changer', { actif: vers, message: $('message').value }).then(function (r) { etat = r; dessiner(); $('msg').className = 'ok'; $('msg').textContent = vers ? '✓ Portail mis en pause.' : '✓ Portail remis en service.'; })
+      .catch(function (e) { $('msg').className = 'err'; $('msg').textContent = e.message; }).then(function () { b.disabled = false; });
+  };
+  charger();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

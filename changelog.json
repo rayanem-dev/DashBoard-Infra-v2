@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-17-437",
+    "date": "2026-11-17",
+    "title": "Version 6.110.0 — Pause du portail : un interrupteur dans Admin",
+    "changes": [
+      "Nouvelle page « Pause du portail » (Admin, secrétariat) : un bouton met tout le portail en pause d'un clic, un autre le remet en service. Un message modifiable est affiché en plein écran à tous les autres utilisateurs (« Portail en pause »), et sur la page de connexion.",
+      "En pause : plus aucune action n'est acceptée de la part des comptes non administrateurs, la connexion leur est refusée, les envois automatiques (rapport du soir, rapport CPM du samedi) et les synchronisations de la nuit sont suspendus, les applications séparées ne s'ouvrent plus depuis le portail. Rien n'est supprimé ni modifié ; les administrateurs gardent l'accès et voient un bandeau rouge sur l'accueil.",
+      "Secours : si plus aucun administrateur ne peut se connecter, la fonction reprendrePortail() de la passerelle (éditeur Apps Script) rallume le portail. Limite : les applications séparées gardent leur propre adresse, seule la désactivation de leur déploiement les coupe vraiment."
+    ]
+  },
+  {
     "id": "2026-11-17-436",
     "date": "2026-11-17",
     "title": "Version 6.109.3 — Carte des puits et Signaler route barrée épinglées dans « Mes applications » (15 jours)",

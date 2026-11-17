@@ -5,6 +5,15 @@
   var BASE = (document.currentScript && document.currentScript.src || '').replace(/api\.js(\?.*)?$/, '');
   var LECTURE = /^(liste|menu|situation|donnees|reprendre|annuaire|cpm_journal|planning|rotations|badges_donnees)/;
   function erreur(msg, code) { var e = new Error(msg); e.code = code || 'ERR'; return e; }
+  // Portail en pause (interrupteur du secrétariat) : message plein écran sur toutes les pages, sauf la page de connexion qui affiche l'erreur dans son formulaire.
+  function afficherPause(msg) {
+    if (/connexion\.html$/i.test(location.pathname) || document.getElementById('pause-portail')) return;
+    var d = document.createElement('div'); d.id = 'pause-portail'; d.setAttribute('role', 'alert');
+    d.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#0F1420;color:#EEF1F7;display:grid;place-items:center;padding:24px;text-align:center;font-family:Inter,Arial,sans-serif';
+    d.innerHTML = '<div style="max-width:480px"><div style="font-size:54px">⏸️</div><h1 style="margin:10px 0;font-size:22px">Portail en pause</h1><p style="font-size:15px;line-height:1.55;color:#C7CEDC"></p>' +
+      '<p style="margin-top:18px"><a href="javascript:location.reload()" style="color:#F48C06;font-weight:700;margin-inline-end:18px">Réessayer</a><a href="connexion.html" style="color:#9AA4B8">Connexion administrateur</a></p></div>';
+    d.querySelector('p').textContent = String(msg || '').replace(/^Portail en pause : /, ''); (document.body || document.documentElement).appendChild(d);
+  }
   var demoChargee = null;
   function chargerDemo() {
     if (window.ApiDemo) return Promise.resolve(window.ApiDemo);
@@ -72,7 +81,7 @@
           });
       }
       return appeler(1)
-        .then(function (j) { if (!j.ok) throw erreur(j.erreur || 'Erreur', j.code); return j; })
+        .then(function (j) { if (!j.ok) { if (j.code === 'PAUSE') afficherPause(j.erreur); throw erreur(j.erreur || 'Erreur', j.code); } return j; })
         .catch(function (e) {
           // Session expirée : on tente une fois de la rouvrir avec « rester connecté », puis on rejoue l'appel.
           if (e.code === 'SESSION' && !dejaRepris && !SANS_REPRISE[action] && self.remember()) {

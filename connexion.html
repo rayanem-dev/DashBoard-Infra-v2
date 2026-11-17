@@ -153,6 +153,11 @@ var RETOUR_OK = /^(video\.html(\?v=[a-z0-9-]+)?|epi\.html)$/;   /* pages où l'o
   });
 })();
 </script>
+<script>
+// Portail en pause : message sur la page de connexion (les administrateurs peuvent quand même se connecter)
+(function () { if (!window.Api) return; Api.call('pause_etat').then(function (p) { if (!p || !p.pause) return; var d = document.createElement('div'); d.setAttribute('role', 'alert');
+  d.style.cssText = 'background:#FEE2E2;color:#7F1D1D;padding:12px 16px;text-align:center;font:600 14px Inter,Arial,sans-serif;position:sticky;top:0;z-index:50'; d.textContent = '⏸️ Portail en pause : ' + (p.message || 'accès suspendu.') + ' (administrateurs : connexion possible)'; document.body.insertBefore(d, document.body.firstChild); }).catch(function () { /* rien */ }); })();
+</script>
 <script src="js/pied.js"></script>
 </body>
 </html>

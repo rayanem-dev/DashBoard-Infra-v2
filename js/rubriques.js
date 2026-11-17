@@ -21,7 +21,7 @@
     [/organigramme|note d.interim|feuille de pointage|affectation du personnel|planning global|planning & rotations|simulation de planning|permanence|formation|visite medicale/, 'personnel'],
     [/veste en cuir|dechets industriels|dotation|repas a emporter|reservation|prise en charge hotel|ordre de travail|gaz.?oil|vehicule|requete transport|requete de transport|stock|inventaire|radio|commande de pieces/, 'logistique'],
     [/instances courriers|consignes|ordres de mission|documents administratifs|renommage|parametres/, 'admin'],
-    [/annuaire|privileges|sante du site|helpdesk|quarantaine/, 'it']
+    [/annuaire|privileges|sante du site|pause du portail|helpdesk|quarantaine/, 'it']
   ];
   // Mots que les agents tapent pour retrouver une carte (ajoutés à la recherche, jamais affichés)
   var MOTS = [
