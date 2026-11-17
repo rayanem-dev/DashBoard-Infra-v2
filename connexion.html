@@ -62,6 +62,8 @@
   </form>
 </div>
 
+<script>(function () { if (/[?&]admin(\b|=|&|$)/.test(location.search)) return; var ok = 0; try { ok = Number(sessionStorage.getItem('infra_v2_pause_ok') || 0); } catch (e) { ok = 0; }
+  if (Date.now() - ok > 600000) { document.documentElement.style.visibility = 'hidden'; window.__pauseCache = true; } })();</script>
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script>
@@ -154,9 +156,11 @@ var RETOUR_OK = /^(video\.html(\?v=[a-z0-9-]+)?|epi\.html)$/;   /* pages où l'o
 })();
 </script>
 <script>
-// Portail en pause : message sur la page de connexion (les administrateurs peuvent quand même se connecter)
-(function () { if (!window.Api) return; Api.call('pause_etat').then(function (p) { if (!p || !p.pause) return; var d = document.createElement('div'); d.setAttribute('role', 'alert');
-  d.style.cssText = 'background:#FEE2E2;color:#7F1D1D;padding:12px 16px;text-align:center;font:600 14px Inter,Arial,sans-serif;position:sticky;top:0;z-index:50'; d.textContent = '⏸️ Portail en pause : ' + (p.message || 'accès suspendu.') + ' (administrateurs : connexion possible)'; document.body.insertBefore(d, document.body.firstChild); }).catch(function () { /* rien */ }); })();
+// Portail en pause : la page de connexion devient blanche pour tout le monde, sauf avec ?admin (adresse des administrateurs). Aucun message.
+(function () {
+  if (!window.Api || /[?&]admin(\b|=|&|$)/.test(location.search)) return;
+  Api.call('pause_etat').then(function (p) { if (p && p.pause) { Api.pageBlanche(); } else { try { sessionStorage.setItem('infra_v2_pause_ok', String(Date.now())); } catch (e) { /* ignoré */ } } document.documentElement.style.visibility = ''; }).catch(function () { document.documentElement.style.visibility = ''; });   // hors connexion : la page reste
+})();
 </script>
 <script src="js/pied.js"></script>
 </body>

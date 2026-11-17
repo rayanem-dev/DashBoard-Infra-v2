@@ -36,9 +36,9 @@
 <main class="pz">
   <section class="etat" id="etat"><div class="gros" id="gros">⏳</div><h2 id="titre">Lecture de l'état…</h2><p id="sous"></p>
     <button class="btn-g" id="bouton" type="button" hidden></button><div id="msg" role="status"></div></section>
-  <section class="carte" id="z-message"><h3>Message affiché à tout le monde pendant la pause</h3><textarea id="message" maxlength="300"></textarea></section>
+  <section class="carte"><h3>Comment un administrateur se connecte pendant la pause</h3><p style="margin:0">Adresse de connexion : <b><code id="lien-admin"></code></b><br>Gardez-la : sans le <code>?admin</code>, la page de connexion reste blanche comme toutes les autres.</p></section>
   <section class="carte"><h3>Ce que fait la pause</h3><ul>
-    <li><b>Plus personne ne peut se connecter ni utiliser le portail</b>, sauf les administrateurs (le secrétariat) : tous les autres voient « Portail en pause » avec le message ci-dessus.</li>
+    <li><b>Plus personne ne peut se connecter ni utiliser le portail</b>, sauf les administrateurs (le secrétariat) : tous les autres voient <b>une page blanche</b>, sans aucun texte, titre d'onglet ni icône.</li>
     <li>Les envois automatiques (rapport du soir, rapport CPM du samedi) et les synchronisations de la nuit sont suspendus.</li>
     <li>Les applications séparées (Bon de sortie, Dotation, Requête de transport, Fiche d'évaluation, Commande de pièces) ne s'ouvrent plus depuis le portail.</li>
     <li>Rien n'est supprimé ni modifié : en rallumant, tout reprend tel quel.</li></ul></section>
@@ -49,7 +49,7 @@
 </main>
 <script>
 (function () {
-  var $ = function (i) { return document.getElementById(i); }, etat = null, defaut = '';
+  var $ = function (i) { return document.getElementById(i); }, etat = null;
   if (window.Api && Api.demo) $('demo').hidden = false;
   function dateFr(t) { var d = new Date(t); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
   function dessiner() {
@@ -57,14 +57,14 @@
     $('gros').textContent = p ? '⏸️' : '✅'; $('titre').textContent = p ? 'Le portail est EN PAUSE' : 'Le portail est en service';
     $('sous').textContent = p ? 'Seuls les administrateurs y ont accès' + (etat.par ? ' · mis en pause par ' + etat.par : '') + (etat.le ? ' le ' + dateFr(etat.le) : '') : 'Tous les comptes y ont accès selon leurs droits.';
     var b = $('bouton'); b.hidden = false; b.className = 'btn-g' + (p ? ' vert' : ''); b.textContent = p ? '▶ Remettre le portail en service' : '⏸ Mettre le portail en pause';
-    if (p || !$('message').value) $('message').value = etat.message || defaut;
+    $('lien-admin').textContent = location.href.replace(/[^/]*$/, '') + 'connexion.html?admin';
   }
-  function charger() { return Api.call('pause_details').then(function (r) { etat = r; defaut = r.message_defaut || ''; dessiner(); }).catch(function (e) { if (e.code === 'SESSION') { location.replace('connexion.html'); return; } $('titre').textContent = e.code === 'DROITS' ? 'Accès réservé aux administrateurs' : e.message; $('gros').textContent = '⚠️'; }); }
+  function charger() { return Api.call('pause_details').then(function (r) { etat = r; dessiner(); }).catch(function (e) { if (e.code === 'SESSION') { location.replace('connexion.html'); return; } $('titre').textContent = e.code === 'DROITS' ? 'Accès réservé aux administrateurs' : e.message; $('gros').textContent = '⚠️'; }); }
   $('bouton').onclick = function () {
     var vers = !etat.pause;
-    if (!window.confirm(vers ? 'Mettre le portail en pause ? Plus personne (sauf les administrateurs) ne pourra l\'utiliser, et les envois automatiques seront suspendus.' : 'Remettre le portail en service pour tout le monde ?')) return;
+    if (!window.confirm(vers ? 'Mettre le portail en pause ? Tout le monde (sauf les administrateurs) verra une page blanche, et les envois automatiques seront suspendus.' : 'Remettre le portail en service pour tout le monde ?')) return;
     var b = $('bouton'); b.disabled = true; $('msg').textContent = '';
-    Api.call('pause_changer', { actif: vers, message: $('message').value }).then(function (r) { etat = r; dessiner(); $('msg').className = 'ok'; $('msg').textContent = vers ? '✓ Portail mis en pause.' : '✓ Portail remis en service.'; })
+    Api.call('pause_changer', { actif: vers }).then(function (r) { etat = r; dessiner(); $('msg').className = 'ok'; $('msg').textContent = vers ? '✓ Portail mis en pause.' : '✓ Portail remis en service.'; })
       .catch(function (e) { $('msg').className = 'err'; $('msg').textContent = e.message; }).then(function () { b.disabled = false; });
   };
   charger();

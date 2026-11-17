@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-17-438",
+    "date": "2026-11-17",
+    "title": "Version 6.110.1 — Pause du portail : page blanche, aucune trace",
+    "changes": [
+      "Pendant la pause, toutes les pages du portail deviennent une page blanche pour tous les comptes sauf les administrateurs : aucun texte, aucun message, titre d'onglet vidé, icônes retirées. La page de connexion est blanche aussi.",
+      "Les administrateurs se connectent pendant la pause par l'adresse connexion.html?admin (affichée sur la page « Pause du portail »). La réponse de la passerelle ne contient plus aucune phrase. Le champ « message » de la page de pause est supprimé."
+    ]
+  },
+  {
     "id": "2026-11-17-437",
     "date": "2026-11-17",
     "title": "Version 6.110.0 — Pause du portail : un interrupteur dans Admin",
