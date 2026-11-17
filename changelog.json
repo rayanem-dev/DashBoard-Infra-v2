@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-11-17-439",
+    "date": "2026-11-17",
+    "title": "Version 6.110.2 — « Pause du portail » et « Santé du site » rangées dans la rubrique Admin",
+    "changes": [
+      "Les cartes « Pause du portail » et « Santé du site » apparaissent maintenant dans la rubrique « Admin » du menu et de l'accueil (elles étaient rangées dans « Informatique »)."
+    ]
+  },
+  {
     "id": "2026-11-17-438",
     "date": "2026-11-17",
     "title": "Version 6.110.1 — Pause du portail : page blanche, aucune trace",
