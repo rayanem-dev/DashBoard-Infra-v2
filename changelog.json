@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-18-441",
+    "date": "2026-11-18",
+    "title": "Version 6.112.0 — Adresse du secrétariat paramétrable dans chaque application séparée",
+    "changes": [
+      "Bon de sortie matériel, Dotation, Fiche d'évaluation, Prise en charge et Requête de transport ne codent plus l'adresse du secrétariat en dur : elle se règle dans l'éditeur Apps Script de CHAQUE application (Paramètres du projet → Propriétés du script → clé EMAIL_SECRETARIAT, ou SECRETARIAT_MAILS pour Dotation qui accepte plusieurs adresses séparées par une virgule). Le changement est pris en compte tout de suite, sans redéploiement.",
+      "Tant que cette propriété n'est pas réglée, l'envoi est refusé avec un message clair au lieu d'écrire quelque part par défaut ; Dotation garde son ancienne liste (Sec-INFRA.RNS@Sonatrach.dz, rayanem@gmail.com) tant qu'aucune propriété n'est réglée.",
+      "Rappel : dans le portail (passerelle), l'adresse du secrétariat utilisée pour la diffusion des documents et le consolidé des rapports était déjà réglable dans Paramètres → onglet « Adresses e-mail » ; si sec.infra.rns@gmail.com y a été enregistrée à la main, il faut la retirer là aussi."
+    ]
+  },
+  {
     "id": "2026-11-18-440",
     "date": "2026-11-18",
     "title": "Version 6.111.0 — Plus aucun envoi vers sec.infra.rns@gmail.com (consigne cellule IT)",
