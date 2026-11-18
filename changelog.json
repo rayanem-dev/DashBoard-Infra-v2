@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-18-442",
+    "date": "2026-11-18",
+    "title": "Version 6.113.0 — Adresse du secrétariat centralisée dans Paramètres, pour les cinq applications séparées",
+    "changes": [
+      "Retour en arrière sur la 6.112.0 : plus besoin de régler une propriété dans chacune des cinq applications séparées (Bon de sortie, Dotation, Fiche d'évaluation, Prise en charge, Requête de transport). Elles demandent maintenant l'adresse au portail, avant chaque envoi, réglée au même endroit que tout le reste : Paramètres → onglet « Adresses e-mail » → « Boîtes du secrétariat ». La changer là met à jour les cinq applications tout de suite, sans toucher à leur code ni à leurs propriétés.",
+      "Nouvelle action de la passerelle « envoi_externe_destinataire », protégée par la même clé partagée que la notification existante (Paramètres → « Clé des applications séparées », à coller dans la propriété ENVOI_CLE de chacune des cinq applications — déjà fait pour celles qui notifiaient déjà le portail). Sans cette clé réglée, l'application refuse d'envoyer avec un message clair plutôt que de deviner une adresse.",
+      "Cette action est bloquée pendant la pause du portail, comme la notification : les cinq applications séparées ne peuvent alors plus envoyer aucun document, pas seulement être ouvertes depuis le portail — la pause les arrête vraiment.",
+      "« Prise en charge » rejoint la liste des applications séparées connues du portail (comptée dans le rapport de l'activité du secrétariat, comme les quatre autres)."
+    ]
+  },
+  {
     "id": "2026-11-18-441",
     "date": "2026-11-18",
     "title": "Version 6.112.0 — Adresse du secrétariat paramétrable dans chaque application séparée",
