@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-18-440",
+    "date": "2026-11-18",
+    "title": "Version 6.111.0 — Plus aucun envoi vers sec.infra.rns@gmail.com (consigne cellule IT)",
+    "changes": [
+      "Toutes les applications (portail et applications séparées : Bon de sortie, Dotation, Fiche d'évaluation, Prise en charge, Requête de transport) ne mettent plus jamais sec.infra.rns@gmail.com comme destinataire : l'adresse officielle Sec-INFRA.RNS@Sonatrach.dz la remplace partout où elle était la boîte par défaut du secrétariat.",
+      "Les textes affichés (annuaire, confirmation d'envoi d'un document) ne mentionnent plus cette adresse Gmail.",
+      "Si le secrétariat a déjà personnalisé une liste d'adresses dans Paramètres (onglet « Adresses e-mail »), cette valeur enregistrée reste utilisée telle quelle : repasser dans Paramètres pour en retirer l'adresse Gmail si elle y figure encore."
+    ]
+  },
+  {
     "id": "2026-11-17-439",
     "date": "2026-11-17",
     "title": "Version 6.110.2 — « Pause du portail » et « Santé du site » rangées dans la rubrique Admin",

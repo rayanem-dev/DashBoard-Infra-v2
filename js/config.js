@@ -15,4 +15,4 @@ window.EMPLOYEURS = {
 };
 
 // Adresse du secrétariat : lien « Mot de passe oublié ? Demander au secrétariat » de la fiche de l'agent.
-window.SECRETARIAT_EMAIL = 'sec.infra.rns@gmail.com,Sec-INFRA.RNS@Sonatrach.dz'; // plusieurs adresses possibles, séparées par une virgule
+window.SECRETARIAT_EMAIL = 'Sec-INFRA.RNS@Sonatrach.dz'; // plus d'envoi vers sec.infra.rns@gmail.com (consigne cellule IT du 17/11/2026)
