@@ -79,6 +79,7 @@ window.google = { script: { run: (function () {
   .histo-links { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
   .histo-links a, .histo-links button.mail, .histo-links button.impr { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
   .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.impr { background: linear-gradient(135deg, #16A34A, #22C55E); color: #fff; } .histo-links button:disabled { opacity: .5; cursor: wait; }
+  .histo-links button.mail.suspendu { background: #9CA3AF; color: #fff; opacity: .65; cursor: not-allowed; }
   .titre-fichiers { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 14px; } .titre-fichiers .section-title { margin: 0; }
   .btn-tout-suppr { background: #FEE2E2; color: var(--red); border: 1.5px solid #FECACA; border-radius: 9px; padding: 7px 12px; font: 700 12px 'Inter', sans-serif; cursor: pointer; } .btn-tout-suppr:hover { background: #FCA5A5; } .btn-tout-suppr:disabled { opacity: .5; cursor: wait; }
   .btn-suppr-item { background: #FEE2E2; color: var(--red); border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
@@ -730,6 +731,7 @@ window.google = { script: { run: (function () {
       if (!res.success) { div.innerHTML = '<div class="placeholder">Erreur : ' + echapper(res.error) + '</div>'; return; }
       document.getElementById('btnToutSupprimer').hidden = !res.fichiers.length || !peutSuppr;
       if (!res.fichiers.length) { div.innerHTML = '<div class="placeholder">Aucun document généré pour le moment.</div>'; return; }
+      const emailSuspendu = !!res.email_suspendu;
       div.innerHTML = '';
       res.fichiers.forEach(function(f) {
         const row = document.createElement('div'); row.className = 'histo-item';
@@ -739,12 +741,12 @@ window.google = { script: { run: (function () {
           '<button type="button" class="impr" data-id="' + echapper(f.id) + '">🖨️ Imprimer</button>' +
           (peutDoc ? '<button type="button" class="modif" data-id="' + echapper(f.id) + '" title="Ouvre le document Google pour le corriger">✏️ Modifier</button>' : '') +
           (!estPrestataire && f.type === 'AUTORISATION' ? '<button type="button" class="sites" data-id="' + echapper(f.id) + '" title="Sites concernés par l\'accès (OUI / NON) : l\'autorisation et le macaron sont mis à jour">🏢 Sites</button>' : '') +
-          (peutEnvoi ? '<button type="button" class="mail" data-id="' + echapper(f.id) + '">✉️ Envoyer par email</button>' : '') + '</div>' +
+          (peutEnvoi ? '<button type="button" class="mail' + (emailSuspendu ? ' suspendu' : '') + '" data-id="' + echapper(f.id) + '"' + (emailSuspendu ? ' disabled title="Envoi d\'e-mail suspendu (Paramètres)"' : '') + '>✉️ Envoyer par email</button>' : '') + '</div>' +
           (peutSuppr ? '<button type="button" class="btn-suppr-item" title="Supprimer" data-id="' + echapper(f.id) + '">🗑</button>' : '');
         row.querySelector('button.impr').onclick = function() { imprimerDirect(this, f.id); };
         if (peutDoc) { row.querySelector('button.modif').onclick = function() { modifierDoc(this, f.id); }; }
         const bs = row.querySelector('button.sites'); if (bs) bs.onclick = function() { choisirSites(this, f.id); };
-        if (peutEnvoi) row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
+        if (peutEnvoi && !emailSuspendu) row.querySelector('button.mail').onclick = function() { envoyerParMail(this, f.id); };
         if (peutSuppr) row.querySelector('.btn-suppr-item').onclick = function() { supprimerFichier(this, f.id); };
         div.appendChild(row);
       });

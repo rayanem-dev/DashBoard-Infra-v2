@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-19-447",
+    "date": "2026-11-19",
+    "title": "Version 6.117.0 — Onglet « Arrêt d'urgence » dans Paramètres, bouton email grisé sur la liste de Prise en charge",
+    "changes": [
+      "Nouvel onglet « 🛑 Arrêt d'urgence » dans Paramètres, en premier : la pause du portail (interrupteur compact, même état que pause.html) et le bouton rouge « Suspendre tout envoi d'e-mail » au même endroit, plutôt que dispersés.",
+      "Corrigé : dans la liste de documents de Prise en charge (celle de l'application elle-même, différente de la carte « Documents générés »), le bouton « Envoyer par email » se grise maintenant lui aussi tant que l'envoi d'e-mail est suspendu — il ne l'était pas.",
+      "Outillage interne : le générateur qui reprend Prise en charge dans la passerelle (outils/generer-pec-gateway.js) est maintenant un petit réglage au-dessus d'un module générique (outils/generer-moteur.js), réutilisable pour fusionner d'autres applications séparées dans le portail de la même façon."
+    ]
+  },
+  {
     "id": "2026-11-19-446",
     "date": "2026-11-19",
     "title": "Version 6.116.0 — Audit complet du site : « Commande de pièces » et « Note d'intérim » rejoignent le dossier de sortie commun",

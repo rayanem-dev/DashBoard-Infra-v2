@@ -39,6 +39,9 @@
   .btn-suspendre.inactif { background: var(--surface); color: var(--text-dark); border: 1.5px solid var(--border); }
   .btn-suspendre:disabled { opacity: .6; cursor: default; }
   .suspendre-etat { font-size: 12.5px; margin-top: 8px; font-weight: 700; } .suspendre-etat.on { color: #B42318; } .suspendre-etat.off { color: #15803d; }
+  .pause-mini { border: 2px solid #16A34A; } .pause-mini.actif { border-color: #DC2626; background: rgba(220,38,38,.06); }
+  .pause-mini h3 { margin: 0 0 4px; font-size: 15px; } .pause-mini .aide { margin: 0 0 10px; }
+  .pause-mini .btn-g { padding: 10px 18px; border: 0; border-radius: 10px; font: inherit; font-size: 13.5px; font-weight: 800; color: #fff; cursor: pointer; background: #DC2626; } .pause-mini .btn-g.vert { background: #16A34A; } .pause-mini .btn-g:disabled { opacity: .6; cursor: wait; }
 </style>
 </head>
 <body>
@@ -63,7 +66,7 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   if (window.Api && Api.demo) $('demo').hidden = false;
-  var P = [], ONGLETS = [['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['accueil', '🏠 Page d\'accueil', 'Ce qui s\'affiche en haut de l\'accueil du portail : interrupteurs des statistiques (planning, inventaire), textes de la stat de planning et message pour tous. Un interrupteur coupé fait disparaître l\'encadré chez tout le monde.'], ['rapport', '📨 Rapport journalier', 'Qui reçoit le rapport journalier consolidé, et ce qu\'il reçoit : le consolidé complet, seulement le rapport de son service, ou rien. L\'envoi automatique du soir et l\'envoi manuel suivent ce tableau.'], ['fichiers', '📦 Inventaire', 'Exercices d\'inventaire (création, clôture, injection, suppression) et fichier global amortissable dans lequel l\'injection écrit les emplacements retrouvés. Les administrateurs de l\'inventaire se désignent dans l\'onglet Adresses e-mail.']], onglet = 'adresses';
+  var P = [], ONGLETS = [['urgence', '🛑 Arrêt d\'urgence', 'Les deux interrupteurs qui coupent l\'accès ou l\'envoi d\'e-mail pour tout le monde, au même endroit.'], ['adresses', '✉️ Adresses e-mail', 'Qui reçoit quoi : consolidé des rapports, réservation de vol, prise en charge, repas à emporter, ordre de travail, rapport CPM… Chaque adresse est enregistrée seule et sert tout de suite. Les envois restent toujours déclenchés au clic d\'un agent, sauf l\'envoi automatique du soir.'], ['options', '🔐 Options et accès', 'Interrupteurs et niveaux d\'accès : qui peut utiliser quelle fonction (une option ne donne jamais plus de droits que le module concerné).'], ['reglages', '⚙️ Réglages', 'Valeurs, durées, seuils, copies automatiques et suppression automatique des documents générés.'], ['accueil', '🏠 Page d\'accueil', 'Ce qui s\'affiche en haut de l\'accueil du portail : interrupteurs des statistiques (planning, inventaire), textes de la stat de planning et message pour tous. Un interrupteur coupé fait disparaître l\'encadré chez tout le monde.'], ['rapport', '📨 Rapport journalier', 'Qui reçoit le rapport journalier consolidé, et ce qu\'il reçoit : le consolidé complet, seulement le rapport de son service, ou rien. L\'envoi automatique du soir et l\'envoi manuel suivent ce tableau.'], ['fichiers', '📦 Inventaire', 'Exercices d\'inventaire (création, clôture, injection, suppression) et fichier global amortissable dans lequel l\'injection écrit les emplacements retrouvés. Les administrateurs de l\'inventaire se désignent dans l\'onglet Adresses e-mail.']], onglet = 'adresses';
   try { var memo = sessionStorage.getItem('pa_onglet'); if (memo) onglet = memo; } catch (e) { /* mémoire indisponible */ }
   if (/^#rapport/.test(location.hash)) onglet = 'rapport';
   function toast(m, err) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, 3200); }
@@ -97,6 +100,7 @@
       groupe(p.groupe).push({ p: p });
     });
     z.textContent = '';
+    if (!q && onglet === 'urgence') z.appendChild(cartePauseMini());
     if (!ordre.length) z.appendChild(el('p', 'aide', 'Aucun réglage ne correspond.'));
     ordre.forEach(function (g) {
       var d = el('details', 'groupe'), nbOpt = groupes[g].filter(function (x) { return x.option; }).length, n = groupes[g].length; d.open = true;
@@ -110,6 +114,28 @@
   /** Option à interrupteur et niveau d'accès : « Active » oui / non et, si elle en a un, le rôle minimum (ce rôle et ceux au-dessus). Un seul « Enregistrer » pour les deux. */
   /** Fichier global amortissable : chargé depuis un Excel, devient un Google Sheets du Drive ; l'inventaire y écrit à la clôture d'un exercice (une sauvegarde est faite avant chaque injection). */
   /** Rapport journalier : tableau « qui reçoit quoi » (un choix par rôle), envoi automatique (activé, heure) et adresses supplémentaires, enregistrés d'un seul clic. */
+  /** Pause du portail, en version compacte (onglet « Arrêt d'urgence ») : même état et bouton que pause.html, sans quitter Paramètres. */
+  function cartePauseMini() {
+    var c = el('div', 'bloc pause-mini'), etat = null;
+    var titre = el('h3', null, '⏸️ Pause du portail'), sous = el('p', 'aide', 'Lecture de l\'état…'), b = el('button', 'btn-g'); b.type = 'button'; b.hidden = true;
+    var lien = el('a', null, 'Détails, adresse de connexion administrateur…'); lien.href = 'pause.html'; lien.style.cssText = 'font-size:12px;display:inline-block;margin-top:6px';
+    c.appendChild(titre); c.appendChild(sous); c.appendChild(b); c.appendChild(el('div', null, lien));
+    function dessinerEtat() {
+      var p = etat.pause; c.className = 'bloc pause-mini' + (p ? ' actif' : '');
+      titre.textContent = p ? '⏸️ Portail EN PAUSE' : '✅ Portail en service';
+      sous.textContent = p ? 'Seuls les administrateurs y ont accès.' : 'Tous les comptes y ont accès selon leurs droits.';
+      b.hidden = false; b.className = 'btn-g' + (p ? ' vert' : ''); b.textContent = p ? '▶ Remettre en service' : '⏸ Mettre en pause';
+    }
+    Api.call('pause_details').then(function (r) { etat = r; dessinerEtat(); }).catch(function (e) { sous.textContent = e.code === 'DROITS' ? 'Accès réservé aux administrateurs.' : e.message; });
+    b.onclick = function () {
+      var vers = !etat.pause;
+      if (!window.confirm(vers ? 'Mettre le portail en pause ? Tout le monde (sauf les administrateurs) verra une page blanche.' : 'Remettre le portail en service pour tout le monde ?')) return;
+      b.disabled = true;
+      Api.call('pause_changer', { actif: vers }).then(function (r) { etat = r; dessinerEtat(); toast(vers ? 'Portail mis en pause' : 'Portail remis en service'); })
+        .catch(function (e) { sous.textContent = e.message; }).then(function () { b.disabled = false; });
+    };
+    return c;
+  }
   function carteRapport() {
     var c = el('div', 'bloc'), par = {}; P.forEach(function (p) { par[p.id] = p; });
     c.appendChild(el('h3', null, '📨 Rapport journalier : qui reçoit quoi'));
