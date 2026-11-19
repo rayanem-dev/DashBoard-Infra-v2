@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-19-446",
+    "date": "2026-11-19",
+    "title": "Version 6.116.0 — Audit complet du site : « Commande de pièces » et « Note d'intérim » rejoignent le dossier de sortie commun",
+    "changes": [
+      "Vérification de TOUT le site (passerelle, les 6 applications séparées, tous les fichiers .gs/.js qui créent un document ou envoient un e-mail — recherche exhaustive, pas seulement les 5 applications déjà couvertes) : deux générateurs de documents n'étaient pas encore raccordés au dossier de sortie commun (Paramètres → « Dossier de sortie »).",
+      "« Commande de pièces » (6ᵉ application séparée, jusqu'ici absente du dispositif) dépose maintenant une copie de chaque bon de commande généré dans le dossier commun. Cette application n'envoie aucun e-mail : rien à changer côté bouton rouge pour elle.",
+      "« Note d'intérim », générée directement par la passerelle (pas une application séparée), dépose aussi une copie dans le dossier commun.",
+      "Résultat de l'audit : toutes les applications qui génèrent un document (bon de sortie, dotation, fiche d'évaluation, requête de transport, prise en charge, commande de pièces, note d'intérim) déposent maintenant une copie dans le dossier de sortie commun ; tout ce qui envoie un e-mail (10 points d'envoi dans les applications séparées + tous les envois de la passerelle) passe par le bouton rouge « Suspendre tout envoi d'e-mail ». Aucun autre générateur de document ni envoi d'e-mail n'a été trouvé ailleurs dans le site (badges, inventaire, rapports journaliers et carte des puits ne stockent que des photos ou des tuiles de carte, pas des documents à imprimer ou envoyer)."
+    ]
+  },
+  {
     "id": "2026-11-19-445",
     "date": "2026-11-19",
     "title": "Version 6.115.1 — « Documents générés » : le bouton « Envoyer par email » se grise pendant la suspension",
