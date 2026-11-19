@@ -31,7 +31,10 @@
   .histo-links { display: flex; gap: 6px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
   .histo-links a, .histo-links button.mail, .histo-links button.impr { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
   .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.impr { background: linear-gradient(135deg, #16A34A, #22C55E); color: #fff; } .histo-links button:disabled { opacity: .5; cursor: wait; }
+  .histo-links button.mail.suspendu { background: #9CA3AF; color: #fff; opacity: .65; cursor: not-allowed; }
   .btn-suppr-item { background: #FEE2E2; color: #B42318; border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+  .avis-suspendu { display: flex; align-items: center; gap: 10px; background: #FEE2E2; border: 1.5px solid #FECACA; color: #B42318; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  .avis-suspendu a { color: inherit; text-decoration: underline; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -55,13 +58,14 @@
     <div class="reglage-vide">Aucun dossier de sortie n'est réglé pour l'instant.<br>À régler une fois dans <a href="parametres.html">Paramètres → « Dossier de sortie »</a>.</div>
   </section>
   <section id="avec-reglage" hidden>
+    <div class="avis-suspendu" id="avisSuspendu" hidden>🔴 Envoi d'e-mail suspendu : le bouton « Envoyer par email » est désactivé. <a href="parametres.html">Réactiver dans Paramètres</a>.</div>
     <div class="titre-fichiers"><h2 id="titreFichiers">Documents générés</h2><button type="button" class="btn-tout-suppr" id="btnToutSupprimer" hidden>🗑 Tout supprimer</button></div>
     <div id="historique"><div class="placeholder">Chargement…</div></div>
   </section>
 </main>
 <script>
 (function () {
-  var $ = function (i) { return document.getElementById(i); };
+  var $ = function (i) { return document.getElementById(i); }, emailSuspendu = false;
   if (window.Api && Api.demo) $('demo').hidden = false;
   function echapper(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function etiquette(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, '-'); }
@@ -81,7 +85,9 @@
         '<button type="button" class="impr">🖨️ Imprimer</button><button type="button" class="mail">✉️ Envoyer par email</button></div>' +
         '<button type="button" class="btn-suppr-item" title="Supprimer">🗑</button>';
       row.querySelector('button.impr').onclick = function () { imprimerDirect(this, f.id); };
-      row.querySelector('button.mail').onclick = function () { envoyerParMail(this, f.id); };
+      var btnMail = row.querySelector('button.mail');
+      if (emailSuspendu) { btnMail.classList.add('suspendu'); btnMail.disabled = true; btnMail.title = "Envoi d'e-mail suspendu (Paramètres)"; }
+      else btnMail.onclick = function () { envoyerParMail(this, f.id); };
       row.querySelector('.btn-suppr-item').onclick = function () { supprimerFichier(this, f.id); };
       div.appendChild(row);
     });
@@ -90,6 +96,7 @@
   function charger() {
     Api.call('sortie_liste').then(function (r) {
       $('sans-reglage').hidden = r.regle; $('avec-reglage').hidden = !r.regle;
+      emailSuspendu = !!r.email_suspendu; $('avisSuspendu').hidden = !emailSuspendu;
       if (r.regle) dessiner(r.fichiers);
     }).catch(function (e) {
       if (e.code === 'SESSION') { location.replace('connexion.html'); return; }

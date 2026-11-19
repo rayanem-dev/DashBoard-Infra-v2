@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-11-19-445",
+    "date": "2026-11-19",
+    "title": "Version 6.115.1 — « Documents générés » : le bouton « Envoyer par email » se grise pendant la suspension",
+    "changes": [
+      "Dans Documents générés, le bouton « ✉️ Envoyer par email » de chaque document est maintenant grisé et désactivé tant que le bouton rouge « Suspendre tout envoi d'e-mail » (Paramètres) est activé, avec un bandeau d'avertissement en haut de la liste et un lien direct vers Paramètres.",
+      "Le serveur refusait déjà l'envoi pendant la suspension ; ce n'est maintenant plus seulement visible après un clic (message d'erreur), mais visible d'emblée sur le bouton lui-même."
+    ]
+  },
+  {
     "id": "2026-11-19-444",
     "date": "2026-11-19",
     "title": "Version 6.115.0 — « Documents générés » : un dossier de sortie commun, imprimer sans passer par e-mail",
