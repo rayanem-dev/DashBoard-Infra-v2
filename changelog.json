@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-19-450",
+    "date": "2026-11-19",
+    "title": "Version 6.120.0 — « Fiche d'évaluation » fusionnée dans le portail (3e des 5 applications séparées)",
+    "changes": [
+      "« Fiche d'évaluation » tourne maintenant DANS le portail (fiche-evaluation.html), comme Prise en charge, Requête de transport et Bon de sortie l'ont déjà été.",
+      "« Envoyer au secrétariat » ET « Envoyer au service » se grisent tous les deux pendant la suspension (y compris les boutons créés après génération d'une fiche) ; générer, imprimer, modifier et supprimer restent toujours actifs.",
+      "Outillage : outils/generer-moteur-fiche-evaluation.js, même méthode que pour les deux applications précédentes."
+    ]
+  },
+  {
     "id": "2026-11-19-449",
     "date": "2026-11-19",
     "title": "Version 6.119.0 — « Bon de sortie matériel » fusionné dans le portail (2e des 5 applications séparées)",

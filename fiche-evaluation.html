@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiche d’évaluation – Division Infrastructure RNS</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<script>
+// Pont vers la passerelle : le formulaire d'origine appelle google.script.run.xxx(...) ; ici chaque appel passe par la connexion du portail (action « fe »).
+window.google = { script: { run: (function () {
+  function chaine(ok, ko) {
+    return new Proxy({}, { get: function (_, nom) {
+      if (nom === 'withSuccessHandler') return function (f) { return chaine(f, ko); };
+      if (nom === 'withFailureHandler') return function (f) { return chaine(ok, f); };
+      return function () {
+        var args = Array.prototype.slice.call(arguments);
+        Api.call('fe', { fn: String(nom), args: args }).then(function (r) { if (ok) ok(r); }, function (e) { if (ko) ko(e); else if (window.console) console.error(e); });
+      };
+    } });
+  }
+  return chaine(null, null);
+})() } };
+</script>
+<style>
+  :root { --orange: #E85D04; --orange2: #F48C06; --texte: #1C1C1C; --fond: #F5F5F0; --carte: #fff; --bord: #E5E7EB; --doux: #6B7280; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', Arial, sans-serif; background: var(--fond); color: var(--texte); font-size: 14px; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+  .bandeau { max-width: 1000px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .logo { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 17px; }
+  .bandeau h1 { color: #fff; font-size: 19px; } .bandeau p { color: #94A3B8; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .bandeau a { margin-left: auto; color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 9px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+  main { max-width: 1000px; margin: 16px auto 80px; padding: 0 16px; }
+  .onglets { display: flex; gap: 6px; border-bottom: 2px solid var(--bord); margin-bottom: 14px; }
+  .onglet { background: none; border: 0; padding: 10px 16px; font: inherit; font-weight: 700; color: var(--doux); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .onglet.actif { color: var(--orange); border-bottom-color: var(--orange); }
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+  .carte h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--orange); margin-bottom: 12px; }
+  .grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .grille .large { grid-column: 1 / -1; }
+  label { display: block; font-size: 11.5px; font-weight: 700; color: var(--doux); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  input, textarea, select { width: 100%; font: inherit; padding: 9px 11px; border: 1.5px solid var(--bord); border-radius: 9px; background: #fff; color: var(--texte); }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,93,4,.15); }
+  textarea { min-height: 84px; resize: vertical; }
+  .tableau { overflow-x: auto; }
+  table.grillefiche { border-collapse: collapse; width: 100%; min-width: 760px; background: #fff; }
+  table.grillefiche th, table.grillefiche td { border: 1px solid #333; padding: 0; font-size: 12.5px; }
+  table.grillefiche th { background: #F3F4F6; padding: 6px 4px; font-size: 11px; }
+  table.grillefiche td.sec { background: #FAFAF7; padding: 7px 8px; font-weight: 700; } table.grillefiche td.it { padding: 7px 8px 7px 22px; }
+  table.grillefiche td.case { width: 6.2%; text-align: center; cursor: pointer; height: 34px; user-select: none; }
+  table.grillefiche td.case:hover { background: #FFE8D6; } table.grillefiche td.case.on { background: var(--orange); color: #fff; font-weight: 800; }
+  .barre-taux { position: sticky; bottom: 0; background: #1A1A2E; color: #fff; padding: 12px 18px; border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.25); margin-top: 10px; }
+  .barre-taux b { font-size: 22px; color: #FDBA74; } .barre-taux small { color: #CBD5E1; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 11px 18px; cursor: pointer; }
+  .prim { background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; } .sec { background: #fff; color: var(--texte); border: 1.5px solid var(--bord); } .danger { background: #fff; color: #B91C1C; border: 1.5px solid #FCA5A5; }
+  .petit { padding: 6px 10px; font-size: 12.5px; border-radius: 8px; } button:disabled { opacity: .55; cursor: wait; }
+  button.suspendu { background: #9CA3AF !important; color: #fff !important; border-color: transparent !important; cursor: not-allowed; opacity: .75; }
+  .msg { padding: 11px 14px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; display: none; } .msg.ok { display: block; background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; } .msg.err { display: block; background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+  .aide { font-size: 12px; color: var(--doux); margin-top: 6px; }
+  #resultat { display: none; } #resultat a, .lien { color: var(--orange); font-weight: 700; margin-right: 14px; text-decoration: none; }
+  table.archive { width: 100%; border-collapse: collapse; } table.archive th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--doux); padding: 8px; border-bottom: 2px solid var(--bord); }
+  table.archive td { padding: 9px 8px; border-bottom: 1px solid var(--bord); vertical-align: top; } .taux { font-weight: 800; color: var(--orange); white-space: nowrap; }
+  .edition { background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-weight: 600; display: none; }
+  @media (max-width: 760px) { .grille { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header><div class="bandeau">
+  <div class="logo">FE</div>
+  <div><h1>Fiche d’évaluation mensuelle</h1><p>Travaux et / ou prestations — Division Infrastructure RNS</p></div>
+  <a href="portail.html">← Retour au portail</a>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main>
+  <div class="onglets"><button class="onglet actif" id="o-fiche" data-p="p-fiche">Nouvelle fiche</button><button class="onglet" id="o-archive" data-p="p-archive">Archive</button></div>
+  <div id="message" class="msg"></div>
+
+  <section id="p-fiche">
+    <div class="edition" id="edition"></div>
+    <div class="carte"><h2>Cartouche</h2>
+      <div class="grille">
+        <div class="large"><label for="contratCpm">Contrat du Suivi CPM (en exécution, ou hors contrat : préparation / levée des réserves) — remplit la cartouche</label><select id="contratCpm"><option value="">— choisir un contrat, ou tout saisir à la main —</option></select><p class="aide" id="aideCpm">Chargement des contrats du Suivi CPM…</p></div>
+        <div><label for="ref">Réf</label><input id="ref" placeholder="……………………"></div>
+        <div><label for="date">Date de la fiche</label><input type="date" id="date"></div>
+        <div></div>
+        <div><label for="entrepreneur">Entrepreneur</label><input id="entrepreneur"></div>
+        <div><label for="contrat">Contrat</label><input id="contrat" placeholder="I/53/RNS/INFRA/2025"></div>
+        <div><label for="montant">Montant contractuel</label><input id="montant" placeholder="162 300 000,00 DA HT"></div>
+        <div><label for="dateOds">Date ODS</label><input id="dateOds" placeholder="jj/mm/aaaa"></div>
+        <div><label for="dateVigueur">Date d'entrée en vigueur</label><input id="dateVigueur" placeholder="jj/mm/aaaa"></div>
+        <div><label for="delai">Délai de réalisation</label><input id="delai" placeholder="36 Mois"></div>
+        <div><label for="dateService">Date de mise en service</label><input id="dateService" placeholder="jj/mm/aaaa"></div>
+        <div class="large"><label for="projet">Projet</label><input id="projet"></div>
+      </div>
+    </div>
+
+    <div class="carte"><h2>Indice de satisfaction — cliquez une case par critère</h2>
+      <div class="tableau"><table class="grillefiche" id="grille"></table></div>
+      <p class="aide">Un clic coche la case, un second clic la décoche. Un critère non coché ne compte pas dans le taux.</p>
+    </div>
+
+    <div class="carte"><h2>Suggestion / Axes d’amélioration</h2><textarea id="suggestion" maxlength="700"></textarea></div>
+
+    <div class="carte" id="resultat"><h2>Fiche générée</h2><p id="liens"></p></div>
+
+    <div class="barre-taux"><span>Satisfaction globale</span><b id="taux">—</b><small id="detailTaux"></small>
+      <span style="margin-left:auto;display:flex;gap:8px"><button class="sec petit" id="btnVider" type="button">Vider</button><button class="prim" id="btnGenerer" type="button">📄 Générer la fiche (PDF)</button></span></div>
+  </section>
+
+  <section id="p-archive" hidden>
+    <div class="carte"><h2>Fiches éditées</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"><input id="filtre" placeholder="Filtrer : entrepreneur, contrat, projet…" style="max-width:340px"><button class="sec petit" id="btnActualiser" type="button">↻ Actualiser</button></div>
+      <div class="tableau"><table class="archive"><thead><tr><th>Date</th><th>Entrepreneur / contrat</th><th>Projet</th><th>Taux</th><th></th></tr></thead><tbody id="listeArchive"></tbody></table></div>
+      <p class="aide" id="videArchive"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+  if (window.Api && Api.demo) document.getElementById('demo').hidden = false;
+  const $ = id => document.getElementById(id);
+  const CHAMPS = ['ref', 'date', 'entrepreneur', 'contrat', 'montant', 'dateOds', 'dateVigueur', 'delai', 'dateService', 'projet'];
+  let sections = [], pourcents = [], criteres = [], notes = {}, contrats = [], editionId = null, archive = [];
+  let emailSuspendu = false;
+  const aujourdhui = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  function dire(t, err) { const m = $('message'); m.textContent = t; m.className = 'msg ' + (err ? 'err' : 'ok'); if (t) window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  const tauxFr = t => String(t).replace('.', ',') + ' %';
+  /** Un bouton qui ENVOIE un e-mail (secrétariat ou service) se grise tant que le bouton rouge est activé. */
+  function marquerSiSuspendu(btn) { if (emailSuspendu) { btn.classList.add('suspendu'); btn.title = "Envoi d'e-mail suspendu (Paramètres)"; } return btn; }
+
+  // taux = moyenne des cases cochées, tronquée à 2 décimales (même règle que le serveur)
+  function calculer() {
+    const v = Object.keys(notes).map(k => Number(notes[k])).filter(n => pourcents.indexOf(n) >= 0);
+    if (!v.length) { $('taux').textContent = '—'; $('detailTaux').textContent = 'Aucune case cochée'; return; }
+    const t = Math.floor(v.reduce((a, b) => a + b, 0) / v.length * 100 + 1e-9) / 100;
+    $('taux').textContent = tauxFr(t); $('detailTaux').textContent = v.length + ' critère(s) coté(s) sur ' + criteres.length;
+  }
+  function dessinerGrille() {
+    const t = $('grille'); t.textContent = '';
+    const h1 = el('tr'); const a = el('th', null, 'N°'); a.rowSpan = 2; a.style.width = '5%'; const b = el('th', null, 'Désignation'); b.rowSpan = 2; b.style.width = '33%'; const c = el('th', null, 'Indice de satisfaction Projet'); c.colSpan = pourcents.length;
+    h1.appendChild(a); h1.appendChild(b); h1.appendChild(c); t.appendChild(h1);
+    const h2 = el('tr'); pourcents.forEach(p => h2.appendChild(el('th', null, p + '%'))); t.appendChild(h2);
+    let id = 0;
+    const ligneTitre = (n, titre) => { const r = el('tr'); const td = el('td', 'sec', n + '.  ' + titre); td.colSpan = 2; r.appendChild(td); const v = el('td'); v.colSpan = pourcents.length; r.appendChild(v); t.appendChild(r); };
+    const ligneItem = (texte, idc) => {
+      const r = el('tr'); const td = el('td', 'it', '▪  ' + texte); td.colSpan = 2; r.appendChild(td);
+      pourcents.forEach(p => {
+        const x = el('td', 'case' + (Number(notes[idc]) === p ? ' on' : ''), Number(notes[idc]) === p ? 'X' : '');
+        x.title = p + ' %';
+        x.addEventListener('click', () => { if (Number(notes[idc]) === p) delete notes[idc]; else notes[idc] = p; dessinerGrille(); calculer(); });
+        r.appendChild(x);
+      }); t.appendChild(r);
+    };
+    sections.forEach(s => {
+      ligneTitre(s.n, s.t);
+      (s.groupes || [{ items: s.items }]).forEach(g => { if (s.groupes) ligneTitre(g.n, g.t); g.items.forEach(x => { ligneItem(x, id); id += 1; }); });
+    });
+    calculer();
+  }
+  function remplir(c) { CHAMPS.forEach(k => { if (c[k] != null) $(k).value = c[k]; }); }
+  function vider() {
+    CHAMPS.forEach(k => $(k).value = ''); $('date').value = aujourdhui(); $('suggestion').value = ''; $('contratCpm').value = ''; notes = {}; editionId = null; $('edition').style.display = 'none';
+    $('resultat').style.display = 'none'; dessinerGrille(); dire('');
+  }
+
+  function initialiser() {
+    $('date').value = aujourdhui();
+    google.script.run.withSuccessHandler(r => { sections = r.sections; pourcents = r.pourcents; criteres = r.criteres; emailSuspendu = !!r.email_suspendu; dessinerGrille(); }).withFailureHandler(e => dire('❌ ' + e.message, true)).getCriteres();
+    google.script.run
+      .withSuccessHandler(l => {
+        contrats = l || []; const s = $('contratCpm');
+        const GROUPES = { execution: 'Contrats en exécution', preparation: 'Hors contrat — préparation (avant l\'exécution)', reserves: 'Hors contrat — levée des réserves (contrat échu)' }, groupes = {};
+        contrats.forEach((c, i) => {
+          if (!groupes[c.phase]) { groupes[c.phase] = document.createElement('optgroup'); groupes[c.phase].label = GROUPES[c.phase] || c.phase; s.appendChild(groupes[c.phase]); }
+          const o = el('option', null, (c.manques && c.manques.length ? '⚠ ' : '') + c.entrepreneur + ' — ' + (c.contrat || 'sans n°') + ' — ' + c.projet.slice(0, 70)); o.value = i; groupes[c.phase].appendChild(o);
+        });
+        const nb = p => contrats.filter(c => c.phase === p).length;
+        $('aideCpm').textContent = nb('execution') + ' contrat(s) en exécution, ' + nb('preparation') + ' en préparation, ' + nb('reserves') + ' en levée des réserves dans le Suivi CPM (lecture seule). Tout reste modifiable. ⚠ = information manquante dans le Suivi CPM.';
+      })
+      .withFailureHandler(e => { $('aideCpm').textContent = 'Suivi CPM indisponible : ' + e.message + ' — saisie à la main possible.'; })
+      .getContrats();
+  }
+  $('contratCpm').addEventListener('change', () => { const c = contrats[$('contratCpm').value]; if (c) { remplir(c); $('aideCpm').textContent = c.manques && c.manques.length ? '⚠ Non renseigné dans le Suivi CPM : ' + c.manques.join(', ') + ' — à compléter dans le Suivi CPM ou à saisir ici.' : (c.phase !== 'execution' ? 'Hors contrat (' + (c.phase === 'reserves' ? 'levée des réserves' : 'préparation') + ', statut « ' + c.statut + ' »). ' : '') + 'Cartouche reprise du Suivi CPM (lecture seule). Tout reste modifiable.'; } });
+
+  $('btnGenerer').addEventListener('click', () => {
+    const cartouche = {}; CHAMPS.forEach(k => cartouche[k] = $(k).value);
+    const b = $('btnGenerer'); b.disabled = true; b.textContent = '⏳ Génération…'; dire('');
+    google.script.run
+      .withSuccessHandler(r => {
+        b.disabled = false; b.textContent = '📄 Générer la fiche (PDF)';
+        if (!r.success) { dire('❌ ' + r.error, true); return; }
+        editionId = r.fileId; $('resultat').style.display = 'block'; $('edition').textContent = '✏️ Fiche « ' + r.fileName + ' » enregistrée : en la régénérant, elle remplace la version précédente (bouton « Vider » pour une nouvelle fiche).'; $('edition').style.display = 'block';
+        $('liens').innerHTML = '<a href="' + r.pdfUrl + '" target="_blank" rel="noopener">📄 Ouvrir le PDF</a><a href="' + r.downloadUrl + '" target="_blank" rel="noopener">⬇️ Télécharger</a><span style="color:var(--doux)">' + r.fileName + ' — ' + tauxFr(r.taux) + '</span>';
+        const bimp = el('button', 'sec petit', '🖨 Imprimer'); bimp.type = 'button'; bimp.style.marginLeft = '10px'; bimp.addEventListener('click', () => imprimerDirect(r.fileId, bimp)); $('liens').appendChild(bimp);
+        const bsec = marquerSiSuspendu(el('button', 'sec petit', '✉️ Envoyer au secrétariat')); bsec.type = 'button'; bsec.style.marginLeft = '10px'; bsec.addEventListener('click', () => envoyerSec(r.fileId, r.fileName, bsec)); $('liens').appendChild(bsec);
+        const bsv = marquerSiSuspendu(el('button', 'sec petit', '✉️ Envoyer au service')); bsv.type = 'button'; bsv.style.marginLeft = '10px'; bsv.addEventListener('click', () => envoyerService(r.fileId, r.fileName, bsv)); $('liens').appendChild(bsv);
+        dire('✅ Fiche générée et archivée (taux : ' + tauxFr(r.taux) + '). Elle est dans l’onglet Archive.' + (r.remplacees ? ' ♻ ' + r.remplacees + ' fiche' + (r.remplacees > 1 ? 's' : '') + ' du même contrat et du même mois remplacée' + (r.remplacees > 1 ? 's' : '') + ' : une seule fiche par contrat et par mois est gardée (la dernière).' : '')); $('resultat').scrollIntoView({ behavior: 'smooth' });
+      })
+      .withFailureHandler(e => { b.disabled = false; b.textContent = '📄 Générer la fiche (PDF)'; dire('❌ ' + e.message, true); })
+      .genererFiche({ cartouche: cartouche, notes: notes, suggestion: $('suggestion').value }, editionId);
+  });
+  $('btnVider').addEventListener('click', vider);
+
+  // ----- Archive
+  function dessinerArchive() {
+    const f = $('filtre').value.toLowerCase(), z = $('listeArchive'); z.textContent = '';
+    const liste = archive.filter(x => !f || (x.entrepreneur + ' ' + x.contrat + ' ' + x.projet).toLowerCase().indexOf(f) >= 0);
+    $('videArchive').textContent = liste.length ? liste.length + ' fiche(s)' : 'Aucune fiche archivée.';
+    liste.forEach(x => {
+      const tr = el('tr'); tr.appendChild(el('td', null, (x.date || '').split('-').reverse().join('/') || new Date(x.creeLe).toLocaleDateString('fr-FR')));
+      const t2 = el('td'); t2.appendChild(el('b', null, x.entrepreneur || x.nom)); t2.appendChild(el('div', 'aide', x.contrat)); tr.appendChild(t2);
+      tr.appendChild(el('td', null, x.projet)); tr.appendChild(el('td', 'taux', x.taux == null ? '' : tauxFr(x.taux)));
+      const a = el('td'); a.style.whiteSpace = 'nowrap';
+      const l1 = el('a', 'lien', 'Ouvrir'); l1.href = x.url; l1.target = '_blank'; l1.rel = 'noopener'; const l2 = el('a', 'lien', 'Télécharger'); l2.href = x.telecharger; l2.target = '_blank'; l2.rel = 'noopener';
+      const bm = el('button', 'sec petit', 'Modifier'); bm.addEventListener('click', () => rouvrir(x));
+      const bim = el('button', 'sec petit', '🖨 Imprimer'); bim.title = 'Impression en un clic'; bim.addEventListener('click', () => imprimerDirect(x.id, bim));
+      const bse = marquerSiSuspendu(el('button', 'sec petit', '✉️ Secrétariat')); bse.title = 'Envoyer cette fiche par e-mail au secrétariat'; bse.addEventListener('click', () => envoyerSec(x.id, x.nom, bse));
+      const bsv = marquerSiSuspendu(el('button', 'sec petit', '✉️ Service')); bsv.title = 'Envoyer cette fiche par e-mail à un service'; bsv.addEventListener('click', () => envoyerService(x.id, x.nom, bsv));
+      const bs = el('button', 'danger petit', 'Supprimer'); bs.style.marginLeft = '6px'; bs.addEventListener('click', () => supprimer(x));
+      a.appendChild(l1); a.appendChild(l2); a.appendChild(bm); bim.style.marginLeft = '6px'; a.appendChild(bim); bse.style.marginLeft = '6px'; a.appendChild(bse); bsv.style.marginLeft = '6px'; a.appendChild(bsv); a.appendChild(bs); tr.appendChild(a); z.appendChild(tr);
+    });
+  }
+  /** Impression en un clic : la fenêtre d'impression du navigateur s'ouvre directement (imprimante par défaut). Repli : le PDF s'ouvre dans un onglet. */
+  function imprimerDirect(id, btn) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Préparation…';
+    google.script.run.withSuccessHandler(res => {
+      btn.disabled = false; btn.textContent = txt;
+      if (!res.success) { dire('❌ ' + res.error, true); return; }
+      try {
+        const bin = atob(res.base64), o = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([o], { type: 'application/pdf' })), cadre = document.createElement('iframe');
+        cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+        cadre.onload = () => { try { cadre.contentWindow.focus(); cadre.contentWindow.print(); } catch (e) { window.open(url, '_blank'); } };
+        cadre.src = url; document.body.appendChild(cadre); setTimeout(() => { cadre.remove(); URL.revokeObjectURL(url); }, 180000);
+      } catch (e) { dire('❌ Impression impossible : ' + e.message, true); }
+    }).withFailureHandler(e => { btn.disabled = false; btn.textContent = txt; dire('❌ ' + e.message, true); }).lireFichierPourImpression(id);
+  }
+  // Envoi par e-mail à un service : le service se choisit dans une petite fenêtre, puis confirmation ; rien ne part tout seul
+  let servicesMail = null;
+  function choisirService(nom, cb) {
+    const ouvrir = (liste) => {
+      const dlg = document.createElement('dialog'); dlg.style.cssText = 'border:0;border-radius:14px;padding:18px;width:min(420px,94vw)';
+      const h = document.createElement('h3'); h.textContent = 'Envoyer la fiche à un service'; h.style.margin = '0 0 8px'; dlg.appendChild(h);
+      const p = document.createElement('p'); p.textContent = '« ' + nom + ' »'; p.style.cssText = 'font-size:13px;color:#555;margin:0 0 10px;word-break:break-word'; dlg.appendChild(p);
+      const sel = document.createElement('select'); sel.style.cssText = 'width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font:inherit'; liste.forEach(x => { const o = document.createElement('option'); o.value = x.id; o.textContent = x.nom; sel.appendChild(o); });
+      try { const d = localStorage.getItem('fiche_dernier_service'); if (d) sel.value = d; } catch (e) { /* pas de mémoire locale */ }
+      dlg.appendChild(sel);
+      const bt = document.createElement('div'); bt.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px';
+      const ann = document.createElement('button'); ann.className = 'sec petit'; ann.type = 'button'; ann.textContent = 'Annuler'; ann.onclick = () => dlg.close();
+      const ok = document.createElement('button'); ok.className = 'petit'; ok.type = 'button'; ok.textContent = 'Envoyer'; ok.onclick = () => { try { localStorage.setItem('fiche_dernier_service', sel.value); } catch (e) { /* rien */ } const id = sel.value, lib = sel.options[sel.selectedIndex].textContent; dlg.close(); cb(id, lib); };
+      bt.appendChild(ann); bt.appendChild(ok); dlg.appendChild(bt); dlg.addEventListener('close', () => dlg.remove()); document.body.appendChild(dlg); dlg.showModal();
+    };
+    if (servicesMail) return ouvrir(servicesMail);
+    google.script.run.withSuccessHandler(r => { if (!r.success) { dire('❌ ' + (r.error || 'Liste des services indisponible'), true); return; } emailSuspendu = !!r.email_suspendu; servicesMail = r.services; ouvrir(servicesMail); }).withFailureHandler(e => dire('❌ ' + e.message, true)).listeServices();
+  }
+  function envoyerService(id, nom, bouton) {
+    if (emailSuspendu) { dire("Envoi d'e-mail suspendu (Paramètres → 🛑 Arrêt d'urgence).", true); return; }
+    choisirService(nom, (sid, lib) => {
+      if (emailSuspendu) { dire("Envoi d'e-mail suspendu (Paramètres → 🛑 Arrêt d'urgence).", true); return; }
+      if (!confirm('Envoyer la fiche « ' + nom + ' » par e-mail à : ' + lib + ' ?')) return;
+      const t = bouton.textContent; bouton.disabled = true; bouton.textContent = '⏳ Envoi…';
+      google.script.run.withSuccessHandler(r => { bouton.disabled = false; bouton.textContent = t; if (r.success) dire('✅ Fiche envoyée : ' + r.service + '.'); else dire('❌ ' + r.error + ' (si l’autorisation d’e-mail est demandée : exécuter « autoriserEnvoiMail » une fois dans Apps Script)', true); })
+        .withFailureHandler(e => { bouton.disabled = false; bouton.textContent = t; dire('❌ ' + e.message, true); }).envoyerFicheAuService(id, sid);
+    });
+  }
+  // Envoi par e-mail au secrétariat : seulement au clic, après confirmation
+  function envoyerSec(id, nom, bouton) {
+    if (emailSuspendu) { dire("Envoi d'e-mail suspendu (Paramètres → 🛑 Arrêt d'urgence).", true); return; }
+    if (!confirm('Envoyer la fiche « ' + nom + ' » par e-mail au secrétariat ?')) return;
+    const t = bouton.textContent; bouton.disabled = true; bouton.textContent = '⏳ Envoi…';
+    google.script.run.withSuccessHandler(r => { bouton.disabled = false; bouton.textContent = t; if (r.success) dire('✅ Fiche envoyée au secrétariat.'); else dire('❌ ' + r.error + ' (si l’autorisation d’e-mail est demandée : exécuter « autoriserEnvoiMail » une fois dans Apps Script)', true); })
+      .withFailureHandler(e => { bouton.disabled = false; bouton.textContent = t; dire('❌ ' + e.message, true); }).envoyerFicheAuSecretariat(id);
+  }
+  function charger() { $('videArchive').textContent = 'Chargement…'; google.script.run.withSuccessHandler(r => { if (!r.success) { dire('❌ ' + r.error, true); return; } emailSuspendu = !!r.email_suspendu; archive = r.fiches; dessinerArchive(); }).withFailureHandler(e => dire('❌ ' + e.message, true)).listerFiches(); }
+  function rouvrir(x) {
+    google.script.run.withSuccessHandler(r => {
+      if (!r.success) { dire('❌ ' + r.error, true); return; }
+      vider(); remplir(r.cartouche); $('suggestion').value = r.suggestion || ''; notes = r.notes || {}; editionId = x.id;
+      $('edition').textContent = '✏️ Modification de la fiche « ' + x.nom + ' » : en la régénérant, elle remplace l’ancienne.'; $('edition').style.display = 'block';
+      dessinerGrille(); onglet('p-fiche');
+    }).withFailureHandler(e => dire('❌ ' + e.message, true)).ouvrirFiche(x.id);
+  }
+  function supprimer(x) {
+    if (!confirm('Supprimer définitivement la fiche « ' + x.nom + ' » ?')) return;
+    google.script.run.withSuccessHandler(r => { if (r.success) { archive = archive.filter(y => y.id !== x.id); dessinerArchive(); dire('Fiche supprimée.'); } else dire('❌ ' + r.error, true); }).withFailureHandler(e => dire('❌ ' + e.message, true)).supprimerFiche(x.id);
+  }
+  function onglet(id) {
+    ['p-fiche', 'p-archive'].forEach(p => $(p).hidden = p !== id); document.querySelectorAll('.onglet').forEach(o => o.classList.toggle('actif', o.dataset.p === id));
+    if (id === 'p-archive') charger();
+  }
+  document.querySelectorAll('.onglet').forEach(o => o.addEventListener('click', () => onglet(o.dataset.p)));
+  $('filtre').addEventListener('input', dessinerArchive); $('btnActualiser').addEventListener('click', charger);
+  initialiser();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>
