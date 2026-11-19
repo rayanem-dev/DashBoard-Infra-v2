@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-19-451",
+    "date": "2026-11-19",
+    "title": "Version 6.121.0 — « Dotation » fusionnée dans le portail (4e des 5 applications séparées)",
+    "changes": [
+      "« Dotation Vivres & Eau Minérale » (vivres, eau, entretien, division, repas) tourne maintenant DANS le portail (dotation.html), comme les 3 applications fusionnées avant elle.",
+      "« ✉ Envoyer » (secrétariat et/ou service concerné) se grise pendant la suspension, dans l'historique comme sur le résultat d'une génération ; générer, imprimer et supprimer restent toujours actifs.",
+      "Outillage : outils/generer-moteur-dotation.js, même méthode que pour les trois applications précédentes."
+    ]
+  },
+  {
     "id": "2026-11-19-450",
     "date": "2026-11-19",
     "title": "Version 6.120.0 — « Fiche d'évaluation » fusionnée dans le portail (3e des 5 applications séparées)",
