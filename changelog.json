@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-19-448",
+    "date": "2026-11-19",
+    "title": "Version 6.118.0 — « Générateur Requête Transport » fusionné dans le portail (1re des 5 applications séparées)",
+    "changes": [
+      "« Générateur Requête Transport » (véhicules, engins) tourne maintenant DANS le portail (requete-vehicules.html), comme Prise en charge l'a déjà été. Plus de déploiement séparé, plus de clé à coller nulle part : l'envoi d'e-mail et le dépôt dans le dossier de sortie commun passent directement par les fonctions déjà présentes dans la passerelle.",
+      "« Envoyer par email » ET « Envoyer à l'imprimante » (Xerox, qui est aussi un envoi d'e-mail) se grisent tous les deux tant que le bouton rouge est activé ; « Générer » (qui n'envoie rien) reste toujours actif.",
+      "Outillage : outils/generer-moteur-requete-transport.js fusionne apps-script/requete-transport/Code.js dans la passerelle (RequeteTransportMoteur.gs), et remplace automatiquement les anciens appels réseau vers soi-même (adresse du secrétariat, dossier de sortie, autorisation d'envoi, notification) par les fonctions natives de la passerelle — zéro divergence avec la logique d'origine, zéro configuration à faire à la main.",
+      "À ne pas confondre avec « Requête de transport de personnel » (requete-transport.html), une page différente, déjà native au portail, pour demander un véhicule afin de transporter des personnes."
+    ]
+  },
+  {
     "id": "2026-11-19-447",
     "date": "2026-11-19",
     "title": "Version 6.117.0 — Onglet « Arrêt d'urgence » dans Paramètres, bouton email grisé sur la liste de Prise en charge",
