@@ -32,6 +32,13 @@
   .onglets button[aria-selected="true"] { background: linear-gradient(135deg, var(--orange-main), var(--orange-light)); color: #fff; border-color: transparent; } .onglets small { font-weight: 600; opacity: .85; margin-left: 4px; }
   .note-onglet { font-size: 12.5px; color: var(--text-muted); margin: 0 0 12px; }
   .sous-titre { padding: 10px 16px 4px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--orange-main); border-top: 1px solid var(--border); }
+  .suspendre { padding: 14px 16px; }
+  .suspendre .aide { font-size: 12.5px; color: var(--text-muted); margin: 0 0 10px; }
+  .btn-suspendre { width: 100%; border: 0; border-radius: 12px; padding: 14px 16px; font: inherit; font-size: 14.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .btn-suspendre.actif { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; box-shadow: 0 2px 10px rgba(220,38,38,.35); }
+  .btn-suspendre.inactif { background: var(--surface); color: var(--text-dark); border: 1.5px solid var(--border); }
+  .btn-suspendre:disabled { opacity: .6; cursor: default; }
+  .suspendre-etat { font-size: 12.5px; margin-top: 8px; font-weight: 700; } .suspendre-etat.on { color: #B42318; } .suspendre-etat.off { color: #15803d; }
 </style>
 </head>
 <body>
@@ -319,7 +326,30 @@
     });
     inp.addEventListener('input', etat); etat(); r.appendChild(d);
   }
+  /** Rendu spécial, en gros bouton (pas un simple menu Oui/Non) : un seul clic suffit, pas de bouton « Enregistrer » séparé. */
+  function reglageSuspendreEmail(p) {
+    var actif = String(p.valeur).trim() === 'oui';
+    var r = el('div', 'suspendre'); r.appendChild(el('p', 'aide', p.aide));
+    var b = el('button', 'btn-suspendre ' + (actif ? 'actif' : 'inactif'));
+    b.type = 'button';
+    var etat = el('div', 'suspendre-etat ' + (actif ? 'on' : 'off'));
+    function libelleBouton(v) { return v ? '🔴 Envoi d\'e-mail SUSPENDU — cliquer pour réactiver' : '⚪ Envoi d\'e-mail actif — cliquer pour tout suspendre'; }
+    function majEtat(v) { b.className = 'btn-suspendre ' + (v ? 'actif' : 'inactif'); b.textContent = libelleBouton(v); etat.className = 'suspendre-etat ' + (v ? 'on' : 'off'); etat.textContent = v ? 'Aucun e-mail ne part actuellement, de nulle part (portail et les cinq applications séparées).' : 'Les e-mails partent normalement.'; }
+    majEtat(actif);
+    b.onclick = function () {
+      var nouveau = !actif;
+      if (nouveau && !window.confirm('Suspendre tout envoi d\'e-mail (portail ET les cinq applications séparées) ? Les adresses réglées restent en place pour une réactivation en un clic.')) return;
+      b.disabled = true;
+      Api.call('parametres_enregistrer', { id: p.id, valeur: nouveau ? 'oui' : 'non' }).then(function (rep) { chargerListe(rep.parametres, rep.personnes); toast(nouveau ? 'Envoi d\'e-mail suspendu' : 'Envoi d\'e-mail réactivé'); }).catch(function (x) {
+        if (x.code === 'SESSION' || (!Api.token() && !Api.demo)) { Api.setToken(''); location.replace('connexion.html'); return; }
+        b.disabled = false; etat.className = 'suspendre-etat on'; etat.textContent = x.message;
+      });
+    };
+    r.appendChild(b); r.appendChild(etat);
+    return r;
+  }
   function reglage(p) {
+    if (p.id === 'email.suspendu') return reglageSuspendreEmail(p);
     var r = el('div', 'reglage'), id = 'r-' + p.id.replace(/\W/g, '_'); var l = el('label', 'l', p.libelle); l.setAttribute('for', id); r.appendChild(l); r.appendChild(el('p', 'aide', p.aide));
     var c = el('div', 'champ'), inp;
     if (p.type === 'choix') { inp = el('select'); (p.choix || []).forEach(function (o) { var op = el('option', null, o === 'oui' ? 'Oui' : o === 'non' ? 'Non' : (p.choixLibelles && p.choixLibelles[o]) || o); op.value = o; inp.appendChild(op); }); inp.style.cssText = 'padding:8px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--text-dark)'; }

@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-19-443",
+    "date": "2026-11-19",
+    "title": "Version 6.114.0 — Bouton rouge « Suspendre tout envoi d'e-mail » (portail et les cinq applications séparées)",
+    "changes": [
+      "Nouveau réglage dans Paramètres → Réglages : un gros bouton rouge qui coupe TOUT envoi d'e-mail — codes de connexion compris — pour le portail ET les cinq applications séparées (requête de transport, dotation, bon de sortie, fiche d'évaluation, prise en charge). Un clic suffit ; les adresses réglées ailleurs dans Paramètres restent en place, prêtes à servir dès qu'on remet le bouton en « non ».",
+      "Côté portail : tout envoi passe maintenant par un point de passage unique (Mail.envoyer) qui vérifie ce réglage avant d'écrire quoi que ce soit — plus aucun MailApp.sendEmail direct dans la passerelle.",
+      "Côté applications séparées : une nouvelle action « envoi_externe_autorise » (même clé partagée que « Clé des applications séparées ») est demandée avant tout envoi qui ne passe pas déjà par la demande d'adresse du secrétariat (ex. une boîte de service, l'imprimante Xerox) — le bouton les arrête donc, elles aussi, sans exception.",
+      "Bloqué pendant la pause du portail, comme les autres actions des applications séparées.",
+      "Objectif : pouvoir couper complètement la sortie de données par e-mail en attendant une séance avec la cellule IT, sans perdre aucun réglage ni devoir toucher au code des applications séparées."
+    ]
+  },
+  {
     "id": "2026-11-18-442",
     "date": "2026-11-18",
     "title": "Version 6.113.0 — Adresse du secrétariat centralisée dans Paramètres, pour les cinq applications séparées",
