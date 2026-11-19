@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bon de sortie matériel – Division Infrastructure RNS</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<script>
+// Pont vers la passerelle : le formulaire d'origine appelle google.script.run.xxx(...) ; ici chaque appel passe par la connexion du portail (action « bs »).
+window.google = { script: { run: (function () {
+  function chaine(ok, ko) {
+    return new Proxy({}, { get: function (_, nom) {
+      if (nom === 'withSuccessHandler') return function (f) { return chaine(f, ko); };
+      if (nom === 'withFailureHandler') return function (f) { return chaine(ok, f); };
+      return function () {
+        var args = Array.prototype.slice.call(arguments);
+        Api.call('bs', { fn: String(nom), args: args }).then(function (r) { if (ok) ok(r); }, function (e) { if (ko) ko(e); else if (window.console) console.error(e); });
+      };
+    } });
+  }
+  return chaine(null, null);
+})() } };
+</script>
+<style>
+  :root { --orange: #E85D04; --orange2: #F48C06; --texte: #1C1C1C; --fond: #F5F5F0; --carte: #fff; --bord: #E5E7EB; --doux: #6B7280; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', Arial, sans-serif; background: var(--fond); color: var(--texte); font-size: 14px; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%); box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+  .bandeau { max-width: 880px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .logo { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 17px; }
+  .bandeau h1 { color: #fff; font-size: 19px; } .bandeau p { color: #94A3B8; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .bandeau a { margin-left: auto; color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 9px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+  main { max-width: 880px; margin: 18px auto 70px; padding: 0 16px; }
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+  .carte h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--orange); margin-bottom: 12px; }
+  .grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .grille.deux { grid-template-columns: repeat(2, 1fr); }
+  label { display: block; font-size: 11.5px; font-weight: 700; color: var(--doux); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  input, textarea, select { width: 100%; font: inherit; padding: 9px 11px; border: 1.5px solid var(--bord); border-radius: 9px; background: #fff; color: var(--texte); }
+  input:focus, textarea:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,93,4,.15); }
+  textarea { min-height: 96px; resize: vertical; }
+  .aide { font-size: 12px; color: var(--doux); margin-top: 6px; }
+  .sig { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .sig .bloc { border: 1px solid var(--bord); border-radius: 10px; padding: 11px; background: #FAFAF7; }
+  .sig h3 { font-size: 13px; margin-bottom: 8px; text-align: center; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 11px 18px; cursor: pointer; }
+  .prim { background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; } .sec { background: #fff; color: var(--texte); border: 1.5px solid var(--bord); } .danger { background: #fff; color: #B91C1C; border: 1.5px solid #FCA5A5; }
+  button:disabled { opacity: .55; cursor: wait; }
+  button.suspendu { background: #9CA3AF !important; color: #fff !important; border-color: transparent !important; cursor: not-allowed; opacity: .75; }
+  .msg { padding: 11px 14px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; display: none; } .msg.ok { display: block; background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; } .msg.err { display: block; background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+  #resultat { display: none; } #resultat a { color: var(--orange); font-weight: 700; margin-right: 14px; }
+  @media (max-width: 700px) { .grille, .grille.deux, .sig { grid-template-columns: 1fr; } }
+.choix-role{display:inline-flex;align-items:center;gap:6px}.choix-role input{width:auto;margin:0}.choix-role label{margin:0;text-transform:none;font-size:13px;font-weight:600;letter-spacing:0;color:inherit;cursor:pointer}
+</style>
+</head>
+<body>
+<header><div class="bandeau">
+  <div class="logo">BS</div>
+  <div><h1>Bon de sortie matériel</h1><p>Division Infrastructure — RNS</p></div>
+  <a href="portail.html">← Retour au portail</a>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main>
+  <div id="message" class="msg"></div>
+
+  <div class="carte"><h2>Je soussigné(e)</h2>
+    <div class="grille">
+      <div><label for="sNom">Nom et prénom</label><input id="sNom" list="dlSignataires" placeholder="Tapez pour chercher…" autocomplete="off"></div>
+      <div><label for="sFonction">Fonction</label><input id="sFonction"></div>
+      <div><label for="sMatricule">Matricule</label><input id="sMatricule"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span style="font-size:13px;font-weight:700">Je signe ce bon comme :</span>
+      <span class="choix-role"><input type="radio" id="rHab" name="roleS" value="habilite" checked><label for="rHab">Personne habilitée (cédant)</label></span>
+      <span class="choix-role"><input type="radio" id="rPre" name="roleS" value="preneur"><label for="rPre">Preneur</label></span></div>
+    <p class="aide" id="aidePersonnes" style="display:none"></p>
+  </div>
+
+  <div class="carte"><h2>Autorise (la personne qui emporte le matériel)</h2>
+    <div class="grille">
+      <div><label for="aNom">Nom et prénom</label><input id="aNom" list="dlPreneurs" placeholder="Tapez pour chercher, ou saisissez librement…" autocomplete="off"></div>
+      <div><label for="aFonction">Fonction</label><input id="aFonction"></div>
+      <div><label for="aMatricule">Matricule</label><input id="aMatricule"></div>
+    </div>
+  </div>
+  <datalist id="dlSignataires"></datalist><datalist id="dlPreneurs"></datalist>
+
+  <div class="carte"><h2>Matériel à faire sortir</h2>
+    <label for="materiel">En chiffre et en lettre — un matériel par ligne (le tiret « - » est ajouté tout seul)</label>
+    <textarea id="materiel" placeholder="Ex. :&#10;02 (deux) groupes électrogènes 5 kVA&#10;10 (dix) rouleaux de câble"></textarea>
+    <div class="grille deux" style="margin-top:12px">
+      <div><label for="lieuEnl">Lieu d’enlèvement</label><input id="lieuEnl" placeholder="Ex. : Magasin Infrastructure"></div>
+      <div><label for="lieuDest">Lieu de destination</label><input id="lieuDest" placeholder="Ex. : Chantier base de vie"></div>
+    </div>
+  </div>
+
+  <div class="carte"><h2>Visas</h2>
+    <div class="sig">
+      <div class="bloc"><h3>Personne habilitée</h3><label>Date</label><input type="date" id="hDate"><label style="margin-top:8px">Structure</label><input id="hStructure"></div>
+      <div class="bloc"><h3>Preneur</h3><div id="pNomZone"><label>Nom du preneur <span style="font-weight:400">(facultatif)</span></label><input id="pNom" list="dlPreneurs" autocomplete="off" placeholder="Si le preneur n’est pas la personne autorisée"></div><label style="margin-top:8px">Date</label><input type="date" id="pDate"><label style="margin-top:8px">Structure</label><input id="pStructure"></div>
+      <div class="bloc"><h3>Contrôlé par SIE</h3><label>Date</label><input type="date" id="cDate"><label style="margin-top:8px">Structure</label><input id="cStructure" placeholder="SIE"></div>
+    </div>
+    <label for="instruction" style="margin-top:14px">Instruction particulière (facultatif)</label>
+    <textarea id="instruction" style="min-height:62px"></textarea>
+  </div>
+
+  <div class="actions"><button class="prim" id="btnGenerer" type="button">📄 Générer le bon (PDF)</button><button class="sec" id="btnVider" type="button">Vider</button></div>
+
+  <div class="carte" id="resultat" style="margin-top:14px">
+    <h2>Bon généré</h2>
+    <p id="liens"></p>
+    <div class="grille deux" style="margin-top:12px">
+      <div><label for="destEmail">E-mail supplémentaire (facultatif)</label><input id="destEmail" type="text" placeholder="nom@exemple.dz, autre@exemple.dz"><p class="aide">Le secrétariat Infrastructure RNS reçoit toujours le bon.</p></div>
+      <div><label for="msgEmail">Message (facultatif)</label><input id="msgEmail" type="text"></div>
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button class="prim" id="btnMail" type="button">✉️ Envoyer par e-mail</button>
+      <button class="sec" id="btnXerox" type="button">📠 Envoyer à l'imprimante</button>
+      <button class="danger" id="btnSuppr" type="button">🗑️ Supprimer ce PDF</button>
+    </div>
+  </div>
+  <div class="carte" id="listeBons">
+    <h2>Bons générés <span id="nbBons" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--doux)"></span></h2>
+    <div id="zoneBons"><p class="aide">Chargement…</p></div>
+    <div class="actions" style="margin-top:10px"><button class="sec" id="btnActualiser" type="button">↻ Actualiser</button><button class="danger" id="btnToutSuppr" type="button" hidden>🗑️ Tout supprimer</button></div>
+  </div>
+</main>
+
+<script>
+  if (window.Api && Api.demo) document.getElementById('demo').hidden = false;
+  const $ = id => document.getElementById(id);
+  let courant = null;
+  let emailSuspendu = false;
+  /** Grise les deux boutons qui ENVOIENT un e-mail (secrétariat ET imprimante Xerox, qui est elle aussi un envoi d'e-mail) tant que le bouton rouge est activé. « Générer » n'envoie rien : il reste toujours actif. */
+  function appliquerSuspensionEmail() {
+    ['btnMail', 'btnXerox'].forEach(id => { const b = $(id); b.classList.toggle('suspendu', emailSuspendu); b.title = emailSuspendu ? "Envoi d'e-mail suspendu (Paramètres)" : ''; });
+  }
+  const aujourdhui = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  function dire(t, err) { const m = $('message'); m.textContent = t; m.className = 'msg ' + (err ? 'err' : 'ok'); if (t) window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function trouver(nom, liste) { const k = norm(nom); return liste.filter(p => norm(p.nom) === k)[0] || null; }
+
+  let signataires = [], preneurs = [], restreint = false;
+  function remplirListe(id, liste, avecSource) {
+    const dl = $(id); dl.textContent = '';
+    liste.forEach(p => { const o = document.createElement('option'); o.value = p.nom; o.label = [p.fonction, p.service].filter(Boolean).join(' — ') + (avecSource && p.source === 'enquetes' ? ' (Enquêtes)' : ''); dl.appendChild(o); });
+  }
+  function avertir(t) { const a = $('aidePersonnes'); a.textContent = t; a.style.display = t ? 'block' : 'none'; }
+  function initialiser() {
+    ['hDate', 'pDate'].forEach(i => $(i).value = aujourdhui());
+    google.script.run
+      .withSuccessHandler(r => { signataires = r.liste || []; restreint = !!r.restreint; remplirListe('dlSignataires', signataires, false); })
+      .withFailureHandler(e => avertir('Liste des signataires indisponible : ' + e.message + ' — saisie libre possible.'))
+      .getSignataires();
+    google.script.run
+      .withSuccessHandler(r => { preneurs = r.liste || []; remplirListe('dlPreneurs', preneurs, true); if (r.avertissement) avertir(r.avertissement); })
+      .withFailureHandler(e => avertir('Liste des preneurs indisponible : ' + e.message + ' — saisie libre possible.'))
+      .getPreneurs();
+  }
+  // choix d'une personne : fonction, matricule et structure sont repris (modifiables)
+  function lier(prefixe, structureId, liste) {
+    $(prefixe + 'Nom').addEventListener('change', () => {
+      const p = trouver($(prefixe + 'Nom').value, liste()); if (!p) { if (prefixe === 's' && restreint && $('sNom').value) { avertir('« ' + $('sNom').value + ' » n\'est pas dans la liste des signataires désignés.'); } return; }
+      if (prefixe === 's') avertir('');
+      $(prefixe + 'Nom').value = p.nom; $(prefixe + 'Fonction').value = p.fonction; $(prefixe + 'Matricule').value = p.matricule;
+      if (structureId) $(structureId).value = (p.dependance && norm(p.dependance) !== 'sonatrach') ? p.dependance : p.service;   // « Autorise » n'est PAS lié au visa « Preneur » : ce peut être n'importe qui (ex. un chauffeur de camion)
+    });
+  }
+  const roleS = () => (document.querySelector('input[name=roleS]:checked') || {}).value || 'habilite';
+  function majRole() { const pre = roleS() === 'preneur'; $('sNom').setAttribute('list', pre ? 'dlPreneurs' : 'dlSignataires'); $('pNom').closest('.bloc').style.display = ''; document.getElementById('pNomZone').style.display = pre ? 'none' : ''; }
+  document.querySelectorAll('input[name=roleS]').forEach(r => r.addEventListener('change', () => { majRole(); const p = trouver($('sNom').value, preneurs.concat(signataires)); if (p) { const st = (p.dependance && norm(p.dependance) !== 'sonatrach') ? p.dependance : p.service; $(roleS() === 'preneur' ? 'pStructure' : 'hStructure').value = st; } }));
+  lier('s', null, () => roleS() === 'preneur' ? preneurs.concat(signataires) : signataires);
+  $('sNom').addEventListener('change', () => { const p = trouver($('sNom').value, preneurs.concat(signataires)); if (p) $(roleS() === 'preneur' ? 'pStructure' : 'hStructure').value = (p.dependance && norm(p.dependance) !== 'sonatrach') ? p.dependance : p.service; });
+  $('pNom').addEventListener('change', () => { const p = trouver($('pNom').value, preneurs.concat(signataires)); if (p) { $('pNom').value = p.nom; $('pStructure').value = (p.dependance && norm(p.dependance) !== 'sonatrach') ? p.dependance : p.service; } });
+
+  function collecter() {
+    return {
+      roleSoussigne: roleS(),
+      soussigne: { nom: $('sNom').value, fonction: $('sFonction').value, matricule: $('sMatricule').value },
+      autorise: { nom: $('aNom').value, fonction: $('aFonction').value, matricule: $('aMatricule').value },
+      materiel: $('materiel').value, lieuEnlevement: $('lieuEnl').value, lieuDestination: $('lieuDest').value,
+      habilite: { date: $('hDate').value, structure: $('hStructure').value }, preneur: { nom: roleS() === 'preneur' ? '' : $('pNom').value, date: $('pDate').value, structure: $('pStructure').value }, sie: { date: $('cDate').value, structure: $('cStructure').value },
+      instruction: $('instruction').value
+    };
+  }
+  function occupe(b, v) { ['btnGenerer', 'btnMail', 'btnXerox', 'btnSuppr'].forEach(i => $(i).disabled = v); }
+
+  $('btnGenerer').addEventListener('click', () => {
+    dire(''); occupe(0, true); $('btnGenerer').textContent = '⏳ Génération…';
+    google.script.run
+      .withSuccessHandler(r => {
+        occupe(0, false); $('btnGenerer').textContent = '📄 Générer le bon (PDF)';
+        if (!r.success) { dire('❌ ' + r.error, true); return; }
+        courant = r; $('resultat').style.display = 'block';
+        $('liens').innerHTML = '<a href="' + r.pdfUrl + '" target="_blank" rel="noopener">📄 Ouvrir le PDF</a><a href="' + r.downloadUrl + '" target="_blank" rel="noopener">⬇️ Télécharger</a><span style="color:var(--doux)">' + r.fileName + '</span>';
+        dire('✅ Le bon est généré : imprimez-le en deux exemplaires ou envoyez-le par e-mail.'); chargerBons();
+        $('resultat').scrollIntoView({ behavior: 'smooth' });
+      })
+      .withFailureHandler(e => { occupe(0, false); $('btnGenerer').textContent = '📄 Générer le bon (PDF)'; dire('❌ ' + e.message, true); })
+      .genererBon(collecter());
+  });
+  $('btnMail').addEventListener('click', () => {
+    if (!courant) return;
+    if (emailSuspendu) { dire("Envoi d'e-mail suspendu (Paramètres → 🛑 Arrêt d'urgence).", true); return; }
+    occupe(0, true); $('btnMail').textContent = '⏳ Envoi…';
+    google.script.run
+      .withSuccessHandler(r => { occupe(0, false); $('btnMail').textContent = '✉️ Envoyer par e-mail'; r.success ? dire('✅ Envoyé à ' + r.destinataires.join(', ')) : dire('❌ ' + r.error, true); })
+      .withFailureHandler(e => { occupe(0, false); $('btnMail').textContent = '✉️ Envoyer par e-mail'; dire('❌ ' + e.message, true); })
+      .envoyerBon(courant.fileId, $('destEmail').value, $('msgEmail').value);
+  });
+  $('btnXerox').addEventListener('click', () => {
+    if (!courant) return;
+    if (emailSuspendu) { dire("Envoi d'e-mail suspendu (Paramètres → 🛑 Arrêt d'urgence) — l'imprimante Xerox passe aussi par e-mail.", true); return; }
+    occupe(0, true);
+    google.script.run.withSuccessHandler(r => { occupe(0, false); r.success ? dire('✅ Envoyé à l\'imprimante : rendez-vous sur l\'écran du Xerox, ouvrez l\'app @PrintByXerox et appuyez sur Imprimer.') : dire('❌ ' + r.error, true); })
+      .withFailureHandler(e => { occupe(0, false); dire('❌ ' + e.message, true); }).envoyerImpression(courant.fileId);
+  });
+  $('btnSuppr').addEventListener('click', () => {
+    if (!courant || !confirm('Supprimer ce PDF de Drive ?')) return; occupe(0, true);
+    google.script.run.withSuccessHandler(r => { occupe(0, false); if (r.success) { courant = null; $('resultat').style.display = 'none'; dire('PDF supprimé.'); chargerBons(); } else dire('❌ ' + r.error, true); })
+      .withFailureHandler(e => { occupe(0, false); dire('❌ ' + e.message, true); }).supprimerBon(courant.fileId);
+  });
+  $('btnVider').addEventListener('click', () => { document.querySelectorAll('input:not([type=date]), textarea').forEach(e => e.value = ''); ['hDate', 'pDate'].forEach(i => $(i).value = aujourdhui()); $('cDate').value = ''; $('resultat').style.display = 'none'; courant = null; dire(''); });
+  /* ---------- bons générés : ouvrir, imprimer en un clic, supprimer, tout supprimer ---------- */
+  const fr = ms => { const d = new Date(ms); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  function bouton(txt, cls, fn) { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = txt; b.style.cssText = 'padding:6px 10px;font-size:13px'; b.addEventListener('click', fn); return b; }
+  function imprimerDirect(id, b) {
+    const txt = b.textContent; b.disabled = true; b.textContent = '⏳';
+    google.script.run.withSuccessHandler(r => {
+      b.disabled = false; b.textContent = txt; if (!r.success) { dire('❌ ' + r.error, true); return; }
+      const oct = Uint8Array.from(atob(r.data), c => c.charCodeAt(0)), url = URL.createObjectURL(new Blob([oct], { type: 'application/pdf' })), fr0 = document.createElement('iframe');
+      fr0.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; fr0.src = url; document.body.appendChild(fr0);
+      fr0.onload = () => { try { fr0.contentWindow.focus(); fr0.contentWindow.print(); } catch (e) { window.open(url, '_blank'); } setTimeout(() => { URL.revokeObjectURL(url); fr0.remove(); }, 60000); };
+    }).withFailureHandler(e => { b.disabled = false; b.textContent = txt; dire('❌ ' + e.message, true); }).lireBonPourImpression(id);
+  }
+  function chargerBons() {
+    google.script.run.withSuccessHandler(r => {
+      emailSuspendu = !!r.email_suspendu; appliquerSuspensionEmail();
+      const z = $('zoneBons'); z.textContent = '';
+      if (!r.success) { z.innerHTML = '<p class="aide">⚠ ' + String(r.error || '').replace(/</g, '&lt;') + '</p>'; return; }
+      $('nbBons').textContent = '(' + r.total + ')'; $('btnToutSuppr').hidden = !r.total;
+      if (!r.fichiers.length) { z.innerHTML = '<p class="aide">Aucun bon généré pour le moment.</p>'; return; }
+      r.fichiers.forEach(f => {
+        const l = document.createElement('div'); l.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--bord)';
+        const t = document.createElement('div'); t.style.cssText = 'flex:1 1 260px;min-width:0'; const n = document.createElement('div'); n.style.cssText = 'font-weight:700;font-size:13.5px;overflow-wrap:anywhere'; n.textContent = f.nom.replace(/\.pdf$/i, '').replace(/_/g, ' '); const d = document.createElement('div'); d.style.cssText = 'font-size:12px;color:var(--doux)'; d.textContent = fr(f.date) + (f.taille ? ' · ' + Math.max(1, Math.round(f.taille / 1024)) + ' Ko' : ''); t.appendChild(n); t.appendChild(d); l.appendChild(t);
+        const a = document.createElement('a'); a.href = f.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '📄 Ouvrir'; a.style.cssText = 'font-size:13px;font-weight:700;color:var(--orange);text-decoration:none'; l.appendChild(a);
+        l.appendChild(bouton('🖨 Imprimer', 'sec', ev => imprimerDirect(f.id, ev.currentTarget)));
+        l.appendChild(bouton('🗑', 'danger', () => { if (!confirm('Supprimer « ' + f.nom + ' » ?')) return; google.script.run.withSuccessHandler(x => { x.success ? chargerBons() : dire('❌ ' + x.error, true); }).withFailureHandler(e => dire('❌ ' + e.message, true)).supprimerBon(f.id); }));
+        z.appendChild(l);
+      });
+    }).withFailureHandler(e => { $('zoneBons').textContent = '⚠ ' + e.message; }).listerBons();
+  }
+  $('btnActualiser').addEventListener('click', chargerBons);
+  $('btnToutSuppr').addEventListener('click', () => {
+    if (!confirm('Supprimer TOUS les bons générés ? (ils vont dans la corbeille de Drive, récupérables 30 jours)')) return;
+    google.script.run.withSuccessHandler(r => { if (r.success) { courant = null; $('resultat').style.display = 'none'; dire(r.n + ' bon(s) supprimé(s).'); chargerBons(); } else dire('❌ ' + r.error, true); }).withFailureHandler(e => dire('❌ ' + e.message, true)).supprimerTousLesBons();
+  });
+  initialiser(); chargerBons();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

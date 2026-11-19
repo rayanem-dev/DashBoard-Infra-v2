@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-11-19-449",
+    "date": "2026-11-19",
+    "title": "Version 6.119.0 — « Bon de sortie matériel » fusionné dans le portail (2e des 5 applications séparées)",
+    "changes": [
+      "« Bon de sortie matériel » tourne maintenant DANS le portail (bon-sortie.html), comme Prise en charge et Requête de transport l'ont déjà été. Plus de déploiement séparé, plus de clé à coller.",
+      "« Envoyer par e-mail » ET « Envoyer à l'imprimante » (Xerox, qui est aussi un envoi d'e-mail) se grisent tous les deux pendant la suspension ; « Générer le bon » reste toujours actif.",
+      "Outillage : outils/generer-moteur-bon-sortie.js, même méthode que pour Requête de transport."
+    ]
+  },
+  {
     "id": "2026-11-19-448",
     "date": "2026-11-19",
     "title": "Version 6.118.0 — « Générateur Requête Transport » fusionné dans le portail (1re des 5 applications séparées)",
