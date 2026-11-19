@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-11-19-452",
+    "date": "2026-11-19",
+    "title": "Version 6.122.0 — « Commande de pièces » fusionnée dans le portail (5e et dernière des applications séparées : « fusionne tout » terminé)",
+    "changes": [
+      "« Commande de Pièces – Service Électromécanique » (ateliers Électricité et Froid & HVAC) tourne maintenant DANS le portail (commande-pieces.html), comme les 4 applications fusionnées avant elle. Plus de déploiement séparé, plus de clé ENVOI_CLE à coller.",
+      "Cette application n'envoie aucun e-mail : aucun bouton à griser pendant la suspension, seule la génération du bon de commande (PDF).",
+      "Code.js corrigé pour fonctionner fusionné : SpreadsheetApp.getActiveSpreadsheet() (qui dépendait du classeur de déploiement) remplacé par un identifiant explicite du classeur catalogue/journal.",
+      "Les 5 applications séparées (Prise en charge, Requête de transport, Bon de sortie, Fiche d'évaluation, Dotation, Commande de pièces) sont maintenant toutes fusionnées dans le portail.",
+      "Outillage : outils/generer-moteur-commande-pieces.js, même méthode que pour les quatre applications précédentes."
+    ]
+  },
+  {
     "id": "2026-11-19-451",
     "date": "2026-11-19",
     "title": "Version 6.121.0 — « Dotation » fusionnée dans le portail (4e des 5 applications séparées)",
