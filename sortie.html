@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="same-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Documents générés – Division Infrastructure RNS</title>
+<meta name="theme-color" content="#E85D04">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/charte.css">
+<script src="js/config.js"></script><script src="js/api.js"></script><script src="js/garde.js"></script>
+<style>
+  .sz { max-width: 820px; margin: 0 auto; padding: 18px 16px 50px; }
+  .carte { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); padding: 16px 18px; margin-bottom: 14px; font-size: 14px; line-height: 1.55; } .carte h3 { margin: 0 0 6px; font-size: 15px; } .carte ul { margin: 6px 0 0; padding-inline-start: 20px; }
+  .reglage-vide { border: 1.5px dashed var(--border); border-radius: 12px; padding: 14px 16px; text-align: center; color: var(--text-muted); font-size: 13.5px; }
+  .reglage-vide a { color: var(--orange-main); font-weight: 700; text-decoration: none; }
+  .titre-fichiers { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; } .titre-fichiers h2 { margin: 0; font-size: 17px; }
+  .btn-tout-suppr { background: #FEE2E2; color: #B42318; border: 1.5px solid #FECACA; border-radius: 9px; padding: 7px 12px; font: 700 12px Inter, sans-serif; cursor: pointer; } .btn-tout-suppr:hover { background: #FCA5A5; } .btn-tout-suppr:disabled { opacity: .5; cursor: wait; }
+  #historique { display: flex; flex-direction: column; gap: 8px; }
+  #historique .placeholder { font-size: 13px; color: var(--text-muted); font-style: italic; padding: 10px 2px; }
+  .histo-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; flex-wrap: wrap; background: var(--surface); }
+  .histo-tag { font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; flex-shrink: 0; background: #FFE8D6; color: var(--orange-main); }
+  .histo-tag.autorisation-daccès, .histo-tag.autorisation { background: #DBEAFE; color: #1D4ED8; } .histo-tag.macaron { background: #DCFCE7; color: #15803D; } .histo-tag.document { background: #F3F4F6; color: #6B7280; }
+  .histo-info { flex: 1; min-width: 160px; } .histo-nom { font-size: 13px; font-weight: 600; color: var(--text-dark); overflow-wrap: anywhere; } .histo-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .histo-links { display: flex; gap: 6px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+  .histo-links a, .histo-links button.mail, .histo-links button.impr { text-decoration: none; border: 0; font-family: inherit; background: #FFE8D6; color: var(--orange-main); font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 7px; white-space: nowrap; cursor: pointer; }
+  .histo-links button.mail { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; } .histo-links button.impr { background: linear-gradient(135deg, #16A34A, #22C55E); color: #fff; } .histo-links button:disabled { opacity: .5; cursor: wait; }
+  .btn-suppr-item { background: #FEE2E2; color: #B42318; border: none; border-radius: 7px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="bandeau"><div class="bandeau-inner">
+  <div class="logo-area"><div class="logo-circle">🗂️</div>
+    <div class="logo-text"><h1>Documents générés</h1><p>Sonatrach · RNS · Division Infrastructure</p></div></div>
+  <div class="bandeau-droite"><a class="btn-ghost" href="portail.html" style="text-decoration:none">← Retour au portail</a></div>
+</div></header>
+<div id="demo" class="demo-banner" hidden>MODE DÉMO — données fictives</div>
+<main class="sz">
+  <section class="carte">
+    <h3>Tous les documents, sans passer par e-mail</h3>
+    <ul>
+      <li>Le portail ET les cinq applications séparées (requête de transport, dotation, bon de sortie, fiche d'évaluation, prise en charge) déposent une copie de chaque document généré ici, en plus de l'endroit où ils le rangent déjà.</li>
+      <li><b>🖨️ Imprimer</b> ouvre directement la fenêtre d'impression du navigateur (imprimante par défaut) — jamais besoin d'ouvrir le PDF à la main.</li>
+      <li><b>✉️ Envoyer par email</b> n'agit qu'au clic, jamais automatiquement ; soumis au bouton rouge « Suspendre tout envoi d'e-mail » de Paramètres.</li>
+    </ul>
+  </section>
+  <section id="sans-reglage" class="carte" hidden>
+    <div class="reglage-vide">Aucun dossier de sortie n'est réglé pour l'instant.<br>À régler une fois dans <a href="parametres.html">Paramètres → « Dossier de sortie »</a>.</div>
+  </section>
+  <section id="avec-reglage" hidden>
+    <div class="titre-fichiers"><h2 id="titreFichiers">Documents générés</h2><button type="button" class="btn-tout-suppr" id="btnToutSupprimer" hidden>🗑 Tout supprimer</button></div>
+    <div id="historique"><div class="placeholder">Chargement…</div></div>
+  </section>
+</main>
+<script>
+(function () {
+  var $ = function (i) { return document.getElementById(i); };
+  if (window.Api && Api.demo) $('demo').hidden = false;
+  function echapper(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function etiquette(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, '-'); }
+
+  function dessiner(fichiers) {
+    var n = fichiers.length;
+    $('titreFichiers').textContent = 'Documents générés (' + n + ')';
+    $('btnToutSupprimer').hidden = !n;
+    var div = $('historique');
+    if (!n) { div.innerHTML = '<div class="placeholder">Aucun document généré pour le moment.</div>'; return; }
+    div.innerHTML = '';
+    fichiers.forEach(function (f) {
+      var row = document.createElement('div'); row.className = 'histo-item';
+      row.innerHTML = '<span class="histo-tag ' + etiquette(f.type) + '">' + echapper(f.type) + '</span>' +
+        '<div class="histo-info"><div class="histo-nom">' + echapper(f.nom) + '</div><div class="histo-date">' + echapper(f.date) + '</div></div>' +
+        '<div class="histo-links"><a href="https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view" target="_blank" rel="noopener">📄 Ouvrir</a>' +
+        '<button type="button" class="impr">🖨️ Imprimer</button><button type="button" class="mail">✉️ Envoyer par email</button></div>' +
+        '<button type="button" class="btn-suppr-item" title="Supprimer">🗑</button>';
+      row.querySelector('button.impr').onclick = function () { imprimerDirect(this, f.id); };
+      row.querySelector('button.mail').onclick = function () { envoyerParMail(this, f.id); };
+      row.querySelector('.btn-suppr-item').onclick = function () { supprimerFichier(this, f.id); };
+      div.appendChild(row);
+    });
+  }
+
+  function charger() {
+    Api.call('sortie_liste').then(function (r) {
+      $('sans-reglage').hidden = r.regle; $('avec-reglage').hidden = !r.regle;
+      if (r.regle) dessiner(r.fichiers);
+    }).catch(function (e) {
+      if (e.code === 'SESSION') { location.replace('connexion.html'); return; }
+      document.querySelector('main').innerHTML = '<p>' + (e.code === 'DROITS' ? 'Accès réservé aux administrateurs.' : echapper(e.message)) + '</p>';
+    });
+  }
+
+  /** Impression en un clic : la fenêtre d'impression du navigateur s'ouvre directement (imprimante par défaut). Repli : le PDF s'ouvre dans un onglet. */
+  function imprimerDirect(btn, id) {
+    var txt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Préparation…';
+    Api.call('sortie_imprimer', { id: id }).then(function (res) {
+      btn.disabled = false; btn.textContent = txt;
+      try {
+        var bin = atob(res.base64), octets = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+        var url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+        var cadre = document.createElement('iframe');
+        cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+        cadre.onload = function () { try { cadre.contentWindow.focus(); cadre.contentWindow.print(); } catch (e) { window.open(url, '_blank'); } };
+        cadre.src = url; document.body.appendChild(cadre);
+        setTimeout(function () { cadre.remove(); URL.revokeObjectURL(url); }, 180000);
+      } catch (e) { window.alert('Impression impossible : ' + e.message); }
+    }).catch(function (e) { btn.disabled = false; btn.textContent = txt; window.alert(e.message); });
+  }
+  function envoyerParMail(btn, id) {
+    var txt = btn.textContent; btn.disabled = true; btn.textContent = 'Envoi…';
+    Api.call('sortie_envoyer', { id: id }).then(function () { btn.disabled = false; btn.textContent = txt; window.alert('✅ Document envoyé !'); })
+      .catch(function (e) { btn.disabled = false; btn.textContent = txt; window.alert(e.message); });
+  }
+  function supprimerFichier(btn, id) {
+    if (!window.confirm('Supprimer ce document ? Le PDF sera mis à la corbeille.')) return;
+    btn.disabled = true;
+    Api.call('sortie_supprimer', { id: id }).then(charger).catch(function (e) { window.alert(e.message); charger(); });
+  }
+  $('btnToutSupprimer').onclick = function () {
+    if (!window.confirm('Tout supprimer ? Tous les documents générés seront mis à la corbeille.')) return;
+    var b = $('btnToutSupprimer'); b.disabled = true;
+    Api.call('sortie_tout_supprimer').then(function (r) { b.disabled = false; window.alert(r.message); charger(); })
+      .catch(function (e) { b.disabled = false; window.alert(e.message); });
+  };
+  charger();
+})();
+</script>
+<script src="js/pied.js"></script>
+</body>
+</html>

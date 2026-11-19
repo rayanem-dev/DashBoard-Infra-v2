@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-11-19-444",
+    "date": "2026-11-19",
+    "title": "Version 6.115.0 — « Documents générés » : un dossier de sortie commun, imprimer sans passer par e-mail",
+    "changes": [
+      "Nouvelle carte « Documents générés » (Administration, secrétariat) : tous les documents produits par le portail ET les cinq applications séparées (requête de transport, dotation, bon de sortie, fiche d'évaluation, prise en charge) apparaissent dans une seule liste — ouvrir, imprimer en un clic (sans jamais ouvrir le PDF à la main), envoyer par e-mail SEULEMENT au clic, supprimer un document ou tout supprimer.",
+      "Nouveau réglage Paramètres → « Dossier de sortie » : un identifiant de dossier Drive unique. Chaque application y dépose une COPIE de chaque document généré, en plus de l'endroit où elle le range déjà — rien n'est déplacé ni perdu.",
+      "Nouvelle action « envoi_externe_sortie » (même clé partagée que les autres actions des applications séparées) qui donne cet identifiant aux cinq applications séparées ; jamais bloquante pour la génération si le dossier n'est pas encore réglé, la clé absente ou le portail injoignable.",
+      "L'envoi par e-mail depuis cette liste respecte le bouton rouge « Suspendre tout envoi d'e-mail » (6.114.0), comme tout le reste."
+    ]
+  },
+  {
     "id": "2026-11-19-443",
     "date": "2026-11-19",
     "title": "Version 6.114.0 — Bouton rouge « Suspendre tout envoi d'e-mail » (portail et les cinq applications séparées)",
